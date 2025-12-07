@@ -1,8 +1,21 @@
 import { Effect, Scope, Stream } from "effect"
 import type { Readable } from "./Readable.js"
 import { map as mapReadable } from "./Readable.js"
-import type { Element } from "./Element.js"
+import type { Element } from "./Element"
 
+/**
+ * Catches errors from a render function and displays a fallback element.
+ * @param tryRender - Function that may fail with an error
+ * @param catchRender - Function to render the error fallback
+ *
+ * @example
+ * ```ts
+ * ErrorBoundary(
+ *   () => riskyComponent(),
+ *   (error) => div(["Something went wrong: ", String(error)])
+ * )
+ * ```
+ */
 export const ErrorBoundary = <E>(
   tryRender: () => Effect.Effect<HTMLElement, E, Scope.Scope>,
   catchRender: (error: E) => Element
@@ -17,6 +30,19 @@ export const ErrorBoundary = <E>(
     return result.right
   })
 
+/**
+ * Renders a fallback while waiting for an async render to complete.
+ * @param asyncRender - Async function that returns the final element
+ * @param fallbackRender - Function to render the loading state
+ *
+ * @example
+ * ```ts
+ * Suspense(
+ *   () => fetchAndRenderUserProfile(userId),
+ *   () => div(["Loading..."])
+ * )
+ * ```
+ */
 export const Suspense = (
   asyncRender: () => Effect.Effect<HTMLElement, never, Scope.Scope>,
   fallbackRender: () => Element
@@ -43,6 +69,21 @@ export const Suspense = (
     return container as HTMLElement
   })
 
+/**
+ * Combines Suspense with ErrorBoundary for async renders that may fail.
+ * @param asyncRender - Async function that may fail
+ * @param fallbackRender - Function to render the loading state
+ * @param catchRender - Function to render the error state
+ *
+ * @example
+ * ```ts
+ * SuspenseWithBoundary(
+ *   () => fetchAndRenderData(),
+ *   () => div(["Loading..."]),
+ *   (error) => div(["Failed to load: ", String(error)])
+ * )
+ * ```
+ */
 export const SuspenseWithBoundary = <E>(
   asyncRender: () => Effect.Effect<HTMLElement, E, Scope.Scope>,
   fallbackRender: () => Element,
@@ -76,6 +117,22 @@ export const SuspenseWithBoundary = <E>(
     return container as HTMLElement
   })
 
+/**
+ * Conditionally render one of two elements based on a reactive boolean.
+ * @param condition - Reactive boolean value
+ * @param onTrue - Element to render when true
+ * @param onFalse - Element to render when false
+ *
+ * @example
+ * ```ts
+ * const isLoggedIn = yield* Signal.make(false)
+ * when(
+ *   isLoggedIn,
+ *   () => div(["Welcome back!"]),
+ *   () => div(["Please log in"])
+ * )
+ * ```
+ */
 export const when = (
   condition: Readable<boolean>,
   onTrue: () => Element,
@@ -118,11 +175,34 @@ export const when = (
     return container as HTMLElement
   })
 
+/**
+ * A case for pattern matching with {@link match}.
+ */
 export interface MatchCase<A> {
+  /** The value to match against */
   readonly pattern: A
+  /** Element to render when matched */
   readonly render: () => Element
 }
 
+/**
+ * Pattern match on a reactive value and render the corresponding element.
+ * @param value - Reactive value to match against
+ * @param cases - Array of pattern-render pairs
+ * @param fallback - Optional fallback if no pattern matches
+ *
+ * @example
+ * ```ts
+ * type Status = "loading" | "success" | "error"
+ * const status = yield* Signal.make<Status>("loading")
+ *
+ * match(status, [
+ *   { pattern: "loading", render: () => div(["Loading..."]) },
+ *   { pattern: "success", render: () => div(["Done!"]) },
+ *   { pattern: "error", render: () => div(["Failed"]) },
+ * ])
+ * ```
+ */
 export const match = <A>(
   value: Readable<A>,
   cases: readonly MatchCase<A>[],
@@ -169,6 +249,24 @@ export const match = <A>(
     return container as HTMLElement
   })
 
+/**
+ * Render a list of items with efficient updates using keys.
+ * @param items - Reactive array of items
+ * @param keyFn - Function to extract a unique key from each item
+ * @param render - Function to render each item (receives a Readable for the item)
+ *
+ * @example
+ * ```ts
+ * interface Todo { id: string; text: string }
+ * const todos = yield* Signal.make<Todo[]>([])
+ *
+ * each(
+ *   todos,
+ *   (todo) => todo.id,
+ *   (todo) => li([todo.map(t => t.text)])
+ * )
+ * ```
+ */
 export const each = <A>(
   items: Readable<readonly A[]>,
   keyFn: (item: A) => string,

@@ -25,6 +25,11 @@ const combineReadables = <T extends readonly Readable<unknown>[]>(
   }, Stream.never as Stream.Stream<unknown[]>) as Stream.Stream<ReadableValues<T>>
 }
 
+/**
+ * Create a side effect that runs whenever any of the dependencies change.
+ * @param deps - Array of Readable dependencies to observe
+ * @param effect - Effect to run when dependencies change, receiving current values
+ */
 export const make = <T extends readonly Readable<unknown>[]>(
   deps: T,
   effect: (values: ReadableValues<T>) => Effect.Effect<void>
@@ -38,6 +43,9 @@ export const make = <T extends readonly Readable<unknown>[]>(
     )
   })
 
+/**
+ * Reaction module namespace for creating reactive side effects.
+ */
 export const Reaction = {
   make,
 }

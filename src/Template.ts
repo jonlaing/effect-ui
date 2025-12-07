@@ -9,6 +9,22 @@ const isReadable = (value: unknown): value is Readable<unknown> =>
   "changes" in value &&
   "values" in value
 
+/**
+ * Tagged template literal for creating reactive strings.
+ * Interpolated Readable values will automatically update the string when they change.
+ *
+ * @example
+ * ```ts
+ * const name = yield* Signal.make("World")
+ * const count = yield* Signal.make(0)
+ *
+ * // Static parts stay static, reactive parts update
+ * const message = t`Hello, ${name}! Count: ${count}`
+ *
+ * // Use in elements
+ * div([message])  // Updates when name or count changes
+ * ```
+ */
 export const t = (
   strings: TemplateStringsArray,
   ...values: readonly (Readable<unknown> | unknown)[]

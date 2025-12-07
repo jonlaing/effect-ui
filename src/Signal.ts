@@ -8,17 +8,33 @@ import {
 import type { Readable } from "./Readable.js";
 import { make as makeReadable } from "./Readable.js";
 
+/**
+ * A mutable reactive value that extends Readable with write capabilities.
+ * @template A - The type of the value
+ */
 export interface Signal<A> extends Readable<A> {
+  /** Set the signal to a new value */
   readonly set: (a: A) => Effect.Effect<void>;
+  /** Update the signal value using a function */
   readonly update: (f: (a: A) => A) => Effect.Effect<void>;
 }
 
+/**
+ * Options for creating a Signal.
+ * @template A - The type of the value
+ */
 export interface SignalOptions<A> {
+  /** Custom equality function to determine if the value has changed */
   readonly equals?: (a: A, b: A) => boolean;
 }
 
 const defaultEquals = <A>(a: A, b: A): boolean => a === b;
 
+/**
+ * Create a new Signal with an initial value.
+ * @param initial - The initial value
+ * @param options - Optional configuration
+ */
 export const make = <A>(
   initial: A,
   options?: SignalOptions<A>,
@@ -56,6 +72,9 @@ export const make = <A>(
   });
 };
 
+/**
+ * Context service for creating and managing Signals within a scope.
+ */
 export class SignalRegistry extends Context.Tag("effect-ui/SignalRegistry")<
   SignalRegistry,
   {
@@ -74,6 +93,9 @@ export class SignalRegistry extends Context.Tag("effect-ui/SignalRegistry")<
   });
 }
 
+/**
+ * Signal module namespace containing factory functions.
+ */
 export const Signal = {
   make,
   SignalRegistry,

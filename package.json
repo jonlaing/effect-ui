@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "docs:gen": "pnpm typedoc"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
@@ -24,6 +25,8 @@
     "globals": "^16.5.0",
     "jiti": "^2.6.1",
     "prettier": "^3.7.4",
+    "typedoc": "^0.28.15",
+    "typedoc-plugin-markdown": "^4.9.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.48.1",
     "vite": "^7.2.4",

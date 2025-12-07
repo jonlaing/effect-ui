@@ -11,7 +11,7 @@ export { Derived } from "./Derived.js"
 export { Reaction } from "./Reaction.js"
 
 // DOM elements
-export type { Element, Child, EventHandler, BaseAttributes, EventAttributes } from "./Element.js"
+export type { Element, Child, EventHandler, BaseAttributes, EventAttributes } from "./Element"
 export {
   div,
   span,
@@ -47,7 +47,7 @@ export {
   tr,
   th,
   td,
-} from "./Element.js"
+} from "./Element"
 
 // Control flow
 export { when, match, each, ErrorBoundary, Suspense, SuspenseWithBoundary } from "./Control.js"

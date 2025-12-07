@@ -2,7 +2,12 @@ import { Cause, Chunk, Effect, Fiber, Option, Scope, Stream } from "effect"
 import type { Readable } from "./Readable.js"
 import { make as makeReadable } from "./Readable.js"
 
+/**
+ * Options for creating a synchronous Derived value.
+ * @template A - The type of the derived value
+ */
 export interface DerivedOptions<A> {
+  /** Custom equality function to determine if the value has changed */
   readonly equals?: (a: A, b: A) => boolean
 }
 
@@ -37,6 +42,12 @@ const getCurrentValues = <T extends readonly Readable<unknown>[]>(
 ): Effect.Effect<ReadableValues<T>> =>
   Effect.all(readables.map((r) => r.get)) as Effect.Effect<ReadableValues<T>>
 
+/**
+ * Create a synchronous derived value that recomputes when dependencies change.
+ * @param deps - Array of Readable dependencies
+ * @param compute - Function to compute the derived value from dependency values
+ * @param options - Optional configuration
+ */
 export const sync = <T extends readonly Readable<unknown>[], B>(
   deps: T,
   compute: (values: ReadableValues<T>) => B,
@@ -69,24 +80,57 @@ export const sync = <T extends readonly Readable<unknown>[], B>(
   })
 }
 
+/**
+ * State of an asynchronous derived value.
+ * @template A - The type of the successful value
+ * @template E - The type of the error
+ */
 export interface AsyncState<A, E = never> {
+  /** Whether a computation is currently in progress */
   readonly isLoading: boolean
+  /** The most recent successful value, if any */
   readonly value: Option.Option<A>
+  /** The most recent error, if any */
   readonly error: Option.Option<E>
 }
 
+/**
+ * Strategy for handling concurrent async computations.
+ * - "abort": Cancel the previous computation when a new one starts
+ * - "queue": Wait for the previous computation to complete
+ * - "debounce": Delay computation and reset timer on new triggers
+ */
 export type AsyncStrategy = "abort" | "queue" | "debounce"
 
+/**
+ * Options for creating an asynchronous Derived value.
+ * @template A - The type of the derived value
+ */
 export interface AsyncDerivedOptions<A> {
+  /** Strategy for handling concurrent computations (default: "abort") */
   readonly strategy?: AsyncStrategy
+  /** Debounce delay in milliseconds (only used with "debounce" strategy) */
   readonly debounceMs?: number
+  /** Custom equality function to determine if the value has changed */
   readonly equals?: (a: A, b: A) => boolean
 }
 
+/**
+ * An asynchronous derived value that tracks loading and error states.
+ * @template A - The type of the successful value
+ * @template E - The type of the error
+ */
 export interface AsyncDerived<A, E = never> extends Readable<AsyncState<A, E>> {
+  /** Effect that resolves to the current value or fails with the current error */
   readonly await: Effect.Effect<A, E>
 }
 
+/**
+ * Create an asynchronous derived value that recomputes when dependencies change.
+ * @param deps - Array of Readable dependencies
+ * @param compute - Effect-returning function to compute the derived value
+ * @param options - Optional configuration including concurrency strategy
+ */
 export const async = <T extends readonly Readable<unknown>[], A, E = never>(
   deps: T,
   compute: (values: ReadableValues<T>) => Effect.Effect<A, E>,
@@ -197,6 +241,9 @@ export const async = <T extends readonly Readable<unknown>[], A, E = never>(
   })
 }
 
+/**
+ * Derived module namespace for creating computed reactive values.
+ */
 export const Derived = {
   sync,
   async,

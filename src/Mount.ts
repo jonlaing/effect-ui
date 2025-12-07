@@ -1,6 +1,25 @@
 import { Effect, Scope } from "effect";
-import type { Element } from "./Element.js";
+import type { Element } from "./Element";
 
+/**
+ * Mount an Element into a DOM container. Automatically cleans up when the scope closes.
+ * @param element - The Element to mount
+ * @param container - The DOM container to mount into
+ *
+ * @example
+ * ```ts
+ * const app = div([
+ *   h1(["Hello, Effect UI!"])
+ * ])
+ *
+ * // Mount the app and run it
+ * Effect.runPromise(
+ *   Effect.scoped(
+ *     mount(app, document.getElementById("root")!)
+ *   )
+ * )
+ * ```
+ */
 export const mount = (
   element: Element,
   container: HTMLElement,
