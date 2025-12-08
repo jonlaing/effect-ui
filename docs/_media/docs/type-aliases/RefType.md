@@ -8,7 +8,7 @@
 
 > **RefType** = `object`
 
-Defined in: [src/dom/Ref.ts:7](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/dom/Ref.ts#L7)
+Defined in: [src/dom/Ref.ts:7](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Ref.ts#L7)
 
 Ref module namespace for creating element references.
 
@@ -18,7 +18,7 @@ Ref module namespace for creating element references.
 
 > **make**: \<`A`\>() => `Effect`\<`Ref`\<`A`\>, `never`, `Scope`\>
 
-Defined in: [src/dom/Ref.ts:52](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/dom/Ref.ts#L52)
+Defined in: [src/dom/Ref.ts:52](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Ref.ts#L52)
 
 Create a Ref to hold a reference to a DOM element.
 

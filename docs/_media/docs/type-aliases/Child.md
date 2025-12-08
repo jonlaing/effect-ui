@@ -4,11 +4,11 @@
 
 [@jonlaing/effect-ui](../globals.md) / Child
 
-# Type Alias: Child\<E\>
+# Type Alias: Child\<E, R\>
 
-> **Child**\<`E`\> = `string` \| `number` \| [`Element`](Element.md)\<`E`\> \| [`Readable`](../interfaces/Readable.md)\<`string`\> \| [`Readable`](../interfaces/Readable.md)\<`number`\> \| readonly `Child`\<`E`\>[]
+> **Child**\<`E`, `R`\> = `string` \| `number` \| [`Element`](Element.md)\<`E`, `R`\> \| [`Readable`](../interfaces/Readable.md)\<`string`\> \| [`Readable`](../interfaces/Readable.md)\<`number`\> \| readonly `Child`\<`E`, `R`\>[]
 
-Defined in: [src/dom/Element/types.ts:41](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/dom/Element/types.ts#L41)
+Defined in: [src/dom/Element/types.ts:53](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L53)
 
 Valid child types for an element: strings, numbers, elements, reactive values, or arrays thereof.
 
@@ -19,6 +19,12 @@ Valid child types for an element: strings, numbers, elements, reactive values, o
 `E` = `never`
 
 The error type for child elements
+
+### R
+
+`R` = `never`
+
+The requirements/context type for child elements
 
 ## Example
 

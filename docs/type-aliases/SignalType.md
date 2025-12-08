@@ -8,7 +8,7 @@
 
 > **SignalType** = `object`
 
-Defined in: [src/core/Signal.ts:15](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/core/Signal.ts#L15)
+Defined in: [src/core/Signal.ts:15](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/core/Signal.ts#L15)
 
 Signal module namespace containing factory functions.
 
@@ -18,7 +18,7 @@ Signal module namespace containing factory functions.
 
 > **make**: \<`A`\>(`initial`, `options?`) => `Effect`\<`Signal`\<`A`\>, `never`, `Scope`\>
 
-Defined in: [src/core/Signal.ts:100](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/core/Signal.ts#L100)
+Defined in: [src/core/Signal.ts:100](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/core/Signal.ts#L100)
 
 Create a new Signal with an initial value.
 
@@ -52,4 +52,4 @@ Optional configuration
 
 > **SignalRegistry**: *typeof* [`SignalRegistry`](../classes/SignalRegistry.md)
 
-Defined in: [src/core/Signal.ts:101](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/core/Signal.ts#L101)
+Defined in: [src/core/Signal.ts:101](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/core/Signal.ts#L101)

@@ -8,7 +8,7 @@
 
 > **AsyncStrategy** = `"abort"` \| `"queue"` \| `"debounce"`
 
-Defined in: [src/core/Derived/types.ts:33](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/core/Derived/types.ts#L33)
+Defined in: [src/core/Derived/types.ts:33](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/core/Derived/types.ts#L33)
 
 Strategy for handling concurrent async computations.
 - "abort": Cancel the previous computation when a new one starts

@@ -6,13 +6,13 @@
 
 # Type Alias: ElementFactory()\<K\>
 
-> **ElementFactory**\<`K`\> = \{\<`E`\>(`attrs`, `children`): `Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope`\>; \<`E`\>(`attrs`, `child`): `Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope`\>; (`attrs`): `Effect`\<`HTMLElementTagNameMap`\[`K`\], `never`, `Scope`\>; \<`E`\>(`children`): `Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope`\>; \<`E`\>(`child`): `Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope`\>; (): `Effect`\<`HTMLElementTagNameMap`\[`K`\], `never`, `Scope`\>; \}
+> **ElementFactory**\<`K`\> = \{\<`E`, `R`\>(`attrs`, `children`): `Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope` \| `R`\>; \<`E`, `R`\>(`attrs`, `child`): `Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope` \| `R`\>; (`attrs`): `Effect`\<`HTMLElementTagNameMap`\[`K`\], `never`, `Scope`\>; \<`E`, `R`\>(`children`): `Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope` \| `R`\>; \<`E`, `R`\>(`child`): `Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope` \| `R`\>; (): `Effect`\<`HTMLElementTagNameMap`\[`K`\], `never`, `Scope`\>; \}
 
-Defined in: [src/dom/Element/types.ts:161](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/dom/Element/types.ts#L161)
+Defined in: [src/dom/Element/types.ts:176](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L176)
 
 Factory function for creating a specific HTML element type.
 Supports multiple call signatures for convenience.
-The error type is inferred from children.
+The error and requirements types are inferred from children.
 
 ## Type Parameters
 
@@ -24,13 +24,17 @@ The HTML element tag name
 
 ## Call Signature
 
-> \<`E`\>(`attrs`, `children`): `Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope`\>
+> \<`E`, `R`\>(`attrs`, `children`): `Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope` \| `R`\>
 
 ### Type Parameters
 
 #### E
 
 `E` = `never`
+
+#### R
+
+`R` = `never`
 
 ### Parameters
 
@@ -40,21 +44,25 @@ The HTML element tag name
 
 #### children
 
-readonly [`Child`](Child.md)\<`E`\>[]
+readonly [`Child`](Child.md)\<`E`, `R`\>[]
 
 ### Returns
 
-`Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope`\>
+`Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope` \| `R`\>
 
 ## Call Signature
 
-> \<`E`\>(`attrs`, `child`): `Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope`\>
+> \<`E`, `R`\>(`attrs`, `child`): `Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope` \| `R`\>
 
 ### Type Parameters
 
 #### E
 
 `E` = `never`
+
+#### R
+
+`R` = `never`
 
 ### Parameters
 
@@ -64,11 +72,11 @@ readonly [`Child`](Child.md)\<`E`\>[]
 
 #### child
 
-[`Child`](Child.md)\<`E`\>
+[`Child`](Child.md)\<`E`, `R`\>
 
 ### Returns
 
-`Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope`\>
+`Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope` \| `R`\>
 
 ## Call Signature
 
@@ -86,27 +94,31 @@ readonly [`Child`](Child.md)\<`E`\>[]
 
 ## Call Signature
 
-> \<`E`\>(`children`): `Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope`\>
+> \<`E`, `R`\>(`children`): `Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope` \| `R`\>
 
 ### Type Parameters
 
 #### E
 
 `E` = `never`
+
+#### R
+
+`R` = `never`
 
 ### Parameters
 
 #### children
 
-readonly [`Child`](Child.md)\<`E`\>[]
+readonly [`Child`](Child.md)\<`E`, `R`\>[]
 
 ### Returns
 
-`Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope`\>
+`Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope` \| `R`\>
 
 ## Call Signature
 
-> \<`E`\>(`child`): `Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope`\>
+> \<`E`, `R`\>(`child`): `Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope` \| `R`\>
 
 ### Type Parameters
 
@@ -114,15 +126,19 @@ readonly [`Child`](Child.md)\<`E`\>[]
 
 `E` = `never`
 
+#### R
+
+`R` = `never`
+
 ### Parameters
 
 #### child
 
-[`Child`](Child.md)\<`E`\>
+[`Child`](Child.md)\<`E`, `R`\>
 
 ### Returns
 
-`Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope`\>
+`Effect`\<`HTMLElementTagNameMap`\[`K`\], `E`, `Scope` \| `R`\>
 
 ## Call Signature
 

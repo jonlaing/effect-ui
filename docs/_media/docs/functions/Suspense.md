@@ -6,35 +6,43 @@
 
 # Function: Suspense()
 
-> **Suspense**\<`E`\>(`asyncRender`, `fallbackRender`): [`Element`](../type-aliases/Element.md)\<`E`\>
+> **Suspense**\<`R1`, `E`, `R2`\>(`asyncRender`, `fallbackRender`): [`Element`](../type-aliases/Element.md)\<`E`, `R1` \| `R2`\>
 
-Defined in: [src/dom/Control.ts:46](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/dom/Control.ts#L46)
+Defined in: [src/dom/Control.ts:46](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Control.ts#L46)
 
 Renders a fallback while waiting for an async render to complete.
 
 ## Type Parameters
 
+### R1
+
+`R1` = `never`
+
 ### E
 
 `E` = `never`
+
+### R2
+
+`R2` = `never`
 
 ## Parameters
 
 ### asyncRender
 
-() => `Effect`\<`HTMLElement`, `never`, `Scope`\>
+() => `Effect`\<`HTMLElement`, `never`, `Scope` \| `R1`\>
 
 Async function that returns the final element
 
 ### fallbackRender
 
-() => [`Element`](../type-aliases/Element.md)\<`E`\>
+() => [`Element`](../type-aliases/Element.md)\<`E`, `R2`\>
 
 Function to render the loading state
 
 ## Returns
 
-[`Element`](../type-aliases/Element.md)\<`E`\>
+[`Element`](../type-aliases/Element.md)\<`E`, `R1` \| `R2`\>
 
 ## Example
 

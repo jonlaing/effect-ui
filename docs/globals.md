@@ -6,6 +6,7 @@
 
 ## Classes
 
+- [RouterContext](classes/RouterContext.md)
 - [SignalRegistry](classes/SignalRegistry.md)
 
 ## Interfaces
@@ -14,12 +15,21 @@
 - [AsyncDerivedOptions](interfaces/AsyncDerivedOptions.md)
 - [AsyncState](interfaces/AsyncState.md)
 - [BaseAttributes](interfaces/BaseAttributes.md)
-- [Component](interfaces/Component.md)
+- [BaseRouter](interfaces/BaseRouter.md)
 - [DerivedOptions](interfaces/DerivedOptions.md)
 - [EventAttributes](interfaces/EventAttributes.md)
+- [LinkProps](interfaces/LinkProps.md)
 - [MatchCase](interfaces/MatchCase.md)
+- [MatchedRoute](interfaces/MatchedRoute.md)
+- [NavigateOptions](interfaces/NavigateOptions.md)
 - [Readable](interfaces/Readable.md)
 - [RefType](interfaces/RefType.md)
+- [RouteMatchErrorType](interfaces/RouteMatchErrorType.md)
+- [RouteOptions](interfaces/RouteOptions.md)
+- [RouterOptions](interfaces/RouterOptions.md)
+- [RouterType](interfaces/RouterType.md)
+- [RouteState](interfaces/RouteState.md)
+- [RouteType](interfaces/RouteType.md)
 - [SignalOptions](interfaces/SignalOptions.md)
 - [SignalType](interfaces/SignalType.md)
 
@@ -27,11 +37,16 @@
 
 - [AsyncStrategy](type-aliases/AsyncStrategy.md)
 - [Child](type-aliases/Child.md)
+- [Children](type-aliases/Children.md)
+- [Component](type-aliases/Component.md)
 - [Element](type-aliases/Element.md)
 - [ElementFactory](type-aliases/ElementFactory.md)
 - [EventHandler](type-aliases/EventHandler.md)
 - [HTMLAttributes](type-aliases/HTMLAttributes.md)
+- [PathSegment](type-aliases/PathSegment.md)
 - [RefType](type-aliases/RefType.md)
+- [RouteMatchErrorType](type-aliases/RouteMatchErrorType.md)
+- [RouterInfer](type-aliases/RouterInfer.md)
 - [SignalType](type-aliases/SignalType.md)
 
 ## Variables
@@ -56,12 +71,15 @@
 - [input](variables/input.md)
 - [label](variables/label.md)
 - [li](variables/li.md)
+- [Link](variables/Link.md)
 - [main](variables/main.md)
 - [nav](variables/nav.md)
 - [ol](variables/ol.md)
 - [option](variables/option.md)
 - [p](variables/p.md)
 - [Reaction](variables/Reaction.md)
+- [Route](variables/Route.md)
+- [Router](variables/Router.md)
 - [section](variables/section.md)
 - [select](variables/select.md)
 - [span](variables/span.md)
@@ -73,17 +91,25 @@
 - [thead](variables/thead.md)
 - [tr](variables/tr.md)
 - [ul](variables/ul.md)
+- [useRouter](variables/useRouter.md)
 
 ## Functions
 
+- [~~clearRouter~~](functions/clearRouter.md)
 - [component](functions/component.md)
 - [each](functions/each.md)
 - [ErrorBoundary](functions/ErrorBoundary.md)
 - [fromStream](functions/fromStream.md)
+- [~~getRouter~~](functions/getRouter.md)
 - [makeReadable](functions/makeReadable.md)
+- [makeRoute](functions/makeRoute.md)
+- [makeRouter](functions/makeRouter.md)
+- [makeRouterLayer](functions/makeRouterLayer.md)
 - [mapReadable](functions/mapReadable.md)
 - [match](functions/match.md)
 - [mount](functions/mount.md)
+- [routeSpecificity](functions/routeSpecificity.md)
+- [~~setRouter~~](functions/setRouter.md)
 - [Suspense](functions/Suspense.md)
 - [SuspenseWithBoundary](functions/SuspenseWithBoundary.md)
 - [t](functions/t.md)
@@ -94,6 +120,12 @@
 ### Ref
 
 Renames and re-exports [RefType](type-aliases/RefType.md)
+
+***
+
+### RouteMatchError
+
+Renames and re-exports [RouteMatchErrorType](type-aliases/RouteMatchErrorType.md)
 
 ***
 

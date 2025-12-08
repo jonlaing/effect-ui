@@ -6,7 +6,7 @@
 
 # Interface: EventAttributes
 
-Defined in: [src/dom/Element/types.ts:107](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/dom/Element/types.ts#L107)
+Defined in: [src/dom/Element/types.ts:119](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L119)
 
 Common DOM event handler attributes.
 
@@ -16,7 +16,7 @@ Common DOM event handler attributes.
 
 > `readonly` `optional` **onBlur**: [`EventHandler`](../type-aliases/EventHandler.md)\<`FocusEvent`\>
 
-Defined in: [src/dom/Element/types.ts:115](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/dom/Element/types.ts#L115)
+Defined in: [src/dom/Element/types.ts:127](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L127)
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: [src/dom/Element/types.ts:115](https://github.com/jonlaing/effect-ui
 
 > `readonly` `optional` **onChange**: [`EventHandler`](../type-aliases/EventHandler.md)\<`Event`\>
 
-Defined in: [src/dom/Element/types.ts:110](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/dom/Element/types.ts#L110)
+Defined in: [src/dom/Element/types.ts:122](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L122)
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: [src/dom/Element/types.ts:110](https://github.com/jonlaing/effect-ui
 
 > `readonly` `optional` **onClick**: [`EventHandler`](../type-aliases/EventHandler.md)\<`MouseEvent`\>
 
-Defined in: [src/dom/Element/types.ts:108](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/dom/Element/types.ts#L108)
+Defined in: [src/dom/Element/types.ts:120](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L120)
 
 ***
 
@@ -40,7 +40,7 @@ Defined in: [src/dom/Element/types.ts:108](https://github.com/jonlaing/effect-ui
 
 > `readonly` `optional` **onFocus**: [`EventHandler`](../type-aliases/EventHandler.md)\<`FocusEvent`\>
 
-Defined in: [src/dom/Element/types.ts:114](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/dom/Element/types.ts#L114)
+Defined in: [src/dom/Element/types.ts:126](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L126)
 
 ***
 
@@ -48,7 +48,7 @@ Defined in: [src/dom/Element/types.ts:114](https://github.com/jonlaing/effect-ui
 
 > `readonly` `optional` **onInput**: [`EventHandler`](../type-aliases/EventHandler.md)\<`InputEvent`\>
 
-Defined in: [src/dom/Element/types.ts:109](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/dom/Element/types.ts#L109)
+Defined in: [src/dom/Element/types.ts:121](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L121)
 
 ***
 
@@ -56,7 +56,7 @@ Defined in: [src/dom/Element/types.ts:109](https://github.com/jonlaing/effect-ui
 
 > `readonly` `optional` **onKeyDown**: [`EventHandler`](../type-aliases/EventHandler.md)\<`KeyboardEvent`\>
 
-Defined in: [src/dom/Element/types.ts:112](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/dom/Element/types.ts#L112)
+Defined in: [src/dom/Element/types.ts:124](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L124)
 
 ***
 
@@ -64,7 +64,7 @@ Defined in: [src/dom/Element/types.ts:112](https://github.com/jonlaing/effect-ui
 
 > `readonly` `optional` **onKeyUp**: [`EventHandler`](../type-aliases/EventHandler.md)\<`KeyboardEvent`\>
 
-Defined in: [src/dom/Element/types.ts:113](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/dom/Element/types.ts#L113)
+Defined in: [src/dom/Element/types.ts:125](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L125)
 
 ***
 
@@ -72,7 +72,7 @@ Defined in: [src/dom/Element/types.ts:113](https://github.com/jonlaing/effect-ui
 
 > `readonly` `optional` **onMouseEnter**: [`EventHandler`](../type-aliases/EventHandler.md)\<`MouseEvent`\>
 
-Defined in: [src/dom/Element/types.ts:116](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/dom/Element/types.ts#L116)
+Defined in: [src/dom/Element/types.ts:128](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L128)
 
 ***
 
@@ -80,7 +80,7 @@ Defined in: [src/dom/Element/types.ts:116](https://github.com/jonlaing/effect-ui
 
 > `readonly` `optional` **onMouseLeave**: [`EventHandler`](../type-aliases/EventHandler.md)\<`MouseEvent`\>
 
-Defined in: [src/dom/Element/types.ts:117](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/dom/Element/types.ts#L117)
+Defined in: [src/dom/Element/types.ts:129](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L129)
 
 ***
 
@@ -88,4 +88,4 @@ Defined in: [src/dom/Element/types.ts:117](https://github.com/jonlaing/effect-ui
 
 > `readonly` `optional` **onSubmit**: [`EventHandler`](../type-aliases/EventHandler.md)\<`SubmitEvent`\>
 
-Defined in: [src/dom/Element/types.ts:111](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/dom/Element/types.ts#L111)
+Defined in: [src/dom/Element/types.ts:123](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L123)

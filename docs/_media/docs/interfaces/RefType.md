@@ -6,7 +6,7 @@
 
 # Interface: RefType\<A\>
 
-Defined in: [src/dom/Ref.ts:7](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/dom/Ref.ts#L7)
+Defined in: [src/dom/Ref.ts:7](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Ref.ts#L7)
 
 A reference to a DOM element that may not exist yet.
 
@@ -24,7 +24,7 @@ The specific HTMLElement type
 
 > `readonly` **\_set**: (`element`) => `void`
 
-Defined in: [src/dom/Ref.ts:13](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/dom/Ref.ts#L13)
+Defined in: [src/dom/Ref.ts:13](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Ref.ts#L13)
 
 Internal setter - do not use directly
 
@@ -44,7 +44,7 @@ Internal setter - do not use directly
 
 > `readonly` **current**: `A` \| `null`
 
-Defined in: [src/dom/Ref.ts:9](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/dom/Ref.ts#L9)
+Defined in: [src/dom/Ref.ts:9](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Ref.ts#L9)
 
 The current element, or null if not yet set
 
@@ -54,6 +54,6 @@ The current element, or null if not yet set
 
 > `readonly` **element**: `Effect`\<`A`\>
 
-Defined in: [src/dom/Ref.ts:11](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/dom/Ref.ts#L11)
+Defined in: [src/dom/Ref.ts:11](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Ref.ts#L11)
 
 Effect that resolves when the element is available

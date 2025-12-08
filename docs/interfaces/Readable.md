@@ -6,7 +6,7 @@
 
 # Interface: Readable\<A\>
 
-Defined in: [src/core/Readable.ts:7](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/core/Readable.ts#L7)
+Defined in: [src/core/Readable.ts:7](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/core/Readable.ts#L7)
 
 A reactive value that can be read and observed for changes.
 
@@ -29,7 +29,7 @@ The type of the value
 
 > `readonly` **changes**: `Stream`\<`A`\>
 
-Defined in: [src/core/Readable.ts:11](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/core/Readable.ts#L11)
+Defined in: [src/core/Readable.ts:11](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/core/Readable.ts#L11)
 
 Stream of value changes (does not include current value)
 
@@ -39,7 +39,7 @@ Stream of value changes (does not include current value)
 
 > `readonly` **get**: `Effect`\<`A`\>
 
-Defined in: [src/core/Readable.ts:9](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/core/Readable.ts#L9)
+Defined in: [src/core/Readable.ts:9](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/core/Readable.ts#L9)
 
 Get the current value
 
@@ -49,7 +49,7 @@ Get the current value
 
 > `readonly` **map**: \<`B`\>(`f`) => `Readable`\<`B`\>
 
-Defined in: [src/core/Readable.ts:15](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/core/Readable.ts#L15)
+Defined in: [src/core/Readable.ts:15](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/core/Readable.ts#L15)
 
 Transform the readable value
 
@@ -75,6 +75,6 @@ Transform the readable value
 
 > `readonly` **values**: `Stream`\<`A`\>
 
-Defined in: [src/core/Readable.ts:13](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/core/Readable.ts#L13)
+Defined in: [src/core/Readable.ts:13](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/core/Readable.ts#L13)
 
 Stream of all values (current value followed by changes)

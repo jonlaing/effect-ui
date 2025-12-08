@@ -14,28 +14,54 @@ pnpm add @jonlaing/effect-ui effect
 
 ## Basic Usage
 
+### Simple Components
+
+For components that just render static or prop-based content, return the element directly:
+
+```ts
+import { $, component } from "@jonlaing/effect-ui"
+
+const Greeting = component("Greeting", (props: { name: string }) =>
+  $.div({ class: "greeting" }, [
+    $.h1(`Hello, ${props.name}!`),
+    $.p("Welcome to Effect UI"),
+  ])
+)
+```
+
+### Stateful Components
+
+Use `Effect.gen` when your component needs to create signals, derived values, or access context:
+
 ```ts
 import { Effect } from "effect"
-import { $, Signal, SignalRegistry, mount } from "@jonlaing/effect-ui"
+import { $, Signal, component } from "@jonlaing/effect-ui"
 
-const Counter = component("Counter", (_props: Record<string, any>) =>
-    Effect.gen(function* () {
-      const count = yield* Signal.make(0)
+const Counter = component("Counter", () =>
+  Effect.gen(function* () {
+    // Need Effect.gen to create signals
+    const count = yield* Signal.make(0)
 
-      return yield* $.div([
-        $.button({ onClick: () => count.update((n) => n - 1) }, "-"),
-        $.span(count),
-        $.button({ onClick: () => count.update((n) => n + 1) }, "+"),
-      ])
-    })
+    return yield* $.div([
+      $.button({ onClick: () => count.update((n) => n - 1) }, "-"),
+      $.span(count),
+      $.button({ onClick: () => count.update((n) => n + 1) }, "+"),
+    ])
+  })
 )
+```
+
+### Mounting
+
+```ts
+import { Effect } from "effect"
+import { SignalRegistry, mount } from "@jonlaing/effect-ui"
 
 Effect.runPromise(
   Effect.scoped(
     Effect.gen(function* () {
-      const app = yield* Counter
-      yield* mount(app, document.getElementById("root")!)
-      yield* Effect.never
+      yield* mount(Counter(), document.getElementById("root")!)
+      yield* Effect.never // Keep scope alive
     })
   ).pipe(Effect.provide(SignalRegistry.Live))
 )
@@ -145,7 +171,7 @@ $.p([count, " items remaining (", completed, " done)"])
 Create DOM elements with reactive attributes and children. Elements are Effects that must be yielded:
 
 ```ts
-yield* $.div({ className: "container", style: { color: "red" } }, [
+yield* $.div({ class: "container", style: { color: "red" } }, [
   $.h1(["Hello, ", name]),
   $.p(t`${count} items`),
 ])
@@ -176,20 +202,80 @@ each(
 )
 ```
 
+### Router
+
+Effect UI includes a typed router with Effect Schema validation for route params.
+
+```ts
+import { Context, Effect, Layer, Schema } from "effect"
+import { Route, Router, Link, makeRouterLayer, type RouterInfer } from "@jonlaing/effect-ui"
+
+// Define routes with typed params
+const routes = {
+  home: Route.make("/"),
+  user: Route.make("/users/:id", {
+    params: Schema.Struct({ id: Schema.String })
+  }),
+}
+
+// Infer the router type and create a typed context
+type AppRouter = RouterInfer<typeof routes>
+class AppRouterContext extends Context.Tag("AppRouterContext")<
+  AppRouterContext,
+  AppRouter
+>() {}
+
+// Components can yield the typed router from context
+const App = component("App", () =>
+  Effect.gen(function* () {
+    const router = yield* AppRouterContext
+
+    // router.currentRoute is typed as "home" | "user" | null
+    // router.routes.user.params is typed as Readable<{ id: string } | null>
+
+    return yield* $.div([
+      $.nav([
+        Link({ href: "/" }, "Home"),
+        Link({ href: "/users/123" }, "User 123"),
+      ]),
+      $.div(router.pathname.map((p) => `Current: ${p}`)),
+    ])
+  })
+)
+
+// Set up and run
+const program = Effect.gen(function* () {
+  const router = yield* Router.make(routes)
+
+  // Provide both contexts:
+  // - RouterContext (for Link components)
+  // - AppRouterContext (for typed access in your components)
+  const routerLayer = Layer.merge(
+    makeRouterLayer(router),
+    Layer.succeed(AppRouterContext, router),
+  )
+
+  yield* mount(App({}).pipe(Effect.provide(routerLayer)), document.body)
+  yield* Effect.never
+})
+```
+
+The `Link` component uses `RouterContext` internally for navigation. Create your own typed context with `RouterInfer` when you need access to `currentRoute` or typed route params.
+
 ## Why No JSX?
 
 Effect UI uses function calls instead of JSX. This is a deliberate design choice:
 
 ```ts
 // Effect UI
-$.div({ className: "container" }, [
+$.div({ class: "container" }, [
   $.h1("Hello"),
   $.p(["Count: ", count]),
-  Counter({}),
+  Counter(),  // No props needed
 ])
 
 // vs JSX
-<div className="container">
+<div class="container">
   <h1>Hello</h1>
   <p>Count: {count}</p>
   <Counter />
@@ -204,7 +290,7 @@ $.div({ className: "container" }, [
 
 3. **Explicit Effects**: Every element is an Effect that must be yielded. JSX would obscure this, making it unclear what's happening under the hood.
 
-4. **Consistent syntax**: Components and elements use the same call syntax. No mental switching between `<Component />` and `{Component({})}`.
+4. **Consistent syntax**: Components and elements use the same call syntax. No mental switching between `<Component />` and `Component()`.
 
 The function-based API is already quite clean for UI structure, and deeply nested markup is often a sign to extract components anyway.
 

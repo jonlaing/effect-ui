@@ -8,7 +8,7 @@
 
 > **EventHandler**\<`E`\> = (`event`) => `Effect.Effect`\<`void`, `never`\> \| `void`
 
-Defined in: [src/dom/Element/types.ts:66](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/dom/Element/types.ts#L66)
+Defined in: [src/dom/Element/types.ts:78](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L78)
 
 Handler for DOM events that can optionally return an Effect.
 

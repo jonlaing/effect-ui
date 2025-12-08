@@ -6,11 +6,12 @@
 
 # Function: component()
 
-> **component**\<`Name`, `Props`, `E`\>(`name`, `render`): [`Component`](../interfaces/Component.md)\<`Name`, `Props`, `E`\>
+> **component**\<`Name`, `Props`, `E`, `R`\>(`name`, `render`): [`Component`](../type-aliases/Component.md)\<`Name`, `Props`, `E`, `R`\>
 
-Defined in: [src/dom/Component.ts:49](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/dom/Component.ts#L49)
+Defined in: [src/dom/Component.ts:111](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Component.ts#L111)
 
 Create a named component from a render function.
+The render function receives props and optional children as separate arguments.
 
 ## Type Parameters
 
@@ -26,6 +27,10 @@ Create a named component from a render function.
 
 `E` = `never`
 
+### R
+
+`R` = `never`
+
 ## Parameters
 
 ### name
@@ -36,17 +41,18 @@ Unique name for the component (useful for debugging)
 
 ### render
 
-(`props`) => [`Element`](../type-aliases/Element.md)\<`E`\>
+(`props`, `children?`) => [`Element`](../type-aliases/Element.md)\<`E`, `R`\>
 
-Function that renders props to an Element
+Function that renders props and children to an Element
 
 ## Returns
 
-[`Component`](../interfaces/Component.md)\<`Name`, `Props`, `E`\>
+[`Component`](../type-aliases/Component.md)\<`Name`, `Props`, `E`, `R`\>
 
 ## Examples
 
 ```ts
+// Simple component without children
 interface ButtonProps {
   label: string
   onClick: () => void
@@ -61,14 +67,28 @@ Button({ label: "Click me", onClick: () => console.log("clicked") })
 ```
 
 ```ts
-// Component that can fail
-class UserNotFoundError { readonly _tag = "UserNotFoundError" }
+// Component with children as second argument
+interface LinkProps {
+  href: string
+  class?: string
+}
 
-const UserProfile = component("UserProfile", (props: { userId: string }) =>
+const Link = component("Link", (props: LinkProps, children) =>
+  a({ href: props.href, class: props.class }, children ?? [])
+)
+
+// Usage - children as second argument
+Link({ href: "/" }, "Home")
+Link({ href: "/about", class: "nav-link" }, ["About", " Us"])
+```
+
+```ts
+// Component with context requirements
+const NavLink = component("NavLink", (props: { href: string }, children) =>
   Effect.gen(function* () {
-    const user = yield* fetchUser(props.userId)
-    return yield* div([user.name])
+    const router = yield* RouterContext
+    return yield* button({ onClick: () => router.push(props.href) }, children ?? [])
   })
 )
-// Type: Component<"UserProfile", { userId: string }, UserNotFoundError>
+// Type: Component<"NavLink", { href: string }, never, RouterContext>
 ```

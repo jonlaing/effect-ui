@@ -6,7 +6,7 @@
 
 # Class: SignalRegistry
 
-Defined in: [src/core/Signal.ts:78](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/core/Signal.ts#L78)
+Defined in: [src/core/Signal.ts:78](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/core/Signal.ts#L78)
 
 Context service for creating and managing Signals within a scope.
 
@@ -134,7 +134,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Cont
 
 #### Inherited from
 
-`Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >()._op`
+[`RouterContext`](RouterContext.md).[`_op`](RouterContext.md#_op)
 
 ***
 
@@ -170,7 +170,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Cont
 
 #### Inherited from
 
-`Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >().[ignoreSymbol]`
+[`RouterContext`](RouterContext.md).[`[ignoreSymbol]`](RouterContext.md#ignoresymbol)
 
 ***
 
@@ -250,7 +250,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Cont
 
 #### Inherited from
 
-`Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >().[typeSymbol]`
+[`RouterContext`](RouterContext.md).[`[typeSymbol]`](RouterContext.md#typesymbol)
 
 ***
 
@@ -294,7 +294,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Cont
 
 > `static` **Live**: `Layer`\<`SignalRegistry`, `never`, `never`\>
 
-Defined in: [src/core/Signal.ts:90](https://github.com/jonlaing/effect-ui/blob/6787207a59cbb4387cd33d98f63150448eeca508/src/core/Signal.ts#L90)
+Defined in: [src/core/Signal.ts:90](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/core/Signal.ts#L90)
 
 ***
 
@@ -370,7 +370,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Cont
 
 #### Inherited from
 
-`Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >().stack`
+[`RouterContext`](RouterContext.md).[`stack`](RouterContext.md#stack)
 
 ## Methods
 
