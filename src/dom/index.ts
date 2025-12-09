@@ -59,7 +59,7 @@ export type { Ref as RefType } from "./Ref";
 export { Ref } from "./Ref";
 
 // Mounting
-export { mount } from "./Mount";
+export { mount, runApp } from "./Mount";
 
 // Template helpers
 export { t } from "./Template";

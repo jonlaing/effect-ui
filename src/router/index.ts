@@ -2,7 +2,11 @@
 export { Route, make as makeRoute, routeSpecificity } from "./Route";
 
 // Router
-export { Router, make as makeRouter, type Infer as RouterInfer } from "./Router";
+export {
+  Router,
+  make as makeRouter,
+  type Infer as RouterInfer,
+} from "./Router";
 
 // RouterContext and Link
 export {
@@ -10,6 +14,7 @@ export {
   Link,
   useRouter,
   makeRouterLayer,
+  makeTypedRouterLayer,
   setRouter,
   clearRouter,
   getRouter,

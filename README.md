@@ -47,19 +47,18 @@ const Counter = component("Counter", () =>
 )
 ```
 
-### Mounting
+### Running Your App
+
+Use `runApp` to mount your application. It handles scoping, the SignalRegistry, and keeping the app alive:
 
 ```ts
 import { Effect } from "effect"
-import { SignalRegistry, mount } from "@jonlaing/effect-ui"
+import { mount, runApp } from "@jonlaing/effect-ui"
 
-Effect.runPromise(
-  Effect.scoped(
-    Effect.gen(function* () {
-      yield* mount(Counter(), document.getElementById("root")!)
-      yield* Effect.never // Keep scope alive
-    })
-  ).pipe(Effect.provide(SignalRegistry.Live))
+runApp(
+  Effect.gen(function* () {
+    yield* mount(Counter(), document.getElementById("root")!)
+  })
 )
 ```
 
@@ -203,8 +202,12 @@ each(
 Effect UI includes a typed router with Effect Schema validation for route params.
 
 ```ts
-import { Context, Effect, Layer, Schema } from "effect"
-import { Route, Router, Link, makeRouterLayer, type RouterInfer } from "@jonlaing/effect-ui"
+import { Context, Effect, Schema } from "effect"
+import {
+  $, component, mount, runApp,
+  Route, Router, Link, makeTypedRouterLayer,
+  type RouterInfer
+} from "@jonlaing/effect-ui"
 
 // Define routes with typed params
 const routes = {
@@ -239,24 +242,17 @@ const App = component("App", () =>
   })
 )
 
-// Set up and run
-const program = Effect.gen(function* () {
-  const router = yield* Router.make(routes)
-
-  // Provide both contexts:
-  // - RouterContext (for Link components)
-  // - AppRouterContext (for typed access in your components)
-  const routerLayer = Layer.merge(
-    makeRouterLayer(router),
-    Layer.succeed(AppRouterContext, router),
-  )
-
-  yield* mount(App({}).pipe(Effect.provide(routerLayer)), document.body)
-  yield* Effect.never
-})
+// Run the app
+runApp(
+  Effect.gen(function* () {
+    const router = yield* Router.make(routes)
+    const routerLayer = makeTypedRouterLayer(router, AppRouterContext)
+    yield* mount(App().pipe(Effect.provide(routerLayer)), document.body)
+  })
+)
 ```
 
-The `Link` component uses `RouterContext` internally for navigation. Create your own typed context with `RouterInfer` when you need access to `currentRoute` or typed route params.
+The `Link` component uses `RouterContext` internally for navigation. Use `makeTypedRouterLayer` to provide both the base router context and your typed context in one layer.
 
 ## Why No JSX?
 

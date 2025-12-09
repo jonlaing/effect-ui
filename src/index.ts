@@ -83,6 +83,7 @@ export {
   Ref,
   // Mounting
   mount,
+  runApp,
   // Template helpers
   t,
 } from "./dom";
@@ -102,6 +103,7 @@ export {
   Link,
   useRouter,
   makeRouterLayer,
+  makeTypedRouterLayer,
   setRouter,
   clearRouter,
   getRouter,

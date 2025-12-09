@@ -59,7 +59,8 @@ export const make = <
 
     // Sort routes by specificity (most specific first)
     const sortedRouteEntries = Object.entries(routes).sort(
-      ([, a], [, b]) => routeSpecificity(b.segments) - routeSpecificity(a.segments),
+      ([, a], [, b]) =>
+        routeSpecificity(b.segments) - routeSpecificity(a.segments),
     );
 
     // Create a derived for the current matched route

@@ -1,18 +1,18 @@
-import { Context, Effect, Layer, Schema } from "effect";
+import { Context, Effect, Schema } from "effect";
 import {
   $,
   Signal,
-  SignalRegistry,
   Derived,
   component,
   mount,
+  runApp,
   when,
   each,
   match,
   Route,
   Router,
   Link,
-  makeRouterLayer,
+  makeTypedRouterLayer,
   t,
   type RouterInfer,
 } from "../index.js";
@@ -266,28 +266,13 @@ const App = component("App", () =>
   }),
 );
 
-const appElement = document.getElementById("app");
+const appElement = document.getElementById("app")!;
 
-const program = Effect.gen(function* () {
-  // Create the router
-  const router = yield* Router.make(routes);
-
-  // Create layers for both contexts:
-  // - RouterContext (BaseRouter) for Link components
-  // - AppRouterContext (typed) for App component
-  const routerLayer = Layer.merge(
-    makeRouterLayer(router),
-    Layer.succeed(AppRouterContext, router),
-  );
-
-  // Mount the app with both router contexts provided
-  yield* mount(App().pipe(Effect.provide(routerLayer)), appElement!);
-
-  // Keep the scope alive forever (until page unload)
-  yield* Effect.never;
-});
-
-Effect.scoped(program).pipe(
-  Effect.provide(SignalRegistry.Live),
-  Effect.runPromise,
+// Run the app - handles scoping, SignalRegistry, and keeping alive
+runApp(
+  Effect.gen(function* () {
+    const router = yield* Router.make(routes);
+    const routerLayer = makeTypedRouterLayer(router, AppRouterContext);
+    yield* mount(App().pipe(Effect.provide(routerLayer)), appElement);
+  }),
 );
