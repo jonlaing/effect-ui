@@ -12,6 +12,7 @@ import {
 } from "./helpers";
 import type {
   Child,
+  ClassValue,
   ElementFactory,
   EventHandler,
   HTMLAttributes,
@@ -27,7 +28,7 @@ const applyAttributes = <K extends keyof HTMLElementTagNameMap>(
       if (value === undefined) continue;
 
       if (key === "class") {
-        yield* applyClass(element, value as string | Readable<string>);
+        yield* applyClass(element, value as ClassValue);
       } else if (key === "style") {
         yield* applyStyle(
           element,

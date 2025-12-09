@@ -1,6 +1,6 @@
 import { Array, Effect, Scope, Stream } from "effect";
 import type { Readable } from "@core/Readable";
-import type { Child, Element, EventHandler, StyleValue } from "./types";
+import type { Child, ClassItem, ClassValue, Element, EventHandler, StyleValue } from "./types";
 
 export const isReadable = (value: unknown): value is Readable<unknown> =>
   value !== null &&
@@ -34,17 +34,64 @@ export const subscribeToReadable = <A>(
     );
   });
 
+const classValueToString = (value: string | readonly string[]): string =>
+  typeof value === "string" ? value : value.join(" ");
+
+const hasReactiveItems = (items: readonly ClassItem[]): boolean =>
+  items.some(isReadable);
+
 export const applyClass = (
   element: HTMLElement,
-  value: string | Readable<string>,
+  value: ClassValue,
 ): Effect.Effect<void, never, Scope.Scope> => {
+  // Single reactive value (string or string[])
   if (isReadable(value)) {
-    return subscribeToReadable(value, (v) => {
-      element.className = v;
-    });
+    return subscribeToReadable(
+      value as Readable<string | readonly string[]>,
+      (v) => {
+        element.className = classValueToString(v);
+      },
+    );
   }
-  element.className = value;
-  return Effect.void;
+
+  // Plain string
+  if (typeof value === "string") {
+    element.className = value;
+    return Effect.void;
+  }
+
+  // Array of class items - check if any are reactive
+  if (!hasReactiveItems(value)) {
+    // All static strings - just join them
+    element.className = (value as readonly string[]).join(" ");
+    return Effect.void;
+  }
+
+  // Mixed array with some reactive items - need to subscribe to each
+  return Effect.gen(function* () {
+    const currentValues: string[] = new globalThis.Array(value.length).fill("");
+
+    const updateClassName = () => {
+      element.className = currentValues.filter((s) => s.length > 0).join(" ");
+    };
+
+    yield* Effect.forEach(
+      value,
+      (item, index) => {
+        if (isReadable(item)) {
+          return subscribeToReadable(item as Readable<string>, (v) => {
+            currentValues[index] = v;
+            updateClassName();
+          });
+        }
+        currentValues[index] = item as string;
+        return Effect.void;
+      },
+      { discard: true },
+    );
+
+    updateClassName();
+  });
 };
 
 export const applyStyle = (

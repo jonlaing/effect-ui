@@ -1,6 +1,7 @@
 export type {
   BaseAttributes,
   Child,
+  ClassValue,
   Element,
   ElementFactory,
   EventAttributes,

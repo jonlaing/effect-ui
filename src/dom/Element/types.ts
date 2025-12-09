@@ -82,6 +82,16 @@ export type EventHandler<E extends Event> = (
 /** Valid values for inline styles: static or reactive strings/numbers. */
 export type StyleValue = string | number | Readable<string> | Readable<number>;
 
+/** Individual class item: string or reactive string */
+export type ClassItem = string | Readable<string>;
+
+/** Valid class value types: string, array of class items, or reactive versions */
+export type ClassValue =
+  | string
+  | readonly ClassItem[]
+  | Readable<string>
+  | Readable<readonly string[]>;
+
 /**
  * Base attributes available on all elements.
  *
@@ -90,9 +100,20 @@ export type StyleValue = string | number | Readable<string> | Readable<number>;
  * // Static class
  * div({ class: "container" }, [...])
  *
+ * // Array of classes (great for Tailwind)
+ * div({ class: ["flex", "items-center", "gap-4"] }, [...])
+ *
  * // Reactive class
  * const isActive = yield* Signal.make(false)
  * div({ class: isActive.map(a => a ? "active" : "inactive") }, [...])
+ *
+ * // Mixed array with reactive items
+ * const variant = yield* Signal.make("primary")
+ * div({ class: ["btn", variant.map(v => `btn-${v}`), "rounded"] }, [...])
+ *
+ * // Reactive array of classes
+ * const classes = yield* Signal.make(["btn", "btn-primary"])
+ * div({ class: classes }, [...])
  *
  * // Static styles
  * div({ style: { color: "red", "font-size": "16px" } }, [...])
@@ -103,8 +124,8 @@ export type StyleValue = string | number | Readable<string> | Readable<number>;
  * ```
  */
 export interface BaseAttributes {
-  /** CSS class name(s) */
-  readonly class?: string | Readable<string>;
+  /** CSS class name(s) - can be a string, array of strings, or reactive versions */
+  readonly class?: ClassValue;
   /** Inline styles as a record of property-value pairs */
   readonly style?:
     | Record<string, StyleValue>
