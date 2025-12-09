@@ -1,4 +1,4 @@
-import { Effect, Scope, Stream } from "effect";
+import { Duration, Effect, Scope, Stream } from "effect";
 import type { Readable } from "@core/Readable";
 import { map as mapReadable } from "@core/Readable";
 import type { Element } from "./Element";
@@ -31,32 +31,150 @@ export const ErrorBoundary = <E, R1 = never, E2 = never, R2 = never>(
   });
 
 /**
- * Renders a fallback while waiting for an async render to complete.
- * @param asyncRender - Async function that returns the final element
- * @param fallbackRender - Function to render the loading state
+ * Options for the Suspense component.
+ */
+export interface SuspenseOptions<E, R1, EF> {
+  /**
+   * Async function that returns the final element.
+   * Can fail with error type E if `catch` is provided.
+   */
+  readonly render: () => Effect.Effect<HTMLElement, E, Scope.Scope | R1>;
+
+  /**
+   * Function to render the loading/fallback state.
+   * Must have no requirements (will be rendered in detached context if delay > 0).
+   */
+  readonly fallback: () => Element<EF, never>;
+
+  /**
+   * Optional error handler. If provided, errors from render are caught
+   * and this function is called to render an error state.
+   * Must have no requirements.
+   */
+  readonly catch?: (error: E) => Element<never, never>;
+
+  /**
+   * Delay before showing the fallback.
+   * If the render completes before this duration, no fallback is shown.
+   * Accepts Effect Duration strings like "200 millis", "1 second", or a number (milliseconds).
+   * If not provided, fallback is shown immediately.
+   */
+  readonly delay?: Duration.DurationInput;
+}
+
+/**
+ * Suspense component for async rendering with loading states.
+ *
+ * Renders the fallback while waiting for the async render to complete.
+ * Optionally delays showing the fallback to avoid loading flashes on fast responses.
+ * Optionally catches errors and renders an error state.
  *
  * @example
  * ```ts
- * Suspense(
- *   () => fetchAndRenderUserProfile(userId),
- *   () => div(["Loading..."])
- * )
+ * // Simple - show fallback immediately
+ * Suspense({
+ *   render: () => fetchAndRenderUser(userId),
+ *   fallback: () => div("Loading..."),
+ * })
+ * ```
+ *
+ * @example
+ * ```ts
+ * // With delay - avoid loading flash on fast responses
+ * Suspense({
+ *   render: () => Effect.gen(function* () {
+ *     const user = yield* fetchUser(userId)
+ *     return yield* UserPage({ user })
+ *   }),
+ *   fallback: () => div("Loading user..."),
+ *   delay: "200 millis",
+ * })
+ * ```
+ *
+ * @example
+ * ```ts
+ * // With error handling
+ * Suspense({
+ *   render: () => Effect.gen(function* () {
+ *     const user = yield* fetchUser(userId)
+ *     return yield* UserPage({ user })
+ *   }),
+ *   fallback: () => div("Loading..."),
+ *   catch: (error) => div(["Error: ", String(error)]),
+ *   delay: "200 millis",
+ * })
  * ```
  */
-export const Suspense = <R1 = never, E = never, R2 = never>(
+export const Suspense: {
+  // Overload 1: No catch, render cannot fail
+  <R1 = never, EF = never>(
+    options: SuspenseOptions<never, R1, EF> & { catch?: never },
+  ): Element<EF, R1>;
+
+  // Overload 2: With catch, render can fail
+  <E, R1 = never, EF = never>(
+    options: SuspenseOptions<E, R1, EF> & {
+      catch: (error: E) => Element<never, never>;
+    },
+  ): Element<EF, R1>;
+} = <E, R1 = never, EF = never>(
+  options: SuspenseOptions<E, R1, EF>,
+): Element<EF, R1> => {
+  const delayMs =
+    options.delay !== undefined ? Duration.toMillis(options.delay) : 0;
+  const hasCatch = options.catch !== undefined;
+  const hasDelay = delayMs > 0;
+
+  // Dispatch to the appropriate implementation
+  if (hasDelay && hasCatch) {
+    return suspenseWithDelayAndCatch(
+      options.render as () => Effect.Effect<HTMLElement, E, Scope.Scope | R1>,
+      options.fallback,
+      options.catch as (error: E) => Element<never, never>,
+      delayMs,
+    ) as Element<EF, R1>;
+  } else if (hasDelay) {
+    return suspenseWithDelay(
+      options.render as () => Effect.Effect<
+        HTMLElement,
+        never,
+        Scope.Scope | R1
+      >,
+      options.fallback,
+      delayMs,
+    ) as Element<EF, R1>;
+  } else if (hasCatch) {
+    return suspenseWithCatch(
+      options.render as () => Effect.Effect<HTMLElement, E, Scope.Scope | R1>,
+      options.fallback,
+      options.catch as (error: E) => Element<never, never>,
+    ) as Element<EF, R1>;
+  } else {
+    return suspenseSimple(
+      options.render as () => Effect.Effect<
+        HTMLElement,
+        never,
+        Scope.Scope | R1
+      >,
+      options.fallback,
+    ) as Element<EF, R1>;
+  }
+};
+
+// Internal implementations
+
+const suspenseSimple = <R1 = never, EF = never>(
   asyncRender: () => Effect.Effect<HTMLElement, never, Scope.Scope | R1>,
-  fallbackRender: () => Element<E, R2>,
-): Element<E, R1 | R2> =>
+  fallbackRender: () => Element<EF, never>,
+): Element<EF, R1> =>
   Effect.gen(function* () {
     const scope = yield* Effect.scope;
     const container = document.createElement("div");
     container.style.display = "contents";
 
-    // Render fallback immediately
     const fallback = yield* fallbackRender();
     container.appendChild(fallback);
 
-    // Start async render in background, then swap when ready
     yield* asyncRender().pipe(
       Effect.tap((element) =>
         Effect.sync(() => {
@@ -69,36 +187,19 @@ export const Suspense = <R1 = never, E = never, R2 = never>(
     return container as HTMLElement;
   });
 
-/**
- * Combines Suspense with ErrorBoundary for async renders that may fail.
- * @param asyncRender - Async function that may fail
- * @param fallbackRender - Function to render the loading state
- * @param catchRender - Function to render the error state
- *
- * @example
- * ```ts
- * SuspenseWithBoundary(
- *   () => fetchAndRenderData(),
- *   () => div(["Loading..."]),
- *   (error) => div(["Failed to load: ", String(error)])
- * )
- * ```
- */
-export const SuspenseWithBoundary = <E, R1 = never, E2 = never, R2 = never, E3 = never, R3 = never>(
+const suspenseWithCatch = <E, R1 = never, EF = never>(
   asyncRender: () => Effect.Effect<HTMLElement, E, Scope.Scope | R1>,
-  fallbackRender: () => Element<E2, R2>,
-  catchRender: (error: E) => Element<E3, R3>,
-): Element<E2 | E3, R1 | R2 | R3> =>
+  fallbackRender: () => Element<EF, never>,
+  catchRender: (error: E) => Element<never, never>,
+): Element<EF, R1> =>
   Effect.gen(function* () {
     const scope = yield* Effect.scope;
     const container = document.createElement("div");
     container.style.display = "contents";
 
-    // Render fallback immediately
     const fallback = yield* fallbackRender();
     container.appendChild(fallback);
 
-    // Start async render in background
     yield* asyncRender().pipe(
       Effect.either,
       Effect.tap((result) =>
@@ -108,6 +209,126 @@ export const SuspenseWithBoundary = <E, R1 = never, E2 = never, R2 = never, E3 =
             container.replaceChild(errorElement, fallback);
           } else {
             container.replaceChild(result.right, fallback);
+          }
+        }),
+      ),
+      Effect.forkIn(scope),
+    );
+
+    return container as HTMLElement;
+  });
+
+const suspenseWithDelay = <R1 = never, EF = never>(
+  asyncRender: () => Effect.Effect<HTMLElement, never, Scope.Scope | R1>,
+  fallbackRender: () => Element<EF, never>,
+  delayMs: number,
+): Element<EF, R1> =>
+  Effect.gen(function* () {
+    const scope = yield* Effect.scope;
+    const container = document.createElement("div");
+    container.style.display = "contents";
+
+    let completed = false;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let fallbackElement: HTMLElement | null = null;
+
+    timeoutId = setTimeout(() => {
+      if (!completed) {
+        Effect.runPromise(
+          Effect.gen(function* () {
+            fallbackElement = yield* Effect.scoped(fallbackRender());
+            if (!completed) {
+              container.appendChild(fallbackElement);
+            }
+          }),
+        );
+      }
+    }, delayMs);
+
+    yield* Effect.addFinalizer(() =>
+      Effect.sync(() => {
+        if (timeoutId !== null) {
+          clearTimeout(timeoutId);
+        }
+      }),
+    );
+
+    yield* asyncRender().pipe(
+      Effect.tap((element) =>
+        Effect.sync(() => {
+          completed = true;
+          if (timeoutId !== null) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+          }
+          if (fallbackElement && container.contains(fallbackElement)) {
+            container.replaceChild(element, fallbackElement);
+          } else {
+            container.appendChild(element);
+          }
+        }),
+      ),
+      Effect.forkIn(scope),
+    );
+
+    return container as HTMLElement;
+  });
+
+const suspenseWithDelayAndCatch = <E, R1 = never, EF = never>(
+  asyncRender: () => Effect.Effect<HTMLElement, E, Scope.Scope | R1>,
+  fallbackRender: () => Element<EF, never>,
+  catchRender: (error: E) => Element<never, never>,
+  delayMs: number,
+): Element<EF, R1> =>
+  Effect.gen(function* () {
+    const scope = yield* Effect.scope;
+    const container = document.createElement("div");
+    container.style.display = "contents";
+
+    let completed = false;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let fallbackElement: HTMLElement | null = null;
+
+    timeoutId = setTimeout(() => {
+      if (!completed) {
+        Effect.runPromise(
+          Effect.gen(function* () {
+            fallbackElement = yield* Effect.scoped(fallbackRender());
+            if (!completed) {
+              container.appendChild(fallbackElement);
+            }
+          }),
+        );
+      }
+    }, delayMs);
+
+    yield* Effect.addFinalizer(() =>
+      Effect.sync(() => {
+        if (timeoutId !== null) {
+          clearTimeout(timeoutId);
+        }
+      }),
+    );
+
+    yield* asyncRender().pipe(
+      Effect.either,
+      Effect.tap((result) =>
+        Effect.gen(function* () {
+          completed = true;
+          if (timeoutId !== null) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+          }
+
+          const newElement =
+            result._tag === "Left"
+              ? yield* catchRender(result.left)
+              : result.right;
+
+          if (fallbackElement && container.contains(fallbackElement)) {
+            container.replaceChild(newElement, fallbackElement);
+          } else {
+            container.appendChild(newElement);
           }
         }),
       ),
@@ -181,27 +402,54 @@ export const when = <E1 = never, R1 = never, E2 = never, R2 = never>(
  * A case for pattern matching with {@link match}.
  */
 export interface MatchCase<A, E = never, R = never> {
-  /** The value to match against */
   readonly pattern: A;
-  /** Element to render when matched */
   readonly render: () => Element<E, R>;
 }
 
 /**
  * Pattern match on a reactive value and render the corresponding element.
+ * For async data loading, use {@link DeferredSuspense} or {@link DeferredSuspenseWithBoundary}
+ * inside the render function.
+ *
  * @param value - Reactive value to match against
  * @param cases - Array of pattern-render pairs
  * @param fallback - Optional fallback if no pattern matches
  *
  * @example
  * ```ts
+ * // Simple matching
  * type Status = "loading" | "success" | "error"
  * const status = yield* Signal.make<Status>("loading")
  *
  * match(status, [
- *   { pattern: "loading", render: () => div(["Loading..."]) },
- *   { pattern: "success", render: () => div(["Done!"]) },
- *   { pattern: "error", render: () => div(["Failed"]) },
+ *   { pattern: "loading", render: () => div("Loading...") },
+ *   { pattern: "success", render: () => div("Done!") },
+ *   { pattern: "error", render: () => div("Failed") },
+ * ])
+ * ```
+ *
+ * @example
+ * ```ts
+ * // Route matching with async data loading
+ * match(router.currentRoute, [
+ *   {
+ *     pattern: "home",
+ *     render: () => HomePage(),
+ *   },
+ *   {
+ *     pattern: "user",
+ *     render: () =>
+ *       DeferredSuspenseWithBoundary(
+ *         () => Effect.gen(function* () {
+ *           const params = yield* router.routes.user.params.get
+ *           const user = yield* fetchUser(params.id)
+ *           return yield* UserPage({ user })
+ *         }),
+ *         () => div("Loading user..."),
+ *         (error) => div(["Error: ", String(error)]),
+ *         { delay: 200 }
+ *       ),
+ *   },
  * ])
  * ```
  */
@@ -218,27 +466,37 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
     let currentElement: HTMLElement | null = null;
     let currentPattern: A | null = null;
 
-    const render = (val: A): Effect.Effect<void, E | E2, Scope.Scope | R | R2> =>
+    const replaceElement = (newElement: HTMLElement) => {
+      if (currentElement) {
+        container.replaceChild(newElement, currentElement);
+      } else {
+        container.appendChild(newElement);
+      }
+      currentElement = newElement;
+    };
+
+    const render = (
+      val: A,
+    ): Effect.Effect<void, E | E2, Scope.Scope | R | R2> =>
       Effect.gen(function* () {
         if (val === currentPattern) return;
-
         currentPattern = val;
+
         const matchedCase = cases.find((c) => c.pattern === val);
-        const element = matchedCase ? matchedCase.render() : fallback?.();
 
-        if (!element) return;
-
-        const newElement = yield* element;
-
-        if (currentElement) {
-          container.replaceChild(newElement, currentElement);
-        } else {
-          container.appendChild(newElement);
+        if (!matchedCase) {
+          if (fallback) {
+            const newElement = yield* fallback();
+            replaceElement(newElement);
+          }
+          return;
         }
-        currentElement = newElement;
+
+        const newElement = yield* matchedCase.render();
+        replaceElement(newElement);
       });
 
-    // Render initial value synchronously
+    // Render initial value
     const initialValue = yield* value.get;
     yield* render(initialValue);
 

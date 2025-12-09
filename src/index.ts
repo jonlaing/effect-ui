@@ -72,8 +72,8 @@ export {
   each,
   ErrorBoundary,
   Suspense,
-  SuspenseWithBoundary,
   type MatchCase,
+  type SuspenseOptions,
   // Components
   type Component,
   type Children,

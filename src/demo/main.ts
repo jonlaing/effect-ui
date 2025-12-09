@@ -9,6 +9,7 @@ import {
   when,
   each,
   match,
+  Suspense,
   Route,
   Router,
   Link,
@@ -181,17 +182,36 @@ const HomePage = component("HomePage", () =>
   ]),
 );
 
-// User profile page component - props work the same way
-const UserPage = component("UserPage", (props: { userId: string }) =>
+// User profile page component
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+const UserPage = component("UserPage", (props: { user: User }) =>
   $.div({ class: "page" }, [
-    $.h2(t`User Profile: ${props.userId}`),
-    $.p(t`Viewing details for user #${props.userId}`),
+    $.h2(t`User Profile: ${props.user.name}`),
     $.div({ class: "card" }, [
-      $.p(t`User ID: ${props.userId}`),
-      $.p("This demonstrates typed route params via Effect Schema."),
+      $.p(t`ID: ${props.user.id}`),
+      $.p(t`Name: ${props.user.name}`),
+      $.p(t`Email: ${props.user.email}`),
     ]),
   ]),
 );
+
+// Simulate fetching user data from an API
+const fetchUser = (id: string): Effect.Effect<User, Error> =>
+  Effect.gen(function* () {
+    // Simulate network delay
+    yield* Effect.sleep("500 millis");
+    // Return mock user data
+    return {
+      id,
+      name: `User ${id}`,
+      email: `user${id}@example.com`,
+    };
+  });
 
 // Not found page
 const NotFoundPage = component("NotFoundPage", () =>
@@ -247,15 +267,28 @@ const App = component("App", () =>
             {
               pattern: "user" as const,
               render: () =>
-                Effect.gen(function* () {
-                  // router.routes.user.params is typed as Readable<{ id: string } | null>
-                  const params = yield* router.routes.user.params.get;
-                  if (params && typeof params === "object" && "id" in params) {
-                    return yield* UserPage({
-                      userId: (params as { id: string }).id,
-                    });
-                  }
-                  return yield* $.span("Loading...");
+                Suspense({
+                  render: () =>
+                    Effect.gen(function* () {
+                      // router.routes.user.params is typed as Readable<{ id: string } | null>
+                      const params = yield* router.routes.user.params.get;
+                      if (
+                        params &&
+                        typeof params === "object" &&
+                        "id" in params
+                      ) {
+                        const user = yield* fetchUser(
+                          (params as { id: string }).id,
+                        );
+                        return yield* UserPage({ user });
+                      }
+                      return yield* Effect.fail(new Error("No user ID"));
+                    }),
+                  fallback: () =>
+                    $.div({ class: "loading" }, "Loading user..."),
+                  catch: (error) =>
+                    $.div({ class: "error" }, `Error: ${String(error)}`),
+                  delay: "200 millis",
                 }),
             },
           ],

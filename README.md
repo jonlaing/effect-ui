@@ -254,6 +254,51 @@ runApp(
 
 The `Link` component uses `RouterContext` internally for navigation. Use `makeTypedRouterLayer` to provide both the base router context and your typed context in one layer.
 
+### Async Data Loading
+
+Use `Suspense` for async rendering with loading states. It accepts an options object:
+
+```ts
+import { match, Suspense } from "@jonlaing/effect-ui"
+
+// Simulate API call
+const fetchUser = (id: string) =>
+  Effect.gen(function* () {
+    yield* Effect.sleep("500 millis")
+    return { id, name: `User ${id}`, email: `user${id}@example.com` }
+  })
+
+// In your app
+match(router.currentRoute, [
+  // Simple route
+  {
+    pattern: "home",
+    render: () => HomePage(),
+  },
+  // Route with async data
+  {
+    pattern: "user",
+    render: () =>
+      Suspense({
+        render: () => Effect.gen(function* () {
+          const params = yield* router.routes.user.params.get
+          const user = yield* fetchUser(params.id)
+          return yield* UserPage({ user })
+        }),
+        fallback: () => $.div("Loading user..."),
+        catch: (error) => $.div(`Error: ${error}`),
+        delay: "200 millis",  // Only show loading after 200ms
+      }),
+  },
+])
+```
+
+Suspense options:
+- `render`: Async Effect that returns the element
+- `fallback`: Element to show while loading
+- `catch`: Optional error handler
+- `delay`: Optional delay before showing fallback (accepts Effect Duration strings like `"200 millis"`, `"1 second"`, or a number in ms). Prevents loading flash on fast responses.
+
 ## Why No JSX?
 
 Effect UI uses function calls instead of JSX. This is a deliberate design choice:

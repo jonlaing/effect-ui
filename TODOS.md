@@ -41,6 +41,12 @@
 
 - [ ] **Documentation site** - Full documentation with examples (TypeDoc is set up)
 
+- [ ] **Table helpers** - TanStack Table-inspired utilities for building data tables with sorting, filtering, pagination, etc.
+
+- [ ] **Streaming async data** - Support for streaming data (e.g., AI chatbot responses). Consider how Effect Streams integrate with reactive UI updates.
+
+- [ ] **Map and Set as reactive state** - Better ergonomics for using Map and Set as state. React makes this painful because of reference equality checks. Explore reactive Map/Set primitives that trigger updates on mutations.
+
 ## Design Decisions
 
 ### JSX (Decided Against)
@@ -267,8 +273,12 @@ each(items, keyFn, render, {
 
 ### className vs class
 
-Using `className` instead of `class` for JSX compatibility. JSX compiles to JS function calls where `class` is a reserved word.
+Using `class` directly since we're not using JSX. No reserved word issues with function calls.
 
 ## Notes
 
 - TypeDoc is configured for Markdown output (`pnpm docs:gen`)
+
+## Development Guidelines
+
+- **NEVER disable TypeScript or ESLint** - If types are difficult to get right, stop and ask for help rather than using `// @ts-ignore`, `// eslint-disable`, or `any` types. Proper typing is essential for this library.

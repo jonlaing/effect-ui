@@ -47,8 +47,8 @@ export {
 } from "./Element";
 
 // Control flow
-export { when, match, each, ErrorBoundary, Suspense, SuspenseWithBoundary } from "./Control";
-export type { MatchCase } from "./Control";
+export { when, match, each, ErrorBoundary, Suspense } from "./Control";
+export type { MatchCase, SuspenseOptions } from "./Control";
 
 // Components
 export type { Component, Children } from "./Component";

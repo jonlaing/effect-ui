@@ -131,21 +131,14 @@ export const make = <
         const rawParams = matchSegments(segments, pathname);
 
         if (rawParams === null) {
-          return yield* Effect.fail(
-            RouteMatchError(pathname, "no-match"),
-          );
+          return yield* Effect.fail(RouteMatchError(pathname, "no-match"));
         }
 
         if (paramsSchema) {
           const decode = Schema.decodeUnknown(paramsSchema);
           const result = yield* decode(rawParams).pipe(
-            Effect.mapError(
-              (e) =>
-                RouteMatchError(
-                  pathname,
-                  "validation-failed",
-                  String(e),
-                ),
+            Effect.mapError((e) =>
+              RouteMatchError(pathname, "validation-failed", String(e)),
             ),
           );
           return result as Schema.Schema.Type<P>;

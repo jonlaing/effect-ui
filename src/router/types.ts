@@ -37,7 +37,10 @@ export interface Route<
   /** Match a pathname against this route, returning params if matched */
   readonly match: (
     pathname: string,
-  ) => Effect.Effect<Schema.Schema.Type<P> | Record<string, never>, RouteMatchError>;
+  ) => Effect.Effect<
+    Schema.Schema.Type<P> | Record<string, never>,
+    RouteMatchError
+  >;
 }
 
 /**
@@ -82,7 +85,7 @@ export interface RouteState<P = unknown> {
   /** Whether this route is currently active */
   readonly isActive: Readable<boolean>;
   /** The current params (only meaningful when active) */
-  readonly params: Readable<P | null>;
+  readonly params: Readable<P>;
 }
 
 /**
@@ -117,7 +120,10 @@ export interface Router<
     >;
   };
   /** Navigate to a path */
-  readonly push: (path: string, options?: NavigateOptions) => Effect.Effect<void>;
+  readonly push: (
+    path: string,
+    options?: NavigateOptions,
+  ) => Effect.Effect<void>;
   /** Replace current path */
   readonly replace: (path: string) => Effect.Effect<void>;
   /** Go back in history */
@@ -144,7 +150,10 @@ export interface BaseRouter {
   /** The current query params */
   readonly searchParams: Readable<URLSearchParams>;
   /** Navigate to a path */
-  readonly push: (path: string, options?: NavigateOptions) => Effect.Effect<void>;
+  readonly push: (
+    path: string,
+    options?: NavigateOptions,
+  ) => Effect.Effect<void>;
   /** Replace current path */
   readonly replace: (path: string) => Effect.Effect<void>;
   /** Go back in history */

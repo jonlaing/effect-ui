@@ -370,14 +370,14 @@ describe("Control", () => {
       const el = await Effect.runPromise(
         Effect.scoped(
           Effect.gen(function* () {
-            const container = yield* Suspense(
-              () =>
+            const container = yield* Suspense({
+              render: () =>
                 Effect.gen(function* () {
                   yield* Effect.sleep(20)
                   return yield* div("Loaded!")
                 }),
-              () => div("Loading...")
-            )
+              fallback: () => div("Loading..."),
+            })
 
             // Should show fallback initially
             expect(container.textContent).toBe("Loading...")
