@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / t
 
@@ -30,12 +30,12 @@ Interpolated Readable values will automatically update the string when they chan
 ## Example
 
 ```ts
-const name = yield* Signal.make("World")
-const count = yield* Signal.make(0)
+const name = yield * Signal.make("World");
+const count = yield * Signal.make(0);
 
 // Static parts stay static, reactive parts update
-const message = t`Hello, ${name}! Count: ${count}`
+const message = t`Hello, ${name}! Count: ${count}`;
 
 // Use in elements
-div([message])  // Updates when name or count changes
+div([message]); // Updates when name or count changes
 ```

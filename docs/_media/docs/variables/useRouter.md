@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / useRouter
 
@@ -18,16 +18,16 @@ Use this inside Effect.gen to access router methods.
 ```ts
 const MyComponent = component("MyComponent", () =>
   Effect.gen(function* () {
-    const router = yield* useRouter
+    const router = yield* useRouter;
 
     const handleSubmit = () =>
       Effect.gen(function* () {
-        yield* saveData()
-        yield* router.push("/success")
-      })
+        yield* saveData();
+        yield* router.push("/success");
+      });
 
-    return yield* button({ onClick: handleSubmit }, "Submit")
-  })
-)
+    return yield* button({ onClick: handleSubmit }, "Submit");
+  }),
+);
 // Type: Component<"MyComponent", object, never, RouterContext>
 ```

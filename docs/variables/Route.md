@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / Route
 
@@ -24,11 +24,11 @@ Create a route definition.
 
 ##### Path
 
-`Path` *extends* `string`
+`Path` _extends_ `string`
 
 ##### P
 
-`P` *extends* `AnyNoContext` = `AnyNoContext`
+`P` _extends_ `AnyNoContext` = `AnyNoContext`
 
 #### Parameters
 
@@ -52,10 +52,10 @@ Route configuration including params schema
 
 ```ts
 const UserRoute = Route.make("/users/:id", {
-  params: Schema.Struct({ id: Schema.String })
-})
+  params: Schema.Struct({ id: Schema.String }),
+});
 
-const HomeRoute = Route.make("/")
+const HomeRoute = Route.make("/");
 
-const CatchAllRoute = Route.make("/*")
+const CatchAllRoute = Route.make("/*");
 ```

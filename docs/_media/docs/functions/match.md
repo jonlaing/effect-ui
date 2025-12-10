@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / match
 
@@ -61,12 +61,12 @@ Optional fallback if no pattern matches
 ## Example
 
 ```ts
-type Status = "loading" | "success" | "error"
-const status = yield* Signal.make<Status>("loading")
+type Status = "loading" | "success" | "error";
+const status = yield * Signal.make<Status>("loading");
 
 match(status, [
   { pattern: "loading", render: () => div(["Loading..."]) },
   { pattern: "success", render: () => div(["Done!"]) },
   { pattern: "error", render: () => div(["Failed"]) },
-])
+]);
 ```

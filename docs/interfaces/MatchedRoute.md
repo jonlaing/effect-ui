@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / MatchedRoute
 
@@ -26,7 +26,7 @@ Defined in: [src/router/types.ts:74](https://github.com/jonlaing/effect-ui/blob/
 
 The parsed and validated params
 
-***
+---
 
 ### route
 

@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / EventHandler
 
@@ -16,7 +16,7 @@ Handler for DOM events that can optionally return an Effect.
 
 ### E
 
-`E` *extends* `Event`
+`E` _extends_ `Event`
 
 The specific Event type
 
@@ -34,12 +34,18 @@ The specific Event type
 
 ```ts
 // Synchronous handler
-button({
-  onClick: (e) => console.log("clicked", e.target)
-}, ["Click"])
+button(
+  {
+    onClick: (e) => console.log("clicked", e.target),
+  },
+  ["Click"],
+);
 
 // Effect-based handler
-button({
-  onClick: (e) => Effect.log(`Clicked at ${e.clientX}, ${e.clientY}`)
-}, ["Click"])
+button(
+  {
+    onClick: (e) => Effect.log(`Clicked at ${e.clientX}, ${e.clientY}`),
+  },
+  ["Click"],
+);
 ```

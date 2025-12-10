@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / ElementFactory
 
@@ -18,7 +18,7 @@ The error and requirements types are inferred from children.
 
 ### K
 
-`K` *extends* keyof `HTMLElementTagNameMap`
+`K` _extends_ keyof `HTMLElementTagNameMap`
 
 The HTML element tag name
 

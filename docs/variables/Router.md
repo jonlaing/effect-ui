@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / Router
 
@@ -24,7 +24,7 @@ Create a Router from a record of routes.
 
 ##### Routes
 
-`Routes` *extends* `Record`\<`string`, [`RouteType`](../interfaces/RouteType.md)\<`string`, `AnyNoContext`\>\>
+`Routes` _extends_ `Record`\<`string`, [`RouteType`](../interfaces/RouteType.md)\<`string`, `AnyNoContext`\>\>
 
 #### Parameters
 
@@ -47,20 +47,22 @@ Optional router configuration
 #### Example
 
 ```ts
-const HomeRoute = Route.make("/")
+const HomeRoute = Route.make("/");
 const UserRoute = Route.make("/users/:id", {
-  params: Schema.Struct({ id: Schema.String })
-})
+  params: Schema.Struct({ id: Schema.String }),
+});
 
-const router = yield* Router.make({
-  home: HomeRoute,
-  user: UserRoute,
-})
+const router =
+  yield *
+  Router.make({
+    home: HomeRoute,
+    user: UserRoute,
+  });
 
 // Navigate
-yield* router.push("/users/123")
+yield * router.push("/users/123");
 
 // Access route state
-const isUserActive = yield* router.routes.user.isActive.get
-const userParams = yield* router.routes.user.params.get
+const isUserActive = yield * router.routes.user.isActive.get;
+const userParams = yield * router.routes.user.params.get;
 ```

@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / RouteOptions
 
@@ -14,7 +14,7 @@ Options for creating a Route.
 
 ### P
 
-`P` *extends* `Schema.Schema.AnyNoContext`
+`P` _extends_ `Schema.Schema.AnyNoContext`
 
 The params schema type
 

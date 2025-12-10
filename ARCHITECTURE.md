@@ -31,10 +31,10 @@ The foundational reactive interface. All reactive values implement `Readable<A>`
 
 ```ts
 interface Readable<A> {
-  get: Effect.Effect<A>           // Current value
-  changes: Stream.Stream<A>       // Future changes (not including current)
-  values: Stream.Stream<A>        // Current + all future values
-  map: <B>(f: (a: A) => B) => Readable<B>
+  get: Effect.Effect<A>; // Current value
+  changes: Stream.Stream<A>; // Future changes (not including current)
+  values: Stream.Stream<A>; // Current + all future values
+  map: <B>(f: (a: A) => B) => Readable<B>;
 }
 ```
 
@@ -46,8 +46,8 @@ Extends `Readable` with write capabilities:
 
 ```ts
 interface Signal<A> extends Readable<A> {
-  set: (value: A) => Effect.Effect<void>
-  update: (f: (a: A) => A) => Effect.Effect<void>
+  set: (value: A) => Effect.Effect<void>;
+  update: (f: (a: A) => A) => Effect.Effect<void>;
 }
 ```
 
@@ -60,11 +60,13 @@ Implementation uses a `SubscriptionRef` from Effect for thread-safe updates and 
 Computed values that automatically update when dependencies change.
 
 **Derived.sync**: Synchronous computation
+
 - Combines dependency streams using `Stream.zipLatestWith`
 - Filters out unchanged values using equality check
 - Returns a `Readable<B>`
 
 **Derived.async**: Asynchronous computation with loading/error states
+
 - Returns `AsyncDerived<A, E>` which is `Readable<AsyncState<A, E>>`
 - `AsyncState` tracks: `isLoading`, `value: Option<A>`, `error: Option<E>`
 - Supports strategies: `"abort"` (cancel previous), `"queue"`, `"debounce"`
@@ -75,8 +77,8 @@ Side effects that run when reactive values change:
 
 ```ts
 Reaction.make([dep1, dep2], ([val1, val2]) =>
-  Effect.log(`Values: ${val1}, ${val2}`)
-)
+  Effect.log(`Values: ${val1}, ${val2}`),
+);
 ```
 
 Uses `Stream.runForEach` internally, forked into the current scope.
@@ -88,24 +90,27 @@ Uses `Stream.runForEach` internally, forked into the current scope.
 Elements are defined as:
 
 ```ts
-type Element<E = never> = Effect.Effect<HTMLElement, E, Scope.Scope>
+type Element<E = never> = Effect.Effect<HTMLElement, E, Scope.Scope>;
 ```
 
 This means:
+
 - Creating an element is an Effect (can use reactive subscriptions)
 - Can fail with error type `E`
 - Requires a `Scope` for lifecycle management (cleanup subscriptions)
 
 **Element factories** (`div`, `span`, etc.) support multiple call signatures:
+
 ```ts
-div()                           // Empty
-div([children])                 // Children only
-div({ attrs })                  // Attributes only
-div({ attrs }, [children])      // Both
-div(singleChild)                // Single child shorthand
+div(); // Empty
+div([children]); // Children only
+div({ attrs }); // Attributes only
+div({ attrs }, [children]); // Both
+div(singleChild); // Single child shorthand
 ```
 
 **Attribute handling**:
+
 - `className`: Static string or `Readable<string>`
 - `style`: Record of static/reactive values
 - `on*`: Event handlers that can return `Effect<void>` or `void`
@@ -116,17 +121,20 @@ div(singleChild)                // Single child shorthand
 ### Control Flow
 
 **when(condition, onTrue, onFalse)**
+
 - Creates a container with `display: contents`
 - Subscribes to condition changes
 - Swaps child element when condition changes
 - Initial render is synchronous, updates are forked
 
 **match(value, cases, fallback?)**
+
 - Pattern matching on reactive values
 - Uses `===` for pattern matching (works for primitives and object identity)
 - Similar swap mechanism to `when`
 
 **each(items, keyFn, render)**
+
 - Keyed list rendering for efficient updates
 - Maintains `Map<key, { element, readable }>` for reconciliation
 - When items change:
@@ -139,11 +147,13 @@ div(singleChild)                // Single child shorthand
 ### Error Boundaries
 
 **ErrorBoundary(tryRender, catchRender)**
+
 - Wraps render in `Effect.either`
 - On `Left`, renders error fallback
 - Returns `Element<E2>` (error from catch render)
 
 **Suspense(asyncRender, fallbackRender)**
+
 - Renders fallback immediately
 - Forks async render
 - Swaps when async completes
@@ -166,8 +176,8 @@ Simple named wrapper for render functions:
 
 ```ts
 interface Component<Name, Props, E> {
-  _tag: Name
-  (props: Props): Element<E>
+  _tag: Name;
+  (props: Props): Element<E>;
 }
 ```
 
@@ -242,7 +252,7 @@ div({ className: "card" }, [
   h1(title),
   p(description),
   Button({ onClick: handleClick }, "Submit"),
-])
+]);
 ```
 
 ## Future Modules

@@ -1,8 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { Effect, Option } from "effect";
+import { Effect } from "effect";
 import { Reaction } from "@core/Reaction";
 import { Field, makeField, makeFieldArray } from "./Field";
-import type { AsyncState } from "@core/Derived";
 
 describe("Field", () => {
   describe("makeField", () => {
@@ -146,9 +145,7 @@ describe("Field", () => {
               initial: "",
               validation: "submit",
               schemaValidate: (value) =>
-                Effect.succeed(
-                  value === "" ? ["Value is required"] : [],
-                ),
+                Effect.succeed(value === "" ? ["Value is required"] : []),
             });
 
             const errors = yield* field.validate();
@@ -161,8 +158,6 @@ describe("Field", () => {
     });
 
     it("should use custom equality function", async () => {
-      type Item = { id: number; name: string };
-
       const result = await Effect.runPromise(
         Effect.scoped(
           Effect.gen(function* () {
@@ -198,9 +193,7 @@ describe("Field", () => {
               initial: "",
               validation: "blur",
               schemaValidate: (value) =>
-                Effect.succeed(
-                  value === "" ? ["Required"] : [],
-                ),
+                Effect.succeed(value === "" ? ["Required"] : []),
             });
 
             yield* Reaction.make([field.errors], ([e]) =>
@@ -233,9 +226,7 @@ describe("Field", () => {
               initial: "valid",
               validation: "change",
               schemaValidate: (value) =>
-                Effect.succeed(
-                  value === "" ? ["Required"] : [],
-                ),
+                Effect.succeed(value === "" ? ["Required"] : []),
             });
 
             yield* Reaction.make([field.errors], ([e]) =>
@@ -268,9 +259,7 @@ describe("Field", () => {
               initial: "",
               validation: "submit",
               schemaValidate: (value) =>
-                Effect.succeed(
-                  value === "" ? ["Required"] : [],
-                ),
+                Effect.succeed(value === "" ? ["Required"] : []),
             });
 
             yield* Reaction.make([field.errors], ([e]) =>
@@ -301,9 +290,7 @@ describe("Field", () => {
               initial: "",
               validation: "hybrid",
               schemaValidate: (value) =>
-                Effect.succeed(
-                  value === "" ? ["Required"] : [],
-                ),
+                Effect.succeed(value === "" ? ["Required"] : []),
             });
 
             yield* Reaction.make([field.errors], ([e]) =>

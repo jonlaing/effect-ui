@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / when
 
@@ -57,10 +57,10 @@ Element to render when false
 ## Example
 
 ```ts
-const isLoggedIn = yield* Signal.make(false)
+const isLoggedIn = yield * Signal.make(false);
 when(
   isLoggedIn,
   () => div(["Welcome back!"]),
-  () => div(["Please log in"])
-)
+  () => div(["Please log in"]),
+);
 ```

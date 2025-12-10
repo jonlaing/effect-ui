@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / RefType
 
@@ -14,7 +14,7 @@ A reference to a DOM element that may not exist yet.
 
 ### A
 
-`A` *extends* `HTMLElement`
+`A` _extends_ `HTMLElement`
 
 The specific HTMLElement type
 
@@ -38,7 +38,7 @@ Internal setter - do not use directly
 
 `void`
 
-***
+---
 
 ### current
 
@@ -48,7 +48,7 @@ Defined in: [src/dom/Ref.ts:9](https://github.com/jonlaing/effect-ui/blob/5dcbd9
 
 The current element, or null if not yet set
 
-***
+---
 
 ### element
 

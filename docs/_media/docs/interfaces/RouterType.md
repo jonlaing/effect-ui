@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / RouterType
 
@@ -14,7 +14,7 @@ The main Router interface.
 
 ### Routes
 
-`Routes` *extends* `Record`\<`string`, [`RouteType`](RouteType.md)\<`string`, `Schema.Schema.AnyNoContext`\>\>
+`Routes` _extends_ `Record`\<`string`, [`RouteType`](RouteType.md)\<`string`, `Schema.Schema.AnyNoContext`\>\>
 
 Record of route names to Route definitions
 
@@ -32,7 +32,7 @@ Go back in history
 
 `Effect`\<`void`\>
 
-***
+---
 
 ### currentRoute
 
@@ -42,7 +42,7 @@ Defined in: [src/router/types.ts:108](https://github.com/jonlaing/effect-ui/blob
 
 The currently matched route name, or null if no match
 
-***
+---
 
 ### forward()
 
@@ -56,7 +56,7 @@ Go forward in history
 
 `Effect`\<`void`\>
 
-***
+---
 
 ### pathname
 
@@ -66,7 +66,7 @@ Defined in: [src/router/types.ts:104](https://github.com/jonlaing/effect-ui/blob
 
 The current pathname
 
-***
+---
 
 ### push()
 
@@ -90,7 +90,7 @@ Navigate to a path
 
 `Effect`\<`void`\>
 
-***
+---
 
 ### replace()
 
@@ -110,7 +110,7 @@ Replace current path
 
 `Effect`\<`void`\>
 
-***
+---
 
 ### routes
 
@@ -120,7 +120,7 @@ Defined in: [src/router/types.ts:110](https://github.com/jonlaing/effect-ui/blob
 
 Route-specific state for each defined route
 
-***
+---
 
 ### searchParams
 

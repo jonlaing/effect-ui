@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / AsyncState
 
@@ -34,7 +34,7 @@ Defined in: [src/core/Derived/types.ts:24](https://github.com/jonlaing/effect-ui
 
 The most recent error, if any
 
-***
+---
 
 ### isLoading
 
@@ -44,7 +44,7 @@ Defined in: [src/core/Derived/types.ts:20](https://github.com/jonlaing/effect-ui
 
 Whether a computation is currently in progress
 
-***
+---
 
 ### value
 

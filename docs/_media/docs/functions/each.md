@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / each
 
@@ -53,12 +53,15 @@ Function to render each item (receives a Readable for the item)
 ## Example
 
 ```ts
-interface Todo { id: string; text: string }
-const todos = yield* Signal.make<Todo[]>([])
+interface Todo {
+  id: string;
+  text: string;
+}
+const todos = yield * Signal.make<Todo[]>([]);
 
 each(
   todos,
   (todo) => todo.id,
-  (todo) => li([todo.map(t => t.text)])
-)
+  (todo) => li([todo.map((t) => t.text)]),
+);
 ```

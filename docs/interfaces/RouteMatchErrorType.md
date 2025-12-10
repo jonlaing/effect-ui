@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / RouteMatchErrorType
 
@@ -18,7 +18,7 @@ Error when a route doesn't match.
 
 Defined in: [src/router/types.ts:47](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/router/types.ts#L47)
 
-***
+---
 
 ### details?
 
@@ -26,7 +26,7 @@ Defined in: [src/router/types.ts:47](https://github.com/jonlaing/effect-ui/blob/
 
 Defined in: [src/router/types.ts:50](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/router/types.ts#L50)
 
-***
+---
 
 ### path
 
@@ -34,7 +34,7 @@ Defined in: [src/router/types.ts:50](https://github.com/jonlaing/effect-ui/blob/
 
 Defined in: [src/router/types.ts:48](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/router/types.ts#L48)
 
-***
+---
 
 ### reason
 

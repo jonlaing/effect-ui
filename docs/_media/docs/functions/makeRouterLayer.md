@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / makeRouterLayer
 
@@ -27,12 +27,9 @@ The router instance to provide
 ## Example
 
 ```ts
-const router = yield* Router.make(routes)
-const layer = makeRouterLayer(router)
+const router = yield * Router.make(routes);
+const layer = makeRouterLayer(router);
 
 // Use in mount
-mount(
-  app.pipe(Effect.provide(layer)),
-  document.getElementById("root")!
-)
+mount(app.pipe(Effect.provide(layer)), document.getElementById("root")!);
 ```

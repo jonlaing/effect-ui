@@ -1,10 +1,4 @@
-import {
-  Array as Arr,
-  Effect,
-  Schema,
-  SchemaAST as AST,
-  Either,
-} from "effect";
+import { Array as Arr, Effect, Schema, SchemaAST as AST, Either } from "effect";
 import type { ParseResult } from "effect";
 import { makeField, makeFieldArray } from "./Field";
 import type { Field, FieldArray, ValidationTiming } from "./types";

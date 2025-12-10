@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / ErrorBoundary
 
@@ -53,6 +53,6 @@ Function to render the error fallback
 ```ts
 ErrorBoundary(
   () => riskyComponent(),
-  (error) => div(["Something went wrong: ", String(error)])
-)
+  (error) => div(["Something went wrong: ", String(error)]),
+);
 ```

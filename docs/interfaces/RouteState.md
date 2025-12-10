@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / RouteState
 
@@ -28,7 +28,7 @@ Defined in: [src/router/types.ts:83](https://github.com/jonlaing/effect-ui/blob/
 
 Whether this route is currently active
 
-***
+---
 
 ### params
 

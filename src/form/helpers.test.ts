@@ -126,9 +126,7 @@ describe("validateForm", () => {
   });
 
   it("should handle missing fields", async () => {
-    const result = await Effect.runPromise(
-      validateForm(TestSchema, {}),
-    );
+    const result = await Effect.runPromise(validateForm(TestSchema, {}));
 
     expect(Object.keys(result).length).toBeGreaterThan(0);
   });
@@ -154,24 +152,30 @@ describe("hasNoErrors", () => {
   });
 
   it("should return true for record with empty arrays", () => {
-    expect(hasNoErrors({
-      email: [],
-      password: [],
-    })).toBe(true);
+    expect(
+      hasNoErrors({
+        email: [],
+        password: [],
+      }),
+    ).toBe(true);
   });
 
   it("should return false for record with errors", () => {
-    expect(hasNoErrors({
-      email: ["Required"],
-      password: [],
-    })).toBe(false);
+    expect(
+      hasNoErrors({
+        email: ["Required"],
+        password: [],
+      }),
+    ).toBe(false);
   });
 
   it("should return false for record with multiple errors", () => {
-    expect(hasNoErrors({
-      email: ["Required", "Invalid format"],
-      password: ["Too short"],
-    })).toBe(false);
+    expect(
+      hasNoErrors({
+        email: ["Required", "Invalid format"],
+        password: ["Too short"],
+      }),
+    ).toBe(false);
   });
 });
 

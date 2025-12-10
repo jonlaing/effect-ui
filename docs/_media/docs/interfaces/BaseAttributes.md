@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / BaseAttributes
 
@@ -38,7 +38,7 @@ Defined in: [src/dom/Element/types.ts:107](https://github.com/jonlaing/effect-ui
 
 CSS class name(s)
 
-***
+---
 
 ### id?
 
@@ -48,7 +48,7 @@ Defined in: [src/dom/Element/types.ts:113](https://github.com/jonlaing/effect-ui
 
 Element ID
 
-***
+---
 
 ### style?
 

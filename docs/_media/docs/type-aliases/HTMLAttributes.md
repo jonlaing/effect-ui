@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / HTMLAttributes
 
@@ -16,6 +16,6 @@ Full HTML attributes for a specific element type, including base, events, and el
 
 ### K
 
-`K` *extends* keyof `HTMLElementTagNameMap`
+`K` _extends_ keyof `HTMLElementTagNameMap`
 
 The HTML element tag name

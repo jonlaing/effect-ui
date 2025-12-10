@@ -1,6 +1,6 @@
 **@jonlaing/effect-ui**
 
-***
+---
 
 # Effect UI
 
@@ -19,14 +19,14 @@ pnpm add @jonlaing/effect-ui effect
 For components that just render static or prop-based content, return the element directly:
 
 ```ts
-import { $, component } from "@jonlaing/effect-ui"
+import { $, component } from "@jonlaing/effect-ui";
 
 const Greeting = component("Greeting", (props: { name: string }) =>
   $.div({ class: "greeting" }, [
     $.h1(`Hello, ${props.name}!`),
     $.p("Welcome to Effect UI"),
-  ])
-)
+  ]),
+);
 ```
 
 ### Stateful Components
@@ -34,43 +34,43 @@ const Greeting = component("Greeting", (props: { name: string }) =>
 Use `Effect.gen` when your component needs to create signals, derived values, or access context:
 
 ```ts
-import { Effect } from "effect"
-import { $, Signal, component } from "@jonlaing/effect-ui"
+import { Effect } from "effect";
+import { $, Signal, component } from "@jonlaing/effect-ui";
 
 const Counter = component("Counter", () =>
   Effect.gen(function* () {
     // Need Effect.gen to create signals
-    const count = yield* Signal.make(0)
+    const count = yield* Signal.make(0);
 
     return yield* $.div([
       $.button({ onClick: () => count.update((n) => n - 1) }, "-"),
       $.span(count),
       $.button({ onClick: () => count.update((n) => n + 1) }, "+"),
-    ])
-  })
-)
+    ]);
+  }),
+);
 ```
 
 ### Mounting
 
 ```ts
-import { Effect } from "effect"
-import { SignalRegistry, mount } from "@jonlaing/effect-ui"
+import { Effect } from "effect";
+import { SignalRegistry, mount } from "@jonlaing/effect-ui";
 
 Effect.runPromise(
   Effect.scoped(
     Effect.gen(function* () {
-      yield* mount(Counter(), document.getElementById("root")!)
-      yield* Effect.never // Keep scope alive
-    })
-  ).pipe(Effect.provide(SignalRegistry.Live))
-)
+      yield* mount(Counter(), document.getElementById("root")!);
+      yield* Effect.never; // Keep scope alive
+    }),
+  ).pipe(Effect.provide(SignalRegistry.Live)),
+);
 ```
 
 The `$` namespace contains all HTML element factories (`$.div`, `$.span`, `$.button`, etc.). You can also import elements individually if you prefer:
 
 ```ts
-import { div, span, button } from "@jonlaing/effect-ui"
+import { div, span, button } from "@jonlaing/effect-ui";
 ```
 
 ## Core Concepts
@@ -80,14 +80,14 @@ import { div, span, button } from "@jonlaing/effect-ui"
 Signals are reactive values that can be read and updated:
 
 ```ts
-const count = yield* Signal.make(0)
+const count = yield * Signal.make(0);
 
 // Read the current value
-const current = yield* count.get
+const current = yield * count.get;
 
 // Update the value
-yield* count.set(5)
-yield* count.update((n) => n + 1)
+yield * count.set(5);
+yield * count.update((n) => n + 1);
 ```
 
 ### Derived Values
@@ -95,13 +95,12 @@ yield* count.update((n) => n + 1)
 Derived values automatically recompute when their dependencies change:
 
 ```ts
-const firstName = yield* Signal.make("John")
-const lastName = yield* Signal.make("Doe")
+const firstName = yield * Signal.make("John");
+const lastName = yield * Signal.make("Doe");
 
-const fullName = yield* Derived.sync(
-  [firstName, lastName],
-  ([first, last]) => `${first} ${last}`
-)
+const fullName =
+  yield *
+  Derived.sync([firstName, lastName], ([first, last]) => `${first} ${last}`);
 ```
 
 ### Custom Equality
@@ -110,23 +109,27 @@ By default, Signal and Derived use strict equality (`===`) to determine if a val
 
 ```ts
 interface User {
-  id: number
-  name: string
-  lastSeen: Date
+  id: number;
+  name: string;
+  lastSeen: Date;
 }
 
 // Only trigger updates when the user ID changes, ignoring lastSeen timestamps
-const currentUser = yield* Signal.make<User>(
-  { id: 1, name: "Alice", lastSeen: new Date() },
-  { equals: (a, b) => a.id === b.id }
-)
+const currentUser =
+  yield *
+  Signal.make<User>(
+    { id: 1, name: "Alice", lastSeen: new Date() },
+    { equals: (a, b) => a.id === b.id },
+  );
 
 // For derived values too
-const userDisplay = yield* Derived.sync(
-  [currentUser],
-  ([user]) => ({ id: user.id, displayName: user.name.toUpperCase() }),
-  { equals: (a, b) => a.id === b.id && a.displayName === b.displayName }
-)
+const userDisplay =
+  yield *
+  Derived.sync(
+    [currentUser],
+    ([user]) => ({ id: user.id, displayName: user.name.toUpperCase() }),
+    { equals: (a, b) => a.id === b.id && a.displayName === b.displayName },
+  );
 ```
 
 **How this differs from React:**
@@ -134,6 +137,7 @@ const userDisplay = yield* Derived.sync(
 React's `useMemo` and `useEffect` use a dependency array with shallow comparison, and there's no built-in way to customize equality. You'd need external libraries or manual `useRef` tracking. In Effect UI, equality is a first-class option on every reactive primitive, giving you fine-grained control over when the UI re-renders.
 
 This is particularly useful for:
+
 - **Objects with irrelevant fields** (timestamps, metadata)
 - **Expensive computations** that shouldn't re-run on semantically equal inputs
 - **Normalized data** where you want to compare by ID rather than reference
@@ -143,27 +147,27 @@ This is particularly useful for:
 The `t` tagged template literal creates reactive strings that update when any interpolated Signal changes:
 
 ```ts
-import { t } from "@jonlaing/effect-ui"
+import { t } from "@jonlaing/effect-ui";
 
-const name = yield* Signal.make("World")
-const count = yield* Signal.make(0)
+const name = yield * Signal.make("World");
+const count = yield * Signal.make(0);
 
 // Creates a Readable<string> that updates automatically
-const message = t`Hello, ${name}! Count: ${count}`
+const message = t`Hello, ${name}! Count: ${count}`;
 
 // Use directly as element children
-yield* $.div(message)
-yield* $.p(t`You have ${count} items`)
+yield * $.div(message);
+yield * $.p(t`You have ${count} items`);
 ```
 
 This is cleaner than array concatenation for text with multiple reactive values:
 
 ```ts
 // With t`` template
-$.p(t`${count} items remaining (${completed} done)`)
+$.p(t`${count} items remaining (${completed} done)`);
 
 // vs array concatenation
-$.p([count, " items remaining (", completed, " done)"])
+$.p([count, " items remaining (", completed, " done)"]);
 ```
 
 ### Elements
@@ -171,17 +175,18 @@ $.p([count, " items remaining (", completed, " done)"])
 Create DOM elements with reactive attributes and children. Elements are Effects that must be yielded:
 
 ```ts
-yield* $.div({ class: "container", style: { color: "red" } }, [
-  $.h1(["Hello, ", name]),
-  $.p(t`${count} items`),
-])
+yield *
+  $.div({ class: "container", style: { color: "red" } }, [
+    $.h1(["Hello, ", name]),
+    $.p(t`${count} items`),
+  ]);
 ```
 
 Single children don't need to be wrapped in arrays:
 
 ```ts
-yield* $.h1("Hello World")
-yield* $.button({ onClick: handleClick }, "Click me")
+yield * $.h1("Hello World");
+yield * $.button({ onClick: handleClick }, "Click me");
 ```
 
 ### Control Flow
@@ -192,14 +197,14 @@ Conditionally render elements:
 when(
   isLoggedIn,
   () => $.div("Welcome back!"),
-  () => $.div("Please log in")
-)
+  () => $.div("Please log in"),
+);
 
 each(
   todos,
   (todo) => todo.id,
-  (todo) => $.li(todo.map((t) => t.text))
-)
+  (todo) => $.li(todo.map((t) => t.text)),
+);
 ```
 
 ### Router
@@ -207,19 +212,25 @@ each(
 Effect UI includes a typed router with Effect Schema validation for route params.
 
 ```ts
-import { Context, Effect, Layer, Schema } from "effect"
-import { Route, Router, Link, makeRouterLayer, type RouterInfer } from "@jonlaing/effect-ui"
+import { Context, Effect, Layer, Schema } from "effect";
+import {
+  Route,
+  Router,
+  Link,
+  makeRouterLayer,
+  type RouterInfer,
+} from "@jonlaing/effect-ui";
 
 // Define routes with typed params
 const routes = {
   home: Route.make("/"),
   user: Route.make("/users/:id", {
-    params: Schema.Struct({ id: Schema.String })
+    params: Schema.Struct({ id: Schema.String }),
   }),
-}
+};
 
 // Infer the router type and create a typed context
-type AppRouter = RouterInfer<typeof routes>
+type AppRouter = RouterInfer<typeof routes>;
 class AppRouterContext extends Context.Tag("AppRouterContext")<
   AppRouterContext,
   AppRouter
@@ -228,7 +239,7 @@ class AppRouterContext extends Context.Tag("AppRouterContext")<
 // Components can yield the typed router from context
 const App = component("App", () =>
   Effect.gen(function* () {
-    const router = yield* AppRouterContext
+    const router = yield* AppRouterContext;
 
     // router.currentRoute is typed as "home" | "user" | null
     // router.routes.user.params is typed as Readable<{ id: string } | null>
@@ -239,13 +250,13 @@ const App = component("App", () =>
         Link({ href: "/users/123" }, "User 123"),
       ]),
       $.div(router.pathname.map((p) => `Current: ${p}`)),
-    ])
-  })
-)
+    ]);
+  }),
+);
 
 // Set up and run
 const program = Effect.gen(function* () {
-  const router = yield* Router.make(routes)
+  const router = yield* Router.make(routes);
 
   // Provide both contexts:
   // - RouterContext (for Link components)
@@ -253,11 +264,11 @@ const program = Effect.gen(function* () {
   const routerLayer = Layer.merge(
     makeRouterLayer(router),
     Layer.succeed(AppRouterContext, router),
-  )
+  );
 
-  yield* mount(App({}).pipe(Effect.provide(routerLayer)), document.body)
-  yield* Effect.never
-})
+  yield* mount(App({}).pipe(Effect.provide(routerLayer)), document.body);
+  yield* Effect.never;
+});
 ```
 
 The `Link` component uses `RouterContext` internally for navigation. Create your own typed context with `RouterInfer` when you need access to `currentRoute` or typed route params.

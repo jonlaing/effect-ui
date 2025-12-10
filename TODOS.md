@@ -117,6 +117,7 @@
 **Decision:** No JSX support. Use function-based DSL only.
 
 **Reasons:**
+
 1. **Error type preservation**: `Element<E>` carries error types through the component tree. TypeScript's `JSX.Element` is not generic, so JSX would erase error information to `Element<unknown>`.
 
 2. **No build complexity**: Function calls work with any TypeScript setup. JSX would require custom jsx-runtime configuration, tsconfig changes, and bundler setup.
@@ -126,12 +127,13 @@
 4. **Explicit Effects**: Elements are Effects that must be yielded. The function syntax makes this clear; JSX would hide it.
 
 The function-based DSL is clean and idiomatic:
+
 ```ts
 div({ className: "card" }, [
   h1(title),
   p(description),
   Button({ onClick: handleClick }, "Submit"),
-])
+]);
 ```
 
 ### Router
@@ -142,26 +144,29 @@ Routes are defined declaratively with typed params:
 
 ```ts
 const UserRoute = Route.make("/users/:id", {
-  params: Schema.Struct({ id: Schema.String })
-})
+  params: Schema.Struct({ id: Schema.String }),
+});
 
 const PostRoute = Route.make("/posts/:postId/comments/:commentId?", {
   params: Schema.Struct({
     postId: Schema.String,
-    commentId: Schema.optional(Schema.String)
-  })
-})
+    commentId: Schema.optional(Schema.String),
+  }),
+});
 
-const router = yield* Router.make({
-  home: HomeRoute,
-  user: UserRoute,
-  post: PostRoute,
-})
+const router =
+  yield *
+  Router.make({
+    home: HomeRoute,
+    user: UserRoute,
+    post: PostRoute,
+  });
 ```
 
 #### V1 Scope (MVP)
 
 **Included:**
+
 - Flat routes (no nesting)
 - History API only
 - Path params with Effect Schema validation
@@ -172,6 +177,7 @@ const router = yield* Router.make({
 - Navigation as Effects: `router.push(...)`, `router.replace(...)`, `router.back()`
 
 **Deferred to V2:**
+
 - Nested routes with accumulated params
 - Hash-based routing (`/#/path`)
 - Route guards via Effect error channel
@@ -181,6 +187,7 @@ const router = yield* Router.make({
 #### Full Feature Set (Future)
 
 **Key features:**
+
 - Type-safe params per route (inferred from Schema)
 - Effect Schema for runtime validation
 - Support both History API and hash-based routing
@@ -192,10 +199,10 @@ const router = yield* Router.make({
       profile: Route.make("/profile"),
       settings: Route.make("/settings"),
       posts: Route.make("/posts/:postId", {
-        params: Schema.Struct({ postId: Schema.String })
+        params: Schema.Struct({ postId: Schema.String }),
       }),
-    }
-  })
+    },
+  });
   // /users/:id/posts/:postId -> { id: string, postId: string }
   ```
 - Route-specific readables: `router.routes.user.params`, `router.routes.user.isActive`
@@ -203,6 +210,7 @@ const router = yield* Router.make({
 - Route guards via Effect error channel for auth checks, etc.
 
 **Why this approach:**
+
 - Fits naturally with Effect-UI's reactive primitives (routes as Readables)
 - Full type safety without manual type annotations
 - Familiar to TanStack Router users
@@ -213,32 +221,37 @@ const router = yield* Router.make({
 **Approach:** Effect Schema integration, headless, TanStack Form-style API
 
 ```ts
-const form = yield* Form.make({
-  schema: Schema.Struct({
-    email: Schema.String.pipe(Schema.nonEmpty(), Schema.pattern(emailRegex)),
-    password: Schema.String.pipe(Schema.minLength(8)),
-    rememberMe: Schema.Boolean,
-  }),
-  initial: { email: "", password: "", rememberMe: false },
-})
+const form =
+  yield *
+  Form.make({
+    schema: Schema.Struct({
+      email: Schema.String.pipe(Schema.nonEmpty(), Schema.pattern(emailRegex)),
+      password: Schema.String.pipe(Schema.minLength(8)),
+      rememberMe: Schema.Boolean,
+    }),
+    initial: { email: "", password: "", rememberMe: false },
+  });
 ```
 
 **Field access - each field is a Signal with metadata:**
+
 ```ts
-form.fields.email.value      // Signal<string>
-form.fields.email.errors     // Readable<string[]>
-form.fields.email.touched    // Readable<boolean>
-form.fields.email.dirty      // Readable<boolean>
+form.fields.email.value; // Signal<string>
+form.fields.email.errors; // Readable<string[]>
+form.fields.email.touched; // Readable<boolean>
+form.fields.email.dirty; // Readable<boolean>
 ```
 
 **Form-level state:**
+
 ```ts
-form.isValid                 // Readable<boolean>
-form.isSubmitting            // Readable<boolean>
-form.errors                  // Readable<Record<string, string[]>>
+form.isValid; // Readable<boolean>
+form.isSubmitting; // Readable<boolean>
+form.errors; // Readable<Record<string, string[]>>
 ```
 
 **Actions:**
+
 ```ts
 form.submit(onSubmit)        // Effect that validates then calls handler
 form.reset()                 // Reset to initial values
@@ -246,12 +259,14 @@ form.setErrors(...)          // Set server-side errors
 ```
 
 **Validation timing options:**
+
 - `"hybrid"` (default) - blur for first validation, then change after
 - `"blur"` - validate when field loses focus
 - `"change"` - validate on every keystroke
 - `"submit"` - only validate when submitting
 
 **Async validation:**
+
 ```ts
 Form.make({
   schema: ...,
@@ -266,14 +281,16 @@ Form.make({
 ```
 
 **Array/dynamic fields:**
+
 ```ts
-form.fields.phoneNumbers.append("")
-form.fields.phoneNumbers.remove(index)
-form.fields.phoneNumbers.move(fromIndex, toIndex)
-form.fields.phoneNumbers.items // Readable<FieldArray<string>>
+form.fields.phoneNumbers.append("");
+form.fields.phoneNumbers.remove(index);
+form.fields.phoneNumbers.move(fromIndex, toIndex);
+form.fields.phoneNumbers.items; // Readable<FieldArray<string>>
 ```
 
 **Key decisions:**
+
 - Headless - no UI opinions, just state management
 - Effect Schema only (no adapters for Zod, etc.) - users of Effect-UI are already in Effect ecosystem
 - Field-level subscriptions - only re-render what changed
@@ -284,6 +301,7 @@ form.fields.phoneNumbers.items // Readable<FieldArray<string>>
 **Approach:** CSS-first with event-based timing, extensible for advanced libraries
 
 **Core (built-in):**
+
 - CSS-first transitions - provide class names, library manages lifecycle
 - Event-based exit timing - listens for `animationend`/`transitionend` with timeout fallback
 - Enter/exit lifecycle for `when()`, `match()`, and `each()`
@@ -292,56 +310,67 @@ form.fields.phoneNumbers.items // Readable<FieldArray<string>>
 
 ```ts
 // Simple fade
-when(isVisible, () => Content(), () => div(), {
-  animate: { enter: "fade-in", exit: "fade-out" }
-})
+when(
+  isVisible,
+  () => Content(),
+  () => div(),
+  {
+    animate: { enter: "fade-in", exit: "fade-out" },
+  },
+);
 
 // With initial/final state classes (great for Tailwind)
-when(isOpen, () => Modal(), () => div(), {
-  animate: {
-    enterFrom: "opacity-0 scale-95",
-    enterTo: "opacity-100 scale-100",
-    exit: "fade-out"
-  }
-})
+when(
+  isOpen,
+  () => Modal(),
+  () => div(),
+  {
+    animate: {
+      enterFrom: "opacity-0 scale-95",
+      enterTo: "opacity-100 scale-100",
+      exit: "fade-out",
+    },
+  },
+);
 
 // Staggered list animations
 each(items, keyFn, render, {
   animate: {
     enter: "slide-in",
     exit: "slide-out",
-    stagger: 50  // 50ms between items
-  }
-})
+    stagger: 50, // 50ms between items
+  },
+});
 
 // Custom stagger functions
 each(items, keyFn, render, {
   animate: {
     enter: "scale-in",
-    stagger: staggerFromCenter(30)  // Animate from center outward
-  }
-})
+    stagger: staggerFromCenter(30), // Animate from center outward
+  },
+});
 
 // With lifecycle hooks
 match(status, cases, undefined, {
   animate: {
     enter: "fade-in",
     exit: "fade-out",
-    onEnter: (el) => Effect.sync(() => el.focus())
-  }
-})
+    onEnter: (el) => Effect.sync(() => el.focus()),
+  },
+});
 ```
 
 **Animation Options:**
+
 ```ts
 interface AnimationOptions {
-  enter?: string;           // Class(es) for enter animation
-  exit?: string;            // Class(es) for exit animation
-  enterFrom?: string;       // Initial state class (removed after animation)
-  enterTo?: string;         // Final state class (persisted)
-  exitTo?: string;          // Exit target state class
-  timeout?: number;         // Max wait time (default: 5000ms)
-  respectReducedMotion?: boolean;  // Default: true
+  enter?: string; // Class(es) for enter animation
+  exit?: string; // Class(es) for exit animation
+  enterFrom?: string; // Initial state class (removed after animation)
+  enterTo?: string; // Final state class (persisted)
+  exitTo?: string; // Exit target state class
+  timeout?: number; // Max wait time (default: 5000ms)
+  respectReducedMotion?: boolean; // Default: true
 
   // Lifecycle hooks
   onBeforeEnter?: (el: HTMLElement) => Effect<void> | void;
@@ -352,20 +381,23 @@ interface AnimationOptions {
 ```
 
 **Stagger Utilities:**
+
 ```ts
-stagger(50)                 // Linear: 0ms, 50ms, 100ms...
-staggerFromCenter(30)       // Center-out: middle items first
-staggerEased(500, easeOut)  // Apply easing curve to delays
+stagger(50); // Linear: 0ms, 50ms, 100ms...
+staggerFromCenter(30); // Center-out: middle items first
+staggerEased(500, easeOut); // Apply easing curve to delays
 ```
 
 **Timing Utilities:**
+
 ```ts
-delay(ms, effect)           // Add delay before animation
-sequence(...effects)        // Run animations sequentially
-parallel(...effects)        // Run animations concurrently
+delay(ms, effect); // Add delay before animation
+sequence(...effects); // Run animations sequentially
+parallel(...effects); // Run animations concurrently
 ```
 
 **Why this approach:**
+
 - Core stays lean, covers 80% of use cases
 - CSS handles performance (GPU-accelerated)
 - Exit animations wait for completion before DOM removal
@@ -391,9 +423,9 @@ Unified all Suspense variants into a single `Suspense` component with options:
 Suspense({
   render: () => asyncEffect,
   fallback: () => loadingElement,
-  catch: (error) => errorElement,  // optional
-  delay: "200 millis",              // optional - delays fallback to avoid flash
-})
+  catch: (error) => errorElement, // optional
+  delay: "200 millis", // optional - delays fallback to avoid flash
+});
 ```
 
 The `delay` option accepts Effect Duration strings. If the render completes before the delay, no fallback is shown - great for route transitions.
@@ -403,10 +435,10 @@ The `delay` option accepts Effect Duration strings. If the render completes befo
 The `class` attribute accepts multiple formats for Tailwind-friendly ergonomics:
 
 ```ts
-div({ class: "flex items-center" })                     // string
-div({ class: ["flex", "items-center", "gap-4"] })       // string[]
-div({ class: isActive.map(a => a ? "on" : "off") })     // Readable<string>
-div({ class: ["btn", variant.map(v => `btn-${v}`)] })   // mixed with reactives
+div({ class: "flex items-center" }); // string
+div({ class: ["flex", "items-center", "gap-4"] }); // string[]
+div({ class: isActive.map((a) => (a ? "on" : "off")) }); // Readable<string>
+div({ class: ["btn", variant.map((v) => `btn-${v}`)] }); // mixed with reactives
 ```
 
 ## Notes

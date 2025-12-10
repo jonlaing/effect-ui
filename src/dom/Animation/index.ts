@@ -34,7 +34,7 @@ export { prefersReducedMotion } from "./helpers";
  * ```
  */
 export const stagger = (delayMs: number): StaggerFunction => {
-  return (index: number, _total: number) => index * delayMs;
+  return (index: number, _: number) => index * delayMs;
 };
 
 /**

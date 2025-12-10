@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / Child
 
@@ -30,15 +30,12 @@ The requirements/context type for child elements
 
 ```ts
 // Static text
-div(["Hello, world!"])
+div(["Hello, world!"]);
 
 // Reactive text
-const count = yield* Signal.make(0)
-div([count])  // Updates automatically when count changes
+const count = yield * Signal.make(0);
+div([count]); // Updates automatically when count changes
 
 // Nested elements
-div([
-  h1(["Title"]),
-  p(["Content"])
-])
+div([h1(["Title"]), p(["Content"])]);
 ```

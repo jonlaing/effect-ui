@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / SignalType
 
@@ -46,10 +46,10 @@ Optional configuration
 
 `Effect`\<`Signal`\<`A`\>, `never`, `Scope`\>
 
-***
+---
 
 ### SignalRegistry
 
-> **SignalRegistry**: *typeof* [`SignalRegistry`](../classes/SignalRegistry.md)
+> **SignalRegistry**: _typeof_ [`SignalRegistry`](../classes/SignalRegistry.md)
 
 Defined in: [src/core/Signal.ts:101](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/core/Signal.ts#L101)

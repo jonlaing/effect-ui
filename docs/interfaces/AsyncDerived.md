@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / AsyncDerived
 
@@ -38,7 +38,7 @@ Defined in: [src/core/Derived/types.ts:55](https://github.com/jonlaing/effect-ui
 
 Effect that resolves to the current value or fails with the current error
 
-***
+---
 
 ### changes
 
@@ -52,7 +52,7 @@ Stream of value changes (does not include current value)
 
 [`Readable`](Readable.md).[`changes`](Readable.md#changes)
 
-***
+---
 
 ### get
 
@@ -66,7 +66,7 @@ Get the current value
 
 [`Readable`](Readable.md).[`get`](Readable.md#get)
 
-***
+---
 
 ### map()
 
@@ -96,7 +96,7 @@ Transform the readable value
 
 [`Readable`](Readable.md).[`map`](Readable.md#map)
 
-***
+---
 
 ### values
 

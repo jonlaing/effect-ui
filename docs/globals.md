@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](README.md)
 
-***
+---
 
 # @jonlaing/effect-ui
 
@@ -121,13 +121,13 @@
 
 Renames and re-exports [RefType](type-aliases/RefType.md)
 
-***
+---
 
 ### RouteMatchError
 
 Renames and re-exports [RouteMatchErrorType](type-aliases/RouteMatchErrorType.md)
 
-***
+---
 
 ### Signal
 

@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / RefType
 
@@ -26,7 +26,7 @@ Create a Ref to hold a reference to a DOM element.
 
 ##### A
 
-`A` *extends* `HTMLElement`
+`A` _extends_ `HTMLElement`
 
 #### Returns
 
@@ -35,10 +35,9 @@ Create a Ref to hold a reference to a DOM element.
 #### Example
 
 ```ts
-const inputRef = yield* Ref.make<HTMLInputElement>()
+const inputRef = yield * Ref.make<HTMLInputElement>();
 
 // Later, focus the input
-yield* inputRef.element.pipe(
-  Effect.tap((el) => Effect.sync(() => el.focus()))
-)
+yield *
+  inputRef.element.pipe(Effect.tap((el) => Effect.sync(() => el.focus())));
 ```

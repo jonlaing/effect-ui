@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / LinkProps
 
@@ -20,7 +20,7 @@ Defined in: [src/router/RouterContext.ts:51](https://github.com/jonlaing/effect-
 
 Optional CSS class
 
-***
+---
 
 ### href
 
@@ -30,7 +30,7 @@ Defined in: [src/router/RouterContext.ts:49](https://github.com/jonlaing/effect-
 
 The path to navigate to
 
-***
+---
 
 ### replace?
 

@@ -1,6 +1,10 @@
 // Readable
 export type { Readable } from "./Readable";
-export { make as makeReadable, map as mapReadable, fromStream } from "./Readable";
+export {
+  make as makeReadable,
+  map as mapReadable,
+  fromStream,
+} from "./Readable";
 
 // Signal
 export type { Signal as SignalType, SignalOptions } from "./Signal";

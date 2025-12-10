@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / Readable
 
@@ -33,7 +33,7 @@ Defined in: [src/core/Readable.ts:11](https://github.com/jonlaing/effect-ui/blob
 
 Stream of value changes (does not include current value)
 
-***
+---
 
 ### get
 
@@ -43,7 +43,7 @@ Defined in: [src/core/Readable.ts:9](https://github.com/jonlaing/effect-ui/blob/
 
 Get the current value
 
-***
+---
 
 ### map()
 
@@ -69,7 +69,7 @@ Transform the readable value
 
 `Readable`\<`B`\>
 
-***
+---
 
 ### values
 

@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / MatchCase
 
@@ -34,7 +34,7 @@ Defined in: [src/dom/Control.ts:185](https://github.com/jonlaing/effect-ui/blob/
 
 The value to match against
 
-***
+---
 
 ### render()
 

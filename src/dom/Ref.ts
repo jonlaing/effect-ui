@@ -1,4 +1,4 @@
-import { Deferred, Effect, Scope } from "effect"
+import { Deferred, Effect, Scope } from "effect";
 
 /**
  * A reference to a DOM element that may not exist yet.
@@ -6,11 +6,11 @@ import { Deferred, Effect, Scope } from "effect"
  */
 export interface Ref<A extends HTMLElement> {
   /** The current element, or null if not yet set */
-  readonly current: A | null
+  readonly current: A | null;
   /** Effect that resolves when the element is available */
-  readonly element: Effect.Effect<A>
+  readonly element: Effect.Effect<A>;
   /** Internal setter - do not use directly */
-  readonly _set: (element: A) => void
+  readonly _set: (element: A) => void;
 }
 
 /**
@@ -26,28 +26,32 @@ export interface Ref<A extends HTMLElement> {
  * )
  * ```
  */
-export const make = <A extends HTMLElement>(): Effect.Effect<Ref<A>, never, Scope.Scope> =>
+export const make = <A extends HTMLElement>(): Effect.Effect<
+  Ref<A>,
+  never,
+  Scope.Scope
+> =>
   Effect.gen(function* () {
-    const deferred = yield* Deferred.make<A>()
-    let current: A | null = null
+    const deferred = yield* Deferred.make<A>();
+    let current: A | null = null;
 
     const ref: Ref<A> = {
       get current() {
-        return current
+        return current;
       },
       element: Deferred.await(deferred),
       _set: (element: A) => {
-        current = element
-        Effect.runSync(Deferred.succeed(deferred, element))
+        current = element;
+        Effect.runSync(Deferred.succeed(deferred, element));
       },
-    }
+    };
 
-    return ref
-  })
+    return ref;
+  });
 
 /**
  * Ref module namespace for creating element references.
  */
 export const Ref = {
   make,
-}
+};

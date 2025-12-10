@@ -4,7 +4,9 @@ import type { Child } from "./Element/types";
 /**
  * Valid children types for a component.
  */
-export type Children<E = never, R = never> = Child<E, R> | readonly Child<E, R>[];
+export type Children<E = never, R = never> =
+  | Child<E, R>
+  | readonly Child<E, R>[];
 
 /**
  * Helper type to check if Props is empty (equivalent to {} or object)
@@ -35,7 +37,12 @@ type IsEmptyProps<Props> = keyof Props extends never ? true : false;
  * Note: Error and requirement types from children are inferred at the call site
  * and combined with the component's own types in the return type.
  */
-export type Component<Name extends string, Props = object, E = never, R = never> = {
+export type Component<
+  Name extends string,
+  Props = object,
+  E = never,
+  R = never,
+> = {
   /** The component's identifying tag name */
   readonly _tag: Name;
 } & (IsEmptyProps<Props> extends true
@@ -43,17 +50,25 @@ export type Component<Name extends string, Props = object, E = never, R = never>
       // () - no props needed
       (): Element<E, R>;
       // (children) - just children
-      <CE = never, CR = never>(children: Children<CE, CR>): Element<E | CE, R | CR>;
+      <CE = never, CR = never>(
+        children: Children<CE, CR>,
+      ): Element<E | CE, R | CR>;
       // (props) - explicit empty props
       (props: Props): Element<E, R>;
       // (props, children)
-      <CE = never, CR = never>(props: Props, children: Children<CE, CR>): Element<E | CE, R | CR>;
+      <CE = never, CR = never>(
+        props: Props,
+        children: Children<CE, CR>,
+      ): Element<E | CE, R | CR>;
     }
   : {
       // (props) - props required
       (props: Props): Element<E, R>;
       // (props, children)
-      <CE = never, CR = never>(props: Props, children: Children<CE, CR>): Element<E | CE, R | CR>;
+      <CE = never, CR = never>(
+        props: Props,
+        children: Children<CE, CR>,
+      ): Element<E | CE, R | CR>;
     });
 
 /**
@@ -108,7 +123,12 @@ export type Component<Name extends string, Props = object, E = never, R = never>
  * // Type: Component<"NavLink", { href: string }, never, RouterContext>
  * ```
  */
-export const component = <Name extends string, Props = object, E = never, R = never>(
+export const component = <
+  Name extends string,
+  Props = object,
+  E = never,
+  R = never,
+>(
   name: Name,
   render: (props: Props, children?: Children<never, never>) => Element<E, R>,
 ): Component<Name, Props, E, R> => {

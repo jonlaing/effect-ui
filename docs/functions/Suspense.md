@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / Suspense
 
@@ -49,6 +49,6 @@ Function to render the loading state
 ```ts
 Suspense(
   () => fetchAndRenderUserProfile(userId),
-  () => div(["Loading..."])
-)
+  () => div(["Loading..."]),
+);
 ```

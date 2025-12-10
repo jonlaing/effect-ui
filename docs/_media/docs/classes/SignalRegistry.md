@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / SignalRegistry
 
@@ -20,7 +20,7 @@ Context service for creating and managing Signals within a scope.
 
 > **new SignalRegistry**(`_`): `SignalRegistry`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Context.d.ts:109
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Context.d.ts:109
 
 #### Parameters
 
@@ -40,33 +40,33 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Cont
 
 ### \[TagTypeId\]
 
-> `readonly` **\[TagTypeId\]**: *typeof* `TagTypeId`
+> `readonly` **\[TagTypeId\]**: _typeof_ `TagTypeId`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Context.d.ts:100
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Context.d.ts:100
 
 #### Inherited from
 
 `Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >().[TagTypeId]`
 
-***
+---
 
 ### Id
 
 > **Id**: `"effect-ui/SignalRegistry"`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Context.d.ts:99
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Context.d.ts:99
 
 #### Inherited from
 
 `Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >().Id`
 
-***
+---
 
 ### Type
 
 > `readonly` **Type**: `object`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Context.d.ts:101
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Context.d.ts:101
 
 #### make()
 
@@ -124,73 +124,73 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Cont
 
 `Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >().Type`
 
-***
+---
 
 ### \_op
 
 > `readonly` `static` **\_op**: `"Tag"`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Context.d.ts:33
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Context.d.ts:33
 
 #### Inherited from
 
 [`RouterContext`](RouterContext.md).[`_op`](RouterContext.md#_op)
 
-***
+---
 
 ### \[ChannelTypeId\]
 
 > `readonly` `static` **\[ChannelTypeId\]**: `VarianceStruct`\<`never`, `unknown`, `never`, `unknown`, \{ `make`: \<`A`\>(`initial`, `options?`) => `Effect`\<[`SignalType`](../type-aliases/SignalType.md)\<`A`\>, `never`, `Scope`\>; `scoped`: \<`A`, `E`, `R`\>(`effect`) => `Effect`\<`A`, `E`, `Exclude`\<`R`, `Scope`\>\>; \}, `unknown`, `SignalRegistry`\>
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Channel.d.ts:108
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Channel.d.ts:108
 
 #### Inherited from
 
 `Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >().[ChannelTypeId]`
 
-***
+---
 
 ### \[EffectTypeId\]
 
 > `readonly` `static` **\[EffectTypeId\]**: `VarianceStruct`\<\{ `make`: \<`A`\>(`initial`, `options?`) => `Effect`\<[`SignalType`](../type-aliases/SignalType.md)\<`A`\>, `never`, `Scope`\>; `scoped`: \<`A`, `E`, `R`\>(`effect`) => `Effect`\<`A`, `E`, `Exclude`\<`R`, `Scope`\>\>; \}, `never`, `SignalRegistry`\>
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Effect.d.ts:195
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Effect.d.ts:195
 
 #### Inherited from
 
 `Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >().[EffectTypeId]`
 
-***
+---
 
 ### \[ignoreSymbol\]?
 
 > `static` `optional` **\[ignoreSymbol\]**: `TagUnifyIgnore`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Context.d.ts:46
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Context.d.ts:46
 
 #### Inherited from
 
 [`RouterContext`](RouterContext.md).[`[ignoreSymbol]`](RouterContext.md#ignoresymbol)
 
-***
+---
 
 ### \[SinkTypeId\]
 
 > `readonly` `static` **\[SinkTypeId\]**: `VarianceStruct`\<\{ `make`: \<`A`\>(`initial`, `options?`) => `Effect`\<[`SignalType`](../type-aliases/SignalType.md)\<`A`\>, `never`, `Scope`\>; `scoped`: \<`A`, `E`, `R`\>(`effect`) => `Effect`\<`A`, `E`, `Exclude`\<`R`, `Scope`\>\>; \}, `unknown`, `never`, `never`, `SignalRegistry`\>
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Sink.d.ts:82
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Sink.d.ts:82
 
 #### Inherited from
 
 `Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >().[SinkTypeId]`
 
-***
+---
 
 ### \[STMTypeId\]
 
 > `readonly` `static` **\[STMTypeId\]**: `object`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/STM.d.ts:136
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/STM.d.ts:136
 
 #### \_A
 
@@ -208,25 +208,25 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/STM.
 
 `Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >().[STMTypeId]`
 
-***
+---
 
 ### \[StreamTypeId\]
 
 > `readonly` `static` **\[StreamTypeId\]**: `VarianceStruct`\<\{ `make`: \<`A`\>(`initial`, `options?`) => `Effect`\<[`SignalType`](../type-aliases/SignalType.md)\<`A`\>, `never`, `Scope`\>; `scoped`: \<`A`, `E`, `R`\>(`effect`) => `Effect`\<`A`, `E`, `Exclude`\<`R`, `Scope`\>\>; \}, `never`, `SignalRegistry`\>
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Stream.d.ts:111
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Stream.d.ts:111
 
 #### Inherited from
 
 `Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >().[StreamTypeId]`
 
-***
+---
 
 ### \[TagTypeId\]
 
 > `readonly` `static` **\[TagTypeId\]**: `object`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Context.d.ts:36
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Context.d.ts:36
 
 #### \_Identifier
 
@@ -240,55 +240,55 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Cont
 
 `Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >().[TagTypeId]`
 
-***
+---
 
 ### \[typeSymbol\]?
 
 > `static` `optional` **\[typeSymbol\]**: `unknown`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Context.d.ts:44
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Context.d.ts:44
 
 #### Inherited from
 
 [`RouterContext`](RouterContext.md).[`[typeSymbol]`](RouterContext.md#typesymbol)
 
-***
+---
 
 ### \[unifySymbol\]?
 
 > `static` `optional` **\[unifySymbol\]**: `TagUnify`\<`TagClass`\<`SignalRegistry`, `"effect-ui/SignalRegistry"`, \{ `make`: \<`A`\>(`initial`, `options?`) => `Effect`\<[`SignalType`](../type-aliases/SignalType.md)\<`A`\>, `never`, `Scope`\>; `scoped`: \<`A`, `E`, `R`\>(`effect`) => `Effect`\<`A`, `E`, `Exclude`\<`R`, `Scope`\>\>; \}\>\>
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Context.d.ts:45
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Context.d.ts:45
 
 #### Inherited from
 
 `Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >().[unifySymbol]`
 
-***
+---
 
 ### Identifier
 
 > `readonly` `static` **Identifier**: `SignalRegistry`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Context.d.ts:35
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Context.d.ts:35
 
 #### Inherited from
 
 `Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >().Identifier`
 
-***
+---
 
 ### key
 
 > `readonly` `static` **key**: `"effect-ui/SignalRegistry"`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Context.d.ts:110
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Context.d.ts:110
 
 #### Inherited from
 
 `Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >().key`
 
-***
+---
 
 ### Live
 
@@ -296,13 +296,13 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Cont
 
 Defined in: [src/core/Signal.ts:90](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/core/Signal.ts#L90)
 
-***
+---
 
 ### Service
 
 > `readonly` `static` **Service**: `object`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Context.d.ts:34
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Context.d.ts:34
 
 #### make()
 
@@ -360,13 +360,13 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Cont
 
 `Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >().Service`
 
-***
+---
 
 ### stack?
 
 > `readonly` `static` `optional` **stack**: `string`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Context.d.ts:42
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Context.d.ts:42
 
 #### Inherited from
 
@@ -378,7 +378,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Cont
 
 > `static` **\[iterator\]**(): `EffectGenerator`\<`Tag`\<`SignalRegistry`, \{ `make`: \<`A`\>(`initial`, `options?`) => `Effect`\<[`SignalType`](../type-aliases/SignalType.md)\<`A`\>, `never`, `Scope`\>; `scoped`: \<`A`, `E`, `R`\>(`effect`) => `Effect`\<`A`, `E`, `Exclude`\<`R`, `Scope`\>\>; \}\>\>
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Effect.d.ts:137
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Effect.d.ts:137
 
 #### Returns
 
@@ -388,13 +388,13 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Effe
 
 `Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >().[iterator]`
 
-***
+---
 
 ### \[NodeInspectSymbol\]()
 
 > `static` **\[NodeInspectSymbol\]**(): `unknown`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Inspectable.d.ts:22
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Inspectable.d.ts:22
 
 #### Returns
 
@@ -404,13 +404,13 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Insp
 
 `Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >().[NodeInspectSymbol]`
 
-***
+---
 
 ### context()
 
 > `static` **context**(`self`): `Context`\<`SignalRegistry`\>
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Context.d.ts:41
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Context.d.ts:41
 
 #### Parameters
 
@@ -432,13 +432,13 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Cont
 
 `Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >().context`
 
-***
+---
 
 ### of()
 
 > `static` **of**(`self`): `object`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Context.d.ts:40
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Context.d.ts:40
 
 #### Parameters
 
@@ -512,7 +512,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Cont
 
 `Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >().of`
 
-***
+---
 
 ### pipe()
 
@@ -520,7 +520,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Cont
 
 > `static` **pipe**\<`A`\>(`this`): `A`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipeable.d.ts:10
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Pipeable.d.ts:10
 
 ##### Type Parameters
 
@@ -546,7 +546,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipe
 
 > `static` **pipe**\<`A`, `B`\>(`this`, `ab`): `B`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipeable.d.ts:11
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Pipeable.d.ts:11
 
 ##### Type Parameters
 
@@ -580,7 +580,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipe
 
 > `static` **pipe**\<`A`, `B`, `C`\>(`this`, `ab`, `bc`): `C`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipeable.d.ts:12
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Pipeable.d.ts:12
 
 ##### Type Parameters
 
@@ -622,7 +622,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipe
 
 > `static` **pipe**\<`A`, `B`, `C`, `D`\>(`this`, `ab`, `bc`, `cd`): `D`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipeable.d.ts:13
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Pipeable.d.ts:13
 
 ##### Type Parameters
 
@@ -672,7 +672,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipe
 
 > `static` **pipe**\<`A`, `B`, `C`, `D`, `E`\>(`this`, `ab`, `bc`, `cd`, `de`): `E`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipeable.d.ts:14
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Pipeable.d.ts:14
 
 ##### Type Parameters
 
@@ -730,7 +730,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipe
 
 > `static` **pipe**\<`A`, `B`, `C`, `D`, `E`, `F`\>(`this`, `ab`, `bc`, `cd`, `de`, `ef`): `F`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipeable.d.ts:15
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Pipeable.d.ts:15
 
 ##### Type Parameters
 
@@ -796,7 +796,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipe
 
 > `static` **pipe**\<`A`, `B`, `C`, `D`, `E`, `F`, `G`\>(`this`, `ab`, `bc`, `cd`, `de`, `ef`, `fg`): `G`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipeable.d.ts:16
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Pipeable.d.ts:16
 
 ##### Type Parameters
 
@@ -870,7 +870,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipe
 
 > `static` **pipe**\<`A`, `B`, `C`, `D`, `E`, `F`, `G`, `H`\>(`this`, `ab`, `bc`, `cd`, `de`, `ef`, `fg`, `gh`): `H`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipeable.d.ts:17
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Pipeable.d.ts:17
 
 ##### Type Parameters
 
@@ -952,7 +952,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipe
 
 > `static` **pipe**\<`A`, `B`, `C`, `D`, `E`, `F`, `G`, `H`, `I`\>(`this`, `ab`, `bc`, `cd`, `de`, `ef`, `fg`, `gh`, `hi`): `I`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipeable.d.ts:18
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Pipeable.d.ts:18
 
 ##### Type Parameters
 
@@ -1042,7 +1042,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipe
 
 > `static` **pipe**\<`A`, `B`, `C`, `D`, `E`, `F`, `G`, `H`, `I`, `J`\>(`this`, `ab`, `bc`, `cd`, `de`, `ef`, `fg`, `gh`, `hi`, `ij`): `J`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipeable.d.ts:19
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Pipeable.d.ts:19
 
 ##### Type Parameters
 
@@ -1140,7 +1140,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipe
 
 > `static` **pipe**\<`A`, `B`, `C`, `D`, `E`, `F`, `G`, `H`, `I`, `J`, `K`\>(`this`, `ab`, `bc`, `cd`, `de`, `ef`, `fg`, `gh`, `hi`, `ij`, `jk`): `K`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipeable.d.ts:20
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Pipeable.d.ts:20
 
 ##### Type Parameters
 
@@ -1246,7 +1246,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipe
 
 > `static` **pipe**\<`A`, `B`, `C`, `D`, `E`, `F`, `G`, `H`, `I`, `J`, `K`, `L`\>(`this`, `ab`, `bc`, `cd`, `de`, `ef`, `fg`, `gh`, `hi`, `ij`, `jk`, `kl`): `L`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipeable.d.ts:21
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Pipeable.d.ts:21
 
 ##### Type Parameters
 
@@ -1360,7 +1360,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipe
 
 > `static` **pipe**\<`A`, `B`, `C`, `D`, `E`, `F`, `G`, `H`, `I`, `J`, `K`, `L`, `M`\>(`this`, `ab`, `bc`, `cd`, `de`, `ef`, `fg`, `gh`, `hi`, `ij`, `jk`, `kl`, `lm`): `M`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipeable.d.ts:22
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Pipeable.d.ts:22
 
 ##### Type Parameters
 
@@ -1482,7 +1482,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipe
 
 > `static` **pipe**\<`A`, `B`, `C`, `D`, `E`, `F`, `G`, `H`, `I`, `J`, `K`, `L`, `M`, `N`\>(`this`, `ab`, `bc`, `cd`, `de`, `ef`, `fg`, `gh`, `hi`, `ij`, `jk`, `kl`, `lm`, `mn`): `N`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipeable.d.ts:23
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Pipeable.d.ts:23
 
 ##### Type Parameters
 
@@ -1612,7 +1612,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipe
 
 > `static` **pipe**\<`A`, `B`, `C`, `D`, `E`, `F`, `G`, `H`, `I`, `J`, `K`, `L`, `M`, `N`, `O`\>(`this`, `ab`, `bc`, `cd`, `de`, `ef`, `fg`, `gh`, `hi`, `ij`, `jk`, `kl`, `lm`, `mn`, `no`): `O`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipeable.d.ts:24
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Pipeable.d.ts:24
 
 ##### Type Parameters
 
@@ -1750,7 +1750,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipe
 
 > `static` **pipe**\<`A`, `B`, `C`, `D`, `E`, `F`, `G`, `H`, `I`, `J`, `K`, `L`, `M`, `N`, `O`, `P`\>(`this`, `ab`, `bc`, `cd`, `de`, `ef`, `fg`, `gh`, `hi`, `ij`, `jk`, `kl`, `lm`, `mn`, `no`, `op`): `P`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipeable.d.ts:25
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Pipeable.d.ts:25
 
 ##### Type Parameters
 
@@ -1896,7 +1896,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipe
 
 > `static` **pipe**\<`A`, `B`, `C`, `D`, `E`, `F`, `G`, `H`, `I`, `J`, `K`, `L`, `M`, `N`, `O`, `P`, `Q`\>(`this`, `ab`, `bc`, `cd`, `de`, `ef`, `fg`, `gh`, `hi`, `ij`, `jk`, `kl`, `lm`, `mn`, `no`, `op`, `pq`): `Q`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipeable.d.ts:26
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Pipeable.d.ts:26
 
 ##### Type Parameters
 
@@ -2050,7 +2050,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipe
 
 > `static` **pipe**\<`A`, `B`, `C`, `D`, `E`, `F`, `G`, `H`, `I`, `J`, `K`, `L`, `M`, `N`, `O`, `P`, `Q`, `R`\>(`this`, `ab`, `bc`, `cd`, `de`, `ef`, `fg`, `gh`, `hi`, `ij`, `jk`, `kl`, `lm`, `mn`, `no`, `op`, `pq`, `qr`): `R`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipeable.d.ts:27
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Pipeable.d.ts:27
 
 ##### Type Parameters
 
@@ -2212,7 +2212,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipe
 
 > `static` **pipe**\<`A`, `B`, `C`, `D`, `E`, `F`, `G`, `H`, `I`, `J`, `K`, `L`, `M`, `N`, `O`, `P`, `Q`, `R`, `S`\>(`this`, `ab`, `bc`, `cd`, `de`, `ef`, `fg`, `gh`, `hi`, `ij`, `jk`, `kl`, `lm`, `mn`, `no`, `op`, `pq`, `qr`, `rs`): `S`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipeable.d.ts:28
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Pipeable.d.ts:28
 
 ##### Type Parameters
 
@@ -2382,7 +2382,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipe
 
 > `static` **pipe**\<`A`, `B`, `C`, `D`, `E`, `F`, `G`, `H`, `I`, `J`, `K`, `L`, `M`, `N`, `O`, `P`, `Q`, `R`, `S`, `T`\>(`this`, `ab`, `bc`, `cd`, `de`, `ef`, `fg`, `gh`, `hi`, `ij`, `jk`, `kl`, `lm`, `mn`, `no`, `op`, `pq`, `qr`, `rs`, `st`): `T`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipeable.d.ts:29
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Pipeable.d.ts:29
 
 ##### Type Parameters
 
@@ -2560,7 +2560,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipe
 
 > `static` **pipe**\<`A`, `B`, `C`, `D`, `E`, `F`, `G`, `H`, `I`, `J`, `K`, `L`, `M`, `N`, `O`, `P`, `Q`, `R`, `S`, `T`, `U`\>(`this`, `ab`, `bc`, `cd`, `de`, `ef`, `fg`, `gh`, `hi`, `ij`, `jk`, `kl`, `lm`, `mn`, `no`, `op`, `pq`, `qr`, `rs`, `st`, `tu`): `U`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipeable.d.ts:30
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Pipeable.d.ts:30
 
 ##### Type Parameters
 
@@ -2746,7 +2746,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipe
 
 > `static` **pipe**\<`A`, `B`, `C`, `D`, `E`, `F`, `G`, `H`, `I`, `J`, `K`, `L`, `M`, `N`, `O`, `P`, `Q`, `R`, `S`, `T`, `U`\>(`this`, `ab`, `bc`, `cd`, `de`, `ef`, `fg`, `gh`, `hi`, `ij`, `jk`, `kl`, `lm`, `mn`, `no`, `op`, `pq`, `qr`, `rs`, `st`, `tu`): `U`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipeable.d.ts:31
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Pipeable.d.ts:31
 
 ##### Type Parameters
 
@@ -2928,13 +2928,13 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Pipe
 
 `Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >().pipe`
 
-***
+---
 
 ### toJSON()
 
 > `static` **toJSON**(): `unknown`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Inspectable.d.ts:21
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Inspectable.d.ts:21
 
 #### Returns
 
@@ -2944,13 +2944,13 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Insp
 
 `Context.Tag("effect-ui/SignalRegistry")< SignalRegistry, { readonly make: <A>( initial: A, options?: SignalOptions<A>, ) => Effect.Effect<Signal<A>, never, Scope.Scope>; readonly scoped: <A, E, R>( effect: Effect.Effect<A, E, R>, ) => Effect.Effect<A, E, Exclude<R, Scope.Scope>>; } >().toJSON`
 
-***
+---
 
 ### toString()
 
 > `static` **toString**(): `string`
 
-Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Inspectable.d.ts:20
+Defined in: node_modules/.pnpm/effect@3.19.9/node_modules/effect/dist/dts/Inspectable.d.ts:20
 
 #### Returns
 

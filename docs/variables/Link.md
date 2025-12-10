@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / Link
 
@@ -17,14 +17,14 @@ Components using Link will have RouterContext in their requirements.
 
 ```ts
 // Basic link with children as second argument
-Link({ href: "/users" }, "Users")
+Link({ href: "/users" }, "Users");
 
 // With custom class (adds "active" when route matches)
-Link({ href: "/", class: "nav-link" }, "Home")
+Link({ href: "/", class: "nav-link" }, "Home");
 
 // With multiple children
-Link({ href: "/about" }, ["About ", "Us"])
+Link({ href: "/about" }, ["About ", "Us"]);
 
 // Replace instead of push
-Link({ href: "/login", replace: true }, "Login")
+Link({ href: "/login", replace: true }, "Login");
 ```

@@ -103,9 +103,7 @@ describe("RouterContext", () => {
       // Test active link (matches current path "/")
       const activeElement = await Effect.runPromise(
         Effect.scoped(
-          Link({ href: "/", class: "nav" }, "Home").pipe(
-            Effect.provide(layer),
-          ),
+          Link({ href: "/", class: "nav" }, "Home").pipe(Effect.provide(layer)),
         ),
       );
       expect(activeElement.className).toBe("nav active");

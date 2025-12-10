@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / Derived
 
@@ -24,7 +24,7 @@ Create an asynchronous derived value that recomputes when dependencies change.
 
 ##### T
 
-`T` *extends* readonly [`Readable`](../interfaces/Readable.md)\<`unknown`\>[]
+`T` _extends_ readonly [`Readable`](../interfaces/Readable.md)\<`unknown`\>[]
 
 ##### A
 
@@ -61,13 +61,15 @@ Optional configuration including concurrency strategy
 #### Example
 
 ```ts
-const userId = yield* Signal.make(1)
-const userData = yield* Derived.async([userId], ([id]) =>
-  Effect.gen(function* () {
-    const response = yield* fetchUser(id)
-    return response.data
-  })
-)
+const userId = yield * Signal.make(1);
+const userData =
+  yield *
+  Derived.async([userId], ([id]) =>
+    Effect.gen(function* () {
+      const response = yield* fetchUser(id);
+      return response.data;
+    }),
+  );
 // userData.get returns AsyncState with isLoading, value, and error
 ```
 
@@ -81,7 +83,7 @@ Create a synchronous derived value that recomputes when dependencies change.
 
 ##### T
 
-`T` *extends* readonly [`Readable`](../interfaces/Readable.md)\<`unknown`\>[]
+`T` _extends_ readonly [`Readable`](../interfaces/Readable.md)\<`unknown`\>[]
 
 ##### B
 
@@ -114,7 +116,7 @@ Optional configuration
 #### Example
 
 ```ts
-const count = yield* Signal.make(5)
-const doubled = yield* Derived.sync([count], ([n]) => n * 2)
+const count = yield * Signal.make(5);
+const doubled = yield * Derived.sync([count], ([n]) => n * 2);
 // doubled.get returns 10
 ```

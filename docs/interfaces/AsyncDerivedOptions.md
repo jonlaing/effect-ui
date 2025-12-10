@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / AsyncDerivedOptions
 
@@ -28,7 +28,7 @@ Defined in: [src/core/Derived/types.ts:43](https://github.com/jonlaing/effect-ui
 
 Debounce delay in milliseconds (only used with "debounce" strategy)
 
-***
+---
 
 ### equals()?
 
@@ -52,7 +52,7 @@ Custom equality function to determine if the value has changed
 
 `boolean`
 
-***
+---
 
 ### strategy?
 

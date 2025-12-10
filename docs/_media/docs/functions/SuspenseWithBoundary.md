@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / SuspenseWithBoundary
 
@@ -68,6 +68,6 @@ Function to render the error state
 SuspenseWithBoundary(
   () => fetchAndRenderData(),
   () => div(["Loading..."]),
-  (error) => div(["Failed to load: ", String(error)])
-)
+  (error) => div(["Failed to load: ", String(error)]),
+);
 ```

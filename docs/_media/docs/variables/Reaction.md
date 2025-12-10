@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / Reaction
 
@@ -24,7 +24,7 @@ Create a side effect that runs whenever any of the dependencies change.
 
 ##### T
 
-`T` *extends* readonly [`Readable`](../interfaces/Readable.md)\<`unknown`\>[]
+`T` _extends_ readonly [`Readable`](../interfaces/Readable.md)\<`unknown`\>[]
 
 #### Parameters
 
@@ -47,16 +47,18 @@ Effect to run when dependencies change, receiving current values
 #### Example
 
 ```ts
-const count = yield* Signal.make(0)
-const name = yield* Signal.make("Alice")
+const count = yield * Signal.make(0);
+const name = yield * Signal.make("Alice");
 
 // Log whenever count or name changes
-yield* Reaction.make([count, name], ([c, n]) =>
-  Effect.log(`Count is ${c}, name is ${n}`)
-)
+yield *
+  Reaction.make([count, name], ([c, n]) =>
+    Effect.log(`Count is ${c}, name is ${n}`),
+  );
 
 // Sync to localStorage whenever count changes
-yield* Reaction.make([count], ([c]) =>
-  Effect.sync(() => localStorage.setItem("count", String(c)))
-)
+yield *
+  Reaction.make([count], ([c]) =>
+    Effect.sync(() => localStorage.setItem("count", String(c))),
+  );
 ```

@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { Effect, Scope, Exit } from "effect";
+import { describe, it, expect, beforeEach } from "vitest";
+import { Effect } from "effect";
 import { Signal } from "@core/Signal";
 import {
   isReadable,
@@ -449,7 +449,8 @@ describe("applyInputValue", () => {
 
   it("should work with select", async () => {
     const select = document.createElement("select");
-    select.innerHTML = '<option value="a">A</option><option value="b">B</option>';
+    select.innerHTML =
+      '<option value="a">A</option><option value="b">B</option>';
     await Effect.runPromise(Effect.scoped(applyInputValue(select, "b")));
     expect(select.value).toBe("b");
   });

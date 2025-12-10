@@ -35,16 +35,16 @@ In Effect UI, every element has type `Element<E>` where `E` is the error channel
 
 ```ts
 // This won't compile - UserProfile might fail with ApiError
-mount(UserProfile(), document.body)  // ❌ Type error!
+mount(UserProfile(), document.body); // ❌ Type error!
 
 // Handle the error first
 mount(
   ErrorBoundary(
     () => UserProfile(),
-    (error) => $.div(`Failed to load: ${error.message}`)
+    (error) => $.div(`Failed to load: ${error.message}`),
   ),
-  document.body
-)  // ✅ Compiles
+  document.body,
+); // ✅ Compiles
 ```
 
 TypeScript tells you at build time which components can fail and forces you to handle it. No more "white screen of death" in production.
@@ -76,6 +76,7 @@ const Counter = component("Counter", () =>
 ### No Rules of Hooks
 
 React hooks have rules you must memorize:
+
 - Don't call hooks conditionally
 - Exhaustive dependency arrays (with lint rules that don't always help)
 - Stale closure bugs when you forget a dependency
@@ -85,15 +86,14 @@ Effect UI has none of this. Create signals wherever you want. Use them wherever 
 
 ```ts
 // React: Must memoize, manage deps, avoid stale closures
-const [items, setItems] = useState([])
+const [items, setItems] = useState([]);
 const handleAdd = useCallback(() => {
-  setItems(prev => [...prev, newItem])  // Must use prev, not items!
-}, [])  // Stale closure if you use items directly
+  setItems((prev) => [...prev, newItem]); // Must use prev, not items!
+}, []); // Stale closure if you use items directly
 
 // Effect UI: Just write code
-const items = yield* Signal.make([])
-const handleAdd = () =>
-  items.update(current => [...current, newItem])  // Always fresh
+const items = yield * Signal.make([]);
+const handleAdd = () => items.update((current) => [...current, newItem]); // Always fresh
 ```
 
 ### Automatic Resource Cleanup
@@ -105,15 +105,16 @@ Effect UI uses Effect's scope system. Resources are automatically cleaned up whe
 ```ts
 // React: Manual cleanup, easy to forget
 useEffect(() => {
-  const subscription = eventSource.subscribe(handler)
-  return () => subscription.unsubscribe()  // Don't forget!
-}, [])
+  const subscription = eventSource.subscribe(handler);
+  return () => subscription.unsubscribe(); // Don't forget!
+}, []);
 
 // Effect UI: Automatic cleanup via scope
-yield* eventSource.pipe(
-  Stream.runForEach(handler),
-  Effect.forkIn(scope)  // Cleaned up when scope closes
-)
+yield *
+  eventSource.pipe(
+    Stream.runForEach(handler),
+    Effect.forkIn(scope), // Cleaned up when scope closes
+  );
 ```
 
 ### No Re-render Cascades
@@ -144,19 +145,21 @@ React's Suspense requires experimental features for data fetching, and error han
 
 ```ts
 Suspense({
-  render: () => Effect.gen(function* () {
-    const user = yield* fetchUser(id)  // Can fail!
-    return yield* UserProfile({ user })
-  }),
+  render: () =>
+    Effect.gen(function* () {
+      const user = yield* fetchUser(id); // Can fail!
+      return yield* UserProfile({ user });
+    }),
   fallback: () => $.div("Loading..."),
-  catch: (error) => $.div(`Error: ${error.message}`),  // Same place
-  delay: "200 millis",  // Avoid loading flash
-})
+  catch: (error) => $.div(`Error: ${error.message}`), // Same place
+  delay: "200 millis", // Avoid loading flash
+});
 ```
 
 ### The Effect Ecosystem
 
 Effect UI gives you access to Effect's entire ecosystem:
+
 - **Schema**: Runtime validation with static types
 - **Streams**: Reactive data flows
 - **Services**: Dependency injection without prop drilling
@@ -171,77 +174,75 @@ A quick reference for React developers learning Effect UI.
 
 ### Concept Mapping
 
-| React | Effect UI | Notes |
-|-------|-----------|-------|
-| `useState(initial)` | `Signal.make(initial)` | Must `yield*` to create |
-| `useMemo(() => x, deps)` | `Derived.sync([deps], () => x)` | Deps are explicit signals |
-| `useEffect(() => {...}, deps)` | `Reaction` or scope finalizers | Automatic cleanup |
-| `useCallback(fn, deps)` | Just use the function | No stale closures |
-| `useContext(Ctx)` | `yield* ServiceTag` | Effect services |
-| `useRef(initial)` | `Ref.make(initial)` | For DOM refs |
-| `<Component prop={x} />` | `Component({ prop: x })` | Function calls |
-| `{cond && <El/>}` | `when(cond, () => El(), () => $.span())` | Always two branches |
-| `{arr.map(x => <El key/>)}` | `each(arr, keyFn, renderFn)` | Key function, not prop |
-| `<ErrorBoundary>` | `ErrorBoundary(try, catch)` | Typed errors! |
-| `<Suspense>` | `Suspense({ render, fallback })` | With typed `catch` |
-| Component re-render | Doesn't exist | Only signals update DOM |
-| Virtual DOM diff | Doesn't exist | Direct DOM updates |
-| `React.memo()` | Not needed | Fine-grained by default |
+| React                          | Effect UI                                | Notes                     |
+| ------------------------------ | ---------------------------------------- | ------------------------- |
+| `useState(initial)`            | `Signal.make(initial)`                   | Must `yield*` to create   |
+| `useMemo(() => x, deps)`       | `Derived.sync([deps], () => x)`          | Deps are explicit signals |
+| `useEffect(() => {...}, deps)` | `Reaction` or scope finalizers           | Automatic cleanup         |
+| `useCallback(fn, deps)`        | Just use the function                    | No stale closures         |
+| `useContext(Ctx)`              | `yield* ServiceTag`                      | Effect services           |
+| `useRef(initial)`              | `Ref.make(initial)`                      | For DOM refs              |
+| `<Component prop={x} />`       | `Component({ prop: x })`                 | Function calls            |
+| `{cond && <El/>}`              | `when(cond, () => El(), () => $.span())` | Always two branches       |
+| `{arr.map(x => <El key/>)}`    | `each(arr, keyFn, renderFn)`             | Key function, not prop    |
+| `<ErrorBoundary>`              | `ErrorBoundary(try, catch)`              | Typed errors!             |
+| `<Suspense>`                   | `Suspense({ render, fallback })`         | With typed `catch`        |
+| Component re-render            | Doesn't exist                            | Only signals update DOM   |
+| Virtual DOM diff               | Doesn't exist                            | Direct DOM updates        |
+| `React.memo()`                 | Not needed                               | Fine-grained by default   |
 
 ### Side-by-Side Examples
 
 **State and Updates**
+
 ```tsx
 // React
 function Counter() {
-  const [count, setCount] = useState(0)
-  return (
-    <button onClick={() => setCount(c => c + 1)}>
-      {count}
-    </button>
-  )
+  const [count, setCount] = useState(0);
+  return <button onClick={() => setCount((c) => c + 1)}>{count}</button>;
 }
 
 // Effect UI
 const Counter = component("Counter", () =>
   Effect.gen(function* () {
-    const count = yield* Signal.make(0)
+    const count = yield* Signal.make(0);
     return yield* $.button(
-      { onClick: () => count.update(c => c + 1) },
-      count
-    )
-  })
-)
+      { onClick: () => count.update((c) => c + 1) },
+      count,
+    );
+  }),
+);
 ```
 
 **Derived State**
+
 ```tsx
 // React
 function Cart({ items }) {
   const total = useMemo(
     () => items.reduce((sum, i) => sum + i.price, 0),
-    [items]
-  )
-  return <div>Total: ${total}</div>
+    [items],
+  );
+  return <div>Total: ${total}</div>;
 }
 
 // Effect UI
 const Cart = component("Cart", (props: { items: Readable<Item[]> }) =>
   Effect.gen(function* () {
-    const total = yield* Derived.sync(
-      [props.items],
-      ([items]) => items.reduce((sum, i) => sum + i.price, 0)
-    )
-    return yield* $.div(total.map(t => `Total: $${t}`))
-  })
-)
+    const total = yield* Derived.sync([props.items], ([items]) =>
+      items.reduce((sum, i) => sum + i.price, 0),
+    );
+    return yield* $.div(total.map((t) => `Total: $${t}`));
+  }),
+);
 ```
 
 **Conditional Rendering**
+
 ```tsx
 // React
 function Auth({ isLoggedIn }) {
-  return isLoggedIn ? <Dashboard /> : <Login />
+  return isLoggedIn ? <Dashboard /> : <Login />;
 }
 
 // Effect UI
@@ -249,22 +250,23 @@ const Auth = component("Auth", (props: { isLoggedIn: Readable<boolean> }) =>
   when(
     props.isLoggedIn,
     () => Dashboard(),
-    () => Login()
-  )
-)
+    () => Login(),
+  ),
+);
 ```
 
 **Lists**
+
 ```tsx
 // React
 function TodoList({ todos }) {
   return (
     <ul>
-      {todos.map(todo => (
+      {todos.map((todo) => (
         <li key={todo.id}>{todo.text}</li>
       ))}
     </ul>
-  )
+  );
 }
 
 // Effect UI
@@ -272,19 +274,20 @@ const TodoList = component("TodoList", (props: { todos: Readable<Todo[]> }) =>
   $.ul([
     each(
       props.todos,
-      todo => todo.id,  // Key function
-      todo => $.li(todo.map(t => t.text))  // Render function
-    )
-  ])
-)
+      (todo) => todo.id, // Key function
+      (todo) => $.li(todo.map((t) => t.text)), // Render function
+    ),
+  ]),
+);
 ```
 
 **Data Fetching**
+
 ```tsx
 // React (with Suspense + error boundary)
 function UserProfile({ id }) {
-  const user = use(fetchUser(id))  // Experimental
-  return <div>{user.name}</div>
+  const user = use(fetchUser(id)); // Experimental
+  return <div>{user.name}</div>;
 }
 
 // Wrapped in error boundary + suspense elsewhere...
@@ -292,30 +295,32 @@ function UserProfile({ id }) {
 // Effect UI (all-in-one)
 const UserProfile = component("UserProfile", (props: { id: string }) =>
   Suspense({
-    render: () => Effect.gen(function* () {
-      const user = yield* fetchUser(props.id)
-      return yield* $.div(user.name)
-    }),
+    render: () =>
+      Effect.gen(function* () {
+        const user = yield* fetchUser(props.id);
+        return yield* $.div(user.name);
+      }),
     fallback: () => $.div("Loading..."),
     catch: (e) => $.div(`Error: ${e}`),
-  })
-)
+  }),
+);
 ```
 
 **Context / Services**
+
 ```tsx
 // React
-const ThemeContext = createContext('light')
+const ThemeContext = createContext("light");
 function App() {
   return (
     <ThemeContext.Provider value="dark">
       <Page />
     </ThemeContext.Provider>
-  )
+  );
 }
 function Page() {
-  const theme = useContext(ThemeContext)
-  return <div className={theme}>...</div>
+  const theme = useContext(ThemeContext);
+  return <div className={theme}>...</div>;
 }
 
 // Effect UI
@@ -323,14 +328,12 @@ class ThemeService extends Context.Tag("Theme")<ThemeService, string>() {}
 
 const Page = component("Page", () =>
   Effect.gen(function* () {
-    const theme = yield* ThemeService
-    return yield* $.div({ class: theme }, "...")
-  })
-)
+    const theme = yield* ThemeService;
+    return yield* $.div({ class: theme }, "...");
+  }),
+);
 
-runApp(
-  mount(Page().pipe(Effect.provideService(ThemeService, "dark")), root)
-)
+runApp(mount(Page().pipe(Effect.provideService(ThemeService, "dark")), root));
 ```
 
 ### Key Mindset Shifts
@@ -360,14 +363,14 @@ pnpm add @jonlaing/effect-ui effect
 For components that just render static or prop-based content, return the element directly:
 
 ```ts
-import { $, component } from "@jonlaing/effect-ui"
+import { $, component } from "@jonlaing/effect-ui";
 
 const Greeting = component("Greeting", (props: { name: string }) =>
   $.div({ class: "greeting" }, [
     $.h1(`Hello, ${props.name}!`),
     $.p("Welcome to Effect UI"),
-  ])
-)
+  ]),
+);
 ```
 
 ### Stateful Components
@@ -375,21 +378,21 @@ const Greeting = component("Greeting", (props: { name: string }) =>
 Use `Effect.gen` when your component needs to create signals, derived values, or access context:
 
 ```ts
-import { Effect } from "effect"
-import { $, Signal, component } from "@jonlaing/effect-ui"
+import { Effect } from "effect";
+import { $, Signal, component } from "@jonlaing/effect-ui";
 
 const Counter = component("Counter", () =>
   Effect.gen(function* () {
     // Need Effect.gen to create signals
-    const count = yield* Signal.make(0)
+    const count = yield* Signal.make(0);
 
     return yield* $.div([
       $.button({ onClick: () => count.update((n) => n - 1) }, "-"),
       $.span(count),
       $.button({ onClick: () => count.update((n) => n + 1) }, "+"),
-    ])
-  })
-)
+    ]);
+  }),
+);
 ```
 
 ### Running Your App
@@ -397,20 +400,20 @@ const Counter = component("Counter", () =>
 Use `runApp` to mount your application. It handles scoping, the SignalRegistry, and keeping the app alive:
 
 ```ts
-import { Effect } from "effect"
-import { mount, runApp } from "@jonlaing/effect-ui"
+import { Effect } from "effect";
+import { mount, runApp } from "@jonlaing/effect-ui";
 
 runApp(
   Effect.gen(function* () {
-    yield* mount(Counter(), document.getElementById("root")!)
-  })
-)
+    yield* mount(Counter(), document.getElementById("root")!);
+  }),
+);
 ```
 
 The `$` namespace contains all HTML element factories (`$.div`, `$.span`, `$.button`, etc.). You can also import elements individually if you prefer:
 
 ```ts
-import { div, span, button } from "@jonlaing/effect-ui"
+import { div, span, button } from "@jonlaing/effect-ui";
 ```
 
 ## Core Concepts
@@ -420,14 +423,14 @@ import { div, span, button } from "@jonlaing/effect-ui"
 Signals are reactive values that can be read and updated:
 
 ```ts
-const count = yield* Signal.make(0)
+const count = yield * Signal.make(0);
 
 // Read the current value
-const current = yield* count.get
+const current = yield * count.get;
 
 // Update the value
-yield* count.set(5)
-yield* count.update((n) => n + 1)
+yield * count.set(5);
+yield * count.update((n) => n + 1);
 ```
 
 ### Derived Values
@@ -435,13 +438,12 @@ yield* count.update((n) => n + 1)
 Derived values automatically recompute when their dependencies change:
 
 ```ts
-const firstName = yield* Signal.make("John")
-const lastName = yield* Signal.make("Doe")
+const firstName = yield * Signal.make("John");
+const lastName = yield * Signal.make("Doe");
 
-const fullName = yield* Derived.sync(
-  [firstName, lastName],
-  ([first, last]) => `${first} ${last}`
-)
+const fullName =
+  yield *
+  Derived.sync([firstName, lastName], ([first, last]) => `${first} ${last}`);
 ```
 
 ### Custom Equality
@@ -450,23 +452,27 @@ By default, Signal and Derived use strict equality (`===`) to determine if a val
 
 ```ts
 interface User {
-  id: number
-  name: string
-  lastSeen: Date
+  id: number;
+  name: string;
+  lastSeen: Date;
 }
 
 // Only trigger updates when the user ID changes, ignoring lastSeen timestamps
-const currentUser = yield* Signal.make<User>(
-  { id: 1, name: "Alice", lastSeen: new Date() },
-  { equals: (a, b) => a.id === b.id }
-)
+const currentUser =
+  yield *
+  Signal.make<User>(
+    { id: 1, name: "Alice", lastSeen: new Date() },
+    { equals: (a, b) => a.id === b.id },
+  );
 
 // For derived values too
-const userDisplay = yield* Derived.sync(
-  [currentUser],
-  ([user]) => ({ id: user.id, displayName: user.name.toUpperCase() }),
-  { equals: (a, b) => a.id === b.id && a.displayName === b.displayName }
-)
+const userDisplay =
+  yield *
+  Derived.sync(
+    [currentUser],
+    ([user]) => ({ id: user.id, displayName: user.name.toUpperCase() }),
+    { equals: (a, b) => a.id === b.id && a.displayName === b.displayName },
+  );
 ```
 
 **How this differs from React:**
@@ -474,6 +480,7 @@ const userDisplay = yield* Derived.sync(
 React's `useMemo` and `useEffect` use a dependency array with shallow comparison, and there's no built-in way to customize equality. You'd need external libraries or manual `useRef` tracking. In Effect UI, equality is a first-class option on every reactive primitive, giving you fine-grained control over when the UI re-renders.
 
 This is particularly useful for:
+
 - **Objects with irrelevant fields** (timestamps, metadata)
 - **Expensive computations** that shouldn't re-run on semantically equal inputs
 - **Normalized data** where you want to compare by ID rather than reference
@@ -483,27 +490,27 @@ This is particularly useful for:
 The `t` tagged template literal creates reactive strings that update when any interpolated Signal changes:
 
 ```ts
-import { t } from "@jonlaing/effect-ui"
+import { t } from "@jonlaing/effect-ui";
 
-const name = yield* Signal.make("World")
-const count = yield* Signal.make(0)
+const name = yield * Signal.make("World");
+const count = yield * Signal.make(0);
 
 // Creates a Readable<string> that updates automatically
-const message = t`Hello, ${name}! Count: ${count}`
+const message = t`Hello, ${name}! Count: ${count}`;
 
 // Use directly as element children
-yield* $.div(message)
-yield* $.p(t`You have ${count} items`)
+yield * $.div(message);
+yield * $.p(t`You have ${count} items`);
 ```
 
 This is cleaner than array concatenation for text with multiple reactive values:
 
 ```ts
 // With t`` template
-$.p(t`${count} items remaining (${completed} done)`)
+$.p(t`${count} items remaining (${completed} done)`);
 
 // vs array concatenation
-$.p([count, " items remaining (", completed, " done)"])
+$.p([count, " items remaining (", completed, " done)"]);
 ```
 
 ### Elements
@@ -511,17 +518,18 @@ $.p([count, " items remaining (", completed, " done)"])
 Create DOM elements with reactive attributes and children. Elements are Effects that must be yielded:
 
 ```ts
-yield* $.div({ class: "container", style: { color: "red" } }, [
-  $.h1(["Hello, ", name]),
-  $.p(t`${count} items`),
-])
+yield *
+  $.div({ class: "container", style: { color: "red" } }, [
+    $.h1(["Hello, ", name]),
+    $.p(t`${count} items`),
+  ]);
 ```
 
 Single children don't need to be wrapped in arrays:
 
 ```ts
-yield* $.h1("Hello World")
-yield* $.button({ onClick: handleClick }, "Click me")
+yield * $.h1("Hello World");
+yield * $.button({ onClick: handleClick }, "Click me");
 ```
 
 ### Control Flow
@@ -532,14 +540,14 @@ Conditionally render elements:
 when(
   isLoggedIn,
   () => $.div("Welcome back!"),
-  () => $.div("Please log in")
-)
+  () => $.div("Please log in"),
+);
 
 each(
   todos,
   (todo) => todo.id,
-  (todo) => $.li(todo.map((t) => t.text))
-)
+  (todo) => $.li(todo.map((t) => t.text)),
+);
 ```
 
 ### Router
@@ -547,23 +555,29 @@ each(
 Effect UI includes a typed router with Effect Schema validation for route params.
 
 ```ts
-import { Context, Effect, Schema } from "effect"
+import { Context, Effect, Schema } from "effect";
 import {
-  $, component, mount, runApp,
-  Route, Router, Link, makeTypedRouterLayer,
-  type RouterInfer
-} from "@jonlaing/effect-ui"
+  $,
+  component,
+  mount,
+  runApp,
+  Route,
+  Router,
+  Link,
+  makeTypedRouterLayer,
+  type RouterInfer,
+} from "@jonlaing/effect-ui";
 
 // Define routes with typed params
 const routes = {
   home: Route.make("/"),
   user: Route.make("/users/:id", {
-    params: Schema.Struct({ id: Schema.String })
+    params: Schema.Struct({ id: Schema.String }),
   }),
-}
+};
 
 // Infer the router type and create a typed context
-type AppRouter = RouterInfer<typeof routes>
+type AppRouter = RouterInfer<typeof routes>;
 class AppRouterContext extends Context.Tag("AppRouterContext")<
   AppRouterContext,
   AppRouter
@@ -572,7 +586,7 @@ class AppRouterContext extends Context.Tag("AppRouterContext")<
 // Components can yield the typed router from context
 const App = component("App", () =>
   Effect.gen(function* () {
-    const router = yield* AppRouterContext
+    const router = yield* AppRouterContext;
 
     // router.currentRoute is typed as "home" | "user" | null
     // router.routes.user.params is typed as Readable<{ id: string } | null>
@@ -583,18 +597,18 @@ const App = component("App", () =>
         Link({ href: "/users/123" }, "User 123"),
       ]),
       $.div(router.pathname.map((p) => `Current: ${p}`)),
-    ])
-  })
-)
+    ]);
+  }),
+);
 
 // Run the app
 runApp(
   Effect.gen(function* () {
-    const router = yield* Router.make(routes)
-    const routerLayer = makeTypedRouterLayer(router, AppRouterContext)
-    yield* mount(App().pipe(Effect.provide(routerLayer)), document.body)
-  })
-)
+    const router = yield* Router.make(routes);
+    const routerLayer = makeTypedRouterLayer(router, AppRouterContext);
+    yield* mount(App().pipe(Effect.provide(routerLayer)), document.body);
+  }),
+);
 ```
 
 The `Link` component uses `RouterContext` internally for navigation. Use `makeTypedRouterLayer` to provide both the base router context and your typed context in one layer.
@@ -604,14 +618,14 @@ The `Link` component uses `RouterContext` internally for navigation. Use `makeTy
 Use `Suspense` for async rendering with loading states. It accepts an options object:
 
 ```ts
-import { match, Suspense } from "@jonlaing/effect-ui"
+import { match, Suspense } from "@jonlaing/effect-ui";
 
 // Simulate API call
 const fetchUser = (id: string) =>
   Effect.gen(function* () {
-    yield* Effect.sleep("500 millis")
-    return { id, name: `User ${id}`, email: `user${id}@example.com` }
-  })
+    yield* Effect.sleep("500 millis");
+    return { id, name: `User ${id}`, email: `user${id}@example.com` };
+  });
 
 // In your app
 match(router.currentRoute, [
@@ -625,20 +639,22 @@ match(router.currentRoute, [
     pattern: "user",
     render: () =>
       Suspense({
-        render: () => Effect.gen(function* () {
-          const params = yield* router.routes.user.params.get
-          const user = yield* fetchUser(params.id)
-          return yield* UserPage({ user })
-        }),
+        render: () =>
+          Effect.gen(function* () {
+            const params = yield* router.routes.user.params.get;
+            const user = yield* fetchUser(params.id);
+            return yield* UserPage({ user });
+          }),
         fallback: () => $.div("Loading user..."),
         catch: (error) => $.div(`Error: ${error}`),
-        delay: "200 millis",  // Only show loading after 200ms
+        delay: "200 millis", // Only show loading after 200ms
       }),
   },
-])
+]);
 ```
 
 Suspense options:
+
 - `render`: Async Effect that returns the element
 - `fallback`: Element to show while loading
 - `catch`: Optional error handler
@@ -649,8 +665,8 @@ Suspense options:
 Effect UI includes a form system with Effect Schema validation:
 
 ```ts
-import { Effect, Schema } from "effect"
-import { $, Form, component, when } from "@jonlaing/effect-ui"
+import { Effect, Schema } from "effect";
+import { $, Form, component, when } from "@jonlaing/effect-ui";
 
 // Define a schema for validation
 const LoginSchema = Schema.Struct({
@@ -658,25 +674,27 @@ const LoginSchema = Schema.Struct({
     Schema.nonEmptyString({ message: () => "Email is required" }),
   ),
   password: Schema.String.pipe(
-    Schema.minLength(8, { message: () => "Password must be at least 8 characters" }),
+    Schema.minLength(8, {
+      message: () => "Password must be at least 8 characters",
+    }),
   ),
-})
+});
 
 const LoginForm = component("LoginForm", () =>
   Effect.gen(function* () {
     const form = yield* Form.make({
       schema: LoginSchema,
       initial: { email: "", password: "" },
-    })
+    });
 
     const handleSubmit = () =>
       form.submit((values) =>
         Effect.gen(function* () {
           // values is typed as { email: string, password: string }
-          console.log("Submitting:", values)
-          yield* form.reset()
-        })
-      )
+          console.log("Submitting:", values);
+          yield* form.reset();
+        }),
+      );
 
     return yield* $.div({ class: "login-form" }, [
       $.div([
@@ -691,7 +709,11 @@ const LoginForm = component("LoginForm", () =>
         // Show errors when field is touched
         when(
           form.fields.email.errors.map((errs) => errs.length > 0),
-          () => $.span({ class: "error" }, form.fields.email.errors.map((e) => e[0] ?? "")),
+          () =>
+            $.span(
+              { class: "error" },
+              form.fields.email.errors.map((e) => e[0] ?? ""),
+            ),
           () => $.span(),
         ),
       ]),
@@ -701,12 +723,18 @@ const LoginForm = component("LoginForm", () =>
           type: "password",
           value: form.fields.password.value,
           onInput: (e) =>
-            form.fields.password.value.set((e.target as HTMLInputElement).value),
+            form.fields.password.value.set(
+              (e.target as HTMLInputElement).value,
+            ),
           onBlur: () => form.fields.password.touch(),
         }),
         when(
           form.fields.password.errors.map((errs) => errs.length > 0),
-          () => $.span({ class: "error" }, form.fields.password.errors.map((e) => e[0] ?? "")),
+          () =>
+            $.span(
+              { class: "error" },
+              form.fields.password.errors.map((e) => e[0] ?? ""),
+            ),
           () => $.span(),
         ),
       ]),
@@ -717,12 +745,13 @@ const LoginForm = component("LoginForm", () =>
         },
         form.isSubmitting.map((s) => (s ? "Submitting..." : "Log In")),
       ),
-    ])
-  })
-)
+    ]);
+  }),
+);
 ```
 
 Form features:
+
 - **Schema validation**: Uses Effect Schema for type-safe validation with custom error messages
 - **Field state**: Each field has `value`, `errors`, `touched`, and `dirty` readables
 - **Validation timing**: Configure when validation runs with `validation: "hybrid" | "blur" | "change" | "submit"`
@@ -734,15 +763,15 @@ Form features:
 Effect UI provides CSS-based animation primitives for `when`, `match`, and `each` components. Animations are CSS-first - you provide class names, and the library manages the lifecycle and timing.
 
 ```ts
-import { when, each, match, stagger } from "@jonlaing/effect-ui"
+import { when, each, match, stagger } from "@jonlaing/effect-ui";
 
 // Simple enter/exit animations
 when(
   isVisible,
   () => Modal(),
   () => $.span(),
-  { animate: { enter: "fade-in", exit: "fade-out" } }
-)
+  { animate: { enter: "fade-in", exit: "fade-out" } },
+);
 
 // With initial and final state classes (great for Tailwind)
 when(
@@ -754,9 +783,9 @@ when(
       enterFrom: "opacity-0 scale-95",
       enterTo: "opacity-100 scale-100",
       exit: "fade-out",
-    }
-  }
-)
+    },
+  },
+);
 
 // Staggered list animations
 each(
@@ -767,10 +796,10 @@ each(
     animate: {
       enter: "slide-in",
       exit: "slide-out",
-      stagger: stagger(50),  // 50ms between items
-    }
-  }
-)
+      stagger: stagger(50), // 50ms between items
+    },
+  },
+);
 
 // Route transitions with match
 match(
@@ -780,21 +809,21 @@ match(
     { pattern: "about", render: () => AboutPage() },
   ],
   () => NotFound(),
-  { animate: { enter: "fade-in", exit: "fade-out" } }
-)
+  { animate: { enter: "fade-in", exit: "fade-out" } },
+);
 ```
 
 **Animation Options:**
 
 ```ts
 interface AnimationOptions {
-  enter?: string;           // CSS class(es) for enter animation
-  exit?: string;            // CSS class(es) for exit animation
-  enterFrom?: string;       // Initial state class (removed after animation)
-  enterTo?: string;         // Final state class (persisted)
-  exitTo?: string;          // Exit target state class
-  timeout?: number;         // Max wait time in ms (default: 5000)
-  respectReducedMotion?: boolean;  // Skip animations if user prefers (default: true)
+  enter?: string; // CSS class(es) for enter animation
+  exit?: string; // CSS class(es) for exit animation
+  enterFrom?: string; // Initial state class (removed after animation)
+  enterTo?: string; // Final state class (persisted)
+  exitTo?: string; // Exit target state class
+  timeout?: number; // Max wait time in ms (default: 5000)
+  respectReducedMotion?: boolean; // Skip animations if user prefers (default: true)
 
   // Lifecycle hooks
   onBeforeEnter?: (el: HTMLElement) => Effect<void> | void;
@@ -807,48 +836,67 @@ interface AnimationOptions {
 **Stagger Utilities:**
 
 ```ts
-import { stagger, staggerFromCenter, staggerEased } from "@jonlaing/effect-ui"
+import { stagger, staggerFromCenter, staggerEased } from "@jonlaing/effect-ui";
 
-stagger(50)                 // Linear: 0ms, 50ms, 100ms...
-staggerFromCenter(30)       // Center-out: middle items animate first
-staggerEased(500, easeOut)  // Apply easing curve to stagger timing
+stagger(50); // Linear: 0ms, 50ms, 100ms...
+staggerFromCenter(30); // Center-out: middle items animate first
+staggerEased(500, easeOut); // Apply easing curve to stagger timing
 ```
 
 **Timing Utilities:**
 
 ```ts
-import { delay, sequence, parallel } from "@jonlaing/effect-ui"
+import { delay, sequence, parallel } from "@jonlaing/effect-ui";
 
 // Delay before animation
-yield* delay(200, runEnterAnimation(element, options))
+yield * delay(200, runEnterAnimation(element, options));
 
 // Run animations sequentially
-yield* sequence(exitAnimation, enterAnimation)
+yield * sequence(exitAnimation, enterAnimation);
 
 // Run animations in parallel
-yield* parallel(anim1, anim2, anim3)
+yield * parallel(anim1, anim2, anim3);
 ```
 
 Example CSS for animations:
 
 ```css
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slide-in {
-  from { opacity: 0; transform: translateX(-20px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-.fade-in { animation: fade-in 0.3s ease-out forwards; }
-.fade-out { animation: fade-in 0.2s ease-in reverse forwards; }
-.slide-in { animation: slide-in 0.3s ease-out forwards; }
-.slide-out { animation: slide-in 0.2s ease-in reverse forwards; }
+.fade-in {
+  animation: fade-in 0.3s ease-out forwards;
+}
+.fade-out {
+  animation: fade-in 0.2s ease-in reverse forwards;
+}
+.slide-in {
+  animation: slide-in 0.3s ease-out forwards;
+}
+.slide-out {
+  animation: slide-in 0.2s ease-in reverse forwards;
+}
 ```
 
 Animation features:
+
 - **CSS-first**: Uses CSS classes for animations - works with any CSS framework
 - **Event-based timing**: Listens for `animationend`/`transitionend` to know when exit animations complete
 - **Reduced motion**: Respects `prefers-reduced-motion` by default
@@ -860,23 +908,18 @@ Animation features:
 Portals render children into a different DOM node, outside the normal component hierarchy. This is useful for modals, dropdowns, and tooltips that need to escape parent `overflow: hidden` or `z-index` stacking contexts.
 
 ```ts
-import { Portal, $ } from "@jonlaing/effect-ui"
+import { Portal, $ } from "@jonlaing/effect-ui";
 
 // Render to document.body (default)
-Portal(() => Modal({ title: "Hello" }))
+Portal(() => Modal({ title: "Hello" }));
 
 // Render to a specific element by selector
 Portal({ target: "#modal-root" }, () =>
-  $.div({ class: "dropdown" }, [
-    $.button("Option 1"),
-    $.button("Option 2"),
-  ])
-)
+  $.div({ class: "dropdown" }, [$.button("Option 1"), $.button("Option 2")]),
+);
 
 // Render to an element reference
-Portal({ target: containerElement }, () =>
-  Tooltip({ content: "Help text" })
-)
+Portal({ target: containerElement }, () => Tooltip({ content: "Help text" }));
 ```
 
 Portal returns a hidden placeholder element in the original DOM position while the actual content lives in the portal target. When the component unmounts (scope closes), the portal content is automatically cleaned up.
@@ -885,34 +928,40 @@ Portal returns a hidden placeholder element in the original DOM position while t
 
 ```ts
 interface PortalOptions {
-  target?: HTMLElement | string;  // Default: document.body
+  target?: HTMLElement | string; // Default: document.body
 }
 ```
 
 **Example: Modal with Portal**
 
 ```ts
-const Modal = component("Modal", (props: {
-  isOpen: Readable<boolean>
-  onClose: () => void
-  children: () => Element
-}) =>
-  when(
-    props.isOpen,
-    () => Portal(() =>
-      $.div({ class: "modal-overlay", onClick: props.onClose }, [
-        $.div({
-          class: "modal-content",
-          onClick: (e) => e.stopPropagation()  // Prevent closing when clicking content
-        }, [
-          $.button({ class: "close", onClick: props.onClose }, "×"),
-          props.children(),
-        ]),
-      ])
+const Modal = component(
+  "Modal",
+  (props: {
+    isOpen: Readable<boolean>;
+    onClose: () => void;
+    children: () => Element;
+  }) =>
+    when(
+      props.isOpen,
+      () =>
+        Portal(() =>
+          $.div({ class: "modal-overlay", onClick: props.onClose }, [
+            $.div(
+              {
+                class: "modal-content",
+                onClick: (e) => e.stopPropagation(), // Prevent closing when clicking content
+              },
+              [
+                $.button({ class: "close", onClick: props.onClose }, "×"),
+                props.children(),
+              ],
+            ),
+          ]),
+        ),
+      () => $.span(),
     ),
-    () => $.span()
-  )
-)
+);
 ```
 
 ## Why No JSX?

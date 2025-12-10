@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / SignalType
 
@@ -36,7 +36,7 @@ Stream of value changes (does not include current value)
 
 [`Readable`](Readable.md).[`changes`](Readable.md#changes)
 
-***
+---
 
 ### get
 
@@ -50,7 +50,7 @@ Get the current value
 
 [`Readable`](Readable.md).[`get`](Readable.md#get)
 
-***
+---
 
 ### map()
 
@@ -80,7 +80,7 @@ Transform the readable value
 
 [`Readable`](Readable.md).[`map`](Readable.md#map)
 
-***
+---
 
 ### set()
 
@@ -100,7 +100,7 @@ Set the signal to a new value
 
 `Effect`\<`void`\>
 
-***
+---
 
 ### update()
 
@@ -120,7 +120,7 @@ Update the signal value using a function
 
 `Effect`\<`void`\>
 
-***
+---
 
 ### values
 

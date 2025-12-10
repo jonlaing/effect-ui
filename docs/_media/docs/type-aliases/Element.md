@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / Element
 
@@ -29,17 +29,17 @@ The requirements/context type (defaults to never for no requirements)
 ## Example
 
 ```ts
-const myButton: Element = button({ className: "primary" }, ["Click me"])
+const myButton: Element = button({ className: "primary" }, ["Click me"]);
 
 // Component that can fail
 const UserProfile: Element<UserNotFoundError> = Effect.gen(function* () {
-  const user = yield* fetchUser(userId)
-  return yield* div([user.name])
-})
+  const user = yield* fetchUser(userId);
+  return yield* div([user.name]);
+});
 
 // Component with requirements
 const NavLink: Element<never, RouterContext> = Effect.gen(function* () {
-  const router = yield* RouterContext
-  return yield* button({ onClick: () => router.push("/") }, "Home")
-})
+  const router = yield* RouterContext;
+  return yield* button({ onClick: () => router.push("/") }, "Home");
+});
 ```

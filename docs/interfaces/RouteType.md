@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / RouteType
 
@@ -14,13 +14,13 @@ A route definition with typed parameters.
 
 ### Path
 
-`Path` *extends* `string` = `string`
+`Path` _extends_ `string` = `string`
 
 The path pattern literal type
 
 ### P
 
-`P` *extends* `Schema.Schema.AnyNoContext` = `Schema.Schema.AnyNoContext`
+`P` _extends_ `Schema.Schema.AnyNoContext` = `Schema.Schema.AnyNoContext`
 
 The params schema type
 
@@ -44,7 +44,7 @@ Match a pathname against this route, returning params if matched
 
 `Effect`\<`Type`\<`P`\> \| `Record`\<`string`, `never`\>, [`RouteMatchErrorType`](../type-aliases/RouteMatchErrorType.md)\>
 
-***
+---
 
 ### paramsSchema
 
@@ -54,7 +54,7 @@ Defined in: [src/router/types.ts:36](https://github.com/jonlaing/effect-ui/blob/
 
 Schema for params validation
 
-***
+---
 
 ### path
 
@@ -64,7 +64,7 @@ Defined in: [src/router/types.ts:32](https://github.com/jonlaing/effect-ui/blob/
 
 The original path pattern
 
-***
+---
 
 ### segments
 

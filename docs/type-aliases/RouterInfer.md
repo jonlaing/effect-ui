@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / RouterInfer
 
@@ -17,18 +17,20 @@ Use this to create typed router contexts.
 
 ### Routes
 
-`Routes` *extends* `Record`\<`string`, [`RouteType`](../interfaces/RouteType.md)\<`string`, `Schema.Schema.AnyNoContext`\>\>
+`Routes` _extends_ `Record`\<`string`, [`RouteType`](../interfaces/RouteType.md)\<`string`, `Schema.Schema.AnyNoContext`\>\>
 
 ## Example
 
 ```ts
 const routes = {
   home: Route.make("/"),
-  user: Route.make("/users/:id", { params: Schema.Struct({ id: Schema.String }) }),
-}
+  user: Route.make("/users/:id", {
+    params: Schema.Struct({ id: Schema.String }),
+  }),
+};
 
 // Infer the router type
-type AppRouter = Router.Infer<typeof routes>
+type AppRouter = Router.Infer<typeof routes>;
 
 // Create a typed context for your app
 class AppRouterContext extends Context.Tag("AppRouterContext")<
@@ -37,7 +39,7 @@ class AppRouterContext extends Context.Tag("AppRouterContext")<
 >() {}
 
 // Now you can yield the typed router from context
-const router = yield* AppRouterContext
-router.currentRoute // Readable<"home" | "user" | null>
-router.routes.user.params // Readable<{ id: string } | null>
+const router = yield * AppRouterContext;
+router.currentRoute; // Readable<"home" | "user" | null>
+router.routes.user.params; // Readable<{ id: string } | null>
 ```

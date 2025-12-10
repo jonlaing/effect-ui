@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / BaseRouter
 
@@ -25,7 +25,7 @@ Go back in history
 
 `Effect`\<`void`\>
 
-***
+---
 
 ### forward()
 
@@ -39,7 +39,7 @@ Go forward in history
 
 `Effect`\<`void`\>
 
-***
+---
 
 ### pathname
 
@@ -49,7 +49,7 @@ Defined in: [src/router/types.ts:143](https://github.com/jonlaing/effect-ui/blob
 
 The current pathname
 
-***
+---
 
 ### push()
 
@@ -73,7 +73,7 @@ Navigate to a path
 
 `Effect`\<`void`\>
 
-***
+---
 
 ### replace()
 
@@ -93,7 +93,7 @@ Replace current path
 
 `Effect`\<`void`\>
 
-***
+---
 
 ### searchParams
 

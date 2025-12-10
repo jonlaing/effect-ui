@@ -1,6 +1,6 @@
 [**@jonlaing/effect-ui**](../README.md)
 
-***
+---
 
 [@jonlaing/effect-ui](../globals.md) / EventAttributes
 
@@ -18,7 +18,7 @@ Common DOM event handler attributes.
 
 Defined in: [src/dom/Element/types.ts:127](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L127)
 
-***
+---
 
 ### onChange?
 
@@ -26,7 +26,7 @@ Defined in: [src/dom/Element/types.ts:127](https://github.com/jonlaing/effect-ui
 
 Defined in: [src/dom/Element/types.ts:122](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L122)
 
-***
+---
 
 ### onClick?
 
@@ -34,7 +34,7 @@ Defined in: [src/dom/Element/types.ts:122](https://github.com/jonlaing/effect-ui
 
 Defined in: [src/dom/Element/types.ts:120](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L120)
 
-***
+---
 
 ### onFocus?
 
@@ -42,7 +42,7 @@ Defined in: [src/dom/Element/types.ts:120](https://github.com/jonlaing/effect-ui
 
 Defined in: [src/dom/Element/types.ts:126](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L126)
 
-***
+---
 
 ### onInput?
 
@@ -50,7 +50,7 @@ Defined in: [src/dom/Element/types.ts:126](https://github.com/jonlaing/effect-ui
 
 Defined in: [src/dom/Element/types.ts:121](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L121)
 
-***
+---
 
 ### onKeyDown?
 
@@ -58,7 +58,7 @@ Defined in: [src/dom/Element/types.ts:121](https://github.com/jonlaing/effect-ui
 
 Defined in: [src/dom/Element/types.ts:124](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L124)
 
-***
+---
 
 ### onKeyUp?
 
@@ -66,7 +66,7 @@ Defined in: [src/dom/Element/types.ts:124](https://github.com/jonlaing/effect-ui
 
 Defined in: [src/dom/Element/types.ts:125](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L125)
 
-***
+---
 
 ### onMouseEnter?
 
@@ -74,7 +74,7 @@ Defined in: [src/dom/Element/types.ts:125](https://github.com/jonlaing/effect-ui
 
 Defined in: [src/dom/Element/types.ts:128](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L128)
 
-***
+---
 
 ### onMouseLeave?
 
@@ -82,7 +82,7 @@ Defined in: [src/dom/Element/types.ts:128](https://github.com/jonlaing/effect-ui
 
 Defined in: [src/dom/Element/types.ts:129](https://github.com/jonlaing/effect-ui/blob/5dcbd96e71866aa767e66bbf641843f4b888e1d7/src/dom/Element/types.ts#L129)
 
-***
+---
 
 ### onSubmit?
 
