@@ -12,7 +12,6 @@ export {
 export {
   RouterContext,
   Link,
-  useRouter,
   makeRouterLayer,
   makeTypedRouterLayer,
   setRouter,

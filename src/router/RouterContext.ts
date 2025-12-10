@@ -136,31 +136,6 @@ export const Link = component("Link", (props: LinkProps, children?) =>
   }),
 );
 
-/**
- * Get the router from context.
- * Use this inside Effect.gen to access router methods.
- *
- * @example
- * ```ts
- * const MyComponent = component("MyComponent", () =>
- *   Effect.gen(function* () {
- *     const router = yield* useRouter
- *
- *     const handleSubmit = () =>
- *       Effect.gen(function* () {
- *         yield* saveData()
- *         yield* router.push("/success")
- *       })
- *
- *     return yield* button({ onClick: handleSubmit }, "Submit")
- *   })
- * )
- * // Type: Component<"MyComponent", object, never, RouterContext>
- * ```
- */
-export const useRouter: Effect.Effect<BaseRouter, never, RouterContext> =
-  RouterContext;
-
 // Legacy global router support for backwards compatibility during migration
 // These can be removed once all code is migrated to use RouterContext
 

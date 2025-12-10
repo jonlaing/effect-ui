@@ -13,7 +13,7 @@ export const prefersReducedMotion = (): boolean =>
 /**
  * Parse space-separated class string into array
  */
-export const parseClasses = (classes: string): string[] =>
+const parseClasses = (classes: string): string[] =>
   classes
     .split(/\s+/)
     .map((c) => c.trim())

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { Effect, Stream } from "effect";
 import {
   Link,
-  useRouter,
+  RouterContext,
   setRouter,
   clearRouter,
   getRouter,
@@ -59,13 +59,13 @@ describe("RouterContext", () => {
     });
   });
 
-  describe("useRouter with RouterContext", () => {
+  describe("RouterContext", () => {
     it("should return router when provided via layer", async () => {
       const router = createMockRouter();
       const layer = makeRouterLayer(router);
 
       const result = await Effect.runPromise(
-        useRouter.pipe(Effect.provide(layer)),
+        RouterContext.pipe(Effect.provide(layer)),
       );
       expect(result).toBe(router);
     });

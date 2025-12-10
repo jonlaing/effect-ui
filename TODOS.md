@@ -63,6 +63,7 @@
   - [x] RouterContext and typed router layers
   - [x] Link component
   - [ ] V2: Nested routes, hash routing, route guards, query param schemas
+  - [ ] V3: File-based routing (Vite plugin, `src/routes/` convention, auto-generated types)
 
 - [ ] **Documentation site** - Full documentation with examples (TypeDoc is set up)
 

@@ -122,7 +122,6 @@ export {
   // RouterContext and Link
   RouterContext,
   Link,
-  useRouter,
   makeRouterLayer,
   makeTypedRouterLayer,
   setRouter,
