@@ -11,8 +11,8 @@
   - [x] Control.ts (when, match, each, ErrorBoundary, Suspense)
   - [x] Component.ts
   - [x] Mount.ts
-  - [ ] Ref.ts
-  - [ ] Template.ts
+  - [x] Ref.ts
+  - [x] Template.ts
 
 ## Medium Priority
 
@@ -35,7 +35,14 @@
 
 - [ ] **Animation primitives** - Built-in support for transitions and animations
 
-- [ ] **Form handling utilities** - Validation, form state management
+- [x] **Form handling utilities** - Validation, form state management (see Design Decisions below)
+  - [x] Schema-based validation with Effect Schema
+  - [x] Field-level state (value, errors, touched, dirty)
+  - [x] Validation timing (hybrid, blur, change, submit)
+  - [x] Form-level state (isValid, isSubmitting, errors)
+  - [x] Async validators support
+  - [x] Array/dynamic fields (FieldArray)
+  - [x] README documentation
 
 - [x] **Router V1** - Basic routing system implemented (see Design Decisions below)
   - [x] Flat routes with path params
