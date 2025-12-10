@@ -50,6 +50,29 @@ export {
 export { when, match, each, ErrorBoundary, Suspense } from "./Control";
 export type { MatchCase, SuspenseOptions } from "./Control";
 
+// Animation
+export type {
+  AnimationEndResult,
+  AnimationHook,
+  AnimationOptions,
+  ControlAnimationOptions,
+  ListAnimationOptions,
+  ListControlAnimationOptions,
+  StaggerFunction,
+} from "./Animation/index.js";
+export {
+  runEnterAnimation,
+  runExitAnimation,
+  prefersReducedMotion,
+  stagger,
+  staggerFromCenter,
+  staggerEased,
+  delay,
+  sequence,
+  parallel,
+  calculateStaggerDelay,
+} from "./Animation/index.js";
+
 // Components
 export type { Component, Children } from "./Component";
 export { component } from "./Component";

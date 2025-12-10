@@ -384,6 +384,132 @@ Form features:
 - **Form state**: Access `isValid`, `isSubmitting`, `isTouched`, `isDirty`, and aggregated `errors`
 - **Actions**: `submit()`, `reset()`, `setErrors()`, `validate()`, `getValues()`
 
+### Animation
+
+Effect UI provides CSS-based animation primitives for `when`, `match`, and `each` components. Animations are CSS-first - you provide class names, and the library manages the lifecycle and timing.
+
+```ts
+import { when, each, match, stagger } from "@jonlaing/effect-ui"
+
+// Simple enter/exit animations
+when(
+  isVisible,
+  () => Modal(),
+  () => $.span(),
+  { animate: { enter: "fade-in", exit: "fade-out" } }
+)
+
+// With initial and final state classes (great for Tailwind)
+when(
+  isOpen,
+  () => Dropdown(),
+  () => $.span(),
+  {
+    animate: {
+      enterFrom: "opacity-0 scale-95",
+      enterTo: "opacity-100 scale-100",
+      exit: "fade-out",
+    }
+  }
+)
+
+// Staggered list animations
+each(
+  items,
+  (item) => item.id,
+  (item) => ListItem(item),
+  {
+    animate: {
+      enter: "slide-in",
+      exit: "slide-out",
+      stagger: stagger(50),  // 50ms between items
+    }
+  }
+)
+
+// Route transitions with match
+match(
+  router.currentRoute,
+  [
+    { pattern: "home", render: () => HomePage() },
+    { pattern: "about", render: () => AboutPage() },
+  ],
+  () => NotFound(),
+  { animate: { enter: "fade-in", exit: "fade-out" } }
+)
+```
+
+**Animation Options:**
+
+```ts
+interface AnimationOptions {
+  enter?: string;           // CSS class(es) for enter animation
+  exit?: string;            // CSS class(es) for exit animation
+  enterFrom?: string;       // Initial state class (removed after animation)
+  enterTo?: string;         // Final state class (persisted)
+  exitTo?: string;          // Exit target state class
+  timeout?: number;         // Max wait time in ms (default: 5000)
+  respectReducedMotion?: boolean;  // Skip animations if user prefers (default: true)
+
+  // Lifecycle hooks
+  onBeforeEnter?: (el: HTMLElement) => Effect<void> | void;
+  onEnter?: (el: HTMLElement) => Effect<void> | void;
+  onBeforeExit?: (el: HTMLElement) => Effect<void> | void;
+  onExit?: (el: HTMLElement) => Effect<void> | void;
+}
+```
+
+**Stagger Utilities:**
+
+```ts
+import { stagger, staggerFromCenter, staggerEased } from "@jonlaing/effect-ui"
+
+stagger(50)                 // Linear: 0ms, 50ms, 100ms...
+staggerFromCenter(30)       // Center-out: middle items animate first
+staggerEased(500, easeOut)  // Apply easing curve to stagger timing
+```
+
+**Timing Utilities:**
+
+```ts
+import { delay, sequence, parallel } from "@jonlaing/effect-ui"
+
+// Delay before animation
+yield* delay(200, runEnterAnimation(element, options))
+
+// Run animations sequentially
+yield* sequence(exitAnimation, enterAnimation)
+
+// Run animations in parallel
+yield* parallel(anim1, anim2, anim3)
+```
+
+Example CSS for animations:
+
+```css
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.fade-in { animation: fade-in 0.3s ease-out forwards; }
+.fade-out { animation: fade-in 0.2s ease-in reverse forwards; }
+.slide-in { animation: slide-in 0.3s ease-out forwards; }
+.slide-out { animation: slide-in 0.2s ease-in reverse forwards; }
+```
+
+Animation features:
+- **CSS-first**: Uses CSS classes for animations - works with any CSS framework
+- **Event-based timing**: Listens for `animationend`/`transitionend` to know when exit animations complete
+- **Reduced motion**: Respects `prefers-reduced-motion` by default
+- **Backward compatible**: Animation options are optional - existing code works unchanged
+- **Lifecycle hooks**: Run code before/after animations (e.g., focus an element after enter)
+
 ## Why No JSX?
 
 Effect UI uses function calls instead of JSX. This is a deliberate design choice:

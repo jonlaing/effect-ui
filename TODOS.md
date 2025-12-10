@@ -2,17 +2,22 @@
 
 ## High Priority
 
-- [x] **Unit Tests for Everything** - Comprehensive test coverage
+- [ ] **Unit Tests for Everything** - Comprehensive test coverage
   - [x] Signal.ts
-  - [x] Derived/
+  - [x] Derived/Derived.ts
+  - [ ] Derived/helpers.ts
   - [x] Readable.ts
   - [x] Reaction.ts
-  - [x] Element/
+  - [x] Element/Element.ts
+  - [ ] Element/helpers.ts
   - [x] Control.ts (when, match, each, ErrorBoundary, Suspense)
   - [x] Component.ts
   - [x] Mount.ts
   - [x] Ref.ts
   - [x] Template.ts
+  - [x] Form.ts
+  - [ ] Field.ts
+  - [ ] form/helpers.ts
 
 ## Medium Priority
 
@@ -33,7 +38,13 @@
 
 - [ ] **DevTools** - Browser extension or integration for debugging reactive state
 
-- [ ] **Animation primitives** - Built-in support for transitions and animations
+- [x] **Animation primitives** - Built-in support for transitions and animations (see Design Decisions below)
+  - [x] CSS-first enter/exit animations
+  - [x] Animation options for `when`, `match`, `each`
+  - [x] Stagger utilities (stagger, staggerFromCenter, staggerEased)
+  - [x] Timing utilities (delay, sequence, parallel)
+  - [x] Lifecycle hooks (onBeforeEnter, onEnter, onBeforeExit, onExit)
+  - [x] Reduced motion support (respects prefers-reduced-motion)
 
 - [x] **Form handling utilities** - Validation, form state management (see Design Decisions below)
   - [x] Schema-based validation with Effect Schema
@@ -232,50 +243,95 @@ form.fields.phoneNumbers.items // Readable<FieldArray<string>>
 
 ### Animation
 
-**Approach:** Simple built-in primitives, extensible for advanced libraries
+**Approach:** CSS-first with event-based timing, extensible for advanced libraries
 
 **Core (built-in):**
-- CSS-first transitions - className/style changes just work
-- Basic enter/exit lifecycle for `each()` and `when()`
-- Simple timing utilities - stagger, delay, sequence
+- CSS-first transitions - provide class names, library manages lifecycle
+- Event-based exit timing - listens for `animationend`/`transitionend` with timeout fallback
+- Enter/exit lifecycle for `when()`, `match()`, and `each()`
+- Stagger utilities for list animations
+- Respects `prefers-reduced-motion` by default
 
 ```ts
-// Built-in: simple and declarative
-each(items, keyFn, render, {
-  enter: "fade-in",
-  exit: "fade-out",
+// Simple fade
+when(isVisible, () => Content(), () => div(), {
+  animate: { enter: "fade-in", exit: "fade-out" }
 })
 
-when(isOpen,
-  () => Modal({}),
-  () => span(),
-  { enter: "slide-up", exit: "slide-down" }
-)
+// With initial/final state classes (great for Tailwind)
+when(isOpen, () => Modal(), () => div(), {
+  animate: {
+    enterFrom: "opacity-0 scale-95",
+    enterTo: "opacity-100 scale-100",
+    exit: "fade-out"
+  }
+})
+
+// Staggered list animations
+each(items, keyFn, render, {
+  animate: {
+    enter: "slide-in",
+    exit: "slide-out",
+    stagger: 50  // 50ms between items
+  }
+})
+
+// Custom stagger functions
+each(items, keyFn, render, {
+  animate: {
+    enter: "scale-in",
+    stagger: staggerFromCenter(30)  // Animate from center outward
+  }
+})
+
+// With lifecycle hooks
+match(status, cases, undefined, {
+  animate: {
+    enter: "fade-in",
+    exit: "fade-out",
+    onEnter: (el) => Effect.sync(() => el.focus())
+  }
+})
 ```
 
-**Extension points for libraries:**
-- Animation Effect type - `Effect<void>` that resolves when animation completes
-- Element lifecycle hooks - `onBeforeEnter`, `onEnter`, `onBeforeExit`, `onExit`
-- Access to underlying DOM for direct element manipulation
-
+**Animation Options:**
 ```ts
-// Third-party library (e.g., "effect-ui-motion")
-import { spring, Motion } from "effect-ui-motion"
+interface AnimationOptions {
+  enter?: string;           // Class(es) for enter animation
+  exit?: string;            // Class(es) for exit animation
+  enterFrom?: string;       // Initial state class (removed after animation)
+  enterTo?: string;         // Final state class (persisted)
+  exitTo?: string;          // Exit target state class
+  timeout?: number;         // Max wait time (default: 5000ms)
+  respectReducedMotion?: boolean;  // Default: true
 
-const scale = yield* Signal.make(1)
-const animatedScale = yield* spring(scale, { stiffness: 300, damping: 30 })
+  // Lifecycle hooks
+  onBeforeEnter?: (el: HTMLElement) => Effect<void> | void;
+  onEnter?: (el: HTMLElement) => Effect<void> | void;
+  onBeforeExit?: (el: HTMLElement) => Effect<void> | void;
+  onExit?: (el: HTMLElement) => Effect<void> | void;
+}
+```
 
-// Or take full control of enter/exit
-each(items, keyFn, render, {
-  enter: Motion.staggeredFadeIn({ delay: 50 }),
-  exit: Motion.collapse({ duration: 300 }),
-})
+**Stagger Utilities:**
+```ts
+stagger(50)                 // Linear: 0ms, 50ms, 100ms...
+staggerFromCenter(30)       // Center-out: middle items first
+staggerEased(500, easeOut)  // Apply easing curve to delays
+```
+
+**Timing Utilities:**
+```ts
+delay(ms, effect)           // Add delay before animation
+sequence(...effects)        // Run animations sequentially
+parallel(...effects)        // Run animations concurrently
 ```
 
 **Why this approach:**
 - Core stays lean, covers 80% of use cases
 - CSS handles performance (GPU-accelerated)
-- Exit animations work naturally with Effect (wait for Effect to complete before DOM removal)
+- Exit animations wait for completion before DOM removal
+- Backward compatible - animation options are optional
 - Enables ecosystem libraries like "effect-ui-framer" or "effect-ui-motion-one"
 
 ### Element Error Channel

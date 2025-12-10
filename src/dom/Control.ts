@@ -2,6 +2,16 @@ import { Duration, Effect, Scope, Stream } from "effect";
 import type { Readable } from "@core/Readable";
 import { map as mapReadable } from "@core/Readable";
 import type { Element } from "./Element";
+import type {
+  ControlAnimationOptions,
+  ListAnimationOptions,
+  ListControlAnimationOptions,
+} from "./Animation/index.js";
+import {
+  runEnterAnimation,
+  runExitAnimation,
+  calculateStaggerDelay,
+} from "./Animation/index.js";
 
 /**
  * Catches errors from a render function and displays a fallback element.
@@ -343,6 +353,7 @@ const suspenseWithDelayAndCatch = <E, R1 = never, EF = never>(
  * @param condition - Reactive boolean value
  * @param onTrue - Element to render when true
  * @param onFalse - Element to render when false
+ * @param options - Optional animation configuration
  *
  * @example
  * ```ts
@@ -353,11 +364,23 @@ const suspenseWithDelayAndCatch = <E, R1 = never, EF = never>(
  *   () => div(["Please log in"])
  * )
  * ```
+ *
+ * @example
+ * ```ts
+ * // With animations
+ * when(
+ *   isVisible,
+ *   () => Modal(),
+ *   () => div(),
+ *   { animate: { enter: "fade-in", exit: "fade-out" } }
+ * )
+ * ```
  */
 export const when = <E1 = never, R1 = never, E2 = never, R2 = never>(
   condition: Readable<boolean>,
   onTrue: () => Element<E1, R1>,
   onFalse: () => Element<E2, R2>,
+  options?: ControlAnimationOptions,
 ): Element<E1 | E2, R1 | R2> =>
   Effect.gen(function* () {
     const scope = yield* Effect.scope;
@@ -366,32 +389,47 @@ export const when = <E1 = never, R1 = never, E2 = never, R2 = never>(
 
     let currentElement: HTMLElement | null = null;
     let currentValue: boolean | null = null;
+    const animate = options?.animate;
 
     const render = (
       value: boolean,
+      isInitial: boolean = false,
     ): Effect.Effect<void, E1 | E2, Scope.Scope | R1 | R2> =>
       Effect.gen(function* () {
         if (value === currentValue) return;
 
+        const previousElement = currentElement;
         currentValue = value;
+
         const element = value ? onTrue() : onFalse();
         const newElement = yield* element;
 
-        if (currentElement) {
-          container.replaceChild(newElement, currentElement);
+        // Run exit animation on previous element (skip on initial render)
+        if (animate && previousElement && !isInitial) {
+          yield* runExitAnimation(previousElement, animate);
+        }
+
+        // DOM mutation
+        if (previousElement) {
+          container.replaceChild(newElement, previousElement);
         } else {
           container.appendChild(newElement);
         }
         currentElement = newElement;
+
+        // Run enter animation on new element (skip on initial render)
+        if (animate && !isInitial) {
+          yield* runEnterAnimation(newElement, animate);
+        }
       });
 
-    // Render initial value synchronously
+    // Render initial value synchronously (no animations)
     const initialValue = yield* condition.get;
-    yield* render(initialValue);
+    yield* render(initialValue, true);
 
-    // Then subscribe to future changes
+    // Then subscribe to future changes (with animations)
     yield* condition.changes.pipe(
-      Stream.runForEach((value) => Effect.scoped(render(value))),
+      Stream.runForEach((value) => Effect.scoped(render(value, false))),
       Effect.forkIn(scope),
     );
 
@@ -414,6 +452,7 @@ export interface MatchCase<A, E = never, R = never> {
  * @param value - Reactive value to match against
  * @param cases - Array of pattern-render pairs
  * @param fallback - Optional fallback if no pattern matches
+ * @param options - Optional animation configuration
  *
  * @example
  * ```ts
@@ -426,6 +465,16 @@ export interface MatchCase<A, E = never, R = never> {
  *   { pattern: "success", render: () => div("Done!") },
  *   { pattern: "error", render: () => div("Failed") },
  * ])
+ * ```
+ *
+ * @example
+ * ```ts
+ * // With animations
+ * match(status, [
+ *   { pattern: "loading", render: () => Spinner() },
+ *   { pattern: "success", render: () => SuccessMessage() },
+ *   { pattern: "error", render: () => ErrorMessage() },
+ * ], undefined, { animate: { enter: "fade-in", exit: "fade-out" } })
  * ```
  *
  * @example
@@ -457,6 +506,7 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
   value: Readable<A>,
   cases: readonly MatchCase<A, E, R>[],
   fallback?: () => Element<E2, R2>,
+  options?: ControlAnimationOptions,
 ): Element<E | E2, R | R2> =>
   Effect.gen(function* () {
     const scope = yield* Effect.scope;
@@ -465,21 +515,39 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
 
     let currentElement: HTMLElement | null = null;
     let currentPattern: A | null = null;
+    const animate = options?.animate;
 
-    const replaceElement = (newElement: HTMLElement) => {
-      if (currentElement) {
-        container.replaceChild(newElement, currentElement);
-      } else {
-        container.appendChild(newElement);
-      }
-      currentElement = newElement;
-    };
+    const replaceElement = (
+      newElement: HTMLElement,
+      previousElement: HTMLElement | null,
+      isInitial: boolean,
+    ): Effect.Effect<void> =>
+      Effect.gen(function* () {
+        // Run exit animation on previous element (skip on initial render)
+        if (animate && previousElement && !isInitial) {
+          yield* runExitAnimation(previousElement, animate);
+        }
+
+        // DOM mutation
+        if (previousElement) {
+          container.replaceChild(newElement, previousElement);
+        } else {
+          container.appendChild(newElement);
+        }
+
+        // Run enter animation on new element (skip on initial render)
+        if (animate && !isInitial) {
+          yield* runEnterAnimation(newElement, animate);
+        }
+      });
 
     const render = (
       val: A,
+      isInitial: boolean = false,
     ): Effect.Effect<void, E | E2, Scope.Scope | R | R2> =>
       Effect.gen(function* () {
         if (val === currentPattern) return;
+        const previousElement = currentElement;
         currentPattern = val;
 
         const matchedCase = cases.find((c) => c.pattern === val);
@@ -487,22 +555,24 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
         if (!matchedCase) {
           if (fallback) {
             const newElement = yield* fallback();
-            replaceElement(newElement);
+            yield* replaceElement(newElement, previousElement, isInitial);
+            currentElement = newElement;
           }
           return;
         }
 
         const newElement = yield* matchedCase.render();
-        replaceElement(newElement);
+        yield* replaceElement(newElement, previousElement, isInitial);
+        currentElement = newElement;
       });
 
-    // Render initial value
+    // Render initial value (no animations)
     const initialValue = yield* value.get;
-    yield* render(initialValue);
+    yield* render(initialValue, true);
 
-    // Then subscribe to future changes
+    // Then subscribe to future changes (with animations)
     yield* value.changes.pipe(
-      Stream.runForEach((val) => Effect.scoped(render(val))),
+      Stream.runForEach((val) => Effect.scoped(render(val, false))),
       Effect.forkIn(scope),
     );
 
@@ -514,6 +584,7 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
  * @param items - Reactive array of items
  * @param keyFn - Function to extract a unique key from each item
  * @param render - Function to render each item (receives a Readable for the item)
+ * @param options - Optional animation configuration
  *
  * @example
  * ```ts
@@ -526,16 +597,35 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
  *   (todo) => li([todo.map(t => t.text)])
  * )
  * ```
+ *
+ * @example
+ * ```ts
+ * // With staggered animations
+ * each(
+ *   items,
+ *   (item) => item.id,
+ *   (item) => ListItem(item),
+ *   {
+ *     animate: {
+ *       enter: "slide-in",
+ *       exit: "slide-out",
+ *       stagger: 50  // 50ms between items
+ *     }
+ *   }
+ * )
+ * ```
  */
 export const each = <A, E = never, R = never>(
   items: Readable<readonly A[]>,
   keyFn: (item: A) => string,
   render: (item: Readable<A>) => Element<E, R>,
+  options?: ListControlAnimationOptions,
 ): Element<E, R> =>
   Effect.gen(function* () {
     const scope = yield* Effect.scope;
     const container = document.createElement("div");
     container.style.display = "contents";
+    const animate = options?.animate;
 
     const itemMap = new Map<
       string,
@@ -553,16 +643,50 @@ export const each = <A, E = never, R = never>(
 
     const updateList = (
       newItems: readonly A[],
+      isInitial: boolean = false,
     ): Effect.Effect<void, E, Scope.Scope | R> =>
       Effect.gen(function* () {
         const newKeys = new Set(newItems.map(keyFn));
 
+        // Collect items to remove
+        const removals: { key: string; element: HTMLElement }[] = [];
         for (const [key, entry] of itemMap) {
           if (!newKeys.has(key)) {
-            container.removeChild(entry.element);
-            itemMap.delete(key);
+            removals.push({ key, element: entry.element });
           }
         }
+
+        // Run exit animations with stagger (skip on initial render)
+        if (animate && removals.length > 0 && !isInitial) {
+          const stagger = (animate as ListAnimationOptions).stagger;
+          yield* Effect.all(
+            removals.map(({ element }, index) =>
+              Effect.gen(function* () {
+                const delayMs = calculateStaggerDelay(
+                  stagger,
+                  index,
+                  removals.length,
+                );
+                if (delayMs > 0) {
+                  yield* Effect.sleep(delayMs);
+                }
+                yield* runExitAnimation(element, animate);
+              }),
+            ),
+            { concurrency: "unbounded" },
+          );
+        }
+
+        // Remove elements from DOM after animations complete
+        for (const { key, element } of removals) {
+          if (container.contains(element)) {
+            container.removeChild(element);
+          }
+          itemMap.delete(key);
+        }
+
+        // Track new items for enter animation
+        const newEntries: { element: HTMLElement; index: number }[] = [];
 
         for (let i = 0; i < newItems.length; i++) {
           const item = newItems[i];
@@ -631,17 +755,45 @@ export const each = <A, E = never, R = never>(
             }
 
             itemMap.set(key, { element, readable: itemReadable });
+
+            // Track for enter animation (skip on initial render)
+            if (!isInitial) {
+              newEntries.push({ element, index: newEntries.length });
+            }
           }
+        }
+
+        // Run enter animations with stagger on new items (skip on initial render)
+        if (animate && newEntries.length > 0 && !isInitial) {
+          const stagger = (animate as ListAnimationOptions).stagger;
+          yield* Effect.all(
+            newEntries.map(({ element, index }) =>
+              Effect.gen(function* () {
+                const delayMs = calculateStaggerDelay(
+                  stagger,
+                  index,
+                  newEntries.length,
+                );
+                if (delayMs > 0) {
+                  yield* Effect.sleep(delayMs);
+                }
+                yield* runEnterAnimation(element, animate);
+              }),
+            ),
+            { concurrency: "unbounded" },
+          );
         }
       });
 
-    // Render initial items synchronously
+    // Render initial items synchronously (no animations)
     const initialItems = yield* items.get;
-    yield* updateList(initialItems);
+    yield* updateList(initialItems, true);
 
-    // Then subscribe to future changes
+    // Then subscribe to future changes (with animations)
     yield* items.changes.pipe(
-      Stream.runForEach((newItems) => Effect.scoped(updateList(newItems))),
+      Stream.runForEach((newItems) =>
+        Effect.scoped(updateList(newItems, false)),
+      ),
       Effect.forkIn(scope),
     );
 

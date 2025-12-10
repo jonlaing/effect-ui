@@ -1,10 +1,5 @@
-import {
-  Context,
-  Effect,
-  Layer,
-  Scope,
-  SubscriptionRef,
-} from "effect";
+import { Context, Effect, Layer, Scope, SubscriptionRef } from "effect";
+
 import type { Readable } from "./Readable.js";
 import { make as makeReadable } from "./Readable.js";
 import { defaultEquals } from "./Derived/helpers.js";

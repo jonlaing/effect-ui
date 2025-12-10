@@ -16,6 +16,7 @@ import {
   Link,
   makeTypedRouterLayer,
   t,
+  stagger,
   type RouterInfer,
 } from "../index.js";
 import "./style.css";
@@ -153,6 +154,13 @@ const TodoApp = component("TodoApp", () =>
                 ],
               );
             }),
+          {
+            animate: {
+              enter: "slide-in",
+              exit: "slide-out",
+              stagger: stagger(50),
+            },
+          },
         ),
       ]),
       $.div({ class: "todo-stats" }, [
@@ -164,6 +172,7 @@ const TodoApp = component("TodoApp", () =>
         stats.map((s) => s.remaining === 0 && s.total > 0),
         () => $.p({ class: "success-message" }, "All done! 🎉"),
         () => $.span(),
+        { animate: { enter: "scale-in", exit: "fade-out" } },
       ),
     ]);
   }),
@@ -317,6 +326,7 @@ const App = component("App", () =>
             },
           ],
           () => NotFoundPage(),
+          { animate: { enter: "fade-in", exit: "fade-out" } },
         ),
       ]),
     ]);
