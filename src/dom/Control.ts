@@ -1,4 +1,4 @@
-import { Duration, Effect, Scope, Stream } from "effect";
+import { Duration, Effect, Exit, Scope, Stream } from "effect";
 import type { Readable } from "@core/Readable";
 import { map as mapReadable } from "@core/Readable";
 import type { Element } from "./Element";
@@ -389,24 +389,39 @@ export const when = <E1 = never, R1 = never, E2 = never, R2 = never>(
 
     let currentElement: HTMLElement | null = null;
     let currentValue: boolean | null = null;
+    let currentElementScope: Scope.CloseableScope | null = null;
     const animate = options?.animate;
 
     const render = (
       value: boolean,
       isInitial: boolean = false,
-    ): Effect.Effect<void, E1 | E2, Scope.Scope | R1 | R2> =>
+    ): Effect.Effect<void, E1 | E2, R1 | R2> =>
       Effect.gen(function* () {
         if (value === currentValue) return;
 
         const previousElement = currentElement;
+        const previousScope = currentElementScope;
         currentValue = value;
 
-        const element = value ? onTrue() : onFalse();
-        const newElement = yield* element;
+        // Create a new scope for this element that stays open
+        currentElementScope = yield* Scope.make();
+
+        const newElement = value
+          ? yield* onTrue().pipe(
+              Effect.provideService(Scope.Scope, currentElementScope),
+            )
+          : yield* onFalse().pipe(
+              Effect.provideService(Scope.Scope, currentElementScope),
+            );
 
         // Run exit animation on previous element (skip on initial render)
         if (animate && previousElement && !isInitial) {
           yield* runExitAnimation(previousElement, animate);
+        }
+
+        // Close the previous scope after exit animation
+        if (previousScope) {
+          yield* Scope.close(previousScope, Exit.void);
         }
 
         // DOM mutation
@@ -429,8 +444,17 @@ export const when = <E1 = never, R1 = never, E2 = never, R2 = never>(
 
     // Then subscribe to future changes (with animations)
     yield* condition.changes.pipe(
-      Stream.runForEach((value) => Effect.scoped(render(value, false))),
+      Stream.runForEach((value) => render(value, false)),
       Effect.forkIn(scope),
+    );
+
+    // Cleanup when this component is unmounted
+    yield* Effect.addFinalizer(() =>
+      Effect.gen(function* () {
+        if (currentElementScope) {
+          yield* Scope.close(currentElementScope, Exit.void);
+        }
+      }),
     );
 
     return container as HTMLElement;
@@ -515,17 +539,49 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
 
     let currentElement: HTMLElement | null = null;
     let currentPattern: A | null = null;
+    let currentElementScope: Scope.CloseableScope | null = null;
     const animate = options?.animate;
 
-    const replaceElement = (
-      newElement: HTMLElement,
-      previousElement: HTMLElement | null,
-      isInitial: boolean,
-    ): Effect.Effect<void> =>
+    const render = (
+      val: A,
+      isInitial: boolean = false,
+    ): Effect.Effect<void, E | E2, R | R2> =>
       Effect.gen(function* () {
+        if (val === currentPattern) return;
+
+        const previousElement = currentElement;
+        const previousScope = currentElementScope;
+        currentPattern = val;
+
+        // Create a new scope for this element that stays open
+        currentElementScope = yield* Scope.make();
+
+        const matchedCase = cases.find((c) => c.pattern === val);
+
+        let newElement: HTMLElement;
+        if (matchedCase) {
+          newElement = yield* matchedCase
+            .render()
+            .pipe(Effect.provideService(Scope.Scope, currentElementScope));
+        } else if (fallback) {
+          newElement = yield* fallback().pipe(
+            Effect.provideService(Scope.Scope, currentElementScope),
+          );
+        } else {
+          // No match and no fallback - close the scope we just created
+          yield* Scope.close(currentElementScope, Exit.void);
+          currentElementScope = previousScope;
+          return;
+        }
+
         // Run exit animation on previous element (skip on initial render)
         if (animate && previousElement && !isInitial) {
           yield* runExitAnimation(previousElement, animate);
+        }
+
+        // Close the previous scope after exit animation
+        if (previousScope) {
+          yield* Scope.close(previousScope, Exit.void);
         }
 
         // DOM mutation
@@ -534,36 +590,12 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
         } else {
           container.appendChild(newElement);
         }
+        currentElement = newElement;
 
         // Run enter animation on new element (skip on initial render)
         if (animate && !isInitial) {
           yield* runEnterAnimation(newElement, animate);
         }
-      });
-
-    const render = (
-      val: A,
-      isInitial: boolean = false,
-    ): Effect.Effect<void, E | E2, Scope.Scope | R | R2> =>
-      Effect.gen(function* () {
-        if (val === currentPattern) return;
-        const previousElement = currentElement;
-        currentPattern = val;
-
-        const matchedCase = cases.find((c) => c.pattern === val);
-
-        if (!matchedCase) {
-          if (fallback) {
-            const newElement = yield* fallback();
-            yield* replaceElement(newElement, previousElement, isInitial);
-            currentElement = newElement;
-          }
-          return;
-        }
-
-        const newElement = yield* matchedCase.render();
-        yield* replaceElement(newElement, previousElement, isInitial);
-        currentElement = newElement;
       });
 
     // Render initial value (no animations)
@@ -572,8 +604,17 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
 
     // Then subscribe to future changes (with animations)
     yield* value.changes.pipe(
-      Stream.runForEach((val) => Effect.scoped(render(val, false))),
+      Stream.runForEach((val) => render(val, false)),
       Effect.forkIn(scope),
+    );
+
+    // Cleanup when this component is unmounted
+    yield* Effect.addFinalizer(() =>
+      Effect.gen(function* () {
+        if (currentElementScope) {
+          yield* Scope.close(currentElementScope, Exit.void);
+        }
+      }),
     );
 
     return container as HTMLElement;
@@ -631,6 +672,7 @@ export const each = <A, E = never, R = never>(
       string,
       {
         element: HTMLElement;
+        scope: Scope.CloseableScope;
         readable: {
           get: Effect.Effect<A>;
           changes: Stream.Stream<A>;
@@ -644,15 +686,19 @@ export const each = <A, E = never, R = never>(
     const updateList = (
       newItems: readonly A[],
       isInitial: boolean = false,
-    ): Effect.Effect<void, E, Scope.Scope | R> =>
+    ): Effect.Effect<void, E, R> =>
       Effect.gen(function* () {
         const newKeys = new Set(newItems.map(keyFn));
 
         // Collect items to remove
-        const removals: { key: string; element: HTMLElement }[] = [];
+        const removals: {
+          key: string;
+          element: HTMLElement;
+          scope: Scope.CloseableScope;
+        }[] = [];
         for (const [key, entry] of itemMap) {
           if (!newKeys.has(key)) {
-            removals.push({ key, element: entry.element });
+            removals.push({ key, element: entry.element, scope: entry.scope });
           }
         }
 
@@ -677,11 +723,12 @@ export const each = <A, E = never, R = never>(
           );
         }
 
-        // Remove elements from DOM after animations complete
-        for (const { key, element } of removals) {
+        // Remove elements from DOM and close their scopes after animations complete
+        for (const { key, element, scope: itemScope } of removals) {
           if (container.contains(element)) {
             container.removeChild(element);
           }
+          yield* Scope.close(itemScope, Exit.void);
           itemMap.delete(key);
         }
 
@@ -712,6 +759,9 @@ export const each = <A, E = never, R = never>(
               }
             }
           } else {
+            // Create a scope for this item that stays open until the item is removed
+            const itemScope = yield* Scope.make();
+
             let currentValue = item;
             const subscribers = new Set<(value: A) => void>();
 
@@ -746,7 +796,9 @@ export const each = <A, E = never, R = never>(
               },
             };
 
-            const element = yield* render(itemReadable);
+            const element = yield* render(itemReadable).pipe(
+              Effect.provideService(Scope.Scope, itemScope),
+            );
 
             if (i >= container.children.length) {
               container.appendChild(element);
@@ -754,7 +806,11 @@ export const each = <A, E = never, R = never>(
               container.insertBefore(element, container.children[i]);
             }
 
-            itemMap.set(key, { element, readable: itemReadable });
+            itemMap.set(key, {
+              element,
+              scope: itemScope,
+              readable: itemReadable,
+            });
 
             // Track for enter animation (skip on initial render)
             if (!isInitial) {
@@ -791,10 +847,17 @@ export const each = <A, E = never, R = never>(
 
     // Then subscribe to future changes (with animations)
     yield* items.changes.pipe(
-      Stream.runForEach((newItems) =>
-        Effect.scoped(updateList(newItems, false)),
-      ),
+      Stream.runForEach((newItems) => updateList(newItems, false)),
       Effect.forkIn(scope),
+    );
+
+    // Cleanup all item scopes when this component is unmounted
+    yield* Effect.addFinalizer(() =>
+      Effect.gen(function* () {
+        for (const [, entry] of itemMap) {
+          yield* Scope.close(entry.scope, Exit.void);
+        }
+      }),
     );
 
     return container as HTMLElement;

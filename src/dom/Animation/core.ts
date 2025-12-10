@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import type { AnimationOptions } from "./types";
+import type { AnimationHook, AnimationOptions } from "./types";
 import {
   addClasses,
   forceReflow,
@@ -10,6 +10,94 @@ import {
 } from "./helpers";
 
 const DEFAULT_TIMEOUT = 5000;
+
+/**
+ * Internal configuration for running an animation.
+ */
+interface AnimationConfig {
+  /** Classes to check - if all are missing, skip animation */
+  readonly triggerClasses: readonly (string | undefined)[];
+  /** Class to apply even when skipping (for final state) */
+  readonly skipFinalClass?: string;
+  /** Classes to add before reflow */
+  readonly addBeforeReflow: readonly (string | undefined)[];
+  /** Classes to remove after reflow (triggers CSS transitions) */
+  readonly removeAfterReflow: readonly (string | undefined)[];
+  /** Classes to add after reflow */
+  readonly addAfterReflow: readonly (string | undefined)[];
+  /** Classes to remove after animation completes (cleanup) */
+  readonly removeAfterAnimation: readonly (string | undefined)[];
+  /** Timeout in milliseconds */
+  readonly timeout: number;
+  /** Hook to run before animation */
+  readonly onBefore?: AnimationHook;
+  /** Hook to run after animation */
+  readonly onAfter?: AnimationHook;
+  /** Whether to respect reduced motion preference */
+  readonly respectReducedMotion: boolean;
+}
+
+/**
+ * Core animation runner that handles the common animation lifecycle.
+ */
+const runAnimation = (
+  element: HTMLElement,
+  config: AnimationConfig,
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    const {
+      triggerClasses,
+      skipFinalClass,
+      addBeforeReflow,
+      removeAfterReflow,
+      addAfterReflow,
+      removeAfterAnimation,
+      timeout,
+      onBefore,
+      onAfter,
+      respectReducedMotion,
+    } = config;
+
+    const shouldSkip =
+      (respectReducedMotion && prefersReducedMotion()) ||
+      triggerClasses.every((c) => !c);
+
+    if (shouldSkip) {
+      yield* runHook(onBefore, element);
+      if (skipFinalClass) addClasses(element, skipFinalClass);
+      yield* runHook(onAfter, element);
+      return;
+    }
+
+    // Run the animation
+    yield* runHook(onBefore, element);
+
+    // Add classes before reflow
+    for (const cls of addBeforeReflow) {
+      if (cls) addClasses(element, cls);
+    }
+
+    // Force reflow to ensure classes take effect
+    forceReflow(element);
+
+    // Remove/add classes after reflow to trigger transitions
+    for (const cls of removeAfterReflow) {
+      if (cls) removeClasses(element, cls);
+    }
+    for (const cls of addAfterReflow) {
+      if (cls) addClasses(element, cls);
+    }
+
+    // Wait for animation to complete
+    yield* waitForAnimationEvent(element, timeout);
+
+    // Cleanup animation classes
+    for (const cls of removeAfterAnimation) {
+      if (cls) removeClasses(element, cls);
+    }
+
+    yield* runHook(onAfter, element);
+  });
 
 /**
  * Run an enter animation on an element.
@@ -28,66 +116,30 @@ const DEFAULT_TIMEOUT = 5000;
 export const runEnterAnimation = (
   element: HTMLElement,
   options: AnimationOptions,
-): Effect.Effect<void> =>
-  Effect.gen(function* () {
-    const {
-      enter,
-      enterFrom,
-      enterTo,
-      timeout = DEFAULT_TIMEOUT,
-      respectReducedMotion = true,
-      onBeforeEnter,
-      onEnter,
-    } = options;
+): Effect.Effect<void> => {
+  const {
+    enter,
+    enterFrom,
+    enterTo,
+    timeout = DEFAULT_TIMEOUT,
+    respectReducedMotion = true,
+    onBeforeEnter,
+    onEnter,
+  } = options;
 
-    // Skip if reduced motion preferred and we respect it
-    if (respectReducedMotion && prefersReducedMotion()) {
-      yield* runHook(onBeforeEnter, element);
-      if (enterTo) addClasses(element, enterTo);
-      yield* runHook(onEnter, element);
-      return;
-    }
-
-    // Skip if no enter animation configured
-    if (!enter && !enterFrom) {
-      yield* runHook(onBeforeEnter, element);
-      if (enterTo) addClasses(element, enterTo);
-      yield* runHook(onEnter, element);
-      return;
-    }
-
-    // Run the animation
-    yield* runHook(onBeforeEnter, element);
-
-    // Set up initial state
-    if (enterFrom) {
-      addClasses(element, enterFrom);
-    }
-    if (enter) {
-      addClasses(element, enter);
-    }
-
-    // Force reflow before removing enterFrom
-    forceReflow(element);
-
-    // Trigger transition by removing initial state
-    if (enterFrom) {
-      removeClasses(element, enterFrom);
-    }
-    if (enterTo) {
-      addClasses(element, enterTo);
-    }
-
-    // Wait for animation to complete
-    yield* waitForAnimationEvent(element, timeout);
-
-    // Cleanup
-    if (enter) {
-      removeClasses(element, enter);
-    }
-
-    yield* runHook(onEnter, element);
+  return runAnimation(element, {
+    triggerClasses: [enter, enterFrom],
+    skipFinalClass: enterTo,
+    addBeforeReflow: [enterFrom, enter],
+    removeAfterReflow: [enterFrom],
+    addAfterReflow: [enterTo],
+    removeAfterAnimation: [enter],
+    timeout,
+    onBefore: onBeforeEnter,
+    onAfter: onEnter,
+    respectReducedMotion,
   });
+};
 
 /**
  * Run an exit animation on an element.
@@ -107,52 +159,26 @@ export const runEnterAnimation = (
 export const runExitAnimation = (
   element: HTMLElement,
   options: AnimationOptions,
-): Effect.Effect<void> =>
-  Effect.gen(function* () {
-    const {
-      exit,
-      exitTo,
-      timeout = DEFAULT_TIMEOUT,
-      respectReducedMotion = true,
-      onBeforeExit,
-      onExit,
-    } = options;
+): Effect.Effect<void> => {
+  const {
+    exit,
+    exitTo,
+    timeout = DEFAULT_TIMEOUT,
+    respectReducedMotion = true,
+    onBeforeExit,
+    onExit,
+  } = options;
 
-    // Skip if reduced motion preferred and we respect it
-    if (respectReducedMotion && prefersReducedMotion()) {
-      yield* runHook(onBeforeExit, element);
-      yield* runHook(onExit, element);
-      return;
-    }
-
-    // Skip if no exit animation configured
-    if (!exit && !exitTo) {
-      yield* runHook(onBeforeExit, element);
-      yield* runHook(onExit, element);
-      return;
-    }
-
-    // Run the animation
-    yield* runHook(onBeforeExit, element);
-
-    // Apply exit classes
-    if (exit) {
-      addClasses(element, exit);
-    }
-    if (exitTo) {
-      addClasses(element, exitTo);
-    }
-
-    // Force reflow to ensure classes take effect
-    forceReflow(element);
-
-    // Wait for animation to complete
-    yield* waitForAnimationEvent(element, timeout);
-
-    // Cleanup (though element is usually about to be removed)
-    if (exit) {
-      removeClasses(element, exit);
-    }
-
-    yield* runHook(onExit, element);
+  return runAnimation(element, {
+    triggerClasses: [exit, exitTo],
+    skipFinalClass: undefined,
+    addBeforeReflow: [exit, exitTo],
+    removeAfterReflow: [],
+    addAfterReflow: [],
+    removeAfterAnimation: [exit],
+    timeout,
+    onBefore: onBeforeExit,
+    onAfter: onExit,
+    respectReducedMotion,
   });
+};

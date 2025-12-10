@@ -53,8 +53,8 @@ const hasActiveAnimations = (element: HTMLElement): boolean => {
   const transitionDuration = style.transitionDuration;
   const hasTransition = Boolean(
     transitionDuration &&
-      transitionDuration !== "0s" &&
-      transitionDuration !== "0ms",
+    transitionDuration !== "0s" &&
+    transitionDuration !== "0ms",
   );
 
   return hasAnimation || hasTransition;
@@ -79,6 +79,12 @@ export const waitForAnimationEvent = (
 
       let resolved = false;
 
+      const cleanup = () => {
+        element.removeEventListener("animationend", handleAnimationEnd);
+        element.removeEventListener("transitionend", handleTransitionEnd);
+        clearTimeout(timeoutId);
+      };
+
       const resolve = (result: AnimationEndResult) => {
         if (resolved) return;
         resolved = true;
@@ -98,12 +104,6 @@ export const waitForAnimationEvent = (
       });
 
       const timeoutId = setTimeout(handleTimeout, timeout);
-
-      const cleanup = () => {
-        element.removeEventListener("animationend", handleAnimationEnd);
-        element.removeEventListener("transitionend", handleTransitionEnd);
-        clearTimeout(timeoutId);
-      };
     });
 
     // Return cleanup function for Effect cancellation
