@@ -201,9 +201,10 @@ describe("Element", () => {
         Effect.scoped(
           button(
             {
-              onClick: () => {
-                clicked = true;
-              },
+              onClick: () =>
+                Effect.sync(() => {
+                  clicked = true;
+                }),
             },
             "Click me",
           ),

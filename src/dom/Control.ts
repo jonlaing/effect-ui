@@ -1,4 +1,4 @@
-import { Duration, Effect, Exit, Scope, Stream } from "effect";
+import { Context, Duration, Effect, Exit, Scope, Stream } from "effect";
 import type { Readable } from "@core/Readable";
 import { map as mapReadable } from "@core/Readable";
 import type { Element } from "./Element";
@@ -887,3 +887,38 @@ export const each = <A, E = never, R = never>(
 
     return container as HTMLElement;
   });
+
+/**
+ * Provide a context value to children elements.
+ * Similar to React's Context.Provider pattern.
+ *
+ * @param tag - The Effect Context tag
+ * @param value - The value to provide
+ * @param children - Elements that require this context
+ * @returns The children with context provided (can be passed to element factories)
+ *
+ * @example
+ * ```ts
+ * // Define a context
+ * class ThemeCtx extends Context.Tag("Theme")<ThemeCtx, { color: string }>() {}
+ *
+ * // Provide it to children
+ * $.div(
+ *   { class: "app" },
+ *   provide(ThemeCtx, { color: "blue" }, [
+ *     ThemedButton({}),
+ *     ThemedText({}, "Hello"),
+ *   ])
+ * )
+ * ```
+ */
+export const provide = <I, S, E = never>(
+  tag: Context.Tag<I, S>,
+  value: S,
+  children: Element<E, I> | Element<E, I>[],
+): Element<E, never>[] => {
+  const childArray = Array.isArray(children) ? children : [children];
+  return childArray.map((child) =>
+    child.pipe(Effect.provideService(tag, value)),
+  );
+};

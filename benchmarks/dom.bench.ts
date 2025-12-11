@@ -1,9 +1,9 @@
 import { bench, describe } from "vitest";
 import { Effect } from "effect";
-import { Signal } from "../src/core/Signal";
-import { $ } from "../src/dom/Element/Element";
-import { when, match } from "../src/dom/Control";
-import { component } from "../src/dom/Component";
+import { Signal } from "@core/Signal";
+import { $ } from "@dom/Element/Element";
+import { when, match } from "@dom/Control";
+import { component } from "@dom/Component";
 
 describe("DOM updates", () => {
   describe("element creation", () => {

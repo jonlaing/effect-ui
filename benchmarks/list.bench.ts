@@ -1,8 +1,8 @@
 import { bench, describe } from "vitest";
 import { Effect } from "effect";
-import { Signal } from "../src/core/Signal";
-import { each } from "../src/dom/Control";
-import { $ } from "../src/dom/Element/Element";
+import { Signal } from "@core/Signal";
+import { each } from "@dom/Control";
+import { $ } from "@dom/Element/Element";
 
 interface Item {
   id: number;

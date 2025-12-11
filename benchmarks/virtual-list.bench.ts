@@ -1,9 +1,9 @@
 import { bench, describe } from "vitest";
 import { Effect } from "effect";
-import { Signal } from "../src/core/Signal";
-import { virtualEach } from "../src/dom/VirtualList";
-import { each } from "../src/dom/Control";
-import { $ } from "../src/dom/Element/Element";
+import { Signal } from "@core/Signal";
+import { virtualEach } from "@dom/VirtualList";
+import { each } from "@dom/Control";
+import { $ } from "@dom/Element/Element";
 
 interface Item {
   id: string;

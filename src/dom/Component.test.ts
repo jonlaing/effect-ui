@@ -84,7 +84,7 @@ describe("Component", () => {
   it("should compose components", async () => {
     interface ButtonProps {
       label: string;
-      onClick: () => void;
+      onClick: () => Effect.Effect<void>;
     }
 
     const Button = component("Button", (props: ButtonProps) =>
@@ -99,7 +99,7 @@ describe("Component", () => {
           span(count),
           Button({
             label: "+",
-            onClick: () => Effect.runSync(count.update((n) => n + 1)),
+            onClick: () => count.update((n) => n + 1),
           }),
         ]);
       }),
@@ -137,7 +137,7 @@ describe("Component", () => {
             div(
               {
                 class: "item",
-                onClick: () => props.onSelect?.(item),
+                onClick: () => Effect.sync(() => props.onSelect?.(item)),
               },
               item,
             ),

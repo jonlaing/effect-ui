@@ -77,7 +77,7 @@ export type Child<E = never, R = never> =
  */
 export type EventHandler<E extends Event> = (
   event: E,
-) => Effect.Effect<void, never> | void;
+) => Effect.Effect<void, never>;
 
 /** Valid values for inline styles: static or reactive strings/numbers. */
 export type StyleValue = string | number | Readable<string> | Readable<number>;
@@ -91,6 +91,36 @@ export type ClassValue =
   | readonly ClassItem[]
   | Readable<string>
   | Readable<readonly string[]>;
+
+/** Data attribute value: string, boolean, number, or reactive versions */
+export type DataAttributeValue =
+  | string
+  | boolean
+  | number
+  | undefined
+  | Readable<string>
+  | Readable<boolean>
+  | Readable<number>
+  | Readable<string | undefined>;
+
+/** Data attributes interface allowing any data-* attribute */
+export interface DataAttributes {
+  readonly [key: `data-${string}`]: DataAttributeValue;
+}
+
+/** ARIA attribute value: string, boolean, or reactive versions */
+export type AriaAttributeValue =
+  | string
+  | boolean
+  | undefined
+  | Readable<string>
+  | Readable<boolean>
+  | Readable<string | undefined>;
+
+/** ARIA attributes interface allowing any aria-* attribute */
+export interface AriaAttributes {
+  readonly [key: `aria-${string}`]: AriaAttributeValue;
+}
 
 /**
  * Base attributes available on all elements.
@@ -121,9 +151,16 @@ export type ClassValue =
  * // Reactive styles
  * const width = yield* Signal.make(100)
  * div({ style: { width: width.map(w => `${w}px`) } }, [...])
+ *
+ * // Data attributes
+ * div({ "data-state": "open", "data-testid": "my-div" }, [...])
+ *
+ * // Reactive data attributes
+ * const state = yield* Signal.make("closed")
+ * div({ "data-state": state }, [...])
  * ```
  */
-export interface BaseAttributes {
+export interface BaseAttributes extends DataAttributes, AriaAttributes {
   /** CSS class name(s) - can be a string, array of strings, or reactive versions */
   readonly class?: ClassValue;
   /** Inline styles as a record of property-value pairs */
@@ -132,6 +169,8 @@ export interface BaseAttributes {
     | Readable<Record<string, string>>;
   /** Element ID */
   readonly id?: string;
+  /** ARIA role attribute */
+  readonly role?: string | Readable<string>;
 }
 
 /**
@@ -156,6 +195,7 @@ type ExcludedKeys =
   | "class"
   | "className" // Exclude the DOM property name too
   | "id"
+  | "role" // Handled by BaseAttributes
   | "onclick"
   | "oninput"
   | "onchange"

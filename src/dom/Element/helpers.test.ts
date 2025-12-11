@@ -265,9 +265,11 @@ describe("applyEventHandler", () => {
 
   it("should add event listener for onClick", () => {
     let clicked = false;
-    applyEventHandler(element, "onClick", () => {
-      clicked = true;
-    });
+    applyEventHandler(element, "onClick", () =>
+      Effect.sync(() => {
+        clicked = true;
+      }),
+    );
 
     element.click();
     expect(clicked).toBe(true);
@@ -275,9 +277,11 @@ describe("applyEventHandler", () => {
 
   it("should handle onMouseEnter event", () => {
     let entered = false;
-    applyEventHandler(element, "onMouseEnter", () => {
-      entered = true;
-    });
+    applyEventHandler(element, "onMouseEnter", () =>
+      Effect.sync(() => {
+        entered = true;
+      }),
+    );
 
     const event = new MouseEvent("mouseenter");
     element.dispatchEvent(event);
@@ -286,9 +290,11 @@ describe("applyEventHandler", () => {
 
   it("should pass event to handler", () => {
     let receivedEvent: Event | null = null;
-    applyEventHandler(element, "onClick", (e) => {
-      receivedEvent = e;
-    });
+    applyEventHandler(element, "onClick", (e) =>
+      Effect.sync(() => {
+        receivedEvent = e;
+      }),
+    );
 
     element.click();
     expect(receivedEvent).toBeInstanceOf(MouseEvent);

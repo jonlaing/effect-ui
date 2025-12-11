@@ -104,14 +104,15 @@ const TodoApp = component("TodoApp", () =>
           value: form.fields.text.value,
           onInput: (e) =>
             form.fields.text.value.set((e.target as HTMLInputElement).value),
-          onKeyDown: (e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              return addTodo();
-            }
-          },
+          onKeyDown: (e) =>
+            Effect.gen(function* () {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                yield* addTodo();
+              }
+            }),
         }),
-        $.button({ onClick: () => addTodo() }, "Add"),
+        $.button({ onClick: addTodo }, "Add"),
       ]),
       // Show validation errors
       when(

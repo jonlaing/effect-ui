@@ -47,7 +47,7 @@ export {
 } from "./Element";
 
 // Control flow
-export { when, match, each, ErrorBoundary, Suspense } from "./Control";
+export { when, match, each, provide, ErrorBoundary, Suspense } from "./Control";
 export type { MatchCase, SuspenseOptions } from "./Control";
 
 // Animation
@@ -99,3 +99,6 @@ export type {
   VisibleRange,
 } from "./VirtualList/index.js";
 export { virtualEach, VirtualListRef } from "./VirtualList/index.js";
+
+// Unique ID generation
+export { UniqueId } from "./UniqueId";

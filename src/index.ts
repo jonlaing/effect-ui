@@ -70,6 +70,7 @@ export {
   when,
   match,
   each,
+  provide,
   ErrorBoundary,
   Suspense,
   type MatchCase,
@@ -114,6 +115,8 @@ export {
   type VisibleRange,
   virtualEach,
   VirtualListRef,
+  // Unique ID
+  UniqueId,
 } from "./dom";
 
 // Router
@@ -170,3 +173,13 @@ export {
   type SubmitHandler,
   type FormType,
 } from "./form";
+
+// Primitives (headless UI components)
+export {
+  Collapsible,
+  CollapsibleCtx,
+  type CollapsibleContext,
+  type CollapsibleRootProps,
+  type CollapsibleTriggerProps,
+  type CollapsibleContentProps,
+} from "./primitives";
