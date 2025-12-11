@@ -8,7 +8,7 @@
 
 > **ValidationTiming** = `"hybrid"` \| `"blur"` \| `"change"` \| `"submit"`
 
-Defined in: [src/form/types.ts:12](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/form/types.ts#L12)
+Defined in: [src/form/types.ts:12](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/form/types.ts#L12)
 
 Validation timing strategy for form fields.
 - "hybrid" (default) - validate on blur first, then on change after first blur

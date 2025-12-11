@@ -8,7 +8,7 @@
 
 > **runEnterAnimation**(`element`, `options`): `Effect`\<`void`\>
 
-Defined in: [src/dom/Animation/core.ts:116](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/dom/Animation/core.ts#L116)
+Defined in: [src/dom/Animation/core.ts:116](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Animation/core.ts#L116)
 
 Run an enter animation on an element.
 

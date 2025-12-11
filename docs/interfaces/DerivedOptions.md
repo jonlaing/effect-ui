@@ -6,7 +6,7 @@
 
 # Interface: DerivedOptions\<A\>
 
-Defined in: [src/core/Derived/types.ts:8](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/core/Derived/types.ts#L8)
+Defined in: [src/core/Derived/types.ts:8](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/core/Derived/types.ts#L8)
 
 Options for creating a synchronous Derived value.
 
@@ -24,7 +24,7 @@ The type of the derived value
 
 > `readonly` `optional` **equals**: (`a`, `b`) => `boolean`
 
-Defined in: [src/core/Derived/types.ts:10](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/core/Derived/types.ts#L10)
+Defined in: [src/core/Derived/types.ts:10](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/core/Derived/types.ts#L10)
 
 Custom equality function to determine if the value has changed
 

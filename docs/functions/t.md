@@ -8,7 +8,7 @@
 
 > **t**(`strings`, ...`values`): [`Readable`](../interfaces/Readable.md)\<`string`\>
 
-Defined in: [src/dom/Template.ts:28](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/dom/Template.ts#L28)
+Defined in: [src/dom/Template.ts:28](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Template.ts#L28)
 
 Tagged template literal for creating reactive strings.
 Interpolated Readable values will automatically update the string when they change.

@@ -6,7 +6,7 @@
 
 # Interface: RouterType\<Routes\>
 
-Defined in: [src/router/types.ts:103](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/router/types.ts#L103)
+Defined in: [src/router/types.ts:103](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L103)
 
 The main Router interface.
 
@@ -24,7 +24,7 @@ Record of route names to Route definitions
 
 > `readonly` **back**: () => `Effect`\<`void`\>
 
-Defined in: [src/router/types.ts:130](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/router/types.ts#L130)
+Defined in: [src/router/types.ts:130](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L130)
 
 Go back in history
 
@@ -38,7 +38,7 @@ Go back in history
 
 > `readonly` **currentRoute**: [`Readable`](Readable.md)\<keyof `Routes` \| `null`\>
 
-Defined in: [src/router/types.ts:111](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/router/types.ts#L111)
+Defined in: [src/router/types.ts:111](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L111)
 
 The currently matched route name, or null if no match
 
@@ -48,7 +48,7 @@ The currently matched route name, or null if no match
 
 > `readonly` **forward**: () => `Effect`\<`void`\>
 
-Defined in: [src/router/types.ts:132](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/router/types.ts#L132)
+Defined in: [src/router/types.ts:132](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L132)
 
 Go forward in history
 
@@ -62,7 +62,7 @@ Go forward in history
 
 > `readonly` **pathname**: [`Readable`](Readable.md)\<`string`\>
 
-Defined in: [src/router/types.ts:107](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/router/types.ts#L107)
+Defined in: [src/router/types.ts:107](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L107)
 
 The current pathname
 
@@ -72,7 +72,7 @@ The current pathname
 
 > `readonly` **push**: (`path`, `options?`) => `Effect`\<`void`\>
 
-Defined in: [src/router/types.ts:123](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/router/types.ts#L123)
+Defined in: [src/router/types.ts:123](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L123)
 
 Navigate to a path
 
@@ -96,7 +96,7 @@ Navigate to a path
 
 > `readonly` **replace**: (`path`) => `Effect`\<`void`\>
 
-Defined in: [src/router/types.ts:128](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/router/types.ts#L128)
+Defined in: [src/router/types.ts:128](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L128)
 
 Replace current path
 
@@ -116,7 +116,7 @@ Replace current path
 
 > `readonly` **routes**: \{ readonly \[K in string \| number \| symbol\]: RouteState\<Routes\[K\] extends RouteType\<string, P\> ? P extends AnyNoContext ? Type\<P\<P\>\> : Record\<string, never\> : Record\<string, never\>\> \}
 
-Defined in: [src/router/types.ts:113](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/router/types.ts#L113)
+Defined in: [src/router/types.ts:113](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L113)
 
 Route-specific state for each defined route
 
@@ -126,6 +126,6 @@ Route-specific state for each defined route
 
 > `readonly` **searchParams**: [`Readable`](Readable.md)\<`URLSearchParams`\>
 
-Defined in: [src/router/types.ts:109](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/router/types.ts#L109)
+Defined in: [src/router/types.ts:109](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L109)
 
 The current query params

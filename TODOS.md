@@ -77,10 +77,10 @@
 
 - [ ] **Documentation site** - Full documentation with examples (TypeDoc is set up)
 
-- [ ] **Migration guides** - Help developers coming from other frameworks
+- [x] **Migration guides** - Help developers coming from other frameworks
   - [x] React migration guide (REACT-MIGRATION.md)
-  - [ ] Vue migration guide
-  - [ ] Svelte migration guide
+  - [x] Vue migration guide (VUE-MIGRATION.md)
+  - [x] Svelte migration guide (SVELTE-MIGRATION.md)
 
 - [ ] **Table helpers** - TanStack Table-inspired utilities for building data tables with sorting, filtering, pagination, etc.
 

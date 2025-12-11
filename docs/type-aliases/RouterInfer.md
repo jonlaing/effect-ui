@@ -8,7 +8,7 @@
 
 > **RouterInfer**\<`Routes`\> = [`RouterType`](../interfaces/RouterType.md)\<`Routes`\>
 
-Defined in: [src/router/Router.ts:250](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/router/Router.ts#L250)
+Defined in: [src/router/Router.ts:250](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/Router.ts#L250)
 
 Infer the Router type from a routes record.
 Use this to create typed router contexts.

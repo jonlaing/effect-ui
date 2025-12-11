@@ -8,7 +8,7 @@
 
 > **mount**(`element`, `container`): `Effect`\<`void`, `never`, `Scope`\>
 
-Defined in: [src/dom/Mount.ts:61](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/dom/Mount.ts#L61)
+Defined in: [src/dom/Mount.ts:61](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Mount.ts#L61)
 
 Mount an Element into a DOM container. Automatically cleans up when the scope closes.
 

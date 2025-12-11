@@ -8,7 +8,7 @@
 
 > **each**\<`A`, `E`, `R`\>(`items`, `keyFn`, `render`, `options?`): [`Element`](../type-aliases/Element.md)\<`E`, `R`\>
 
-Defined in: [src/dom/Control.ts:659](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/dom/Control.ts#L659)
+Defined in: [src/dom/Control.ts:659](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Control.ts#L659)
 
 Render a list of items with efficient updates using keys.
 

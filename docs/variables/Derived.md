@@ -8,7 +8,7 @@
 
 > `const` **Derived**: `object`
 
-Defined in: [src/core/Derived/Derived.ts:155](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/core/Derived/Derived.ts#L155)
+Defined in: [src/core/Derived/Derived.ts:155](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/core/Derived/Derived.ts#L155)
 
 Derived module namespace for creating computed reactive values.
 

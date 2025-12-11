@@ -8,7 +8,7 @@
 
 > **makeForm**\<`S`, `E`, `R`\>(`options`): `Effect`\<[`FormType`](../interfaces/FormType.md)\<`S`, `E`, `R`\>, `never`, `Scope`\>
 
-Defined in: [src/form/Form.ts:43](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/form/Form.ts#L43)
+Defined in: [src/form/Form.ts:43](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/form/Form.ts#L43)
 
 Create a new Form with reactive state management.
 

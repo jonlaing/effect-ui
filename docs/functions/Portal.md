@@ -10,7 +10,7 @@
 
 > **Portal**\<`E`, `R`\>(`children`): [`Element`](../type-aliases/Element.md)\<`E`, `R`\>
 
-Defined in: [src/dom/Portal.ts:31](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/dom/Portal.ts#L31)
+Defined in: [src/dom/Portal.ts:31](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Portal.ts#L31)
 
 Render children into a different DOM node, outside the normal component hierarchy.
 Useful for modals, dropdowns, tooltips that need to escape overflow/z-index issues.
@@ -52,7 +52,7 @@ Portal({ target: containerElement }, () => Tooltip({ ... }))
 
 > **Portal**\<`E`, `R`\>(`options`, `children`): [`Element`](../type-aliases/Element.md)\<`E`, `R`\>
 
-Defined in: [src/dom/Portal.ts:34](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/dom/Portal.ts#L34)
+Defined in: [src/dom/Portal.ts:34](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Portal.ts#L34)
 
 Render children into a different DOM node, outside the normal component hierarchy.
 Useful for modals, dropdowns, tooltips that need to escape overflow/z-index issues.

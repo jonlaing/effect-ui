@@ -8,7 +8,7 @@
 
 > **Child**\<`E`, `R`\> = `string` \| `number` \| [`Element`](Element.md)\<`E`, `R`\> \| [`Readable`](../interfaces/Readable.md)\<`string`\> \| [`Readable`](../interfaces/Readable.md)\<`number`\> \| readonly `Child`\<`E`, `R`\>[]
 
-Defined in: [src/dom/Element/types.ts:53](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/dom/Element/types.ts#L53)
+Defined in: [src/dom/Element/types.ts:53](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Element/types.ts#L53)
 
 Valid child types for an element: strings, numbers, elements, reactive values, or arrays thereof.
 

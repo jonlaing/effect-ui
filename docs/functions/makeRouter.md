@@ -8,7 +8,7 @@
 
 > **makeRouter**\<`Routes`\>(`routes`, `options?`): `Effect`\<[`RouterType`](../interfaces/RouterType.md)\<`Routes`\>, `never`, `Scope`\>
 
-Defined in: [src/router/Router.ts:40](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/router/Router.ts#L40)
+Defined in: [src/router/Router.ts:40](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/Router.ts#L40)
 
 Create a Router from a record of routes.
 

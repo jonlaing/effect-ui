@@ -8,7 +8,7 @@
 
 > **component**\<`Name`, `Props`, `E`, `R`\>(`name`, `render`): [`Component`](../type-aliases/Component.md)\<`Name`, `Props`, `E`, `R`\>
 
-Defined in: [src/dom/Component.ts:126](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/dom/Component.ts#L126)
+Defined in: [src/dom/Component.ts:126](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Component.ts#L126)
 
 Create a named component from a render function.
 The render function receives props and optional children as separate arguments.

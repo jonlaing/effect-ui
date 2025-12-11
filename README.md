@@ -103,9 +103,13 @@ Suspense({
 });
 ```
 
-### Coming from React?
+### Coming from Another Framework?
 
-If you're transitioning from React, see our [migration guide](./REACT-MIGRATION.md) for concept mapping and side-by-side examples.
+We have migration guides with concept mapping and side-by-side examples:
+
+- [Coming from React](./REACT-MIGRATION.md)
+- [Coming from Vue](./VUE-MIGRATION.md)
+- [Coming from Svelte](./SVELTE-MIGRATION.md)
 
 ---
 

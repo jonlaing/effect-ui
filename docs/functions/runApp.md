@@ -8,7 +8,7 @@
 
 > **runApp**\<`E`, `R`\>(`program`, `options?`): `Promise`\<`void`\>
 
-Defined in: [src/dom/Mount.ts:130](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/dom/Mount.ts#L130)
+Defined in: [src/dom/Mount.ts:130](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Mount.ts#L130)
 
 Run an Effect UI application. This is the main entry point for Effect UI apps.
 

@@ -6,7 +6,7 @@
 
 # Interface: BaseAttributes
 
-Defined in: [src/dom/Element/types.ts:126](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/dom/Element/types.ts#L126)
+Defined in: [src/dom/Element/types.ts:126](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Element/types.ts#L126)
 
 Base attributes available on all elements.
 
@@ -45,7 +45,7 @@ div({ style: { width: width.map(w => `${w}px`) } }, [...])
 
 > `readonly` `optional` **class**: `ClassValue`
 
-Defined in: [src/dom/Element/types.ts:128](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/dom/Element/types.ts#L128)
+Defined in: [src/dom/Element/types.ts:128](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Element/types.ts#L128)
 
 CSS class name(s) - can be a string, array of strings, or reactive versions
 
@@ -55,7 +55,7 @@ CSS class name(s) - can be a string, array of strings, or reactive versions
 
 > `readonly` `optional` **id**: `string`
 
-Defined in: [src/dom/Element/types.ts:134](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/dom/Element/types.ts#L134)
+Defined in: [src/dom/Element/types.ts:134](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Element/types.ts#L134)
 
 Element ID
 
@@ -65,6 +65,6 @@ Element ID
 
 > `readonly` `optional` **style**: `Record`\<`string`, `StyleValue`\> \| [`Readable`](Readable.md)\<`Record`\<`string`, `string`\>\>
 
-Defined in: [src/dom/Element/types.ts:130](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/dom/Element/types.ts#L130)
+Defined in: [src/dom/Element/types.ts:130](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Element/types.ts#L130)
 
 Inline styles as a record of property-value pairs

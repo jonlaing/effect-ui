@@ -8,7 +8,7 @@
 
 > `const` **Link**: [`Component`](../type-aliases/Component.md)\<`"Link"`, [`LinkProps`](../interfaces/LinkProps.md), `never`, [`RouterContext`](../classes/RouterContext.md)\>
 
-Defined in: [src/router/RouterContext.ts:113](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/router/RouterContext.ts#L113)
+Defined in: [src/router/RouterContext.ts:113](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/RouterContext.ts#L113)
 
 A navigation link component that uses the RouterContext.
 Components using Link will have RouterContext in their requirements.

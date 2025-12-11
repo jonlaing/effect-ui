@@ -8,7 +8,7 @@
 
 > **mapReadable**\<`A`, `B`\>(`self`, `f`): [`Readable`](../interfaces/Readable.md)\<`B`\>
 
-Defined in: [src/core/Readable.ts:46](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/core/Readable.ts#L46)
+Defined in: [src/core/Readable.ts:46](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/core/Readable.ts#L46)
 
 Transform a Readable's value using a mapping function.
 

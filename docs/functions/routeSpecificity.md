@@ -8,7 +8,7 @@
 
 > **routeSpecificity**(`segments`): `number`
 
-Defined in: [src/router/Route.ts:33](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/router/Route.ts#L33)
+Defined in: [src/router/Route.ts:33](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/Route.ts#L33)
 
 Calculate route specificity for sorting.
 Higher = more specific.

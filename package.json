@@ -43,7 +43,7 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "bench": "vitest bench",
-    "docs:gen": "pnpm typedoc && cp REACT-MIGRATION.md docs/",
+    "docs:gen": "rm -rf docs && pnpm typedoc && cp REACT-MIGRATION.md VUE-MIGRATION.md SVELTE-MIGRATION.md docs/",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

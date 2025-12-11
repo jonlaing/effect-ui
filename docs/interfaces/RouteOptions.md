@@ -6,7 +6,7 @@
 
 # Interface: RouteOptions\<P\>
 
-Defined in: [src/router/types.ts:17](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/router/types.ts#L17)
+Defined in: [src/router/types.ts:17](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L17)
 
 Options for creating a Route.
 
@@ -24,6 +24,6 @@ The params schema type
 
 > `readonly` `optional` **params**: `P`
 
-Defined in: [src/router/types.ts:19](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/router/types.ts#L19)
+Defined in: [src/router/types.ts:19](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L19)
 
 Schema for validating and typing path parameters

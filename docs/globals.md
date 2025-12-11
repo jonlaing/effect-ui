@@ -42,6 +42,10 @@
 - [SignalOptions](interfaces/SignalOptions.md)
 - [SignalType](interfaces/SignalType.md)
 - [SuspenseOptions](interfaces/SuspenseOptions.md)
+- [VirtualEachOptions](interfaces/VirtualEachOptions.md)
+- [VirtualListControl](interfaces/VirtualListControl.md)
+- [VirtualListRefType](interfaces/VirtualListRefType.md)
+- [VisibleRange](interfaces/VisibleRange.md)
 
 ## Type Aliases
 
@@ -112,6 +116,7 @@
 - [thead](variables/thead.md)
 - [tr](variables/tr.md)
 - [ul](variables/ul.md)
+- [VirtualListRef](variables/VirtualListRef.md)
 
 ## Functions
 
@@ -147,6 +152,7 @@
 - [staggerEased](functions/staggerEased.md)
 - [staggerFromCenter](functions/staggerFromCenter.md)
 - [t](functions/t.md)
+- [virtualEach](functions/virtualEach.md)
 - [when](functions/when.md)
 
 ## References

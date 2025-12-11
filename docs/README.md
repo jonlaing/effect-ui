@@ -57,11 +57,11 @@ Effect UI uses signals for reactive state. When a signal updates, only the DOM n
 ```ts
 const Counter = component("Counter", () =>
   Effect.gen(function* () {
-    const count = yield* Signal.make(0)
-    console.log("setup")  // Logs once, on mount
-    return yield* $.div(count)  // count changes update only this text node
-  })
-)
+    const count = yield* Signal.make(0);
+    console.log("setup"); // Logs once, on mount
+    return yield* $.div(count); // count changes update only this text node
+  }),
+);
 ```
 
 Signal updates are surgical. A parent's state change doesn't affect unrelated children.
@@ -71,10 +71,11 @@ Signal updates are surgical. A parent's state change doesn't affect unrelated ch
 Effect UI uses Effect's scope system. Subscriptions, timers, and other resources are automatically cleaned up when components unmount:
 
 ```ts
-yield* eventSource.pipe(
-  Stream.runForEach(handler),
-  Effect.forkIn(scope), // Cleaned up when scope closes
-);
+yield *
+  eventSource.pipe(
+    Stream.runForEach(handler),
+    Effect.forkIn(scope), // Cleaned up when scope closes
+  );
 ```
 
 No manual cleanup, no forgotten unsubscribes, no memory leaks.
@@ -106,9 +107,13 @@ Suspense({
 });
 ```
 
-### Coming from React?
+### Coming from Another Framework?
 
-If you're transitioning from React, see our [migration guide](_media/REACT-MIGRATION.md) for concept mapping and side-by-side examples.
+We have migration guides with concept mapping and side-by-side examples:
+
+- [Coming from React](_media/REACT-MIGRATION.md)
+- [Coming from Vue](_media/VUE-MIGRATION.md)
+- [Coming from Svelte](_media/SVELTE-MIGRATION.md)
 
 ---
 

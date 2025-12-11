@@ -6,7 +6,7 @@
 
 # Interface: FieldType\<A\>
 
-Defined in: [src/form/types.ts:18](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/form/types.ts#L18)
+Defined in: [src/form/types.ts:18](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/form/types.ts#L18)
 
 A single form field with reactive state.
 
@@ -24,7 +24,7 @@ The type of the field value
 
 > `readonly` **dirty**: [`Readable`](Readable.md)\<`boolean`\>
 
-Defined in: [src/form/types.ts:26](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/form/types.ts#L26)
+Defined in: [src/form/types.ts:26](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/form/types.ts#L26)
 
 Whether the field value has changed from initial
 
@@ -34,7 +34,7 @@ Whether the field value has changed from initial
 
 > `readonly` **errors**: [`Readable`](Readable.md)\<readonly `string`[]\>
 
-Defined in: [src/form/types.ts:22](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/form/types.ts#L22)
+Defined in: [src/form/types.ts:22](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/form/types.ts#L22)
 
 Validation errors for this field
 
@@ -44,7 +44,7 @@ Validation errors for this field
 
 > `readonly` **reset**: () => `Effect`\<`void`\>
 
-Defined in: [src/form/types.ts:30](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/form/types.ts#L30)
+Defined in: [src/form/types.ts:30](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/form/types.ts#L30)
 
 Reset the field to its initial value
 
@@ -58,7 +58,7 @@ Reset the field to its initial value
 
 > `readonly` **setErrors**: (`errors`) => `Effect`\<`void`\>
 
-Defined in: [src/form/types.ts:32](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/form/types.ts#L32)
+Defined in: [src/form/types.ts:32](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/form/types.ts#L32)
 
 Manually set errors for this field
 
@@ -78,7 +78,7 @@ readonly `string`[]
 
 > `readonly` **touch**: () => `Effect`\<`void`\>
 
-Defined in: [src/form/types.ts:28](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/form/types.ts#L28)
+Defined in: [src/form/types.ts:28](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/form/types.ts#L28)
 
 Mark the field as touched
 
@@ -92,7 +92,7 @@ Mark the field as touched
 
 > `readonly` **touched**: [`Readable`](Readable.md)\<`boolean`\>
 
-Defined in: [src/form/types.ts:24](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/form/types.ts#L24)
+Defined in: [src/form/types.ts:24](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/form/types.ts#L24)
 
 Whether the field has been touched (blurred)
 
@@ -102,7 +102,7 @@ Whether the field has been touched (blurred)
 
 > `readonly` **validate**: () => `Effect`\<readonly `string`[]\>
 
-Defined in: [src/form/types.ts:34](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/form/types.ts#L34)
+Defined in: [src/form/types.ts:34](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/form/types.ts#L34)
 
 Trigger validation for this field
 
@@ -116,6 +116,6 @@ Trigger validation for this field
 
 > `readonly` **value**: [`SignalType`](../type-aliases/SignalType.md)\<`A`\>
 
-Defined in: [src/form/types.ts:20](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/form/types.ts#L20)
+Defined in: [src/form/types.ts:20](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/form/types.ts#L20)
 
 The field's current value (writable)

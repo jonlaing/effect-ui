@@ -6,7 +6,7 @@
 
 # Class: RouterContext
 
-Defined in: [src/router/RouterContext.ts:19](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/router/RouterContext.ts#L19)
+Defined in: [src/router/RouterContext.ts:19](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/RouterContext.ts#L19)
 
 Context tag for accessing the router within components.
 Components that use RouterContext will have it as a requirement in their type signature.

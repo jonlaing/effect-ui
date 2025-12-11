@@ -6,7 +6,7 @@
 
 # Interface: SuspenseOptions\<E, R1, EF\>
 
-Defined in: [src/dom/Control.ts:46](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/dom/Control.ts#L46)
+Defined in: [src/dom/Control.ts:46](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Control.ts#L46)
 
 Options for the Suspense component.
 
@@ -30,7 +30,7 @@ Options for the Suspense component.
 
 > `readonly` `optional` **catch**: (`error`) => [`Element`](../type-aliases/Element.md)\<`never`, `never`\>
 
-Defined in: [src/dom/Control.ts:64](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/dom/Control.ts#L64)
+Defined in: [src/dom/Control.ts:64](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Control.ts#L64)
 
 Optional error handler. If provided, errors from render are caught
 and this function is called to render an error state.
@@ -52,7 +52,7 @@ Must have no requirements.
 
 > `readonly` `optional` **delay**: `DurationInput`
 
-Defined in: [src/dom/Control.ts:72](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/dom/Control.ts#L72)
+Defined in: [src/dom/Control.ts:72](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Control.ts#L72)
 
 Delay before showing the fallback.
 If the render completes before this duration, no fallback is shown.
@@ -65,7 +65,7 @@ If not provided, fallback is shown immediately.
 
 > `readonly` **fallback**: () => [`Element`](../type-aliases/Element.md)\<`EF`, `never`\>
 
-Defined in: [src/dom/Control.ts:57](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/dom/Control.ts#L57)
+Defined in: [src/dom/Control.ts:57](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Control.ts#L57)
 
 Function to render the loading/fallback state.
 Must have no requirements (will be rendered in detached context if delay > 0).
@@ -80,7 +80,7 @@ Must have no requirements (will be rendered in detached context if delay > 0).
 
 > `readonly` **render**: () => `Effect`\<`HTMLElement`, `E`, `Scope` \| `R1`\>
 
-Defined in: [src/dom/Control.ts:51](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/dom/Control.ts#L51)
+Defined in: [src/dom/Control.ts:51](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Control.ts#L51)
 
 Async function that returns the final element.
 Can fail with error type E if `catch` is provided.

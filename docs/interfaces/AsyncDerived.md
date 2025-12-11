@@ -6,7 +6,7 @@
 
 # Interface: AsyncDerived\<A, E\>
 
-Defined in: [src/core/Derived/types.ts:53](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/core/Derived/types.ts#L53)
+Defined in: [src/core/Derived/types.ts:53](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/core/Derived/types.ts#L53)
 
 An asynchronous derived value that tracks loading and error states.
 
@@ -34,7 +34,7 @@ The type of the error
 
 > `readonly` **await**: `Effect`\<`A`, `E`\>
 
-Defined in: [src/core/Derived/types.ts:55](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/core/Derived/types.ts#L55)
+Defined in: [src/core/Derived/types.ts:55](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/core/Derived/types.ts#L55)
 
 Effect that resolves to the current value or fails with the current error
 
@@ -44,7 +44,7 @@ Effect that resolves to the current value or fails with the current error
 
 > `readonly` **changes**: `Stream`\<[`AsyncState`](AsyncState.md)\<`A`, `E`\>\>
 
-Defined in: [src/core/Readable.ts:11](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/core/Readable.ts#L11)
+Defined in: [src/core/Readable.ts:11](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/core/Readable.ts#L11)
 
 Stream of value changes (does not include current value)
 
@@ -58,7 +58,7 @@ Stream of value changes (does not include current value)
 
 > `readonly` **get**: `Effect`\<[`AsyncState`](AsyncState.md)\<`A`, `E`\>\>
 
-Defined in: [src/core/Readable.ts:9](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/core/Readable.ts#L9)
+Defined in: [src/core/Readable.ts:9](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/core/Readable.ts#L9)
 
 Get the current value
 
@@ -72,7 +72,7 @@ Get the current value
 
 > `readonly` **map**: \<`B`\>(`f`) => [`Readable`](Readable.md)\<`B`\>
 
-Defined in: [src/core/Readable.ts:15](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/core/Readable.ts#L15)
+Defined in: [src/core/Readable.ts:15](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/core/Readable.ts#L15)
 
 Transform the readable value
 
@@ -102,7 +102,7 @@ Transform the readable value
 
 > `readonly` **values**: `Stream`\<[`AsyncState`](AsyncState.md)\<`A`, `E`\>\>
 
-Defined in: [src/core/Readable.ts:13](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/core/Readable.ts#L13)
+Defined in: [src/core/Readable.ts:13](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/core/Readable.ts#L13)
 
 Stream of all values (current value followed by changes)
 

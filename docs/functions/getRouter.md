@@ -8,7 +8,7 @@
 
 > **getRouter**(): [`BaseRouter`](../interfaces/BaseRouter.md) \| `null`
 
-Defined in: [src/router/RouterContext.ts:164](https://github.com/jonlaing/effect-ui/blob/734f667177209887be58fbcdeaf94e3632c47f02/src/router/RouterContext.ts#L164)
+Defined in: [src/router/RouterContext.ts:164](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/RouterContext.ts#L164)
 
 ## Returns
 
