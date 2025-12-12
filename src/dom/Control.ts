@@ -892,10 +892,13 @@ export const each = <A, E = never, R = never>(
  * Provide a context value to children elements.
  * Similar to React's Context.Provider pattern.
  *
+ * Supports partial context provision - if children require multiple contexts,
+ * providing one will satisfy that requirement and leave the rest.
+ *
  * @param tag - The Effect Context tag
  * @param value - The value to provide
- * @param children - Elements that require this context
- * @returns The children with context provided (can be passed to element factories)
+ * @param children - Elements that require this context (and possibly others)
+ * @returns The children with context provided, requiring only remaining contexts
  *
  * @example
  * ```ts
@@ -911,14 +914,21 @@ export const each = <A, E = never, R = never>(
  *   ])
  * )
  * ```
+ *
+ * @example
+ * ```ts
+ * // Nested contexts - children require AccordionCtx | AccordionItemCtx
+ * // After providing AccordionItemCtx, they only require AccordionCtx
+ * provide(AccordionItemCtx, itemCtx, children)
+ * ```
  */
-export const provide = <I, S, E = never>(
+export const provide = <I, S, E = never, R = I>(
   tag: Context.Tag<I, S>,
   value: S,
-  children: Element<E, I> | Element<E, I>[],
-): Element<E, never>[] => {
+  children: Element<E, R> | Element<E, R>[],
+): Element<E, Exclude<R, I>>[] => {
   const childArray = Array.isArray(children) ? children : [children];
   return childArray.map((child) =>
     child.pipe(Effect.provideService(tag, value)),
-  );
+  ) as Element<E, Exclude<R, I>>[];
 };
