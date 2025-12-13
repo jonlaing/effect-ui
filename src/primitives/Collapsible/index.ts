@@ -1,7 +1,8 @@
-export { Collapsible, CollapsibleCtx } from "./Collapsible.js";
-export type {
-  CollapsibleContext,
-  CollapsibleRootProps,
-  CollapsibleTriggerProps,
-  CollapsibleContentProps,
-} from "./types.js";
+export {
+  Collapsible,
+  CollapsibleCtx,
+  type CollapsibleContext,
+  type CollapsibleRootProps,
+  type CollapsibleTriggerProps,
+  type CollapsibleContentProps,
+} from "./Collapsible.js";
