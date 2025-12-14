@@ -55,3 +55,12 @@ export {
   type TabsTriggerProps,
   type TabsContentProps,
 } from "./Tabs/index.js";
+
+// RadioGroup
+export {
+  RadioGroup,
+  RadioGroupCtx,
+  type RadioGroupContext,
+  type RadioGroupRootProps,
+  type RadioGroupItemProps,
+} from "./RadioGroup/index.js";

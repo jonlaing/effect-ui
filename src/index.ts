@@ -201,4 +201,9 @@ export {
   type TabsListProps,
   type TabsTriggerProps,
   type TabsContentProps,
+  RadioGroup,
+  RadioGroupCtx,
+  type RadioGroupContext,
+  type RadioGroupRootProps,
+  type RadioGroupItemProps,
 } from "./primitives";
