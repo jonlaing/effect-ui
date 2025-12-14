@@ -102,3 +102,10 @@ export { virtualEach, VirtualListRef } from "./VirtualList/index.js";
 
 // Unique ID generation
 export { UniqueId } from "./UniqueId";
+
+// Focus Trap
+export type { FocusTrapOptions } from "./FocusTrap";
+export { FocusTrap } from "./FocusTrap";
+
+// Scroll Lock
+export { ScrollLock } from "./ScrollLock";

@@ -1,0 +1,226 @@
+/* Dialog Overlay */
+[data-dialog-overlay] {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 50;
+  animation: fade-in 150ms ease-out;
+}
+
+[data-dialog-overlay][data-state="closed"] {
+  animation: fade-out 150ms ease-in;
+}
+
+/* Dialog Content */
+[data-dialog-content] {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  padding: 24px;
+  width: 90%;
+  max-width: 450px;
+  max-height: 85vh;
+  overflow-y: auto;
+  z-index: 51;
+  animation: dialog-enter 200ms ease-out;
+}
+
+[data-dialog-content][data-state="closed"] {
+  animation: dialog-exit 150ms ease-in;
+}
+
+[data-dialog-content]:focus {
+  outline: none;
+}
+
+/* Dialog Title */
+[data-dialog-title] {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+/* Dialog Description */
+[data-dialog-description] {
+  margin: 0 0 20px 0;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+}
+
+/* Dialog Trigger */
+.dialog-trigger {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  background-color: #3b82f6;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.dialog-trigger:hover {
+  background-color: #2563eb;
+}
+
+.dialog-trigger:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Dialog Close Button */
+.dialog-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1;
+  color: #666;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.dialog-close:hover {
+  color: #1a1a1a;
+  background-color: #f3f4f6;
+}
+
+.dialog-close:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Dialog Actions */
+.dialog-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.dialog-cancel {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.dialog-cancel:hover {
+  background-color: #f9fafb;
+}
+
+.dialog-save {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  background-color: #3b82f6;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.dialog-save:hover {
+  background-color: #2563eb;
+}
+
+/* Form elements inside dialog */
+.dialog-form-group {
+  margin-bottom: 16px;
+}
+
+.dialog-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.dialog-input {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  box-sizing: border-box;
+}
+
+.dialog-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes dialog-enter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes dialog-exit {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+}
+
+/* Story container */
+.dialog-story-container {
+  padding: 20px;
+}
+
+/* External controls demo */
+.dialog-external-controls {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
