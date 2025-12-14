@@ -194,4 +194,11 @@ export {
   type DialogCloseProps,
   type DialogTitleProps,
   type DialogDescriptionProps,
+  Tabs,
+  TabsCtx,
+  type TabsContext,
+  type TabsRootProps,
+  type TabsListProps,
+  type TabsTriggerProps,
+  type TabsContentProps,
 } from "./primitives";

@@ -44,3 +44,14 @@ export {
   type DialogTitleProps,
   type DialogDescriptionProps,
 } from "./Dialog/index.js";
+
+// Tabs
+export {
+  Tabs,
+  TabsCtx,
+  type TabsContext,
+  type TabsRootProps,
+  type TabsListProps,
+  type TabsTriggerProps,
+  type TabsContentProps,
+} from "./Tabs/index.js";
