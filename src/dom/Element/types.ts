@@ -211,6 +211,14 @@ type ExcludedKeys =
   | "onmouseleave";
 
 /**
+ * Helper type to extract only non-function property keys from a type.
+ * This filters out methods like toString, normalize, click, focus, etc.
+ */
+type NonFunctionPropertyKeys<T> = {
+  [K in keyof T]: T[K] extends (...args: unknown[]) => unknown ? never : K;
+}[keyof T];
+
+/**
  * HTML attribute aliases - maps HTML attribute names to their DOM property equivalents.
  * These provide friendlier attribute names that match HTML rather than DOM API.
  */
@@ -223,6 +231,14 @@ type HTMLAttributeAliases<K extends keyof HTMLElementTagNameMap> =
     : object;
 
 /**
+ * Keys that are valid attributes for an element (excluding methods and handled keys).
+ */
+type ElementAttributeKeys<K extends keyof HTMLElementTagNameMap> = Exclude<
+  NonFunctionPropertyKeys<HTMLElementTagNameMap[K]>,
+  ExcludedKeys
+>;
+
+/**
  * Full HTML attributes for a specific element type, including base, events, and element-specific attributes.
  * @template K - The HTML element tag name
  */
@@ -230,20 +246,13 @@ export type HTMLAttributes<K extends keyof HTMLElementTagNameMap> =
   BaseAttributes &
     EventAttributes &
     HTMLAttributeAliases<K> & {
-      readonly [P in Exclude<
-        keyof HTMLElementTagNameMap[K],
-        ExcludedKeys
-      >]?: HTMLElementTagNameMap[K][P] extends string
+      readonly [P in ElementAttributeKeys<K>]?: HTMLElementTagNameMap[K][P] extends string
         ? string | Readable<string>
         : HTMLElementTagNameMap[K][P] extends number
           ? number | Readable<number>
           : HTMLElementTagNameMap[K][P] extends boolean
             ? boolean | Readable<boolean>
-            : HTMLElementTagNameMap[K][P] extends (
-                  ...args: unknown[]
-                ) => unknown
-              ? undefined // Exclude methods (like toString, normalize, etc.)
-              : never;
+            : never;
     };
 
 /**

@@ -64,3 +64,15 @@ export {
   type RadioGroupRootProps,
   type RadioGroupItemProps,
 } from "./RadioGroup/index.js";
+
+// Popover
+export {
+  Popover,
+  PopoverCtx,
+  type PopoverContext,
+  type PopoverRootProps,
+  type PopoverTriggerProps,
+  type PopoverAnchorProps,
+  type PopoverContentProps,
+  type PopoverCloseProps,
+} from "./Popover/index.js";
