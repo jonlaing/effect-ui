@@ -112,17 +112,17 @@
   - Keyboard navigation built-in
   - Focus management
   - Components to include:
-    - [ ] Dialog / Modal
-    - [ ] Dropdown Menu
-    - [ ] Select
+    - [x] Dialog / Modal
+    - [x] Dropdown Menu
+    - [x] Select
     - [ ] Combobox / Autocomplete
-    - [ ] Popover
-    - [ ] Tooltip
-    - [ ] Tabs
+    - [x] Popover
+    - [x] Tooltip
+    - [x] Tabs
     - [x] Accordion
     - [x] Toggle
     - [x] Switch
-    - [ ] Radio Group
+    - [x] Radio Group
     - [x] Checkbox
     - [ ] Slider
     - [ ] Toast / Notifications

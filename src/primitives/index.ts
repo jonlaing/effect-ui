@@ -104,3 +104,17 @@ export {
   type SelectLabelProps,
   type SelectSeparatorProps,
 } from "./Select/index.js";
+
+// DropdownMenu
+export {
+  DropdownMenu,
+  DropdownMenuCtx,
+  type DropdownMenuContext,
+  type DropdownMenuRootProps,
+  type DropdownMenuTriggerProps,
+  type DropdownMenuContentProps,
+  type DropdownMenuItemProps,
+  type DropdownMenuGroupProps,
+  type DropdownMenuLabelProps,
+  type DropdownMenuSeparatorProps,
+} from "./DropdownMenu/index.js";
