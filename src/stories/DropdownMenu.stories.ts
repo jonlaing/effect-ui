@@ -385,3 +385,142 @@ export const WithSubmenus: Story = {
     return container;
   },
 };
+
+export const WithCheckboxItems: Story = {
+  render: () => {
+    const element = Effect.gen(function* () {
+      const showGrid = yield* Signal.make(true);
+      const showRulers = yield* Signal.make(false);
+      const snapToGrid = yield* Signal.make(true);
+
+      return yield* DropdownMenu.Root({}, [
+        DropdownMenu.Trigger({}, "View Options"),
+        DropdownMenu.Content({}, [
+          DropdownMenu.Label({}, "Display"),
+          DropdownMenu.CheckboxItem(
+            {
+              checked: showGrid,
+              onCheckedChange: (checked) => Effect.log(`Show Grid: ${checked}`),
+            },
+            "Show Grid",
+          ),
+          DropdownMenu.CheckboxItem(
+            {
+              checked: showRulers,
+              onCheckedChange: (checked) =>
+                Effect.log(`Show Rulers: ${checked}`),
+            },
+            "Show Rulers",
+          ),
+          DropdownMenu.CheckboxItem(
+            {
+              checked: snapToGrid,
+              onCheckedChange: (checked) =>
+                Effect.log(`Snap to Grid: ${checked}`),
+            },
+            "Snap to Grid",
+          ),
+        ]),
+      ]);
+    });
+
+    const container = document.createElement("div");
+    container.className = "menu-story-container";
+
+    renderEffectAsync(element).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
+  },
+};
+
+export const WithRadioItems: Story = {
+  render: () => {
+    const element = Effect.gen(function* () {
+      const sortBy = yield* Signal.make("name");
+
+      return yield* DropdownMenu.Root({}, [
+        DropdownMenu.Trigger({}, "Sort By"),
+        DropdownMenu.Content({}, [
+          DropdownMenu.RadioGroup(
+            {
+              value: sortBy,
+              onValueChange: (value) => Effect.log(`Sort by: ${value}`),
+            },
+            [
+              DropdownMenu.RadioItem({ value: "name" }, "Name"),
+              DropdownMenu.RadioItem({ value: "date" }, "Date Modified"),
+              DropdownMenu.RadioItem({ value: "size" }, "Size"),
+              DropdownMenu.RadioItem({ value: "type" }, "Type"),
+            ],
+          ),
+        ]),
+      ]);
+    });
+
+    const container = document.createElement("div");
+    container.className = "menu-story-container";
+
+    renderEffectAsync(element).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
+  },
+};
+
+export const MixedItems: Story = {
+  render: () => {
+    const element = Effect.gen(function* () {
+      const showHidden = yield* Signal.make(false);
+      const showExtensions = yield* Signal.make(true);
+      const sortBy = yield* Signal.make("name");
+      const viewMode = yield* Signal.make("list");
+
+      return yield* DropdownMenu.Root({}, [
+        DropdownMenu.Trigger({}, "View"),
+        DropdownMenu.Content({}, [
+          DropdownMenu.Group({}, [
+            DropdownMenu.Label({}, "Options"),
+            DropdownMenu.CheckboxItem(
+              { checked: showHidden },
+              "Show Hidden Files",
+            ),
+            DropdownMenu.CheckboxItem(
+              { checked: showExtensions },
+              "Show File Extensions",
+            ),
+          ]),
+          DropdownMenu.Separator({}),
+          DropdownMenu.Group({}, [
+            DropdownMenu.Label({}, "Sort By"),
+            DropdownMenu.RadioGroup({ value: sortBy }, [
+              DropdownMenu.RadioItem({ value: "name" }, "Name"),
+              DropdownMenu.RadioItem({ value: "date" }, "Date"),
+              DropdownMenu.RadioItem({ value: "size" }, "Size"),
+            ]),
+          ]),
+          DropdownMenu.Separator({}),
+          DropdownMenu.Group({}, [
+            DropdownMenu.Label({}, "View As"),
+            DropdownMenu.RadioGroup({ value: viewMode }, [
+              DropdownMenu.RadioItem({ value: "list" }, "List"),
+              DropdownMenu.RadioItem({ value: "grid" }, "Grid"),
+              DropdownMenu.RadioItem({ value: "columns" }, "Columns"),
+            ]),
+          ]),
+        ]),
+      ]);
+    });
+
+    const container = document.createElement("div");
+    container.className = "menu-story-container";
+
+    renderEffectAsync(element).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
+  },
+};

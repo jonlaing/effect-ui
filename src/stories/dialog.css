@@ -90,7 +90,9 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  transition: color 150ms ease, background-color 150ms ease;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
 }
 
 .dialog-close:hover {
@@ -162,7 +164,9 @@
   font-size: 14px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
   box-sizing: border-box;
 }
 

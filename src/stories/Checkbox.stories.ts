@@ -91,16 +91,33 @@ export const Disabled: Story = {
   render: () => {
     const element = $.div({ class: "checkbox-group" }, [
       $.div({ class: "checkbox-row" }, [
-        Checkbox({ class: "checkbox", id: "disabled-unchecked", disabled: true }),
+        Checkbox({
+          class: "checkbox",
+          id: "disabled-unchecked",
+          disabled: true,
+        }),
         $.label(
-          { class: "checkbox-label", for: "disabled-unchecked", "data-disabled": "" },
+          {
+            class: "checkbox-label",
+            for: "disabled-unchecked",
+            "data-disabled": "",
+          },
           "Disabled unchecked",
         ),
       ]),
       $.div({ class: "checkbox-row" }, [
-        Checkbox({ class: "checkbox", id: "disabled-checked", disabled: true, defaultChecked: true }),
+        Checkbox({
+          class: "checkbox",
+          id: "disabled-checked",
+          disabled: true,
+          defaultChecked: true,
+        }),
         $.label(
-          { class: "checkbox-label", for: "disabled-checked", "data-disabled": "" },
+          {
+            class: "checkbox-label",
+            for: "disabled-checked",
+            "data-disabled": "",
+          },
           "Disabled checked",
         ),
       ]),
@@ -127,7 +144,10 @@ export const CheckboxGroup: Story = {
       return yield* $.div({ class: "checkbox-group" }, [
         $.div({ class: "checkbox-row" }, [
           Checkbox({ class: "checkbox", id: "email", checked: option1 }),
-          $.label({ class: "checkbox-label", for: "email" }, "Email notifications"),
+          $.label(
+            { class: "checkbox-label", for: "email" },
+            "Email notifications",
+          ),
         ]),
         $.div({ class: "checkbox-row" }, [
           Checkbox({ class: "checkbox", id: "sms", checked: option2 }),
@@ -135,7 +155,10 @@ export const CheckboxGroup: Story = {
         ]),
         $.div({ class: "checkbox-row" }, [
           Checkbox({ class: "checkbox", id: "push", checked: option3 }),
-          $.label({ class: "checkbox-label", for: "push" }, "Push notifications"),
+          $.label(
+            { class: "checkbox-label", for: "push" },
+            "Push notifications",
+          ),
         ]),
       ]);
     });

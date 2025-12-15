@@ -166,6 +166,58 @@ export interface DropdownMenuSubContentProps {
 }
 
 /**
+ * Props for DropdownMenu.CheckboxItem
+ */
+export interface DropdownMenuCheckboxItemProps {
+  /** Additional class names */
+  readonly class?: string | Readable.Readable<string>;
+  /** Whether this item is disabled */
+  readonly disabled?: boolean;
+  /** Controlled checked state */
+  readonly checked?: Signal<boolean>;
+  /** Default checked state (uncontrolled) */
+  readonly defaultChecked?: boolean;
+  /** Callback when checked state changes */
+  readonly onCheckedChange?: (checked: boolean) => Effect.Effect<void>;
+}
+
+/**
+ * Context for DropdownMenu.RadioGroup
+ */
+export interface DropdownMenuRadioGroupContext {
+  /** Current selected value */
+  readonly value: Readable.Readable<string>;
+  /** Set the selected value */
+  readonly setValue: (value: string) => Effect.Effect<void>;
+}
+
+/**
+ * Props for DropdownMenu.RadioGroup
+ */
+export interface DropdownMenuRadioGroupProps {
+  /** Additional class names */
+  readonly class?: string | Readable.Readable<string>;
+  /** Controlled value */
+  readonly value?: Signal<string>;
+  /** Default value (uncontrolled) */
+  readonly defaultValue?: string;
+  /** Callback when value changes */
+  readonly onValueChange?: (value: string) => Effect.Effect<void>;
+}
+
+/**
+ * Props for DropdownMenu.RadioItem
+ */
+export interface DropdownMenuRadioItemProps {
+  /** Additional class names */
+  readonly class?: string | Readable.Readable<string>;
+  /** The value for this radio item */
+  readonly value: string;
+  /** Whether this item is disabled */
+  readonly disabled?: boolean;
+}
+
+/**
  * Effect Context for DropdownMenu state sharing between parts.
  */
 export class DropdownMenuCtx extends Context.Tag("DropdownMenuContext")<
@@ -180,6 +232,13 @@ export class DropdownMenuSubCtx extends Context.Tag("DropdownMenuSubContext")<
   DropdownMenuSubCtx,
   DropdownMenuSubContext
 >() {}
+
+/**
+ * Effect Context for DropdownMenu.RadioGroup state sharing.
+ */
+export class DropdownMenuRadioGroupCtx extends Context.Tag(
+  "DropdownMenuRadioGroupContext",
+)<DropdownMenuRadioGroupCtx, DropdownMenuRadioGroupContext>() {}
 
 /**
  * Root container for a DropdownMenu. Manages open/closed state
@@ -570,6 +629,156 @@ const Separator = component(
         role: "separator",
         "data-menu-separator": "",
       });
+    }),
+);
+
+/**
+ * A menu item with a checkbox that can be toggled.
+ *
+ * @example
+ * ```ts
+ * const showGrid = yield* Signal.make(true);
+ * DropdownMenu.CheckboxItem({ checked: showGrid }, "Show Grid")
+ * ```
+ */
+const CheckboxItem = component(
+  "DropdownMenuCheckboxItem",
+  (props: DropdownMenuCheckboxItemProps, children) =>
+    Effect.gen(function* () {
+      const ctx = yield* DropdownMenuCtx;
+
+      const checked: Signal<boolean> = props.checked
+        ? props.checked
+        : yield* Signal.make(props.defaultChecked ?? false);
+
+      const dataState = checked.map((c) => (c ? "checked" : "unchecked"));
+      const ariaChecked = checked.map((c) => (c ? "true" : "false"));
+
+      const handleClick = () =>
+        Effect.gen(function* () {
+          if (props.disabled) return;
+
+          const current = yield* checked.get;
+          const newValue = !current;
+          yield* checked.set(newValue);
+
+          if (props.onCheckedChange) {
+            yield* props.onCheckedChange(newValue);
+          }
+
+          // Close menu and return focus to trigger
+          yield* ctx.close();
+          ctx.triggerRef.current?.focus();
+        });
+
+      return yield* $.div(
+        {
+          class: props.class,
+          role: "menuitemcheckbox",
+          "aria-checked": ariaChecked,
+          "data-state": dataState,
+          "data-disabled": props.disabled ? "" : undefined,
+          "data-menu-item": "",
+          "data-menu-checkbox-item": "",
+          tabIndex: props.disabled ? undefined : 0,
+          onClick: handleClick,
+        },
+        children ?? [],
+      );
+    }),
+);
+
+/**
+ * Groups radio items together. Only one item can be selected at a time.
+ *
+ * @example
+ * ```ts
+ * const sortBy = yield* Signal.make("name");
+ * DropdownMenu.RadioGroup({ value: sortBy }, [
+ *   DropdownMenu.RadioItem({ value: "name" }, "Name"),
+ *   DropdownMenu.RadioItem({ value: "date" }, "Date"),
+ *   DropdownMenu.RadioItem({ value: "size" }, "Size"),
+ * ])
+ * ```
+ */
+const RadioGroup = (
+  props: DropdownMenuRadioGroupProps,
+  children:
+    | Element<never, DropdownMenuCtx | DropdownMenuRadioGroupCtx>
+    | Element<never, DropdownMenuCtx | DropdownMenuRadioGroupCtx>[],
+): Element<never, DropdownMenuCtx> =>
+  Effect.gen(function* () {
+    const value: Signal<string> = props.value
+      ? props.value
+      : yield* Signal.make(props.defaultValue ?? "");
+
+    const setValue = (newValue: string) =>
+      Effect.gen(function* () {
+        yield* value.set(newValue);
+        if (props.onValueChange) {
+          yield* props.onValueChange(newValue);
+        }
+      });
+
+    const radioCtx: DropdownMenuRadioGroupContext = {
+      value,
+      setValue,
+    };
+
+    return yield* $.div(
+      {
+        class: props.class,
+        role: "group",
+        "data-menu-radio-group": "",
+      },
+      provide(DropdownMenuRadioGroupCtx, radioCtx, children),
+    );
+  });
+
+/**
+ * A radio item within a RadioGroup. Only one can be selected at a time.
+ *
+ * @example
+ * ```ts
+ * DropdownMenu.RadioItem({ value: "option1" }, "Option 1")
+ * ```
+ */
+const RadioItem = component(
+  "DropdownMenuRadioItem",
+  (props: DropdownMenuRadioItemProps, children) =>
+    Effect.gen(function* () {
+      const ctx = yield* DropdownMenuCtx;
+      const radioCtx = yield* DropdownMenuRadioGroupCtx;
+
+      const isChecked = radioCtx.value.map((v) => v === props.value);
+      const dataState = isChecked.map((c) => (c ? "checked" : "unchecked"));
+      const ariaChecked = isChecked.map((c) => (c ? "true" : "false"));
+
+      const handleClick = () =>
+        Effect.gen(function* () {
+          if (props.disabled) return;
+
+          yield* radioCtx.setValue(props.value);
+
+          // Close menu and return focus to trigger
+          yield* ctx.close();
+          ctx.triggerRef.current?.focus();
+        });
+
+      return yield* $.div(
+        {
+          class: props.class,
+          role: "menuitemradio",
+          "aria-checked": ariaChecked,
+          "data-state": dataState,
+          "data-disabled": props.disabled ? "" : undefined,
+          "data-menu-item": "",
+          "data-menu-radio-item": "",
+          tabIndex: props.disabled ? undefined : 0,
+          onClick: handleClick,
+        },
+        children ?? [],
+      );
     }),
 );
 
@@ -965,6 +1174,9 @@ export const DropdownMenu = {
   Group,
   Label,
   Separator,
+  CheckboxItem,
+  RadioGroup,
+  RadioItem,
   Sub,
   SubTrigger,
   SubContent,

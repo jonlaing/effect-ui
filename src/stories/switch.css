@@ -1,6 +1,9 @@
 /* Story container */
 .switch-story-container {
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
   padding: 1rem;
   display: flex;
   flex-direction: column;

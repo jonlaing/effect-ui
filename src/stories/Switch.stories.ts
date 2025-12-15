@@ -119,20 +119,23 @@ export const Controlled: Story = {
 
 export const Sizes: Story = {
   render: () => {
-    const element = $.div({ style: { display: "flex", gap: "1rem", alignItems: "center" } }, [
-      $.div({ class: "switch-row" }, [
-        Switch({ class: "switch switch-sm" }),
-        $.span({ class: "switch-label" }, "Small"),
-      ]),
-      $.div({ class: "switch-row" }, [
-        Switch({ class: "switch" }),
-        $.span({ class: "switch-label" }, "Default"),
-      ]),
-      $.div({ class: "switch-row" }, [
-        Switch({ class: "switch switch-lg" }),
-        $.span({ class: "switch-label" }, "Large"),
-      ]),
-    ]);
+    const element = $.div(
+      { style: { display: "flex", gap: "1rem", alignItems: "center" } },
+      [
+        $.div({ class: "switch-row" }, [
+          Switch({ class: "switch switch-sm" }),
+          $.span({ class: "switch-label" }, "Small"),
+        ]),
+        $.div({ class: "switch-row" }, [
+          Switch({ class: "switch" }),
+          $.span({ class: "switch-label" }, "Default"),
+        ]),
+        $.div({ class: "switch-row" }, [
+          Switch({ class: "switch switch-lg" }),
+          $.span({ class: "switch-label" }, "Large"),
+        ]),
+      ],
+    );
 
     const container = document.createElement("div");
     container.className = "switch-story-container";

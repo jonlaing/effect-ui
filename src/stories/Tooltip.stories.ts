@@ -39,8 +39,14 @@ const meta: Meta<TooltipStoryArgs> = {
   render: (args) => {
     const element = Effect.gen(function* () {
       return yield* Tooltip.Root({ delayDuration: args.delayDuration }, [
-        Tooltip.Trigger({}, $.button({ class: "tooltip-demo-button" }, "Hover me")),
-        Tooltip.Content({ side: args.side, align: args.align }, "This is a helpful tooltip"),
+        Tooltip.Trigger(
+          {},
+          $.button({ class: "tooltip-demo-button" }, "Hover me"),
+        ),
+        Tooltip.Content(
+          { side: args.side, align: args.align },
+          "This is a helpful tooltip",
+        ),
       ]);
     });
 
@@ -149,7 +155,10 @@ export const LongContent: Story = {
   render: () => {
     const element = Effect.gen(function* () {
       return yield* Tooltip.Root({ delayDuration: 300 }, [
-        Tooltip.Trigger({}, $.button({ class: "tooltip-demo-button" }, "Hover for details")),
+        Tooltip.Trigger(
+          {},
+          $.button({ class: "tooltip-demo-button" }, "Hover for details"),
+        ),
         Tooltip.Content(
           { side: "top" },
           "This is a longer tooltip that contains more detailed information about the action or element.",
@@ -193,9 +202,15 @@ export const AllPositions: Story = {
               Tooltip.Root({ delayDuration: 200 }, [
                 Tooltip.Trigger(
                   {},
-                  $.button({ class: "tooltip-demo-button" }, `${pos.side}/${pos.align}`),
+                  $.button(
+                    { class: "tooltip-demo-button" },
+                    `${pos.side}/${pos.align}`,
+                  ),
                 ),
-                Tooltip.Content({ side: pos.side, align: pos.align }, `Side: ${pos.side}, Align: ${pos.align}`),
+                Tooltip.Content(
+                  { side: pos.side, align: pos.align },
+                  `Side: ${pos.side}, Align: ${pos.align}`,
+                ),
               ]),
             ]);
             return cell;
@@ -223,8 +238,14 @@ export const FocusTrigger: Story = {
   render: () => {
     const element = Effect.gen(function* () {
       return yield* Tooltip.Root({ delayDuration: 0 }, [
-        Tooltip.Trigger({}, $.button({ class: "tooltip-demo-button" }, "Focus me (Tab)")),
-        Tooltip.Content({ side: "top" }, "Tooltips also show on keyboard focus"),
+        Tooltip.Trigger(
+          {},
+          $.button({ class: "tooltip-demo-button" }, "Focus me (Tab)"),
+        ),
+        Tooltip.Content(
+          { side: "top" },
+          "Tooltips also show on keyboard focus",
+        ),
       ]);
     });
 

@@ -186,7 +186,8 @@ export const Controlled: Story = {
       const popover = yield* Popover.Root(
         {
           open: isOpen,
-          onOpenChange: (open) => Effect.log(`Popover ${open ? "opened" : "closed"}`),
+          onOpenChange: (open) =>
+            Effect.log(`Popover ${open ? "opened" : "closed"}`),
         },
         [
           Popover.Trigger({}, "Toggle Popover"),
@@ -275,7 +276,10 @@ export const AllPositions: Story = {
                 Popover.Trigger({}, `${pos.side}/${pos.align}`),
                 Popover.Content({ side: pos.side, align: pos.align }, [
                   $.div({ style: { fontSize: "13px" } }, [
-                    $.p({ style: { margin: "0 0 4px 0" } }, `Side: ${pos.side}`),
+                    $.p(
+                      { style: { margin: "0 0 4px 0" } },
+                      `Side: ${pos.side}`,
+                    ),
                     $.p({ style: { margin: "0" } }, `Align: ${pos.align}`),
                   ]),
                 ]),

@@ -22,7 +22,9 @@
   border: 2px solid #d1d5db;
   background-color: white;
   cursor: pointer;
-  transition: border-color 150ms ease, background-color 150ms ease;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
 }
 
 [data-radio-item]:hover:not(:disabled) {
@@ -103,7 +105,9 @@
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   cursor: pointer;
-  transition: border-color 150ms ease, background-color 150ms ease;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
 }
 
 .radio-card:hover {

@@ -3,7 +3,8 @@
   background: white;
   border-radius: 8px;
   padding: 16px;
-  box-shadow: 0 10px 38px -10px rgba(22, 23, 24, 0.35),
+  box-shadow:
+    0 10px 38px -10px rgba(22, 23, 24, 0.35),
     0 10px 20px -15px rgba(22, 23, 24, 0.2);
   min-width: 200px;
   max-width: 300px;
@@ -63,7 +64,9 @@
   border: 1px solid #d1d5db;
   border-radius: 6px;
   cursor: pointer;
-  transition: background-color 150ms ease, border-color 150ms ease;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
 }
 
 [data-popover-trigger]:hover {
@@ -90,7 +93,9 @@
   border: 1px solid #e5e7eb;
   border-radius: 4px;
   cursor: pointer;
-  transition: background-color 150ms ease, color 150ms ease;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
 }
 
 [data-popover-close]:hover {

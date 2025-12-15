@@ -228,7 +228,8 @@ export const CardStyle: Story = {
       ];
 
       return yield* $.div({ class: "radiogroup-card" }, [
-        RadioGroup.Root({ value: selected },
+        RadioGroup.Root(
+          { value: selected },
           options.map((option) =>
             $.div(
               {
@@ -239,7 +240,10 @@ export const CardStyle: Story = {
                 onClick: () => selected.set(option.value),
               },
               [
-                RadioGroup.Item({ value: option.value, id: `card-${option.value}` }),
+                RadioGroup.Item({
+                  value: option.value,
+                  id: `card-${option.value}`,
+                }),
                 $.div({ class: "radio-card-content" }, [
                   $.p({ class: "radio-card-title" }, option.title),
                   $.p({ class: "radio-card-description" }, option.description),
@@ -304,7 +308,10 @@ export const WithForm: Story = {
             ]),
           ],
         ),
-        $.button({ class: "radiogroup-form-button", onClick: handleClick }, "Submit"),
+        $.button(
+          { class: "radiogroup-form-button", onClick: handleClick },
+          "Submit",
+        ),
       ]);
     });
 

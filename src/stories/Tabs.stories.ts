@@ -141,9 +141,12 @@ export const Vertical: Story = {
 export const ManualActivation: Story = {
   render: () => {
     const element = Effect.gen(function* () {
-      const info = yield* $.p({
-        style: { fontSize: "14px", color: "#6b7280", marginBottom: "16px" },
-      }, "Use arrow keys to navigate, then press Enter or Space to select a tab.");
+      const info = yield* $.p(
+        {
+          style: { fontSize: "14px", color: "#6b7280", marginBottom: "16px" },
+        },
+        "Use arrow keys to navigate, then press Enter or Space to select a tab.",
+      );
 
       const tabs = yield* Tabs.Root(
         {
@@ -157,14 +160,12 @@ export const ManualActivation: Story = {
             Tabs.Trigger({ value: "tab3" }, "Tab 3"),
           ]),
           Tabs.Content({ value: "tab1" }, [
-            $.p("Content for Tab 1. Focus moves with arrows, but you must press Enter/Space to activate."),
+            $.p(
+              "Content for Tab 1. Focus moves with arrows, but you must press Enter/Space to activate.",
+            ),
           ]),
-          Tabs.Content({ value: "tab2" }, [
-            $.p("Content for Tab 2."),
-          ]),
-          Tabs.Content({ value: "tab3" }, [
-            $.p("Content for Tab 3."),
-          ]),
+          Tabs.Content({ value: "tab2" }, [$.p("Content for Tab 2.")]),
+          Tabs.Content({ value: "tab3" }, [$.p("Content for Tab 3.")]),
         ],
       );
 
@@ -266,14 +267,12 @@ export const Controlled: Story = {
             Tabs.Trigger({ value: "tab3" }, "Tab 3"),
           ]),
           Tabs.Content({ value: "tab1" }, [
-            $.p("Content for Tab 1. You can control this from the buttons above."),
+            $.p(
+              "Content for Tab 1. You can control this from the buttons above.",
+            ),
           ]),
-          Tabs.Content({ value: "tab2" }, [
-            $.p("Content for Tab 2."),
-          ]),
-          Tabs.Content({ value: "tab3" }, [
-            $.p("Content for Tab 3."),
-          ]),
+          Tabs.Content({ value: "tab2" }, [$.p("Content for Tab 2.")]),
+          Tabs.Content({ value: "tab3" }, [$.p("Content for Tab 3.")]),
         ],
       );
 
@@ -307,7 +306,9 @@ export const CardStyle: Story = {
         ]),
         Tabs.Content({ value: "overview" }, [
           $.h3("Overview"),
-          $.p("Welcome to your dashboard. Here's a quick overview of your account."),
+          $.p(
+            "Welcome to your dashboard. Here's a quick overview of your account.",
+          ),
         ]),
         Tabs.Content({ value: "analytics" }, [
           $.h3("Analytics"),
