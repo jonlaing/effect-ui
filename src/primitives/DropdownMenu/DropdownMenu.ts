@@ -32,7 +32,7 @@ export interface DropdownMenuContext {
   /** Toggle the menu open state */
   readonly toggle: () => Effect.Effect<void>;
   /** Reference to the trigger element */
-  readonly triggerRef: Ref<HTMLElement>;
+  readonly triggerRef: Ref<HTMLButtonElement>;
   /** Unique ID for the content */
   readonly contentId: string;
   /** Unique ID for the trigger */
@@ -128,7 +128,7 @@ export interface DropdownMenuSubContext {
   /** Schedule a close with delay */
   readonly scheduleClose: () => void;
   /** Reference to the SubTrigger element */
-  readonly triggerRef: Ref<HTMLElement>;
+  readonly triggerRef: Ref<HTMLDivElement>;
   /** Unique ID for the submenu content */
   readonly contentId: string;
   /** Unique ID for the SubTrigger */
@@ -268,7 +268,7 @@ const Root = (
       ? props.open
       : yield* Signal.make(props.defaultOpen ?? false);
 
-    const triggerRef = yield* Ref.make<HTMLElement>();
+    const triggerRef = yield* Ref.make<HTMLButtonElement>();
     const contentId = yield* UniqueId.make("menu-content");
     const triggerId = yield* UniqueId.make("menu-trigger");
 
@@ -812,7 +812,7 @@ const Sub = (
       ? props.open
       : yield* Signal.make(props.defaultOpen ?? false);
 
-    const triggerRef = yield* Ref.make<HTMLElement>();
+    const triggerRef = yield* Ref.make<HTMLDivElement>();
     const contentId = yield* UniqueId.make("submenu-content");
     const triggerId = yield* UniqueId.make("submenu-trigger");
 

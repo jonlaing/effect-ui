@@ -161,7 +161,8 @@ export interface AriaAttributes {
  * div({ "data-state": state }, [...])
  * ```
  */
-export interface BaseAttributes extends DataAttributes, AriaAttributes {
+export interface BaseAttributes<T extends HTMLElement>
+  extends DataAttributes, AriaAttributes {
   /** CSS class name(s) - can be a string, array of strings, or reactive versions */
   readonly class?: ClassValue;
   /** Inline styles as a record of property-value pairs */
@@ -172,7 +173,7 @@ export interface BaseAttributes extends DataAttributes, AriaAttributes {
   readonly id?: string;
   /** ARIA role attribute */
   readonly role?: string | Readable<string>;
-  readonly ref?: Ref<HTMLElement>;
+  readonly ref?: Ref<T>;
 }
 
 /**
@@ -245,7 +246,7 @@ type ElementAttributeKeys<K extends keyof HTMLElementTagNameMap> = Exclude<
  * @template K - The HTML element tag name
  */
 export type HTMLAttributes<K extends keyof HTMLElementTagNameMap> =
-  BaseAttributes &
+  BaseAttributes<HTMLElementTagNameMap[K]> &
     EventAttributes &
     HTMLAttributeAliases<K> & {
       readonly [P in ElementAttributeKeys<K>]?: HTMLElementTagNameMap[K][P] extends string
