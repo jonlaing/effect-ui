@@ -125,8 +125,8 @@
     - [x] Radio Group
     - [x] Checkbox
     - [x] Slider
-    - [ ] Toast / Notifications
-    - [ ] Alert Dialog
+    - [x] Toast / Notifications
+    - [x] Alert Dialog
     - [x] Context Menu
     - [ ] Navigation Menu
     - [x] Collapsible

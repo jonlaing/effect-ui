@@ -1,0 +1,210 @@
+/* AlertDialog Overlay */
+[data-alertdialog-overlay] {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 50;
+  animation: alertdialog-fade-in 150ms ease-out;
+}
+
+[data-alertdialog-overlay][data-state="closed"] {
+  animation: alertdialog-fade-out 150ms ease-in;
+}
+
+/* AlertDialog Content */
+[data-alertdialog-content] {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  padding: 24px;
+  width: 90%;
+  max-width: 450px;
+  z-index: 51;
+  animation: alertdialog-enter 200ms ease-out;
+}
+
+[data-alertdialog-content][data-state="closed"] {
+  animation: alertdialog-exit 150ms ease-in;
+}
+
+[data-alertdialog-content]:focus {
+  outline: none;
+}
+
+/* AlertDialog Title */
+[data-alertdialog-title] {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+/* AlertDialog Description */
+[data-alertdialog-description] {
+  margin: 0 0 20px 0;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+}
+
+/* AlertDialog Trigger */
+.alertdialog-trigger {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  background-color: #3b82f6;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.alertdialog-trigger:hover {
+  background-color: #2563eb;
+}
+
+.alertdialog-trigger:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.alertdialog-trigger--danger {
+  background-color: #dc2626;
+}
+
+.alertdialog-trigger--danger:hover {
+  background-color: #b91c1c;
+}
+
+/* AlertDialog Buttons Container */
+.alertdialog-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.alertdialog-buttons--three {
+  gap: 8px;
+}
+
+/* AlertDialog Cancel Button */
+.alertdialog-cancel {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.alertdialog-cancel:hover {
+  background-color: #f9fafb;
+}
+
+.alertdialog-cancel:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* AlertDialog Action Button */
+.alertdialog-action {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  background-color: #3b82f6;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.alertdialog-action:hover {
+  background-color: #2563eb;
+}
+
+.alertdialog-action:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.alertdialog-action--danger {
+  background-color: #dc2626;
+}
+
+.alertdialog-action--danger:hover {
+  background-color: #b91c1c;
+}
+
+.alertdialog-action--secondary {
+  color: #374151;
+  background-color: white;
+  border: 1px solid #d1d5db;
+}
+
+.alertdialog-action--secondary:hover {
+  background-color: #f9fafb;
+}
+
+/* Animations */
+@keyframes alertdialog-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes alertdialog-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes alertdialog-enter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes alertdialog-exit {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+}
+
+/* Story container */
+.alertdialog-story-container {
+  padding: 20px;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* External controls demo */
+.alertdialog-external-controls {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}

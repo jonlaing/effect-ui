@@ -49,6 +49,22 @@ export {
   type DialogDescriptionProps,
 } from "./Dialog/index.js";
 
+// AlertDialog
+export {
+  AlertDialog,
+  AlertDialogCtx,
+  type AlertDialogContext,
+  type AlertDialogRootProps,
+  type AlertDialogTriggerProps,
+  type AlertDialogPortalProps,
+  type AlertDialogOverlayProps,
+  type AlertDialogContentProps,
+  type AlertDialogCancelProps,
+  type AlertDialogActionProps,
+  type AlertDialogTitleProps,
+  type AlertDialogDescriptionProps,
+} from "./AlertDialog/index.js";
+
 // Tabs
 export {
   Tabs,
