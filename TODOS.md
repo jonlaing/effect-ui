@@ -131,7 +131,7 @@
     - [x] Navigation Menu
     - [x] Collapsible
     - [x] Scroll Area
-    - [ ] Progress
+    - [x] Progress
   - Design principles:
     - Composable parts (e.g., `Dialog.Root`, `Dialog.Trigger`, `Dialog.Content`)
     - Render props or slot pattern for full control

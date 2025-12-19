@@ -259,3 +259,13 @@ export {
   type ScrollAreaThumbProps,
   type ScrollAreaCornerProps,
 } from "./ScrollArea/index.js";
+
+// Progress
+export {
+  Progress,
+  ProgressCtx,
+  type ProgressState,
+  type ProgressContext,
+  type ProgressRootProps,
+  type ProgressIndicatorProps,
+} from "./Progress/index.js";

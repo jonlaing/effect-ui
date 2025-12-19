@@ -353,4 +353,10 @@ export {
   type ScrollAreaScrollbarProps,
   type ScrollAreaThumbProps,
   type ScrollAreaCornerProps,
+  Progress,
+  ProgressCtx,
+  type ProgressState,
+  type ProgressContext,
+  type ProgressRootProps,
+  type ProgressIndicatorProps,
 } from "./primitives";

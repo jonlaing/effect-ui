@@ -1,0 +1,117 @@
+/* Progress Root */
+[data-progress-root] {
+  position: relative;
+  overflow: hidden;
+  background: #e5e7eb;
+  border-radius: 9999px;
+  width: 100%;
+  height: 16px;
+}
+
+/* Progress Indicator */
+[data-progress-indicator] {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  border-radius: 9999px;
+  transition: transform 300ms ease;
+}
+
+/* Indeterminate animation */
+[data-progress-root][data-state="indeterminate"] [data-progress-indicator] {
+  width: 50%;
+  animation: progress-indeterminate 1.5s ease-in-out infinite;
+}
+
+@keyframes progress-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+/* Complete state */
+[data-progress-root][data-state="complete"] [data-progress-indicator] {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+/* Story container styles */
+.progress-story-container {
+  padding: 20px;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  max-width: 400px;
+}
+
+.progress-demo {
+  margin-bottom: 24px;
+}
+
+.progress-demo-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.progress-demo-value {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+  text-align: right;
+}
+
+/* Size variants */
+.progress-sm [data-progress-root] {
+  height: 8px;
+}
+
+.progress-lg [data-progress-root] {
+  height: 24px;
+}
+
+/* Color variants */
+.progress-success [data-progress-indicator] {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.progress-warning [data-progress-indicator] {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.progress-error [data-progress-indicator] {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+/* Striped variant */
+.progress-striped [data-progress-indicator] {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.15) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.15) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 1rem 1rem;
+  background-color: #3b82f6;
+  animation: progress-stripes 1s linear infinite;
+}
+
+@keyframes progress-stripes {
+  from {
+    background-position: 1rem 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
