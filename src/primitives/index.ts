@@ -243,3 +243,19 @@ export {
   type NavigationMenuViewportProps,
   type NavigationMenuIndicatorProps,
 } from "./NavigationMenu/index.js";
+
+// ScrollArea
+export {
+  ScrollArea,
+  ScrollAreaCtx,
+  ScrollbarCtx,
+  type ScrollAreaContext,
+  type ScrollbarContext,
+  type ScrollAreaType,
+  type ScrollbarOrientation,
+  type ScrollAreaRootProps,
+  type ScrollAreaViewportProps,
+  type ScrollAreaScrollbarProps,
+  type ScrollAreaThumbProps,
+  type ScrollAreaCornerProps,
+} from "./ScrollArea/index.js";

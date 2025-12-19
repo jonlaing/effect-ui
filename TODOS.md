@@ -130,7 +130,7 @@
     - [x] Context Menu
     - [x] Navigation Menu
     - [x] Collapsible
-    - [ ] Scroll Area
+    - [x] Scroll Area
     - [ ] Progress
   - Design principles:
     - Composable parts (e.g., `Dialog.Root`, `Dialog.Trigger`, `Dialog.Content`)

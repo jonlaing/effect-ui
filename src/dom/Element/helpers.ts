@@ -118,9 +118,11 @@ export const applyStyle = (
     Object.entries(value),
     ([prop, styleVal]) => {
       if (isReadable(styleVal)) {
+        console.log("im a readable for style", prop);
         return subscribeToReadable(
           styleVal as Readable<string | number>,
           (v) => {
+            console.log("im setting", prop, "to", v);
             element.style.setProperty(prop, String(v));
           },
         );

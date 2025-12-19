@@ -9,7 +9,8 @@ export const defaultEquals = <A>(a: A, b: A): boolean => a === b;
 
 /**
  * Combines multiple Readables into a single stream of value tuples.
- * Emits whenever any dependency emits, using the latest values from all.
+ * Emits whenever any dependency changes, fetching current values from ALL
+ * dependencies to ensure consistency.
  */
 export const combineReadables = <T extends readonly Readable<unknown>[]>(
   readables: T,
@@ -25,19 +26,17 @@ export const combineReadables = <T extends readonly Readable<unknown>[]>(
     );
   }
 
-  const streams = readables.map((r) => r.values);
-  return streams.reduce(
-    (acc: Stream.Stream<unknown[]>, stream, idx) => {
-      if (idx === 0) {
-        return Stream.map(stream, (a) => [a]);
-      }
-      return Stream.zipLatestWith(acc, stream, (arr: unknown[], val) => [
-        ...arr,
-        val,
-      ]);
-    },
-    Stream.never as Stream.Stream<unknown[]>,
-  ) as Stream.Stream<ReadableValues<T>>;
+  // Emit initial values once, then re-fetch all values whenever any changes
+  const initialStream = Stream.fromEffect(getCurrentValues(readables));
+  const changesStream = readables
+    .map((r) => r.changes)
+    .reduce(
+      (acc, stream) => Stream.merge(acc, stream),
+      Stream.never as Stream.Stream<unknown>,
+    )
+    .pipe(Stream.mapEffect(() => getCurrentValues(readables)));
+
+  return Stream.concat(initialStream, changesStream);
 };
 
 /**
