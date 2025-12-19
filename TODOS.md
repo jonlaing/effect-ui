@@ -86,6 +86,16 @@
 
 - [ ] **Documentation site** - Full documentation with examples (TypeDoc is set up)
 
+- [ ] **Architecture/internals documentation** - For contributors and those who want to understand how Effect-UI works under the hood
+  - [ ] Reactivity system: How Streams power the reactive graph (Readable, Signal, Derived)
+  - [ ] How `combineReadables` merges dependency changes and ensures consistency
+  - [ ] DOM subscription lifecycle: `subscribeToReadable`, scopes, and automatic cleanup
+  - [ ] Element creation and attribute binding
+  - [ ] Control flow internals (`when`, `match`, `each`)
+  - [ ] How headless primitives use Context for part communication
+
+- [ ] **Full-fledged demo application** - Comprehensive showcase app demonstrating all Effect-UI features together (may be a separate project). Should include: headless primitives, forms, routing, animations, streaming data, etc.
+
 - [x] **Migration guides** - Help developers coming from other frameworks
   - [x] React migration guide (REACT-MIGRATION.md)
   - [x] Vue migration guide (VUE-MIGRATION.md)
@@ -96,7 +106,11 @@
 
 - [ ] **Chart integration guide** - Document pattern for integrating charting libraries (ECharts, Chart.js, etc.) using refs + Reaction for reactive updates. Don't build our own chart library - wrap existing mature solutions.
 
-- [ ] **Streaming async data** - Support for streaming data (e.g., AI chatbot responses). Consider how Effect Streams integrate with reactive UI updates.
+- [x] **Streaming async data** - Support for streaming data (e.g., AI chatbot responses)
+  - [x] `Readable.fromStream` creates reactive values from Effect Streams
+  - [x] `Stream.scan` for accumulating chunks (e.g., chat responses)
+  - [x] `innerHTML` prop for rendering dynamic HTML (markdown, rich text)
+  - [ ] Documentation/example showing chatbot streaming pattern
 
 - [ ] **Map and Set as reactive state** - Better ergonomics for using Map and Set as state. React makes this painful because of reference equality checks. Explore reactive Map/Set primitives that trigger updates on mutations.
 

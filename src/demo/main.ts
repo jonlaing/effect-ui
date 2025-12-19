@@ -306,17 +306,11 @@ const App = component("App", () =>
                     Effect.gen(function* () {
                       // router.routes.user.params is typed as Readable<{ id: string } | null>
                       const params = yield* router.routes.user.params.get;
-                      if (
-                        params &&
-                        typeof params === "object" &&
-                        "id" in params
-                      ) {
-                        const user = yield* fetchUser(
-                          (params as { id: string }).id,
-                        );
-                        return yield* UserPage({ user });
+                      if (!params) {
+                        return yield* Effect.fail(new Error("No user ID"));
                       }
-                      return yield* Effect.fail(new Error("No user ID"));
+                      const user = yield* fetchUser(params.id);
+                      return yield* UserPage({ user });
                     }),
                   fallback: () =>
                     $.div({ class: "loading" }, "Loading user..."),
