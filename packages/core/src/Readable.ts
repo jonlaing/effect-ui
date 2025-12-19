@@ -152,39 +152,6 @@ const getCurrentValues = <T extends readonly Readable<unknown>[]>(
   }>;
 
 /**
- * Combines multiple Readables into a single stream of value tuples.
- * Emits whenever any dependency changes, fetching current values from ALL
- * dependencies to ensure consistency.
- *
- * This is an internal helper that returns a Stream including initial values.
- */
-const combineReadablesStream = <T extends readonly Readable<unknown>[]>(
-  readables: T,
-): Stream.Stream<{ [K in keyof T]: T[K] extends Readable<infer A> ? A : never }> => {
-  type Result = { [K in keyof T]: T[K] extends Readable<infer A> ? A : never };
-
-  if (readables.length === 0) {
-    return Stream.make([] as unknown as Result);
-  }
-
-  if (readables.length === 1) {
-    return Stream.map(readables[0].values, (a) => [a] as unknown as Result);
-  }
-
-  // Emit initial values once, then re-fetch all values whenever any changes
-  const initialStream = Stream.fromEffect(getCurrentValues(readables));
-  const changesStream = readables
-    .map((r) => r.changes)
-    .reduce(
-      (acc, stream) => Stream.merge(acc, stream),
-      Stream.never as Stream.Stream<unknown>,
-    )
-    .pipe(Stream.mapEffect(() => getCurrentValues(readables)));
-
-  return Stream.concat(initialStream, changesStream);
-};
-
-/**
  * Combine multiple Readables into a single Readable of a tuple.
  * The combined Readable updates whenever any input changes.
  *

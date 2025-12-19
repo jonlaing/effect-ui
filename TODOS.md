@@ -55,7 +55,7 @@
 
 ## Future Considerations
 
-- [ ] **SSR Support** - Server-side rendering capability
+- [ ] **SSR & Multi-Target Rendering** - Server-side rendering and beyond (see Design Decisions)
 
 - [ ] **DevTools** - Browser extension or integration for debugging reactive state
 
@@ -483,6 +483,131 @@ div({ class: ["flex", "items-center", "gap-4"] }); // string[]
 div({ class: isActive.map((a) => (a ? "on" : "off")) }); // Readable<string>
 div({ class: ["btn", variant.map((v) => `btn-${v}`)] }); // mixed with reactives
 ```
+
+### SSR & Multi-Target Rendering
+
+**Approach:** Abstract rendering through Effect Layers to support multiple targets
+
+The reactive core (Signals, Derived, Readable) is completely platform-agnostic. Only the `$` element factories are DOM-specific. By abstracting rendering through Layers, the same component code can target different environments.
+
+**Architecture:**
+
+```
+┌─────────────────────────────────────────────────┐
+│                  Component Logic                 │
+│         (Signals, Derived, Effects, Streams)     │
+└─────────────────────┬───────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────┐
+│              Element Description                 │
+│    { type: "div", props: {...}, children: [] }  │
+└─────────────────────┬───────────────────────────┘
+                      │
+        ┌─────────────┼─────────────┬─────────────┐
+        ▼             ▼             ▼             ▼
+   ┌─────────┐  ┌──────────┐  ┌─────────┐  ┌───────────┐
+   │   DOM   │  │  String  │  │ Terminal│  │  Native   │
+   │ Renderer│  │ Renderer │  │ Renderer│  │ Renderer  │
+   └─────────┘  └──────────┘  └─────────┘  └───────────┘
+```
+
+**Renderer Interface:**
+
+```ts
+interface Renderer<Node> {
+  createNode: (type: string, props: Props) => Effect<Node>
+  createTextNode: (text: string) => Effect<Node>
+  appendChild: (parent: Node, child: Node) => Effect<void>
+  removeChild: (parent: Node, child: Node) => Effect<void>
+  setAttribute: (node: Node, key: string, value: unknown) => Effect<void>
+  setTextContent: (node: Node, text: string) => Effect<void>
+  addEventListener: (node: Node, event: string, handler: Handler) => Effect<void>
+}
+
+class RendererContext extends Context.Tag("Renderer")<
+  RendererContext,
+  Renderer<unknown>
+>() {}
+```
+
+**Potential Targets:**
+
+- `@effex/dom` - Browser DOM (current implementation)
+- `@effex/string` - HTML strings for SSR/static site generation
+- `@effex/terminal` - Terminal UI (like Ink for React)
+- `@effex/native` - iOS/Android native views
+- `@effex/canvas` - Canvas/WebGL for games, data viz
+- `@effex/test` - Fast virtual renderer for unit tests (no jsdom)
+
+**Key Insight:** Reactivity works across all targets. A Signal updating triggers `setTextContent` or `setAttribute` on whatever renderer is active. The renderer receives imperative commands and doesn't need to know about reactivity.
+
+**SSR-Specific Considerations:**
+
+1. **Server reactivity** - Only need initial values, not subscriptions. Could provide simplified Signal that skips stream setup.
+
+2. **Streaming** - Effect's streaming could enable progressive HTML. Suspense boundaries could flush placeholders early.
+
+**Hydration via Data Attributes (Preferred Approach):**
+
+Instead of walking the DOM in creation order or using comment markers, use data attributes for direct lookup. Each reactive binding gets a deterministic ID (from creation order via SignalRegistry), and elements are tagged with that ID.
+
+```html
+<!-- Reactive text -->
+<span data-effex-text="s:0">42</span>
+
+<!-- Reactive attribute -->
+<div class="active" data-effex-class="s:1">...</div>
+
+<!-- Event handler (via delegation) -->
+<button data-effex-click="h:0">Click me</button>
+
+<!-- when conditional -->
+<div style="display:contents" data-effex-when="w:0" data-effex-branch="true">
+  <div>Welcome!</div>
+</div>
+
+<!-- match -->
+<div style="display:contents" data-effex-match="m:0" data-effex-pattern="success">
+  <div>Done!</div>
+</div>
+
+<!-- each list -->
+<div style="display:contents" data-effex-each="e:0">
+  <li data-effex-key="item-1">Apple</li>
+  <li data-effex-key="item-2">Banana</li>
+</div>
+```
+
+Hydration process:
+1. Run component code (same as server) - creates signals, derived values
+2. Each reactive primitive gets deterministic ID from creation order
+3. Query DOM by data attributes: `[data-effex-text="s:0"]`
+4. Attach subscriptions to found elements
+5. Event handlers use delegation from root
+
+Benefits:
+- O(1) lookup vs O(n) DOM walking
+- No comment markers needed
+- `when`/`match`/`each` already have wrapper divs (`display: contents`) - perfect anchor points
+- Out-of-order hydration possible
+- Bindings visible in DevTools
+
+| Binding | Data attribute | Extra info |
+|---------|----------------|------------|
+| Text | `data-effex-text="id"` | — |
+| Attribute | `data-effex-attr-{name}="id"` | — |
+| Event | `data-effex-{event}="id"` | delegation |
+| `when` | `data-effex-when="id"` | `data-effex-branch` |
+| `match` | `data-effex-match="id"` | `data-effex-pattern` |
+| `each` | `data-effex-each="id"` | keys on children |
+
+**Open Questions:**
+
+- How to handle DOM-specific primitives (Portal, form inputs) in non-DOM targets?
+- Scope lifecycle on server - when does cleanup run?
+- Async boundaries - wait for all data vs stream vs placeholders?
+- Multiple bindings from same signal - need compound IDs like `s:0:0`, `s:0:1`?
 
 ## Notes
 
