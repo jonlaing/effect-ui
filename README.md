@@ -484,12 +484,14 @@ import {
   component,
   mount,
   runApp,
+} from "@effex/dom";
+import {
   Route,
   Router,
   Link,
   makeTypedRouterLayer,
   type RouterInfer,
-} from "@effex/dom";
+} from "@effex/router";
 
 // Define routes with typed params
 const routes = {
@@ -589,7 +591,8 @@ Effex includes a form system with Effect Schema validation:
 
 ```ts
 import { Effect, Schema } from "effect";
-import { $, Form, component, when } from "@effex/dom";
+import { $, component, when } from "@effex/dom";
+import { Form } from "@effex/form";
 
 // Define a schema for validation
 const LoginSchema = Schema.Struct({
