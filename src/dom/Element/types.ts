@@ -176,6 +176,23 @@ export interface BaseAttributes<T extends HTMLElement>
   /** ARIA role attribute */
   readonly role?: string | Readable<string>;
   readonly ref?: Ref<T>;
+  /**
+   * Set the element's innerHTML directly. Useful for rendering HTML strings
+   * from markdown parsers, rich text editors, or sanitized user content.
+   *
+   * Note: No automatic sanitization - use DOMPurify or similar if rendering untrusted content.
+   *
+   * @example
+   * ```ts
+   * // Static HTML
+   * $.div({ innerHTML: "<strong>Bold</strong> text" })
+   *
+   * // Reactive markdown rendering
+   * const markdown = yield* Signal.make("# Hello");
+   * $.div({ innerHTML: markdown.map(md => marked.parse(md)) })
+   * ```
+   */
+  readonly innerHTML?: string | Readable<string>;
 }
 
 /**
@@ -206,6 +223,7 @@ type ExcludedKeys =
   | "htmlFor" // We use HTML attribute name "for" instead
   | "id"
   | "role" // Handled by BaseAttributes
+  | "innerHTML" // Handled by BaseAttributes
   | "onclick"
   | "oninput"
   | "onchange"

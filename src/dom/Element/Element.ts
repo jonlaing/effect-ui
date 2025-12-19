@@ -28,6 +28,19 @@ const applyRef = <K extends keyof HTMLElementTagNameMap>(
   ref.set(element);
 };
 
+const applyInnerHTML = (
+  element: HTMLElement,
+  value: string | Readable<string>,
+): Effect.Effect<void, never, Scope.Scope> => {
+  if (isReadable(value)) {
+    return subscribeToReadable(value as Readable<string>, (html) => {
+      element.innerHTML = html;
+    });
+  }
+  element.innerHTML = value as string;
+  return Effect.void;
+};
+
 const applyAttributes = <K extends keyof HTMLElementTagNameMap>(
   element: HTMLElementTagNameMap[K],
   attrs: HTMLAttributes<K>,
@@ -47,6 +60,8 @@ const applyAttributes = <K extends keyof HTMLElementTagNameMap>(
             | Record<string, StyleValue>
             | Readable<Record<string, string>>,
         );
+      } else if (key === "innerHTML") {
+        yield* applyInnerHTML(element, value as string | Readable<string>);
       } else if (key.startsWith("on")) {
         applyEventHandler(element, key, value as EventHandler<Event>);
       } else if (key === "id") {
