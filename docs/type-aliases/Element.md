@@ -8,7 +8,7 @@
 
 > **Element**\<`E`, `R`\> = `Effect.Effect`\<`HTMLElement`, `E`, `Scope.Scope` \| `R`\>
 
-Defined in: [src/dom/Element/types.ts:26](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Element/types.ts#L26)
+Defined in: [src/dom/Element/types.ts:27](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/Element/types.ts#L27)
 
 A DOM element wrapped in an Effect with scope management.
 

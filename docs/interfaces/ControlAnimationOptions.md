@@ -6,7 +6,7 @@
 
 # Interface: ControlAnimationOptions
 
-Defined in: [src/dom/Animation/types.ts:112](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Animation/types.ts#L112)
+Defined in: [src/dom/Animation/types.ts:112](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/Animation/types.ts#L112)
 
 Options passed to control flow functions (when, match, each)
 
@@ -16,4 +16,4 @@ Options passed to control flow functions (when, match, each)
 
 > `optional` **animate**: [`AnimationOptions`](AnimationOptions.md)
 
-Defined in: [src/dom/Animation/types.ts:113](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Animation/types.ts#L113)
+Defined in: [src/dom/Animation/types.ts:113](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/Animation/types.ts#L113)

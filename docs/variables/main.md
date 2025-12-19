@@ -8,4 +8,4 @@
 
 > `const` **main**: [`ElementFactory`](../type-aliases/ElementFactory.md)\<`"main"`\>
 
-Defined in: [src/dom/Element/Element.ts:156](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Element/Element.ts#L156)
+Defined in: [src/dom/Element/Element.ts:166](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/Element/Element.ts#L166)

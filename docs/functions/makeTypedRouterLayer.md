@@ -8,7 +8,7 @@
 
 > **makeTypedRouterLayer**\<`R`, `I`\>(`router`, `TypedContext`): `Layer`\<[`RouterContext`](../classes/RouterContext.md) \| `R`\>
 
-Defined in: [src/router/RouterContext.ts:73](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/RouterContext.ts#L73)
+Defined in: [src/router/RouterContext.ts:73](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/router/RouterContext.ts#L73)
 
 Create a router layer that provides both RouterContext (for Link components)
 and a custom typed context (for full router access with typed routes).

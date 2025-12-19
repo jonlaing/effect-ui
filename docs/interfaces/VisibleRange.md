@@ -6,7 +6,7 @@
 
 # Interface: VisibleRange
 
-Defined in: [src/dom/VirtualList/types.ts:9](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/VirtualList/types.ts#L9)
+Defined in: [src/dom/VirtualList/types.ts:9](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/VirtualList/types.ts#L9)
 
 Visible range of items in the virtual list.
 
@@ -16,7 +16,7 @@ Visible range of items in the virtual list.
 
 > `readonly` **end**: `number`
 
-Defined in: [src/dom/VirtualList/types.ts:11](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/VirtualList/types.ts#L11)
+Defined in: [src/dom/VirtualList/types.ts:11](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/VirtualList/types.ts#L11)
 
 ***
 
@@ -24,4 +24,4 @@ Defined in: [src/dom/VirtualList/types.ts:11](https://github.com/jonlaing/effect
 
 > `readonly` **start**: `number`
 
-Defined in: [src/dom/VirtualList/types.ts:10](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/VirtualList/types.ts#L10)
+Defined in: [src/dom/VirtualList/types.ts:10](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/VirtualList/types.ts#L10)

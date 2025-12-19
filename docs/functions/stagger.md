@@ -8,7 +8,7 @@
 
 > **stagger**(`delayMs`): [`StaggerFunction`](../type-aliases/StaggerFunction.md)
 
-Defined in: [src/dom/Animation/index.ts:36](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Animation/index.ts#L36)
+Defined in: [src/dom/Animation/index.ts:36](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/Animation/index.ts#L36)
 
 Create a linear stagger function with fixed delay between items.
 

@@ -6,7 +6,7 @@
 
 # Interface: BaseRouter
 
-Defined in: [src/router/types.ts:147](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L147)
+Defined in: [src/router/types.ts:147](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/router/types.ts#L147)
 
 Base router interface for context (without route-specific typing).
 Used by Link and other components that need router access.
@@ -17,7 +17,7 @@ Used by Link and other components that need router access.
 
 > `readonly` **back**: () => `Effect`\<`void`\>
 
-Defined in: [src/router/types.ts:160](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L160)
+Defined in: [src/router/types.ts:160](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/router/types.ts#L160)
 
 Go back in history
 
@@ -31,7 +31,7 @@ Go back in history
 
 > `readonly` **forward**: () => `Effect`\<`void`\>
 
-Defined in: [src/router/types.ts:162](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L162)
+Defined in: [src/router/types.ts:162](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/router/types.ts#L162)
 
 Go forward in history
 
@@ -45,7 +45,7 @@ Go forward in history
 
 > `readonly` **pathname**: [`Readable`](Readable.md)\<`string`\>
 
-Defined in: [src/router/types.ts:149](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L149)
+Defined in: [src/router/types.ts:149](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/router/types.ts#L149)
 
 The current pathname
 
@@ -55,7 +55,7 @@ The current pathname
 
 > `readonly` **push**: (`path`, `options?`) => `Effect`\<`void`\>
 
-Defined in: [src/router/types.ts:153](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L153)
+Defined in: [src/router/types.ts:153](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/router/types.ts#L153)
 
 Navigate to a path
 
@@ -79,7 +79,7 @@ Navigate to a path
 
 > `readonly` **replace**: (`path`) => `Effect`\<`void`\>
 
-Defined in: [src/router/types.ts:158](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L158)
+Defined in: [src/router/types.ts:158](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/router/types.ts#L158)
 
 Replace current path
 
@@ -99,6 +99,6 @@ Replace current path
 
 > `readonly` **searchParams**: [`Readable`](Readable.md)\<`URLSearchParams`\>
 
-Defined in: [src/router/types.ts:151](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L151)
+Defined in: [src/router/types.ts:151](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/router/types.ts#L151)
 
 The current query params

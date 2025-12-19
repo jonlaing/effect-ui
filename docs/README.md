@@ -25,6 +25,7 @@ A reactive UI framework built on [Effect](https://effect.website/). Effect UI pr
 - [Portal](#portal)
 - [Why No JSX?](#why-no-jsx)
 - [API Documentation](#api-documentation)
+- [Acknowledgments](#acknowledgments)
 
 ## Why Effect UI?
 
@@ -620,37 +621,19 @@ Example CSS for animations:
 
 ```css
 @keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slide-in {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
-.fade-in {
-  animation: fade-in 0.3s ease-out forwards;
-}
-.fade-out {
-  animation: fade-in 0.2s ease-in reverse forwards;
-}
-.slide-in {
-  animation: slide-in 0.3s ease-out forwards;
-}
-.slide-out {
-  animation: slide-in 0.2s ease-in reverse forwards;
-}
+.fade-in { animation: fade-in 0.3s ease-out forwards; }
+.fade-out { animation: fade-in 0.2s ease-in reverse forwards; }
+.slide-in { animation: slide-in 0.3s ease-out forwards; }
+.slide-out { animation: slide-in 0.2s ease-in reverse forwards; }
 ```
 
 Animation features:
@@ -757,6 +740,20 @@ The function-based API is already quite clean for UI structure, and deeply neste
 ## API Documentation
 
 See the [docs](./docs) folder for full API documentation.
+
+## Acknowledgments
+
+Effect UI stands on the shoulders of giants. We're grateful to these projects for their inspiration:
+
+- **[Effect](https://effect.website/)** - The foundation of everything. Effect's approach to typed errors, resource management, and structured concurrency inspired this entire project. If you haven't explored Effect yet, you're missing out on one of the most well-designed TypeScript libraries in existence.
+
+- **[React](https://react.dev/)** - The component model, hooks patterns, and overall developer experience of React heavily influenced Effect UI's API design. React proved that declarative UI is the way forward.
+
+- **[Solid](https://www.solidjs.com/)** - Our fine-grained reactivity system (Signals, Derived values, subscriptions) draws direct inspiration from Solid's brilliant reactive primitives. Solid showed that you don't need a virtual DOM to build great UIs.
+
+- **[TanStack](https://tanstack.com/)** - The router and form APIs are inspired by TanStack Router and TanStack Form. Their focus on type safety and developer experience set the bar for what modern web tooling should look like.
+
+- **[Radix](https://www.radix-ui.com/)** - Our headless UI primitives follow patterns established by Radix. Their commitment to accessibility and unstyled, composable components is exactly right.
 
 ## License
 

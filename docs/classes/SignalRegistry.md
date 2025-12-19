@@ -6,7 +6,7 @@
 
 # Class: SignalRegistry
 
-Defined in: [src/core/Signal.ts:72](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/core/Signal.ts#L72)
+Defined in: [src/core/Signal.ts:72](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/core/Signal.ts#L72)
 
 Context service for creating and managing Signals within a scope.
 
@@ -294,7 +294,7 @@ Defined in: node\_modules/.pnpm/effect@3.19.9/node\_modules/effect/dist/dts/Cont
 
 > `static` **Live**: `Layer`\<`SignalRegistry`, `never`, `never`\>
 
-Defined in: [src/core/Signal.ts:84](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/core/Signal.ts#L84)
+Defined in: [src/core/Signal.ts:84](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/core/Signal.ts#L84)
 
 ***
 

@@ -8,7 +8,7 @@
 
 > **AnimationHook** = (`element`) => `Effect.Effect`\<`void`\> \| `void`
 
-Defined in: [src/dom/Animation/types.ts:15](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Animation/types.ts#L15)
+Defined in: [src/dom/Animation/types.ts:15](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/Animation/types.ts#L15)
 
 Lifecycle hook that can return void or an Effect
 

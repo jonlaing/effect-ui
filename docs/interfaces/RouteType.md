@@ -6,7 +6,7 @@
 
 # Interface: RouteType\<Path, P\>
 
-Defined in: [src/router/types.ts:27](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L27)
+Defined in: [src/router/types.ts:27](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/router/types.ts#L27)
 
 A route definition with typed parameters.
 
@@ -30,7 +30,7 @@ The params schema type
 
 > `readonly` **match**: (`pathname`) => `Effect`\<`Type`\<`P`\> \| `Record`\<`string`, `never`\>, [`RouteMatchErrorType`](../type-aliases/RouteMatchErrorType.md)\>
 
-Defined in: [src/router/types.ts:38](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L38)
+Defined in: [src/router/types.ts:38](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/router/types.ts#L38)
 
 Match a pathname against this route, returning params if matched
 
@@ -50,7 +50,7 @@ Match a pathname against this route, returning params if matched
 
 > `readonly` **paramsSchema**: `P` \| `undefined`
 
-Defined in: [src/router/types.ts:36](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L36)
+Defined in: [src/router/types.ts:36](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/router/types.ts#L36)
 
 Schema for params validation
 
@@ -60,7 +60,7 @@ Schema for params validation
 
 > `readonly` **path**: `Path`
 
-Defined in: [src/router/types.ts:32](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L32)
+Defined in: [src/router/types.ts:32](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/router/types.ts#L32)
 
 The original path pattern
 
@@ -70,6 +70,6 @@ The original path pattern
 
 > `readonly` **segments**: readonly [`PathSegment`](../type-aliases/PathSegment.md)[]
 
-Defined in: [src/router/types.ts:34](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L34)
+Defined in: [src/router/types.ts:34](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/router/types.ts#L34)
 
 Parsed path segments

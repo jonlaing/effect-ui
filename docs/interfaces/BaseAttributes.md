@@ -4,9 +4,9 @@
 
 [@jonlaing/effect-ui](../globals.md) / BaseAttributes
 
-# Interface: BaseAttributes
+# Interface: BaseAttributes\<T\>
 
-Defined in: [src/dom/Element/types.ts:126](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Element/types.ts#L126)
+Defined in: [src/dom/Element/types.ts:166](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/Element/types.ts#L166)
 
 Base attributes available on all elements.
 
@@ -37,7 +37,30 @@ div({ style: { color: "red", "font-size": "16px" } }, [...])
 // Reactive styles
 const width = yield* Signal.make(100)
 div({ style: { width: width.map(w => `${w}px`) } }, [...])
+
+// Data attributes
+div({ "data-state": "open", "data-testid": "my-div" }, [...])
+
+// Reactive data attributes
+const state = yield* Signal.make("closed")
+div({ "data-state": state }, [...])
 ```
+
+## Extends
+
+- `DataAttributes`.`AriaAttributes`
+
+## Type Parameters
+
+### T
+
+`T` *extends* `HTMLElement`
+
+## Indexable
+
+\[`key`: `` `data-${string}` ``\]: `DataAttributeValue`
+
+\[`key`: `` `aria-${string}` ``\]: `AriaAttributeValue`
 
 ## Properties
 
@@ -45,7 +68,7 @@ div({ style: { width: width.map(w => `${w}px`) } }, [...])
 
 > `readonly` `optional` **class**: `ClassValue`
 
-Defined in: [src/dom/Element/types.ts:128](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Element/types.ts#L128)
+Defined in: [src/dom/Element/types.ts:169](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/Element/types.ts#L169)
 
 CSS class name(s) - can be a string, array of strings, or reactive versions
 
@@ -55,9 +78,27 @@ CSS class name(s) - can be a string, array of strings, or reactive versions
 
 > `readonly` `optional` **id**: `string`
 
-Defined in: [src/dom/Element/types.ts:134](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Element/types.ts#L134)
+Defined in: [src/dom/Element/types.ts:175](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/Element/types.ts#L175)
 
 Element ID
+
+***
+
+### ref?
+
+> `readonly` `optional` **ref**: [`RefType`](../type-aliases/RefType.md)\<`T`\>
+
+Defined in: [src/dom/Element/types.ts:178](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/Element/types.ts#L178)
+
+***
+
+### role?
+
+> `readonly` `optional` **role**: `string` \| [`Readable`](Readable.md)\<`string`\>
+
+Defined in: [src/dom/Element/types.ts:177](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/Element/types.ts#L177)
+
+ARIA role attribute
 
 ***
 
@@ -65,6 +106,6 @@ Element ID
 
 > `readonly` `optional` **style**: `Record`\<`string`, `StyleValue`\> \| [`Readable`](Readable.md)\<`Record`\<`string`, `string`\>\>
 
-Defined in: [src/dom/Element/types.ts:130](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Element/types.ts#L130)
+Defined in: [src/dom/Element/types.ts:171](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/Element/types.ts#L171)
 
 Inline styles as a record of property-value pairs

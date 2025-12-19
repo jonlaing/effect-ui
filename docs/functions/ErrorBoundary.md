@@ -8,7 +8,7 @@
 
 > **ErrorBoundary**\<`E`, `R1`, `E2`, `R2`\>(`tryRender`, `catchRender`): [`Element`](../type-aliases/Element.md)\<`E2`, `R1` \| `R2`\>
 
-Defined in: [src/dom/Control.ts:29](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Control.ts#L29)
+Defined in: [src/dom/Control.ts:30](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/Control.ts#L30)
 
 Catches errors from a render function and displays a fallback element.
 

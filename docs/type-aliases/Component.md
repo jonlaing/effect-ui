@@ -8,7 +8,7 @@
 
 > **Component**\<`Name`, `Props`, `E`, `R`\> = `object` & `IsEmptyProps`\<`Props`\> *extends* `true` ? \{(): [`Element`](Element.md)\<`E`, `R`\>; \<`CE`, `CR`\>(`children`): [`Element`](Element.md)\<`E` \| `CE`, `R` \| `CR`\>; (`props`): [`Element`](Element.md)\<`E`, `R`\>; \<`CE`, `CR`\>(`props`, `children`): [`Element`](Element.md)\<`E` \| `CE`, `R` \| `CR`\>; \} : \{(`props`): [`Element`](Element.md)\<`E`, `R`\>; \<`CE`, `CR`\>(`props`, `children`): [`Element`](Element.md)\<`E` \| `CE`, `R` \| `CR`\>; \}
 
-Defined in: [src/dom/Component.ts:40](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Component.ts#L40)
+Defined in: [src/dom/Component.ts:40](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/Component.ts#L40)
 
 A named component function that renders props to an Element.
 Supports multiple call signatures similar to element factories.

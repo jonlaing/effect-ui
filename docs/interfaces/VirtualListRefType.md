@@ -6,7 +6,7 @@
 
 # Interface: VirtualListRefType
 
-Defined in: [src/dom/VirtualList/types.ts:36](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/VirtualList/types.ts#L36)
+Defined in: [src/dom/VirtualList/types.ts:36](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/VirtualList/types.ts#L36)
 
 A reference to virtual list controls that may not be available yet.
 
@@ -16,7 +16,7 @@ A reference to virtual list controls that may not be available yet.
 
 > `readonly` **\_deferred**: `Deferred`\<[`VirtualListControl`](VirtualListControl.md)\>
 
-Defined in: [src/dom/VirtualList/types.ts:44](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/VirtualList/types.ts#L44)
+Defined in: [src/dom/VirtualList/types.ts:44](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/VirtualList/types.ts#L44)
 
 Internal deferred for awaiting
 
@@ -26,7 +26,7 @@ Internal deferred for awaiting
 
 > `readonly` **\_set**: (`control`) => `void`
 
-Defined in: [src/dom/VirtualList/types.ts:42](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/VirtualList/types.ts#L42)
+Defined in: [src/dom/VirtualList/types.ts:42](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/VirtualList/types.ts#L42)
 
 Internal setter - do not use directly
 
@@ -46,7 +46,7 @@ Internal setter - do not use directly
 
 > `readonly` **current**: [`VirtualListControl`](VirtualListControl.md) \| `null`
 
-Defined in: [src/dom/VirtualList/types.ts:38](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/VirtualList/types.ts#L38)
+Defined in: [src/dom/VirtualList/types.ts:38](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/VirtualList/types.ts#L38)
 
 The current control interface, or null if not yet mounted
 
@@ -56,6 +56,6 @@ The current control interface, or null if not yet mounted
 
 > `readonly` **ready**: `Effect`\<[`VirtualListControl`](VirtualListControl.md)\>
 
-Defined in: [src/dom/VirtualList/types.ts:40](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/VirtualList/types.ts#L40)
+Defined in: [src/dom/VirtualList/types.ts:40](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/VirtualList/types.ts#L40)
 
 Effect that resolves when the control interface is available

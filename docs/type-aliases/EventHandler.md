@@ -6,9 +6,9 @@
 
 # Type Alias: EventHandler()\<E\>
 
-> **EventHandler**\<`E`\> = (`event`) => `Effect.Effect`\<`void`, `never`\> \| `void`
+> **EventHandler**\<`E`\> = (`event`) => `Effect.Effect`\<`void`, `never`\>
 
-Defined in: [src/dom/Element/types.ts:78](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Element/types.ts#L78)
+Defined in: [src/dom/Element/types.ts:79](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/Element/types.ts#L79)
 
 Handler for DOM events that can optionally return an Effect.
 
@@ -28,7 +28,7 @@ The specific Event type
 
 ## Returns
 
-`Effect.Effect`\<`void`, `never`\> \| `void`
+`Effect.Effect`\<`void`, `never`\>
 
 ## Example
 

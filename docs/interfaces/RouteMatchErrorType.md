@@ -6,7 +6,7 @@
 
 # Interface: RouteMatchErrorType
 
-Defined in: [src/router/types.ts:49](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L49)
+Defined in: [src/router/types.ts:49](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/router/types.ts#L49)
 
 Error when a route doesn't match.
 
@@ -16,7 +16,7 @@ Error when a route doesn't match.
 
 > `readonly` **\_tag**: `"RouteMatchError"`
 
-Defined in: [src/router/types.ts:50](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L50)
+Defined in: [src/router/types.ts:50](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/router/types.ts#L50)
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: [src/router/types.ts:50](https://github.com/jonlaing/effect-ui/blob/
 
 > `readonly` `optional` **details**: `string`
 
-Defined in: [src/router/types.ts:53](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L53)
+Defined in: [src/router/types.ts:53](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/router/types.ts#L53)
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: [src/router/types.ts:53](https://github.com/jonlaing/effect-ui/blob/
 
 > `readonly` **path**: `string`
 
-Defined in: [src/router/types.ts:51](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L51)
+Defined in: [src/router/types.ts:51](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/router/types.ts#L51)
 
 ***
 
@@ -40,4 +40,4 @@ Defined in: [src/router/types.ts:51](https://github.com/jonlaing/effect-ui/blob/
 
 > `readonly` **reason**: `"no-match"` \| `"validation-failed"`
 
-Defined in: [src/router/types.ts:52](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/router/types.ts#L52)
+Defined in: [src/router/types.ts:52](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/router/types.ts#L52)

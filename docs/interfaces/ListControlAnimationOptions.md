@@ -6,7 +6,7 @@
 
 # Interface: ListControlAnimationOptions
 
-Defined in: [src/dom/Animation/types.ts:119](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Animation/types.ts#L119)
+Defined in: [src/dom/Animation/types.ts:119](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/Animation/types.ts#L119)
 
 Options passed to `each` control flow function
 
@@ -16,4 +16,4 @@ Options passed to `each` control flow function
 
 > `optional` **animate**: [`ListAnimationOptions`](ListAnimationOptions.md)
 
-Defined in: [src/dom/Animation/types.ts:120](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Animation/types.ts#L120)
+Defined in: [src/dom/Animation/types.ts:120](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/dom/Animation/types.ts#L120)

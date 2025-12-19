@@ -6,31 +6,42 @@
 
 # Interface: RefType\<A\>
 
-Defined in: [src/dom/Ref.ts:7](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Ref.ts#L7)
+Defined in: [src/core/Ref.ts:8](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/core/Ref.ts#L8)
 
-A reference to a DOM element that may not exist yet.
+A mutable reference that may not have a value yet.
+Similar to React's useRef but with Effect integration.
 
 ## Type Parameters
 
 ### A
 
-`A` *extends* `HTMLElement`
+`A`
 
-The specific HTMLElement type
+The type of value held by the ref
 
 ## Properties
 
-### \_set()
+### current
 
-> `readonly` **\_set**: (`element`) => `void`
+> **current**: `A` \| `null`
 
-Defined in: [src/dom/Ref.ts:13](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Ref.ts#L13)
+Defined in: [src/core/Ref.ts:10](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/core/Ref.ts#L10)
 
-Internal setter - do not use directly
+The current value, or null if not yet set
+
+***
+
+### set()
+
+> `readonly` **set**: (`value`) => `void`
+
+Defined in: [src/core/Ref.ts:14](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/core/Ref.ts#L14)
+
+Set the value (also completes the deferred)
 
 #### Parameters
 
-##### element
+##### value
 
 `A`
 
@@ -40,20 +51,10 @@ Internal setter - do not use directly
 
 ***
 
-### current
+### value
 
-> `readonly` **current**: `A` \| `null`
+> `readonly` **value**: `Effect`\<`A`\>
 
-Defined in: [src/dom/Ref.ts:9](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Ref.ts#L9)
+Defined in: [src/core/Ref.ts:12](https://github.com/jonlaing/effect-ui/blob/5c8e6a73fe71d5c320b454ab84a9938a1f710309/src/core/Ref.ts#L12)
 
-The current element, or null if not yet set
-
-***
-
-### element
-
-> `readonly` **element**: `Effect`\<`A`\>
-
-Defined in: [src/dom/Ref.ts:11](https://github.com/jonlaing/effect-ui/blob/aacf1bed760c2d540b930ff4141953153ab6a6f4/src/dom/Ref.ts#L11)
-
-Effect that resolves when the element is available
+Effect that resolves when the value is available
