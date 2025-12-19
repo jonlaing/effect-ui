@@ -1,7 +1,8 @@
 import { Context, Duration, Effect, Exit, Scope, Stream } from "effect";
 import type { Readable } from "@core/Readable";
 import { map as mapReadable } from "@core/Readable";
-import type { Element } from "./Element";
+import type { Element, Child } from "./Element";
+import { isElement, flattenChildren } from "./Element/helpers.js";
 import type {
   ControlAnimationOptions,
   ListAnimationOptions,
@@ -925,10 +926,19 @@ export const each = <A, E = never, R = never>(
 export const provide = <I, S, E = never, R = I>(
   tag: Context.Tag<I, S>,
   value: S,
-  children: Element<E, R> | Element<E, R>[],
-): Element<E, Exclude<R, I>>[] => {
-  const childArray = Array.isArray(children) ? children : [children];
-  return childArray.map((child) =>
-    child.pipe(Effect.provideService(tag, value)),
-  ) as Element<E, Exclude<R, I>>[];
+  children: Child<E, R> | readonly Child<E, R>[],
+): Child<E, Exclude<R, I>>[] => {
+  const childArray = Array.isArray(children)
+    ? flattenChildren(children)
+    : [children];
+  return childArray.map((child) => {
+    if (isElement(child)) {
+      return child.pipe(Effect.provideService(tag, value)) as Element<
+        E,
+        Exclude<R, I>
+      >;
+    }
+    // Strings, numbers, and Readables don't need context - pass through unchanged
+    return child as Child<E, Exclude<R, I>>;
+  });
 };

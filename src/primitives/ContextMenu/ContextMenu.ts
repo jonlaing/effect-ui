@@ -6,7 +6,7 @@ import { provide, when } from "@dom/Control";
 import { component } from "@dom/Component";
 import { UniqueId } from "@dom/UniqueId";
 import { Portal } from "@dom/Portal";
-import type { Element } from "@dom/Element";
+import type { Element, Child } from "@dom/Element";
 import { getMenuNavigationState, handleMenuArrowNavigation } from "../helpers";
 
 // ============================================================================
@@ -638,9 +638,7 @@ const CheckboxItem = component(
  */
 const RadioGroup = (
   props: ContextMenuRadioGroupProps,
-  children:
-    | Element<never, ContextMenuCtx | ContextMenuRadioGroupCtx>
-    | Element<never, ContextMenuCtx | ContextMenuRadioGroupCtx>[],
+  children: Child<never, ContextMenuCtx | ContextMenuRadioGroupCtx>[],
 ): Element<never, ContextMenuCtx> =>
   Effect.gen(function* () {
     const value: Signal<string> = props.value
@@ -736,9 +734,7 @@ const RadioItem = component(
  */
 const Sub = (
   props: ContextMenuSubProps,
-  children:
-    | Element<never, ContextMenuCtx | ContextMenuSubCtx>
-    | Element<never, ContextMenuCtx | ContextMenuSubCtx>[],
+  children: Child<never, ContextMenuCtx | ContextMenuSubCtx>[],
 ): Element<never, ContextMenuCtx> =>
   Effect.gen(function* () {
     const isOpen: Signal<boolean> = props.open

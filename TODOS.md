@@ -128,7 +128,7 @@
     - [x] Toast / Notifications
     - [x] Alert Dialog
     - [x] Context Menu
-    - [ ] Navigation Menu
+    - [x] Navigation Menu
     - [x] Collapsible
     - [ ] Scroll Area
     - [ ] Progress

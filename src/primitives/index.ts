@@ -226,3 +226,20 @@ export {
   type ToastOptions,
   type SwipeDirection,
 } from "./Toast/index.js";
+
+// NavigationMenu
+export {
+  NavigationMenu,
+  NavigationMenuCtx,
+  NavigationMenuItemCtx,
+  type NavigationMenuOrientation,
+  type NavigationMenuContext,
+  type NavigationMenuItemContext,
+  type NavigationMenuRootProps,
+  type NavigationMenuListProps,
+  type NavigationMenuItemProps,
+  type NavigationMenuTriggerProps,
+  type NavigationMenuContentProps,
+  type NavigationMenuViewportProps,
+  type NavigationMenuIndicatorProps,
+} from "./NavigationMenu/index.js";

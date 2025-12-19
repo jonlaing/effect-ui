@@ -7,7 +7,7 @@ import { component } from "@dom/Component";
 import { UniqueId } from "@dom/UniqueId";
 import { Portal } from "@dom/Portal";
 import { Ref } from "@dom/Ref";
-import type { Element } from "@dom/Element";
+import type { Element, Child } from "@dom/Element";
 import {
   calculatePosition,
   getTransform,
@@ -707,9 +707,7 @@ const CheckboxItem = component(
  */
 const RadioGroup = (
   props: DropdownMenuRadioGroupProps,
-  children:
-    | Element<never, DropdownMenuCtx | DropdownMenuRadioGroupCtx>
-    | Element<never, DropdownMenuCtx | DropdownMenuRadioGroupCtx>[],
+  children: Child<never, DropdownMenuCtx | DropdownMenuRadioGroupCtx>[],
 ): Element<never, DropdownMenuCtx> =>
   Effect.gen(function* () {
     const value: Signal<string> = props.value
@@ -803,9 +801,7 @@ const RadioItem = component(
  */
 const Sub = (
   props: DropdownMenuSubProps,
-  children:
-    | Element<never, DropdownMenuCtx | DropdownMenuSubCtx>
-    | Element<never, DropdownMenuCtx | DropdownMenuSubCtx>[],
+  children: Child<never, DropdownMenuCtx | DropdownMenuSubCtx>[],
 ): Element<never, DropdownMenuCtx> =>
   Effect.gen(function* () {
     const isOpen: Signal<boolean> = props.open
