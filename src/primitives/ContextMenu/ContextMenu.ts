@@ -46,9 +46,9 @@ export interface ContextMenuRootProps {
  */
 export interface ContextMenuTriggerProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Whether the trigger is disabled */
-  readonly disabled?: boolean;
+  readonly disabled?: Readable.Reactive<boolean>;
 }
 
 /**
@@ -56,7 +56,7 @@ export interface ContextMenuTriggerProps {
  */
 export interface ContextMenuContentProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Whether keyboard navigation loops (default: true) */
   readonly loop?: boolean;
 }
@@ -66,9 +66,9 @@ export interface ContextMenuContentProps {
  */
 export interface ContextMenuItemProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Whether this item is disabled */
-  readonly disabled?: boolean;
+  readonly disabled?: Readable.Reactive<boolean>;
   /** Callback when item is selected */
   readonly onSelect?: () => Effect.Effect<void>;
 }
@@ -78,7 +78,7 @@ export interface ContextMenuItemProps {
  */
 export interface ContextMenuGroupProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -86,7 +86,7 @@ export interface ContextMenuGroupProps {
  */
 export interface ContextMenuLabelProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -94,7 +94,7 @@ export interface ContextMenuLabelProps {
  */
 export interface ContextMenuSeparatorProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -102,9 +102,9 @@ export interface ContextMenuSeparatorProps {
  */
 export interface ContextMenuCheckboxItemProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Whether this item is disabled */
-  readonly disabled?: boolean;
+  readonly disabled?: Readable.Reactive<boolean>;
   /** Controlled checked state */
   readonly checked?: Signal<boolean>;
   /** Default checked state (uncontrolled) */
@@ -128,7 +128,7 @@ export interface ContextMenuRadioGroupContext {
  */
 export interface ContextMenuRadioGroupProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Controlled value */
   readonly value?: Signal<string>;
   /** Default value (uncontrolled) */
@@ -142,11 +142,11 @@ export interface ContextMenuRadioGroupProps {
  */
 export interface ContextMenuRadioItemProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** The value for this radio item */
   readonly value: string;
   /** Whether this item is disabled */
-  readonly disabled?: boolean;
+  readonly disabled?: Readable.Reactive<boolean>;
 }
 
 /**
@@ -188,9 +188,9 @@ export interface ContextMenuSubProps {
  */
 export interface ContextMenuSubTriggerProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Whether this trigger is disabled */
-  readonly disabled?: boolean;
+  readonly disabled?: Readable.Reactive<boolean>;
 }
 
 /**
@@ -198,9 +198,9 @@ export interface ContextMenuSubTriggerProps {
  */
 export interface ContextMenuSubContentProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Gap between trigger and content in pixels (default: 0) */
-  readonly sideOffset?: number;
+  readonly sideOffset?: Readable.Reactive<number>;
   /** Whether keyboard navigation loops (default: true) */
   readonly loop?: boolean;
 }
@@ -299,9 +299,13 @@ const Trigger = component(
     Effect.gen(function* () {
       const ctx = yield* ContextMenuCtx;
 
+      // Normalize disabled prop
+      const disabled = Readable.of(props.disabled ?? false);
+      const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+
       const handleContextMenu = (event: MouseEvent) =>
         Effect.gen(function* () {
-          if (props.disabled) return;
+          if (yield* disabled.get) return;
 
           event.preventDefault();
           yield* ctx.openAt(event.clientX, event.clientY);
@@ -311,7 +315,7 @@ const Trigger = component(
         {
           id: ctx.triggerId,
           class: props.class,
-          "data-disabled": props.disabled ? "" : undefined,
+          "data-disabled": dataDisabled,
           "data-context-menu-trigger": "",
           onContextMenu: handleContextMenu,
         },
@@ -468,9 +472,14 @@ const Item = component(
     Effect.gen(function* () {
       const ctx = yield* ContextMenuCtx;
 
+      // Normalize disabled prop
+      const disabled = Readable.of(props.disabled ?? false);
+      const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+      const tabIndex = disabled.map((d) => (d ? -1 : 0));
+
       const handleClick = () =>
         Effect.gen(function* () {
-          if (props.disabled) return;
+          if (yield* disabled.get) return;
 
           if (props.onSelect) {
             yield* props.onSelect();
@@ -484,10 +493,10 @@ const Item = component(
         {
           class: props.class,
           role: "menuitem",
-          "data-disabled": props.disabled ? "" : undefined,
+          "data-disabled": dataDisabled,
           "data-menu-item": "",
           "data-context-menu-item": "",
-          tabIndex: props.disabled ? undefined : 0,
+          tabIndex,
           onClick: handleClick,
         },
         children ?? [],
@@ -582,6 +591,11 @@ const CheckboxItem = component(
     Effect.gen(function* () {
       const ctx = yield* ContextMenuCtx;
 
+      // Normalize disabled prop
+      const disabled = Readable.of(props.disabled ?? false);
+      const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+      const tabIndex = disabled.map((d) => (d ? -1 : 0));
+
       const checked: Signal<boolean> = props.checked
         ? props.checked
         : yield* Signal.make(props.defaultChecked ?? false);
@@ -591,7 +605,7 @@ const CheckboxItem = component(
 
       const handleClick = () =>
         Effect.gen(function* () {
-          if (props.disabled) return;
+          if (yield* disabled.get) return;
 
           const current = yield* checked.get;
           const newValue = !current;
@@ -611,12 +625,12 @@ const CheckboxItem = component(
           role: "menuitemcheckbox",
           "aria-checked": ariaChecked,
           "data-state": dataState,
-          "data-disabled": props.disabled ? "" : undefined,
+          "data-disabled": dataDisabled,
           "data-menu-item": "",
           "data-menu-checkbox-item": "",
           "data-context-menu-item": "",
           "data-context-menu-checkbox-item": "",
-          tabIndex: props.disabled ? undefined : 0,
+          tabIndex,
           onClick: handleClick,
         },
         children ?? [],
@@ -684,13 +698,18 @@ const RadioItem = component(
       const ctx = yield* ContextMenuCtx;
       const radioCtx = yield* ContextMenuRadioGroupCtx;
 
+      // Normalize disabled prop
+      const disabled = Readable.of(props.disabled ?? false);
+      const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+      const tabIndex = disabled.map((d) => (d ? -1 : 0));
+
       const isChecked = radioCtx.value.map((v) => v === props.value);
       const dataState = isChecked.map((c) => (c ? "checked" : "unchecked"));
       const ariaChecked = isChecked.map((c) => (c ? "true" : "false"));
 
       const handleClick = () =>
         Effect.gen(function* () {
-          if (props.disabled) return;
+          if (yield* disabled.get) return;
 
           yield* radioCtx.setValue(props.value);
 
@@ -704,12 +723,12 @@ const RadioItem = component(
           role: "menuitemradio",
           "aria-checked": ariaChecked,
           "data-state": dataState,
-          "data-disabled": props.disabled ? "" : undefined,
+          "data-disabled": dataDisabled,
           "data-menu-item": "",
           "data-menu-radio-item": "",
           "data-context-menu-item": "",
           "data-context-menu-radio-item": "",
-          tabIndex: props.disabled ? undefined : 0,
+          tabIndex,
           onClick: handleClick,
         },
         children ?? [],
@@ -807,6 +826,11 @@ const SubTrigger = component(
     Effect.gen(function* () {
       const subCtx = yield* ContextMenuSubCtx;
 
+      // Normalize disabled prop
+      const disabled = Readable.of(props.disabled ?? false);
+      const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+      const tabIndex = disabled.map((d) => (d ? -1 : 0));
+
       const dataState = subCtx.isOpen.map((open) => (open ? "open" : "closed"));
 
       let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -830,7 +854,7 @@ const SubTrigger = component(
 
       const handleKeyDown = (event: KeyboardEvent) =>
         Effect.gen(function* () {
-          if (props.disabled) return;
+          if (yield* disabled.get) return;
 
           if (event.key === "ArrowRight" || event.key === "Enter") {
             event.preventDefault();
@@ -849,7 +873,7 @@ const SubTrigger = component(
 
       const handleClick = () =>
         Effect.gen(function* () {
-          if (props.disabled) return;
+          if (yield* disabled.get) return;
           yield* subCtx.open();
         });
 
@@ -871,12 +895,12 @@ const SubTrigger = component(
           ),
           "aria-controls": subCtx.contentId,
           "data-state": dataState,
-          "data-disabled": props.disabled ? "" : undefined,
+          "data-disabled": dataDisabled,
           "data-menu-item": "",
           "data-menu-subtrigger": "",
           "data-context-menu-item": "",
           "data-context-menu-subtrigger": "",
-          tabIndex: props.disabled ? undefined : 0,
+          tabIndex,
           onMouseEnter: handleMouseEnter,
           onMouseLeave: handleMouseLeave,
           onKeyDown: handleKeyDown,
@@ -909,7 +933,8 @@ const SubContent = component(
       const rootCtx = yield* ContextMenuCtx;
       const subCtx = yield* ContextMenuSubCtx;
 
-      const sideOffset = props.sideOffset ?? 0;
+      // Normalize sideOffset prop
+      const sideOffset = Readable.of(props.sideOffset ?? 0);
       const loop = props.loop ?? true;
 
       const dataState = subCtx.isOpen.map((open) => (open ? "open" : "closed"));
@@ -921,6 +946,9 @@ const SubContent = component(
             Effect.gen(function* () {
               const triggerEl = yield* subCtx.triggerEl.get;
 
+              // Get current sideOffset value
+              const currentSideOffset = yield* sideOffset.get;
+
               let positionStyle: Record<string, string> = {
                 position: "fixed",
               };
@@ -931,7 +959,7 @@ const SubContent = component(
                 positionStyle = {
                   position: "fixed",
                   top: `${rect.top}px`,
-                  left: `${rect.right + sideOffset}px`,
+                  left: `${rect.right + currentSideOffset}px`,
                 };
               }
 

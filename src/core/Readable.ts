@@ -15,6 +15,26 @@ export interface Readable<A> {
   readonly map: <B>(f: (a: A) => B) => Readable<B>;
 }
 
+/**
+ * A value that can be either static or reactive.
+ * Use `Readable.of()` to normalize to a `Readable<T>`.
+ *
+ * @example
+ * ```ts
+ * interface ButtonProps {
+ *   disabled?: Readable.Reactive<boolean>;
+ *   class?: Readable.Reactive<string>;
+ * }
+ *
+ * const Button = (props: ButtonProps) =>
+ *   Effect.gen(function* () {
+ *     const disabled = Readable.of(props.disabled ?? false);
+ *     // Now disabled is Readable<boolean>
+ *   });
+ * ```
+ */
+export type Reactive<T> = T | Readable<T>;
+
 export const isReadable = <A>(value: A | Readable<A>): value is Readable<A> =>
   value !== null &&
   typeof value === "object" &&

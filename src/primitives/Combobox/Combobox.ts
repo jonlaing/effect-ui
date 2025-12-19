@@ -91,7 +91,7 @@ export interface ComboboxContext {
   readonly isLoading: Readable.Readable<boolean>;
 
   /** Whether the combobox is disabled */
-  readonly disabled: boolean;
+  readonly disabled: Readable.Readable<boolean>;
   /** Whether keyboard navigation loops */
   readonly loop: boolean;
 }
@@ -107,7 +107,7 @@ export interface ComboboxItemContext {
   /** Whether this item is highlighted */
   readonly isHighlighted: Readable.Readable<boolean>;
   /** Whether this item is disabled */
-  readonly disabled: boolean;
+  readonly disabled: Readable.Readable<boolean>;
   /** Set the text value for this item */
   readonly setTextValue: (text: string) => Effect.Effect<void>;
 }
@@ -138,7 +138,7 @@ export interface ComboboxRootProps {
   readonly onOpenChange?: (open: boolean) => Effect.Effect<void>;
 
   /** Whether the combobox is disabled */
-  readonly disabled?: boolean;
+  readonly disabled?: Readable.Reactive<boolean>;
   /** Whether keyboard navigation loops (default: true) */
   readonly loop?: boolean;
 
@@ -158,11 +158,11 @@ export interface ComboboxRootProps {
  */
 export interface ComboboxInputProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Placeholder text */
-  readonly placeholder?: string;
+  readonly placeholder?: Readable.Reactive<string>;
   /** Whether the input is disabled */
-  readonly disabled?: boolean;
+  readonly disabled?: Readable.Reactive<boolean>;
   /** Whether to open on focus (default: true) */
   readonly openOnFocus?: boolean;
 }
@@ -172,13 +172,13 @@ export interface ComboboxInputProps {
  */
 export interface ComboboxContentProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Which side to position on (default: "bottom") */
-  readonly side?: "top" | "bottom";
+  readonly side?: Readable.Reactive<"top" | "bottom">;
   /** Alignment relative to input (default: "start") */
-  readonly align?: "start" | "center" | "end";
+  readonly align?: Readable.Reactive<"start" | "center" | "end">;
   /** Gap between input and content in pixels (default: 4) */
-  readonly sideOffset?: number;
+  readonly sideOffset?: Readable.Reactive<number>;
 }
 
 /**
@@ -190,9 +190,9 @@ export interface ComboboxItemProps {
   /** Text value for display (auto-detected from ItemText if not provided) */
   readonly textValue?: string;
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Whether this item is disabled */
-  readonly disabled?: boolean;
+  readonly disabled?: Readable.Reactive<boolean>;
 }
 
 /**
@@ -200,7 +200,7 @@ export interface ComboboxItemProps {
  */
 export interface ComboboxItemTextProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -208,7 +208,7 @@ export interface ComboboxItemTextProps {
  */
 export interface ComboboxGroupProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -216,7 +216,7 @@ export interface ComboboxGroupProps {
  */
 export interface ComboboxLabelProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -224,7 +224,7 @@ export interface ComboboxLabelProps {
  */
 export interface ComboboxEmptyProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -232,7 +232,7 @@ export interface ComboboxEmptyProps {
  */
 export interface ComboboxLoadingProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -316,7 +316,7 @@ const Root = (
     const baseItemId = yield* UniqueId.make("combobox-item");
 
     const loop = props.loop ?? true;
-    const disabled = props.disabled ?? false;
+    const disabled = Readable.of(props.disabled ?? false);
 
     // State change handlers
     const setOpenState = (newValue: boolean) =>
@@ -644,9 +644,10 @@ const Content = component(
     Effect.gen(function* () {
       const ctx = yield* ComboboxCtx;
 
-      const side = props.side ?? "bottom";
-      const align = props.align ?? "start";
-      const sideOffset = props.sideOffset ?? 4;
+      // Normalize positioning props
+      const side = Readable.of(props.side ?? "bottom");
+      const align = Readable.of(props.align ?? "start");
+      const sideOffset = Readable.of(props.sideOffset ?? 4);
 
       const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
 
@@ -657,6 +658,11 @@ const Content = component(
             Effect.gen(function* () {
               const inputEl = ctx.inputRef.current;
 
+              // Get current positioning values
+              const currentSide = yield* side.get;
+              const currentAlign = yield* align.get;
+              const currentSideOffset = yield* sideOffset.get;
+
               let positionStyle: Record<string, string> = {
                 position: "fixed",
               };
@@ -665,12 +671,12 @@ const Content = component(
                 const rect = inputEl.getBoundingClientRect();
                 const { top, left } = calculatePosition(
                   rect,
-                  side,
-                  align,
-                  sideOffset,
+                  currentSide,
+                  currentAlign,
+                  currentSideOffset,
                   0,
                 );
-                const transform = getTransform(side, align);
+                const transform = getTransform(currentSide, currentAlign);
 
                 positionStyle = {
                   position: "fixed",
@@ -689,8 +695,8 @@ const Content = component(
                   "aria-labelledby": ctx.inputId,
                   "data-combobox-content": "",
                   "data-state": dataState,
-                  "data-side": side,
-                  "data-align": align,
+                  "data-side": currentSide,
+                  "data-align": currentAlign,
                   tabIndex: -1,
                   style: positionStyle,
                 },
@@ -752,14 +758,16 @@ const Item = (
   Effect.gen(function* () {
     const ctx = yield* ComboboxCtx;
 
-    const disabled = props.disabled ?? false;
+    // Normalize disabled prop
+    const disabled = Readable.of(props.disabled ?? false);
+    const disabledValue = yield* disabled.get;
 
     // Text value signal for ItemText to set
     const textValueSignal = yield* Signal.make(props.textValue ?? props.value);
 
     // Register item on mount (needs to happen before filtering can work)
     const textVal = yield* textValueSignal.get;
-    yield* ctx.registerItem(props.value, textVal, disabled);
+    yield* ctx.registerItem(props.value, textVal, disabledValue);
 
     // Unregister on unmount
     yield* Effect.addFinalizer(() => ctx.unregisterItem(props.value));
@@ -779,16 +787,17 @@ const Item = (
     const ariaSelected = Readable.map(isSelected, (s) =>
       s ? "true" : "false",
     );
+    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
 
     const handleClick = () =>
       Effect.gen(function* () {
-        if (disabled) return;
+        if (yield* disabled.get) return;
         yield* ctx.selectValue(props.value);
       });
 
     const handleMouseEnter = () =>
       Effect.gen(function* () {
-        if (disabled) return;
+        if (yield* disabled.get) return;
         yield* ctx.highlightValue(props.value);
       });
 
@@ -800,7 +809,8 @@ const Item = (
       setTextValue: (text: string) =>
         Effect.gen(function* () {
           yield* textValueSignal.set(text);
-          yield* ctx.registerItem(props.value, text, disabled);
+          const currentDisabled = yield* disabled.get;
+          yield* ctx.registerItem(props.value, text, currentDisabled);
         }),
     };
 
@@ -814,15 +824,15 @@ const Item = (
             class: props.class,
             role: "option",
             "aria-selected": ariaSelected,
-            "aria-disabled": disabled ? "true" : undefined,
+            "aria-disabled": disabled.map((d) => (d ? "true" : undefined)),
             "data-combobox-item": "",
             "data-value": props.value,
             "data-state": dataState,
             "data-highlighted": Readable.map(isHighlighted, (h) =>
               h ? "" : undefined,
             ),
-            "data-disabled": disabled ? "" : undefined,
-            tabIndex: disabled ? undefined : -1,
+            "data-disabled": dataDisabled,
+            tabIndex: disabled.map((d) => (d ? -1 : 0)),
             onClick: handleClick,
             onMouseEnter: handleMouseEnter,
           },

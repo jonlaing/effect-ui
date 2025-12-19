@@ -36,7 +36,7 @@ export interface NavigationMenuContext {
   /** Cancel any pending close */
   readonly cancelClose: () => void;
   /** Menu orientation */
-  readonly orientation: NavigationMenuOrientation;
+  readonly orientation: Readable.Readable<NavigationMenuOrientation>;
   /** Reference to viewport element */
   readonly viewportRef: Ref<HTMLDivElement>;
   /** Map of item IDs to their trigger elements */
@@ -81,50 +81,50 @@ export interface NavigationMenuRootProps {
   readonly value?: Signal<string | null>;
   /** Callback when active item changes */
   readonly onValueChange?: (value: string | null) => Effect.Effect<void>;
-  /** Menu orientation */
-  readonly orientation?: NavigationMenuOrientation;
+  /** Menu orientation (can be reactive for responsive layouts) */
+  readonly orientation?: Readable.Reactive<NavigationMenuOrientation>;
   /** Delay before opening (ms) */
   readonly delayDuration?: number;
   /** Reduced delay after first interaction (ms) */
   readonly skipDelayDuration?: number;
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** ARIA label for the navigation */
   readonly "aria-label"?: string;
 }
 
 export interface NavigationMenuListProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 export interface NavigationMenuItemProps {
   /** Unique value identifying this item */
   readonly value: string;
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 export interface NavigationMenuTriggerProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 export interface NavigationMenuContentProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Called when Escape key is pressed */
   readonly onEscapeKeyDown?: (event: KeyboardEvent) => Effect.Effect<void>;
 }
 
 export interface NavigationMenuViewportProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 export interface NavigationMenuIndicatorProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 // ============================================================================
@@ -141,7 +141,7 @@ const Root = (
     | Element<never, NavigationMenuCtx>[],
 ): Element =>
   Effect.gen(function* () {
-    const orientation = props.orientation ?? "horizontal";
+    const orientation = Readable.of(props.orientation ?? "horizontal");
     const delayDuration = props.delayDuration ?? 200;
     const skipDelayDuration = props.skipDelayDuration ?? 300;
 
@@ -252,7 +252,7 @@ const List = component(
       const ctx = yield* NavigationMenuCtx;
 
       const handleKeyDown = (event: KeyboardEvent) =>
-        Effect.sync(() => {
+        Effect.gen(function* () {
           const triggers = Array.from(ctx.triggerRefs.values());
           const currentIndex = triggers.findIndex(
             (el) => el === document.activeElement,
@@ -260,7 +260,8 @@ const List = component(
 
           if (currentIndex === -1) return;
 
-          const isHorizontal = ctx.orientation === "horizontal";
+          const currentOrientation = yield* ctx.orientation.get;
+          const isHorizontal = currentOrientation === "horizontal";
           const prevKey = isHorizontal ? "ArrowLeft" : "ArrowUp";
           const nextKey = isHorizontal ? "ArrowRight" : "ArrowDown";
 

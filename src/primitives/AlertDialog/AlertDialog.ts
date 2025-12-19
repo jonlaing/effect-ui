@@ -48,7 +48,7 @@ export interface AlertDialogRootProps {
  */
 export interface AlertDialogTriggerProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -64,7 +64,7 @@ export interface AlertDialogPortalProps {
  */
 export interface AlertDialogOverlayProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -72,7 +72,7 @@ export interface AlertDialogOverlayProps {
  */
 export interface AlertDialogContentProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Called when Escape key is pressed (before close) */
   readonly onEscapeKeyDown?: (event: KeyboardEvent) => Effect.Effect<void>;
   /** Whether to close on Escape key (default: true) */
@@ -84,7 +84,7 @@ export interface AlertDialogContentProps {
  */
 export interface AlertDialogCancelProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -92,7 +92,7 @@ export interface AlertDialogCancelProps {
  */
 export interface AlertDialogActionProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Called when action button is clicked (before close) */
   readonly onClick?: () => Effect.Effect<void>;
 }
@@ -102,7 +102,7 @@ export interface AlertDialogActionProps {
  */
 export interface AlertDialogTitleProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -110,7 +110,7 @@ export interface AlertDialogTitleProps {
  */
 export interface AlertDialogDescriptionProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**

@@ -40,7 +40,7 @@ export interface SliderContext {
   /** Orientation */
   readonly orientation: "horizontal" | "vertical";
   /** Whether the slider is disabled */
-  readonly disabled: boolean;
+  readonly disabled: Readable.Readable<boolean>;
   /** Whether it's a range slider */
   readonly isRange: boolean;
   /** Whether values are inverted */
@@ -88,7 +88,7 @@ export interface SliderRootProps {
   /** Orientation (default: "horizontal") */
   readonly orientation?: "horizontal" | "vertical";
   /** Whether the slider is disabled */
-  readonly disabled?: boolean;
+  readonly disabled?: Readable.Reactive<boolean>;
   /** Invert the slider direction */
   readonly inverted?: boolean;
   /** Minimum steps between thumbs in range mode (default: 0) */
@@ -100,7 +100,7 @@ export interface SliderRootProps {
   /** ID of labelling element */
   readonly "aria-labelledby"?: string;
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -108,7 +108,7 @@ export interface SliderRootProps {
  */
 export interface SliderTrackProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -116,7 +116,7 @@ export interface SliderTrackProps {
  */
 export interface SliderRangeProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -124,7 +124,7 @@ export interface SliderRangeProps {
  */
 export interface SliderThumbProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** ARIA label for this specific thumb */
   readonly "aria-label"?: string;
   /** ID of element that labels this thumb */
@@ -163,7 +163,7 @@ const Root = (
     const step = props.step ?? 1;
     const largeStep = props.largeStep ?? Math.max(step * 10, (max - min) / 10);
     const orientation = props.orientation ?? "horizontal";
-    const disabled = props.disabled ?? false;
+    const disabled = Readable.of(props.disabled ?? false);
     const inverted = props.inverted ?? false;
     const minStepsBetweenThumbs = props.minStepsBetweenThumbs ?? 0;
 

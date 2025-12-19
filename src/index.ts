@@ -1,7 +1,10 @@
 // Core reactivity
 export {
-  // Readable
-  type Readable,
+  // Readable (namespace for Readable.Reactive<T> pattern)
+  Readable,
+  // Readable (individual exports - kept for backward compatibility)
+  type ReadableInterface,
+  type Reactive,
   readableOf,
   makeReadable,
   mapReadable,

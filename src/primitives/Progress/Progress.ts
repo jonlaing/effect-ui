@@ -46,12 +46,12 @@ export interface ProgressRootProps {
   /** Custom label for screen readers */
   readonly getValueLabel?: (value: number, max: number) => string;
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 export interface ProgressIndicatorProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 // ============================================================================

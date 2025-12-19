@@ -15,7 +15,7 @@ export interface TabsContext {
   /** Set the active tab */
   readonly setValue: (value: string) => Effect.Effect<void>;
   /** Tab orientation (affects keyboard navigation) */
-  readonly orientation: "horizontal" | "vertical";
+  readonly orientation: Readable.Readable<"horizontal" | "vertical">;
   /** Activation mode: automatic (focus selects) or manual (Enter/Space to select) */
   readonly activationMode: "automatic" | "manual";
 }
@@ -31,7 +31,7 @@ export interface TabsRootProps {
   /** Callback when value changes */
   readonly onValueChange?: (value: string) => Effect.Effect<void>;
   /** Tab orientation (default: "horizontal") */
-  readonly orientation?: "horizontal" | "vertical";
+  readonly orientation?: Readable.Reactive<"horizontal" | "vertical">;
   /** Activation mode (default: "automatic") */
   readonly activationMode?: "automatic" | "manual";
 }
@@ -41,7 +41,7 @@ export interface TabsRootProps {
  */
 export interface TabsListProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Whether keyboard navigation loops (default: true) */
   readonly loop?: boolean;
 }
@@ -53,9 +53,9 @@ export interface TabsTriggerProps {
   /** Unique value for this tab */
   readonly value: string;
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Whether this tab is disabled */
-  readonly disabled?: boolean;
+  readonly disabled?: Readable.Reactive<boolean>;
 }
 
 /**
@@ -65,7 +65,7 @@ export interface TabsContentProps {
   /** Value matching the corresponding Trigger */
   readonly value: string;
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Force mount even when inactive (default: false) */
   readonly forceMount?: boolean;
 }
@@ -103,7 +103,8 @@ const Root = (
       ? props.value
       : yield* Signal.make(props.defaultValue ?? "");
 
-    const orientation = props.orientation ?? "horizontal";
+    // Normalize props to Readables
+    const orientation = Readable.of(props.orientation ?? "horizontal");
     const activationMode = props.activationMode ?? "automatic";
 
     const setValue = (newValue: string) =>
@@ -145,7 +146,8 @@ const List = component("TabsList", (props: TabsListProps, children) =>
 
     const handleKeyDown = (e: KeyboardEvent) =>
       Effect.gen(function* () {
-        const isHorizontal = ctx.orientation === "horizontal";
+        const currentOrientation = yield* ctx.orientation.get;
+        const isHorizontal = currentOrientation === "horizontal";
         const prevKey = isHorizontal ? "ArrowLeft" : "ArrowUp";
         const nextKey = isHorizontal ? "ArrowRight" : "ArrowDown";
 
@@ -216,10 +218,14 @@ const Trigger = component("TabsTrigger", (props: TabsTriggerProps, children) =>
   Effect.gen(function* () {
     const ctx = yield* TabsCtx;
 
+    // Normalize disabled prop
+    const disabled = Readable.of(props.disabled ?? false);
+
     const isSelected = ctx.value.map((v) => v === props.value);
     const dataState = isSelected.map((s) => (s ? "active" : "inactive"));
     const ariaSelected = isSelected.map((s) => (s ? "true" : "false"));
     const tabIndex = isSelected.map((s) => (s ? 0 : -1));
+    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
 
     const handleClick = () => ctx.setValue(props.value);
 
@@ -237,13 +243,13 @@ const Trigger = component("TabsTrigger", (props: TabsTriggerProps, children) =>
         class: props.class,
         type: "button",
         role: "tab",
-        disabled: props.disabled,
+        disabled,
         tabIndex,
         "aria-selected": ariaSelected,
         "aria-controls": `tabs-content-${props.value}`,
         "data-state": dataState,
         "data-value": props.value,
-        "data-disabled": props.disabled ? "" : undefined,
+        "data-disabled": dataDisabled,
         "data-tabs-trigger": "",
         onClick: handleClick,
         onKeyDown: ctx.activationMode === "manual" ? handleKeyDown : undefined,

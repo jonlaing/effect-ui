@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import { Signal } from "@core/Signal";
+import * as Readable from "@core/Readable";
 import { component } from "@dom/Component";
 import { $ } from "@dom/Element/Element";
 
@@ -32,12 +33,12 @@ export interface ToggleProps {
    * Whether the toggle is disabled.
    * @default false
    */
-  readonly disabled?: boolean;
+  readonly disabled?: Readable.Reactive<boolean>;
 
   /**
    * CSS class name(s) for styling.
    */
-  readonly class?: string;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -75,9 +76,12 @@ export const Toggle = component("Toggle", (props: ToggleProps, children) =>
       ? props.pressed
       : yield* Signal.make(props.defaultPressed ?? false);
 
+    // Normalize disabled to Readable
+    const disabled = Readable.of(props.disabled ?? false);
+
     const handleClick = () =>
       Effect.gen(function* () {
-        if (props.disabled) return;
+        if (yield* disabled.get) return;
 
         const newPressed = !(yield* pressed.get);
         yield* pressed.set(newPressed);
@@ -89,14 +93,14 @@ export const Toggle = component("Toggle", (props: ToggleProps, children) =>
 
     const dataState = pressed.map((p) => (p ? "on" : "off"));
     const ariaPressed = pressed.map((p) => (p ? "true" : "false"));
-    const dataDisabled = props.disabled ? "" : undefined;
+    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
 
     return yield* $.button(
       {
         type: "button",
         id: props.id,
         class: props.class,
-        disabled: props.disabled,
+        disabled,
         "aria-pressed": ariaPressed,
         "data-state": dataState,
         "data-disabled": dataDisabled,

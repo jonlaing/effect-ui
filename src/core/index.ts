@@ -1,5 +1,7 @@
-// Readable
-export type { Readable } from "./Readable";
+// Readable - export as namespace for Readable.Reactive<T> pattern
+export * as Readable from "./Readable";
+// Readable - individual exports (kept for backward compatibility)
+export type { Readable as ReadableInterface, Reactive } from "./Readable";
 export {
   of as readableOf,
   make as makeReadable,

@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import { Signal } from "@core/Signal";
+import * as Readable from "@core/Readable";
 import { component } from "@dom/Component";
 import { $ } from "@dom/Element/Element";
 
@@ -37,13 +38,13 @@ export interface CheckboxProps {
    * Whether the checkbox is disabled.
    * @default false
    */
-  readonly disabled?: boolean;
+  readonly disabled?: Readable.Reactive<boolean>;
 
   /**
    * Whether the checkbox is required in a form context.
    * @default false
    */
-  readonly required?: boolean;
+  readonly required?: Readable.Reactive<boolean>;
 
   /**
    * The name attribute for form submission.
@@ -59,7 +60,7 @@ export interface CheckboxProps {
   /**
    * CSS class name(s) for styling.
    */
-  readonly class?: string;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -88,9 +89,13 @@ export const Checkbox = component("Checkbox", (props: CheckboxProps) =>
       ? props.checked
       : yield* Signal.make(props.defaultChecked ?? false);
 
+    // Normalize props to Readables
+    const disabled = Readable.of(props.disabled ?? false);
+    const required = Readable.of(props.required ?? false);
+
     const handleClick = () =>
       Effect.gen(function* () {
-        if (props.disabled) return;
+        if (yield* disabled.get) return;
 
         const current = yield* checked.get;
         // Clicking always toggles to checked or unchecked (never to indeterminate)
@@ -112,7 +117,8 @@ export const Checkbox = component("Checkbox", (props: CheckboxProps) =>
       return c ? "true" : "false";
     });
 
-    const dataDisabled = props.disabled ? "" : undefined;
+    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+    const ariaRequired = required.map((r) => (r ? "true" : undefined));
 
     // The indicator shows the check/indeterminate mark
     const indicator = $.span({ "data-checkbox-indicator": "" });
@@ -123,9 +129,9 @@ export const Checkbox = component("Checkbox", (props: CheckboxProps) =>
         role: "checkbox",
         id: props.id,
         class: props.class,
-        disabled: props.disabled,
+        disabled,
         "aria-checked": ariaChecked,
-        "aria-required": props.required ? "true" : undefined,
+        "aria-required": ariaRequired,
         "data-state": dataState,
         "data-disabled": dataDisabled,
         name: props.name,

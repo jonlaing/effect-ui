@@ -47,7 +47,7 @@ export interface DialogRootProps {
  */
 export interface DialogTriggerProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -63,7 +63,7 @@ export interface DialogPortalProps {
  */
 export interface DialogOverlayProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -71,7 +71,7 @@ export interface DialogOverlayProps {
  */
 export interface DialogContentProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Called when Escape key is pressed (before close) */
   readonly onEscapeKeyDown?: (event: KeyboardEvent) => Effect.Effect<void>;
 }
@@ -81,7 +81,7 @@ export interface DialogContentProps {
  */
 export interface DialogCloseProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -89,7 +89,7 @@ export interface DialogCloseProps {
  */
 export interface DialogTitleProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -97,7 +97,7 @@ export interface DialogTitleProps {
  */
 export interface DialogDescriptionProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**

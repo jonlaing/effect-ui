@@ -46,7 +46,7 @@ export interface PopoverRootProps {
  */
 export interface PopoverTriggerProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -54,7 +54,7 @@ export interface PopoverTriggerProps {
  */
 export interface PopoverAnchorProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -62,15 +62,15 @@ export interface PopoverAnchorProps {
  */
 export interface PopoverContentProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Positioning side relative to trigger (default: "bottom") */
-  readonly side?: "top" | "bottom" | "left" | "right";
+  readonly side?: Readable.Reactive<"top" | "bottom" | "left" | "right">;
   /** Alignment along the side axis (default: "center") */
-  readonly align?: "start" | "center" | "end";
+  readonly align?: Readable.Reactive<"start" | "center" | "end">;
   /** Gap between trigger and content in pixels (default: 4) */
-  readonly sideOffset?: number;
+  readonly sideOffset?: Readable.Reactive<number>;
   /** Shift along the side axis in pixels (default: 0) */
-  readonly alignOffset?: number;
+  readonly alignOffset?: Readable.Reactive<number>;
   /** Called when clicking outside */
   readonly onClickOutside?: () => Effect.Effect<void>;
   /** Called when Escape key is pressed */
@@ -82,7 +82,7 @@ export interface PopoverContentProps {
  */
 export interface PopoverCloseProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -241,10 +241,11 @@ const Content = component(
     Effect.gen(function* () {
       const ctx = yield* PopoverCtx;
 
-      const side = props.side ?? "bottom";
-      const align = props.align ?? "center";
-      const sideOffset = props.sideOffset ?? 4;
-      const alignOffset = props.alignOffset ?? 0;
+      // Normalize positioning props
+      const side = Readable.of(props.side ?? "bottom");
+      const align = Readable.of(props.align ?? "center");
+      const sideOffset = Readable.of(props.sideOffset ?? 4);
+      const alignOffset = Readable.of(props.alignOffset ?? 0);
 
       const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
 
@@ -257,6 +258,12 @@ const Content = component(
               const anchorEl =
                 (yield* ctx.anchorRef.get) ?? (yield* ctx.triggerRef.get);
 
+              // Get current positioning values
+              const currentSide = yield* side.get;
+              const currentAlign = yield* align.get;
+              const currentSideOffset = yield* sideOffset.get;
+              const currentAlignOffset = yield* alignOffset.get;
+
               let positionStyle: Record<string, string> = {
                 position: "fixed",
               };
@@ -265,12 +272,12 @@ const Content = component(
                 const rect = anchorEl.getBoundingClientRect();
                 const { top, left } = calculatePosition(
                   rect,
-                  side,
-                  align,
-                  sideOffset,
-                  alignOffset,
+                  currentSide,
+                  currentAlign,
+                  currentSideOffset,
+                  currentAlignOffset,
                 );
-                const transform = getTransform(side, align);
+                const transform = getTransform(currentSide, currentAlign);
 
                 positionStyle = {
                   position: "fixed",
@@ -298,8 +305,8 @@ const Content = component(
                   class: props.class,
                   role: "dialog",
                   "data-state": dataState,
-                  "data-side": side,
-                  "data-align": align,
+                  "data-side": currentSide,
+                  "data-align": currentAlign,
                   "data-popover-content": "",
                   tabIndex: -1,
                   style: positionStyle,

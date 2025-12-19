@@ -97,29 +97,29 @@ export interface ScrollAreaRootProps {
   /** Delay before hiding scrollbars (ms) */
   readonly scrollHideDelay?: number;
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 export interface ScrollAreaViewportProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 export interface ScrollAreaScrollbarProps {
   /** Scrollbar orientation */
   readonly orientation: ScrollbarOrientation;
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 export interface ScrollAreaThumbProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 export interface ScrollAreaCornerProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 // ============================================================================

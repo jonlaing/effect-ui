@@ -10,6 +10,7 @@ A reactive UI framework built on [Effect](https://effect.website/). Effect UI pr
 - [Core Concepts](#core-concepts)
   - [Signals](#signals)
   - [Derived Values](#derived-values)
+  - [Reactive Props](#reactive-props)
   - [Custom Equality](#custom-equality)
   - [Template Strings](#template-strings)
   - [Elements](#elements)
@@ -208,6 +209,68 @@ const fullName = yield* Derived.sync(
   [firstName, lastName],
   ([first, last]) => `${first} ${last}`,
 );
+```
+
+### Reactive Props
+
+Many components accept props that can be either static values or reactive `Readable` values. This is expressed using the `Readable.Reactive<T>` type:
+
+```ts
+import { Readable } from "@jonlaing/effect-ui";
+
+// Reactive<T> means: T | Readable<T>
+interface ButtonProps {
+  disabled?: Readable.Reactive<boolean>;
+  class?: Readable.Reactive<string>;
+}
+```
+
+When implementing a component with reactive props, use `Readable.of()` to normalize the prop to a `Readable<T>`:
+
+```ts
+const Button = component("Button", (props: ButtonProps, children) =>
+  Effect.gen(function* () {
+    // Normalize props - works whether they're static or reactive
+    const disabled = Readable.of(props.disabled ?? false);
+    const className = Readable.of(props.class ?? "");
+
+    // Use .map() for derived attributes
+    const ariaDisabled = disabled.map((d) => (d ? "true" : undefined));
+    const tabIndex = disabled.map((d) => (d ? -1 : 0));
+
+    return yield* $.button(
+      {
+        class: className,
+        disabled: disabled,
+        "aria-disabled": ariaDisabled,
+        tabIndex: tabIndex,
+      },
+      children ?? [],
+    );
+  }),
+);
+```
+
+This pattern lets consumers pass either static or reactive values:
+
+```ts
+// Static value - button is always disabled
+Button({ disabled: true }, "Click me");
+
+// Reactive value - button disabled state follows signal
+const isLoading = yield* Signal.make(false);
+Button({ disabled: isLoading }, "Submit");
+```
+
+When you need to read a reactive prop's current value in an event handler, use `.get`:
+
+```ts
+const handleClick = () =>
+  Effect.gen(function* () {
+    const isDisabled = yield* disabled.get;
+    if (isDisabled) return;
+    // ... handle click
+  });
 ```
 
 ### Custom Equality

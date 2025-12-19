@@ -58,7 +58,7 @@ export interface AccordionRootProps {
    */
   readonly defaultValue?: string | string[] | null;
   /** Whether the accordion is disabled */
-  readonly disabled?: boolean | Readable.Readable<boolean>;
+  readonly disabled?: Readable.Reactive<boolean>;
   /**
    * When type="single", whether clicking the open item closes it.
    * @default false
@@ -77,7 +77,7 @@ export interface AccordionItemProps {
   /** Unique value for this item */
   readonly value: string;
   /** Whether this item is disabled */
-  readonly disabled?: boolean;
+  readonly disabled?: Readable.Reactive<boolean>;
 }
 
 /**
@@ -85,7 +85,7 @@ export interface AccordionItemProps {
  */
 export interface AccordionTriggerProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -93,7 +93,7 @@ export interface AccordionTriggerProps {
  */
 export interface AccordionContentProps {
   /** Additional class names for the outer container */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**

@@ -1,6 +1,7 @@
 import { Context, Effect } from "effect";
 import { Signal } from "@core/Signal";
 import * as Readable from "@core/Readable";
+import { Derived } from "@core/Derived";
 import { $ } from "@dom/Element/Element";
 import { provide } from "@dom/Control";
 import { component } from "@dom/Component";
@@ -17,11 +18,11 @@ export interface RadioGroupContext {
   /** Name attribute for form submission */
   readonly name?: string;
   /** Whether the entire group is disabled */
-  readonly disabled: boolean;
+  readonly disabled: Readable.Readable<boolean>;
   /** Whether selection is required */
-  readonly required: boolean;
+  readonly required: Readable.Readable<boolean>;
   /** Orientation (affects keyboard navigation) */
-  readonly orientation: "horizontal" | "vertical";
+  readonly orientation: Readable.Readable<"horizontal" | "vertical">;
   /** Whether keyboard navigation loops */
   readonly loop: boolean;
 }
@@ -39,15 +40,15 @@ export interface RadioGroupRootProps {
   /** Name attribute for form submission */
   readonly name?: string;
   /** Whether the entire group is disabled */
-  readonly disabled?: boolean;
+  readonly disabled?: Readable.Reactive<boolean>;
   /** Whether selection is required */
-  readonly required?: boolean;
+  readonly required?: Readable.Reactive<boolean>;
   /** Orientation (default: "vertical") */
-  readonly orientation?: "horizontal" | "vertical";
+  readonly orientation?: Readable.Reactive<"horizontal" | "vertical">;
   /** Whether keyboard navigation loops (default: true) */
   readonly loop?: boolean;
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -59,9 +60,9 @@ export interface RadioGroupItemProps {
   /** ID for the item (for label association) */
   readonly id?: string;
   /** Whether this item is disabled */
-  readonly disabled?: boolean;
+  readonly disabled?: Readable.Reactive<boolean>;
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -99,10 +100,11 @@ const Root = (
       ? props.value
       : yield* Signal.make(props.defaultValue ?? "");
 
-    const orientation = props.orientation ?? "vertical";
+    // Normalize props to Readables
+    const orientation = Readable.of(props.orientation ?? "vertical");
     const loop = props.loop ?? true;
-    const disabled = props.disabled ?? false;
-    const required = props.required ?? false;
+    const disabled = Readable.of(props.disabled ?? false);
+    const required = Readable.of(props.required ?? false);
 
     const setValue = (newValue: string) =>
       Effect.gen(function* () {
@@ -124,7 +126,8 @@ const Root = (
 
     const handleKeyDown = (e: KeyboardEvent) =>
       Effect.gen(function* () {
-        const isVertical = orientation === "vertical";
+        const currentOrientation = yield* orientation.get;
+        const isVertical = currentOrientation === "vertical";
         const prevKey = isVertical ? "ArrowUp" : "ArrowLeft";
         const nextKey = isVertical ? "ArrowDown" : "ArrowRight";
 
@@ -168,14 +171,17 @@ const Root = (
         }
       });
 
+    const ariaRequired = required.map((r) => (r ? "true" : undefined));
+    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+
     return yield* $.div(
       {
         class: props.class,
         role: "radiogroup",
-        "aria-required": required ? "true" : undefined,
+        "aria-required": ariaRequired,
         "aria-orientation": orientation,
         "data-orientation": orientation,
-        "data-disabled": disabled ? "" : undefined,
+        "data-disabled": dataDisabled,
         onKeyDown: handleKeyDown,
       },
       provide(RadioGroupCtx, ctx, children),
@@ -200,15 +206,22 @@ const Item = component(
     Effect.gen(function* () {
       const ctx = yield* RadioGroupCtx;
 
-      const isDisabled = ctx.disabled || props.disabled;
+      // Normalize item's disabled prop and combine with context disabled
+      const itemDisabled = Readable.of(props.disabled ?? false);
+      const isDisabled = yield* Derived.sync(
+        [ctx.disabled, itemDisabled],
+        ([ctxDisabled, propDisabled]) => ctxDisabled || propDisabled,
+      );
+
       const isChecked = ctx.value.map((v) => v === props.value);
       const dataState = isChecked.map((c) => (c ? "checked" : "unchecked"));
       const ariaChecked = isChecked.map((c) => (c ? "true" : "false"));
       const tabIndex = isChecked.map((c) => (c ? 0 : -1));
+      const dataDisabled = isDisabled.map((d) => (d ? "" : undefined));
 
       const handleClick = () =>
         Effect.gen(function* () {
-          if (isDisabled) return;
+          if (yield* isDisabled.get) return;
           yield* ctx.setValue(props.value);
         });
 
@@ -216,7 +229,7 @@ const Item = component(
         Effect.gen(function* () {
           if (e.key === " ") {
             e.preventDefault();
-            if (!isDisabled) {
+            if (!(yield* isDisabled.get)) {
               yield* ctx.setValue(props.value);
             }
           }
@@ -239,7 +252,7 @@ const Item = component(
           "aria-checked": ariaChecked,
           "data-state": dataState,
           "data-value": props.value,
-          "data-disabled": isDisabled ? "" : undefined,
+          "data-disabled": dataDisabled,
           "data-radio-item": "",
           name: ctx.name,
           onClick: handleClick,

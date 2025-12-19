@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import { Signal } from "@core/Signal";
+import * as Readable from "@core/Readable";
 import { component } from "@dom/Component";
 import { $ } from "@dom/Element/Element";
 
@@ -32,13 +33,13 @@ export interface SwitchProps {
    * Whether the switch is disabled.
    * @default false
    */
-  readonly disabled?: boolean;
+  readonly disabled?: Readable.Reactive<boolean>;
 
   /**
    * Whether the switch is required in a form context.
    * @default false
    */
-  readonly required?: boolean;
+  readonly required?: Readable.Reactive<boolean>;
 
   /**
    * The name attribute for form submission.
@@ -54,7 +55,7 @@ export interface SwitchProps {
   /**
    * CSS class name(s) for styling.
    */
-  readonly class?: string;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -87,9 +88,13 @@ export const Switch = component("Switch", (props: SwitchProps) =>
       ? props.checked
       : yield* Signal.make(props.defaultChecked ?? false);
 
+    // Normalize props to Readables
+    const disabled = Readable.of(props.disabled ?? false);
+    const required = Readable.of(props.required ?? false);
+
     const handleClick = () =>
       Effect.gen(function* () {
-        if (props.disabled) return;
+        if (yield* disabled.get) return;
 
         const newChecked = !(yield* checked.get);
         yield* checked.set(newChecked);
@@ -101,7 +106,8 @@ export const Switch = component("Switch", (props: SwitchProps) =>
 
     const dataState = checked.map((c) => (c ? "checked" : "unchecked"));
     const ariaChecked = checked.map((c) => (c ? "true" : "false"));
-    const dataDisabled = props.disabled ? "" : undefined;
+    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+    const ariaRequired = required.map((r) => (r ? "true" : undefined));
 
     // The thumb is a visual element inside the switch
     const thumb = $.span({ "data-switch-thumb": "" });
@@ -112,9 +118,9 @@ export const Switch = component("Switch", (props: SwitchProps) =>
         role: "switch",
         id: props.id,
         class: props.class,
-        disabled: props.disabled,
+        disabled,
         "aria-checked": ariaChecked,
-        "aria-required": props.required ? "true" : undefined,
+        "aria-required": ariaRequired,
         "data-state": dataState,
         "data-disabled": dataDisabled,
         name: props.name,

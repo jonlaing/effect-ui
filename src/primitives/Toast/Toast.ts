@@ -117,7 +117,7 @@ export interface ToastProviderProps {
 
 export interface ToastViewportProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Hotkey to focus viewport (default: Alt+T) */
   readonly hotkey?: readonly string[];
   /** ARIA label (default: "Notifications") */
@@ -128,29 +128,29 @@ export interface ToastRootProps {
   /** The toast data to render */
   readonly toast: ToastData;
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 export interface ToastTitleProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 export interface ToastDescriptionProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 export interface ToastActionProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Alt text for screen readers */
   readonly altText?: string;
 }
 
 export interface ToastCloseProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** ARIA label (default: "Close") */
   readonly "aria-label"?: string;
 }

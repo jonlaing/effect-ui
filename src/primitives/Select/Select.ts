@@ -40,9 +40,9 @@ export interface SelectContext {
   /** Unique ID for the trigger */
   readonly triggerId: string;
   /** Whether the select is disabled */
-  readonly disabled: boolean;
+  readonly disabled: Readable.Readable<boolean>;
   /** Placeholder text when no value selected */
-  readonly placeholder: string;
+  readonly placeholder: Readable.Readable<string>;
 }
 
 /**
@@ -54,7 +54,7 @@ export interface SelectItemContext {
   /** Whether this item is selected */
   readonly isSelected: Readable.Readable<boolean>;
   /** Whether this item is disabled */
-  readonly disabled: boolean;
+  readonly disabled: Readable.Readable<boolean>;
   /** Register display text for this item (called by ItemText with string children) */
   readonly setTextValue: (text: string) => Effect.Effect<void>;
 }
@@ -76,9 +76,9 @@ export interface SelectRootProps {
   /** Callback when open state changes */
   readonly onOpenChange?: (open: boolean) => Effect.Effect<void>;
   /** Whether the select is disabled */
-  readonly disabled?: boolean;
+  readonly disabled?: Readable.Reactive<boolean>;
   /** Placeholder text */
-  readonly placeholder?: string;
+  readonly placeholder?: Readable.Reactive<string>;
 }
 
 /**
@@ -86,7 +86,7 @@ export interface SelectRootProps {
  */
 export interface SelectTriggerProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -94,9 +94,9 @@ export interface SelectTriggerProps {
  */
 export interface SelectValueProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Placeholder when no value selected */
-  readonly placeholder?: string;
+  readonly placeholder?: Readable.Reactive<string>;
 }
 
 /**
@@ -104,13 +104,13 @@ export interface SelectValueProps {
  */
 export interface SelectContentProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Positioning side relative to trigger (default: "bottom") */
-  readonly side?: "top" | "bottom";
+  readonly side?: Readable.Reactive<"top" | "bottom">;
   /** Alignment along the side axis (default: "start") */
-  readonly align?: "start" | "center" | "end";
+  readonly align?: Readable.Reactive<"start" | "center" | "end">;
   /** Gap between trigger and content in pixels (default: 4) */
-  readonly sideOffset?: number;
+  readonly sideOffset?: Readable.Reactive<number>;
 }
 
 /**
@@ -125,9 +125,9 @@ export interface SelectItemProps {
    */
   readonly textValue?: string;
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
   /** Whether this item is disabled */
-  readonly disabled?: boolean;
+  readonly disabled?: Readable.Reactive<boolean>;
 }
 
 /**
@@ -135,7 +135,7 @@ export interface SelectItemProps {
  */
 export interface SelectItemTextProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -143,7 +143,7 @@ export interface SelectItemTextProps {
  */
 export interface SelectGroupProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -151,7 +151,7 @@ export interface SelectGroupProps {
  */
 export interface SelectLabelProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -159,7 +159,7 @@ export interface SelectLabelProps {
  */
 export interface SelectSeparatorProps {
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -236,6 +236,9 @@ const Root = (
         yield* valueLabels.set(newMap);
       });
 
+    const disabled = Readable.of(props.disabled ?? false);
+    const placeholder = Readable.of(props.placeholder ?? "Select...");
+
     const ctx: SelectContext = {
       isOpen,
       value,
@@ -252,8 +255,8 @@ const Root = (
       triggerRef,
       contentId,
       triggerId,
-      disabled: props.disabled ?? false,
-      placeholder: props.placeholder ?? "Select...",
+      disabled,
+      placeholder,
     };
 
     return yield* $.div(
@@ -280,10 +283,11 @@ const Trigger = component(
 
       const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
       const ariaExpanded = ctx.isOpen.map((open) => (open ? "true" : "false"));
+      const dataDisabled = ctx.disabled.map((d) => (d ? "" : undefined));
 
       const handleKeyDown = (event: KeyboardEvent) =>
         Effect.gen(function* () {
-          if (ctx.disabled) return;
+          if (yield* ctx.disabled.get) return;
 
           switch (event.key) {
             case "Enter":
@@ -306,7 +310,7 @@ const Trigger = component(
           "aria-expanded": ariaExpanded,
           "aria-controls": ctx.contentId,
           "data-state": dataState,
-          "data-disabled": ctx.disabled ? "" : undefined,
+          "data-disabled": dataDisabled,
           "data-select-trigger": "",
           disabled: ctx.disabled,
           onClick: ctx.toggle,
@@ -333,12 +337,15 @@ const Value = component("SelectValue", (props: SelectValueProps) =>
   Effect.gen(function* () {
     const ctx = yield* SelectCtx;
 
-    const placeholder = props.placeholder ?? ctx.placeholder;
+    // Normalize placeholder prop, falling back to context placeholder
+    const placeholderProp = props.placeholder
+      ? Readable.of(props.placeholder)
+      : ctx.placeholder;
 
-    // Combine value and valueLabels to get display text
+    // Combine value, valueLabels, and placeholder to get display text
     const displayText = yield* Derived.sync(
-      [ctx.value, ctx.valueLabels] as const,
-      ([v, labels]) => {
+      [ctx.value, ctx.valueLabels, placeholderProp] as const,
+      ([v, labels, placeholder]) => {
         if (!v) return placeholder;
         return labels.get(v) ?? v;
       },
@@ -373,9 +380,10 @@ const Content = component(
     Effect.gen(function* () {
       const ctx = yield* SelectCtx;
 
-      const side = props.side ?? "bottom";
-      const align = props.align ?? "start";
-      const sideOffset = props.sideOffset ?? 4;
+      // Normalize positioning props
+      const side = Readable.of(props.side ?? "bottom");
+      const align = Readable.of(props.align ?? "start");
+      const sideOffset = Readable.of(props.sideOffset ?? 4);
 
       const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
 
@@ -386,6 +394,11 @@ const Content = component(
             Effect.gen(function* () {
               const triggerEl = yield* ctx.triggerRef.get;
 
+              // Get current positioning values
+              const currentSide = yield* side.get;
+              const currentAlign = yield* align.get;
+              const currentSideOffset = yield* sideOffset.get;
+
               let positionStyle: Record<string, string> = {
                 position: "fixed",
               };
@@ -394,12 +407,12 @@ const Content = component(
                 const rect = triggerEl.getBoundingClientRect();
                 const { top, left } = calculatePosition(
                   rect,
-                  side,
-                  align,
-                  sideOffset,
+                  currentSide,
+                  currentAlign,
+                  currentSideOffset,
                   0,
                 );
-                const transform = getTransform(side, align);
+                const transform = getTransform(currentSide, currentAlign);
 
                 positionStyle = {
                   position: "fixed",
@@ -429,7 +442,7 @@ const Content = component(
                   role: "listbox",
                   "aria-labelledby": ctx.triggerId,
                   "data-state": dataState,
-                  "data-side": side,
+                  "data-side": currentSide,
                   "data-select-content": "",
                   tabIndex: -1,
                   style: positionStyle,
@@ -507,10 +520,15 @@ const Item = (
       yield* ctx.registerItem(props.value, props.textValue);
     }
 
+    // Normalize disabled prop
+    const disabled = Readable.of(props.disabled ?? false);
+
     const isSelected = ctx.value.map((v) => v === props.value);
     const dataState = isSelected.map((selected) =>
       selected ? "checked" : "unchecked",
     );
+    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+    const tabIndex = disabled.map((d) => (d ? -1 : 0));
 
     // Create function for ItemText to register string children
     const setTextValue = (text: string) => ctx.registerItem(props.value, text);
@@ -518,19 +536,19 @@ const Item = (
     const itemCtx: SelectItemContext = {
       itemValue: props.value,
       isSelected,
-      disabled: props.disabled ?? false,
+      disabled,
       setTextValue,
     };
 
     const handleClick = () =>
       Effect.gen(function* () {
-        if (props.disabled) return;
+        if (yield* disabled.get) return;
         yield* ctx.selectValue(props.value);
       });
 
     const handleKeyDown = (event: KeyboardEvent) =>
       Effect.gen(function* () {
-        if (props.disabled) return;
+        if (yield* disabled.get) return;
 
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
@@ -544,10 +562,10 @@ const Item = (
         role: "option",
         "aria-selected": isSelected.map((s) => (s ? "true" : "false")),
         "data-state": dataState,
-        "data-disabled": props.disabled ? "" : undefined,
+        "data-disabled": dataDisabled,
         "data-select-item": "",
         "data-value": props.value,
-        tabIndex: props.disabled ? undefined : 0,
+        tabIndex,
         onClick: handleClick,
         onKeyDown: handleKeyDown,
       },

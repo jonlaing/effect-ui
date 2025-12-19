@@ -34,7 +34,7 @@ export interface CollapsibleRootProps {
   /** Default open state for uncontrolled usage */
   readonly defaultOpen?: boolean;
   /** Whether the collapsible is disabled */
-  readonly disabled?: boolean | Readable.Readable<boolean>;
+  readonly disabled?: Readable.Reactive<boolean>;
   /** Callback when open state changes */
   readonly onOpenChange?: (open: boolean) => Effect.Effect<void>;
 }
@@ -46,7 +46,7 @@ export interface CollapsibleTriggerProps {
   /** Element to render as trigger (default: button) */
   readonly as?: "button" | "div";
   /** Additional class names */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
@@ -54,7 +54,7 @@ export interface CollapsibleTriggerProps {
  */
 export interface CollapsibleContentProps {
   /** Additional class names for the outer container */
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: Readable.Reactive<string>;
 }
 
 /**
