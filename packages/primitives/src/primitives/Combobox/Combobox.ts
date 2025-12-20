@@ -1,6 +1,7 @@
 import { Context, Effect, Stream } from "effect";
 import { Signal } from "@effex/dom";
 import { Readable } from "@effex/dom";
+import { Derived } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { when } from "@effex/dom";
@@ -483,7 +484,12 @@ const Input = component(
       const ctx = yield* ComboboxCtx;
 
       const openOnFocus = props.openOnFocus ?? true;
-      const isDisabled = ctx.disabled || props.disabled;
+      // Combine context disabled and prop disabled into a single Readable
+      const propDisabled = Readable.of(props.disabled ?? false);
+      const isDisabled = yield* Derived.sync(
+        [ctx.disabled, propDisabled] as const,
+        ([ctxD, propD]) => ctxD || propD,
+      );
 
       const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
       const ariaExpanded = ctx.isOpen.map((open) => (open ? "true" : "false"));
@@ -505,7 +511,7 @@ const Input = component(
 
       const handleKeyDown = (event: KeyboardEvent) =>
         Effect.gen(function* () {
-          if (isDisabled) return;
+          if (yield* isDisabled.get) return;
 
           const isOpenVal = yield* ctx.isOpen.get;
 
@@ -580,7 +586,7 @@ const Input = component(
 
       const handleFocus = () =>
         Effect.gen(function* () {
-          if (openOnFocus && !isDisabled) {
+          if (openOnFocus && !(yield* isDisabled.get)) {
             yield* ctx.open();
           }
         });
@@ -618,7 +624,7 @@ const Input = component(
         "aria-haspopup": "listbox",
         "data-combobox-input": "",
         "data-state": dataState,
-        "data-disabled": isDisabled ? "" : undefined,
+        "data-disabled": isDisabled.map((d) => (d ? "" : undefined)),
         value: ctx.inputValue,
         onInput: handleInput,
         onKeyDown: handleKeyDown,
@@ -706,10 +712,7 @@ const Content = component(
 
               // Click outside handler
               const handleDocumentClick = (e: MouseEvent) => {
-                const inputRefCast = ctx.inputRef as unknown as {
-                  _value: HTMLInputElement | null;
-                };
-                const input = inputRefCast._value;
+                const input = ctx.inputRef.current;
 
                 if (
                   contentEl &&

@@ -492,10 +492,7 @@ const Content = component(
 
               // Click outside handler
               const handleDocumentClick = (e: MouseEvent) => {
-                const triggerEl = ctx.triggerRef as unknown as {
-                  _value: HTMLElement | null;
-                };
-                const trigger = triggerEl._value;
+                const trigger = ctx.triggerRef.current;
 
                 if (
                   contentEl &&

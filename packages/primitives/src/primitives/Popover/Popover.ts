@@ -7,6 +7,7 @@ import { when } from "@effex/dom";
 import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
+import { Ref } from "@effex/dom";
 import type { Element } from "@effex/dom";
 import { calculatePosition, getTransform } from "../helpers";
 
@@ -23,9 +24,9 @@ export interface PopoverContext {
   /** Toggle the popover open state */
   readonly toggle: () => Effect.Effect<void>;
   /** Reference to the trigger element */
-  readonly triggerRef: Signal<HTMLElement | null>;
+  readonly triggerRef: Ref<HTMLElement>;
   /** Reference to an optional anchor element */
-  readonly anchorRef: Signal<HTMLElement | null>;
+  readonly anchorRef: Ref<HTMLElement>;
   /** Unique ID for the popover content */
   readonly contentId: string;
 }
@@ -118,8 +119,8 @@ const Root = (
       ? props.open
       : yield* Signal.make(props.defaultOpen ?? false);
 
-    const triggerRef = yield* Signal.make<HTMLElement | null>(null);
-    const anchorRef = yield* Signal.make<HTMLElement | null>(null);
+    const triggerRef = yield* Ref.make<HTMLElement>();
+    const anchorRef = yield* Ref.make<HTMLElement>();
     const contentId = yield* UniqueId.make("popover-content");
 
     const setOpenState = (newValue: boolean) =>
@@ -168,8 +169,9 @@ const Trigger = component(
       const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
       const ariaExpanded = ctx.isOpen.map((open) => (open ? "true" : "false"));
 
-      const button = yield* $.button(
+      return yield* $.button(
         {
+          ref: ctx.triggerRef,
           class: props.class,
           type: "button",
           "aria-haspopup": "dialog",
@@ -181,11 +183,6 @@ const Trigger = component(
         },
         children ?? [],
       );
-
-      // Store reference to trigger element
-      yield* ctx.triggerRef.set(button);
-
-      return button;
     }),
 );
 
@@ -207,18 +204,14 @@ const Anchor = component(
     Effect.gen(function* () {
       const ctx = yield* PopoverCtx;
 
-      const anchor = yield* $.div(
+      return yield* $.div(
         {
+          ref: ctx.anchorRef,
           class: props.class,
           "data-popover-anchor": "",
         },
         children ?? [],
       );
-
-      // Store reference to anchor element
-      yield* ctx.anchorRef.set(anchor);
-
-      return anchor;
     }),
 );
 
@@ -256,8 +249,7 @@ const Content = component(
           Portal(() =>
             Effect.gen(function* () {
               // Get anchor element (prefer anchorRef, fallback to triggerRef)
-              const anchorEl =
-                (yield* ctx.anchorRef.get) ?? (yield* ctx.triggerRef.get);
+              const anchorEl = ctx.anchorRef.current ?? ctx.triggerRef.current;
 
               // Get current positioning values
               const currentSide = yield* side.get;
@@ -318,10 +310,7 @@ const Content = component(
 
               // Click outside handler
               const handleDocumentClick = (e: MouseEvent) => {
-                const triggerEl = ctx.triggerRef as unknown as {
-                  _value: HTMLElement | null;
-                };
-                const trigger = triggerEl._value;
+                const trigger = ctx.triggerRef.current;
 
                 if (
                   contentEl &&

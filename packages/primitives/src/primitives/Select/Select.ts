@@ -8,6 +8,7 @@ import { when } from "@effex/dom";
 import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
+import { Ref } from "@effex/dom";
 import type { Element } from "@effex/dom";
 import { calculatePosition, getTransform } from "../helpers";
 
@@ -35,7 +36,7 @@ export interface SelectContext {
   /** Map of value to display text */
   readonly valueLabels: Signal<Map<string, string>>;
   /** Reference to the trigger element */
-  readonly triggerRef: Signal<HTMLElement | null>;
+  readonly triggerRef: Ref<HTMLButtonElement>;
   /** Unique ID for the content */
   readonly contentId: string;
   /** Unique ID for the trigger */
@@ -208,7 +209,7 @@ const Root = (
       : yield* Signal.make(props.defaultValue ?? "");
 
     const valueLabels = yield* Signal.make<Map<string, string>>(new Map());
-    const triggerRef = yield* Signal.make<HTMLElement | null>(null);
+    const triggerRef = yield* Ref.make<HTMLButtonElement>();
     const contentId = yield* UniqueId.make("select-content");
     const triggerId = yield* UniqueId.make("select-trigger");
 
@@ -301,8 +302,9 @@ const Trigger = component(
           }
         });
 
-      const button = yield* $.button(
+      return yield* $.button(
         {
+          ref: ctx.triggerRef,
           id: ctx.triggerId,
           class: props.class,
           type: "button",
@@ -319,10 +321,6 @@ const Trigger = component(
         },
         children ?? [],
       );
-
-      yield* ctx.triggerRef.set(button);
-
-      return button;
     }),
 );
 
@@ -393,7 +391,7 @@ const Content = component(
         () =>
           Portal(() =>
             Effect.gen(function* () {
-              const triggerEl = yield* ctx.triggerRef.get;
+              const triggerEl = ctx.triggerRef.current;
 
               // Get current positioning values
               const currentSide = yield* side.get;
@@ -431,8 +429,7 @@ const Content = component(
                     event.stopPropagation();
                     yield* ctx.close();
                     // Return focus to trigger
-                    const trigger = yield* ctx.triggerRef.get;
-                    trigger?.focus();
+                    ctx.triggerRef.current?.focus();
                   }
                 });
 
@@ -454,10 +451,7 @@ const Content = component(
 
               // Click outside handler
               const handleDocumentClick = (e: MouseEvent) => {
-                const triggerEl = ctx.triggerRef as unknown as {
-                  _value: HTMLElement | null;
-                };
-                const trigger = triggerEl._value;
+                const trigger = ctx.triggerRef.current;
 
                 if (
                   contentEl &&

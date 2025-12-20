@@ -21,8 +21,8 @@
     "test:coverage": "vitest run --coverage",
     "bench": "vitest bench",
     "typecheck": "tsc --noEmit",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build",
+    "storybook": "storybook dev -p 6006 -c packages/primitives/.storybook",
+    "build-storybook": "storybook build -c packages/primitives/.storybook",
     "changeset": "changeset",
     "version": "changeset version",
     "release": "pnpm build && changeset publish"

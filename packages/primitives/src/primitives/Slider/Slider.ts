@@ -315,7 +315,7 @@ const Root = (
         style: { position: "relative" },
         "data-slider-root": "",
         "data-orientation": orientation,
-        "data-disabled": disabled ? "" : undefined,
+        "data-disabled": disabled.map((d) => (d ? "" : undefined)),
         "aria-label": props["aria-label"],
         "aria-labelledby": props["aria-labelledby"],
       },
@@ -340,7 +340,7 @@ const Track = component("SliderTrack", (props: SliderTrackProps, children) =>
     // Handle pointer down on track - jump to position and start drag
     const handlePointerDown = (e: PointerEvent) =>
       Effect.gen(function* () {
-        if (ctx.disabled) return;
+        if (yield* ctx.disabled.get) return;
 
         e.preventDefault();
         const newValue = ctx.pointerToValue(e.clientX, e.clientY);
@@ -377,7 +377,7 @@ const Track = component("SliderTrack", (props: SliderTrackProps, children) =>
         class: props.class,
         "data-slider-track": "",
         "data-orientation": ctx.orientation,
-        "data-disabled": ctx.disabled ? "" : undefined,
+        "data-disabled": ctx.disabled.map((d) => (d ? "" : undefined)),
         onPointerDown: handlePointerDown,
         style: { position: "relative", touchAction: "none" },
       },
@@ -460,7 +460,7 @@ const Thumb = component("SliderThumb", (props: SliderThumbProps) =>
     // Handle pointer down on thumb
     const handlePointerDown = (e: PointerEvent) =>
       Effect.gen(function* () {
-        if (ctx.disabled) return;
+        if (yield* ctx.disabled.get) return;
         e.preventDefault();
         e.stopPropagation();
 
@@ -474,7 +474,7 @@ const Thumb = component("SliderThumb", (props: SliderThumbProps) =>
     // Keyboard navigation
     const handleKeyDown = (e: KeyboardEvent) =>
       Effect.gen(function* () {
-        if (ctx.disabled) return;
+        if (yield* ctx.disabled.get) return;
 
         const currentValue = yield* thumbValue.get;
         let newValue: number | null = null;
@@ -539,17 +539,17 @@ const Thumb = component("SliderThumb", (props: SliderThumbProps) =>
         class: props.class,
         style: thumbStyle,
         role: "slider",
-        tabIndex: ctx.disabled ? undefined : 0,
+        tabIndex: ctx.disabled.map((d) => (d ? -1 : 0)),
         "aria-valuenow": thumbValue,
         "aria-valuemin": ctx.min,
         "aria-valuemax": ctx.max,
         "aria-valuetext": ariaValueText,
         "aria-orientation": ctx.orientation,
-        "aria-disabled": ctx.disabled ? "true" : undefined,
+        "aria-disabled": ctx.disabled.map((d) => (d ? "true" : undefined)),
         "aria-label": props["aria-label"],
         "aria-labelledby": props["aria-labelledby"],
         "data-slider-thumb": "",
-        "data-disabled": ctx.disabled ? "" : undefined,
+        "data-disabled": ctx.disabled.map((d) => (d ? "" : undefined)),
         "data-dragging": isDragging.map((d) => (d ? "" : undefined)),
         "data-thumb-index": thumbIndex,
         onPointerDown: handlePointerDown,
