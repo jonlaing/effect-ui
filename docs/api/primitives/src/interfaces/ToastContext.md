@@ -6,7 +6,7 @@
 
 # Interface: ToastContext
 
-Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:53](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/Toast.ts#L53)
+Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:53](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/Toast.ts#L53)
 
 Global toast context provided by Provider.
 
@@ -16,7 +16,7 @@ Global toast context provided by Provider.
 
 > `readonly` **add**: (`options`) => `Effect`\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:57](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/Toast.ts#L57)
+Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:57](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/Toast.ts#L57)
 
 Add a new toast, returns its ID
 
@@ -36,7 +36,7 @@ Add a new toast, returns its ID
 
 > `readonly` **defaultDuration**: `number`
 
-Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:67](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/Toast.ts#L67)
+Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:67](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/Toast.ts#L67)
 
 Default auto-dismiss duration
 
@@ -46,7 +46,7 @@ Default auto-dismiss duration
 
 > `readonly` **dismiss**: (`id`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:59](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/Toast.ts#L59)
+Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:59](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/Toast.ts#L59)
 
 Dismiss a specific toast by ID
 
@@ -66,7 +66,7 @@ Dismiss a specific toast by ID
 
 > `readonly` **dismissAll**: () => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:61](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/Toast.ts#L61)
+Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:61](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/Toast.ts#L61)
 
 Dismiss all toasts
 
@@ -80,7 +80,7 @@ Dismiss all toasts
 
 > `readonly` **maxVisible**: `number`
 
-Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:65](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/Toast.ts#L65)
+Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:65](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/Toast.ts#L65)
 
 Max visible toasts
 
@@ -90,7 +90,7 @@ Max visible toasts
 
 > `readonly` **position**: [`ToastPosition`](../type-aliases/ToastPosition.md)
 
-Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:63](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/Toast.ts#L63)
+Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:63](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/Toast.ts#L63)
 
 Current position
 
@@ -100,7 +100,7 @@ Current position
 
 > `readonly` **swipeDirection**: [`SwipeDirection`](../type-aliases/SwipeDirection.md)
 
-Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:71](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/Toast.ts#L71)
+Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:71](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/Toast.ts#L71)
 
 Swipe direction
 
@@ -110,7 +110,7 @@ Swipe direction
 
 > `readonly` **swipeThreshold**: `number`
 
-Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:69](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/Toast.ts#L69)
+Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:69](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/Toast.ts#L69)
 
 Swipe threshold in pixels
 
@@ -120,6 +120,6 @@ Swipe threshold in pixels
 
 > `readonly` **toasts**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<readonly [`ToastData`](ToastData.md)[]\>
 
-Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:55](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/Toast.ts#L55)
+Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:55](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/Toast.ts#L55)
 
 All current toasts

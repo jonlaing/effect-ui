@@ -6,7 +6,7 @@
 
 # Interface: DropdownMenuContext
 
-Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:26](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L26)
+Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:26](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L26)
 
 Context shared between DropdownMenu parts.
 
@@ -16,7 +16,7 @@ Context shared between DropdownMenu parts.
 
 > `readonly` **close**: () => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:32](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L32)
+Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:32](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L32)
 
 Close the menu
 
@@ -30,7 +30,7 @@ Close the menu
 
 > `readonly` **contentId**: `string`
 
-Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:38](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L38)
+Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:38](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L38)
 
 Unique ID for the content
 
@@ -40,7 +40,7 @@ Unique ID for the content
 
 > `readonly` **isOpen**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:28](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L28)
+Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:28](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L28)
 
 Whether the menu is currently open
 
@@ -50,7 +50,7 @@ Whether the menu is currently open
 
 > `readonly` **open**: () => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:30](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L30)
+Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:30](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L30)
 
 Open the menu
 
@@ -64,7 +64,7 @@ Open the menu
 
 > `readonly` **toggle**: () => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:34](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L34)
+Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:34](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L34)
 
 Toggle the menu open state
 
@@ -78,7 +78,7 @@ Toggle the menu open state
 
 > `readonly` **triggerId**: `string`
 
-Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:40](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L40)
+Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:40](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L40)
 
 Unique ID for the trigger
 
@@ -88,6 +88,6 @@ Unique ID for the trigger
 
 > `readonly` **triggerRef**: [`RefType`](../../../core/src/type-aliases/RefType.md)\<`HTMLButtonElement`\>
 
-Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:36](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L36)
+Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:36](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L36)
 
 Reference to the trigger element

@@ -6,7 +6,7 @@
 
 # Interface: ToastProviderProps
 
-Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:106](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/Toast.ts#L106)
+Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:106](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/Toast.ts#L106)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:106](https://gith
 
 > `readonly` `optional` **defaultDuration**: `number`
 
-Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:112](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/Toast.ts#L112)
+Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:112](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/Toast.ts#L112)
 
 Default auto-dismiss duration in ms (default: 5000)
 
@@ -24,7 +24,7 @@ Default auto-dismiss duration in ms (default: 5000)
 
 > `readonly` `optional` **maxVisible**: `number`
 
-Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:110](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/Toast.ts#L110)
+Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:110](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/Toast.ts#L110)
 
 Maximum visible toasts (default: 5)
 
@@ -34,7 +34,7 @@ Maximum visible toasts (default: 5)
 
 > `readonly` `optional` **position**: [`ToastPosition`](../type-aliases/ToastPosition.md)
 
-Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:108](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/Toast.ts#L108)
+Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:108](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/Toast.ts#L108)
 
 Position of toast viewport (default: "bottom-right")
 
@@ -44,7 +44,7 @@ Position of toast viewport (default: "bottom-right")
 
 > `readonly` `optional` **swipeDirection**: [`SwipeDirection`](../type-aliases/SwipeDirection.md)
 
-Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:114](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/Toast.ts#L114)
+Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:114](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/Toast.ts#L114)
 
 Swipe direction override (default: based on position)
 
@@ -54,6 +54,6 @@ Swipe direction override (default: based on position)
 
 > `readonly` `optional` **swipeThreshold**: `number`
 
-Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:116](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/Toast.ts#L116)
+Defined in: [packages/primitives/src/primitives/Toast/Toast.ts:116](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/Toast.ts#L116)
 
 Swipe threshold in pixels (default: 50)

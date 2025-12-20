@@ -6,7 +6,7 @@
 
 # Interface: SelectItemProps
 
-Defined in: [packages/primitives/src/primitives/Select/Select.ts:121](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Select/Select.ts#L121)
+Defined in: [packages/primitives/src/primitives/Select/Select.ts:121](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Select/Select.ts#L121)
 
 Props for Select.Item
 
@@ -16,7 +16,7 @@ Props for Select.Item
 
 > `readonly` `optional` **class**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/Select/Select.ts:130](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Select/Select.ts#L130)
+Defined in: [packages/primitives/src/primitives/Select/Select.ts:130](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Select/Select.ts#L130)
 
 Additional class names
 
@@ -26,7 +26,7 @@ Additional class names
 
 > `readonly` `optional` **disabled**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/Select/Select.ts:132](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Select/Select.ts#L132)
+Defined in: [packages/primitives/src/primitives/Select/Select.ts:132](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Select/Select.ts#L132)
 
 Whether this item is disabled
 
@@ -36,7 +36,7 @@ Whether this item is disabled
 
 > `readonly` `optional` **textValue**: `string`
 
-Defined in: [packages/primitives/src/primitives/Select/Select.ts:128](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Select/Select.ts#L128)
+Defined in: [packages/primitives/src/primitives/Select/Select.ts:128](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Select/Select.ts#L128)
 
 Optional display text for this item. Only needed when ItemText has complex children.
 For simple string children in ItemText, the label is registered automatically.
@@ -47,6 +47,6 @@ For simple string children in ItemText, the label is registered automatically.
 
 > `readonly` **value**: `string`
 
-Defined in: [packages/primitives/src/primitives/Select/Select.ts:123](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Select/Select.ts#L123)
+Defined in: [packages/primitives/src/primitives/Select/Select.ts:123](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Select/Select.ts#L123)
 
 The value for this item

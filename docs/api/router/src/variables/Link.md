@@ -8,7 +8,7 @@
 
 > `const` **Link**: [`Component`](../../../dom/src/type-aliases/Component.md)\<`"Link"`, [`LinkProps`](../interfaces/LinkProps.md), `never`, [`RouterContext`](../classes/RouterContext.md)\>
 
-Defined in: [packages/router/src/router/RouterContext.ts:113](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/RouterContext.ts#L113)
+Defined in: [packages/router/src/router/RouterContext.ts:113](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/RouterContext.ts#L113)
 
 A navigation link component that uses the RouterContext.
 Components using Link will have RouterContext in their requirements.

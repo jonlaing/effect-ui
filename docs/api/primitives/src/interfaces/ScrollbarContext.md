@@ -6,7 +6,7 @@
 
 # Interface: ScrollbarContext
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:61](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L61)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:61](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L61)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:61](htt
 
 > `readonly` **hasOverflow**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:69](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L69)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:69](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L69)
 
 Whether this scrollbar should be visible (content overflows)
 
@@ -24,7 +24,7 @@ Whether this scrollbar should be visible (content overflows)
 
 > `readonly` **isVisible**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:71](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L71)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:71](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L71)
 
 Whether scrollbar is currently visible based on type
 
@@ -34,7 +34,7 @@ Whether scrollbar is currently visible based on type
 
 > `readonly` **orientation**: [`ScrollbarOrientation`](../type-aliases/ScrollbarOrientation.md)
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:63](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L63)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:63](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L63)
 
 Scrollbar orientation
 
@@ -44,7 +44,7 @@ Scrollbar orientation
 
 > `readonly` **thumbPosition**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`number`\>
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:67](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L67)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:67](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L67)
 
 Thumb position as percentage (0-100)
 
@@ -54,7 +54,7 @@ Thumb position as percentage (0-100)
 
 > `readonly` **thumbSize**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`number`\>
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:65](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L65)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:65](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L65)
 
 Thumb size as percentage (0-100)
 
@@ -64,6 +64,6 @@ Thumb size as percentage (0-100)
 
 > `readonly` **trackRef**: [`RefType`](../../../core/src/type-aliases/RefType.md)\<`HTMLDivElement`\>
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:73](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L73)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:73](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L73)
 
 Reference to the scrollbar track

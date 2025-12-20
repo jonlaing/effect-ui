@@ -6,7 +6,7 @@
 
 # Class: RouterContext
 
-Defined in: [packages/router/src/router/RouterContext.ts:19](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/RouterContext.ts#L19)
+Defined in: [packages/router/src/router/RouterContext.ts:19](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/RouterContext.ts#L19)
 
 Context tag for accessing the router within components.
 Components that use RouterContext will have it as a requirement in their type signature.

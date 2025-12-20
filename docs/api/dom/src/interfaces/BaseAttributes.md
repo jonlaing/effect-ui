@@ -6,7 +6,7 @@
 
 # Interface: BaseAttributes\<T\>
 
-Defined in: [packages/dom/src/Element/types.ts:165](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Element/types.ts#L165)
+Defined in: [packages/dom/src/Element/types.ts:165](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Element/types.ts#L165)
 
 Base attributes available on all elements.
 
@@ -68,7 +68,7 @@ div({ "data-state": state }, [...])
 
 > `readonly` `optional` **class**: `ClassValue`
 
-Defined in: [packages/dom/src/Element/types.ts:168](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Element/types.ts#L168)
+Defined in: [packages/dom/src/Element/types.ts:168](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Element/types.ts#L168)
 
 CSS class name(s) - can be a string, array of strings, or reactive versions
 
@@ -78,7 +78,7 @@ CSS class name(s) - can be a string, array of strings, or reactive versions
 
 > `readonly` `optional` **id**: `string`
 
-Defined in: [packages/dom/src/Element/types.ts:174](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Element/types.ts#L174)
+Defined in: [packages/dom/src/Element/types.ts:174](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Element/types.ts#L174)
 
 Element ID
 
@@ -88,7 +88,7 @@ Element ID
 
 > `readonly` `optional` **innerHTML**: `string` \| [`Readable`](../../../core/src/interfaces/Readable.md)\<`string`\>
 
-Defined in: [packages/dom/src/Element/types.ts:194](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Element/types.ts#L194)
+Defined in: [packages/dom/src/Element/types.ts:194](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Element/types.ts#L194)
 
 Set the element's innerHTML directly. Useful for rendering HTML strings
 from markdown parsers, rich text editors, or sanitized user content.
@@ -112,7 +112,7 @@ $.div({ innerHTML: markdown.map(md => marked.parse(md)) })
 
 > `readonly` `optional` **ref**: [`RefType`](../../../core/src/type-aliases/RefType.md)\<`T`\>
 
-Defined in: [packages/dom/src/Element/types.ts:177](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Element/types.ts#L177)
+Defined in: [packages/dom/src/Element/types.ts:177](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Element/types.ts#L177)
 
 ***
 
@@ -120,7 +120,7 @@ Defined in: [packages/dom/src/Element/types.ts:177](https://github.com/jonlaing/
 
 > `readonly` `optional` **role**: `string` \| [`Readable`](../../../core/src/interfaces/Readable.md)\<`string`\>
 
-Defined in: [packages/dom/src/Element/types.ts:176](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Element/types.ts#L176)
+Defined in: [packages/dom/src/Element/types.ts:176](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Element/types.ts#L176)
 
 ARIA role attribute
 
@@ -130,6 +130,6 @@ ARIA role attribute
 
 > `readonly` `optional` **style**: `Record`\<`string`, `StyleValue`\> \| [`Readable`](../../../core/src/interfaces/Readable.md)\<`Record`\<`string`, `string`\>\>
 
-Defined in: [packages/dom/src/Element/types.ts:170](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Element/types.ts#L170)
+Defined in: [packages/dom/src/Element/types.ts:170](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Element/types.ts#L170)
 
 Inline styles as a record of property-value pairs

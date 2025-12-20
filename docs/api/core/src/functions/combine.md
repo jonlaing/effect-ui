@@ -8,7 +8,7 @@
 
 > **combine**\<`T`\>(`readables`): [`Readable`](../interfaces/Readable.md)\<\{ \[K in string \| number \| symbol\]: T\[K\<K\>\] extends Readable\<A\> ? A : never \}\>
 
-Defined in: [packages/core/src/Readable.ts:174](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Readable.ts#L174)
+Defined in: [packages/core/src/Readable.ts:174](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Readable.ts#L174)
 
 Combine multiple Readables into a single Readable of a tuple.
 The combined Readable updates whenever any input changes.

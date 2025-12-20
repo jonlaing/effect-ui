@@ -6,7 +6,7 @@
 
 # Interface: Signal\<A\>
 
-Defined in: [packages/core/src/Signal.ts:26](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Signal.ts#L26)
+Defined in: [packages/core/src/Signal.ts:26](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Signal.ts#L26)
 
 A mutable reactive value that extends Readable with write capabilities.
 
@@ -28,7 +28,7 @@ The type of the value
 
 > `readonly` **changes**: `Stream`\<`A`\>
 
-Defined in: [packages/core/src/Readable.ts:11](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Readable.ts#L11)
+Defined in: [packages/core/src/Readable.ts:11](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Readable.ts#L11)
 
 Stream of value changes (does not include current value)
 
@@ -42,7 +42,7 @@ Stream of value changes (does not include current value)
 
 > `readonly` **get**: `Effect`\<`A`\>
 
-Defined in: [packages/core/src/Readable.ts:9](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Readable.ts#L9)
+Defined in: [packages/core/src/Readable.ts:9](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Readable.ts#L9)
 
 Get the current value
 
@@ -56,7 +56,7 @@ Get the current value
 
 > `readonly` **map**: \<`B`\>(`f`) => [`Readable`](../../../interfaces/Readable.md)\<`B`\>
 
-Defined in: [packages/core/src/Readable.ts:15](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Readable.ts#L15)
+Defined in: [packages/core/src/Readable.ts:15](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Readable.ts#L15)
 
 Transform the readable value
 
@@ -86,7 +86,7 @@ Transform the readable value
 
 > `readonly` **set**: (`a`) => `Effect`\<`void`\>
 
-Defined in: [packages/core/src/Signal.ts:28](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Signal.ts#L28)
+Defined in: [packages/core/src/Signal.ts:28](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Signal.ts#L28)
 
 Set the signal to a new value
 
@@ -106,7 +106,7 @@ Set the signal to a new value
 
 > `readonly` **update**: (`f`) => `Effect`\<`void`\>
 
-Defined in: [packages/core/src/Signal.ts:30](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Signal.ts#L30)
+Defined in: [packages/core/src/Signal.ts:30](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Signal.ts#L30)
 
 Update the signal value using a function
 
@@ -126,7 +126,7 @@ Update the signal value using a function
 
 > `readonly` **values**: `Stream`\<`A`\>
 
-Defined in: [packages/core/src/Readable.ts:13](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Readable.ts#L13)
+Defined in: [packages/core/src/Readable.ts:13](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Readable.ts#L13)
 
 Stream of all values (current value followed by changes)
 

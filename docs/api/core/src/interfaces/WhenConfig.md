@@ -6,7 +6,7 @@
 
 # Interface: WhenConfig\<N, E1, R1, E2, R2\>
 
-Defined in: [packages/core/src/Control.ts:10](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Control.ts#L10)
+Defined in: [packages/core/src/Control.ts:10](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Control.ts#L10)
 
 Configuration for the `when` control flow.
 
@@ -38,7 +38,7 @@ Configuration for the `when` control flow.
 
 > `readonly` `optional` **container**: () => [`Element`](../type-aliases/Element.md)\<`N`, `never`, `never`\>
 
-Defined in: [packages/core/src/Control.ts:20](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Control.ts#L20)
+Defined in: [packages/core/src/Control.ts:20](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Control.ts#L20)
 
 Optional custom container element. If not provided, defaults to a div
 with `display: contents`.
@@ -59,7 +59,7 @@ container: () => $.tbody({ class: "data-rows" })
 
 > `readonly` **onFalse**: () => [`Element`](../type-aliases/Element.md)\<`N`, `E2`, `R2`\>
 
-Defined in: [packages/core/src/Control.ts:24](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Control.ts#L24)
+Defined in: [packages/core/src/Control.ts:24](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Control.ts#L24)
 
 Element to render when condition is false
 
@@ -73,7 +73,7 @@ Element to render when condition is false
 
 > `readonly` **onTrue**: () => [`Element`](../type-aliases/Element.md)\<`N`, `E1`, `R1`\>
 
-Defined in: [packages/core/src/Control.ts:22](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Control.ts#L22)
+Defined in: [packages/core/src/Control.ts:22](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Control.ts#L22)
 
 Element to render when condition is true
 

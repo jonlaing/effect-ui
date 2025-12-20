@@ -6,7 +6,7 @@
 
 # Interface: AsyncDerived\<A, E\>
 
-Defined in: [packages/core/src/Derived/types.ts:53](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Derived/types.ts#L53)
+Defined in: [packages/core/src/Derived/types.ts:53](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Derived/types.ts#L53)
 
 An asynchronous derived value that tracks loading and error states.
 
@@ -34,7 +34,7 @@ The type of the error
 
 > `readonly` **await**: `Effect`\<`A`, `E`\>
 
-Defined in: [packages/core/src/Derived/types.ts:55](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Derived/types.ts#L55)
+Defined in: [packages/core/src/Derived/types.ts:55](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Derived/types.ts#L55)
 
 Effect that resolves to the current value or fails with the current error
 
@@ -44,7 +44,7 @@ Effect that resolves to the current value or fails with the current error
 
 > `readonly` **changes**: `Stream`\<[`AsyncState`](AsyncState.md)\<`A`, `E`\>\>
 
-Defined in: [packages/core/src/Readable.ts:11](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Readable.ts#L11)
+Defined in: [packages/core/src/Readable.ts:11](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Readable.ts#L11)
 
 Stream of value changes (does not include current value)
 
@@ -58,7 +58,7 @@ Stream of value changes (does not include current value)
 
 > `readonly` **get**: `Effect`\<[`AsyncState`](AsyncState.md)\<`A`, `E`\>\>
 
-Defined in: [packages/core/src/Readable.ts:9](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Readable.ts#L9)
+Defined in: [packages/core/src/Readable.ts:9](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Readable.ts#L9)
 
 Get the current value
 
@@ -72,7 +72,7 @@ Get the current value
 
 > `readonly` **map**: \<`B`\>(`f`) => [`Readable`](Readable.md)\<`B`\>
 
-Defined in: [packages/core/src/Readable.ts:15](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Readable.ts#L15)
+Defined in: [packages/core/src/Readable.ts:15](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Readable.ts#L15)
 
 Transform the readable value
 
@@ -102,7 +102,7 @@ Transform the readable value
 
 > `readonly` **values**: `Stream`\<[`AsyncState`](AsyncState.md)\<`A`, `E`\>\>
 
-Defined in: [packages/core/src/Readable.ts:13](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Readable.ts#L13)
+Defined in: [packages/core/src/Readable.ts:13](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Readable.ts#L13)
 
 Stream of all values (current value followed by changes)
 

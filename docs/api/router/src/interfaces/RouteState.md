@@ -6,7 +6,7 @@
 
 # Interface: RouteState\<P\>
 
-Defined in: [packages/router/src/router/types.ts:83](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L83)
+Defined in: [packages/router/src/router/types.ts:83](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L83)
 
 State for an individual route within the router.
 
@@ -24,7 +24,7 @@ The params type
 
 > `readonly` **isActive**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`boolean`\>
 
-Defined in: [packages/router/src/router/types.ts:85](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L85)
+Defined in: [packages/router/src/router/types.ts:85](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L85)
 
 Whether this route is currently active
 
@@ -34,6 +34,6 @@ Whether this route is currently active
 
 > `readonly` **params**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`P`\>
 
-Defined in: [packages/router/src/router/types.ts:87](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L87)
+Defined in: [packages/router/src/router/types.ts:87](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L87)
 
 The current params (only meaningful when active)

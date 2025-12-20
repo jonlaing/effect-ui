@@ -6,7 +6,7 @@
 
 # Interface: TabsRootProps
 
-Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:27](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tabs/Tabs.ts#L27)
+Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:27](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tabs/Tabs.ts#L27)
 
 Props for Tabs.Root
 
@@ -16,7 +16,7 @@ Props for Tabs.Root
 
 > `readonly` `optional` **activationMode**: `"automatic"` \| `"manual"`
 
-Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:37](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tabs/Tabs.ts#L37)
+Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:37](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tabs/Tabs.ts#L37)
 
 Activation mode (default: "automatic")
 
@@ -26,7 +26,7 @@ Activation mode (default: "automatic")
 
 > `readonly` `optional` **defaultValue**: `string`
 
-Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:31](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tabs/Tabs.ts#L31)
+Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:31](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tabs/Tabs.ts#L31)
 
 Default value for uncontrolled usage
 
@@ -36,7 +36,7 @@ Default value for uncontrolled usage
 
 > `readonly` `optional` **onValueChange**: (`value`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:33](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tabs/Tabs.ts#L33)
+Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:33](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tabs/Tabs.ts#L33)
 
 Callback when value changes
 
@@ -56,7 +56,7 @@ Callback when value changes
 
 > `readonly` `optional` **orientation**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`"horizontal"` \| `"vertical"`\>
 
-Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:35](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tabs/Tabs.ts#L35)
+Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:35](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tabs/Tabs.ts#L35)
 
 Tab orientation (default: "horizontal")
 
@@ -66,6 +66,6 @@ Tab orientation (default: "horizontal")
 
 > `readonly` `optional` **value**: [`Signal`](../../../core/src/interfaces/Signal.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:29](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tabs/Tabs.ts#L29)
+Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:29](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tabs/Tabs.ts#L29)
 
 Controlled value - if provided, component is controlled

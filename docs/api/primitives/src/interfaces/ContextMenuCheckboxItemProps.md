@@ -6,7 +6,7 @@
 
 # Interface: ContextMenuCheckboxItemProps
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:104](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L104)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:104](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L104)
 
 Props for ContextMenu.CheckboxItem
 
@@ -16,7 +16,7 @@ Props for ContextMenu.CheckboxItem
 
 > `readonly` `optional` **checked**: [`Signal`](../../../core/src/interfaces/Signal.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:110](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L110)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:110](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L110)
 
 Controlled checked state
 
@@ -26,7 +26,7 @@ Controlled checked state
 
 > `readonly` `optional` **class**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:106](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L106)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:106](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L106)
 
 Additional class names
 
@@ -36,7 +36,7 @@ Additional class names
 
 > `readonly` `optional` **defaultChecked**: `boolean`
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:112](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L112)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:112](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L112)
 
 Default checked state (uncontrolled)
 
@@ -46,7 +46,7 @@ Default checked state (uncontrolled)
 
 > `readonly` `optional` **disabled**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:108](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L108)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:108](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L108)
 
 Whether this item is disabled
 
@@ -56,7 +56,7 @@ Whether this item is disabled
 
 > `readonly` `optional` **onCheckedChange**: (`checked`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:114](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L114)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:114](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L114)
 
 Callback when checked state changes
 

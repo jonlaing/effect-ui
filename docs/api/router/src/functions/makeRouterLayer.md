@@ -8,7 +8,7 @@
 
 > **makeRouterLayer**(`router`): `Layer`\<[`RouterContext`](../classes/RouterContext.md)\>
 
-Defined in: [packages/router/src/router/RouterContext.ts:40](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/RouterContext.ts#L40)
+Defined in: [packages/router/src/router/RouterContext.ts:40](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/RouterContext.ts#L40)
 
 Convenience function to create a RouterContext layer.
 

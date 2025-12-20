@@ -6,7 +6,7 @@
 
 # Interface: CollapsibleRootProps
 
-Defined in: [packages/primitives/src/primitives/Collapsible/Collapsible.ts:31](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Collapsible/Collapsible.ts#L31)
+Defined in: [packages/primitives/src/primitives/Collapsible/Collapsible.ts:31](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Collapsible/Collapsible.ts#L31)
 
 Props for Collapsible.Root
 
@@ -16,7 +16,7 @@ Props for Collapsible.Root
 
 > `readonly` `optional` **defaultOpen**: `boolean`
 
-Defined in: [packages/primitives/src/primitives/Collapsible/Collapsible.ts:35](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Collapsible/Collapsible.ts#L35)
+Defined in: [packages/primitives/src/primitives/Collapsible/Collapsible.ts:35](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Collapsible/Collapsible.ts#L35)
 
 Default open state for uncontrolled usage
 
@@ -26,7 +26,7 @@ Default open state for uncontrolled usage
 
 > `readonly` `optional` **disabled**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/Collapsible/Collapsible.ts:37](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Collapsible/Collapsible.ts#L37)
+Defined in: [packages/primitives/src/primitives/Collapsible/Collapsible.ts:37](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Collapsible/Collapsible.ts#L37)
 
 Whether the collapsible is disabled
 
@@ -36,7 +36,7 @@ Whether the collapsible is disabled
 
 > `readonly` `optional` **onOpenChange**: (`open`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Collapsible/Collapsible.ts:39](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Collapsible/Collapsible.ts#L39)
+Defined in: [packages/primitives/src/primitives/Collapsible/Collapsible.ts:39](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Collapsible/Collapsible.ts#L39)
 
 Callback when open state changes
 
@@ -56,6 +56,6 @@ Callback when open state changes
 
 > `readonly` `optional` **open**: [`Signal`](../../../core/src/interfaces/Signal.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/Collapsible/Collapsible.ts:33](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Collapsible/Collapsible.ts#L33)
+Defined in: [packages/primitives/src/primitives/Collapsible/Collapsible.ts:33](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Collapsible/Collapsible.ts#L33)
 
 Controlled open state - if provided, component is controlled

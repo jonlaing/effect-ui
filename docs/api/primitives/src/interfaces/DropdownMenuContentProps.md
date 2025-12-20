@@ -6,7 +6,7 @@
 
 # Interface: DropdownMenuContentProps
 
-Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:68](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L68)
+Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:68](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L68)
 
 Props for DropdownMenu.Content
 
@@ -16,7 +16,7 @@ Props for DropdownMenu.Content
 
 > `readonly` `optional` **align**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`"center"` \| `"start"` \| `"end"`\>
 
-Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:74](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L74)
+Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:74](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L74)
 
 Alignment along the side axis (default: "start")
 
@@ -26,7 +26,7 @@ Alignment along the side axis (default: "start")
 
 > `readonly` `optional` **class**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:70](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L70)
+Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:70](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L70)
 
 Additional class names
 
@@ -36,7 +36,7 @@ Additional class names
 
 > `readonly` `optional` **loop**: `boolean`
 
-Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:78](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L78)
+Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:78](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L78)
 
 Whether keyboard navigation loops (default: true)
 
@@ -46,7 +46,7 @@ Whether keyboard navigation loops (default: true)
 
 > `readonly` `optional` **side**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`"top"` \| `"bottom"` \| `"left"` \| `"right"`\>
 
-Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:72](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L72)
+Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:72](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L72)
 
 Positioning side relative to trigger (default: "bottom")
 
@@ -56,6 +56,6 @@ Positioning side relative to trigger (default: "bottom")
 
 > `readonly` `optional` **sideOffset**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`number`\>
 
-Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:76](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L76)
+Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:76](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L76)
 
 Gap between trigger and content in pixels (default: 4)

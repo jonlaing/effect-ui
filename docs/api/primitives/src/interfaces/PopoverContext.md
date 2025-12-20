@@ -6,7 +6,7 @@
 
 # Interface: PopoverContext
 
-Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:17](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Popover/Popover.ts#L17)
+Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:17](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Popover/Popover.ts#L17)
 
 Context shared between Popover parts.
 
@@ -16,7 +16,7 @@ Context shared between Popover parts.
 
 > `readonly` **anchorRef**: [`RefType`](../../../core/src/type-aliases/RefType.md)\<`HTMLElement`\>
 
-Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:29](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Popover/Popover.ts#L29)
+Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:29](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Popover/Popover.ts#L29)
 
 Reference to an optional anchor element
 
@@ -26,7 +26,7 @@ Reference to an optional anchor element
 
 > `readonly` **close**: () => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:23](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Popover/Popover.ts#L23)
+Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:23](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Popover/Popover.ts#L23)
 
 Close the popover
 
@@ -40,7 +40,7 @@ Close the popover
 
 > `readonly` **contentId**: `string`
 
-Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:31](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Popover/Popover.ts#L31)
+Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:31](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Popover/Popover.ts#L31)
 
 Unique ID for the popover content
 
@@ -50,7 +50,7 @@ Unique ID for the popover content
 
 > `readonly` **isOpen**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:19](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Popover/Popover.ts#L19)
+Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:19](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Popover/Popover.ts#L19)
 
 Whether the popover is currently open
 
@@ -60,7 +60,7 @@ Whether the popover is currently open
 
 > `readonly` **open**: () => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:21](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Popover/Popover.ts#L21)
+Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:21](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Popover/Popover.ts#L21)
 
 Open the popover
 
@@ -74,7 +74,7 @@ Open the popover
 
 > `readonly` **toggle**: () => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:25](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Popover/Popover.ts#L25)
+Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:25](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Popover/Popover.ts#L25)
 
 Toggle the popover open state
 
@@ -88,6 +88,6 @@ Toggle the popover open state
 
 > `readonly` **triggerRef**: [`RefType`](../../../core/src/type-aliases/RefType.md)\<`HTMLElement`\>
 
-Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:27](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Popover/Popover.ts#L27)
+Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:27](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Popover/Popover.ts#L27)
 
 Reference to the trigger element

@@ -6,7 +6,7 @@
 
 # Interface: PopoverContentProps
 
-Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:65](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Popover/Popover.ts#L65)
+Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:65](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Popover/Popover.ts#L65)
 
 Props for Popover.Content
 
@@ -16,7 +16,7 @@ Props for Popover.Content
 
 > `readonly` `optional` **align**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`"center"` \| `"start"` \| `"end"`\>
 
-Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:71](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Popover/Popover.ts#L71)
+Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:71](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Popover/Popover.ts#L71)
 
 Alignment along the side axis (default: "center")
 
@@ -26,7 +26,7 @@ Alignment along the side axis (default: "center")
 
 > `readonly` `optional` **alignOffset**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`number`\>
 
-Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:75](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Popover/Popover.ts#L75)
+Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:75](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Popover/Popover.ts#L75)
 
 Shift along the side axis in pixels (default: 0)
 
@@ -36,7 +36,7 @@ Shift along the side axis in pixels (default: 0)
 
 > `readonly` `optional` **class**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:67](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Popover/Popover.ts#L67)
+Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:67](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Popover/Popover.ts#L67)
 
 Additional class names
 
@@ -46,7 +46,7 @@ Additional class names
 
 > `readonly` `optional` **onClickOutside**: () => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:77](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Popover/Popover.ts#L77)
+Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:77](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Popover/Popover.ts#L77)
 
 Called when clicking outside
 
@@ -60,7 +60,7 @@ Called when clicking outside
 
 > `readonly` `optional` **onEscapeKeyDown**: (`event`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:79](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Popover/Popover.ts#L79)
+Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:79](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Popover/Popover.ts#L79)
 
 Called when Escape key is pressed
 
@@ -80,7 +80,7 @@ Called when Escape key is pressed
 
 > `readonly` `optional` **side**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`"top"` \| `"bottom"` \| `"left"` \| `"right"`\>
 
-Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:69](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Popover/Popover.ts#L69)
+Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:69](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Popover/Popover.ts#L69)
 
 Positioning side relative to trigger (default: "bottom")
 
@@ -90,6 +90,6 @@ Positioning side relative to trigger (default: "bottom")
 
 > `readonly` `optional` **sideOffset**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`number`\>
 
-Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:73](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Popover/Popover.ts#L73)
+Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:73](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Popover/Popover.ts#L73)
 
 Gap between trigger and content in pixels (default: 4)

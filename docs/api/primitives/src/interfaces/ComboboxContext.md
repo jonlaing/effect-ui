@@ -6,7 +6,7 @@
 
 # Interface: ComboboxContext
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:39](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L39)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:39](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L39)
 
 Context shared between Combobox parts.
 
@@ -16,7 +16,7 @@ Context shared between Combobox parts.
 
 > `readonly` **close**: () => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:45](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L45)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:45](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L45)
 
 Close the listbox
 
@@ -30,7 +30,7 @@ Close the listbox
 
 > `readonly` **contentId**: `string`
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:83](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L83)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:83](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L83)
 
 Unique ID for the content element
 
@@ -40,7 +40,7 @@ Unique ID for the content element
 
 > `readonly` **disabled**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:96](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L96)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:96](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L96)
 
 Whether the combobox is disabled
 
@@ -50,7 +50,7 @@ Whether the combobox is disabled
 
 > `readonly` **getItemId**: (`value`) => `string`
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:87](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L87)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:87](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L87)
 
 Get the ID for an item by its value
 
@@ -70,7 +70,7 @@ Get the ID for an item by its value
 
 > `readonly` **highlightedValue**: [`Signal`](../../../core/src/interfaces/Signal.md)\<`string` \| `null`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:56](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L56)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:56](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L56)
 
 The currently highlighted item value (keyboard navigation)
 
@@ -80,7 +80,7 @@ The currently highlighted item value (keyboard navigation)
 
 > `readonly` **highlightFirst**: () => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:64](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L64)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:64](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L64)
 
 Highlight the first item
 
@@ -94,7 +94,7 @@ Highlight the first item
 
 > `readonly` **highlightLast**: () => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:66](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L66)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:66](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L66)
 
 Highlight the last item
 
@@ -108,7 +108,7 @@ Highlight the last item
 
 > `readonly` **highlightNext**: () => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:60](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L60)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:60](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L60)
 
 Highlight the next item
 
@@ -122,7 +122,7 @@ Highlight the next item
 
 > `readonly` **highlightPrev**: () => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:62](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L62)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:62](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L62)
 
 Highlight the previous item
 
@@ -136,7 +136,7 @@ Highlight the previous item
 
 > `readonly` **highlightValue**: (`value`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:58](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L58)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:58](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L58)
 
 Highlight a specific value
 
@@ -156,7 +156,7 @@ Highlight a specific value
 
 > `readonly` **inputId**: `string`
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:85](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L85)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:85](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L85)
 
 Unique ID for the input element
 
@@ -166,7 +166,7 @@ Unique ID for the input element
 
 > `readonly` **inputRef**: [`RefType`](../../../core/src/type-aliases/RefType.md)\<`HTMLInputElement`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:90](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L90)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:90](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L90)
 
 Reference to the input element
 
@@ -176,7 +176,7 @@ Reference to the input element
 
 > `readonly` **inputValue**: [`Signal`](../../../core/src/interfaces/Signal.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:48](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L48)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:48](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L48)
 
 The current input value (what user types)
 
@@ -186,7 +186,7 @@ The current input value (what user types)
 
 > `readonly` **isLoading**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:93](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L93)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:93](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L93)
 
 Whether async loading is in progress
 
@@ -196,7 +196,7 @@ Whether async loading is in progress
 
 > `readonly` **isOpen**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:41](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L41)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:41](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L41)
 
 Whether the listbox is currently open
 
@@ -206,7 +206,7 @@ Whether the listbox is currently open
 
 > `readonly` **items**: [`Signal`](../../../core/src/interfaces/Signal.md)\<`Map`\<`string`, \{ `disabled`: `boolean`; `textValue`: `string`; \}\>\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:77](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L77)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:77](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L77)
 
 Map of registered items
 
@@ -216,7 +216,7 @@ Map of registered items
 
 > `readonly` **loop**: `boolean`
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:98](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L98)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:98](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L98)
 
 Whether keyboard navigation loops
 
@@ -226,7 +226,7 @@ Whether keyboard navigation loops
 
 > `readonly` **open**: () => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:43](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L43)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:43](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L43)
 
 Open the listbox
 
@@ -240,7 +240,7 @@ Open the listbox
 
 > `readonly` **registerItem**: (`value`, `textValue`, `disabled`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:69](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L69)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:69](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L69)
 
 Register an item
 
@@ -268,7 +268,7 @@ Register an item
 
 > `readonly` **selectValue**: (`value`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:53](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L53)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:53](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L53)
 
 Select a value
 
@@ -288,7 +288,7 @@ Select a value
 
 > `readonly` **shouldShowItem**: (`value`) => [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:80](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L80)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:80](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L80)
 
 Check if an item should be shown based on filter
 
@@ -308,7 +308,7 @@ Check if an item should be shown based on filter
 
 > `readonly` **unregisterItem**: (`value`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:75](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L75)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:75](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L75)
 
 Unregister an item
 
@@ -328,6 +328,6 @@ Unregister an item
 
 > `readonly` **value**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:51](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L51)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:51](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L51)
 
 The selected value (committed selection)

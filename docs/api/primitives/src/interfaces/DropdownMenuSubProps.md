@@ -6,7 +6,7 @@
 
 # Interface: DropdownMenuSubProps
 
-Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:142](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L142)
+Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:142](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L142)
 
 Props for DropdownMenu.Sub
 
@@ -16,7 +16,7 @@ Props for DropdownMenu.Sub
 
 > `readonly` `optional` **defaultOpen**: `boolean`
 
-Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:146](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L146)
+Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:146](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L146)
 
 Default open state
 
@@ -26,7 +26,7 @@ Default open state
 
 > `readonly` `optional` **onOpenChange**: (`open`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:148](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L148)
+Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:148](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L148)
 
 Callback when open state changes
 
@@ -46,6 +46,6 @@ Callback when open state changes
 
 > `readonly` `optional` **open**: [`Signal`](../../../core/src/interfaces/Signal.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:144](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L144)
+Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:144](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L144)
 
 Controlled open state

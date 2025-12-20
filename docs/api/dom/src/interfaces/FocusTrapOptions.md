@@ -6,7 +6,7 @@
 
 # Interface: FocusTrapOptions
 
-Defined in: [packages/dom/src/FocusTrap/FocusTrap.ts:18](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/FocusTrap/FocusTrap.ts#L18)
+Defined in: [packages/dom/src/FocusTrap/FocusTrap.ts:18](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/FocusTrap/FocusTrap.ts#L18)
 
 Options for creating a focus trap.
 
@@ -16,7 +16,7 @@ Options for creating a focus trap.
 
 > `readonly` **container**: `HTMLElement`
 
-Defined in: [packages/dom/src/FocusTrap/FocusTrap.ts:20](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/FocusTrap/FocusTrap.ts#L20)
+Defined in: [packages/dom/src/FocusTrap/FocusTrap.ts:20](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/FocusTrap/FocusTrap.ts#L20)
 
 Element to trap focus within
 
@@ -26,7 +26,7 @@ Element to trap focus within
 
 > `readonly` `optional` **initialFocus**: `HTMLElement` \| `null`
 
-Defined in: [packages/dom/src/FocusTrap/FocusTrap.ts:22](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/FocusTrap/FocusTrap.ts#L22)
+Defined in: [packages/dom/src/FocusTrap/FocusTrap.ts:22](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/FocusTrap/FocusTrap.ts#L22)
 
 Initial element to focus (default: first focusable element)
 
@@ -36,6 +36,6 @@ Initial element to focus (default: first focusable element)
 
 > `readonly` `optional` **returnFocus**: `HTMLElement` \| `null`
 
-Defined in: [packages/dom/src/FocusTrap/FocusTrap.ts:24](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/FocusTrap/FocusTrap.ts#L24)
+Defined in: [packages/dom/src/FocusTrap/FocusTrap.ts:24](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/FocusTrap/FocusTrap.ts#L24)
 
 Element to return focus to when deactivated (default: previously focused element)

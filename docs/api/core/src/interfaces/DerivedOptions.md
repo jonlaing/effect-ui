@@ -6,7 +6,7 @@
 
 # Interface: DerivedOptions\<A\>
 
-Defined in: [packages/core/src/Derived/types.ts:8](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Derived/types.ts#L8)
+Defined in: [packages/core/src/Derived/types.ts:8](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Derived/types.ts#L8)
 
 Options for creating a synchronous Derived value.
 
@@ -24,7 +24,7 @@ The type of the derived value
 
 > `readonly` `optional` **equals**: (`a`, `b`) => `boolean`
 
-Defined in: [packages/core/src/Derived/types.ts:10](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Derived/types.ts#L10)
+Defined in: [packages/core/src/Derived/types.ts:10](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Derived/types.ts#L10)
 
 Custom equality function to determine if the value has changed
 

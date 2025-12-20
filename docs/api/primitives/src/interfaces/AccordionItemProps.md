@@ -6,7 +6,7 @@
 
 # Interface: AccordionItemProps
 
-Defined in: [packages/primitives/src/primitives/Accordion/Accordion.ts:76](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Accordion/Accordion.ts#L76)
+Defined in: [packages/primitives/src/primitives/Accordion/Accordion.ts:76](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Accordion/Accordion.ts#L76)
 
 Props for Accordion.Item
 
@@ -16,7 +16,7 @@ Props for Accordion.Item
 
 > `readonly` `optional` **disabled**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/Accordion/Accordion.ts:80](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Accordion/Accordion.ts#L80)
+Defined in: [packages/primitives/src/primitives/Accordion/Accordion.ts:80](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Accordion/Accordion.ts#L80)
 
 Whether this item is disabled
 
@@ -26,6 +26,6 @@ Whether this item is disabled
 
 > `readonly` **value**: `string`
 
-Defined in: [packages/primitives/src/primitives/Accordion/Accordion.ts:78](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Accordion/Accordion.ts#L78)
+Defined in: [packages/primitives/src/primitives/Accordion/Accordion.ts:78](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Accordion/Accordion.ts#L78)
 
 Unique value for this item

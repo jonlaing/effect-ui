@@ -6,7 +6,7 @@
 
 # Interface: LinkProps
 
-Defined in: [packages/router/src/router/RouterContext.ts:85](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/RouterContext.ts#L85)
+Defined in: [packages/router/src/router/RouterContext.ts:85](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/RouterContext.ts#L85)
 
 Props for the Link component.
 
@@ -16,7 +16,7 @@ Props for the Link component.
 
 > `readonly` `optional` **class**: `string`
 
-Defined in: [packages/router/src/router/RouterContext.ts:89](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/RouterContext.ts#L89)
+Defined in: [packages/router/src/router/RouterContext.ts:89](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/RouterContext.ts#L89)
 
 Optional CSS class
 
@@ -26,7 +26,7 @@ Optional CSS class
 
 > `readonly` **href**: `string`
 
-Defined in: [packages/router/src/router/RouterContext.ts:87](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/RouterContext.ts#L87)
+Defined in: [packages/router/src/router/RouterContext.ts:87](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/RouterContext.ts#L87)
 
 The path to navigate to
 
@@ -36,6 +36,6 @@ The path to navigate to
 
 > `readonly` `optional` **replace**: `boolean`
 
-Defined in: [packages/router/src/router/RouterContext.ts:91](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/RouterContext.ts#L91)
+Defined in: [packages/router/src/router/RouterContext.ts:91](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/RouterContext.ts#L91)
 
 Whether to replace instead of push

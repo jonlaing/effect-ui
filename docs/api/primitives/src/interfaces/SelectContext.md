@@ -6,7 +6,7 @@
 
 # Interface: SelectContext
 
-Defined in: [packages/primitives/src/primitives/Select/Select.ts:18](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Select/Select.ts#L18)
+Defined in: [packages/primitives/src/primitives/Select/Select.ts:18](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Select/Select.ts#L18)
 
 Context shared between Select parts.
 
@@ -16,7 +16,7 @@ Context shared between Select parts.
 
 > `readonly` **close**: () => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Select/Select.ts:26](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Select/Select.ts#L26)
+Defined in: [packages/primitives/src/primitives/Select/Select.ts:26](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Select/Select.ts#L26)
 
 Close the select
 
@@ -30,7 +30,7 @@ Close the select
 
 > `readonly` **contentId**: `string`
 
-Defined in: [packages/primitives/src/primitives/Select/Select.ts:41](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Select/Select.ts#L41)
+Defined in: [packages/primitives/src/primitives/Select/Select.ts:41](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Select/Select.ts#L41)
 
 Unique ID for the content
 
@@ -40,7 +40,7 @@ Unique ID for the content
 
 > `readonly` **disabled**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/Select/Select.ts:45](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Select/Select.ts#L45)
+Defined in: [packages/primitives/src/primitives/Select/Select.ts:45](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Select/Select.ts#L45)
 
 Whether the select is disabled
 
@@ -50,7 +50,7 @@ Whether the select is disabled
 
 > `readonly` **isOpen**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/Select/Select.ts:20](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Select/Select.ts#L20)
+Defined in: [packages/primitives/src/primitives/Select/Select.ts:20](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Select/Select.ts#L20)
 
 Whether the select is currently open
 
@@ -60,7 +60,7 @@ Whether the select is currently open
 
 > `readonly` **open**: () => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Select/Select.ts:24](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Select/Select.ts#L24)
+Defined in: [packages/primitives/src/primitives/Select/Select.ts:24](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Select/Select.ts#L24)
 
 Open the select
 
@@ -74,7 +74,7 @@ Open the select
 
 > `readonly` **placeholder**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/Select/Select.ts:47](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Select/Select.ts#L47)
+Defined in: [packages/primitives/src/primitives/Select/Select.ts:47](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Select/Select.ts#L47)
 
 Placeholder text when no value selected
 
@@ -84,7 +84,7 @@ Placeholder text when no value selected
 
 > `readonly` **registerItem**: (`value`, `textValue`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Select/Select.ts:32](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Select/Select.ts#L32)
+Defined in: [packages/primitives/src/primitives/Select/Select.ts:32](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Select/Select.ts#L32)
 
 Register an item's display text
 
@@ -108,7 +108,7 @@ Register an item's display text
 
 > `readonly` **selectValue**: (`value`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Select/Select.ts:30](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Select/Select.ts#L30)
+Defined in: [packages/primitives/src/primitives/Select/Select.ts:30](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Select/Select.ts#L30)
 
 Select a value
 
@@ -128,7 +128,7 @@ Select a value
 
 > `readonly` **toggle**: () => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Select/Select.ts:28](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Select/Select.ts#L28)
+Defined in: [packages/primitives/src/primitives/Select/Select.ts:28](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Select/Select.ts#L28)
 
 Toggle the select open state
 
@@ -142,7 +142,7 @@ Toggle the select open state
 
 > `readonly` **triggerId**: `string`
 
-Defined in: [packages/primitives/src/primitives/Select/Select.ts:43](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Select/Select.ts#L43)
+Defined in: [packages/primitives/src/primitives/Select/Select.ts:43](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Select/Select.ts#L43)
 
 Unique ID for the trigger
 
@@ -152,7 +152,7 @@ Unique ID for the trigger
 
 > `readonly` **triggerRef**: [`RefType`](../../../core/src/type-aliases/RefType.md)\<`HTMLButtonElement`\>
 
-Defined in: [packages/primitives/src/primitives/Select/Select.ts:39](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Select/Select.ts#L39)
+Defined in: [packages/primitives/src/primitives/Select/Select.ts:39](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Select/Select.ts#L39)
 
 Reference to the trigger element
 
@@ -162,7 +162,7 @@ Reference to the trigger element
 
 > `readonly` **value**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/Select/Select.ts:22](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Select/Select.ts#L22)
+Defined in: [packages/primitives/src/primitives/Select/Select.ts:22](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Select/Select.ts#L22)
 
 Current selected value
 
@@ -172,6 +172,6 @@ Current selected value
 
 > `readonly` **valueLabels**: [`Signal`](../../../core/src/interfaces/Signal.md)\<`Map`\<`string`, `string`\>\>
 
-Defined in: [packages/primitives/src/primitives/Select/Select.ts:37](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Select/Select.ts#L37)
+Defined in: [packages/primitives/src/primitives/Select/Select.ts:37](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Select/Select.ts#L37)
 
 Map of value to display text

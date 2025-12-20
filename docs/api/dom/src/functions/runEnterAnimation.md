@@ -8,7 +8,7 @@
 
 > **runEnterAnimation**(`element`, `options`): `Effect`\<`void`\>
 
-Defined in: [packages/dom/src/Animation/core.ts:116](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Animation/core.ts#L116)
+Defined in: [packages/dom/src/Animation/core.ts:116](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Animation/core.ts#L116)
 
 Run an enter animation on an element.
 

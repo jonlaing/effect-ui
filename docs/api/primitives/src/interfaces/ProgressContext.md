@@ -6,7 +6,7 @@
 
 # Interface: ProgressContext
 
-Defined in: [packages/primitives/src/primitives/Progress/Progress.ts:19](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Progress/Progress.ts#L19)
+Defined in: [packages/primitives/src/primitives/Progress/Progress.ts:19](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Progress/Progress.ts#L19)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/primitives/src/primitives/Progress/Progress.ts:19](https:/
 
 > `readonly` **max**: `number`
 
-Defined in: [packages/primitives/src/primitives/Progress/Progress.ts:23](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Progress/Progress.ts#L23)
+Defined in: [packages/primitives/src/primitives/Progress/Progress.ts:23](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Progress/Progress.ts#L23)
 
 Maximum value
 
@@ -24,7 +24,7 @@ Maximum value
 
 > `readonly` **percentage**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`number`\>
 
-Defined in: [packages/primitives/src/primitives/Progress/Progress.ts:25](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Progress/Progress.ts#L25)
+Defined in: [packages/primitives/src/primitives/Progress/Progress.ts:25](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Progress/Progress.ts#L25)
 
 Progress as percentage (0-100)
 
@@ -34,6 +34,6 @@ Progress as percentage (0-100)
 
 > `readonly` **value**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`number` \| `null`\>
 
-Defined in: [packages/primitives/src/primitives/Progress/Progress.ts:21](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Progress/Progress.ts#L21)
+Defined in: [packages/primitives/src/primitives/Progress/Progress.ts:21](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Progress/Progress.ts#L21)
 
 Current value (null = indeterminate)

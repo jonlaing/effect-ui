@@ -6,7 +6,7 @@
 
 # Interface: MatchCase\<A, E, R\>
 
-Defined in: [packages/dom/src/Control.ts:29](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Control.ts#L29)
+Defined in: [packages/dom/src/Control.ts:29](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Control.ts#L29)
 
 A case for pattern matching with [match](../../../core/src/functions/match.md).
 
@@ -34,7 +34,7 @@ A case for pattern matching with [match](../../../core/src/functions/match.md).
 
 > `readonly` **pattern**: `A`
 
-Defined in: [packages/core/src/Control.ts:31](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Control.ts#L31)
+Defined in: [packages/core/src/Control.ts:31](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Control.ts#L31)
 
 #### Inherited from
 
@@ -46,7 +46,7 @@ Defined in: [packages/core/src/Control.ts:31](https://github.com/jonlaing/effex/
 
 > `readonly` **render**: () => [`Element`](../../../core/src/type-aliases/Element.md)\<`HTMLElement`, `E`, `R`\>
 
-Defined in: [packages/core/src/Control.ts:32](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Control.ts#L32)
+Defined in: [packages/core/src/Control.ts:32](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Control.ts#L32)
 
 #### Returns
 

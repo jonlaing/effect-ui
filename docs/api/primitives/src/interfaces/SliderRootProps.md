@@ -6,7 +6,7 @@
 
 # Interface: SliderRootProps
 
-Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:71](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Slider/Slider.ts#L71)
+Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:71](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Slider/Slider.ts#L71)
 
 Props for Slider.Root
 
@@ -16,7 +16,7 @@ Props for Slider.Root
 
 > `readonly` `optional` **aria-label**: `string`
 
-Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:99](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Slider/Slider.ts#L99)
+Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:99](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Slider/Slider.ts#L99)
 
 ARIA label
 
@@ -26,7 +26,7 @@ ARIA label
 
 > `readonly` `optional` **aria-labelledby**: `string`
 
-Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:101](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Slider/Slider.ts#L101)
+Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:101](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Slider/Slider.ts#L101)
 
 ID of labelling element
 
@@ -36,7 +36,7 @@ ID of labelling element
 
 > `readonly` `optional` **class**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:103](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Slider/Slider.ts#L103)
+Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:103](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Slider/Slider.ts#L103)
 
 Additional class names
 
@@ -46,7 +46,7 @@ Additional class names
 
 > `readonly` `optional` **defaultValue**: [`SliderValue`](../type-aliases/SliderValue.md)
 
-Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:75](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Slider/Slider.ts#L75)
+Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:75](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Slider/Slider.ts#L75)
 
 Default value for uncontrolled usage (type determines single vs range)
 
@@ -56,7 +56,7 @@ Default value for uncontrolled usage (type determines single vs range)
 
 > `readonly` `optional` **disabled**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:91](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Slider/Slider.ts#L91)
+Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:91](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Slider/Slider.ts#L91)
 
 Whether the slider is disabled
 
@@ -66,7 +66,7 @@ Whether the slider is disabled
 
 > `readonly` `optional` **inverted**: `boolean`
 
-Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:93](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Slider/Slider.ts#L93)
+Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:93](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Slider/Slider.ts#L93)
 
 Invert the slider direction
 
@@ -76,7 +76,7 @@ Invert the slider direction
 
 > `readonly` `optional` **largeStep**: `number`
 
-Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:87](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Slider/Slider.ts#L87)
+Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:87](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Slider/Slider.ts#L87)
 
 Large step for PageUp/PageDown (default: step * 10)
 
@@ -86,7 +86,7 @@ Large step for PageUp/PageDown (default: step * 10)
 
 > `readonly` `optional` **max**: `number`
 
-Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:83](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Slider/Slider.ts#L83)
+Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:83](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Slider/Slider.ts#L83)
 
 Maximum value (default: 100)
 
@@ -96,7 +96,7 @@ Maximum value (default: 100)
 
 > `readonly` `optional` **min**: `number`
 
-Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:81](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Slider/Slider.ts#L81)
+Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:81](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Slider/Slider.ts#L81)
 
 Minimum value (default: 0)
 
@@ -106,7 +106,7 @@ Minimum value (default: 0)
 
 > `readonly` `optional` **minStepsBetweenThumbs**: `number`
 
-Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:95](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Slider/Slider.ts#L95)
+Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:95](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Slider/Slider.ts#L95)
 
 Minimum steps between thumbs in range mode (default: 0)
 
@@ -116,7 +116,7 @@ Minimum steps between thumbs in range mode (default: 0)
 
 > `readonly` `optional` **name**: `string`
 
-Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:97](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Slider/Slider.ts#L97)
+Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:97](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Slider/Slider.ts#L97)
 
 Name attribute for form submission
 
@@ -126,7 +126,7 @@ Name attribute for form submission
 
 > `readonly` `optional` **onValueChange**: (`value`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:77](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Slider/Slider.ts#L77)
+Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:77](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Slider/Slider.ts#L77)
 
 Callback when value changes during drag
 
@@ -146,7 +146,7 @@ Callback when value changes during drag
 
 > `readonly` `optional` **onValueCommit**: (`value`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:79](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Slider/Slider.ts#L79)
+Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:79](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Slider/Slider.ts#L79)
 
 Callback when dragging ends (value committed)
 
@@ -166,7 +166,7 @@ Callback when dragging ends (value committed)
 
 > `readonly` `optional` **orientation**: `"horizontal"` \| `"vertical"`
 
-Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:89](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Slider/Slider.ts#L89)
+Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:89](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Slider/Slider.ts#L89)
 
 Orientation (default: "horizontal")
 
@@ -176,7 +176,7 @@ Orientation (default: "horizontal")
 
 > `readonly` `optional` **step**: `number`
 
-Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:85](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Slider/Slider.ts#L85)
+Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:85](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Slider/Slider.ts#L85)
 
 Step increment (default: 1)
 
@@ -186,6 +186,6 @@ Step increment (default: 1)
 
 > `readonly` `optional` **value**: [`Signal`](../../../core/src/interfaces/Signal.md)\<[`SliderValue`](../type-aliases/SliderValue.md)\>
 
-Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:73](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Slider/Slider.ts#L73)
+Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:73](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Slider/Slider.ts#L73)
 
 Controlled value - single number or [min, max] tuple for range

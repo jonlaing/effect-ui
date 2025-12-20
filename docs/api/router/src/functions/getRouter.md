@@ -8,7 +8,7 @@
 
 > **getRouter**(): [`BaseRouter`](../interfaces/BaseRouter.md) \| `null`
 
-Defined in: [packages/router/src/router/RouterContext.ts:164](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/RouterContext.ts#L164)
+Defined in: [packages/router/src/router/RouterContext.ts:164](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/RouterContext.ts#L164)
 
 ## Returns
 

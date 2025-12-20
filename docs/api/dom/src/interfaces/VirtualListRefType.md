@@ -6,7 +6,7 @@
 
 # Interface: VirtualListRefType
 
-Defined in: [packages/dom/src/VirtualList/types.ts:36](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/VirtualList/types.ts#L36)
+Defined in: [packages/dom/src/VirtualList/types.ts:36](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/VirtualList/types.ts#L36)
 
 A reference to virtual list controls that may not be available yet.
 
@@ -16,7 +16,7 @@ A reference to virtual list controls that may not be available yet.
 
 > `readonly` **\_deferred**: `Deferred`\<[`VirtualListControl`](VirtualListControl.md)\>
 
-Defined in: [packages/dom/src/VirtualList/types.ts:44](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/VirtualList/types.ts#L44)
+Defined in: [packages/dom/src/VirtualList/types.ts:44](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/VirtualList/types.ts#L44)
 
 Internal deferred for awaiting
 
@@ -26,7 +26,7 @@ Internal deferred for awaiting
 
 > `readonly` **\_set**: (`control`) => `void`
 
-Defined in: [packages/dom/src/VirtualList/types.ts:42](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/VirtualList/types.ts#L42)
+Defined in: [packages/dom/src/VirtualList/types.ts:42](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/VirtualList/types.ts#L42)
 
 Internal setter - do not use directly
 
@@ -46,7 +46,7 @@ Internal setter - do not use directly
 
 > `readonly` **current**: [`VirtualListControl`](VirtualListControl.md) \| `null`
 
-Defined in: [packages/dom/src/VirtualList/types.ts:38](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/VirtualList/types.ts#L38)
+Defined in: [packages/dom/src/VirtualList/types.ts:38](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/VirtualList/types.ts#L38)
 
 The current control interface, or null if not yet mounted
 
@@ -56,6 +56,6 @@ The current control interface, or null if not yet mounted
 
 > `readonly` **ready**: `Effect`\<[`VirtualListControl`](VirtualListControl.md)\>
 
-Defined in: [packages/dom/src/VirtualList/types.ts:40](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/VirtualList/types.ts#L40)
+Defined in: [packages/dom/src/VirtualList/types.ts:40](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/VirtualList/types.ts#L40)
 
 Effect that resolves when the control interface is available

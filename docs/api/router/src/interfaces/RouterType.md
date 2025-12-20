@@ -6,7 +6,7 @@
 
 # Interface: RouterType\<Routes\>
 
-Defined in: [packages/router/src/router/types.ts:102](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L102)
+Defined in: [packages/router/src/router/types.ts:102](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L102)
 
 The main Router interface.
 
@@ -24,7 +24,7 @@ Record of route names to Route definitions
 
 > `readonly` **back**: () => `Effect`\<`void`\>
 
-Defined in: [packages/router/src/router/types.ts:129](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L129)
+Defined in: [packages/router/src/router/types.ts:129](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L129)
 
 Go back in history
 
@@ -38,7 +38,7 @@ Go back in history
 
 > `readonly` **currentRoute**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<keyof `Routes` \| `null`\>
 
-Defined in: [packages/router/src/router/types.ts:110](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L110)
+Defined in: [packages/router/src/router/types.ts:110](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L110)
 
 The currently matched route name, or null if no match
 
@@ -48,7 +48,7 @@ The currently matched route name, or null if no match
 
 > `readonly` **forward**: () => `Effect`\<`void`\>
 
-Defined in: [packages/router/src/router/types.ts:131](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L131)
+Defined in: [packages/router/src/router/types.ts:131](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L131)
 
 Go forward in history
 
@@ -62,7 +62,7 @@ Go forward in history
 
 > `readonly` **pathname**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`string`\>
 
-Defined in: [packages/router/src/router/types.ts:106](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L106)
+Defined in: [packages/router/src/router/types.ts:106](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L106)
 
 The current pathname
 
@@ -72,7 +72,7 @@ The current pathname
 
 > `readonly` **push**: (`path`, `options?`) => `Effect`\<`void`\>
 
-Defined in: [packages/router/src/router/types.ts:122](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L122)
+Defined in: [packages/router/src/router/types.ts:122](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L122)
 
 Navigate to a path
 
@@ -96,7 +96,7 @@ Navigate to a path
 
 > `readonly` **replace**: (`path`) => `Effect`\<`void`\>
 
-Defined in: [packages/router/src/router/types.ts:127](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L127)
+Defined in: [packages/router/src/router/types.ts:127](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L127)
 
 Replace current path
 
@@ -116,7 +116,7 @@ Replace current path
 
 > `readonly` **routes**: \{ readonly \[K in string \| number \| symbol\]: RouteState\<Routes\[K\] extends RouteType\<string, P\> ? P extends AnyNoContext ? Type\<P\<P\>\> : Record\<string, never\> : Record\<string, never\>\> \}
 
-Defined in: [packages/router/src/router/types.ts:112](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L112)
+Defined in: [packages/router/src/router/types.ts:112](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L112)
 
 Route-specific state for each defined route
 
@@ -126,6 +126,6 @@ Route-specific state for each defined route
 
 > `readonly` **searchParams**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`URLSearchParams`\>
 
-Defined in: [packages/router/src/router/types.ts:108](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L108)
+Defined in: [packages/router/src/router/types.ts:108](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L108)
 
 The current query params

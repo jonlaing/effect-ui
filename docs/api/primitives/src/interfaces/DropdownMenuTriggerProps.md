@@ -6,7 +6,7 @@
 
 # Interface: DropdownMenuTriggerProps
 
-Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:58](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L58)
+Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:58](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L58)
 
 Props for DropdownMenu.Trigger
 
@@ -16,7 +16,7 @@ Props for DropdownMenu.Trigger
 
 > `readonly` `optional` **class**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:60](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L60)
+Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:60](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L60)
 
 Additional class names
 
@@ -26,6 +26,6 @@ Additional class names
 
 > `readonly` `optional` **disabled**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:62](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L62)
+Defined in: [packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts:62](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/DropdownMenu/DropdownMenu.ts#L62)
 
 Whether the trigger is disabled

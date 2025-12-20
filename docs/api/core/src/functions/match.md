@@ -8,7 +8,7 @@
 
 > **match**\<`A`, `N`, `E`, `R`, `E2`, `R2`\>(`value`, `config`): [`Element`](../type-aliases/Element.md)\<`N`, `E` \| `E2`, `R` \| `R2`\>
 
-Defined in: [packages/core/src/Control.ts:219](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Control.ts#L219)
+Defined in: [packages/core/src/Control.ts:219](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Control.ts#L219)
 
 Pattern match on a reactive value and render the corresponding element.
 

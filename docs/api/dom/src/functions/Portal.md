@@ -10,7 +10,7 @@
 
 > **Portal**\<`E`, `R`\>(`children`): [`Element`](../type-aliases/Element.md)\<`E`, `R`\>
 
-Defined in: [packages/dom/src/Portal.ts:31](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Portal.ts#L31)
+Defined in: [packages/dom/src/Portal.ts:31](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Portal.ts#L31)
 
 Render children into a different DOM node, outside the normal component hierarchy.
 Useful for modals, dropdowns, tooltips that need to escape overflow/z-index issues.
@@ -52,7 +52,7 @@ Portal({ target: containerElement }, () => Tooltip({ ... }))
 
 > **Portal**\<`E`, `R`\>(`options`, `children`): [`Element`](../type-aliases/Element.md)\<`E`, `R`\>
 
-Defined in: [packages/dom/src/Portal.ts:34](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Portal.ts#L34)
+Defined in: [packages/dom/src/Portal.ts:34](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Portal.ts#L34)
 
 Render children into a different DOM node, outside the normal component hierarchy.
 Useful for modals, dropdowns, tooltips that need to escape overflow/z-index issues.

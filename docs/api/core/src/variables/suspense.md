@@ -8,7 +8,7 @@
 
 > `const` **suspense**: \{\<`N`, `R1`, `EF`\>(`options`): [`Element`](../type-aliases/Element.md)\<`N`, `EF`, `R1`\>; \<`N`, `E`, `R1`, `EF`\>(`options`): [`Element`](../type-aliases/Element.md)\<`N`, `EF`, `R1`\>; \}
 
-Defined in: [packages/core/src/Boundary.ts:66](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Boundary.ts#L66)
+Defined in: [packages/core/src/Boundary.ts:66](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Boundary.ts#L66)
 
 Suspense boundary for async rendering with loading states.
 

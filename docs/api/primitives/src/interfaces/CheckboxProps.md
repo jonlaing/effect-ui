@@ -6,7 +6,7 @@
 
 # Interface: CheckboxProps
 
-Defined in: [packages/primitives/src/primitives/Checkbox/Checkbox.ts:15](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Checkbox/Checkbox.ts#L15)
+Defined in: [packages/primitives/src/primitives/Checkbox/Checkbox.ts:15](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Checkbox/Checkbox.ts#L15)
 
 Props for Checkbox component.
 
@@ -16,7 +16,7 @@ Props for Checkbox component.
 
 > `readonly` `optional` **checked**: [`Signal`](../../../core/src/interfaces/Signal.md)\<[`CheckedState`](../type-aliases/CheckedState.md)\>
 
-Defined in: [packages/primitives/src/primitives/Checkbox/Checkbox.ts:24](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Checkbox/Checkbox.ts#L24)
+Defined in: [packages/primitives/src/primitives/Checkbox/Checkbox.ts:24](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Checkbox/Checkbox.ts#L24)
 
 The controlled checked state. Pass a Signal for controlled mode.
 
@@ -26,7 +26,7 @@ The controlled checked state. Pass a Signal for controlled mode.
 
 > `readonly` `optional` **class**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/Checkbox/Checkbox.ts:63](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Checkbox/Checkbox.ts#L63)
+Defined in: [packages/primitives/src/primitives/Checkbox/Checkbox.ts:63](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Checkbox/Checkbox.ts#L63)
 
 CSS class name(s) for styling.
 
@@ -36,7 +36,7 @@ CSS class name(s) for styling.
 
 > `readonly` `optional` **defaultChecked**: [`CheckedState`](../type-aliases/CheckedState.md)
 
-Defined in: [packages/primitives/src/primitives/Checkbox/Checkbox.ts:30](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Checkbox/Checkbox.ts#L30)
+Defined in: [packages/primitives/src/primitives/Checkbox/Checkbox.ts:30](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Checkbox/Checkbox.ts#L30)
 
 The default checked state for uncontrolled mode.
 
@@ -52,7 +52,7 @@ false
 
 > `readonly` `optional` **disabled**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/Checkbox/Checkbox.ts:41](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Checkbox/Checkbox.ts#L41)
+Defined in: [packages/primitives/src/primitives/Checkbox/Checkbox.ts:41](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Checkbox/Checkbox.ts#L41)
 
 Whether the checkbox is disabled.
 
@@ -68,7 +68,7 @@ false
 
 > `readonly` `optional` **id**: `string`
 
-Defined in: [packages/primitives/src/primitives/Checkbox/Checkbox.ts:19](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Checkbox/Checkbox.ts#L19)
+Defined in: [packages/primitives/src/primitives/Checkbox/Checkbox.ts:19](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Checkbox/Checkbox.ts#L19)
 
 The id attribute for the checkbox button.
 
@@ -78,7 +78,7 @@ The id attribute for the checkbox button.
 
 > `readonly` `optional` **name**: `string`
 
-Defined in: [packages/primitives/src/primitives/Checkbox/Checkbox.ts:52](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Checkbox/Checkbox.ts#L52)
+Defined in: [packages/primitives/src/primitives/Checkbox/Checkbox.ts:52](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Checkbox/Checkbox.ts#L52)
 
 The name attribute for form submission.
 
@@ -88,7 +88,7 @@ The name attribute for form submission.
 
 > `readonly` `optional` **onCheckedChange**: (`checked`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Checkbox/Checkbox.ts:35](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Checkbox/Checkbox.ts#L35)
+Defined in: [packages/primitives/src/primitives/Checkbox/Checkbox.ts:35](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Checkbox/Checkbox.ts#L35)
 
 Callback fired when the checked state changes.
 
@@ -108,7 +108,7 @@ Callback fired when the checked state changes.
 
 > `readonly` `optional` **required**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/Checkbox/Checkbox.ts:47](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Checkbox/Checkbox.ts#L47)
+Defined in: [packages/primitives/src/primitives/Checkbox/Checkbox.ts:47](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Checkbox/Checkbox.ts#L47)
 
 Whether the checkbox is required in a form context.
 
@@ -124,7 +124,7 @@ false
 
 > `readonly` `optional` **value**: `string`
 
-Defined in: [packages/primitives/src/primitives/Checkbox/Checkbox.ts:58](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Checkbox/Checkbox.ts#L58)
+Defined in: [packages/primitives/src/primitives/Checkbox/Checkbox.ts:58](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Checkbox/Checkbox.ts#L58)
 
 The value attribute for form submission.
 

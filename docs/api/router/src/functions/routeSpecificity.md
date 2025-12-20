@@ -8,7 +8,7 @@
 
 > **routeSpecificity**(`segments`): `number`
 
-Defined in: [packages/router/src/router/Route.ts:33](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/Route.ts#L33)
+Defined in: [packages/router/src/router/Route.ts:33](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/Route.ts#L33)
 
 Calculate route specificity for sorting.
 Higher = more specific.

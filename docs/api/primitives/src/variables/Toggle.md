@@ -8,7 +8,7 @@
 
 > `const` **Toggle**: [`Component`](../../../dom/src/type-aliases/Component.md)\<`"Toggle"`, [`ToggleProps`](../interfaces/ToggleProps.md), `never`, `Scope`\>
 
-Defined in: [packages/primitives/src/primitives/Toggle/Toggle.ts:72](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toggle/Toggle.ts#L72)
+Defined in: [packages/primitives/src/primitives/Toggle/Toggle.ts:72](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toggle/Toggle.ts#L72)
 
 A two-state button that can be toggled on or off.
 

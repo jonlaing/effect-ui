@@ -8,7 +8,7 @@
 
 > **when**\<`N`, `E1`, `R1`, `E2`, `R2`\>(`condition`, `config`): [`Element`](../type-aliases/Element.md)\<`N`, `E1` \| `E2`, `R1` \| `R2`\>
 
-Defined in: [packages/core/src/Control.ts:115](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Control.ts#L115)
+Defined in: [packages/core/src/Control.ts:115](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Control.ts#L115)
 
 Conditionally render one of two elements based on a reactive boolean.
 

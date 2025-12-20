@@ -8,7 +8,7 @@
 
 > **Element**\<`N`, `E`, `R`\> = `Effect.Effect`\<`N`, `E`, `Scope.Scope` \| [`RendererContext`](../classes/RendererContext.md) \| `R`\>
 
-Defined in: [packages/core/src/Element.ts:30](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Element.ts#L30)
+Defined in: [packages/core/src/Element.ts:30](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Element.ts#L30)
 
 A rendered element wrapped in an Effect with scope management.
 This is the generic version that works with any renderer.

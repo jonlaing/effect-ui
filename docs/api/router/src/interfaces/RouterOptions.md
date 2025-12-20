@@ -6,7 +6,7 @@
 
 # Interface: RouterOptions
 
-Defined in: [packages/router/src/router/types.ts:137](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L137)
+Defined in: [packages/router/src/router/types.ts:137](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L137)
 
 Options for creating a Router.
 
@@ -16,6 +16,6 @@ Options for creating a Router.
 
 > `readonly` `optional` **initialPath**: `string`
 
-Defined in: [packages/router/src/router/types.ts:139](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L139)
+Defined in: [packages/router/src/router/types.ts:139](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L139)
 
 Initial path to start at (defaults to window.location.pathname)

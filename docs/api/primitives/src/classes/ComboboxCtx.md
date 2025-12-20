@@ -6,7 +6,7 @@
 
 # Class: ComboboxCtx
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:243](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L243)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:243](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L243)
 
 Effect Context for Combobox state sharing between parts.
 

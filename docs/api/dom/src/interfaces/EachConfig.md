@@ -6,7 +6,7 @@
 
 # Interface: EachConfig\<A, E, R\>
 
-Defined in: [packages/dom/src/Control.ts:78](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Control.ts#L78)
+Defined in: [packages/dom/src/Control.ts:78](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Control.ts#L78)
 
 Configuration for the `each` control flow (DOM-specific with animation support).
 
@@ -30,7 +30,7 @@ Configuration for the `each` control flow (DOM-specific with animation support).
 
 > `readonly` `optional` **animate**: [`ListAnimationOptions`](ListAnimationOptions.md)
 
-Defined in: [packages/dom/src/Control.ts:94](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Control.ts#L94)
+Defined in: [packages/dom/src/Control.ts:94](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Control.ts#L94)
 
 Optional animation configuration
 
@@ -40,7 +40,7 @@ Optional animation configuration
 
 > `readonly` `optional` **container**: () => [`Element`](../type-aliases/Element.md)\<`never`, `never`\>
 
-Defined in: [packages/dom/src/Control.ts:88](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Control.ts#L88)
+Defined in: [packages/dom/src/Control.ts:88](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Control.ts#L88)
 
 Optional custom container element. If not provided, defaults to a div
 with `display: contents`.
@@ -61,7 +61,7 @@ container: () => $.ul({ class: "todo-list" })
 
 > `readonly` **key**: (`item`) => `string`
 
-Defined in: [packages/dom/src/Control.ts:90](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Control.ts#L90)
+Defined in: [packages/dom/src/Control.ts:90](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Control.ts#L90)
 
 Function to extract a unique key from each item
 
@@ -81,7 +81,7 @@ Function to extract a unique key from each item
 
 > `readonly` **render**: (`item`) => [`Element`](../type-aliases/Element.md)\<`E`, `R`\>
 
-Defined in: [packages/dom/src/Control.ts:92](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Control.ts#L92)
+Defined in: [packages/dom/src/Control.ts:92](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Control.ts#L92)
 
 Function to render each item (receives a Readable for the item)
 

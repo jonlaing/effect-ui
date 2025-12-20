@@ -6,7 +6,7 @@
 
 # Interface: TabsContext
 
-Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:13](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tabs/Tabs.ts#L13)
+Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:13](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tabs/Tabs.ts#L13)
 
 Context shared between Tabs parts.
 
@@ -16,7 +16,7 @@ Context shared between Tabs parts.
 
 > `readonly` **activationMode**: `"automatic"` \| `"manual"`
 
-Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:21](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tabs/Tabs.ts#L21)
+Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:21](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tabs/Tabs.ts#L21)
 
 Activation mode: automatic (focus selects) or manual (Enter/Space to select)
 
@@ -26,7 +26,7 @@ Activation mode: automatic (focus selects) or manual (Enter/Space to select)
 
 > `readonly` **orientation**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`"horizontal"` \| `"vertical"`\>
 
-Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:19](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tabs/Tabs.ts#L19)
+Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:19](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tabs/Tabs.ts#L19)
 
 Tab orientation (affects keyboard navigation)
 
@@ -36,7 +36,7 @@ Tab orientation (affects keyboard navigation)
 
 > `readonly` **setValue**: (`value`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:17](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tabs/Tabs.ts#L17)
+Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:17](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tabs/Tabs.ts#L17)
 
 Set the active tab
 
@@ -56,6 +56,6 @@ Set the active tab
 
 > `readonly` **value**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:15](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tabs/Tabs.ts#L15)
+Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:15](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tabs/Tabs.ts#L15)
 
 Current active tab value

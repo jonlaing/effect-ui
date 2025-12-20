@@ -6,7 +6,7 @@
 
 # Interface: TooltipContentProps
 
-Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:58](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L58)
+Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:58](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L58)
 
 Props for Tooltip.Content
 
@@ -16,7 +16,7 @@ Props for Tooltip.Content
 
 > `readonly` `optional` **align**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`"center"` \| `"start"` \| `"end"`\>
 
-Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:64](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L64)
+Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:64](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L64)
 
 Alignment along the side axis (default: "center")
 
@@ -26,7 +26,7 @@ Alignment along the side axis (default: "center")
 
 > `readonly` `optional` **alignOffset**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`number`\>
 
-Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:68](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L68)
+Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:68](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L68)
 
 Shift along the side axis in pixels (default: 0)
 
@@ -36,7 +36,7 @@ Shift along the side axis in pixels (default: 0)
 
 > `readonly` `optional` **class**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:60](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L60)
+Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:60](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L60)
 
 Additional class names
 
@@ -46,7 +46,7 @@ Additional class names
 
 > `readonly` `optional` **side**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`"top"` \| `"bottom"` \| `"left"` \| `"right"`\>
 
-Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:62](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L62)
+Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:62](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L62)
 
 Positioning side relative to trigger (default: "top")
 
@@ -56,6 +56,6 @@ Positioning side relative to trigger (default: "top")
 
 > `readonly` `optional` **sideOffset**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`number`\>
 
-Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:66](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L66)
+Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:66](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L66)
 
 Gap between trigger and content in pixels (default: 4)

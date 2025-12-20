@@ -8,7 +8,7 @@
 
 > **lift**\<`T`, `R`\>(`fn`): (`props`) => [`Readable`](../interfaces/Readable.md)\<`R`\>
 
-Defined in: [packages/core/src/Readable.ts:255](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Readable.ts#L255)
+Defined in: [packages/core/src/Readable.ts:255](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Readable.ts#L255)
 
 Lift a function that takes an object as its argument to work with
 potentially reactive properties. Properties can be either static values

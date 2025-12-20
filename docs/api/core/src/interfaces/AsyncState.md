@@ -6,7 +6,7 @@
 
 # Interface: AsyncState\<A, E\>
 
-Defined in: [packages/core/src/Derived/types.ts:18](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Derived/types.ts#L18)
+Defined in: [packages/core/src/Derived/types.ts:18](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Derived/types.ts#L18)
 
 State of an asynchronous derived value.
 
@@ -30,7 +30,7 @@ The type of the error
 
 > `readonly` **error**: `Option`\<`E`\>
 
-Defined in: [packages/core/src/Derived/types.ts:24](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Derived/types.ts#L24)
+Defined in: [packages/core/src/Derived/types.ts:24](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Derived/types.ts#L24)
 
 The most recent error, if any
 
@@ -40,7 +40,7 @@ The most recent error, if any
 
 > `readonly` **isLoading**: `boolean`
 
-Defined in: [packages/core/src/Derived/types.ts:20](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Derived/types.ts#L20)
+Defined in: [packages/core/src/Derived/types.ts:20](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Derived/types.ts#L20)
 
 Whether a computation is currently in progress
 
@@ -50,6 +50,6 @@ Whether a computation is currently in progress
 
 > `readonly` **value**: `Option`\<`A`\>
 
-Defined in: [packages/core/src/Derived/types.ts:22](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Derived/types.ts#L22)
+Defined in: [packages/core/src/Derived/types.ts:22](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Derived/types.ts#L22)
 
 The most recent successful value, if any

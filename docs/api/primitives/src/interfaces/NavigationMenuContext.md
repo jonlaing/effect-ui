@@ -6,7 +6,7 @@
 
 # Interface: NavigationMenuContext
 
-Defined in: [packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts:25](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts#L25)
+Defined in: [packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts:25](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts#L25)
 
 Context shared between NavigationMenu parts.
 
@@ -16,7 +16,7 @@ Context shared between NavigationMenu parts.
 
 > `readonly` **activeItem**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`string` \| `null`\>
 
-Defined in: [packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts:27](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts#L27)
+Defined in: [packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts:27](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts#L27)
 
 Currently active/open item ID
 
@@ -26,7 +26,7 @@ Currently active/open item ID
 
 > `readonly` **cancelClose**: () => `void`
 
-Defined in: [packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts:37](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts#L37)
+Defined in: [packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts:37](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts#L37)
 
 Cancel any pending close
 
@@ -40,7 +40,7 @@ Cancel any pending close
 
 > `readonly` **cancelOpen**: () => `void`
 
-Defined in: [packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts:35](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts#L35)
+Defined in: [packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts:35](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts#L35)
 
 Cancel any pending open
 
@@ -54,7 +54,7 @@ Cancel any pending open
 
 > `readonly` **orientation**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<[`NavigationMenuOrientation`](../type-aliases/NavigationMenuOrientation.md)\>
 
-Defined in: [packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts:39](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts#L39)
+Defined in: [packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts:39](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts#L39)
 
 Menu orientation
 
@@ -64,7 +64,7 @@ Menu orientation
 
 > `readonly` **scheduleClose**: () => `void`
 
-Defined in: [packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts:33](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts#L33)
+Defined in: [packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts:33](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts#L33)
 
 Schedule closing with delay
 
@@ -78,7 +78,7 @@ Schedule closing with delay
 
 > `readonly` **scheduleOpen**: (`id`) => `void`
 
-Defined in: [packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts:31](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts#L31)
+Defined in: [packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts:31](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts#L31)
 
 Schedule opening an item with delay
 
@@ -98,7 +98,7 @@ Schedule opening an item with delay
 
 > `readonly` **setActiveItem**: (`id`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts:29](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts#L29)
+Defined in: [packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts:29](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts#L29)
 
 Set the active item
 
@@ -118,7 +118,7 @@ Set the active item
 
 > `readonly` **triggerRefs**: `Map`\<`string`, `HTMLButtonElement`\>
 
-Defined in: [packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts:43](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts#L43)
+Defined in: [packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts:43](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts#L43)
 
 Map of item IDs to their trigger elements
 
@@ -128,6 +128,6 @@ Map of item IDs to their trigger elements
 
 > `readonly` **viewportRef**: [`RefType`](../../../core/src/type-aliases/RefType.md)\<`HTMLDivElement`\>
 
-Defined in: [packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts:41](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts#L41)
+Defined in: [packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts:41](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/NavigationMenu/NavigationMenu.ts#L41)
 
 Reference to viewport element

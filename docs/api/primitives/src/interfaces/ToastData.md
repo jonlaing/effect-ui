@@ -6,7 +6,7 @@
 
 # Interface: ToastData
 
-Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:35](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/helpers.ts#L35)
+Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:35](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/helpers.ts#L35)
 
 Toast data stored in the provider.
 
@@ -16,7 +16,7 @@ Toast data stored in the provider.
 
 > `readonly` `optional` **action**: `object`
 
-Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:41](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/helpers.ts#L41)
+Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:41](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/helpers.ts#L41)
 
 #### label
 
@@ -36,7 +36,7 @@ Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:41](https://git
 
 > `readonly` `optional` **description**: `string`
 
-Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:38](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/helpers.ts#L38)
+Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:38](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/helpers.ts#L38)
 
 ***
 
@@ -44,7 +44,7 @@ Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:38](https://git
 
 > `readonly` `optional` **duration**: `number`
 
-Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:40](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/helpers.ts#L40)
+Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:40](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/helpers.ts#L40)
 
 ***
 
@@ -52,7 +52,7 @@ Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:40](https://git
 
 > `readonly` **id**: `string`
 
-Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:36](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/helpers.ts#L36)
+Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:36](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/helpers.ts#L36)
 
 ***
 
@@ -60,7 +60,7 @@ Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:36](https://git
 
 > `readonly` `optional` **onDismiss**: () => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:45](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/helpers.ts#L45)
+Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:45](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/helpers.ts#L45)
 
 #### Returns
 
@@ -72,7 +72,7 @@ Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:45](https://git
 
 > `readonly` `optional` **title**: `string`
 
-Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:37](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/helpers.ts#L37)
+Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:37](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/helpers.ts#L37)
 
 ***
 
@@ -80,4 +80,4 @@ Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:37](https://git
 
 > `readonly` **type**: [`ToastType`](../type-aliases/ToastType.md)
 
-Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:39](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/helpers.ts#L39)
+Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:39](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/helpers.ts#L39)

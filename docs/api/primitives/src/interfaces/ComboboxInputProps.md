@@ -6,7 +6,7 @@
 
 # Interface: ComboboxInputProps
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:161](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L161)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:161](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L161)
 
 Props for Combobox.Input
 
@@ -16,7 +16,7 @@ Props for Combobox.Input
 
 > `readonly` `optional` **class**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:163](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L163)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:163](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L163)
 
 Additional class names
 
@@ -26,7 +26,7 @@ Additional class names
 
 > `readonly` `optional` **disabled**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:167](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L167)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:167](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L167)
 
 Whether the input is disabled
 
@@ -36,7 +36,7 @@ Whether the input is disabled
 
 > `readonly` `optional` **openOnFocus**: `boolean`
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:169](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L169)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:169](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L169)
 
 Whether to open on focus (default: true)
 
@@ -46,6 +46,6 @@ Whether to open on focus (default: true)
 
 > `readonly` `optional` **placeholder**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:165](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L165)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:165](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L165)
 
 Placeholder text

@@ -6,7 +6,7 @@
 
 # Interface: VisibleRange
 
-Defined in: [packages/dom/src/VirtualList/types.ts:9](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/VirtualList/types.ts#L9)
+Defined in: [packages/dom/src/VirtualList/types.ts:9](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/VirtualList/types.ts#L9)
 
 Visible range of items in the virtual list.
 
@@ -16,7 +16,7 @@ Visible range of items in the virtual list.
 
 > `readonly` **end**: `number`
 
-Defined in: [packages/dom/src/VirtualList/types.ts:11](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/VirtualList/types.ts#L11)
+Defined in: [packages/dom/src/VirtualList/types.ts:11](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/VirtualList/types.ts#L11)
 
 ***
 
@@ -24,4 +24,4 @@ Defined in: [packages/dom/src/VirtualList/types.ts:11](https://github.com/jonlai
 
 > `readonly` **start**: `number`
 
-Defined in: [packages/dom/src/VirtualList/types.ts:10](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/VirtualList/types.ts#L10)
+Defined in: [packages/dom/src/VirtualList/types.ts:10](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/VirtualList/types.ts#L10)

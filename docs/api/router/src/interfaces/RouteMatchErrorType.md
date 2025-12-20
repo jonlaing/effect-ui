@@ -6,7 +6,7 @@
 
 # Interface: RouteMatchErrorType
 
-Defined in: [packages/router/src/router/types.ts:48](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L48)
+Defined in: [packages/router/src/router/types.ts:48](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L48)
 
 Error when a route doesn't match.
 
@@ -16,7 +16,7 @@ Error when a route doesn't match.
 
 > `readonly` **\_tag**: `"RouteMatchError"`
 
-Defined in: [packages/router/src/router/types.ts:49](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L49)
+Defined in: [packages/router/src/router/types.ts:49](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L49)
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: [packages/router/src/router/types.ts:49](https://github.com/jonlaing
 
 > `readonly` `optional` **details**: `string`
 
-Defined in: [packages/router/src/router/types.ts:52](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L52)
+Defined in: [packages/router/src/router/types.ts:52](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L52)
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: [packages/router/src/router/types.ts:52](https://github.com/jonlaing
 
 > `readonly` **path**: `string`
 
-Defined in: [packages/router/src/router/types.ts:50](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L50)
+Defined in: [packages/router/src/router/types.ts:50](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L50)
 
 ***
 
@@ -40,4 +40,4 @@ Defined in: [packages/router/src/router/types.ts:50](https://github.com/jonlaing
 
 > `readonly` **reason**: `"no-match"` \| `"validation-failed"`
 
-Defined in: [packages/router/src/router/types.ts:51](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L51)
+Defined in: [packages/router/src/router/types.ts:51](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L51)

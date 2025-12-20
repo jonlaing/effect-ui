@@ -8,7 +8,7 @@
 
 > **of**\<`A`\>(`value`): [`Readable`](../interfaces/Readable.md)\<`A`\>
 
-Defined in: [packages/core/src/Readable.ts:88](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Readable.ts#L88)
+Defined in: [packages/core/src/Readable.ts:88](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Readable.ts#L88)
 
 Create a constant Readable that never changes.
 Useful for normalizing `T | Readable<T>` props.

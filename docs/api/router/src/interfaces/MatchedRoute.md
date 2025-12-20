@@ -6,7 +6,7 @@
 
 # Interface: MatchedRoute\<P\>
 
-Defined in: [packages/router/src/router/types.ts:72](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L72)
+Defined in: [packages/router/src/router/types.ts:72](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L72)
 
 A matched route with its parsed params.
 
@@ -22,7 +22,7 @@ A matched route with its parsed params.
 
 > `readonly` **params**: `P`
 
-Defined in: [packages/router/src/router/types.ts:76](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L76)
+Defined in: [packages/router/src/router/types.ts:76](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L76)
 
 The parsed and validated params
 
@@ -32,6 +32,6 @@ The parsed and validated params
 
 > `readonly` **route**: [`RouteType`](RouteType.md)\<`string`, `AnyNoContext`\>
 
-Defined in: [packages/router/src/router/types.ts:74](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L74)
+Defined in: [packages/router/src/router/types.ts:74](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L74)
 
 The route that matched

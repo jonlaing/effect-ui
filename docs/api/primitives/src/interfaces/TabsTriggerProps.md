@@ -6,7 +6,7 @@
 
 # Interface: TabsTriggerProps
 
-Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:53](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tabs/Tabs.ts#L53)
+Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:53](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tabs/Tabs.ts#L53)
 
 Props for Tabs.Trigger
 
@@ -16,7 +16,7 @@ Props for Tabs.Trigger
 
 > `readonly` `optional` **class**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:57](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tabs/Tabs.ts#L57)
+Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:57](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tabs/Tabs.ts#L57)
 
 Additional class names
 
@@ -26,7 +26,7 @@ Additional class names
 
 > `readonly` `optional` **disabled**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:59](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tabs/Tabs.ts#L59)
+Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:59](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tabs/Tabs.ts#L59)
 
 Whether this tab is disabled
 
@@ -36,6 +36,6 @@ Whether this tab is disabled
 
 > `readonly` **value**: `string`
 
-Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:55](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tabs/Tabs.ts#L55)
+Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:55](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tabs/Tabs.ts#L55)
 
 Unique value for this tab

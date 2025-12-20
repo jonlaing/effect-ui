@@ -6,7 +6,7 @@
 
 # Interface: TooltipContext
 
-Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:16](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L16)
+Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:16](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L16)
 
 Context shared between Tooltip parts.
 
@@ -16,7 +16,7 @@ Context shared between Tooltip parts.
 
 > `readonly` **close**: () => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:22](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L22)
+Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:22](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L22)
 
 Close the tooltip
 
@@ -30,7 +30,7 @@ Close the tooltip
 
 > `readonly` **contentId**: `string`
 
-Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:26](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L26)
+Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:26](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L26)
 
 Unique ID for the tooltip content
 
@@ -40,7 +40,7 @@ Unique ID for the tooltip content
 
 > `readonly` **delayDuration**: `number`
 
-Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:28](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L28)
+Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:28](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L28)
 
 Delay before opening (ms)
 
@@ -50,7 +50,7 @@ Delay before opening (ms)
 
 > `readonly` **isOpen**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:18](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L18)
+Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:18](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L18)
 
 Whether the tooltip is currently open
 
@@ -60,7 +60,7 @@ Whether the tooltip is currently open
 
 > `readonly` **open**: () => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:20](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L20)
+Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:20](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L20)
 
 Open the tooltip
 
@@ -74,6 +74,6 @@ Open the tooltip
 
 > `readonly` **triggerRef**: [`Signal`](../../../core/src/interfaces/Signal.md)\<`HTMLElement` \| `null`\>
 
-Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:24](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L24)
+Defined in: [packages/primitives/src/primitives/Tooltip/Tooltip.ts:24](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tooltip/Tooltip.ts#L24)
 
 Reference to the trigger element

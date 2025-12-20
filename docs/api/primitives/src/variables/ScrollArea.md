@@ -8,7 +8,7 @@
 
 > `const` **ScrollArea**: `object`
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:700](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L700)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:700](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L700)
 
 Headless ScrollArea primitive for building custom scrollable areas.
 

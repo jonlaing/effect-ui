@@ -6,7 +6,7 @@
 
 # Interface: ContextMenuSubProps
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:178](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L178)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:178](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L178)
 
 Props for ContextMenu.Sub
 
@@ -16,7 +16,7 @@ Props for ContextMenu.Sub
 
 > `readonly` `optional` **defaultOpen**: `boolean`
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:182](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L182)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:182](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L182)
 
 Default open state
 
@@ -26,7 +26,7 @@ Default open state
 
 > `readonly` `optional` **onOpenChange**: (`open`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:184](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L184)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:184](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L184)
 
 Callback when open state changes
 
@@ -46,6 +46,6 @@ Callback when open state changes
 
 > `readonly` `optional` **open**: [`Signal`](../../../core/src/interfaces/Signal.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:180](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L180)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:180](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L180)
 
 Controlled open state

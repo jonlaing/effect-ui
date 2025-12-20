@@ -8,7 +8,7 @@
 
 > **component**\<`Name`, `Props`, `E`, `R`\>(`name`, `render`): [`Component`](../type-aliases/Component.md)\<`Name`, `Props`, `E`, `R`\>
 
-Defined in: [packages/dom/src/Component.ts:126](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Component.ts#L126)
+Defined in: [packages/dom/src/Component.ts:126](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Component.ts#L126)
 
 Create a named component from a render function.
 The render function receives props and optional children as separate arguments.

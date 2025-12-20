@@ -6,7 +6,7 @@
 
 # Interface: FormType\<S, E, R\>
 
-Defined in: [packages/form/src/form/types.ts:122](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/form/src/form/types.ts#L122)
+Defined in: [packages/form/src/form/types.ts:122](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/form/src/form/types.ts#L122)
 
 The main Form interface.
 
@@ -36,7 +36,7 @@ The requirements from validators
 
 > `readonly` **errors**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`Record`\<`string`, readonly `string`[]\>\>
 
-Defined in: [packages/form/src/form/types.ts:138](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/form/src/form/types.ts#L138)
+Defined in: [packages/form/src/form/types.ts:138](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/form/src/form/types.ts#L138)
 
 All form errors by field name
 
@@ -46,7 +46,7 @@ All form errors by field name
 
 > `readonly` **fields**: [`FormFields`](../type-aliases/FormFields.md)\<`Schema.Schema.Type`\<`S`\>\>
 
-Defined in: [packages/form/src/form/types.ts:128](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/form/src/form/types.ts#L128)
+Defined in: [packages/form/src/form/types.ts:128](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/form/src/form/types.ts#L128)
 
 Individual field accessors
 
@@ -56,7 +56,7 @@ Individual field accessors
 
 > `readonly` **getValues**: () => `Effect`\<`Type`\<`S`\>\>
 
-Defined in: [packages/form/src/form/types.ts:156](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/form/src/form/types.ts#L156)
+Defined in: [packages/form/src/form/types.ts:156](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/form/src/form/types.ts#L156)
 
 Get current form values
 
@@ -70,7 +70,7 @@ Get current form values
 
 > `readonly` **isDirty**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`boolean`\>
 
-Defined in: [packages/form/src/form/types.ts:136](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/form/src/form/types.ts#L136)
+Defined in: [packages/form/src/form/types.ts:136](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/form/src/form/types.ts#L136)
 
 Whether any field has changed from initial
 
@@ -80,7 +80,7 @@ Whether any field has changed from initial
 
 > `readonly` **isSubmitting**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`boolean`\>
 
-Defined in: [packages/form/src/form/types.ts:132](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/form/src/form/types.ts#L132)
+Defined in: [packages/form/src/form/types.ts:132](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/form/src/form/types.ts#L132)
 
 Whether the form is currently submitting
 
@@ -90,7 +90,7 @@ Whether the form is currently submitting
 
 > `readonly` **isTouched**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`boolean`\>
 
-Defined in: [packages/form/src/form/types.ts:134](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/form/src/form/types.ts#L134)
+Defined in: [packages/form/src/form/types.ts:134](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/form/src/form/types.ts#L134)
 
 Whether any field has been touched
 
@@ -100,7 +100,7 @@ Whether any field has been touched
 
 > `readonly` **isValid**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`boolean`\>
 
-Defined in: [packages/form/src/form/types.ts:130](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/form/src/form/types.ts#L130)
+Defined in: [packages/form/src/form/types.ts:130](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/form/src/form/types.ts#L130)
 
 Whether the entire form is valid
 
@@ -110,7 +110,7 @@ Whether the entire form is valid
 
 > `readonly` **reset**: () => `Effect`\<`void`\>
 
-Defined in: [packages/form/src/form/types.ts:144](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/form/src/form/types.ts#L144)
+Defined in: [packages/form/src/form/types.ts:144](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/form/src/form/types.ts#L144)
 
 Reset all fields to initial values
 
@@ -124,7 +124,7 @@ Reset all fields to initial values
 
 > `readonly` **setErrors**: (`errors`) => `Effect`\<`void`\>
 
-Defined in: [packages/form/src/form/types.ts:146](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/form/src/form/types.ts#L146)
+Defined in: [packages/form/src/form/types.ts:146](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/form/src/form/types.ts#L146)
 
 Set errors from server/external validation
 
@@ -144,7 +144,7 @@ Set errors from server/external validation
 
 > `readonly` **submit**: \<`SE`, `SR`\>(`handler`) => `Effect`\<`void`, `E` \| `SE`, `R` \| `SR`\>
 
-Defined in: [packages/form/src/form/types.ts:140](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/form/src/form/types.ts#L140)
+Defined in: [packages/form/src/form/types.ts:140](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/form/src/form/types.ts#L140)
 
 Submit the form with a handler
 
@@ -174,7 +174,7 @@ Submit the form with a handler
 
 > `readonly` **validate**: () => `Effect`\<`Record`\<keyof `Type`\<`S`\>, readonly `string`[]\>, `E`, `R`\>
 
-Defined in: [packages/form/src/form/types.ts:150](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/form/src/form/types.ts#L150)
+Defined in: [packages/form/src/form/types.ts:150](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/form/src/form/types.ts#L150)
 
 Validate all fields and return all errors
 

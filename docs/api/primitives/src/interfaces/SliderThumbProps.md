@@ -6,7 +6,7 @@
 
 # Interface: SliderThumbProps
 
-Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:125](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Slider/Slider.ts#L125)
+Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:125](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Slider/Slider.ts#L125)
 
 Props for Slider.Thumb
 
@@ -16,7 +16,7 @@ Props for Slider.Thumb
 
 > `readonly` `optional` **aria-label**: `string`
 
-Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:129](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Slider/Slider.ts#L129)
+Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:129](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Slider/Slider.ts#L129)
 
 ARIA label for this specific thumb
 
@@ -26,7 +26,7 @@ ARIA label for this specific thumb
 
 > `readonly` `optional` **aria-labelledby**: `string`
 
-Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:131](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Slider/Slider.ts#L131)
+Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:131](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Slider/Slider.ts#L131)
 
 ID of element that labels this thumb
 
@@ -36,7 +36,7 @@ ID of element that labels this thumb
 
 > `readonly` `optional` **aria-valuetext**: `string` \| (`value`) => `string`
 
-Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:133](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Slider/Slider.ts#L133)
+Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:133](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Slider/Slider.ts#L133)
 
 ARIA value text (custom readable value)
 
@@ -46,6 +46,6 @@ ARIA value text (custom readable value)
 
 > `readonly` `optional` **class**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:127](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Slider/Slider.ts#L127)
+Defined in: [packages/primitives/src/primitives/Slider/Slider.ts:127](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Slider/Slider.ts#L127)
 
 Additional class names

@@ -6,7 +6,7 @@
 
 # Interface: ContextMenuSubContext
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:156](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L156)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:156](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L156)
 
 Context for ContextMenu.Sub
 
@@ -16,7 +16,7 @@ Context for ContextMenu.Sub
 
 > `readonly` **cancelClose**: () => `void`
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:164](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L164)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:164](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L164)
 
 Cancel any pending close timeout
 
@@ -30,7 +30,7 @@ Cancel any pending close timeout
 
 > `readonly` **close**: () => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:162](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L162)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:162](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L162)
 
 Close the submenu
 
@@ -44,7 +44,7 @@ Close the submenu
 
 > `readonly` **contentId**: `string`
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:170](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L170)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:170](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L170)
 
 Unique ID for the submenu content
 
@@ -54,7 +54,7 @@ Unique ID for the submenu content
 
 > `readonly` **isOpen**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:158](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L158)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:158](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L158)
 
 Whether the submenu is currently open
 
@@ -64,7 +64,7 @@ Whether the submenu is currently open
 
 > `readonly` **open**: () => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:160](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L160)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:160](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L160)
 
 Open the submenu
 
@@ -78,7 +78,7 @@ Open the submenu
 
 > `readonly` **scheduleClose**: () => `void`
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:166](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L166)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:166](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L166)
 
 Schedule a close with delay
 
@@ -92,7 +92,7 @@ Schedule a close with delay
 
 > `readonly` **triggerEl**: [`Signal`](../../../core/src/interfaces/Signal.md)\<`HTMLElement` \| `null`\>
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:168](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L168)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:168](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L168)
 
 Reference to the SubTrigger element
 
@@ -102,6 +102,6 @@ Reference to the SubTrigger element
 
 > `readonly` **triggerId**: `string`
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:172](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L172)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:172](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L172)
 
 Unique ID for the SubTrigger

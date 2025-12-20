@@ -6,7 +6,7 @@
 
 # Class: PopoverCtx
 
-Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:93](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Popover/Popover.ts#L93)
+Defined in: [packages/primitives/src/primitives/Popover/Popover.ts:93](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Popover/Popover.ts#L93)
 
 Effect Context for Popover state sharing between parts.
 

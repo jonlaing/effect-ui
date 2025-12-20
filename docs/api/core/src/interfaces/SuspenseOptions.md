@@ -6,7 +6,7 @@
 
 # Interface: SuspenseOptions\<N, E, R1, EF\>
 
-Defined in: [packages/core/src/Boundary.ts:8](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Boundary.ts#L8)
+Defined in: [packages/core/src/Boundary.ts:8](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Boundary.ts#L8)
 
 Options for the suspense boundary.
 
@@ -34,7 +34,7 @@ Options for the suspense boundary.
 
 > `readonly` `optional` **catch**: (`error`) => [`Element`](../type-aliases/Element.md)\<`N`, `never`, `never`\>
 
-Defined in: [packages/core/src/Boundary.ts:26](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Boundary.ts#L26)
+Defined in: [packages/core/src/Boundary.ts:26](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Boundary.ts#L26)
 
 Optional error handler. If provided, errors from render are caught
 and this function is called to render an error state.
@@ -56,7 +56,7 @@ Must have no requirements.
 
 > `readonly` `optional` **delay**: `DurationInput`
 
-Defined in: [packages/core/src/Boundary.ts:34](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Boundary.ts#L34)
+Defined in: [packages/core/src/Boundary.ts:34](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Boundary.ts#L34)
 
 Delay before showing the fallback.
 If the render completes before this duration, no fallback is shown.
@@ -69,7 +69,7 @@ If not provided, fallback is shown immediately.
 
 > `readonly` **fallback**: () => [`Element`](../type-aliases/Element.md)\<`N`, `EF`, `never`\>
 
-Defined in: [packages/core/src/Boundary.ts:19](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Boundary.ts#L19)
+Defined in: [packages/core/src/Boundary.ts:19](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Boundary.ts#L19)
 
 Function to render the loading/fallback state.
 Must have no requirements (will be rendered in detached context if delay > 0).
@@ -84,7 +84,7 @@ Must have no requirements (will be rendered in detached context if delay > 0).
 
 > `readonly` **render**: () => `Effect`\<`N`, `E`, `Scope` \| `R1`\>
 
-Defined in: [packages/core/src/Boundary.ts:13](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Boundary.ts#L13)
+Defined in: [packages/core/src/Boundary.ts:13](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Boundary.ts#L13)
 
 Async function that returns the final element.
 Can fail with error type E if `catch` is provided.

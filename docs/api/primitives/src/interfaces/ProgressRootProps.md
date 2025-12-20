@@ -6,7 +6,7 @@
 
 # Interface: ProgressRootProps
 
-Defined in: [packages/primitives/src/primitives/Progress/Progress.ts:41](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Progress/Progress.ts#L41)
+Defined in: [packages/primitives/src/primitives/Progress/Progress.ts:41](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Progress/Progress.ts#L41)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/primitives/src/primitives/Progress/Progress.ts:41](https:/
 
 > `readonly` `optional` **class**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/Progress/Progress.ts:49](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Progress/Progress.ts#L49)
+Defined in: [packages/primitives/src/primitives/Progress/Progress.ts:49](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Progress/Progress.ts#L49)
 
 Additional class names
 
@@ -24,7 +24,7 @@ Additional class names
 
 > `readonly` `optional` **getValueLabel**: (`value`, `max`) => `string`
 
-Defined in: [packages/primitives/src/primitives/Progress/Progress.ts:47](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Progress/Progress.ts#L47)
+Defined in: [packages/primitives/src/primitives/Progress/Progress.ts:47](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Progress/Progress.ts#L47)
 
 Custom label for screen readers
 
@@ -48,7 +48,7 @@ Custom label for screen readers
 
 > `readonly` `optional` **max**: `number`
 
-Defined in: [packages/primitives/src/primitives/Progress/Progress.ts:45](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Progress/Progress.ts#L45)
+Defined in: [packages/primitives/src/primitives/Progress/Progress.ts:45](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Progress/Progress.ts#L45)
 
 Maximum value (default: 100)
 
@@ -58,6 +58,6 @@ Maximum value (default: 100)
 
 > `readonly` `optional` **value**: `number` \| [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`number` \| `null`\> \| `null`
 
-Defined in: [packages/primitives/src/primitives/Progress/Progress.ts:43](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Progress/Progress.ts#L43)
+Defined in: [packages/primitives/src/primitives/Progress/Progress.ts:43](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Progress/Progress.ts#L43)
 
 Current progress value (null = indeterminate)

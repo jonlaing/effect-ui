@@ -6,7 +6,7 @@
 
 # Interface: TabsContentProps
 
-Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:65](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tabs/Tabs.ts#L65)
+Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:65](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tabs/Tabs.ts#L65)
 
 Props for Tabs.Content
 
@@ -16,7 +16,7 @@ Props for Tabs.Content
 
 > `readonly` `optional` **class**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:69](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tabs/Tabs.ts#L69)
+Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:69](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tabs/Tabs.ts#L69)
 
 Additional class names
 
@@ -26,7 +26,7 @@ Additional class names
 
 > `readonly` `optional` **forceMount**: `boolean`
 
-Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:71](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tabs/Tabs.ts#L71)
+Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:71](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tabs/Tabs.ts#L71)
 
 Force mount even when inactive (default: false)
 
@@ -36,6 +36,6 @@ Force mount even when inactive (default: false)
 
 > `readonly` **value**: `string`
 
-Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:67](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Tabs/Tabs.ts#L67)
+Defined in: [packages/primitives/src/primitives/Tabs/Tabs.ts:67](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Tabs/Tabs.ts#L67)
 
 Value matching the corresponding Trigger

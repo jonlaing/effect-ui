@@ -8,7 +8,7 @@
 
 > `const` **VirtualListRef**: `object`
 
-Defined in: [packages/dom/src/VirtualList/VirtualList.ts:465](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/VirtualList/VirtualList.ts#L465)
+Defined in: [packages/dom/src/VirtualList/VirtualList.ts:465](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/VirtualList/VirtualList.ts#L465)
 
 VirtualListRef module for creating refs to access scroll control.
 

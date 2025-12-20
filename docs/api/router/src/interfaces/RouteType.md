@@ -6,7 +6,7 @@
 
 # Interface: RouteType\<Path, P\>
 
-Defined in: [packages/router/src/router/types.ts:26](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L26)
+Defined in: [packages/router/src/router/types.ts:26](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L26)
 
 A route definition with typed parameters.
 
@@ -30,7 +30,7 @@ The params schema type
 
 > `readonly` **match**: (`pathname`) => `Effect`\<`Type`\<`P`\> \| `Record`\<`string`, `never`\>, [`RouteMatchErrorType`](../type-aliases/RouteMatchErrorType.md)\>
 
-Defined in: [packages/router/src/router/types.ts:37](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L37)
+Defined in: [packages/router/src/router/types.ts:37](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L37)
 
 Match a pathname against this route, returning params if matched
 
@@ -50,7 +50,7 @@ Match a pathname against this route, returning params if matched
 
 > `readonly` **paramsSchema**: `P` \| `undefined`
 
-Defined in: [packages/router/src/router/types.ts:35](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L35)
+Defined in: [packages/router/src/router/types.ts:35](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L35)
 
 Schema for params validation
 
@@ -60,7 +60,7 @@ Schema for params validation
 
 > `readonly` **path**: `Path`
 
-Defined in: [packages/router/src/router/types.ts:31](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L31)
+Defined in: [packages/router/src/router/types.ts:31](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L31)
 
 The original path pattern
 
@@ -70,6 +70,6 @@ The original path pattern
 
 > `readonly` **segments**: readonly [`PathSegment`](../type-aliases/PathSegment.md)[]
 
-Defined in: [packages/router/src/router/types.ts:33](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/router/src/router/types.ts#L33)
+Defined in: [packages/router/src/router/types.ts:33](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/router/src/router/types.ts#L33)
 
 Parsed path segments

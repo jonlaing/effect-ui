@@ -6,7 +6,7 @@
 
 # Interface: ScrollAreaContext
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:22](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L22)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:22](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L22)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:22](htt
 
 > `readonly` **contentSize**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<\{ `height`: `number`; `width`: `number`; \}\>
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:28](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L28)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:28](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L28)
 
 Content dimensions
 
@@ -24,7 +24,7 @@ Content dimensions
 
 > `readonly` **isHovering**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:54](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L54)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:54](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L54)
 
 Whether mouse is hovering
 
@@ -34,7 +34,7 @@ Whether mouse is hovering
 
 > `readonly` **isScrolling**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:52](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L52)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:52](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L52)
 
 Whether currently scrolling
 
@@ -44,7 +44,7 @@ Whether currently scrolling
 
 > `readonly` **scrollableRef**: [`RefType`](../../../core/src/type-aliases/RefType.md)\<`HTMLElement`\>
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:30](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L30)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:30](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L30)
 
 Reference to the scrollable element
 
@@ -54,7 +54,7 @@ Reference to the scrollable element
 
 > `readonly` **scrollBy**: (`delta`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:37](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L37)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:37](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L37)
 
 Scroll by a delta
 
@@ -80,7 +80,7 @@ Scroll by a delta
 
 > `readonly` **scrollHideDelay**: `number`
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:50](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L50)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:50](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L50)
 
 Delay before hiding scrollbar (ms)
 
@@ -90,7 +90,7 @@ Delay before hiding scrollbar (ms)
 
 > `readonly` **scrollPosition**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<\{ `x`: `number`; `y`: `number`; \}\>
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:24](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L24)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:24](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L24)
 
 Current scroll position
 
@@ -100,7 +100,7 @@ Current scroll position
 
 > `readonly` **scrollTo**: (`position`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:32](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L32)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:32](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L32)
 
 Scroll to a position
 
@@ -126,7 +126,7 @@ Scroll to a position
 
 > `readonly` **setIsHovering**: (`value`) => `void`
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:58](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L58)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:58](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L58)
 
 Set hovering state
 
@@ -146,7 +146,7 @@ Set hovering state
 
 > `readonly` **setIsScrolling**: (`value`) => `void`
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:56](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L56)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:56](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L56)
 
 Set scrolling state
 
@@ -166,7 +166,7 @@ Set scrolling state
 
 > `readonly` **type**: [`ScrollAreaType`](../type-aliases/ScrollAreaType.md)
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:48](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L48)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:48](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L48)
 
 Scrollbar visibility type
 
@@ -176,7 +176,7 @@ Scrollbar visibility type
 
 > `readonly` **updateContentSize**: (`size`) => `void`
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:41](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L41)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:41](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L41)
 
 Update content size (internal)
 
@@ -202,7 +202,7 @@ Update content size (internal)
 
 > `readonly` **updateScrollPosition**: (`pos`) => `void`
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:39](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L39)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:39](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L39)
 
 Update scroll position (internal)
 
@@ -228,7 +228,7 @@ Update scroll position (internal)
 
 > `readonly` **updateViewportSize**: (`size`) => `void`
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:43](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L43)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:43](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L43)
 
 Update viewport size (internal)
 
@@ -254,6 +254,6 @@ Update viewport size (internal)
 
 > `readonly` **viewportSize**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<\{ `height`: `number`; `width`: `number`; \}\>
 
-Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:26](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L26)
+Defined in: [packages/primitives/src/primitives/ScrollArea/ScrollArea.ts:26](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ScrollArea/ScrollArea.ts#L26)
 
 Viewport dimensions

@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { Effect } from "effect";
-import { Signal, DOMRendererLive } from "@effex/dom";
+import { Effect, Scope } from "effect";
+import { Signal, DOMRendererLive, RendererContext } from "@effex/dom";
 import { Slider } from "./Slider";
 
-const runTest = <A>(effect: Effect.Effect<A, never, any>) =>
+const runTest = <A>(
+  effect: Effect.Effect<A, never, RendererContext | Scope.Scope>,
+) =>
   Effect.runPromise(
     Effect.scoped(effect).pipe(Effect.provide(DOMRendererLive)),
   );
@@ -366,7 +368,7 @@ describe("Slider", () => {
           ]);
 
           const thumb = el.querySelector("[role='slider']");
-          expect(thumb?.getAttribute("tabindex")).toBeNull();
+          expect(thumb?.getAttribute("tabindex")).toBe("-1");
         }),
       );
     });

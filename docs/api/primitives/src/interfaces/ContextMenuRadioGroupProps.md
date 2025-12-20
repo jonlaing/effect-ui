@@ -6,7 +6,7 @@
 
 # Interface: ContextMenuRadioGroupProps
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:130](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L130)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:130](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L130)
 
 Props for ContextMenu.RadioGroup
 
@@ -16,7 +16,7 @@ Props for ContextMenu.RadioGroup
 
 > `readonly` `optional` **class**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:132](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L132)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:132](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L132)
 
 Additional class names
 
@@ -26,7 +26,7 @@ Additional class names
 
 > `readonly` `optional` **defaultValue**: `string`
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:136](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L136)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:136](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L136)
 
 Default value (uncontrolled)
 
@@ -36,7 +36,7 @@ Default value (uncontrolled)
 
 > `readonly` `optional` **onValueChange**: (`value`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:138](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L138)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:138](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L138)
 
 Callback when value changes
 
@@ -56,6 +56,6 @@ Callback when value changes
 
 > `readonly` `optional` **value**: [`Signal`](../../../core/src/interfaces/Signal.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:134](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L134)
+Defined in: [packages/primitives/src/primitives/ContextMenu/ContextMenu.ts:134](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/ContextMenu/ContextMenu.ts#L134)
 
 Controlled value

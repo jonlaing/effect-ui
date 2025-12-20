@@ -6,7 +6,7 @@
 
 # Interface: Readable\<A\>
 
-Defined in: [packages/core/src/Readable.ts:7](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Readable.ts#L7)
+Defined in: [packages/core/src/Readable.ts:7](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Readable.ts#L7)
 
 A reactive value that can be read and observed for changes.
 
@@ -30,7 +30,7 @@ The type of the value
 
 > `readonly` **changes**: `Stream`\<`A`\>
 
-Defined in: [packages/core/src/Readable.ts:11](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Readable.ts#L11)
+Defined in: [packages/core/src/Readable.ts:11](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Readable.ts#L11)
 
 Stream of value changes (does not include current value)
 
@@ -40,7 +40,7 @@ Stream of value changes (does not include current value)
 
 > `readonly` **get**: `Effect`\<`A`\>
 
-Defined in: [packages/core/src/Readable.ts:9](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Readable.ts#L9)
+Defined in: [packages/core/src/Readable.ts:9](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Readable.ts#L9)
 
 Get the current value
 
@@ -50,7 +50,7 @@ Get the current value
 
 > `readonly` **map**: \<`B`\>(`f`) => `Readable`\<`B`\>
 
-Defined in: [packages/core/src/Readable.ts:15](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Readable.ts#L15)
+Defined in: [packages/core/src/Readable.ts:15](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Readable.ts#L15)
 
 Transform the readable value
 
@@ -76,6 +76,6 @@ Transform the readable value
 
 > `readonly` **values**: `Stream`\<`A`\>
 
-Defined in: [packages/core/src/Readable.ts:13](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Readable.ts#L13)
+Defined in: [packages/core/src/Readable.ts:13](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Readable.ts#L13)
 
 Stream of all values (current value followed by changes)

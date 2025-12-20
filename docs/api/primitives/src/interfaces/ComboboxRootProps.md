@@ -6,7 +6,7 @@
 
 # Interface: ComboboxRootProps
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:120](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L120)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:120](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L120)
 
 Props for Combobox.Root
 
@@ -16,7 +16,7 @@ Props for Combobox.Root
 
 > `readonly` `optional` **defaultInputValue**: `string`
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:131](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L131)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:131](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L131)
 
 Default input value (uncontrolled)
 
@@ -26,7 +26,7 @@ Default input value (uncontrolled)
 
 > `readonly` `optional` **defaultOpen**: `boolean`
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:138](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L138)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:138](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L138)
 
 Default open state (uncontrolled)
 
@@ -36,7 +36,7 @@ Default open state (uncontrolled)
 
 > `readonly` `optional` **defaultValue**: `string`
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:124](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L124)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:124](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L124)
 
 Default selected value (uncontrolled)
 
@@ -46,7 +46,7 @@ Default selected value (uncontrolled)
 
 > `readonly` `optional` **disabled**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:143](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L143)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:143](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L143)
 
 Whether the combobox is disabled
 
@@ -56,7 +56,7 @@ Whether the combobox is disabled
 
 > `readonly` `optional` **filterFn**: [`ComboboxFilterFn`](../type-aliases/ComboboxFilterFn.md) \| `null`
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:155](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L155)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:155](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L155)
 
 Filter function to determine which items to show.
 Defaults to case-insensitive substring matching.
@@ -68,7 +68,7 @@ Set to `null` to disable filtering (for external/async filtering).
 
 > `readonly` `optional` **inputValue**: [`Signal`](../../../core/src/interfaces/Signal.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:129](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L129)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:129](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L129)
 
 Controlled input value
 
@@ -78,7 +78,7 @@ Controlled input value
 
 > `readonly` `optional` **isLoading**: [`Readable`](../../../core/src/namespaces/Readable/interfaces/Readable.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:148](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L148)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:148](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L148)
 
 Loading state for async operations
 
@@ -88,7 +88,7 @@ Loading state for async operations
 
 > `readonly` `optional` **loop**: `boolean`
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:145](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L145)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:145](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L145)
 
 Whether keyboard navigation loops (default: true)
 
@@ -98,7 +98,7 @@ Whether keyboard navigation loops (default: true)
 
 > `readonly` `optional` **onInputValueChange**: (`value`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:133](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L133)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:133](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L133)
 
 Callback when input value changes
 
@@ -118,7 +118,7 @@ Callback when input value changes
 
 > `readonly` `optional` **onOpenChange**: (`open`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:140](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L140)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:140](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L140)
 
 Callback when open state changes
 
@@ -138,7 +138,7 @@ Callback when open state changes
 
 > `readonly` `optional` **onValueChange**: (`value`) => `Effect`\<`void`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:126](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L126)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:126](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L126)
 
 Callback when selected value changes
 
@@ -158,7 +158,7 @@ Callback when selected value changes
 
 > `readonly` `optional` **open**: [`Signal`](../../../core/src/interfaces/Signal.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:136](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L136)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:136](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L136)
 
 Controlled open state
 
@@ -168,6 +168,6 @@ Controlled open state
 
 > `readonly` `optional` **value**: [`Signal`](../../../core/src/interfaces/Signal.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:122](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L122)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:122](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L122)
 
 Controlled selected value

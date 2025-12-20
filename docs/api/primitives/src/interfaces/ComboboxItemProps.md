@@ -6,7 +6,7 @@
 
 # Interface: ComboboxItemProps
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:189](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L189)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:189](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L189)
 
 Props for Combobox.Item
 
@@ -16,7 +16,7 @@ Props for Combobox.Item
 
 > `readonly` `optional` **class**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`string`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:195](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L195)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:195](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L195)
 
 Additional class names
 
@@ -26,7 +26,7 @@ Additional class names
 
 > `readonly` `optional` **disabled**: [`Reactive`](../../../core/src/namespaces/Readable/type-aliases/Reactive.md)\<`boolean`\>
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:197](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L197)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:197](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L197)
 
 Whether this item is disabled
 
@@ -36,7 +36,7 @@ Whether this item is disabled
 
 > `readonly` `optional` **textValue**: `string`
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:193](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L193)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:193](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L193)
 
 Text value for display (auto-detected from ItemText if not provided)
 
@@ -46,6 +46,6 @@ Text value for display (auto-detected from ItemText if not provided)
 
 > `readonly` **value**: `string`
 
-Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:191](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Combobox/Combobox.ts#L191)
+Defined in: [packages/primitives/src/primitives/Combobox/Combobox.ts:191](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Combobox/Combobox.ts#L191)
 
 The value for this item

@@ -6,7 +6,7 @@
 
 # Interface: EventAttributes
 
-Defined in: [packages/dom/src/Element/types.ts:200](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Element/types.ts#L200)
+Defined in: [packages/dom/src/Element/types.ts:200](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Element/types.ts#L200)
 
 Common DOM event handler attributes.
 
@@ -16,7 +16,7 @@ Common DOM event handler attributes.
 
 > `readonly` `optional` **onBlur**: [`EventHandler`](../type-aliases/EventHandler.md)\<`FocusEvent`\>
 
-Defined in: [packages/dom/src/Element/types.ts:208](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Element/types.ts#L208)
+Defined in: [packages/dom/src/Element/types.ts:208](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Element/types.ts#L208)
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: [packages/dom/src/Element/types.ts:208](https://github.com/jonlaing/
 
 > `readonly` `optional` **onChange**: [`EventHandler`](../type-aliases/EventHandler.md)\<`Event`\>
 
-Defined in: [packages/dom/src/Element/types.ts:203](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Element/types.ts#L203)
+Defined in: [packages/dom/src/Element/types.ts:203](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Element/types.ts#L203)
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: [packages/dom/src/Element/types.ts:203](https://github.com/jonlaing/
 
 > `readonly` `optional` **onClick**: [`EventHandler`](../type-aliases/EventHandler.md)\<`MouseEvent`\>
 
-Defined in: [packages/dom/src/Element/types.ts:201](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Element/types.ts#L201)
+Defined in: [packages/dom/src/Element/types.ts:201](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Element/types.ts#L201)
 
 ***
 
@@ -40,7 +40,7 @@ Defined in: [packages/dom/src/Element/types.ts:201](https://github.com/jonlaing/
 
 > `readonly` `optional` **onContextMenu**: [`EventHandler`](../type-aliases/EventHandler.md)\<`MouseEvent`\>
 
-Defined in: [packages/dom/src/Element/types.ts:211](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Element/types.ts#L211)
+Defined in: [packages/dom/src/Element/types.ts:211](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Element/types.ts#L211)
 
 ***
 
@@ -48,7 +48,7 @@ Defined in: [packages/dom/src/Element/types.ts:211](https://github.com/jonlaing/
 
 > `readonly` `optional` **onFocus**: [`EventHandler`](../type-aliases/EventHandler.md)\<`FocusEvent`\>
 
-Defined in: [packages/dom/src/Element/types.ts:207](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Element/types.ts#L207)
+Defined in: [packages/dom/src/Element/types.ts:207](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Element/types.ts#L207)
 
 ***
 
@@ -56,7 +56,7 @@ Defined in: [packages/dom/src/Element/types.ts:207](https://github.com/jonlaing/
 
 > `readonly` `optional` **onInput**: [`EventHandler`](../type-aliases/EventHandler.md)\<`InputEvent`\>
 
-Defined in: [packages/dom/src/Element/types.ts:202](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Element/types.ts#L202)
+Defined in: [packages/dom/src/Element/types.ts:202](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Element/types.ts#L202)
 
 ***
 
@@ -64,7 +64,7 @@ Defined in: [packages/dom/src/Element/types.ts:202](https://github.com/jonlaing/
 
 > `readonly` `optional` **onKeyDown**: [`EventHandler`](../type-aliases/EventHandler.md)\<`KeyboardEvent`\>
 
-Defined in: [packages/dom/src/Element/types.ts:205](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Element/types.ts#L205)
+Defined in: [packages/dom/src/Element/types.ts:205](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Element/types.ts#L205)
 
 ***
 
@@ -72,7 +72,7 @@ Defined in: [packages/dom/src/Element/types.ts:205](https://github.com/jonlaing/
 
 > `readonly` `optional` **onKeyUp**: [`EventHandler`](../type-aliases/EventHandler.md)\<`KeyboardEvent`\>
 
-Defined in: [packages/dom/src/Element/types.ts:206](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Element/types.ts#L206)
+Defined in: [packages/dom/src/Element/types.ts:206](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Element/types.ts#L206)
 
 ***
 
@@ -80,7 +80,7 @@ Defined in: [packages/dom/src/Element/types.ts:206](https://github.com/jonlaing/
 
 > `readonly` `optional` **onMouseEnter**: [`EventHandler`](../type-aliases/EventHandler.md)\<`MouseEvent`\>
 
-Defined in: [packages/dom/src/Element/types.ts:209](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Element/types.ts#L209)
+Defined in: [packages/dom/src/Element/types.ts:209](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Element/types.ts#L209)
 
 ***
 
@@ -88,7 +88,7 @@ Defined in: [packages/dom/src/Element/types.ts:209](https://github.com/jonlaing/
 
 > `readonly` `optional` **onMouseLeave**: [`EventHandler`](../type-aliases/EventHandler.md)\<`MouseEvent`\>
 
-Defined in: [packages/dom/src/Element/types.ts:210](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Element/types.ts#L210)
+Defined in: [packages/dom/src/Element/types.ts:210](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Element/types.ts#L210)
 
 ***
 
@@ -96,7 +96,7 @@ Defined in: [packages/dom/src/Element/types.ts:210](https://github.com/jonlaing/
 
 > `readonly` `optional` **onPointerDown**: [`EventHandler`](../type-aliases/EventHandler.md)\<`PointerEvent`\>
 
-Defined in: [packages/dom/src/Element/types.ts:212](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Element/types.ts#L212)
+Defined in: [packages/dom/src/Element/types.ts:212](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Element/types.ts#L212)
 
 ***
 
@@ -104,7 +104,7 @@ Defined in: [packages/dom/src/Element/types.ts:212](https://github.com/jonlaing/
 
 > `readonly` `optional` **onPointerMove**: [`EventHandler`](../type-aliases/EventHandler.md)\<`PointerEvent`\>
 
-Defined in: [packages/dom/src/Element/types.ts:214](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Element/types.ts#L214)
+Defined in: [packages/dom/src/Element/types.ts:214](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Element/types.ts#L214)
 
 ***
 
@@ -112,7 +112,7 @@ Defined in: [packages/dom/src/Element/types.ts:214](https://github.com/jonlaing/
 
 > `readonly` `optional` **onPointerUp**: [`EventHandler`](../type-aliases/EventHandler.md)\<`PointerEvent`\>
 
-Defined in: [packages/dom/src/Element/types.ts:213](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Element/types.ts#L213)
+Defined in: [packages/dom/src/Element/types.ts:213](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Element/types.ts#L213)
 
 ***
 
@@ -120,4 +120,4 @@ Defined in: [packages/dom/src/Element/types.ts:213](https://github.com/jonlaing/
 
 > `readonly` `optional` **onSubmit**: [`EventHandler`](../type-aliases/EventHandler.md)\<`SubmitEvent`\>
 
-Defined in: [packages/dom/src/Element/types.ts:204](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/dom/src/Element/types.ts#L204)
+Defined in: [packages/dom/src/Element/types.ts:204](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/dom/src/Element/types.ts#L204)

@@ -8,6 +8,6 @@
 
 > **ToastPosition** = `"top-left"` \| `"top-center"` \| `"top-right"` \| `"bottom-left"` \| `"bottom-center"` \| `"bottom-right"`
 
-Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:14](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/primitives/src/primitives/Toast/helpers.ts#L14)
+Defined in: [packages/primitives/src/primitives/Toast/helpers.ts:14](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/primitives/src/primitives/Toast/helpers.ts#L14)
 
 Available toast positions.

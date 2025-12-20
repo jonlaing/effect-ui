@@ -6,7 +6,7 @@
 
 # Interface: RendererInterface\<Node\>
 
-Defined in: [packages/core/src/Renderer.ts:9](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Renderer.ts#L9)
+Defined in: [packages/core/src/Renderer.ts:9](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Renderer.ts#L9)
 
 Abstract renderer interface for creating and manipulating a node tree.
 Implementations can target DOM, strings (SSR), terminal, native, etc.
@@ -25,7 +25,7 @@ The node type for this renderer (e.g., HTMLElement, VNode, string)
 
 > `readonly` **addEventListener**: (`node`, `event`, `handler`) => `Effect`\<`void`\>
 
-Defined in: [packages/core/src/Renderer.ts:99](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Renderer.ts#L99)
+Defined in: [packages/core/src/Renderer.ts:99](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Renderer.ts#L99)
 
 Add an event listener to a node.
 Returns a cleanup function to remove the listener.
@@ -55,7 +55,7 @@ Note: This may be a no-op for non-interactive renderers (SSR).
 
 > `readonly` **appendChild**: (`parent`, `child`) => `Effect`\<`void`\>
 
-Defined in: [packages/core/src/Renderer.ts:23](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Renderer.ts#L23)
+Defined in: [packages/core/src/Renderer.ts:23](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Renderer.ts#L23)
 
 Append a child node to a parent node.
 
@@ -79,7 +79,7 @@ Append a child node to a parent node.
 
 > `readonly` **createNode**: (`type`) => `Effect`\<`Node`\>
 
-Defined in: [packages/core/src/Renderer.ts:13](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Renderer.ts#L13)
+Defined in: [packages/core/src/Renderer.ts:13](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Renderer.ts#L13)
 
 Create an element node of the given type.
 
@@ -99,7 +99,7 @@ Create an element node of the given type.
 
 > `readonly` **createTextNode**: (`text`) => `Effect`\<`Node`\>
 
-Defined in: [packages/core/src/Renderer.ts:18](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Renderer.ts#L18)
+Defined in: [packages/core/src/Renderer.ts:18](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Renderer.ts#L18)
 
 Create a text node with the given content.
 
@@ -119,7 +119,7 @@ Create a text node with the given content.
 
 > `readonly` **getChildren**: (`node`) => `Effect`\<readonly `Node`[]\>
 
-Defined in: [packages/core/src/Renderer.ts:108](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Renderer.ts#L108)
+Defined in: [packages/core/src/Renderer.ts:108](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Renderer.ts#L108)
 
 Get children of a node (for traversal during hydration).
 
@@ -139,7 +139,7 @@ Get children of a node (for traversal during hydration).
 
 > `readonly` **insertBefore**: (`parent`, `child`, `reference`) => `Effect`\<`void`\>
 
-Defined in: [packages/core/src/Renderer.ts:42](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Renderer.ts#L42)
+Defined in: [packages/core/src/Renderer.ts:42](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Renderer.ts#L42)
 
 Insert a child before a reference node.
 
@@ -167,7 +167,7 @@ Insert a child before a reference node.
 
 > `readonly` **isHydrating**: `Effect`\<`boolean`\>
 
-Defined in: [packages/core/src/Renderer.ts:113](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Renderer.ts#L113)
+Defined in: [packages/core/src/Renderer.ts:113](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Renderer.ts#L113)
 
 Check if the renderer is in hydration mode.
 
@@ -177,7 +177,7 @@ Check if the renderer is in hydration mode.
 
 > `readonly` **removeAttribute**: (`node`, `key`) => `Effect`\<`void`\>
 
-Defined in: [packages/core/src/Renderer.ts:62](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Renderer.ts#L62)
+Defined in: [packages/core/src/Renderer.ts:62](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Renderer.ts#L62)
 
 Remove an attribute from a node.
 
@@ -201,7 +201,7 @@ Remove an attribute from a node.
 
 > `readonly` **removeChild**: (`parent`, `child`) => `Effect`\<`void`\>
 
-Defined in: [packages/core/src/Renderer.ts:28](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Renderer.ts#L28)
+Defined in: [packages/core/src/Renderer.ts:28](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Renderer.ts#L28)
 
 Remove a child node from a parent node.
 
@@ -225,7 +225,7 @@ Remove a child node from a parent node.
 
 > `readonly` **replaceChild**: (`parent`, `newChild`, `oldChild`) => `Effect`\<`void`\>
 
-Defined in: [packages/core/src/Renderer.ts:33](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Renderer.ts#L33)
+Defined in: [packages/core/src/Renderer.ts:33](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Renderer.ts#L33)
 
 Replace an old child node with a new one.
 
@@ -253,7 +253,7 @@ Replace an old child node with a new one.
 
 > `readonly` **setAttribute**: (`node`, `key`, `value`) => `Effect`\<`void`\>
 
-Defined in: [packages/core/src/Renderer.ts:53](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Renderer.ts#L53)
+Defined in: [packages/core/src/Renderer.ts:53](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Renderer.ts#L53)
 
 Set an attribute on a node.
 If value is null/undefined, the attribute should be removed.
@@ -283,7 +283,7 @@ If value is a boolean, true sets empty string, false removes.
 
 > `readonly` **setClassName**: (`node`, `className`) => `Effect`\<`void`\>
 
-Defined in: [packages/core/src/Renderer.ts:67](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Renderer.ts#L67)
+Defined in: [packages/core/src/Renderer.ts:67](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Renderer.ts#L67)
 
 Set the className of a node.
 
@@ -307,7 +307,7 @@ Set the className of a node.
 
 > `readonly` **setInnerHTML**: (`node`, `html`) => `Effect`\<`void`\>
 
-Defined in: [packages/core/src/Renderer.ts:87](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Renderer.ts#L87)
+Defined in: [packages/core/src/Renderer.ts:87](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Renderer.ts#L87)
 
 Set the innerHTML of a node.
 Note: This may not be supported by all renderers.
@@ -332,7 +332,7 @@ Note: This may not be supported by all renderers.
 
 > `readonly` **setInputValue**: (`node`, `value`) => `Effect`\<`void`\>
 
-Defined in: [packages/core/src/Renderer.ts:92](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Renderer.ts#L92)
+Defined in: [packages/core/src/Renderer.ts:92](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Renderer.ts#L92)
 
 Set the value property of an input-like node.
 
@@ -356,7 +356,7 @@ Set the value property of an input-like node.
 
 > `readonly` **setStyleProperty**: (`node`, `property`, `value`) => `Effect`\<`void`\>
 
-Defined in: [packages/core/src/Renderer.ts:72](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Renderer.ts#L72)
+Defined in: [packages/core/src/Renderer.ts:72](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Renderer.ts#L72)
 
 Set a CSS style property on a node.
 
@@ -384,7 +384,7 @@ Set a CSS style property on a node.
 
 > `readonly` **setTextContent**: (`node`, `text`) => `Effect`\<`void`\>
 
-Defined in: [packages/core/src/Renderer.ts:81](https://github.com/jonlaing/effex/blob/54ecd92e6ce2cfbeee604b727471aa18d6829626/packages/core/src/Renderer.ts#L81)
+Defined in: [packages/core/src/Renderer.ts:81](https://github.com/jonlaing/effex/blob/df5bcd687dfc005f51162b57280671d110f09f63/packages/core/src/Renderer.ts#L81)
 
 Set the text content of a node.
 
