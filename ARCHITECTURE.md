@@ -261,9 +261,3 @@ div({ className: "card" }, [
 ]);
 ```
 
-## Future Modules
-
-Planned additions (see TODOS.md for design decisions):
-
-- `router/` - TanStack Router-style with Effect Schema
-- `form/` - Form state management with validation

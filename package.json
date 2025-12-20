@@ -25,7 +25,8 @@
     "build-storybook": "storybook build -c packages/primitives/.storybook",
     "changeset": "changeset",
     "version": "changeset version",
-    "release": "pnpm build && changeset publish"
+    "release": "pnpm build && changeset publish",
+    "docs:gen": "typedoc"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.8",

@@ -21,6 +21,7 @@ A reactive UI framework built on [Effect](https://effect.website/). Effex provid
 - [Async Data Loading](#async-data-loading)
 - [Forms](#forms)
 - [Animation](#animation)
+- [Primitives](#primitives)
 - [Portal](#portal)
 - [Why No JSX?](#why-no-jsx)
 - [API Documentation](#api-documentation)
@@ -811,6 +812,59 @@ Animation features:
 - **Backward compatible**: Animation options are optional - existing code works unchanged
 - **Lifecycle hooks**: Run code before/after animations (e.g., focus an element after enter)
 
+### Primitives
+
+Effex includes a set of headless UI components inspired by [Radix UI](https://www.radix-ui.com/). These are fully accessible, unstyled components that handle complex interactions out of the box.
+
+```bash
+pnpm add @effex/primitives
+```
+
+Available components:
+
+- **Accordion** - Collapsible content sections
+- **AlertDialog** - Modal dialogs requiring user action
+- **Checkbox** - Tri-state checkbox with label
+- **Combobox** - Searchable autocomplete select
+- **ContextMenu** - Right-click context menus
+- **Dialog** - Modal dialogs
+- **DropdownMenu** - Dropdown menus with keyboard navigation
+- **NavigationMenu** - Accessible navigation with submenus
+- **Popover** - Floating content panels
+- **Progress** - Progress indicators
+- **RadioGroup** - Radio button groups
+- **ScrollArea** - Custom scrollbar styling
+- **Select** - Custom select dropdowns
+- **Slider** - Range input sliders
+- **Switch** - Toggle switches
+- **Tabs** - Tabbed content panels
+- **Toast** - Notification toasts
+- **Toggle** - Toggle buttons
+- **Tooltip** - Hover tooltips
+
+All primitives follow consistent patterns:
+
+```ts
+import { Dialog } from "@effex/primitives";
+
+Dialog.Root({ defaultOpen: false }, [
+  Dialog.Trigger({}, "Open Dialog"),
+  Dialog.Content({ class: "dialog-content" }, [
+    Dialog.Title({}, "Dialog Title"),
+    Dialog.Description({}, "Dialog description text"),
+    $.p("Your dialog content here"),
+    Dialog.Close({}, "Close"),
+  ]),
+]);
+```
+
+Features:
+- **Accessible by default** - ARIA attributes, keyboard navigation, focus management
+- **Unstyled** - Style with your own CSS or Tailwind
+- **Data attributes** - `data-state`, `data-disabled`, etc. for CSS selectors
+- **Controlled & uncontrolled** - Use with or without external state
+- **Portal rendering** - Dropdowns/popovers escape overflow:hidden
+
 ### Portal
 
 Portals render children into a different DOM node, outside the normal component hierarchy. This is useful for modals, dropdowns, and tooltips that need to escape parent `overflow: hidden` or `z-index` stacking contexts.
@@ -906,7 +960,7 @@ The function-based API is already quite clean for UI structure, and deeply neste
 
 ## API Documentation
 
-See the [docs](./docs) folder for full API documentation.
+See the [docs/api](./docs/api) folder for full API documentation.
 
 ## Acknowledgments
 

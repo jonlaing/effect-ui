@@ -1,10 +1,19 @@
 {
   "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": ["./src/index.ts"],
-  "out": "./docs",
+  "entryPoints": [
+    "./packages/core/src/index.ts",
+    "./packages/dom/src/index.ts",
+    "./packages/router/src/index.ts",
+    "./packages/form/src/index.ts",
+    "./packages/primitives/src/index.ts"
+  ],
+  "out": "./docs/api",
   "plugin": ["typedoc-plugin-markdown"],
   "excludePrivate": true,
   "excludeInternal": true,
   "hideGenerator": true,
-  "githubPages": false
+  "githubPages": false,
+  "entryPointStrategy": "expand",
+  "exclude": ["**/*.test.ts", "**/*.stories.ts", "**/stories/**"],
+  "skipErrorChecking": true
 }
