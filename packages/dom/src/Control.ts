@@ -1,4 +1,4 @@
-import { Effect, Exit, Scope, Stream } from "effect";
+import { Effect, Exit, Option, Scope, Stream } from "effect";
 import type { Readable } from "@effex/core";
 import {
   mapReadable,
@@ -24,6 +24,7 @@ import {
   runExitAnimation,
   calculateStaggerDelay,
 } from "./Animation/index.js";
+import { SSRContext } from "./SSRContext";
 
 // Re-export the MatchCase type specialized for HTMLElement
 export interface MatchCase<A, E = never, R = never> extends CoreMatchCase<
@@ -107,6 +108,35 @@ const createDefaultContainer = (
   });
 
 /**
+ * Add hydration markers to a container element during SSR.
+ */
+const addHydrationMarkers = (
+  renderer: RendererInterface<Node>,
+  container: HTMLElement,
+  type: "when" | "match" | "each",
+  id: string,
+  metadata?: Record<string, string>,
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    yield* renderer.setAttribute(container, "data-effex-id", id);
+    yield* renderer.setAttribute(container, "data-effex-type", type);
+    if (metadata) {
+      for (const [key, value] of Object.entries(metadata)) {
+        yield* renderer.setAttribute(container, `data-effex-${key}`, value);
+      }
+    }
+  });
+
+/**
+ * Add hydration key to a list item element during SSR.
+ */
+const addItemHydrationKey = (
+  renderer: RendererInterface<Node>,
+  element: HTMLElement,
+  key: string,
+): Effect.Effect<void> => renderer.setAttribute(element, "data-effex-key", key);
+
+/**
  * Conditionally render one of two elements based on a reactive boolean.
  *
  * @param condition - Reactive boolean value
@@ -145,22 +175,42 @@ const createDefaultContainer = (
 export const when = <E1 = never, R1 = never, E2 = never, R2 = never>(
   condition: Readable<boolean>,
   config: WhenConfig<E1, R1, E2, R2>,
-): Element<E1 | E2, R1 | R2> => {
-  // If no animations, use the core implementation
-  if (!config.animate) {
-    return coreWhen(condition, {
-      container: config.container,
-      onTrue: config.onTrue,
-      onFalse: config.onFalse,
-    } as CoreWhenConfig<HTMLElement, E1, R1, E2, R2>) as Element<
-      E1 | E2,
-      R1 | R2
-    >;
-  }
-
-  // With animations, use the DOM-specific implementation
-  return Effect.gen(function* () {
+): Element<E1 | E2, R1 | R2> =>
+  Effect.gen(function* () {
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
+    const ssrContext = yield* Effect.serviceOption(SSRContext);
+
+    // SSR mode: render initial value with hydration markers, no subscriptions
+    if (Option.isSome(ssrContext)) {
+      const hydrationId = yield* ssrContext.value.generateId;
+      const initialValue = yield* condition.get;
+
+      const container = config.container
+        ? yield* config.container()
+        : yield* createDefaultContainer(renderer);
+
+      yield* addHydrationMarkers(renderer, container, "when", hydrationId, {
+        condition: String(initialValue),
+      });
+
+      const element = initialValue
+        ? yield* config.onTrue()
+        : yield* config.onFalse();
+
+      yield* renderer.appendChild(container, element);
+      return container;
+    }
+
+    // Client-side: if no animations, use the core implementation
+    if (!config.animate) {
+      return yield* coreWhen(condition, {
+        container: config.container,
+        onTrue: config.onTrue,
+        onFalse: config.onFalse,
+      } as CoreWhenConfig<HTMLElement, E1, R1, E2, R2>);
+    }
+
+    // Client-side with animations: use the DOM-specific implementation
     const scope = yield* Effect.scope;
 
     const container = config.container
@@ -239,7 +289,6 @@ export const when = <E1 = never, R1 = never, E2 = never, R2 = never>(
 
     return container;
   });
-};
 
 /**
  * Pattern match on a reactive value and render the corresponding element.
@@ -277,22 +326,49 @@ export const when = <E1 = never, R1 = never, E2 = never, R2 = never>(
 export const match = <A, E = never, R = never, E2 = never, R2 = never>(
   value: Readable<A>,
   config: MatchConfig<A, E, R, E2, R2>,
-): Element<E | E2, R | R2> => {
-  // If no animations, use the core implementation
-  if (!config.animate) {
-    return coreMatch(value, {
-      container: config.container,
-      cases: config.cases as readonly CoreMatchCase<A, HTMLElement, E, R>[],
-      fallback: config.fallback,
-    } as CoreMatchConfig<A, HTMLElement, E, R, E2, R2>) as Element<
-      E | E2,
-      R | R2
-    >;
-  }
-
-  // With animations, use the DOM-specific implementation
-  return Effect.gen(function* () {
+): Element<E | E2, R | R2> =>
+  Effect.gen(function* () {
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
+    const ssrContext = yield* Effect.serviceOption(SSRContext);
+
+    // SSR mode: render initial value with hydration markers, no subscriptions
+    if (Option.isSome(ssrContext)) {
+      const hydrationId = yield* ssrContext.value.generateId;
+      const initialValue = yield* value.get;
+
+      const container = config.container
+        ? yield* config.container()
+        : yield* createDefaultContainer(renderer);
+
+      yield* addHydrationMarkers(renderer, container, "match", hydrationId, {
+        pattern: JSON.stringify(initialValue),
+      });
+
+      const matchedCase = config.cases.find((c) => c.pattern === initialValue);
+      let element: HTMLElement | undefined;
+
+      if (matchedCase) {
+        element = yield* matchedCase.render();
+      } else if (config.fallback) {
+        element = yield* config.fallback();
+      }
+
+      if (element) {
+        yield* renderer.appendChild(container, element);
+      }
+      return container;
+    }
+
+    // Client-side: if no animations, use the core implementation
+    if (!config.animate) {
+      return yield* coreMatch(value, {
+        container: config.container,
+        cases: config.cases as readonly CoreMatchCase<A, HTMLElement, E, R>[],
+        fallback: config.fallback,
+      } as CoreMatchConfig<A, HTMLElement, E, R, E2, R2>);
+    }
+
+    // Client-side with animations: use the DOM-specific implementation
     const scope = yield* Effect.scope;
 
     const container = config.container
@@ -381,7 +457,6 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
 
     return container;
   });
-};
 
 /**
  * Render a list of items with efficient updates using keys.
@@ -419,19 +494,50 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
 export const each = <A, E = never, R = never>(
   items: Readable<readonly A[]>,
   config: EachConfig<A, E, R>,
-): Element<E, R> => {
-  // If no animations, use the core implementation
-  if (!config.animate) {
-    return coreEach(items, {
-      container: config.container,
-      key: config.key,
-      render: config.render,
-    } as CoreEachConfig<A, HTMLElement, E, R>) as Element<E, R>;
-  }
-
-  // With animations, use the DOM-specific implementation
-  return Effect.gen(function* () {
+): Element<E, R> =>
+  Effect.gen(function* () {
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
+    const ssrContext = yield* Effect.serviceOption(SSRContext);
+
+    // SSR mode: render initial items with hydration markers, no subscriptions
+    if (Option.isSome(ssrContext)) {
+      const hydrationId = yield* ssrContext.value.generateId;
+      const initialItems = yield* items.get;
+
+      const container = config.container
+        ? yield* config.container()
+        : yield* createDefaultContainer(renderer);
+
+      yield* addHydrationMarkers(renderer, container, "each", hydrationId);
+
+      // Render each item with a static readable (no updates during SSR)
+      for (const item of initialItems) {
+        const key = config.key(item);
+        const staticReadable: Readable<A> = {
+          get: Effect.succeed(item),
+          changes: Stream.empty,
+          values: Stream.make(item),
+          map: <B>(f: (a: A) => B): Readable<B> => mapReadable(staticReadable, f),
+        };
+
+        const element = yield* config.render(staticReadable);
+        yield* addItemHydrationKey(renderer, element, key);
+        yield* renderer.appendChild(container, element);
+      }
+
+      return container;
+    }
+
+    // Client-side: if no animations, use the core implementation
+    if (!config.animate) {
+      return yield* coreEach(items, {
+        container: config.container,
+        key: config.key,
+        render: config.render,
+      } as CoreEachConfig<A, HTMLElement, E, R>);
+    }
+
+    // Client-side with animations: use the DOM-specific implementation
     const scope = yield* Effect.scope;
 
     const container = config.container
@@ -647,4 +753,3 @@ export const each = <A, E = never, R = never>(
 
     return container;
   });
-};

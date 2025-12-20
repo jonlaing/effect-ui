@@ -93,9 +93,7 @@ export type {
   AnimationEndResult,
   AnimationHook,
   AnimationOptions,
-  ControlAnimationOptions,
   ListAnimationOptions,
-  ListControlAnimationOptions,
   StaggerFunction,
 } from "./Animation/index.js";
 export {
