@@ -67,15 +67,20 @@ export const when = <E1 = never, R1 = never, E2 = never, R2 = never>(
 ): Element<E1 | E2, R1 | R2> => {
   // If no animations, use the core implementation
   if (!options?.animate) {
-    return coreWhen(condition, onTrue, onFalse) as Element<E1 | E2, R1 | R2>;
+    return coreWhen(condition, onTrue, onFalse, {
+      as: options?.as,
+    }) as Element<E1 | E2, R1 | R2>;
   }
 
   // With animations, use the DOM-specific implementation
   return Effect.gen(function* () {
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
     const scope = yield* Effect.scope;
-    const container = yield* renderer.createNode("div");
-    yield* renderer.setStyleProperty(container, "display", "contents");
+    const containerTag = options?.as ?? "div";
+    const container = yield* renderer.createNode(containerTag);
+    if (!options?.as) {
+      yield* renderer.setStyleProperty(container, "display", "contents");
+    }
 
     let currentElement: HTMLElement | null = null;
     let currentValue: boolean | null = null;
@@ -196,6 +201,7 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
       value,
       cases as readonly CoreMatchCase<A, HTMLElement, E, R>[],
       fallback,
+      { as: options?.as },
     ) as Element<E | E2, R | R2>;
   }
 
@@ -203,8 +209,11 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
   return Effect.gen(function* () {
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
     const scope = yield* Effect.scope;
-    const container = yield* renderer.createNode("div");
-    yield* renderer.setStyleProperty(container, "display", "contents");
+    const containerTag = options?.as ?? "div";
+    const container = yield* renderer.createNode(containerTag);
+    if (!options?.as) {
+      yield* renderer.setStyleProperty(container, "display", "contents");
+    }
 
     let currentElement: HTMLElement | null = null;
     let currentPattern: A | null = null;
@@ -295,17 +304,19 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
  * @param items - Reactive array of items
  * @param keyFn - Function to extract a unique key from each item
  * @param render - Function to render each item (receives a Readable for the item)
- * @param options - Optional animation configuration
+ * @param options - Optional configuration including container tag and animations
  *
  * @example
  * ```ts
  * interface Todo { id: string; text: string }
  * const todos = yield* Signal.make<Todo[]>([])
  *
+ * // Use `as: "ul"` to render a proper HTML list
  * each(
  *   todos,
  *   (todo) => todo.id,
- *   (todo) => li([todo.map(t => t.text)])
+ *   (todo) => $.li(todo.map(t => t.text)),
+ *   { as: "ul" }
  * )
  * ```
  *
@@ -317,6 +328,7 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
  *   (item) => item.id,
  *   (item) => ListItem(item),
  *   {
+ *     as: "ul",
  *     animate: {
  *       enter: "slide-in",
  *       exit: "slide-out",
@@ -334,15 +346,18 @@ export const each = <A, E = never, R = never>(
 ): Element<E, R> => {
   // If no animations, use the core implementation
   if (!options?.animate) {
-    return coreEach(items, keyFn, render) as Element<E, R>;
+    return coreEach(items, keyFn, render, { as: options?.as }) as Element<E, R>;
   }
 
   // With animations, use the DOM-specific implementation
   return Effect.gen(function* () {
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
     const scope = yield* Effect.scope;
-    const container = yield* renderer.createNode("div");
-    yield* renderer.setStyleProperty(container, "display", "contents");
+    const containerTag = options?.as ?? "div";
+    const container = yield* renderer.createNode(containerTag);
+    if (!options?.as) {
+      yield* renderer.setStyleProperty(container, "display", "contents");
+    }
     const animate = options.animate;
 
     const itemMap = new Map<

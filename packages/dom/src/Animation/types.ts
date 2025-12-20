@@ -107,9 +107,11 @@ export interface ListAnimationOptions extends AnimationOptions {
 }
 
 /**
- * Options passed to control flow functions (when, match, each)
+ * Options passed to control flow functions (when, match)
  */
 export interface ControlAnimationOptions {
+  /** The HTML tag to use for the container element (default: "div") */
+  as?: keyof HTMLElementTagNameMap;
   animate?: AnimationOptions;
 }
 
@@ -117,5 +119,7 @@ export interface ControlAnimationOptions {
  * Options passed to `each` control flow function
  */
 export interface ListControlAnimationOptions {
+  /** The HTML tag to use for the container element (default: "div") */
+  as?: keyof HTMLElementTagNameMap;
   animate?: ListAnimationOptions;
 }

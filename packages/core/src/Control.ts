@@ -5,10 +5,35 @@ import { RendererContext, type Renderer } from "./Renderer";
 import type { Element } from "./Element";
 
 /**
+ * Options for the `when` control flow.
+ */
+export interface WhenOptions {
+  /** The HTML tag to use for the container element (default: "div") */
+  readonly as?: string;
+}
+
+/**
+ * Options for the `match` control flow.
+ */
+export interface MatchOptions {
+  /** The HTML tag to use for the container element (default: "div") */
+  readonly as?: string;
+}
+
+/**
+ * Options for the `each` control flow.
+ */
+export interface EachOptions {
+  /** The HTML tag to use for the container element (default: "div") */
+  readonly as?: string;
+}
+
+/**
  * Conditionally render one of two elements based on a reactive boolean.
  * @param condition - Reactive boolean value
  * @param onTrue - Element to render when true
  * @param onFalse - Element to render when false
+ * @param options - Optional configuration
  *
  * @example
  * ```ts
@@ -19,17 +44,32 @@ import type { Element } from "./Element";
  *   () => div(["Please log in"])
  * )
  * ```
+ *
+ * @example
+ * ```ts
+ * // With custom container tag for valid HTML in tables
+ * when(
+ *   hasData,
+ *   () => tr(td("Data row")),
+ *   () => tr(td("No data")),
+ *   { as: "tbody" }
+ * )
+ * ```
  */
 export const when = <N, E1 = never, R1 = never, E2 = never, R2 = never>(
   condition: Readable<boolean>,
   onTrue: () => Element<N, E1, R1>,
   onFalse: () => Element<N, E2, R2>,
+  options?: WhenOptions,
 ): Element<N, E1 | E2, R1 | R2> =>
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as Renderer<N>;
     const scope = yield* Effect.scope;
-    const container = yield* renderer.createNode("div");
-    yield* renderer.setStyleProperty(container, "display", "contents");
+    const containerTag = options?.as ?? "div";
+    const container = yield* renderer.createNode(containerTag);
+    if (!options?.as) {
+      yield* renderer.setStyleProperty(container, "display", "contents");
+    }
 
     let currentElement: N | null = null;
     let currentValue: boolean | null = null;
@@ -106,6 +146,7 @@ export interface MatchCase<A, N, E = never, R = never> {
  * @param value - Reactive value to match against
  * @param cases - Array of pattern-render pairs
  * @param fallback - Optional fallback if no pattern matches
+ * @param options - Optional configuration
  *
  * @example
  * ```ts
@@ -123,12 +164,16 @@ export const match = <A, N, E = never, R = never, E2 = never, R2 = never>(
   value: Readable<A>,
   cases: readonly MatchCase<A, N, E, R>[],
   fallback?: () => Element<N, E2, R2>,
+  options?: MatchOptions,
 ): Element<N, E | E2, R | R2> =>
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as Renderer<N>;
     const scope = yield* Effect.scope;
-    const container = yield* renderer.createNode("div");
-    yield* renderer.setStyleProperty(container, "display", "contents");
+    const containerTag = options?.as ?? "div";
+    const container = yield* renderer.createNode(containerTag);
+    if (!options?.as) {
+      yield* renderer.setStyleProperty(container, "display", "contents");
+    }
 
     let currentElement: N | null = null;
     let currentPattern: A | null = null;
@@ -206,16 +251,19 @@ export const match = <A, N, E = never, R = never, E2 = never, R2 = never>(
  * @param items - Reactive array of items
  * @param keyFn - Function to extract a unique key from each item
  * @param render - Function to render each item (receives a Readable for the item)
+ * @param options - Optional configuration including the container tag
  *
  * @example
  * ```ts
  * interface Todo { id: string; text: string }
  * const todos = yield* Signal.make<Todo[]>([])
  *
+ * // Use `as: "ul"` to render a proper HTML list
  * each(
  *   todos,
  *   (todo) => todo.id,
- *   (todo) => li([todo.map(t => t.text)])
+ *   (todo) => li([todo.map(t => t.text)]),
+ *   { as: "ul" }
  * )
  * ```
  */
@@ -223,12 +271,16 @@ export const each = <A, N, E = never, R = never>(
   items: Readable<readonly A[]>,
   keyFn: (item: A) => string,
   render: (item: Readable<A>) => Element<N, E, R>,
+  options?: EachOptions,
 ): Element<N, E, R> =>
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as Renderer<N>;
     const scope = yield* Effect.scope;
-    const container = yield* renderer.createNode("div");
-    yield* renderer.setStyleProperty(container, "display", "contents");
+    const containerTag = options?.as ?? "div";
+    const container = yield* renderer.createNode(containerTag);
+    if (!options?.as) {
+      yield* renderer.setStyleProperty(container, "display", "contents");
+    }
 
     const itemMap = new Map<
       string,

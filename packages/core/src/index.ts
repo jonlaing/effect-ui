@@ -44,7 +44,12 @@ export { Renderer, RendererContext } from "./Renderer";
 export type { Element, Child } from "./Element";
 
 // Control flow
-export type { MatchCase } from "./Control";
+export type {
+  MatchCase,
+  WhenOptions,
+  MatchOptions,
+  EachOptions,
+} from "./Control";
 export { when, match, each } from "./Control";
 
 // Boundary
