@@ -517,7 +517,8 @@ export const each = <A, E = never, R = never>(
           get: Effect.succeed(item),
           changes: Stream.empty,
           values: Stream.make(item),
-          map: <B>(f: (a: A) => B): Readable<B> => mapReadable(staticReadable, f),
+          map: <B>(f: (a: A) => B): Readable<B> =>
+            mapReadable(staticReadable, f),
         };
 
         const element = yield* config.render(staticReadable);

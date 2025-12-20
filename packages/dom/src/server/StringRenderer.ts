@@ -1,6 +1,12 @@
 import { Effect } from "effect";
 import type { Renderer } from "@effex/core";
-import { vElement, vText, type VNode, type VElement, type VText } from "./VNode";
+import {
+  vElement,
+  vText,
+  type VNode,
+  type VElement,
+  type VText,
+} from "./VNode";
 
 /**
  * Renderer implementation that produces VNodes for SSR.

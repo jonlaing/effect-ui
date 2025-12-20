@@ -4,6 +4,7 @@ import { renderToString } from "./index";
 import { Signal } from "@effex/core";
 import { div, span, ul, li } from "../Element";
 import { when, match, each } from "../Control";
+import { Boundary } from "../Boundary";
 
 describe("SSR", () => {
   describe("renderToString", () => {
@@ -208,6 +209,49 @@ describe("SSR", () => {
       );
 
       expect(html).toContain('class="active"');
+    });
+  });
+
+  describe("suspense boundaries in SSR", () => {
+    it("should render fallback with hydration markers", async () => {
+      const html = await Effect.runPromise(
+        renderToString(
+          Boundary.suspense({
+            render: () =>
+              Effect.gen(function* () {
+                yield* Effect.sleep(100);
+                return yield* div("Loaded content");
+              }),
+            fallback: () => div("Loading..."),
+          }),
+        ),
+      );
+
+      expect(html).toContain("data-effex-id=");
+      expect(html).toContain('data-effex-type="suspense"');
+      expect(html).toContain('data-effex-suspense-state="loading"');
+      expect(html).toContain("Loading...");
+      // Should NOT contain the async content during SSR
+      expect(html).not.toContain("Loaded content");
+    });
+
+    it("should render fallback with catch handler", async () => {
+      const html = await Effect.runPromise(
+        renderToString(
+          Boundary.suspense({
+            render: () =>
+              Effect.gen(function* () {
+                yield* Effect.sleep(100);
+                return yield* div("Success");
+              }),
+            fallback: () => div("Loading..."),
+            catch: () => div("Error occurred"),
+          }),
+        ),
+      );
+
+      expect(html).toContain('data-effex-type="suspense"');
+      expect(html).toContain("Loading...");
     });
   });
 });

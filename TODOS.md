@@ -56,6 +56,26 @@
 ## Future Considerations
 
 - [ ] **SSR & Multi-Target Rendering** - Server-side rendering and beyond (see Design Decisions)
+  - [x] Basic SSR implementation (`@effex/dom/server` with `renderToString`)
+  - [x] Basic hydration (`@effex/dom/hydrate` with `hydrate`)
+  - [x] Hydration markers on control flow (`data-effex-*` attributes)
+  - [x] Suspense SSR (renders fallback with `data-effex-suspense-state`)
+  - [ ] **Suspense hydration** - Client needs to re-trigger async content after hydration
+    - Currently SSR renders fallback, but hydration doesn't re-run the async `render` function
+    - Options: (1) block SSR and wait, (2) streaming SSR, (3) client fetches on hydration (current, causes flash)
+  - [ ] **Data serialization for hydration** - Avoid double-fetching on client
+    - Server should serialize fetched data into `<script>window.__EFFEX_DATA__ = {...}</script>`
+    - Services could check this cache before making API calls
+    - Needs: SSR to collect resolved data, mechanism to inject into HTML, client cache layer
+  - [ ] **Router SSR refinement** - Router works but could be cleaner
+    - Consider SSR-specific router that skips `popstate` listeners entirely
+    - Document the `initialPath` option pattern for server usage
+  - [ ] **Streaming SSR** - `renderToStream` for progressive HTML delivery
+    - Suspense boundaries could flush placeholders early, stream resolved content later
+    - Would require chunked transfer encoding support
+  - [ ] **Partial/Islands hydration** - Only hydrate interactive parts
+    - Static content could skip hydration entirely
+    - Would need way to mark components as static vs interactive
 
 - [ ] **DevTools** - Browser extension or integration for debugging reactive state
 

@@ -1,6 +1,13 @@
-import type { Duration, Effect, Scope } from "effect";
+import { Effect, Option } from "effect";
+import type { Duration, Scope } from "effect";
 import type { Element } from "./Element";
-import { suspense as coreSuspense, error as coreError } from "@effex/core";
+import {
+  suspense as coreSuspense,
+  error as coreError,
+  RendererContext,
+  type RendererInterface,
+} from "@effex/core";
+import { SSRContext } from "./SSRContext";
 
 /**
  * Options for the suspense boundary (DOM-specialized version).
@@ -91,11 +98,38 @@ export const suspense: {
   ): Element<EF, R1>;
 } = <E, R1 = never, EF = never>(
   options: SuspenseOptions<E, R1, EF>,
-): Element<EF, R1> => {
-  // Cast to any to bypass the strict type checking on overloads
-  // The runtime behavior is correct because coreSuspense handles all cases
-  return (coreSuspense as any)(options) as Element<EF, R1>;
-};
+): Element<EF, R1> =>
+  Effect.gen(function* () {
+    const ssrContext = yield* Effect.serviceOption(SSRContext);
+
+    // SSR mode: render fallback with hydration markers
+    if (Option.isSome(ssrContext)) {
+      const renderer = (yield* RendererContext) as RendererInterface<Node>;
+      const hydrationId = yield* ssrContext.value.generateId;
+
+      // Create container with hydration markers
+      const container = yield* renderer.createNode("div");
+      yield* renderer.setStyleProperty(container, "display", "contents");
+      yield* renderer.setAttribute(container, "data-effex-id", hydrationId);
+      yield* renderer.setAttribute(container, "data-effex-type", "suspense");
+      yield* renderer.setAttribute(
+        container,
+        "data-effex-suspense-state",
+        "loading",
+      );
+
+      // Render the fallback
+      const fallback = yield* options.fallback();
+      yield* renderer.appendChild(container, fallback);
+
+      return container as HTMLElement;
+    }
+
+    // Client-side: use the core implementation
+    // Cast to any to bypass the strict type checking on overloads
+    // The runtime behavior is correct because coreSuspense handles all cases
+    return yield* (coreSuspense as any)(options);
+  }) as Element<EF, R1>;
 
 /**
  * Error boundary that catches errors from a render function and displays a fallback element.

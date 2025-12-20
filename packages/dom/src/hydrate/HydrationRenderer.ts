@@ -199,8 +199,7 @@ export const createHydrationRenderer = (
         (node as HTMLElement).addEventListener(event, handler);
       }),
 
-    getChildren: (node: Node) =>
-      Effect.sync(() => Array.from(node.childNodes)),
+    getChildren: (node: Node) => Effect.sync(() => Array.from(node.childNodes)),
 
     isHydrating: Effect.succeed(true),
   };
