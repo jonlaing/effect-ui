@@ -282,38 +282,41 @@ const Viewport = component(
 
       // Default toast rendering
       const toastElements = [
-        each(ctx.toasts.map((toasts) => toasts.slice(-ctx.maxVisible)), {
-          key: (toast: ToastData) => toast.id,
-          render: (toastReadable: Readable<ToastData>) =>
-            Effect.gen(function* () {
-              const toast = yield* toastReadable.get;
-              const actionButton = toast.action
-                ? [Action({}, toast.action.label)]
-                : [];
+        each(
+          ctx.toasts.map((toasts) => toasts.slice(-ctx.maxVisible)),
+          {
+            key: (toast: ToastData) => toast.id,
+            render: (toastReadable: Readable<ToastData>) =>
+              Effect.gen(function* () {
+                const toast = yield* toastReadable.get;
+                const actionButton = toast.action
+                  ? [Action({}, toast.action.label)]
+                  : [];
 
-              const itemCtx: ToastItemContext = {
-                toast,
-                dismiss: () => ctx.dismiss(toast.id),
-                pauseTimer: () => {},
-                resumeTimer: () => {},
-              };
+                const itemCtx: ToastItemContext = {
+                  toast,
+                  dismiss: () => ctx.dismiss(toast.id),
+                  pauseTimer: () => {},
+                  resumeTimer: () => {},
+                };
 
-              return yield* $.div(
-                { style: { display: "content" } },
-                provide(
-                  ToastItemCtx,
-                  itemCtx,
-                  Root({ toast }, [
-                    Title({}, toast.title ?? ""),
-                    Description({}, toast.description ?? ""),
-                    ...actionButton,
-                    Close({}, "\u00d7"),
-                  ]),
-                ),
-              );
-            }),
-          animate: { exit: exitClass },
-        }),
+                return yield* $.div(
+                  { style: { display: "content" } },
+                  provide(
+                    ToastItemCtx,
+                    itemCtx,
+                    Root({ toast }, [
+                      Title({}, toast.title ?? ""),
+                      Description({}, toast.description ?? ""),
+                      ...actionButton,
+                      Close({}, "\u00d7"),
+                    ]),
+                  ),
+                );
+              }),
+            animate: { exit: exitClass },
+          },
+        ),
       ];
 
       return yield* Portal({}, () =>

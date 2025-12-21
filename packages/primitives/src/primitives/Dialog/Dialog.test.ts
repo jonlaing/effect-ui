@@ -5,7 +5,9 @@ import { Dialog } from "./Dialog";
 
 const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
   Effect.runPromise(
-    Effect.scoped(effect).pipe(Effect.provide(DOMRendererLive)) as Effect.Effect<A, never, never>,
+    Effect.scoped(effect).pipe(
+      Effect.provide(DOMRendererLive),
+    ) as Effect.Effect<A, never, never>,
   );
 
 describe("Dialog", () => {

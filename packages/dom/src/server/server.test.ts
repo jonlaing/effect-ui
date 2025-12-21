@@ -180,7 +180,9 @@ describe("SSR", () => {
       const html = await Effect.runPromise(
         Effect.scoped(
           Effect.gen(function* () {
-            const items = yield* Signal.make<{ id: string; name: string }[]>([]);
+            const items = yield* Signal.make<{ id: string; name: string }[]>(
+              [],
+            );
             return yield* renderToString(
               each(items, {
                 key: (item) => item.id,
