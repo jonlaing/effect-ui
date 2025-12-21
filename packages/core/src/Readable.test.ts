@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Effect, Stream, Chunk, Scope } from "effect";
+import { Effect, Stream, Chunk } from "effect";
 import * as Readable from "./Readable";
 import * as Signal from "./Signal";
 

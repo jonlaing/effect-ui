@@ -3,9 +3,9 @@ import { Effect } from "effect";
 import { Signal, DOMRendererLive } from "@effex/dom";
 import { Combobox } from "./Combobox";
 
-const runTest = <A>(effect: Effect.Effect<A, never, any>) =>
+const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
   Effect.runPromise(
-    Effect.scoped(effect).pipe(Effect.provide(DOMRendererLive)),
+    Effect.scoped(effect).pipe(Effect.provide(DOMRendererLive)) as Effect.Effect<A, never, never>,
   );
 
 describe("Combobox", () => {
@@ -166,7 +166,7 @@ describe("Combobox", () => {
     it("should render with combobox-content data attribute when open", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({ defaultOpen: true }, [
+          yield* Combobox.Root({ defaultOpen: true }, [
             Combobox.Input({}),
             Combobox.Content({}, []),
           ]);
@@ -181,7 +181,7 @@ describe("Combobox", () => {
     it("should have role=listbox", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({ defaultOpen: true }, [
+          yield* Combobox.Root({ defaultOpen: true }, [
             Combobox.Input({}),
             Combobox.Content({}, []),
           ]);
@@ -196,7 +196,7 @@ describe("Combobox", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({ defaultOpen: true }, [
+          yield* Combobox.Root({ defaultOpen: true }, [
             Combobox.Input({}),
             Combobox.Content({ class: "my-content" }, []),
           ]);
@@ -211,7 +211,7 @@ describe("Combobox", () => {
     it("should have data-state=open when open", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({ defaultOpen: true }, [
+          yield* Combobox.Root({ defaultOpen: true }, [
             Combobox.Input({}),
             Combobox.Content({}, []),
           ]);
@@ -228,7 +228,7 @@ describe("Combobox", () => {
     it("should render with combobox-item data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({ defaultOpen: true }, [
+          yield* Combobox.Root({ defaultOpen: true }, [
             Combobox.Input({}),
             Combobox.Content({}, [
               Combobox.Item({ value: "apple" }, [
@@ -247,7 +247,7 @@ describe("Combobox", () => {
     it("should have role=option", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({ defaultOpen: true }, [
+          yield* Combobox.Root({ defaultOpen: true }, [
             Combobox.Input({}),
             Combobox.Content({}, [
               Combobox.Item({ value: "apple" }, [
@@ -266,7 +266,7 @@ describe("Combobox", () => {
     it("should have data-value attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({ defaultOpen: true }, [
+          yield* Combobox.Root({ defaultOpen: true }, [
             Combobox.Input({}),
             Combobox.Content({}, [
               Combobox.Item({ value: "apple" }, [
@@ -285,7 +285,7 @@ describe("Combobox", () => {
     it("should have data-state=unchecked by default", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({ defaultOpen: true }, [
+          yield* Combobox.Root({ defaultOpen: true }, [
             Combobox.Input({}),
             Combobox.Content({}, [
               Combobox.Item({ value: "apple" }, [
@@ -304,7 +304,7 @@ describe("Combobox", () => {
     it("should have data-state=checked when selected", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root(
+          yield* Combobox.Root(
             {
               defaultOpen: true,
               defaultValue: "apple",
@@ -330,7 +330,7 @@ describe("Combobox", () => {
     it("should have data-disabled when disabled", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({ defaultOpen: true }, [
+          yield* Combobox.Root({ defaultOpen: true }, [
             Combobox.Input({}),
             Combobox.Content({}, [
               Combobox.Item({ value: "apple", disabled: true }, [
@@ -349,7 +349,7 @@ describe("Combobox", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({ defaultOpen: true }, [
+          yield* Combobox.Root({ defaultOpen: true }, [
             Combobox.Input({}),
             Combobox.Content({}, [
               Combobox.Item({ value: "apple", class: "my-item" }, [
@@ -370,7 +370,7 @@ describe("Combobox", () => {
     it("should render with combobox-item-text data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({ defaultOpen: true }, [
+          yield* Combobox.Root({ defaultOpen: true }, [
             Combobox.Input({}),
             Combobox.Content({}, [
               Combobox.Item({ value: "apple" }, [
@@ -390,7 +390,7 @@ describe("Combobox", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({ defaultOpen: true }, [
+          yield* Combobox.Root({ defaultOpen: true }, [
             Combobox.Input({}),
             Combobox.Content({}, [
               Combobox.Item({ value: "apple" }, [
@@ -411,7 +411,7 @@ describe("Combobox", () => {
     it("should render with combobox-group data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({ defaultOpen: true }, [
+          yield* Combobox.Root({ defaultOpen: true }, [
             Combobox.Input({}),
             Combobox.Content({}, [Combobox.Group({}, [])]),
           ]);
@@ -426,7 +426,7 @@ describe("Combobox", () => {
     it("should have role=group", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({ defaultOpen: true }, [
+          yield* Combobox.Root({ defaultOpen: true }, [
             Combobox.Input({}),
             Combobox.Content({}, [Combobox.Group({}, [])]),
           ]);
@@ -441,7 +441,7 @@ describe("Combobox", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({ defaultOpen: true }, [
+          yield* Combobox.Root({ defaultOpen: true }, [
             Combobox.Input({}),
             Combobox.Content({}, [Combobox.Group({ class: "my-group" }, [])]),
           ]);
@@ -458,7 +458,7 @@ describe("Combobox", () => {
     it("should render with combobox-label data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({ defaultOpen: true }, [
+          yield* Combobox.Root({ defaultOpen: true }, [
             Combobox.Input({}),
             Combobox.Content({}, [Combobox.Label({}, "Category")]),
           ]);
@@ -474,7 +474,7 @@ describe("Combobox", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({ defaultOpen: true }, [
+          yield* Combobox.Root({ defaultOpen: true }, [
             Combobox.Input({}),
             Combobox.Content({}, [
               Combobox.Label({ class: "my-label" }, "Label"),
@@ -535,7 +535,7 @@ describe("Combobox", () => {
         Effect.gen(function* () {
           const changes: string[] = [];
 
-          const el = yield* Combobox.Root(
+          yield* Combobox.Root(
             {
               defaultOpen: true,
               onValueChange: (val) =>
@@ -603,7 +603,7 @@ describe("Combobox", () => {
         Effect.gen(function* () {
           const isLoading = yield* Signal.make(true);
 
-          const el = yield* Combobox.Root({ defaultOpen: true, isLoading }, [
+          yield* Combobox.Root({ defaultOpen: true, isLoading }, [
             Combobox.Input({}),
             Combobox.Content({}, [Combobox.Loading({}, "Loading...")]),
           ]);
@@ -621,7 +621,7 @@ describe("Combobox", () => {
         Effect.gen(function* () {
           const isLoading = yield* Signal.make(true);
 
-          const el = yield* Combobox.Root({ defaultOpen: true, isLoading }, [
+          yield* Combobox.Root({ defaultOpen: true, isLoading }, [
             Combobox.Input({}),
             Combobox.Content({}, [
               Combobox.Loading({ class: "my-loading" }, "Loading..."),

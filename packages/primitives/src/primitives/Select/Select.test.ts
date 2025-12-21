@@ -3,9 +3,9 @@ import { Effect } from "effect";
 import { Signal, DOMRendererLive } from "@effex/dom";
 import { Select } from "./Select";
 
-const runTest = <A>(effect: Effect.Effect<A, never, any>) =>
+const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
   Effect.runPromise(
-    Effect.scoped(effect).pipe(Effect.provide(DOMRendererLive)),
+    Effect.scoped(effect).pipe(Effect.provide(DOMRendererLive)) as Effect.Effect<A, never, never>,
   );
 
 describe("Select", () => {
@@ -216,7 +216,7 @@ describe("Select", () => {
     it("should render with select-item data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ defaultOpen: true }, [
+          yield* Select.Root({ defaultOpen: true }, [
             Select.Trigger({}, []),
             Select.Content({}, [
               Select.Item({ value: "apple" }, [Select.ItemText({}, "Apple")]),
@@ -233,7 +233,7 @@ describe("Select", () => {
     it("should have role=option", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ defaultOpen: true }, [
+          yield* Select.Root({ defaultOpen: true }, [
             Select.Trigger({}, []),
             Select.Content({}, [
               Select.Item({ value: "apple" }, [Select.ItemText({}, "Apple")]),
@@ -250,7 +250,7 @@ describe("Select", () => {
     it("should have data-value attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ defaultOpen: true }, [
+          yield* Select.Root({ defaultOpen: true }, [
             Select.Trigger({}, []),
             Select.Content({}, [
               Select.Item({ value: "apple" }, [Select.ItemText({}, "Apple")]),
@@ -267,7 +267,7 @@ describe("Select", () => {
     it("should have data-state=unchecked by default", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ defaultOpen: true }, [
+          yield* Select.Root({ defaultOpen: true }, [
             Select.Trigger({}, []),
             Select.Content({}, [
               Select.Item({ value: "apple" }, [Select.ItemText({}, "Apple")]),
@@ -284,7 +284,7 @@ describe("Select", () => {
     it("should have data-state=checked when selected", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root(
+          yield* Select.Root(
             {
               defaultOpen: true,
               defaultValue: "apple",
@@ -308,7 +308,7 @@ describe("Select", () => {
     it("should have data-disabled when disabled", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ defaultOpen: true }, [
+          yield* Select.Root({ defaultOpen: true }, [
             Select.Trigger({}, []),
             Select.Content({}, [
               Select.Item({ value: "apple", disabled: true }, [
@@ -327,7 +327,7 @@ describe("Select", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ defaultOpen: true }, [
+          yield* Select.Root({ defaultOpen: true }, [
             Select.Trigger({}, []),
             Select.Content({}, [
               Select.Item({ value: "apple", class: "my-item" }, [
@@ -348,7 +348,7 @@ describe("Select", () => {
     it("should render with select-item-text data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ defaultOpen: true }, [
+          yield* Select.Root({ defaultOpen: true }, [
             Select.Trigger({}, []),
             Select.Content({}, [
               Select.Item({ value: "apple" }, [Select.ItemText({}, "Apple")]),
@@ -366,7 +366,7 @@ describe("Select", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ defaultOpen: true }, [
+          yield* Select.Root({ defaultOpen: true }, [
             Select.Trigger({}, []),
             Select.Content({}, [
               Select.Item({ value: "apple" }, [
@@ -387,7 +387,7 @@ describe("Select", () => {
     it("should render with select-content data attribute when open", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ defaultOpen: true }, [
+          yield* Select.Root({ defaultOpen: true }, [
             Select.Trigger({}, []),
             Select.Content({}, []),
           ]);
@@ -402,7 +402,7 @@ describe("Select", () => {
     it("should have role=listbox", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ defaultOpen: true }, [
+          yield* Select.Root({ defaultOpen: true }, [
             Select.Trigger({}, []),
             Select.Content({}, []),
           ]);
@@ -417,7 +417,7 @@ describe("Select", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ defaultOpen: true }, [
+          yield* Select.Root({ defaultOpen: true }, [
             Select.Trigger({}, []),
             Select.Content({ class: "my-content" }, []),
           ]);
@@ -434,7 +434,7 @@ describe("Select", () => {
     it("should render with select-group data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ defaultOpen: true }, [
+          yield* Select.Root({ defaultOpen: true }, [
             Select.Trigger({}, []),
             Select.Content({}, [Select.Group({}, [])]),
           ]);
@@ -449,7 +449,7 @@ describe("Select", () => {
     it("should have role=group", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ defaultOpen: true }, [
+          yield* Select.Root({ defaultOpen: true }, [
             Select.Trigger({}, []),
             Select.Content({}, [Select.Group({}, [])]),
           ]);
@@ -464,7 +464,7 @@ describe("Select", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ defaultOpen: true }, [
+          yield* Select.Root({ defaultOpen: true }, [
             Select.Trigger({}, []),
             Select.Content({}, [Select.Group({ class: "my-group" }, [])]),
           ]);
@@ -481,7 +481,7 @@ describe("Select", () => {
     it("should render with select-label data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ defaultOpen: true }, [
+          yield* Select.Root({ defaultOpen: true }, [
             Select.Trigger({}, []),
             Select.Content({}, [Select.Label({}, "Category")]),
           ]);
@@ -497,7 +497,7 @@ describe("Select", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ defaultOpen: true }, [
+          yield* Select.Root({ defaultOpen: true }, [
             Select.Trigger({}, []),
             Select.Content({}, [Select.Label({ class: "my-label" }, "Label")]),
           ]);
@@ -514,7 +514,7 @@ describe("Select", () => {
     it("should render with select-separator data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ defaultOpen: true }, [
+          yield* Select.Root({ defaultOpen: true }, [
             Select.Trigger({}, []),
             Select.Content({}, [Select.Separator({})]),
           ]);
@@ -529,7 +529,7 @@ describe("Select", () => {
     it("should have role=separator", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ defaultOpen: true }, [
+          yield* Select.Root({ defaultOpen: true }, [
             Select.Trigger({}, []),
             Select.Content({}, [Select.Separator({})]),
           ]);
@@ -544,7 +544,7 @@ describe("Select", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ defaultOpen: true }, [
+          yield* Select.Root({ defaultOpen: true }, [
             Select.Trigger({}, []),
             Select.Content({}, [Select.Separator({ class: "my-separator" })]),
           ]);
@@ -607,7 +607,7 @@ describe("Select", () => {
         Effect.gen(function* () {
           const changes: string[] = [];
 
-          const el = yield* Select.Root(
+          yield* Select.Root(
             {
               defaultOpen: true,
               onValueChange: (val) =>

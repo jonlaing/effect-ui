@@ -24,9 +24,9 @@ export interface PopoverContext {
   /** Toggle the popover open state */
   readonly toggle: () => Effect.Effect<void>;
   /** Reference to the trigger element */
-  readonly triggerRef: Ref<HTMLElement>;
+  readonly triggerRef: Ref<HTMLButtonElement>;
   /** Reference to an optional anchor element */
-  readonly anchorRef: Ref<HTMLElement>;
+  readonly anchorRef: Ref<HTMLDivElement>;
   /** Unique ID for the popover content */
   readonly contentId: string;
 }
@@ -119,8 +119,8 @@ const Root = (
       ? props.open
       : yield* Signal.make(props.defaultOpen ?? false);
 
-    const triggerRef = yield* Ref.make<HTMLElement>();
-    const anchorRef = yield* Ref.make<HTMLElement>();
+    const triggerRef = yield* Ref.make<HTMLButtonElement>();
+    const anchorRef = yield* Ref.make<HTMLDivElement>();
     const contentId = yield* UniqueId.make("popover-content");
 
     const setOpenState = (newValue: boolean) =>

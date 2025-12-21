@@ -282,10 +282,9 @@ const Viewport = component(
 
       // Default toast rendering
       const toastElements = [
-        each(
-          ctx.toasts.map((toasts) => toasts.slice(-ctx.maxVisible)),
-          (toast) => toast.id,
-          (toastReadable) =>
+        each(ctx.toasts.map((toasts) => toasts.slice(-ctx.maxVisible)), {
+          key: (toast: ToastData) => toast.id,
+          render: (toastReadable: Readable<ToastData>) =>
             Effect.gen(function* () {
               const toast = yield* toastReadable.get;
               const actionButton = toast.action
@@ -313,8 +312,8 @@ const Viewport = component(
                 ),
               );
             }),
-          { animate: { exit: exitClass } },
-        ),
+          animate: { exit: exitClass },
+        }),
       ];
 
       return yield* Portal({}, () =>

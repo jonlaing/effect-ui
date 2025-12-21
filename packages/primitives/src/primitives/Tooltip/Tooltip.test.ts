@@ -4,9 +4,9 @@ import { Signal, DOMRendererLive } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { Tooltip } from "./Tooltip";
 
-const runTest = <A>(effect: Effect.Effect<A, never, any>) =>
+const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
   Effect.runPromise(
-    Effect.scoped(effect).pipe(Effect.provide(DOMRendererLive)),
+    Effect.scoped(effect).pipe(Effect.provide(DOMRendererLive)) as Effect.Effect<A, never, never>,
   );
 
 describe("Tooltip", () => {

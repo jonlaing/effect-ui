@@ -108,7 +108,7 @@
   - [x] RouterContext and typed router layers
   - [x] Link component
   - [ ] V2: Nested routes, hash routing, route guards, query param schemas
-  - [ ] V3: File-based routing (Vite plugin, `src/routes/` convention, auto-generated types)
+  - [ ] V3: File-based routing (Vite plugin) - see detailed plan below
 
 - [ ] **Documentation site** - Full documentation with examples (TypeDoc is set up)
 
@@ -120,7 +120,7 @@
   - [ ] Control flow internals (`when`, `match`, `each`)
   - [ ] How headless primitives use Context for part communication
 
-- [ ] **Rename project directory** - Rename /Users/jon/projects/effect-ui to /Users/jon/projects/effex
+- [x] **Rename project directory** - Rename /Users/jon/projects/effect-ui to /Users/jon/projects/effex
 
 - [ ] **Full-fledged demo application** - Comprehensive showcase app demonstrating all Effex features together (may be a separate project). Should include: headless primitives, forms, routing, animations, streaming data, etc.
 
@@ -210,6 +210,212 @@ div({ className: "card" }, [
 ### Router
 
 **Approach:** TanStack Router-style with Effect Schema integration
+
+#### V3: File-Based Routing (Future)
+
+**Goal:** Make Effex the Effect.ts answer to Next.js with convention-over-configuration routing.
+
+**Vite Plugin (`@effex/vite-plugin`):**
+
+The plugin scans `src/routes/` and generates a type-safe route tree:
+
+```
+src/routes/
+  __root.ts           → Root layout, global service providers, error boundaries
+  index.ts            → /
+  about.ts            → /about
+  users/
+    index.ts          → /users
+    $id.ts            → /users/:id (param segment)
+    $id.settings.ts   → /users/:id/settings (nested under param)
+  blog/
+    [...slug].ts      → /blog/* (catch-all)
+  (marketing)/        → Route group (no URL segment)
+    pricing.ts        → /pricing
+    contact.ts        → /contact
+```
+
+**Route File Format:**
+
+```typescript
+// src/routes/users/$id.ts
+import { Effect, Schema } from "effect";
+import { Route } from "@effex/router";
+import { div, h1, p } from "@effex/dom";
+import { UserService } from "../../services/User";
+
+// Optional: Override inferred params with explicit schema
+export const params = Schema.Struct({
+  id: Schema.NumberFromString,
+});
+
+// Data loader - Effect that runs on server (SSR) and client (navigation)
+// Has access to services, can fail with typed errors
+export const loader = Effect.gen(function* () {
+  const { id } = yield* Route.params<typeof params>();
+  const userService = yield* UserService;
+  return yield* userService.getById(id);
+});
+
+// Optional: Suspense fallback for this route
+export const loading = () => div({ class: "skeleton" }, "Loading user...");
+
+// Optional: Error boundary for this route
+export const error = (err: unknown) => div({ class: "error" }, `Failed: ${err}`);
+
+// The page component - default export
+export default Effect.gen(function* () {
+  const user = yield* Route.loaderData<typeof loader>();
+
+  return yield* div({ class: "user-page" }, [
+    h1(user.name),
+    p(user.email),
+  ]);
+});
+```
+
+**Generated Route Tree:**
+
+```typescript
+// src/routeTree.gen.ts (auto-generated, do not edit)
+import { Schema } from "effect";
+
+export const routeTree = {
+  "/": {
+    component: () => import("./routes/index"),
+  },
+  "/about": {
+    component: () => import("./routes/about"),
+  },
+  "/users": {
+    component: () => import("./routes/users/index"),
+  },
+  "/users/:id": {
+    params: Schema.Struct({ id: Schema.NumberFromString }),
+    component: () => import("./routes/users/$id"),
+  },
+  "/users/:id/settings": {
+    params: Schema.Struct({ id: Schema.NumberFromString }),
+    component: () => import("./routes/users/$id.settings"),
+  },
+} as const;
+
+export type AppRoutes = typeof routeTree;
+export type RoutePath = keyof AppRoutes;
+```
+
+**Type-Safe Link Component:**
+
+```typescript
+// Generated or augmented
+import { Link } from "@effex/router";
+
+// Full type safety - only valid routes, required params
+Link({ to: "/users/:id", params: { id: 123 } }, "View User")
+Link({ to: "/about" }, "About") // No params needed
+Link({ to: "/invalid" }) // TS Error: not a valid route
+```
+
+**Effect-Specific Advantages:**
+
+| Feature | Next.js | Effex |
+|---------|---------|-------|
+| Params validation | Runtime, manual | Schema at compile + runtime |
+| Data loading | `async function`, `fetch` | `Effect` with services, retry, timeout |
+| Error handling | Error boundaries (React) | Typed error channel, catch at any level |
+| Auth/guards | Middleware (string matching) | Effect that fails with `Unauthorized` error |
+| Dependencies | React Context, prop drilling | Effect Services (injected, testable) |
+| Loading states | `loading.tsx` (file-based) | `loading` export or Suspense |
+
+**Route Guards via Error Channel:**
+
+```typescript
+// src/routes/admin/$path.ts
+import { Effect } from "effect";
+import { Route, Unauthorized } from "@effex/router";
+import { AuthService } from "../../services/Auth";
+
+export const loader = Effect.gen(function* () {
+  const auth = yield* AuthService;
+  const user = yield* auth.getCurrentUser();
+
+  if (!user.isAdmin) {
+    return yield* Effect.fail(new Unauthorized({ redirect: "/login" }));
+  }
+
+  return { user };
+});
+```
+
+**Layouts (`__layout.ts`):**
+
+```typescript
+// src/routes/users/__layout.ts
+import { Effect } from "effect";
+import { Route } from "@effex/router";
+import { div, nav } from "@effex/dom";
+
+export default Effect.gen(function* () {
+  const outlet = yield* Route.outlet(); // Child route renders here
+
+  return yield* div({ class: "users-layout" }, [
+    nav([
+      Link({ to: "/users" }, "All Users"),
+      Link({ to: "/users/new" }, "New User"),
+    ]),
+    outlet,
+  ]);
+});
+```
+
+**Implementation Phases:**
+
+1. **Phase 1: Vite Plugin MVP**
+   - Route directory scanning with chokidar
+   - Generate `routeTree.gen.ts` on startup and file changes
+   - Dynamic imports for code splitting
+   - HMR support for route file changes
+   - Basic path-to-pattern conversion (`$id` → `:id`, `[...slug]` → `*`)
+
+2. **Phase 2: Loaders & SSR Data**
+   - `loader` export convention
+   - `Route.loaderData()` hook to access loaded data
+   - Server-side execution during SSR
+   - Data serialization into HTML (`__EFFEX_DATA__`)
+   - Client-side cache to avoid refetch on hydration
+
+3. **Phase 3: Layouts & Nesting**
+   - `__layout.ts` file convention
+   - `Route.outlet()` for nested rendering
+   - Layout data loaders
+   - Parallel route segments (like Next.js `@folder`)
+
+4. **Phase 4: Polish & DX**
+   - Route prefetching on hover/visibility
+   - Transitions between routes (View Transitions API?)
+   - Dev overlay showing current route, params, loader data
+   - Error overlay for loader failures
+   - `effex generate route users/$id` CLI command
+
+**Open Questions:**
+
+- Should `__root.ts` provide the base HTML shell, or is that separate?
+- How to handle API routes (`/api/*`)? Separate convention or same system?
+- Integration with Effect's `Layer` - should routes define their service requirements?
+- How to handle `notFound` - special file or catch-all pattern?
+
+**File naming conventions (TanStack-inspired):**
+
+| Pattern | Example | URL |
+|---------|---------|-----|
+| `index.ts` | `routes/index.ts` | `/` |
+| `name.ts` | `routes/about.ts` | `/about` |
+| `$param.ts` | `routes/$id.ts` | `/:id` |
+| `$param.name.ts` | `routes/$id.settings.ts` | `/:id/settings` |
+| `[...slug].ts` | `routes/[...slug].ts` | `/*` |
+| `(group)/` | `routes/(admin)/` | No URL segment |
+| `__layout.ts` | `routes/__layout.ts` | Wraps siblings |
+| `__root.ts` | `routes/__root.ts` | App root |
 
 Routes are defined declaratively with typed params:
 

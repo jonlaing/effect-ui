@@ -3,6 +3,7 @@ import { Effect } from "effect";
 import { Signal } from "@effex/core";
 import { virtualEach, VirtualListRef } from "./VirtualList";
 import { div } from "../Element";
+import { DOMRendererLive } from "../DOMRenderer";
 import {
   calculateVisibleRange,
   calculateItemOffset,
@@ -11,6 +12,11 @@ import {
   parseHeight,
   rangesEqual,
 } from "./helpers";
+
+const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
+  Effect.runPromise(
+    Effect.scoped(effect).pipe(Effect.provide(DOMRendererLive)) as Effect.Effect<A, never, never>,
+  );
 
 // Mock ResizeObserver for jsdom
 class MockResizeObserver {
@@ -162,87 +168,79 @@ describe("VirtualList", () => {
 
   describe("virtualEach", () => {
     it("should create a scrollable container", async () => {
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const items = yield* Signal.make(makeItems(100));
-            const el = yield* virtualEach(items, {
-              key: (item) => item.id,
-              itemHeight: 50,
-              height: 300,
-              render: (item) => div(item.map((i) => i.text)),
-            });
+      await runTest(
+        Effect.gen(function* () {
+          const items = yield* Signal.make(makeItems(100));
+          const el = yield* virtualEach(items, {
+            key: (item) => item.id,
+            itemHeight: 50,
+            height: 300,
+            render: (item) => div(item.map((i) => i.text)),
+          });
 
-            expect(el.style.overflow).toBe("auto");
-            expect(el.style.height).toBe("300px");
-          }),
-        ),
+          expect(el.style.overflow).toBe("auto");
+          expect(el.style.height).toBe("300px");
+        }),
       );
     });
 
     it("should render inner container with full height", async () => {
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const items = yield* Signal.make(makeItems(100));
-            const el = yield* virtualEach(items, {
-              key: (item) => item.id,
-              itemHeight: 50,
-              height: 300,
-              render: (item) => div(item.map((i) => i.text)),
-            });
+      await runTest(
+        Effect.gen(function* () {
+          const items = yield* Signal.make(makeItems(100));
+          const el = yield* virtualEach(items, {
+            key: (item) => item.id,
+            itemHeight: 50,
+            height: 300,
+            render: (item) => div(item.map((i) => i.text)),
+          });
 
-            const inner = el.firstElementChild as HTMLElement;
-            expect(inner.style.height).toBe("5000px"); // 100 * 50
-          }),
-        ),
+          const inner = el.firstElementChild as HTMLElement;
+          expect(inner.style.height).toBe("5000px"); // 100 * 50
+        }),
       );
     });
 
     // Skip: jsdom doesn't have real layout, so this would need a browser test
     it.skip("should only render visible items initially", async () => {
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const items = yield* Signal.make(makeItems(1000));
-            const el = yield* virtualEach(items, {
-              key: (item) => item.id,
-              itemHeight: 50,
-              height: 300,
-              overscan: 3,
-              render: (item) => div(item.map((i) => i.text)),
-            });
+      await runTest(
+        Effect.gen(function* () {
+          const items = yield* Signal.make(makeItems(1000));
+          const el = yield* virtualEach(items, {
+            key: (item) => item.id,
+            itemHeight: 50,
+            height: 300,
+            overscan: 3,
+            render: (item) => div(item.map((i) => i.text)),
+          });
 
-            // Should only render visible items + overscan
-            // 300/50 = 6 visible + 3 overscan at bottom = 9-10 items max
-            const inner = el.firstElementChild as HTMLElement;
-            expect(inner.children.length).toBeLessThanOrEqual(15);
-          }),
-        ),
+          // Should only render visible items + overscan
+          // 300/50 = 6 visible + 3 overscan at bottom = 9-10 items max
+          const inner = el.firstElementChild as HTMLElement;
+          expect(inner.children.length).toBeLessThanOrEqual(15);
+        }),
       );
     });
 
     // Skip: jsdom doesn't have real layout so clientHeight is always 0,
     // which means no items get rendered initially. This would work in a real browser.
     it.skip("should position items absolutely", async () => {
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const items = yield* Signal.make(makeItems(100));
-            const el = yield* virtualEach(items, {
-              key: (item) => item.id,
-              itemHeight: 50,
-              height: 300,
-              render: (item) => div(item.map((i) => i.text)),
-            });
+      await runTest(
+        Effect.gen(function* () {
+          const items = yield* Signal.make(makeItems(100));
+          const el = yield* virtualEach(items, {
+            key: (item) => item.id,
+            itemHeight: 50,
+            height: 300,
+            render: (item) => div(item.map((i) => i.text)),
+          });
 
-            const inner = el.firstElementChild as HTMLElement;
-            expect(inner.children.length).toBeGreaterThan(0);
-            const firstItem = inner.firstElementChild as HTMLElement;
-            expect(firstItem.style.position).toBe("absolute");
-            expect(firstItem.style.top).toBe("0px");
-          }),
-        ),
+          const inner = el.firstElementChild as HTMLElement;
+          expect(inner.children.length).toBeGreaterThan(0);
+          const firstItem = inner.firstElementChild as HTMLElement;
+          expect(firstItem.style.position).toBe("absolute");
+          expect(firstItem.style.top).toBe("0px");
+        }),
       );
     });
 
@@ -254,14 +252,12 @@ describe("VirtualList", () => {
       };
 
       await expect(
-        Effect.runPromise(
-          Effect.scoped(
-            Effect.gen(function* () {
-              const items = yield* Signal.make(makeItems(10));
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              yield* virtualEach(items, badOptions as any);
-            }),
-          ),
+        runTest(
+          Effect.gen(function* () {
+            const items = yield* Signal.make(makeItems(10));
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            yield* virtualEach(items, badOptions as any);
+          }),
         ),
       ).rejects.toThrow("itemHeight or estimatedHeight");
     });
@@ -269,49 +265,45 @@ describe("VirtualList", () => {
 
   describe("VirtualListRef", () => {
     it("should create a ref that receives control interface", async () => {
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const items = yield* Signal.make(makeItems(100));
-            const ref = yield* VirtualListRef.make();
+      await runTest(
+        Effect.gen(function* () {
+          const items = yield* Signal.make(makeItems(100));
+          const ref = yield* VirtualListRef.make();
 
-            yield* virtualEach(items, {
-              key: (item) => item.id,
-              itemHeight: 50,
-              height: 300,
-              ref,
-              render: (item) => div(item.map((i) => i.text)),
-            });
+          yield* virtualEach(items, {
+            key: (item) => item.id,
+            itemHeight: 50,
+            height: 300,
+            ref,
+            render: (item) => div(item.map((i) => i.text)),
+          });
 
-            expect(ref.current).not.toBeNull();
-            expect(ref.current!.scrollTo).toBeDefined();
-            expect(ref.current!.scrollToTop).toBeDefined();
-            expect(ref.current!.scrollToBottom).toBeDefined();
-            expect(ref.current!.visibleRange).toBeDefined();
-          }),
-        ),
+          expect(ref.current).not.toBeNull();
+          expect(ref.current!.scrollTo).toBeDefined();
+          expect(ref.current!.scrollToTop).toBeDefined();
+          expect(ref.current!.scrollToBottom).toBeDefined();
+          expect(ref.current!.visibleRange).toBeDefined();
+        }),
       );
     });
 
     it("should provide ready effect that resolves to control", async () => {
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const items = yield* Signal.make(makeItems(100));
-            const ref = yield* VirtualListRef.make();
+      await runTest(
+        Effect.gen(function* () {
+          const items = yield* Signal.make(makeItems(100));
+          const ref = yield* VirtualListRef.make();
 
-            yield* virtualEach(items, {
-              key: (item) => item.id,
-              itemHeight: 50,
-              height: 300,
-              ref,
-              render: (item) => div(item.map((i) => i.text)),
-            });
+          yield* virtualEach(items, {
+            key: (item) => item.id,
+            itemHeight: 50,
+            height: 300,
+            ref,
+            render: (item) => div(item.map((i) => i.text)),
+          });
 
-            const control = yield* ref.ready;
-            expect(control).toBe(ref.current);
-          }),
-        ),
+          const control = yield* ref.ready;
+          expect(control).toBe(ref.current);
+        }),
       );
     });
   });

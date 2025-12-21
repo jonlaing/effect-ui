@@ -13,9 +13,9 @@ class ResizeObserverMock {
 globalThis.ResizeObserver =
   ResizeObserverMock as unknown as typeof ResizeObserver;
 
-const runTest = <A>(effect: Effect.Effect<A, never, any>) =>
+const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
   Effect.runPromise(
-    Effect.scoped(effect).pipe(Effect.provide(DOMRendererLive)),
+    Effect.scoped(effect).pipe(Effect.provide(DOMRendererLive)) as Effect.Effect<A, never, never>,
   );
 
 describe("ScrollArea", () => {

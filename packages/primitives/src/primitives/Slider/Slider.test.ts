@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Effect, Scope } from "effect";
 import { Signal, DOMRendererLive, RendererContext } from "@effex/dom";
-import { Slider } from "./Slider";
+import { Slider, type SliderValue } from "./Slider";
 
 const runTest = <A>(
   effect: Effect.Effect<A, never, RendererContext | Scope.Scope>,
@@ -284,7 +284,7 @@ describe("Slider", () => {
     it("should reflect controlled value", async () => {
       await runTest(
         Effect.gen(function* () {
-          const value = yield* Signal.make(30);
+          const value = yield* Signal.make<SliderValue>(30);
 
           const el = yield* Slider.Root({ value }, [Slider.Thumb({})]);
 

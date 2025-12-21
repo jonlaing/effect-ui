@@ -6,9 +6,9 @@ import { div, button, span } from "./Element";
 import type { Element } from "./Element";
 import { DOMRendererLive } from "./DOMRenderer";
 
-const runTest = <A>(effect: Effect.Effect<A, never, any>) =>
+const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
   Effect.runPromise(
-    Effect.scoped(effect).pipe(Effect.provide(DOMRendererLive)),
+    Effect.scoped(effect).pipe(Effect.provide(DOMRendererLive)) as Effect.Effect<A, never, never>,
   );
 
 describe("Component", () => {
@@ -173,8 +173,8 @@ describe("Component", () => {
       return Effect.succeed(el);
     });
 
-    const el1 = await Effect.runPromise(Effect.scoped(TrackedComponent({})));
-    const el2 = await Effect.runPromise(Effect.scoped(TrackedComponent({})));
+    const el1 = await runTest(TrackedComponent({}));
+    const el2 = await runTest(TrackedComponent({}));
 
     // Each call creates a new element instance
     expect(el1).not.toBe(el2);

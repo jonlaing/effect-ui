@@ -3,9 +3,9 @@ import { Effect } from "effect";
 import { Signal, DOMRendererLive } from "@effex/dom";
 import { AlertDialog } from "./AlertDialog";
 
-const runTest = <A>(effect: Effect.Effect<A, never, any>) =>
+const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
   Effect.runPromise(
-    Effect.scoped(effect).pipe(Effect.provide(DOMRendererLive)),
+    Effect.scoped(effect).pipe(Effect.provide(DOMRendererLive)) as Effect.Effect<A, never, never>,
   );
 
 describe("AlertDialog", () => {

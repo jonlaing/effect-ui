@@ -5,9 +5,9 @@ import { when, match, each } from "./Control";
 import { div, li } from "./Element";
 import { DOMRendererLive } from "./DOMRenderer";
 
-const runTest = <A>(effect: Effect.Effect<A, never, any>) =>
+const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
   Effect.runPromise(
-    Effect.scoped(effect).pipe(Effect.provide(DOMRendererLive)),
+    Effect.scoped(effect).pipe(Effect.provide(DOMRendererLive)) as Effect.Effect<A, never, never>,
   );
 
 describe("Control", () => {

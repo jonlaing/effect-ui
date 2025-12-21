@@ -60,7 +60,7 @@ describe("Hydration", () => {
   describe("control flow hydration", () => {
     it("should hydrate when component and set up subscriptions", async () => {
       // Create signal outside for testing
-      let conditionSignal: Awaited<ReturnType<typeof Signal.make<boolean>>>;
+      let conditionSignal: Signal.Signal<boolean>;
 
       const App = () =>
         Effect.gen(function* () {
@@ -86,9 +86,7 @@ describe("Hydration", () => {
     });
 
     it("should hydrate match component", async () => {
-      let statusSignal: Awaited<
-        ReturnType<typeof Signal.make<"loading" | "success" | "error">>
-      >;
+      let statusSignal: Signal.Signal<"loading" | "success" | "error">;
 
       const App = () =>
         Effect.gen(function* () {
@@ -186,7 +184,7 @@ describe("Hydration", () => {
     });
 
     it("should handle nested when inside suspense", async () => {
-      let conditionSignal: Awaited<ReturnType<typeof Signal.make<boolean>>>;
+      let conditionSignal: Signal.Signal<boolean>;
 
       const App = () =>
         Effect.gen(function* () {

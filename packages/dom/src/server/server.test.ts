@@ -56,15 +56,17 @@ describe("SSR", () => {
   describe("when with hydration markers", () => {
     it("should add hydration markers to when container", async () => {
       const html = await Effect.runPromise(
-        Effect.gen(function* () {
-          const condition = yield* Signal.make(true);
-          return yield* renderToString(
-            when(condition, {
-              onTrue: () => div("Visible"),
-              onFalse: () => div("Hidden"),
-            }),
-          );
-        }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const condition = yield* Signal.make(true);
+            return yield* renderToString(
+              when(condition, {
+                onTrue: () => div("Visible"),
+                onFalse: () => div("Hidden"),
+              }),
+            );
+          }),
+        ),
       );
 
       expect(html).toContain("data-effex-id=");
@@ -76,15 +78,17 @@ describe("SSR", () => {
 
     it("should render false condition", async () => {
       const html = await Effect.runPromise(
-        Effect.gen(function* () {
-          const condition = yield* Signal.make(false);
-          return yield* renderToString(
-            when(condition, {
-              onTrue: () => div("Visible"),
-              onFalse: () => div("Hidden"),
-            }),
-          );
-        }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const condition = yield* Signal.make(false);
+            return yield* renderToString(
+              when(condition, {
+                onTrue: () => div("Visible"),
+                onFalse: () => div("Hidden"),
+              }),
+            );
+          }),
+        ),
       );
 
       expect(html).toContain('data-effex-condition="false"');
@@ -96,20 +100,22 @@ describe("SSR", () => {
   describe("match with hydration markers", () => {
     it("should add hydration markers to match container", async () => {
       const html = await Effect.runPromise(
-        Effect.gen(function* () {
-          const status = yield* Signal.make<"loading" | "success" | "error">(
-            "loading",
-          );
-          return yield* renderToString(
-            match(status, {
-              cases: [
-                { pattern: "loading", render: () => div("Loading...") },
-                { pattern: "success", render: () => div("Done!") },
-                { pattern: "error", render: () => div("Failed") },
-              ],
-            }),
-          );
-        }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const status = yield* Signal.make<"loading" | "success" | "error">(
+              "loading",
+            );
+            return yield* renderToString(
+              match(status, {
+                cases: [
+                  { pattern: "loading", render: () => div("Loading...") },
+                  { pattern: "success", render: () => div("Done!") },
+                  { pattern: "error", render: () => div("Failed") },
+                ],
+              }),
+            );
+          }),
+        ),
       );
 
       expect(html).toContain("data-effex-id=");
@@ -120,18 +126,20 @@ describe("SSR", () => {
 
     it("should render fallback when no pattern matches", async () => {
       const html = await Effect.runPromise(
-        Effect.gen(function* () {
-          const value = yield* Signal.make(999);
-          return yield* renderToString(
-            match(value, {
-              cases: [
-                { pattern: 1, render: () => div("One") },
-                { pattern: 2, render: () => div("Two") },
-              ],
-              fallback: () => div("Unknown"),
-            }),
-          );
-        }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const value = yield* Signal.make(999);
+            return yield* renderToString(
+              match(value, {
+                cases: [
+                  { pattern: 1, render: () => div("One") },
+                  { pattern: 2, render: () => div("Two") },
+                ],
+                fallback: () => div("Unknown"),
+              }),
+            );
+          }),
+        ),
       );
 
       expect(html).toContain("Unknown");
@@ -141,19 +149,21 @@ describe("SSR", () => {
   describe("each with hydration markers", () => {
     it("should add hydration markers to each container and items", async () => {
       const html = await Effect.runPromise(
-        Effect.gen(function* () {
-          const items = yield* Signal.make([
-            { id: "1", name: "Alice" },
-            { id: "2", name: "Bob" },
-          ]);
-          return yield* renderToString(
-            each(items, {
-              container: () => ul({ class: "list" }),
-              key: (item) => item.id,
-              render: (item) => li(item.map((i) => i.name)),
-            }),
-          );
-        }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const items = yield* Signal.make([
+              { id: "1", name: "Alice" },
+              { id: "2", name: "Bob" },
+            ]);
+            return yield* renderToString(
+              each(items, {
+                container: () => ul({ class: "list" }),
+                key: (item) => item.id,
+                render: (item) => li(item.map((i) => i.name)),
+              }),
+            );
+          }),
+        ),
       );
 
       expect(html).toContain("data-effex-id=");
@@ -168,15 +178,17 @@ describe("SSR", () => {
 
     it("should render empty list", async () => {
       const html = await Effect.runPromise(
-        Effect.gen(function* () {
-          const items = yield* Signal.make<{ id: string; name: string }[]>([]);
-          return yield* renderToString(
-            each(items, {
-              key: (item) => item.id,
-              render: (item) => li(item.map((i) => i.name)),
-            }),
-          );
-        }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const items = yield* Signal.make<{ id: string; name: string }[]>([]);
+            return yield* renderToString(
+              each(items, {
+                key: (item) => item.id,
+                render: (item) => li(item.map((i) => i.name)),
+              }),
+            );
+          }),
+        ),
       );
 
       expect(html).toContain("data-effex-id=");
@@ -188,10 +200,12 @@ describe("SSR", () => {
   describe("reactive values in SSR", () => {
     it("should render initial value of Signal in text", async () => {
       const html = await Effect.runPromise(
-        Effect.gen(function* () {
-          const count = yield* Signal.make(42);
-          return yield* renderToString(div(["Count: ", count]));
-        }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const count = yield* Signal.make(42);
+            return yield* renderToString(div(["Count: ", count]));
+          }),
+        ),
       );
 
       expect(html).toContain("Count: ");
@@ -200,12 +214,14 @@ describe("SSR", () => {
 
     it("should render initial value of Signal in attribute", async () => {
       const html = await Effect.runPromise(
-        Effect.gen(function* () {
-          const isActive = yield* Signal.make(true);
-          return yield* renderToString(
-            div({ class: isActive.map((a) => (a ? "active" : "inactive")) }),
-          );
-        }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const isActive = yield* Signal.make(true);
+            return yield* renderToString(
+              div({ class: isActive.map((a) => (a ? "active" : "inactive")) }),
+            );
+          }),
+        ),
       );
 
       expect(html).toContain('class="active"');
