@@ -269,3 +269,21 @@ export {
   type ProgressRootProps,
   type ProgressIndicatorProps,
 } from "./Progress/index.js";
+
+// Image
+export {
+  Image,
+  ImageCtx,
+  type ImageLoadingStatus,
+  type ImageContext,
+  type ImageRootProps,
+  type ImageImgProps,
+  type ImageFallbackProps,
+} from "./Image/index.js";
+
+// Separator
+export {
+  Separator,
+  type SeparatorProps,
+  type SeparatorOrientation,
+} from "./Separator/index.js";

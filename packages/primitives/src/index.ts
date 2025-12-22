@@ -217,4 +217,16 @@ export {
   type ProgressContext,
   type ProgressRootProps,
   type ProgressIndicatorProps,
+  // Image
+  Image,
+  ImageCtx,
+  type ImageLoadingStatus,
+  type ImageContext,
+  type ImageRootProps,
+  type ImageImgProps,
+  type ImageFallbackProps,
+  // Separator
+  Separator,
+  type SeparatorProps,
+  type SeparatorOrientation,
 } from "./primitives";
