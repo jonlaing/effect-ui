@@ -17,6 +17,9 @@ export {
   type SignalOptions,
   SignalRegistry,
   make as makeSignal,
+  type SignalArray,
+  type SignalMap,
+  type SignalSet,
 } from "./Signal";
 
 // Derived

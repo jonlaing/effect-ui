@@ -9,8 +9,13 @@ import { Context, Effect } from "effect";
 export interface Renderer<Node> {
   /**
    * Create an element node of the given type.
+   * @param type - The element tag name
+   * @param namespace - Optional namespace URI (e.g., "http://www.w3.org/2000/svg" for SVG)
    */
-  readonly createNode: (type: string) => Effect.Effect<Node>;
+  readonly createNode: (
+    type: string,
+    namespace?: string,
+  ) => Effect.Effect<Node>;
 
   /**
    * Create a text node with the given content.

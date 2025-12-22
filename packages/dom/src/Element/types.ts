@@ -315,3 +315,76 @@ export type ElementFactory<K extends keyof HTMLElementTagNameMap> = {
   // ()
   (): Effect.Effect<HTMLElementTagNameMap[K], never, Scope.Scope>;
 };
+
+/**
+ * Base attributes available on all SVG elements.
+ */
+export interface SVGBaseAttributes<T extends SVGElement>
+  extends DataAttributes, AriaAttributes {
+  /** CSS class name(s) */
+  readonly class?: ClassValue;
+  /** Inline styles */
+  readonly style?:
+    | Record<string, StyleValue>
+    | Readable<Record<string, string>>;
+  /** Element ID */
+  readonly id?: string;
+  /** ARIA role attribute */
+  readonly role?: string | Readable<string>;
+  readonly ref?: Ref<T>;
+}
+
+/**
+ * Keys that are valid attributes for an SVG element.
+ */
+type SVGElementAttributeKeys<K extends keyof SVGElementTagNameMap> = Exclude<
+  NonFunctionPropertyKeys<SVGElementTagNameMap[K]>,
+  ExcludedKeys
+>;
+
+/**
+ * Full SVG attributes for a specific element type.
+ * @template K - The SVG element tag name
+ */
+export type SVGAttributes<K extends keyof SVGElementTagNameMap> =
+  SVGBaseAttributes<SVGElementTagNameMap[K]> &
+    EventAttributes & {
+      readonly [P in SVGElementAttributeKeys<K>]?: SVGElementTagNameMap[K][P] extends string
+        ? string | Readable<string>
+        : SVGElementTagNameMap[K][P] extends number
+          ? number | Readable<number>
+          : SVGElementTagNameMap[K][P] extends boolean
+            ? boolean | Readable<boolean>
+            : never;
+    };
+
+/**
+ * Factory function for creating a specific SVG element type.
+ * @template K - The SVG element tag name
+ */
+export type SVGElementFactory<K extends keyof SVGElementTagNameMap> = {
+  // (attrs, children[])
+  <E = never, R = never>(
+    attrs: SVGAttributes<K>,
+    children: readonly Child<E, R>[],
+  ): Effect.Effect<SVGElementTagNameMap[K], E, Scope.Scope | R>;
+  // (attrs, singleChild)
+  <E = never, R = never>(
+    attrs: SVGAttributes<K>,
+    child: Child<E, R>,
+  ): Effect.Effect<SVGElementTagNameMap[K], E, Scope.Scope | R>;
+  // (attrs)
+  (
+    attrs: SVGAttributes<K>,
+  ): Effect.Effect<SVGElementTagNameMap[K], never, Scope.Scope>;
+  // (children[])
+  <E = never, R = never>(
+    children: readonly Child<E, R>[],
+  ): Effect.Effect<SVGElementTagNameMap[K], E, Scope.Scope | R>;
+  // (singleChild)
+  <E = never, R = never>(
+    child: Child<E, R>,
+  ): Effect.Effect<SVGElementTagNameMap[K], E, Scope.Scope | R>;
+  // ()
+  (): Effect.Effect<SVGElementTagNameMap[K], never, Scope.Scope>;
+};

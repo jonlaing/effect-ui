@@ -21,7 +21,7 @@
 
 ## Medium Priority
 
-- [ ] **SVG element support** - Add SVG element factories (`$.svg`, `$.path`, `$.rect`, `$.circle`, `$.line`, `$.g`, `$.text`, etc.)
+- [x] **SVG element support** - Add SVG element factories (`$.svg`, `$.path`, `$.rect`, `$.circle`, `$.line`, `$.g`, `$.text`, etc.)
   - SVG elements require `document.createElementNS` with SVG namespace
   - Different type maps (`SVGElementTagNameMap` vs `HTMLElementTagNameMap`)
   - Enables building charts, icons, and graphics with fine-grained reactivity
@@ -140,7 +140,7 @@
   - [x] `innerHTML` prop for rendering dynamic HTML (markdown, rich text)
   - [ ] Documentation/example showing chatbot streaming pattern
 
-- [ ] **Map and Set as reactive state** - Better ergonomics for using Map and Set as state. React makes this painful because of reference equality checks. Explore reactive Map/Set primitives that trigger updates on mutations.
+- [x] **Map and Set as reactive state** - Better ergonomics for using Map and Set as state. React makes this painful because of reference equality checks. Implemented `Signal.Array`, `Signal.Map`, and `Signal.Set` with in-place mutations that trigger reactive updates.
 
 - [x] **Portal** - Render children into a different DOM node (like React Portal)
   - [x] `Portal(children)` or `Portal({ target }, children)` - defaults to `document.body`

@@ -38,7 +38,7 @@ export const createHydrationRenderer = (
   let childIndex = 0;
 
   const renderer: Renderer<Node> = {
-    createNode: (type: string) =>
+    createNode: (type: string, namespace?: string) =>
       Effect.sync(() => {
         // During hydration, we expect the element to already exist
         const children = currentParent.childNodes;
@@ -67,7 +67,9 @@ export const createHydrationRenderer = (
         if (!node) {
           onMismatch(`Expected <${type}> but not found`, currentParent);
           // Fallback: create the element (hydration failure recovery)
-          return document.createElement(type);
+          return namespace
+            ? document.createElementNS(namespace, type)
+            : document.createElement(type);
         }
 
         return node;

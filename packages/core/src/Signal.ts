@@ -3,6 +3,12 @@ import { Context, Effect, Layer, Scope, SubscriptionRef } from "effect";
 import type { Readable } from "./Readable.js";
 import { Readable as ReadableNS } from "./Readable.js";
 import { defaultEquals } from "./Derived/helpers.js";
+import {
+  SignalArray,
+  type SignalArray as SignalArrayType,
+} from "./SignalArray.js";
+import { SignalMap, type SignalMap as SignalMapType } from "./SignalMap.js";
+import { SignalSet, type SignalSet as SignalSetType } from "./SignalSet.js";
 
 /**
  * A mutable reactive value that extends Readable with write capabilities.
@@ -118,4 +124,24 @@ export class SignalRegistry extends Context.Tag("effect-ui/SignalRegistry")<
 export const Signal = {
   make,
   SignalRegistry,
+  /**
+   * Create a reactive array with in-place mutation methods.
+   * @see SignalArray
+   */
+  Array: SignalArray,
+  /**
+   * Create a reactive Map with in-place mutation methods.
+   * @see SignalMap
+   */
+  Map: SignalMap,
+  /**
+   * Create a reactive Set with in-place mutation methods.
+   * @see SignalSet
+   */
+  Set: SignalSet,
 };
+
+// Re-export types for convenience
+export type { SignalArrayType as SignalArray };
+export type { SignalMapType as SignalMap };
+export type { SignalSetType as SignalSet };

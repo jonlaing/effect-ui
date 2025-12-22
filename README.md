@@ -10,9 +10,10 @@ A reactive UI framework built on [Effect](https://effect.website/). Effex provid
 - [Core Concepts](#core-concepts)
   - [Signals](#signals)
   - [Derived Values](#derived-values)
+  - [Custom Equality](#custom-equality)
+  - [Reactive Collections](#reactive-collections)
   - [Lifting Functions (CVA, clsx)](#lifting-functions-cva-clsx)
   - [Reactive Props](#reactive-props)
-  - [Custom Equality](#custom-equality)
   - [Template Strings](#template-strings)
   - [Elements](#elements)
   - [Control Flow](#control-flow)
@@ -214,64 +215,143 @@ const fullName = yield* Derived.sync(
 );
 ```
 
-### Lifting Functions (CVA, clsx)
+### Custom Equality
 
-When using utility libraries like [class-variance-authority (CVA)](https://cva.style/docs) or [clsx](https://github.com/lukeed/clsx), use `Readable.lift` to make them reactive-aware. The lifted function accepts either static values or `Readable` values for any property, and returns a `Readable` that updates when any reactive input changes.
+By default, Signal and Derived use strict equality (`===`) to determine if a value has changed. You can provide a custom `equals` function to control when updates propagate:
 
 ```ts
-import { cva } from "class-variance-authority";
-import { $, Signal, Readable, component } from "@effex/dom";
-import { Effect } from "effect";
+interface User {
+  id: number;
+  name: string;
+  lastSeen: Date;
+}
 
-// Define your CVA function as usual
-const buttonStyles = cva("btn font-medium rounded", {
-  variants: {
-    variant: {
-      primary: "bg-blue-500 text-white",
-      secondary: "bg-gray-200 text-gray-800",
-    },
-    size: {
-      sm: "px-2 py-1 text-sm",
-      md: "px-4 py-2",
-      lg: "px-6 py-3 text-lg",
-    },
-  },
-  defaultVariants: {
-    variant: "primary",
-    size: "md",
-  },
-});
+// Only trigger updates when the user ID changes, ignoring lastSeen timestamps
+const currentUser = yield* Signal.make<User>(
+  { id: 1, name: "Alice", lastSeen: new Date() },
+  { equals: (a, b) => a.id === b.id },
+);
 
-// Lift it to accept Readables
-const reactiveButtonStyles = Readable.lift(buttonStyles);
-
-// Now use it with reactive or static values
-const Button = component("Button", () =>
-  Effect.gen(function* () {
-    const variant = yield* Signal.make<"primary" | "secondary">("primary");
-
-    // className is Readable<string> - updates when variant changes
-    const className = reactiveButtonStyles({ variant, size: "md" });
-
-    return yield* $.div([
-      $.button({ class: className }, "Styled Button"),
-      $.button({ onClick: () => variant.set("secondary") }, "Make Secondary"),
-    ]);
-  }),
+// For derived values too
+const userDisplay = yield* Derived.sync(
+  [currentUser],
+  ([user]) => ({ id: user.id, displayName: user.name.toUpperCase() }),
+  { equals: (a, b) => a.id === b.id && a.displayName === b.displayName },
 );
 ```
 
-This works with any function that takes an object as its argument:
+This is particularly useful for:
+
+- **Objects with irrelevant fields** (timestamps, metadata)
+- **Expensive computations** that shouldn't re-run on semantically equal inputs
+- **Normalized data** where you want to compare by ID rather than reference
+
+### Reactive Collections
+
+Effex provides reactive versions of Array, Map, and Set. Unlike in React where you must clone collections on every mutation, these allow in-place mutations that automatically trigger reactive updates.
+
+#### Signal.Array
+
+A reactive array with in-place mutation methods:
 
 ```ts
-import { clsx } from "clsx";
+const todos = yield* Signal.Array.make<Todo>([]);
 
-const reactiveClsx = Readable.lift(clsx);
+// In-place mutations (no cloning needed!)
+yield* todos.push({ id: 1, text: "Learn Effex", done: false });
+yield* todos.unshift(firstItem);
+yield* todos.pop();
+yield* todos.shift();
+yield* todos.splice(1, 2, replacement);
+yield* todos.insertAt(0, item);
+yield* todos.removeAt(index);
+yield* todos.remove(specificItem);  // By reference
+yield* todos.move(fromIndex, toIndex);  // Great for drag-and-drop
+yield* todos.sort((a, b) => a.id - b.id);
+yield* todos.reverse();
+yield* todos.clear();
 
-// Mix static and reactive values
-const isActive = yield* Signal.make(false);
-const className = reactiveClsx({ btn: true, "btn-active": isActive });
+// Transform entire array (like filter/map)
+yield* todos.update(arr => arr.filter(t => !t.done));
+yield* todos.set(newTodos);
+
+// Reactive length
+todos.length  // Readable<number>
+
+// Use with Control.each
+each(todos, {
+  key: todo => todo.id,
+  render: todo => TodoItem(todo),
+});
 ```
+
+#### Signal.Map
+
+A reactive Map for key-value stores:
+
+```ts
+const users = yield* Signal.Map.make<string, User>();
+
+// Mutations
+yield* users.set("u1", { name: "Alice", role: "admin" });
+yield* users.delete("u1");
+yield* users.clear();
+
+// Reads
+const user = yield* users.get("u1");
+const exists = yield* users.has("u1");
+
+// Replace or transform entire map
+yield* users.replace(new Map([["u2", bob]]));
+yield* users.update(m => new Map([...m].filter(([_, u]) => u.role === "admin")));
+
+// Reactive derived values
+users.size     // Readable<number>
+users.entries  // Readable<readonly [string, User][]>
+users.keys     // Readable<readonly string[]>
+users.values   // Readable<readonly User[]>
+
+// For use with Readable.combine
+users.readable // Readable<ReadonlyMap<string, User>>
+```
+
+#### Signal.Set
+
+A reactive Set for unique collections:
+
+```ts
+const tags = yield* Signal.Set.make<string>(["draft"]);
+
+// Mutations
+yield* tags.add("important");
+yield* tags.delete("draft");
+yield* tags.toggle("featured");  // Add if missing, remove if present
+yield* tags.clear();
+
+// Reads
+const hasTag = yield* tags.has("important");
+
+// Replace or transform
+yield* tags.replace(["new", "tags"]);
+yield* tags.update(s => new Set([...s].filter(t => t !== "archived")));
+
+// Reactive derived values
+tags.size    // Readable<number>
+tags.values  // Readable<readonly string[]>
+
+// For use with Readable.combine
+tags.readable // Readable<ReadonlySet<string>>
+```
+
+**Why This Matters**: In React, mutating a Map/Set doesn't trigger re-renders because the reference is unchanged. You're forced to clone on every mutation:
+
+```tsx
+// React (painful)
+setMap(new Map(map).set(key, value));
+setSet(new Set(set).add(item));
+```
+
+With Effex's reactive collections, mutations are O(1) and automatically trigger updates.
 
 ### Reactive Props
 
@@ -335,36 +415,64 @@ const handleClick = () =>
   });
 ```
 
-### Custom Equality
+### Lifting Functions (CVA, clsx)
 
-By default, Signal and Derived use strict equality (`===`) to determine if a value has changed. You can provide a custom `equals` function to control when updates propagate:
+When using utility libraries like [class-variance-authority (CVA)](https://cva.style/docs) or [clsx](https://github.com/lukeed/clsx), use `Readable.lift` to make them reactive-aware. The lifted function accepts either static values or `Readable` values for any property, and returns a `Readable` that updates when any reactive input changes.
 
 ```ts
-interface User {
-  id: number;
-  name: string;
-  lastSeen: Date;
-}
+import { cva } from "class-variance-authority";
+import { $, Signal, Readable, component } from "@effex/dom";
+import { Effect } from "effect";
 
-// Only trigger updates when the user ID changes, ignoring lastSeen timestamps
-const currentUser = yield* Signal.make<User>(
-  { id: 1, name: "Alice", lastSeen: new Date() },
-  { equals: (a, b) => a.id === b.id },
-);
+// Define your CVA function as usual
+const buttonStyles = cva("btn font-medium rounded", {
+  variants: {
+    variant: {
+      primary: "bg-blue-500 text-white",
+      secondary: "bg-gray-200 text-gray-800",
+    },
+    size: {
+      sm: "px-2 py-1 text-sm",
+      md: "px-4 py-2",
+      lg: "px-6 py-3 text-lg",
+    },
+  },
+  defaultVariants: {
+    variant: "primary",
+    size: "md",
+  },
+});
 
-// For derived values too
-const userDisplay = yield* Derived.sync(
-  [currentUser],
-  ([user]) => ({ id: user.id, displayName: user.name.toUpperCase() }),
-  { equals: (a, b) => a.id === b.id && a.displayName === b.displayName },
+// Lift it to accept Readables
+const reactiveButtonStyles = Readable.lift(buttonStyles);
+
+// Now use it with reactive or static values
+const Button = component("Button", () =>
+  Effect.gen(function* () {
+    const variant = yield* Signal.make<"primary" | "secondary">("primary");
+
+    // className is Readable<string> - updates when variant changes
+    const className = reactiveButtonStyles({ variant, size: "md" });
+
+    return yield* $.div([
+      $.button({ class: className }, "Styled Button"),
+      $.button({ onClick: () => variant.set("secondary") }, "Make Secondary"),
+    ]);
+  }),
 );
 ```
 
-This is particularly useful for:
+This works with any function that takes an object as its argument:
 
-- **Objects with irrelevant fields** (timestamps, metadata)
-- **Expensive computations** that shouldn't re-run on semantically equal inputs
-- **Normalized data** where you want to compare by ID rather than reference
+```ts
+import { clsx } from "clsx";
+
+const reactiveClsx = Readable.lift(clsx);
+
+// Mix static and reactive values
+const isActive = yield* Signal.make(false);
+const className = reactiveClsx({ btn: true, "btn-active": isActive });
+```
 
 ### Template Strings
 
@@ -418,12 +526,13 @@ Conditionally render elements:
 
 ```ts
 when(isLoggedIn, {
+  container: () => $.div({ class: "login-status" }), // optional, `div` by default
   onTrue: () => $.div("Welcome back!"),
   onFalse: () => $.div("Please log in"),
 });
 
 each(todos, {
-  container: () => $.ul({ class: "todo-list" }),
+  container: () => $.ul({ class: "todo-list" }), // optional, `div` by default
   key: (todo) => todo.id,
   render: (todo) => $.li(todo.map((t) => t.text)),
 });

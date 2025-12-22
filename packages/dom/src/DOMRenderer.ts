@@ -6,7 +6,12 @@ import { type RendererInterface, RendererContext } from "@effex/core";
  * Uses browser DOM APIs to create and manipulate elements.
  */
 export const DOMRenderer: RendererInterface<Node> = {
-  createNode: (type: string) => Effect.sync(() => document.createElement(type)),
+  createNode: (type: string, namespace?: string) =>
+    Effect.sync(() =>
+      namespace
+        ? document.createElementNS(namespace, type)
+        : document.createElement(type),
+    ),
 
   createTextNode: (text: string) =>
     Effect.sync(() => document.createTextNode(text)),

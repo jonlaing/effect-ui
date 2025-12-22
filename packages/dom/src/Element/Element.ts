@@ -19,12 +19,23 @@ import type {
   EventHandler,
   HTMLAttributes,
   StyleValue,
+  SVGAttributes,
+  SVGElementFactory,
 } from "./types";
 import type { Ref } from "@effex/core";
+
+const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 
 const applyRef = <K extends keyof HTMLElementTagNameMap>(
   element: HTMLElementTagNameMap[K],
   ref: Ref<HTMLElementTagNameMap[K]>,
+): void => {
+  ref.set(element);
+};
+
+const applyRefSVG = <K extends keyof SVGElementTagNameMap>(
+  element: SVGElementTagNameMap[K],
+  ref: Ref<SVGElementTagNameMap[K]>,
 ): void => {
   ref.set(element);
 };
@@ -214,13 +225,154 @@ export const tr = makeElementFactory("tr");
 export const th = makeElementFactory("th");
 export const td = makeElementFactory("td");
 
+// === SVG Elements ===
+
+const applyAttributesSVG = <K extends keyof SVGElementTagNameMap>(
+  renderer: RendererInterface<Node>,
+  element: Node,
+  attrs: SVGAttributes<K>,
+): Effect.Effect<void, never, Scope.Scope> =>
+  Effect.gen(function* () {
+    for (const [key, value] of Object.entries(attrs)) {
+      if (value === undefined) continue;
+
+      if (key === "ref") {
+        applyRefSVG(
+          element as SVGElementTagNameMap[K],
+          value as Ref<SVGElementTagNameMap[K]>,
+        );
+      } else if (key === "class") {
+        yield* applyClassWithRenderer(renderer, element, value as ClassValue);
+      } else if (key === "style") {
+        yield* applyStyleWithRenderer(
+          renderer,
+          element,
+          value as
+            | Record<string, StyleValue>
+            | Readable<Record<string, string>>,
+        );
+      } else if (key.startsWith("on")) {
+        yield* applyEventHandlerWithRenderer(
+          renderer,
+          element,
+          key,
+          value as EventHandler<Event>,
+        );
+      } else if (key === "id") {
+        yield* renderer.setAttribute(element, "id", value as string);
+      } else {
+        yield* applyGenericAttributeWithRenderer(renderer, element, key, value);
+      }
+    }
+  });
+
+const createSVGElement = <K extends keyof SVGElementTagNameMap, E, R>(
+  tagName: K,
+  attrs: SVGAttributes<K>,
+  children: readonly Child<E, R>[],
+): Effect.Effect<
+  SVGElementTagNameMap[K],
+  E,
+  Scope.Scope | R | RendererContext
+> =>
+  Effect.gen(function* () {
+    const renderer = (yield* RendererContext) as RendererInterface<Node>;
+    const element = yield* renderer.createNode(tagName, SVG_NAMESPACE);
+    yield* applyAttributesSVG(renderer, element, attrs);
+    yield* appendChildren(renderer, element, children);
+    return element as SVGElementTagNameMap[K];
+  });
+
+const makeSVGElementFactory = <K extends keyof SVGElementTagNameMap>(
+  tagName: K,
+): SVGElementFactory<K> => {
+  return ((...args: unknown[]) => {
+    if (args.length === 0) {
+      return createSVGElement(tagName, {} as SVGAttributes<K>, []);
+    }
+
+    if (args.length === 1) {
+      const arg = args[0];
+      if (Array.isArray(arg)) {
+        return createSVGElement(
+          tagName,
+          {} as SVGAttributes<K>,
+          arg as Child<unknown>[],
+        );
+      }
+      if (typeof arg === "string" || typeof arg === "number") {
+        return createSVGElement(tagName, {} as SVGAttributes<K>, [arg]);
+      }
+      if (isElement(arg) || isReadable(arg)) {
+        return createSVGElement(tagName, {} as SVGAttributes<K>, [
+          arg as Child<unknown>,
+        ]);
+      }
+      return createSVGElement(tagName, arg as SVGAttributes<K>, []);
+    }
+
+    const [attrs, children] = args as [
+      SVGAttributes<K>,
+      readonly Child<unknown>[],
+    ];
+    return createSVGElement(
+      tagName,
+      attrs,
+      Array.isArray(children) ? children : [children],
+    );
+  }) as SVGElementFactory<K>;
+};
+
+// SVG container and structural elements
+export const svg = makeSVGElementFactory("svg");
+export const g = makeSVGElementFactory("g");
+export const defs = makeSVGElementFactory("defs");
+export const symbol = makeSVGElementFactory("symbol");
+export const use = makeSVGElementFactory("use");
+
+// SVG shape elements
+export const path = makeSVGElementFactory("path");
+export const rect = makeSVGElementFactory("rect");
+export const circle = makeSVGElementFactory("circle");
+export const ellipse = makeSVGElementFactory("ellipse");
+export const line = makeSVGElementFactory("line");
+export const polyline = makeSVGElementFactory("polyline");
+export const polygon = makeSVGElementFactory("polygon");
+
+// SVG text elements
+export const svgText = makeSVGElementFactory("text");
+export const tspan = makeSVGElementFactory("tspan");
+export const textPath = makeSVGElementFactory("textPath");
+
+// SVG gradient and pattern elements
+export const linearGradient = makeSVGElementFactory("linearGradient");
+export const radialGradient = makeSVGElementFactory("radialGradient");
+export const stop = makeSVGElementFactory("stop");
+export const pattern = makeSVGElementFactory("pattern");
+
+// SVG clipping and masking
+export const clipPath = makeSVGElementFactory("clipPath");
+export const mask = makeSVGElementFactory("mask");
+
+// SVG filter elements
+export const filter = makeSVGElementFactory("filter");
+export const feGaussianBlur = makeSVGElementFactory("feGaussianBlur");
+export const feColorMatrix = makeSVGElementFactory("feColorMatrix");
+export const feBlend = makeSVGElementFactory("feBlend");
+export const feOffset = makeSVGElementFactory("feOffset");
+
+// Other SVG elements
+export const image = makeSVGElementFactory("image");
+export const foreignObject = makeSVGElementFactory("foreignObject");
+export const marker = makeSVGElementFactory("marker");
+
 /**
- * Namespace containing all HTML element factories.
+ * Namespace containing all HTML and SVG element factories.
  * Provides a convenient way to access elements without individual imports.
  *
  * @example
  * ```ts
- * import { $ } from "@jonlaing/effect-ui"
+ * import { $ } from "@effex/dom"
  *
  * const MyComponent = Effect.gen(function* () {
  *   return yield* $.div({ class: "card" }, [
@@ -229,9 +381,17 @@ export const td = makeElementFactory("td");
  *     $.button({ onClick: handleClick }, "Submit"),
  *   ])
  * })
+ *
+ * // SVG example
+ * const Icon = Effect.gen(function* () {
+ *   return yield* $.svg({ viewBox: "0 0 24 24" }, [
+ *     $.path({ d: "M12 2L2 7l10 5 10-5-10-5z" }),
+ *   ])
+ * })
  * ```
  */
 export const $ = {
+  // HTML elements
   div,
   span,
   p,
@@ -266,4 +426,40 @@ export const $ = {
   tr,
   th,
   td,
+  // SVG container and structural elements
+  svg,
+  g,
+  defs,
+  symbol,
+  use,
+  // SVG shape elements
+  path,
+  rect,
+  circle,
+  ellipse,
+  line,
+  polyline,
+  polygon,
+  // SVG text elements
+  text: svgText,
+  tspan,
+  textPath,
+  // SVG gradient and pattern elements
+  linearGradient,
+  radialGradient,
+  stop,
+  pattern,
+  // SVG clipping and masking
+  clipPath,
+  mask,
+  // SVG filter elements
+  filter,
+  feGaussianBlur,
+  feColorMatrix,
+  feBlend,
+  feOffset,
+  // Other SVG elements
+  image,
+  foreignObject,
+  marker,
 };

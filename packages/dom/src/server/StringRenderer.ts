@@ -13,7 +13,8 @@ import {
  * VNodes are then serialized to HTML strings via vnodeToString.
  */
 export const StringRenderer: Renderer<VNode> = {
-  createNode: (type: string) => Effect.sync(() => vElement(type)),
+  createNode: (type: string, _namespace?: string) =>
+    Effect.sync(() => vElement(type)),
 
   createTextNode: (text: string) => Effect.sync(() => vText(text)),
 
