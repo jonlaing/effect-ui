@@ -1,0 +1,48 @@
+{
+  "name": "@effex/platform",
+  "version": "0.0.1",
+  "description": "Full-stack meta-framework for Effex applications",
+  "type": "module",
+  "license": "MIT",
+  "author": "Jon Laing",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jonlaing/effex.git",
+    "directory": "packages/platform"
+  },
+  "keywords": [
+    "effect",
+    "effect-ts",
+    "framework",
+    "ssr",
+    "full-stack",
+    "meta-framework"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup"
+  },
+  "dependencies": {
+    "@effex/core": "workspace:*",
+    "@effex/dom": "workspace:*",
+    "@effex/router": "workspace:*",
+    "@effex/form": "workspace:*",
+    "@effex/primitives": "workspace:*"
+  },
+  "peerDependencies": {
+    "effect": "^3.0.0"
+  }
+}

@@ -65,10 +65,11 @@
     - Hydration finds container via HydrationContext, runs async render
     - Uses DOMRenderer for async content (since it doesn't exist in SSR HTML)
     - Replaces fallback when async completes, updates state to "loaded"
-  - [ ] **Data serialization for hydration** - Avoid double-fetching on client
-    - Server should serialize fetched data into `<script>window.__EFFEX_DATA__ = {...}</script>`
-    - Services could check this cache before making API calls
-    - Needs: SSR to collect resolved data, mechanism to inject into HTML, client cache layer
+  - [x] **Data serialization for hydration** - Avoid double-fetching on client
+    - Implemented in `@effex/platform` via `Serialization.ts`
+    - Supports Date, Map, Set, BigInt, RegExp, URL, undefined, NaN, Infinity
+    - Server serializes loader data with `serialize()`, embedded via `renderToDocument()`
+    - Client deserializes via `hydrateApp()` which reads `window.__EFFEX_LOADER_DATA__`
   - [x] **Router SSR refinement** - Router works cleanly for SSR
     - Added `initialSearch` option to `RouterOptions`
     - Router imports core types from `@effex/core` (framework-agnostic)
@@ -80,6 +81,153 @@
   - [ ] **Partial/Islands hydration** - Only hydrate interactive parts
     - Static content could skip hydration entirely
     - Would need way to mark components as static vs interactive
+
+- [x] **@effex/platform** - Meta-framework package (the "Next.js" for Effex) - **V1 COMPLETE**
+
+  **Implemented (V1):**
+  - [x] Re-exports `@effex/core`, `@effex/dom`, `@effex/router`, `@effex/form`, `@effex/primitives`
+  - [x] `PlatformContext` - Environment detection (`server` | `client`), request/response headers
+  - [x] `Platform.cookies` - Universal cookie access (server parses headers, client uses `document.cookie`)
+  - [x] `Platform.isServer` / `Platform.isClient` - Environment checks
+  - [x] `Platform.request` - Access current request (server only)
+  - [x] `Platform.setHeader` - Set response headers (server only)
+  - [x] `RouteLoader` utilities - Remix-style data loading
+    - `params()` - Get reactive route params
+    - `loaderData<T>()` - Get cached loader data
+    - `parentData<T>()` - Access parent route's data
+    - `formData()` / `request()` - Action context accessors
+    - `redirect(url, status?)` - Trigger redirect via typed error
+  - [x] `Serialization` - Custom JSON for types JSON doesn't support
+    - Date, Map, Set, BigInt, RegExp, URL, undefined, NaN, Infinity
+    - HTML-safe output (escapes `<`, `>`, `&` for script embedding)
+  - [x] `render()` - Server-side render function
+    - Creates platform context from request
+    - Returns HTML string, loader data, headers
+  - [x] `renderToDocument()` - Generate complete HTML document
+    - Configurable title, styles, scripts, head content
+    - Embeds serialized loader data as `window.__EFFEX_LOADER_DATA__`
+  - [x] `hydrateApp()` - Client hydration
+    - Reads and deserializes `window.__EFFEX_LOADER_DATA__`
+    - Attaches event handlers and reactive subscriptions
+    - Cleans up window data after hydration
+  - [x] `isHydrating()` - Check if currently hydrating
+  - [x] Comprehensive test suite (107 tests)
+
+  **Still TODO (V2+):**
+  - [ ] Actions (mutations) - Form submissions with typed responses
+  - [ ] File-based routing (Vite plugin) - `src/routes/` convention
+  - [ ] Build orchestration - SSR build, client build, asset manifest
+  - [ ] Platform adapters (Vercel, Cloudflare, Node)
+  - [ ] CLI (`create-effex-app`, `effex dev`, `effex build`)
+  - [ ] `Link` component with `prefetch` prop ("hover" | "viewport")
+  - [ ] Streaming SSR (`renderToStream`)
+
+  **Key Decisions:**
+  - Custom JSON serialization (Effect Schema integration planned for future)
+  - Remix-style route-level loaders/actions
+  - Defer streaming SSR to v2
+  - Separate service layers for server/client environments
+  - No middleware needed - Effect composition handles cross-cutting concerns
+  - Loaders are just Effects - fully testable in isolation
+
+  **Route File Convention:**
+  ```typescript
+  // src/routes/users/$id.ts
+  import { Effect } from "effect";
+  import { Route, $ } from "@effex/platform";
+
+  // Loader runs on server (SSR) and client (navigation)
+  export const loader = Effect.gen(function* () {
+    const { id } = yield* Route.params<{ id: string }>();
+    const userService = yield* UserService;
+    return { user: yield* userService.getById(id) };
+  });
+
+  // Action handles form submissions (Remix-style)
+  export const action = Effect.gen(function* () {
+    const formData = yield* Route.formData();
+    const userService = yield* UserService;
+    yield* userService.update(formData);
+    return yield* Route.redirect("/users");
+  });
+
+  // Component receives loader data automatically
+  export default Effect.gen(function* () {
+    const { user } = yield* Route.loaderData<typeof loader>();
+    return yield* $.div([$.h1(user.name), $.p(user.email)]);
+  });
+  ```
+
+  **Server/Client Service Layers:**
+  ```typescript
+  // server.ts - Direct DB access
+  const ServerServices = Layer.mergeAll(
+    DatabaseServiceLive,
+    UserServiceServer,
+    SessionServiceLive,
+  );
+
+  // client.ts - API calls
+  const ClientServices = Layer.mergeAll(
+    ApiClientLive,
+    UserServiceClient,
+    SessionServiceClient,
+  );
+  ```
+
+  **Platform APIs:**
+  ```typescript
+  // In loaders/actions
+  const cookies = yield* Platform.cookies;
+  yield* cookies.get("session");
+  yield* cookies.set("token", value, { httpOnly: true });
+
+  // Parent route data (replaces middleware)
+  const { user } = yield* Route.parentData<typeof parentLoader>();
+
+  // Redirect
+  yield* Route.redirect("/login");
+  ```
+
+  **Link Prefetching:**
+  ```typescript
+  Link({ to: "/users", prefetch: "hover" }, "Users")    // prefetch on hover
+  Link({ to: "/dashboard", prefetch: "viewport" }, ...) // prefetch when visible
+  Link({ to: "/settings" }, "Settings")                 // no prefetch
+  ```
+
+  **Testing Loaders:**
+  ```typescript
+  import { loader } from "./routes/users/$id";
+
+  test("loader returns user", async () => {
+    const result = await Effect.runPromise(
+      loader.pipe(
+        Effect.provideService(RouteContext, { params: { id: "123" } }),
+        Effect.provideService(UserService, mockUserService),
+      )
+    );
+    expect(result.user.id).toBe("123");
+  });
+  ```
+
+  **Adapter Interface:**
+  ```typescript
+  interface PlatformAdapter {
+    name: string;
+    buildStart?: () => Effect<void>;
+    buildEnd?: (manifest: BuildManifest) => Effect<void>;
+    dev?: { port?: number; hmr?: boolean };
+  }
+  ```
+
+  **Implementation Phases:**
+  1. Core loader/action system with data serialization
+  2. Vite plugin with HMR and file-based routing
+  3. Node adapter (baseline)
+  4. Vercel adapter
+  5. CLI tooling
+  6. Cloudflare/other adapters
 
 - [ ] **DevTools** - In-app panel for debugging reactive state (`@effex/devtools`)
   - Ship as separate package, add to devDependencies so it doesn't go to production
@@ -926,5 +1074,6 @@ packages/
 ├── dom/         → @effex/dom (DOM rendering, depends on core)
 ├── router/      → @effex/router (routing, depends on dom)
 ├── form/        → @effex/form (form handling, depends on dom)
-└── primitives/  → @effex/primitives (UI primitives, depends on dom)
+├── primitives/  → @effex/primitives (UI primitives, depends on dom)
+└── platform/    → @effex/platform (meta-framework, re-exports all above)
 ```

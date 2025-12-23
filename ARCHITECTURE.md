@@ -22,11 +22,21 @@ packages/
 │       ├── Control    # Control flow (when, match, each)
 │       ├── Component  # Named components
 │       ├── Mount      # Mounting to DOM
-│       └── Template   # Tagged template literals
+│       ├── Template   # Tagged template literals
+│       ├── server/    # SSR (renderToString)
+│       └── hydrate/   # Client hydration
 │
 ├── router/        # @effex/router - Routing
 ├── form/          # @effex/form - Form handling
-└── primitives/    # @effex/primitives - Headless UI components
+├── primitives/    # @effex/primitives - Headless UI components
+│
+└── platform/      # @effex/platform - Meta-framework for SSR apps
+    └── src/
+        ├── Platform       # Environment detection, cookies
+        ├── RouteLoader    # Remix-style data loading
+        ├── Serialization  # JSON serialization for hydration
+        ├── render         # Server-side render function
+        └── hydrate        # Client hydration with loader data
 ```
 
 ## Core Module
@@ -260,4 +270,143 @@ div({ className: "card" }, [
   Button({ onClick: handleClick }, "Submit"),
 ]);
 ```
+
+## Platform Module
+
+The `@effex/platform` package provides a meta-framework layer for full-stack applications with SSR.
+
+### Architecture Overview
+
+```
+Server:                              Client:
+  Request                              SSR HTML + loader data
+     │                                        │
+     ▼                                        ▼
+  render(App, { request })             hydrateApp(App, container)
+     │                                        │
+     ▼                                        ▼
+  PlatformContext                      Read __EFFEX_LOADER_DATA__
+  (cookies, headers)                          │
+     │                                        ▼
+     ▼                                 Deserialize (Date, Map, Set...)
+  renderToString(element)                     │
+     │                                        ▼
+     ▼                                 domHydrate(element, container)
+  VNode → HTML string                         │
+     │                                        ▼
+     ▼                                 Attach subscriptions
+  Serialize loader data                 Clean up window data
+     │
+     ▼
+  Response (html + headers)
+```
+
+### Platform Context
+
+`PlatformContext` is an Effect context that provides environment-aware services:
+
+```ts
+interface PlatformContextType {
+  environment: "server" | "client";
+  cookies: Cookies;              // Universal cookie access
+  request: Request | undefined;  // Server-only
+  responseHeaders: Headers;      // Server-only
+}
+```
+
+Two factories create the appropriate context:
+- `makeServerPlatformContext(request)` - Parses cookies from request headers
+- `makeClientPlatformContext()` - Uses `document.cookie`
+
+### Serialization
+
+The platform uses custom JSON serialization to preserve types that JSON doesn't support natively. This is critical for SSR hydration.
+
+**How it works:**
+
+1. **Server**: Data is serialized using a custom `replacer` that wraps special types:
+   ```ts
+   // Date becomes:
+   { "__effex_type__": "Date", "__effex_value__": "2024-01-15T00:00:00.000Z" }
+   ```
+
+2. **HTML embedding**: Output is escaped for safe embedding in `<script>` tags:
+   ```ts
+   // < > & are escaped to Unicode escapes
+   json.replace(/</g, "\\u003c").replace(/>/g, "\\u003e")
+   ```
+
+3. **Client**: A custom `reviver` restores the original types during hydration.
+
+**Supported types:**
+- `Date`, `Map`, `Set`, `RegExp`, `URL`, `BigInt`
+- `undefined`, `NaN`, `Infinity`, `-Infinity`
+
+### Route Loader Context
+
+`LoaderContextTag` provides Remix-style data loading primitives:
+
+```ts
+interface LoaderContext {
+  routeId: string;                          // "routes/users/$id"
+  params: ParamsReadable;                   // Reactive route params
+  loaderDataCache: Map<string, unknown>;    // Cached loader results
+  isHydrating: boolean;                     // True during initial hydration
+  parentData: Option<unknown>;              // Nested route parent data
+}
+```
+
+The `RouteLoader` namespace provides helpers:
+- `params()` - Get current route params
+- `loaderData<T>()` - Get cached loader data (fails if not found)
+- `parentData<T>()` - Access parent route's data
+- `redirect(url, status?)` - Trigger redirect (returns `Effect.fail`)
+- `formData()` / `request()` - Action context accessors
+
+### SSR Flow
+
+1. **Server receives request**
+2. **Create PlatformContext** from request
+3. **Call `render(element, { request })`**:
+   - Creates loader data cache
+   - Runs `renderToString` (from `@effex/dom/server`)
+   - Collects loader data during render
+   - Serializes loader data for HTML embedding
+4. **Return response** with HTML and headers
+
+### Hydration Flow
+
+1. **Client loads page** with SSR HTML
+2. **Call `hydrateApp(element, container)`**:
+   - Reads `window.__EFFEX_LOADER_DATA__`
+   - Deserializes (restores Date, Map, Set, etc.)
+   - Calls `domHydrate` (from `@effex/dom/hydrate`)
+   - Cleans up `window.__EFFEX_LOADER_DATA__`
+
+### Re-exports
+
+`@effex/platform` re-exports everything from:
+- `@effex/core`
+- `@effex/dom`
+- `@effex/router`
+- `@effex/form`
+- `@effex/primitives`
+
+This allows users to import everything from a single package:
+
+```ts
+import { $, Signal, when, Router, Form, Dialog, render } from "@effex/platform";
+```
+
+### Design Decisions
+
+1. **Separate from core/dom**: SSR adds dependencies and complexity that pure client apps don't need.
+
+2. **Remix-style loaders**: Familiar API for developers coming from Remix/Next.js.
+
+3. **Custom serialization**: Effect Schema integration is planned, but custom JSON serialization provides immediate functionality.
+
+4. **Platform-agnostic**: Works with any server runtime (Bun, Node, Deno, Cloudflare Workers) that supports the Web `Request`/`Response` API.
+
+5. **Effect integration**: Cookie operations return `Effect`, allowing composition with other Effect-based code.
 

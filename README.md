@@ -24,6 +24,7 @@ A reactive UI framework built on [Effect](https://effect.website/). Effex provid
 - [Animation](#animation)
 - [Primitives](#primitives)
 - [Portal](#portal)
+- [Server-Side Rendering](#server-side-rendering)
 - [Why No JSX?](#why-no-jsx)
 - [API Documentation](#api-documentation)
 - [Acknowledgments](#acknowledgments)
@@ -376,7 +377,8 @@ const Button = component("Button", (props: ButtonProps, children) =>
     const disabled = Readable.of(props.disabled ?? false);
     const className = Readable.of(props.class ?? "");
 
-    // Use .map() for derived attributes
+    // Use .map() for derived attributes based on single reactive props
+    // You can use Derived.sync for multiple dependencies if needed
     const ariaDisabled = disabled.map((d) => (d ? "true" : undefined));
     const tabIndex = disabled.map((d) => (d ? -1 : 0));
 
@@ -1024,6 +1026,126 @@ const Modal = component(
       onFalse: () => $.span(),
     }),
 );
+```
+
+### Server-Side Rendering
+
+Effex supports server-side rendering (SSR) with hydration through the `@effex/platform` package. This is a meta-framework that provides everything you need for full-stack Effex applications.
+
+```bash
+pnpm add @effex/platform
+```
+
+`@effex/platform` re-exports everything from all other Effex packages, so you only need one import:
+
+```ts
+import { $, Signal, when, render, hydrateApp, Platform, RouteLoader } from "@effex/platform";
+```
+
+#### Server Rendering
+
+Use `render` to render your app to HTML on the server:
+
+```ts
+import { render, renderToDocument } from "@effex/platform";
+import { App } from "./App";
+
+// In your server handler (Bun, Node, Deno, etc.)
+const handler = async (request: Request) => {
+  const result = await render(App(), { request });
+
+  // Use renderToDocument for a complete HTML page
+  const html = renderToDocument(result, {
+    title: "My Effex App",
+    scripts: ["/app.js"],
+    styles: ["/app.css"],
+  });
+
+  return new Response(html, {
+    headers: {
+      "Content-Type": "text/html",
+      ...Object.fromEntries(result.headers),
+    },
+  });
+};
+```
+
+The render result includes:
+- `html` - The rendered HTML string
+- `loaderData` - Serialized loader data for hydration
+- `loaderDataScript` - HTML-safe JSON string for embedding
+- `headers` - Response headers (cookies, etc.)
+- `platformContext` - Access to platform services
+
+#### Client Hydration
+
+Use `hydrateApp` to hydrate the server-rendered HTML on the client:
+
+```ts
+// client.ts
+import { hydrateApp } from "@effex/platform";
+import { App } from "./App";
+
+hydrateApp(App(), document.getElementById("root")!);
+```
+
+Hydration:
+- Reads loader data from `window.__EFFEX_LOADER_DATA__`
+- Attaches event handlers to existing DOM elements
+- Sets up reactive subscriptions
+- Cleans up loader data after hydration
+
+#### Platform Services
+
+Access platform utilities via the `Platform` service:
+
+```ts
+import { Effect } from "effect";
+import { Platform } from "@effex/platform";
+
+const handler = Effect.gen(function* () {
+  // Environment detection
+  const isServer = yield* Platform.isServer;
+  const isClient = yield* Platform.isClient;
+
+  // Cookie access (works on both server and client)
+  const cookies = yield* Platform.cookies;
+  const session = yield* cookies.get("session");
+  yield* cookies.set("theme", "dark", { maxAge: 86400, path: "/" });
+
+  // Server-only: access request and set response headers
+  const request = yield* Platform.request;
+  yield* Platform.setHeader("X-Custom-Header", "value");
+});
+```
+
+#### Data Serialization
+
+The platform handles serialization of complex types for SSR hydration. Types that JSON doesn't natively support are preserved:
+
+- `Date` - Serialized as ISO strings, restored as Date objects
+- `Map` and `Set` - Serialized as arrays, restored as Map/Set
+- `BigInt` - Serialized as strings, restored as BigInt
+- `RegExp` - Serialized with source and flags
+- `URL` - Serialized as href strings
+- `undefined`, `NaN`, `Infinity` - Preserved correctly
+
+```ts
+import { serialize, deserialize } from "@effex/platform";
+
+const data = {
+  created: new Date(),
+  items: new Set([1, 2, 3]),
+  metadata: new Map([["key", "value"]]),
+};
+
+// Serialize for SSR
+const json = serializeSync(data);
+
+// Deserialize on client (happens automatically during hydration)
+const restored = deserializeSync(json);
+// restored.created instanceof Date === true
+// restored.items instanceof Set === true
 ```
 
 ## Why No JSX?
