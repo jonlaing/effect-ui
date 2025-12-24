@@ -10,6 +10,7 @@ export {
   // RouterContext and Link
   RouterContext,
   Link,
+  getActionState,
   makeRouterLayer,
   makeTypedRouterLayer,
   setRouter,
@@ -30,6 +31,10 @@ export {
   type AnyRoute,
   type LoaderFn,
   type LoaderResult,
+  type LoaderState,
+  type ActionFn,
+  type ActionResult,
+  type ActionState,
   // Error constructor
   RouteMatchError,
 } from "./router";

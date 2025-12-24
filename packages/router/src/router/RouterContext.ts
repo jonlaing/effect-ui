@@ -1,5 +1,5 @@
 import { Context, Effect, Layer } from "effect";
-import { button, form as formElement } from "@effex/dom";
+import { button } from "@effex/dom";
 import { component } from "@effex/dom";
 import type { BaseRouter, ActionState } from "./types";
 import type { Readable } from "@effex/core";
@@ -138,115 +138,13 @@ export const Link = component("Link", (props: LinkProps, children?) =>
 );
 
 /**
- * Props for the Form component.
- */
-export interface FormProps {
-  /** HTTP method (defaults to "POST") */
-  readonly method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-  /** Optional action URL (defaults to current path) */
-  readonly action?: string;
-  /** Optional CSS class */
-  readonly class?: string;
-  /** Called before submission (return false to prevent) */
-  readonly onSubmit?: (formData: FormData) => boolean | void;
-  /** Called after successful action */
-  readonly onSuccess?: (data: unknown) => void;
-  /** Called after action error */
-  readonly onError?: (error: unknown) => void;
-  /** Whether to prevent default form behavior (defaults to true on client) */
-  readonly preventDefaultOnClient?: boolean;
-}
-
-/**
- * A form component that integrates with the router's action system.
- * Provides progressive enhancement - works without JS, enhanced with JS.
- *
- * @example
- * ```ts
- * // Basic form that submits to current route's action
- * Form({}, [
- *   input({ type: "text", name: "title" }),
- *   button({ type: "submit" }, "Save"),
- * ])
- *
- * // With callbacks
- * Form({
- *   onSuccess: (data) => console.log("Saved!", data),
- *   onError: (err) => console.error("Failed:", err),
- * }, [
- *   input({ type: "text", name: "email" }),
- *   button({ type: "submit" }, "Subscribe"),
- * ])
- *
- * // Different HTTP method
- * Form({ method: "DELETE" }, [
- *   button({ type: "submit" }, "Delete"),
- * ])
- * ```
- */
-export const Form = component("Form", (props: FormProps, children?) =>
-  Effect.gen(function* () {
-    const router = yield* RouterContext;
-    const currentPath = yield* router.pathname.get;
-
-    const method = props.method ?? "POST";
-    const action = props.action ?? currentPath;
-    const preventDefault = props.preventDefaultOnClient ?? true;
-
-    // Build attributes object
-    // Note: Using type assertion due to intersection type issue with index signatures
-    // in @effex/dom's HTMLAttributes type definition
-    const formAttrs = {
-      method,
-      action,
-      class: props.class,
-      onSubmit: (e: SubmitEvent) => {
-        // Get form data before potentially preventing default
-        const formEl = e.target as HTMLFormElement;
-        const formData = new FormData(formEl);
-
-        // Call user's onSubmit if provided
-        if (props.onSubmit) {
-          const shouldContinue = props.onSubmit(formData);
-          if (shouldContinue === false) {
-            e.preventDefault();
-            return Effect.void;
-          }
-        }
-
-        // On client, prevent default and use router
-        if (typeof window !== "undefined" && preventDefault) {
-          e.preventDefault();
-
-          return Effect.gen(function* () {
-            const result = yield* Effect.either(router.submitAction(formData));
-
-            if (result._tag === "Right" && result.right !== null) {
-              props.onSuccess?.(result.right.data);
-            } else if (result._tag === "Left") {
-              props.onError?.(result.left);
-            }
-          });
-        }
-
-        // On server or with preventDefault=false, let form submit normally
-        return Effect.void;
-      },
-    };
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return yield* formElement(formAttrs as any, children ?? []);
-  }),
-);
-
-/**
- * Hook to access the current action state.
+ * Access the current action state from the router.
  * Returns a Readable of the action state.
  *
  * @example
  * ```ts
- * const MyForm = Effect.gen(function* () {
- *   const actionState = yield* useActionState()
+ * const MyComponent = Effect.gen(function* () {
+ *   const actionState = yield* getActionState()
  *
  *   return div([
  *     when(actionState.map(s => s.isSubmitting), () =>
@@ -255,15 +153,11 @@ export const Form = component("Form", (props: FormProps, children?) =>
  *     when(actionState.map(s => s.error !== null), () =>
  *       span({ class: "error" }, "Submission failed")
  *     ),
- *     Form({}, [
- *       input({ name: "email" }),
- *       button({ type: "submit" }, "Subscribe"),
- *     ]),
  *   ])
  * })
  * ```
  */
-export const useActionState = (): Effect.Effect<
+export const getActionState = (): Effect.Effect<
   Readable.Readable<ActionState>,
   never,
   RouterContext

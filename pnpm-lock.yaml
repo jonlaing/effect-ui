@@ -109,7 +109,7 @@ importers:
     dependencies:
       effect:
         specifier: ^3.0.0
-        version: 3.19.9
+        version: 3.19.13
 
   packages/dom:
     dependencies:
@@ -118,7 +118,7 @@ importers:
         version: link:../core
       effect:
         specifier: ^3.0.0
-        version: 3.19.9
+        version: 3.19.13
 
   packages/form:
     dependencies:
@@ -127,19 +127,22 @@ importers:
         version: link:../dom
       effect:
         specifier: ^3.0.0
-        version: 3.19.9
+        version: 3.19.13
 
   packages/platform:
     dependencies:
       '@effex/dom':
         specifier: workspace:*
         version: link:../dom
+      '@effex/form':
+        specifier: workspace:*
+        version: link:../form
       '@effex/router':
         specifier: workspace:*
         version: link:../router
       effect:
         specifier: ^3.0.0
-        version: 3.19.4
+        version: 3.19.13
 
   packages/primitives:
     dependencies:
@@ -148,7 +151,7 @@ importers:
         version: link:../dom
       effect:
         specifier: ^3.0.0
-        version: 3.19.9
+        version: 3.19.13
 
   packages/router:
     dependencies:
@@ -160,7 +163,7 @@ importers:
         version: link:../dom
       effect:
         specifier: ^3.0.0
-        version: 3.19.9
+        version: 3.19.13
 
 packages:
 
@@ -706,9 +709,6 @@ packages:
   '@shikijs/vscode-textmate@10.0.2':
     resolution: {integrity: sha512-83yeghZ2xxin3Nj8z1NMd/NCuca+gsYXswywDy5bHvwlWL8tpTQmzGeUuHd9FC3E/SBEMvzJRwWEOz5gGes9Qg==}
 
-  '@standard-schema/spec@1.0.0':
-    resolution: {integrity: sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA==}
-
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
@@ -1244,12 +1244,6 @@ packages:
 
   effect@3.19.13:
     resolution: {integrity: sha512-8MZ783YuHRwHZX2Mmm+bpGxq+7XPd88sWwYAz2Ysry80sEKpftDZXs2Hg9ZyjESi1IBTNHF0oDKe0zJRkUlyew==}
-
-  effect@3.19.4:
-    resolution: {integrity: sha512-gApFffMwpDVgmw/FzCaYWt6zw4m0xAnQf5+cPS0+Sl85AxfeovJeEIsiEQVlk+ZvtBYcoPXxi65GIyruzanQ5g==}
-
-  effect@3.19.9:
-    resolution: {integrity: sha512-taMXnfG/p+j7AmMOHHQaCHvjqwu9QBO3cxuZqL2dMG/yWcEMw0ZHruHe9B49OxtfKH/vKKDDKRhZ+1GJ2p5R5w==}
 
   emoji-regex@10.6.0:
     resolution: {integrity: sha512-toUI84YS5YmxW219erniWD0CIVOo46xGKColeNQRgOzDorgBi1v4D71/OFzgD9GO2UGKIv1C3Sp8DAn0+j5w7A==}
@@ -2981,8 +2975,6 @@ snapshots:
 
   '@shikijs/vscode-textmate@10.0.2': {}
 
-  '@standard-schema/spec@1.0.0': {}
-
   '@standard-schema/spec@1.1.0': {}
 
   '@storybook/addon-a11y@10.1.10(storybook@10.1.10(@testing-library/dom@10.4.1)(prettier@3.7.4)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))':
@@ -3566,16 +3558,6 @@ snapshots:
   effect@3.19.13:
     dependencies:
       '@standard-schema/spec': 1.1.0
-      fast-check: 3.23.2
-
-  effect@3.19.4:
-    dependencies:
-      '@standard-schema/spec': 1.0.0
-      fast-check: 3.23.2
-
-  effect@3.19.9:
-    dependencies:
-      '@standard-schema/spec': 1.0.0
       fast-check: 3.23.2
 
   emoji-regex@10.6.0: {}

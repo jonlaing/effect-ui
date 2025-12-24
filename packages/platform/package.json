@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@effex/dom": "workspace:*",
+    "@effex/form": "workspace:*",
     "@effex/router": "workspace:*"
   },
   "peerDependencies": {

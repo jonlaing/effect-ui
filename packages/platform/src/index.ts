@@ -4,8 +4,25 @@ export * from "@effex/dom";
 // Re-export everything from @effex/router
 export * from "@effex/router";
 
-// Re-export everything from @effex/form
-export * from "@effex/form";
+// Re-export from @effex/form, but exclude Form (we provide our own)
+export {
+  // Form.make is re-exported from PlatformForm with router integration
+  makeForm,
+  // Field
+  Field,
+  makeField,
+  makeFieldArray,
+  // Types
+  type ValidationTiming,
+  type FieldType,
+  type FieldArray,
+  type AsyncValidator,
+  type Validators,
+  type FormOptions,
+  type FormFields,
+  type SubmitHandler,
+  type FormType,
+} from "@effex/form";
 
 // Re-export everything from @effex/primitives
 export * from "@effex/primitives";
@@ -31,3 +48,10 @@ export { serialize, deserialize } from "./Serialization.js";
 export { render, type RenderOptions, type RenderResult } from "./render.js";
 
 export { hydrateApp, type HydrateOptions } from "./hydrate.js";
+
+// Platform-integrated Form (wraps @effex/form with router action support)
+export {
+  Form,
+  type PlatformForm,
+  type PlatformFormOptions,
+} from "./PlatformForm.js";
