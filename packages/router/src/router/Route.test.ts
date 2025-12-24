@@ -193,4 +193,71 @@ describe("Route", () => {
       );
     });
   });
+
+  describe("Route with loader", () => {
+    it("should create a route without a loader", () => {
+      const route = Route.make("/users");
+      expect(route.loader).toBeUndefined();
+    });
+
+    it("should create a route with a loader", () => {
+      const route = Route.make("/users/:id", {
+        params: Schema.Struct({ id: Schema.String }),
+        loader: (params) => Effect.succeed({ user: { id: params.id } }),
+      });
+      expect(route.loader).toBeDefined();
+    });
+
+    it("should execute loader with params", async () => {
+      const route = Route.make("/users/:id", {
+        params: Schema.Struct({ id: Schema.String }),
+        loader: (params: { id: string }) =>
+          Effect.succeed({ user: { id: params.id, name: "Test User" } }),
+      });
+
+      const params = await Effect.runPromise(route.match("/users/123"));
+      expect(params).toEqual({ id: "123" });
+
+      const data = await Effect.runPromise(
+        route.loader!(params as { id: string }),
+      );
+      expect(data).toEqual({ user: { id: "123", name: "Test User" } });
+    });
+
+    it("should support async loader", async () => {
+      const route = Route.make("/users/:id", {
+        params: Schema.Struct({ id: Schema.String }),
+        loader: (params: { id: string }) =>
+          Effect.gen(function* () {
+            yield* Effect.sleep("1 millis");
+            return { user: { id: params.id } };
+          }),
+      });
+
+      const params = await Effect.runPromise(route.match("/users/42"));
+      const data = await Effect.runPromise(
+        route.loader!(params as { id: string }),
+      );
+      expect(data).toEqual({ user: { id: "42" } });
+    });
+
+    it("should support loader that can fail", async () => {
+      const route = Route.make("/users/:id", {
+        params: Schema.Struct({ id: Schema.String }),
+        loader: (params: { id: string }) =>
+          params.id === "404"
+            ? Effect.fail(new Error("User not found"))
+            : Effect.succeed({ user: { id: params.id } }),
+      });
+
+      const params = await Effect.runPromise(route.match("/users/404"));
+      const result = await Effect.runPromise(
+        route.loader!(params as { id: string }).pipe(
+          Effect.map(() => "success"),
+          Effect.catchAll(() => Effect.succeed("failed")),
+        ),
+      );
+      expect(result).toBe("failed");
+    });
+  });
 });

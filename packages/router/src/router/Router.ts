@@ -2,11 +2,13 @@ import { Effect, Scope } from "effect";
 import type { Schema } from "effect";
 import { Signal, Derived } from "@effex/core";
 import type {
+  AnyRoute,
   Route,
   Router as RouterType,
   RouterOptions,
   RouteState,
   NavigateOptions,
+  LoaderResult,
 } from "./types";
 import { routeSpecificity } from "./Route";
 
@@ -36,9 +38,7 @@ import { routeSpecificity } from "./Route";
  * const userParams = yield* router.routes.user.params.get
  * ```
  */
-export const make = <
-  Routes extends Record<string, Route<string, Schema.Schema.AnyNoContext>>,
->(
+export const make = <Routes extends Record<string, AnyRoute>>(
   routes: Routes,
   options?: RouterOptions,
 ): Effect.Effect<RouterType<Routes>, never, Scope.Scope> =>
@@ -160,15 +160,50 @@ export const make = <
         }
       });
 
+    // Execute the loader for the currently matched route
+    const executeLoader = <R = never>(): Effect.Effect<
+      LoaderResult | null,
+      unknown,
+      R
+    > =>
+      Effect.gen(function* () {
+        const currentRouteName = yield* currentRoute.get;
+        if (currentRouteName === null) {
+          return null;
+        }
+
+        const routeDef = routes[currentRouteName as keyof Routes];
+        if (!routeDef || !routeDef.loader) {
+          return null;
+        }
+
+        const pathname = yield* pathnameSignal.get;
+        const params = yield* routeDef.match(pathname);
+
+        const data = yield* routeDef.loader(params) as Effect.Effect<
+          unknown,
+          unknown,
+          R
+        >;
+
+        return {
+          routeName: currentRouteName as string,
+          params,
+          data,
+        } satisfies LoaderResult;
+      });
+
     const router: RouterType<Routes> = {
       pathname: pathnameSignal,
       searchParams: searchParamsSignal,
       currentRoute,
       routes: routeStates,
+      definitions: routes,
       push,
       replace,
       back,
       forward,
+      executeLoader,
     };
 
     return router;
@@ -180,7 +215,7 @@ export const make = <
  * This doesn't validate with Schema - just checks if the path pattern matches.
  */
 const tryMatchSync = (
-  route: Route<string, Schema.Schema.AnyNoContext>,
+  route: AnyRoute,
   pathname: string,
 ): Record<string, string> | null => {
   const parts = pathname.split("/").filter((p) => p.length > 0);
@@ -247,9 +282,7 @@ const tryMatchSync = (
  * router.routes.user.params // Readable<{ id: string } | null>
  * ```
  */
-export type Infer<
-  Routes extends Record<string, Route<string, Schema.Schema.AnyNoContext>>,
-> = RouterType<Routes>;
+export type Infer<Routes extends Record<string, AnyRoute>> = RouterType<Routes>;
 
 /**
  * Router module namespace.

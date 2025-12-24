@@ -535,4 +535,159 @@ describe("Router", () => {
       }
     });
   });
+
+  describe("executeLoader", () => {
+    it("should return null when no route matches", async () => {
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const router = yield* Router.make(
+              {
+                users: Route.make("/users"),
+              },
+              { initialPath: "/nonexistent" },
+            );
+            return yield* router.executeLoader();
+          }),
+        ),
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it("should return null when matched route has no loader", async () => {
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const router = yield* Router.make(
+              {
+                home: Route.make("/"),
+              },
+              { initialPath: "/" },
+            );
+            return yield* router.executeLoader();
+          }),
+        ),
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it("should execute loader and return result", async () => {
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const router = yield* Router.make(
+              {
+                user: Route.make("/users/:id", {
+                  params: Schema.Struct({ id: Schema.String }),
+                  loader: (params) =>
+                    Effect.succeed({ user: { id: params.id, name: "Test" } }),
+                }),
+              },
+              { initialPath: "/users/123" },
+            );
+            return yield* router.executeLoader();
+          }),
+        ),
+      );
+
+      expect(result).toEqual({
+        routeName: "user",
+        params: { id: "123" },
+        data: { user: { id: "123", name: "Test" } },
+      });
+    });
+
+    it("should execute async loader", async () => {
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const router = yield* Router.make(
+              {
+                user: Route.make("/users/:id", {
+                  params: Schema.Struct({ id: Schema.String }),
+                  loader: (params) =>
+                    Effect.gen(function* () {
+                      yield* Effect.sleep("1 millis");
+                      return { userId: params.id };
+                    }),
+                }),
+              },
+              { initialPath: "/users/456" },
+            );
+            return yield* router.executeLoader();
+          }),
+        ),
+      );
+
+      expect(result).toEqual({
+        routeName: "user",
+        params: { id: "456" },
+        data: { userId: "456" },
+      });
+    });
+
+    it("should propagate loader errors", async () => {
+      // Create route with a loader that conditionally fails
+      const userRoute = Route.make("/users/:id", {
+        params: Schema.Struct({ id: Schema.String }),
+        loader: (params: { id: string }) =>
+          params.id === "fail"
+            ? Effect.fail(new Error("Loader failed"))
+            : Effect.succeed({ id: params.id }),
+      });
+
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const router = yield* Router.make(
+              { user: userRoute },
+              { initialPath: "/users/fail" },
+            );
+            return yield* router.executeLoader().pipe(
+              Effect.map(() => "success"),
+              Effect.catchAll((e) =>
+                Effect.succeed(`failed: ${(e as Error).message}`),
+              ),
+            );
+          }),
+        ),
+      );
+
+      expect(result).toBe("failed: Loader failed");
+    });
+
+    it("should expose route definitions", async () => {
+      const userRoute = Route.make("/users/:id", {
+        params: Schema.Struct({ id: Schema.String }),
+        loader: (params) => Effect.succeed({ id: params.id }),
+      });
+
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const router = yield* Router.make(
+              {
+                home: Route.make("/"),
+                user: userRoute,
+              },
+              { initialPath: "/" },
+            );
+            return {
+              hasHome: "home" in router.definitions,
+              hasUser: "user" in router.definitions,
+              userHasLoader: router.definitions.user.loader !== undefined,
+            };
+          }),
+        ),
+      );
+
+      expect(result).toEqual({
+        hasHome: true,
+        hasUser: true,
+        userHasLoader: true,
+      });
+    });
+  });
 });

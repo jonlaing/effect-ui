@@ -32,5 +32,8 @@ export type {
   Router as RouterType,
   RouterOptions,
   BaseRouter,
+  AnyRoute,
+  LoaderFn,
+  LoaderResult,
 } from "./types";
 export { RouteMatchError } from "./types";

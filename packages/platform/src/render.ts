@@ -1,13 +1,29 @@
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import { RendererContext } from "@effex/core";
 import type { Element } from "@effex/dom";
 import { renderToString } from "@effex/dom/server";
 import {
   makeServerPlatformContext,
+  PlatformContext,
   type PlatformContextType,
 } from "./Platform.js";
-import { type LoaderData } from "./RouteLoader.js";
+import {
+  type LoaderData,
+  LoaderContextTag,
+  makeLoaderContext,
+} from "./RouteLoader.js";
 import { serializeForHtmlSync } from "./Serialization.js";
+
+/**
+ * Router interface for SSR (avoids cross-package Effect type issues)
+ */
+interface SSRRouter {
+  executeLoader: () => Effect.Effect<
+    { routeName: string; params: unknown; data: unknown } | null,
+    unknown,
+    unknown
+  >;
+}
 
 /**
  * Options for server-side rendering
@@ -17,6 +33,12 @@ export interface RenderOptions {
    * The incoming request
    */
   readonly request: Request;
+
+  /**
+   * Optional router instance. If provided, loaders will be executed before rendering.
+   * Create the router with Router.make() and pass it here.
+   */
+  readonly router?: SSRRouter;
 }
 
 /**
@@ -86,11 +108,56 @@ export const render = async (
   // Create a loader data cache to collect data during rendering
   const loaderDataCache = new Map<string, unknown>();
 
+  // If router is provided, execute the loader for the matched route
+  let currentRouteName: string | null = null;
+  let currentParams: Record<string, string> = {};
+
+  if (options.router) {
+    // Execute loader and populate cache
+    const loaderResult = await Effect.runPromise(
+      options.router.executeLoader() as Effect.Effect<{
+        routeName: string;
+        params: unknown;
+        data: unknown;
+      } | null>,
+    );
+
+    if (loaderResult) {
+      currentRouteName = loaderResult.routeName;
+      currentParams = (loaderResult.params as Record<string, string>) ?? {};
+      loaderDataCache.set(loaderResult.routeName, loaderResult.data);
+    }
+  }
+
+  // Create loader context for components to access
+  // Use a simple object that satisfies ParamsReadable to avoid cross-package type issues
+  const paramsReadable = {
+    get: Effect.succeed(currentParams),
+  };
+
+  const loaderContext = makeLoaderContext({
+    routeId: currentRouteName ?? "",
+    params: paramsReadable,
+    loaderDataCache,
+    isHydrating: false,
+  });
+
+  // Provide LoaderContext and PlatformContext during rendering
+  const loaderLayer = Layer.succeed(LoaderContextTag, loaderContext);
+  const platformLayer = Layer.succeed(PlatformContext, platformContext);
+  const layers = Layer.merge(loaderLayer, platformLayer);
+
   // renderToString handles providing the RendererContext internally
-  // Note: In the future, we'll provide platformContext to loaders during render
   // Type assertion needed due to pnpm resolving Effect types differently across packages
   const html: string = await Effect.runPromise(
-    renderToString(element) as unknown as Effect.Effect<string>,
+    Effect.provide(
+      renderToString(element) as unknown as Effect.Effect<
+        string,
+        never,
+        LoaderContextTag | PlatformContext
+      >,
+      layers,
+    ) as unknown as Effect.Effect<string>,
   );
 
   // Convert loader data cache to serializable format
@@ -99,7 +166,7 @@ export const render = async (
     loaderData[routeId] = {
       data,
       timestamp: Date.now(),
-      params: {},
+      params: currentParams,
     };
   }
 

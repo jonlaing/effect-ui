@@ -27,6 +27,9 @@ export {
   type RouterType,
   type RouterOptions,
   type BaseRouter,
+  type AnyRoute,
+  type LoaderFn,
+  type LoaderResult,
   // Error constructor
   RouteMatchError,
 } from "./router";

@@ -36,11 +36,8 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@effex/core": "workspace:*",
     "@effex/dom": "workspace:*",
-    "@effex/router": "workspace:*",
-    "@effex/form": "workspace:*",
-    "@effex/primitives": "workspace:*"
+    "@effex/router": "workspace:*"
   },
   "peerDependencies": {
     "effect": "^3.0.0"
