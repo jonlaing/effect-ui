@@ -140,6 +140,22 @@ export interface LoaderResult<A = unknown, E = unknown> {
 }
 
 /**
+ * Current loader state for the active route.
+ */
+export interface LoaderState<A = unknown> {
+  /** The route name that was loaded */
+  readonly routeName: string | null;
+  /** The params used for the loader */
+  readonly params: Record<string, string>;
+  /** The loader data */
+  readonly data: A | null;
+  /** Whether the loader is currently loading */
+  readonly isLoading: boolean;
+  /** Error from loader (if any) */
+  readonly error: unknown | null;
+}
+
+/**
  * A route with any loader type (used for Router constraints)
  */
 export type AnyRoute = Route<
@@ -173,6 +189,11 @@ export interface Router<Routes extends Record<string, AnyRoute>> {
   };
   /** The original route definitions (for accessing loaders) */
   readonly definitions: Routes;
+  /**
+   * Reactive loader state for the current route.
+   * Updates automatically when navigation triggers a loader.
+   */
+  readonly loaderState: Readable.Readable<LoaderState>;
   /** Navigate to a path */
   readonly push: (
     path: string,
@@ -193,6 +214,14 @@ export interface Router<Routes extends Record<string, AnyRoute>> {
     unknown,
     R
   >;
+  /**
+   * Initialize loader state with pre-loaded data (for SSR hydration).
+   */
+  readonly initializeLoaderData: (
+    routeName: string,
+    params: Record<string, string>,
+    data: unknown,
+  ) => Effect.Effect<void>;
 }
 
 /**

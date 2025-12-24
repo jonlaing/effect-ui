@@ -448,4 +448,145 @@ describe("hydrate", () => {
       expect(container.querySelectorAll("div").length).toBeGreaterThan(0);
     });
   });
+
+  describe("router integration", () => {
+    it("should initialize router loaderState with SSR data", async () => {
+      const initializeLoaderDataMock = vi.fn(() => Effect.void);
+
+      const mockRouter = {
+        initializeLoaderData: initializeLoaderDataMock,
+      };
+
+      (
+        window as unknown as { __EFFEX_LOADER_DATA__: LoaderData }
+      ).__EFFEX_LOADER_DATA__ = {
+        "routes/user": {
+          data: { name: "Alice", email: "alice@example.com" },
+          timestamp: Date.now(),
+          params: { id: "123" },
+        },
+      };
+
+      const html = await run(renderToString(div("User profile")));
+      container.innerHTML = html;
+
+      await hydrateApp(div("User profile"), container, { router: mockRouter });
+
+      expect(initializeLoaderDataMock).toHaveBeenCalledWith(
+        "routes/user",
+        { id: "123" },
+        { name: "Alice", email: "alice@example.com" },
+      );
+    });
+
+    it("should initialize router for multiple route data entries", async () => {
+      const calls: Array<[string, Record<string, string>, unknown]> = [];
+      const initializeLoaderDataMock = vi.fn(
+        (routeName: string, params: Record<string, string>, data: unknown) => {
+          calls.push([routeName, params, data]);
+          return Effect.void;
+        },
+      );
+
+      const mockRouter = {
+        initializeLoaderData: initializeLoaderDataMock,
+      };
+
+      (
+        window as unknown as { __EFFEX_LOADER_DATA__: LoaderData }
+      ).__EFFEX_LOADER_DATA__ = {
+        "routes/layout": {
+          data: { theme: "dark" },
+          timestamp: Date.now(),
+          params: {},
+        },
+        "routes/user": {
+          data: { name: "Bob" },
+          timestamp: Date.now(),
+          params: { id: "456" },
+        },
+      };
+
+      const html = await run(renderToString(div("App")));
+      container.innerHTML = html;
+
+      await hydrateApp(div("App"), container, { router: mockRouter });
+
+      expect(initializeLoaderDataMock).toHaveBeenCalledTimes(2);
+      expect(calls).toContainEqual(["routes/layout", {}, { theme: "dark" }]);
+      expect(calls).toContainEqual([
+        "routes/user",
+        { id: "456" },
+        { name: "Bob" },
+      ]);
+    });
+
+    it("should work without router option", async () => {
+      (
+        window as unknown as { __EFFEX_LOADER_DATA__: LoaderData }
+      ).__EFFEX_LOADER_DATA__ = {
+        "routes/test": {
+          data: { value: 1 },
+          timestamp: Date.now(),
+          params: {},
+        },
+      };
+
+      const html = await run(renderToString(div("Test")));
+      container.innerHTML = html;
+
+      // Should not throw when router is not provided
+      await hydrateApp(div("Test"), container);
+
+      expect(container.textContent).toContain("Test");
+    });
+
+    it("should deserialize data before passing to router", async () => {
+      let receivedData: unknown;
+      const initializeLoaderDataMock = vi.fn(
+        (
+          _routeName: string,
+          _params: Record<string, string>,
+          data: unknown,
+        ) => {
+          receivedData = data;
+          return Effect.void;
+        },
+      );
+
+      const mockRouter = {
+        initializeLoaderData: initializeLoaderDataMock,
+      };
+
+      (
+        window as unknown as { __EFFEX_LOADER_DATA__: LoaderData }
+      ).__EFFEX_LOADER_DATA__ = {
+        "routes/test": {
+          data: {
+            created: {
+              __effex_type__: "Date",
+              __effex_value__: "2024-01-15T10:30:00Z",
+            },
+            tags: {
+              __effex_type__: "Set",
+              __effex_value__: ["a", "b"],
+            },
+          },
+          timestamp: Date.now(),
+          params: {},
+        },
+      };
+
+      const html = await run(renderToString(div("Test")));
+      container.innerHTML = html;
+
+      await hydrateApp(div("Test"), container, { router: mockRouter });
+
+      // Data should be deserialized
+      const data = receivedData as { created: Date; tags: Set<string> };
+      expect(data.created).toBeInstanceOf(Date);
+      expect(data.tags).toBeInstanceOf(Set);
+      expect(data.tags.has("a")).toBe(true);
+    });
+  });
 });

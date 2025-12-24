@@ -1,4 +1,4 @@
-import { Effect, Scope } from "effect";
+import { Effect, Scope, Stream } from "effect";
 import type { Schema } from "effect";
 import { Signal, Derived } from "@effex/core";
 import type {
@@ -9,6 +9,7 @@ import type {
   RouteState,
   NavigateOptions,
   LoaderResult,
+  LoaderState,
 } from "./types";
 import { routeSpecificity } from "./Route";
 
@@ -160,6 +161,16 @@ export const make = <Routes extends Record<string, AnyRoute>>(
         }
       });
 
+    // Create reactive loader state
+    const initialLoaderState: LoaderState = {
+      routeName: null,
+      params: {},
+      data: null,
+      isLoading: false,
+      error: null,
+    };
+    const loaderStateSignal = yield* Signal.make(initialLoaderState);
+
     // Execute the loader for the currently matched route
     const executeLoader = <R = never>(): Effect.Effect<
       LoaderResult | null,
@@ -193,17 +204,117 @@ export const make = <Routes extends Record<string, AnyRoute>>(
         } satisfies LoaderResult;
       });
 
+    // Execute loader and update reactive state
+    const runLoaderAndUpdateState = Effect.gen(function* () {
+      const currentRouteName = yield* currentRoute.get;
+      if (currentRouteName === null) {
+        yield* loaderStateSignal.set({
+          routeName: null,
+          params: {},
+          data: null,
+          isLoading: false,
+          error: null,
+        });
+        return;
+      }
+
+      const routeDef = routes[currentRouteName as keyof Routes];
+      const pathname = yield* pathnameSignal.get;
+      const rawParams = tryMatchSync(routeDef, pathname) ?? {};
+
+      // If route has no loader, just update with null data
+      if (!routeDef || !routeDef.loader) {
+        yield* loaderStateSignal.set({
+          routeName: currentRouteName as string,
+          params: rawParams,
+          data: null,
+          isLoading: false,
+          error: null,
+        });
+        return;
+      }
+
+      // Set loading state
+      yield* loaderStateSignal.set({
+        routeName: currentRouteName as string,
+        params: rawParams,
+        data: null,
+        isLoading: true,
+        error: null,
+      });
+
+      // Execute loader
+      const result = yield* Effect.either(
+        Effect.gen(function* () {
+          const params = yield* routeDef.match(pathname);
+          return yield* routeDef.loader!(params) as Effect.Effect<unknown>;
+        }),
+      );
+
+      if (result._tag === "Right") {
+        yield* loaderStateSignal.set({
+          routeName: currentRouteName as string,
+          params: rawParams,
+          data: result.right,
+          isLoading: false,
+          error: null,
+        });
+      } else {
+        yield* loaderStateSignal.set({
+          routeName: currentRouteName as string,
+          params: rawParams,
+          data: null,
+          isLoading: false,
+          error: result.left,
+        });
+      }
+    });
+
+    // Initialize loader data from SSR (for hydration)
+    const initializeLoaderData = (
+      routeName: string,
+      params: Record<string, string>,
+      data: unknown,
+    ): Effect.Effect<void> =>
+      loaderStateSignal.set({
+        routeName,
+        params,
+        data,
+        isLoading: false,
+        error: null,
+      });
+
+    // Subscribe to route changes and execute loaders (client-side only)
+    if (typeof window !== "undefined") {
+      // Track last route to detect changes
+      let lastRouteName: string | null = null;
+
+      yield* Effect.fork(
+        Stream.runForEach(currentRoute.changes, (newRouteName) =>
+          Effect.gen(function* () {
+            // Only run loader if route actually changed
+            if (newRouteName !== lastRouteName) {
+              lastRouteName = newRouteName as string | null;
+              yield* runLoaderAndUpdateState;
+            }
+          }),
+        ),
+      );
+    }
+
     const router: RouterType<Routes> = {
       pathname: pathnameSignal,
       searchParams: searchParamsSignal,
       currentRoute,
       routes: routeStates,
       definitions: routes,
+      loaderState: loaderStateSignal,
       push,
       replace,
       back,
       forward,
       executeLoader,
+      initializeLoaderData,
     };
 
     return router;

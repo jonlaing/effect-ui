@@ -1,7 +1,19 @@
+import { Effect } from "effect";
 import { RendererContext } from "@effex/core";
 import type { Element } from "@effex/dom";
 import { hydrate as domHydrate } from "@effex/dom/hydrate";
 import { type LoaderData } from "./RouteLoader.js";
+
+/**
+ * Router interface for hydration (avoids cross-package Effect type issues)
+ */
+interface HydrationRouter {
+  initializeLoaderData: (
+    routeName: string,
+    params: Record<string, string>,
+    data: unknown,
+  ) => Effect.Effect<void>;
+}
 
 /**
  * Global loader data injected by SSR
@@ -20,6 +32,12 @@ export interface HydrateOptions {
    * Pre-loaded loader data (defaults to window.__EFFEX_LOADER_DATA__)
    */
   readonly loaderData?: LoaderData;
+
+  /**
+   * Router instance for initializing loader state.
+   * If provided, the router's loaderState will be populated with SSR data.
+   */
+  readonly router?: HydrationRouter;
 }
 
 /**
@@ -28,18 +46,37 @@ export interface HydrateOptions {
  * This function:
  * 1. Reads loader data from window.__EFFEX_LOADER_DATA__ (or options.loaderData)
  * 2. Deserializes the data (restoring Date, Map, Set, etc.)
- * 3. Hydrates the DOM, attaching reactivity to server-rendered elements
+ * 3. Initializes router's loaderState with SSR data (if router provided)
+ * 4. Hydrates the DOM, attaching reactivity to server-rendered elements
  *
  * @example
  * ```ts
- * // client.ts
+ * // client.ts - Basic usage
  * import { hydrateApp } from "@effex/platform";
  * import { App } from "./App";
  *
  * hydrateApp(App(), document.getElementById("root")!);
  * ```
+ *
+ * @example
+ * ```ts
+ * // client.ts - With router for reactive loader data
+ * import { Effect, Scope } from "effect";
+ * import { hydrateApp } from "@effex/platform";
+ * import { Router } from "@effex/router";
+ * import { App, routes } from "./App";
+ *
+ * const program = Effect.gen(function* () {
+ *   const router = yield* Router.make(routes);
+ *   yield* Effect.promise(() =>
+ *     hydrateApp(App(), document.getElementById("root")!, { router })
+ *   );
+ * });
+ *
+ * Effect.runPromise(Effect.scoped(program));
+ * ```
  */
-export const hydrateApp = (
+export const hydrateApp = async (
   element: Element<never, RendererContext>,
   container: HTMLElement,
   options: HydrateOptions = {},
@@ -57,14 +94,23 @@ export const hydrateApp = (
     loaderDataCache.set(routeId, entry.data);
   }
 
-  // domHydrate returns a Promise
-  return domHydrate(element, container).then(() => {
-    // Clean up the loader data from window after hydration
-    // This frees memory and prevents stale data usage
-    if (typeof window !== "undefined") {
-      delete window.__EFFEX_LOADER_DATA__;
+  // Initialize router's loaderState with SSR data (if router provided)
+  if (options.router) {
+    for (const [routeId, entry] of Object.entries(loaderData)) {
+      await Effect.runPromise(
+        options.router.initializeLoaderData(routeId, entry.params, entry.data),
+      );
     }
-  });
+  }
+
+  // domHydrate returns a Promise
+  await domHydrate(element, container);
+
+  // Clean up the loader data from window after hydration
+  // This frees memory and prevents stale data usage
+  if (typeof window !== "undefined") {
+    delete window.__EFFEX_LOADER_DATA__;
+  }
 };
 
 /**

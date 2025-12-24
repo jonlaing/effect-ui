@@ -35,5 +35,6 @@ export type {
   AnyRoute,
   LoaderFn,
   LoaderResult,
+  LoaderState,
 } from "./types";
 export { RouteMatchError } from "./types";

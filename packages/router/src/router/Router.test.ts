@@ -690,4 +690,146 @@ describe("Router", () => {
       });
     });
   });
+
+  describe("loaderState", () => {
+    it("should have initial empty state", async () => {
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const router = yield* Router.make(
+              {
+                home: Route.make("/"),
+              },
+              { initialPath: "/" },
+            );
+            return yield* router.loaderState.get;
+          }),
+        ),
+      );
+
+      expect(result).toEqual({
+        routeName: null,
+        params: {},
+        data: null,
+        isLoading: false,
+        error: null,
+      });
+    });
+
+    it("should be reactive (is a Readable)", async () => {
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const router = yield* Router.make(
+              {
+                home: Route.make("/"),
+              },
+              { initialPath: "/" },
+            );
+            // loaderState should have get method (Readable interface)
+            const state = yield* router.loaderState.get;
+            return typeof state === "object" && state !== null;
+          }),
+        ),
+      );
+
+      expect(result).toBe(true);
+    });
+  });
+
+  describe("initializeLoaderData", () => {
+    it("should initialize loader state with provided data", async () => {
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const router = yield* Router.make(
+              {
+                user: Route.make("/users/:id", {
+                  params: Schema.Struct({ id: Schema.String }),
+                }),
+              },
+              { initialPath: "/users/123" },
+            );
+
+            // Initialize with SSR data
+            yield* router.initializeLoaderData(
+              "user",
+              { id: "123" },
+              { name: "Alice", email: "alice@example.com" },
+            );
+
+            return yield* router.loaderState.get;
+          }),
+        ),
+      );
+
+      expect(result).toEqual({
+        routeName: "user",
+        params: { id: "123" },
+        data: { name: "Alice", email: "alice@example.com" },
+        isLoading: false,
+        error: null,
+      });
+    });
+
+    it("should allow re-initialization (for hydration)", async () => {
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const router = yield* Router.make(
+              {
+                home: Route.make("/"),
+                user: Route.make("/users/:id"),
+              },
+              { initialPath: "/users/456" },
+            );
+
+            // First initialization
+            yield* router.initializeLoaderData(
+              "user",
+              { id: "456" },
+              { name: "Bob" },
+            );
+
+            const first = yield* router.loaderState.get;
+
+            // Re-initialize (simulating a new hydration)
+            yield* router.initializeLoaderData(
+              "user",
+              { id: "456" },
+              { name: "Bob Updated" },
+            );
+
+            const second = yield* router.loaderState.get;
+
+            return { first, second };
+          }),
+        ),
+      );
+
+      expect(result.first.data).toEqual({ name: "Bob" });
+      expect(result.second.data).toEqual({ name: "Bob Updated" });
+    });
+
+    it("should set isLoading to false after initialization", async () => {
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const router = yield* Router.make(
+              {
+                home: Route.make("/"),
+              },
+              { initialPath: "/" },
+            );
+
+            yield* router.initializeLoaderData("home", {}, { loaded: true });
+
+            return yield* router.loaderState.get;
+          }),
+        ),
+      );
+
+      expect(result.isLoading).toBe(false);
+    });
+  });
 });
