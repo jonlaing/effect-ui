@@ -23,6 +23,17 @@ interface SSRRouter {
     unknown,
     unknown
   >;
+  executeAction: (
+    routeName: string,
+    formData: FormData,
+    request: Request,
+  ) => Effect.Effect<
+    { routeName: string; data: unknown } | null,
+    unknown,
+    unknown
+  >;
+  currentRoute: { get: Effect.Effect<string | null> };
+  pathname: { get: Effect.Effect<string> };
 }
 
 /**
@@ -39,6 +50,15 @@ export interface RenderOptions {
    * Create the router with Router.make() and pass it here.
    */
   readonly router?: SSRRouter;
+}
+
+/**
+ * Action data structure for hydration
+ */
+export interface ActionData {
+  routeName: string;
+  data: unknown;
+  timestamp: number;
 }
 
 /**
@@ -59,6 +79,16 @@ export interface RenderResult {
    * Serialized loader data as HTML-safe JSON string
    */
   readonly loaderDataScript: string;
+
+  /**
+   * Action data (if a POST request was processed)
+   */
+  readonly actionData: ActionData | null;
+
+  /**
+   * Serialized action data as HTML-safe JSON string (or "null")
+   */
+  readonly actionDataScript: string;
 
   /**
    * Response headers (includes Set-Cookie, etc.)
@@ -111,9 +141,52 @@ export const render = async (
   // If router is provided, execute the loader for the matched route
   let currentRouteName: string | null = null;
   let currentParams: Record<string, string> = {};
+  let actionData: ActionData | null = null;
 
   if (options.router) {
-    // Execute loader and populate cache
+    // Check if this is a form submission (POST, PUT, PATCH, DELETE)
+    const method = options.request.method.toUpperCase();
+    const isActionRequest = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+
+    if (isActionRequest) {
+      // Get the current route name
+      const routeName = await Effect.runPromise(
+        options.router.currentRoute.get as Effect.Effect<string | null>,
+      );
+
+      if (routeName) {
+        // Parse form data from request
+        const formData = await options.request.formData();
+
+        // Execute the action
+        try {
+          const actionResult = await Effect.runPromise(
+            options.router.executeAction(
+              routeName,
+              formData,
+              options.request,
+            ) as Effect.Effect<{ routeName: string; data: unknown } | null>,
+          );
+
+          if (actionResult) {
+            actionData = {
+              routeName: actionResult.routeName,
+              data: actionResult.data,
+              timestamp: Date.now(),
+            };
+          }
+        } catch (error) {
+          // Action failed - store error in actionData
+          actionData = {
+            routeName,
+            data: { error: String(error) },
+            timestamp: Date.now(),
+          };
+        }
+      }
+    }
+
+    // Execute loader and populate cache (always run after action)
     const loaderResult = await Effect.runPromise(
       options.router.executeLoader() as Effect.Effect<{
         routeName: string;
@@ -172,11 +245,14 @@ export const render = async (
 
   // Serialize for safe embedding in HTML
   const loaderDataScript = serializeForHtmlSync(loaderData);
+  const actionDataScript = serializeForHtmlSync(actionData);
 
   return {
     html,
     loaderData,
     loaderDataScript,
+    actionData,
+    actionDataScript,
     headers: platformContext.responseHeaders,
     platformContext,
   };
@@ -234,7 +310,10 @@ export const renderToDocument = (
   </head>
   <body${bodyAttributes ? ` ${bodyAttributes}` : ""}>
     <div id="${escapeHtml(rootId)}">${result.html}</div>
-    <script>window.__EFFEX_LOADER_DATA__ = ${result.loaderDataScript};</script>
+    <script>
+      window.__EFFEX_LOADER_DATA__ = ${result.loaderDataScript};
+      window.__EFFEX_ACTION_DATA__ = ${result.actionDataScript};
+    </script>
     ${scriptTags}
   </body>
 </html>`;

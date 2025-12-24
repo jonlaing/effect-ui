@@ -832,4 +832,149 @@ describe("Router", () => {
       expect(result.isLoading).toBe(false);
     });
   });
+
+  describe("actionState", () => {
+    it("should have initial empty state", async () => {
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const router = yield* Router.make(
+              {
+                home: Route.make("/"),
+              },
+              { initialPath: "/" },
+            );
+            return yield* router.actionState.get;
+          }),
+        ),
+      );
+
+      expect(result).toEqual({
+        isSubmitting: false,
+        data: null,
+        error: null,
+        routeName: null,
+        submissionId: null,
+      });
+    });
+  });
+
+  describe("executeAction", () => {
+    it("should return null when route has no action", async () => {
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const router = yield* Router.make(
+              {
+                home: Route.make("/"),
+              },
+              { initialPath: "/" },
+            );
+
+            const formData = new FormData();
+            const request = new Request("http://localhost/", {
+              method: "POST",
+            });
+
+            return yield* router.executeAction("home", formData, request);
+          }),
+        ),
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it("should execute action and return result", async () => {
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const router = yield* Router.make(
+              {
+                contact: Route.make("/contact", {
+                  action: ({ formData }) =>
+                    Effect.succeed({
+                      success: true,
+                      email: formData.get("email"),
+                    }),
+                }),
+              },
+              { initialPath: "/contact" },
+            );
+
+            const formData = new FormData();
+            formData.append("email", "test@example.com");
+            const request = new Request("http://localhost/contact", {
+              method: "POST",
+            });
+
+            return yield* router.executeAction("contact", formData, request);
+          }),
+        ),
+      );
+
+      expect(result).toEqual({
+        routeName: "contact",
+        data: { success: true, email: "test@example.com" },
+      });
+    });
+
+    it("should pass params to action", async () => {
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const router = yield* Router.make(
+              {
+                user: Route.make("/users/:id", {
+                  params: Schema.Struct({ id: Schema.String }),
+                  action: ({ params }) => Effect.succeed({ userId: params.id }),
+                }),
+              },
+              { initialPath: "/users/123" },
+            );
+
+            const formData = new FormData();
+            const request = new Request("http://localhost/users/123", {
+              method: "POST",
+            });
+
+            return yield* router.executeAction("user", formData, request);
+          }),
+        ),
+      );
+
+      expect(result).toEqual({
+        routeName: "user",
+        data: { userId: "123" },
+      });
+    });
+  });
+
+  describe("initializeActionData", () => {
+    it("should initialize action state with provided data", async () => {
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const router = yield* Router.make(
+              {
+                home: Route.make("/"),
+              },
+              { initialPath: "/" },
+            );
+
+            yield* router.initializeActionData("home", { submitted: true });
+
+            return yield* router.actionState.get;
+          }),
+        ),
+      );
+
+      expect(result).toEqual({
+        isSubmitting: false,
+        data: { submitted: true },
+        error: null,
+        routeName: "home",
+        submissionId: null,
+      });
+    });
+  });
 });

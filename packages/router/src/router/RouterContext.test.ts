@@ -30,6 +30,13 @@ const createMockRouter = (initialPath = "/"): BaseRouter => {
   return {
     pathname: makeTestReadable(pathname),
     searchParams: makeTestReadable(new URLSearchParams()),
+    actionState: makeTestReadable({
+      isSubmitting: false,
+      data: null,
+      error: null,
+      routeName: null,
+      submissionId: null,
+    }),
     push: (path: string) =>
       Effect.sync(() => {
         pathname = path;
@@ -40,6 +47,7 @@ const createMockRouter = (initialPath = "/"): BaseRouter => {
       }),
     back: () => Effect.void,
     forward: () => Effect.void,
+    submitAction: () => Effect.succeed(null),
   };
 };
 

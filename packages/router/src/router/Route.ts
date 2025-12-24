@@ -99,7 +99,7 @@ const matchSegments = (
  * Create a route definition.
  *
  * @param path - The path pattern (e.g., "/users/:id")
- * @param options - Route configuration including params schema and loader
+ * @param options - Route configuration including params schema, loader, and action
  *
  * @example
  * ```ts
@@ -108,6 +108,11 @@ const matchSegments = (
  *   loader: (params) => Effect.gen(function* () {
  *     const userService = yield* UserService;
  *     return yield* userService.getById(params.id);
+ *   }),
+ *   action: ({ formData, params }) => Effect.gen(function* () {
+ *     const userService = yield* UserService;
+ *     const name = formData.get("name") as string;
+ *     return yield* userService.update(params.id, { name });
  *   }),
  * })
  *
@@ -119,22 +124,27 @@ const matchSegments = (
 export const make = <
   Path extends string,
   P extends Schema.Schema.AnyNoContext = Schema.Schema.AnyNoContext,
-  A = unknown,
-  E = never,
-  R = never,
+  LA = unknown,
+  LE = never,
+  LR = never,
+  AA = unknown,
+  AE = never,
+  AR = never,
 >(
   path: Path,
-  options?: RouteOptions<P, A, E, R>,
-): RouteType<Path, P, A, E, R> => {
+  options?: RouteOptions<P, LA, LE, LR, AA, AE, AR>,
+): RouteType<Path, P, LA, LE, LR, AA, AE, AR> => {
   const segments = parsePath(path);
   const paramsSchema = options?.params;
   const loader = options?.loader;
+  const action = options?.action;
 
-  const route: RouteType<Path, P, A, E, R> = {
+  const route: RouteType<Path, P, LA, LE, LR, AA, AE, AR> = {
     path,
     segments,
     paramsSchema,
     loader,
+    action,
     match: (pathname: string) =>
       Effect.gen(function* () {
         const rawParams = matchSegments(segments, pathname);

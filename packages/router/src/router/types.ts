@@ -14,6 +14,19 @@ export type LoaderFn<P, A, E = never, R = never> = (
 ) => Effect.Effect<A, E, R>;
 
 /**
+ * An action function that handles form submissions/mutations.
+ * Receives form data and request, returns action result.
+ * @template A - The return data type
+ * @template E - The error type
+ * @template R - The required context
+ */
+export type ActionFn<A = unknown, E = never, R = never> = (args: {
+  formData: FormData;
+  request: Request;
+  params: Record<string, string>;
+}) => Effect.Effect<A, E, R>;
+
+/**
  * A path segment in a route pattern.
  */
 export type PathSegment =
@@ -24,36 +37,50 @@ export type PathSegment =
 /**
  * Options for creating a Route.
  * @template P - The params schema type
- * @template A - The loader return type
- * @template E - The loader error type
- * @template R - The loader required context
+ * @template LA - The loader return type
+ * @template LE - The loader error type
+ * @template LR - The loader required context
+ * @template AA - The action return type
+ * @template AE - The action error type
+ * @template AR - The action required context
  */
 export interface RouteOptions<
   P extends Schema.Schema.AnyNoContext,
-  A = unknown,
-  E = never,
-  R = never,
+  LA = unknown,
+  LE = never,
+  LR = never,
+  AA = unknown,
+  AE = never,
+  AR = never,
 > {
   /** Schema for validating and typing path parameters */
   readonly params?: P;
   /** Loader function to fetch data for this route */
-  readonly loader?: LoaderFn<Schema.Schema.Type<P>, A, E, R>;
+  readonly loader?: LoaderFn<Schema.Schema.Type<P>, LA, LE, LR>;
+  /** Action function to handle form submissions for this route */
+  readonly action?: ActionFn<AA, AE, AR>;
 }
 
 /**
- * A route definition with typed parameters and optional loader.
+ * A route definition with typed parameters, optional loader, and optional action.
  * @template Path - The path pattern literal type
  * @template P - The params schema type
- * @template A - The loader return type
- * @template E - The loader error type
- * @template R - The loader required context
+ * @template LA - The loader return type
+ * @template LE - The loader error type
+ * @template LR - The loader required context
+ * @template AA - The action return type
+ * @template AE - The action error type
+ * @template AR - The action required context
  */
 export interface Route<
   Path extends string = string,
   P extends Schema.Schema.AnyNoContext = Schema.Schema.AnyNoContext,
-  A = unknown,
-  E = never,
-  R = never,
+  LA = unknown,
+  LE = never,
+  LR = never,
+  AA = unknown,
+  AE = never,
+  AR = never,
 > {
   /** The original path pattern */
   readonly path: Path;
@@ -62,7 +89,9 @@ export interface Route<
   /** Schema for params validation */
   readonly paramsSchema: P | undefined;
   /** Loader function to fetch data for this route */
-  readonly loader: LoaderFn<Schema.Schema.Type<P>, A, E, R> | undefined;
+  readonly loader: LoaderFn<Schema.Schema.Type<P>, LA, LE, LR> | undefined;
+  /** Action function to handle form submissions for this route */
+  readonly action: ActionFn<AA, AE, AR> | undefined;
   /** Match a pathname against this route, returning params if matched */
   readonly match: (
     pathname: string,
@@ -140,6 +169,16 @@ export interface LoaderResult<A = unknown, E = unknown> {
 }
 
 /**
+ * Result of executing an action.
+ */
+export interface ActionResult<A = unknown> {
+  /** The route name where the action was executed */
+  readonly routeName: string;
+  /** The action return data */
+  readonly data: A;
+}
+
+/**
  * Current loader state for the active route.
  */
 export interface LoaderState<A = unknown> {
@@ -156,11 +195,30 @@ export interface LoaderState<A = unknown> {
 }
 
 /**
- * A route with any loader type (used for Router constraints)
+ * Current action state for form submissions.
+ */
+export interface ActionState<A = unknown> {
+  /** Whether an action is currently submitting */
+  readonly isSubmitting: boolean;
+  /** The last action result data */
+  readonly data: A | null;
+  /** Error from action (if any) */
+  readonly error: unknown | null;
+  /** The route name where the action was submitted */
+  readonly routeName: string | null;
+  /** Unique submission ID for tracking multiple submissions */
+  readonly submissionId: string | null;
+}
+
+/**
+ * A route with any loader/action type (used for Router constraints)
  */
 export type AnyRoute = Route<
   string,
   Schema.Schema.AnyNoContext,
+  unknown,
+  unknown,
+  unknown,
   unknown,
   unknown,
   unknown
@@ -194,6 +252,11 @@ export interface Router<Routes extends Record<string, AnyRoute>> {
    * Updates automatically when navigation triggers a loader.
    */
   readonly loaderState: Readable.Readable<LoaderState>;
+  /**
+   * Reactive action state for form submissions.
+   * Updates when actions are submitted and completed.
+   */
+  readonly actionState: Readable.Readable<ActionState>;
   /** Navigate to a path */
   readonly push: (
     path: string,
@@ -215,11 +278,36 @@ export interface Router<Routes extends Record<string, AnyRoute>> {
     R
   >;
   /**
+   * Execute an action for the specified route.
+   * @param routeName - The route to execute the action for
+   * @param formData - The form data to pass to the action
+   * @param request - The request object
+   */
+  readonly executeAction: <R = never>(
+    routeName: string,
+    formData: FormData,
+    request: Request,
+  ) => Effect.Effect<ActionResult | null, unknown, R>;
+  /**
+   * Submit a form to the current route's action.
+   * Updates actionState reactively during submission.
+   */
+  readonly submitAction: (
+    formData: FormData,
+  ) => Effect.Effect<ActionResult | null, unknown>;
+  /**
    * Initialize loader state with pre-loaded data (for SSR hydration).
    */
   readonly initializeLoaderData: (
     routeName: string,
     params: Record<string, string>,
+    data: unknown,
+  ) => Effect.Effect<void>;
+  /**
+   * Initialize action state with pre-loaded data (for SSR form submission).
+   */
+  readonly initializeActionData: (
+    routeName: string,
     data: unknown,
   ) => Effect.Effect<void>;
 }
@@ -236,13 +324,15 @@ export interface RouterOptions {
 
 /**
  * Base router interface for context (without route-specific typing).
- * Used by Link and other components that need router access.
+ * Used by Link, Form, and other components that need router access.
  */
 export interface BaseRouter {
   /** The current pathname */
   readonly pathname: Readable.Readable<string>;
   /** The current query params */
   readonly searchParams: Readable.Readable<URLSearchParams>;
+  /** Reactive action state for form submissions */
+  readonly actionState: Readable.Readable<ActionState>;
   /** Navigate to a path */
   readonly push: (
     path: string,
@@ -254,4 +344,8 @@ export interface BaseRouter {
   readonly back: () => Effect.Effect<void>;
   /** Go forward in history */
   readonly forward: () => Effect.Effect<void>;
+  /** Submit a form to the current route's action */
+  readonly submitAction: (
+    formData: FormData,
+  ) => Effect.Effect<ActionResult | null, unknown>;
 }

@@ -10,6 +10,8 @@ import type {
   NavigateOptions,
   LoaderResult,
   LoaderState,
+  ActionResult,
+  ActionState,
 } from "./types";
 import { routeSpecificity } from "./Route";
 
@@ -284,6 +286,141 @@ export const make = <Routes extends Record<string, AnyRoute>>(
         error: null,
       });
 
+    // Create reactive action state
+    const initialActionState: ActionState = {
+      isSubmitting: false,
+      data: null,
+      error: null,
+      routeName: null,
+      submissionId: null,
+    };
+    const actionStateSignal = yield* Signal.make(initialActionState);
+
+    // Generate unique submission ID
+    let submissionCounter = 0;
+    const generateSubmissionId = () => {
+      submissionCounter += 1;
+      return `submission-${submissionCounter}-${Date.now()}`;
+    };
+
+    // Execute an action for a specific route
+    const executeAction = <R = never>(
+      routeName: string,
+      formData: FormData,
+      request: Request,
+    ): Effect.Effect<ActionResult | null, unknown, R> =>
+      Effect.gen(function* () {
+        const routeDef = routes[routeName as keyof Routes];
+        if (!routeDef || !routeDef.action) {
+          return null;
+        }
+
+        const pathname = yield* pathnameSignal.get;
+        const rawParams = tryMatchSync(routeDef, pathname) ?? {};
+
+        const data = yield* routeDef.action({
+          formData,
+          request,
+          params: rawParams,
+        }) as Effect.Effect<unknown, unknown, R>;
+
+        return {
+          routeName,
+          data,
+        } satisfies ActionResult;
+      });
+
+    // Submit action and update reactive state
+    const submitAction = (
+      formData: FormData,
+    ): Effect.Effect<ActionResult | null, unknown> =>
+      Effect.gen(function* () {
+        const currentRouteName = yield* currentRoute.get;
+        if (currentRouteName === null) {
+          return null;
+        }
+
+        const routeDef = routes[currentRouteName as keyof Routes];
+        if (!routeDef || !routeDef.action) {
+          return null;
+        }
+
+        const submissionId = generateSubmissionId();
+
+        // Set submitting state
+        yield* actionStateSignal.set({
+          isSubmitting: true,
+          data: null,
+          error: null,
+          routeName: currentRouteName as string,
+          submissionId,
+        });
+
+        const pathname = yield* pathnameSignal.get;
+        const rawParams = tryMatchSync(routeDef, pathname) ?? {};
+
+        // Create a mock request for client-side submissions
+        const request = new Request(
+          typeof window !== "undefined"
+            ? window.location.href
+            : `http://localhost${pathname}`,
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
+
+        // Execute action
+        const result = yield* Effect.either(
+          routeDef.action({
+            formData,
+            request,
+            params: rawParams,
+          }) as Effect.Effect<unknown>,
+        );
+
+        if (result._tag === "Right") {
+          yield* actionStateSignal.set({
+            isSubmitting: false,
+            data: result.right,
+            error: null,
+            routeName: currentRouteName as string,
+            submissionId,
+          });
+
+          // Re-run loader after successful action to get fresh data
+          yield* runLoaderAndUpdateState;
+
+          return {
+            routeName: currentRouteName as string,
+            data: result.right,
+          } satisfies ActionResult;
+        } else {
+          yield* actionStateSignal.set({
+            isSubmitting: false,
+            data: null,
+            error: result.left,
+            routeName: currentRouteName as string,
+            submissionId,
+          });
+
+          return yield* Effect.fail(result.left);
+        }
+      });
+
+    // Initialize action data from SSR (for form submission hydration)
+    const initializeActionData = (
+      routeName: string,
+      data: unknown,
+    ): Effect.Effect<void> =>
+      actionStateSignal.set({
+        isSubmitting: false,
+        data,
+        error: null,
+        routeName,
+        submissionId: null,
+      });
+
     // Subscribe to route changes and execute loaders (client-side only)
     if (typeof window !== "undefined") {
       // Track last route to detect changes
@@ -309,12 +446,16 @@ export const make = <Routes extends Record<string, AnyRoute>>(
       routes: routeStates,
       definitions: routes,
       loaderState: loaderStateSignal,
+      actionState: actionStateSignal,
       push,
       replace,
       back,
       forward,
       executeLoader,
+      executeAction,
+      submitAction,
       initializeLoaderData,
+      initializeActionData,
     };
 
     return router;
