@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Effect, Schema, Stream } from "effect";
+import { Effect, Option, Schema, Stream } from "effect";
 import { Form } from "./PlatformForm";
 import { Reaction } from "@effex/dom";
 import { makeRouterLayer } from "@effex/router";
@@ -29,6 +29,7 @@ const createMockRouter = (options?: {
   return {
     pathname: makeTestReadable(pathname),
     searchParams: makeTestReadable(new URLSearchParams()),
+    currentRoute: makeTestReadable(Option.some("test")),
     actionState: makeTestReadable({
       isSubmitting: false,
       data: null,
@@ -134,6 +135,7 @@ describe("PlatformForm", () => {
       const mockRouter: BaseRouter = {
         pathname: makeTestReadable("/"),
         searchParams: makeTestReadable(new URLSearchParams()),
+        currentRoute: makeTestReadable(Option.some("test")),
         actionState: makeTestReadable({
           isSubmitting: false,
           data: null,
@@ -260,6 +262,7 @@ describe("PlatformForm", () => {
       const mockRouter: BaseRouter = {
         pathname: makeTestReadable("/"),
         searchParams: makeTestReadable(new URLSearchParams()),
+        currentRoute: makeTestReadable(Option.some("test")),
         actionState: makeTestReadable({
           isSubmitting: false,
           data: null,
@@ -304,6 +307,7 @@ describe("PlatformForm", () => {
       const mockRouter: BaseRouter = {
         pathname: makeTestReadable("/"),
         searchParams: makeTestReadable(new URLSearchParams()),
+        currentRoute: makeTestReadable(Option.some("test")),
         actionState: makeTestReadable({
           isSubmitting: false,
           data: null,
@@ -347,6 +351,7 @@ describe("PlatformForm", () => {
       const mockRouter: BaseRouter = {
         pathname: makeTestReadable("/"),
         searchParams: makeTestReadable(new URLSearchParams()),
+        currentRoute: makeTestReadable(Option.some("test")),
         actionState: makeTestReadable({
           isSubmitting: false,
           data: null,
@@ -396,6 +401,7 @@ describe("PlatformForm", () => {
       const mockRouter: BaseRouter = {
         pathname: makeTestReadable("/"),
         searchParams: makeTestReadable(new URLSearchParams()),
+        currentRoute: makeTestReadable(Option.some("test")),
         actionState: makeTestReadable({
           isSubmitting: false,
           data: null,
@@ -442,6 +448,7 @@ describe("PlatformForm", () => {
       const mockRouter: BaseRouter = {
         pathname: makeTestReadable("/"),
         searchParams: makeTestReadable(new URLSearchParams()),
+        currentRoute: makeTestReadable(Option.some("test")),
         actionState: makeTestReadable({
           isSubmitting: false,
           data: null,
@@ -493,6 +500,7 @@ describe("PlatformForm", () => {
       const mockRouter: BaseRouter = {
         pathname: makeTestReadable("/"),
         searchParams: makeTestReadable(new URLSearchParams()),
+        currentRoute: makeTestReadable(Option.some("test")),
         actionState: makeTestReadable({
           isSubmitting: false,
           data: null,
@@ -540,6 +548,7 @@ describe("PlatformForm", () => {
       const mockRouter: BaseRouter = {
         pathname: makeTestReadable("/"),
         searchParams: makeTestReadable(new URLSearchParams()),
+        currentRoute: makeTestReadable(Option.some("test")),
         actionState: makeTestReadable({
           isSubmitting: false,
           data: null,

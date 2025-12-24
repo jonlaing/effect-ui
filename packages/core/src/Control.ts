@@ -5,6 +5,12 @@ import { RendererContext, type Renderer } from "./Renderer";
 import type { Element } from "./Element";
 
 /**
+ * Sentinel value to represent "not yet rendered" state.
+ * This is necessary because null/undefined could be valid pattern values.
+ */
+const NOT_RENDERED = Symbol("NOT_RENDERED");
+
+/**
  * Configuration for the `when` control flow.
  */
 export interface WhenConfig<N, E1 = never, R1 = never, E2 = never, R2 = never> {
@@ -229,14 +235,14 @@ export const match = <A, N, E = never, R = never, E2 = never, R2 = never>(
       : yield* createDefaultContainer(renderer);
 
     let currentElement: N | null = null;
-    let currentPattern: A | null = null;
+    let currentPattern: A | typeof NOT_RENDERED = NOT_RENDERED;
     let currentElementScope: Scope.CloseableScope | null = null;
 
     const render = (
       val: A,
     ): Effect.Effect<void, E | E2, Scope.Scope | RendererContext | R | R2> =>
       Effect.gen(function* () {
-        if (val === currentPattern) return;
+        if (currentPattern !== NOT_RENDERED && val === currentPattern) return;
 
         const previousElement = currentElement;
         const previousScope = currentElementScope;

@@ -1,4 +1,4 @@
-import { Effect, Scope, Stream } from "effect";
+import { Effect, Equivalence, Option, Scope, Stream } from "effect";
 import type { Schema } from "effect";
 import { Signal, Derived } from "@effex/core";
 import type {
@@ -69,15 +69,15 @@ export const make = <Routes extends Record<string, AnyRoute>>(
     // Create a derived for the current matched route
     const currentRoute = yield* Derived.sync(
       [pathnameSignal],
-      ([pathname]): keyof Routes | null => {
+      ([pathname]): Option.Option<keyof Routes & string> => {
         for (const [name, route] of sortedRouteEntries) {
           // Try to match synchronously by checking segments
           const result = tryMatchSync(route, pathname);
           if (result !== null) {
-            return name as keyof Routes;
+            return Option.some(name as keyof Routes & string);
           }
         }
-        return null;
+        return Option.none();
       },
     );
 
@@ -95,7 +95,7 @@ export const make = <Routes extends Record<string, AnyRoute>>(
     for (const [name, route] of Object.entries(routes)) {
       const isActive = yield* Derived.sync(
         [currentRoute],
-        ([current]) => current === name,
+        ([current]) => Option.isSome(current) && current.value === name,
       );
 
       // Derive params synchronously using the raw matching (without schema validation)
@@ -180,10 +180,11 @@ export const make = <Routes extends Record<string, AnyRoute>>(
       R
     > =>
       Effect.gen(function* () {
-        const currentRouteName = yield* currentRoute.get;
-        if (currentRouteName === null) {
+        const currentRouteOption = yield* currentRoute.get;
+        if (Option.isNone(currentRouteOption)) {
           return null;
         }
+        const currentRouteName = currentRouteOption.value;
 
         const routeDef = routes[currentRouteName as keyof Routes];
         if (!routeDef || !routeDef.loader) {
@@ -208,8 +209,8 @@ export const make = <Routes extends Record<string, AnyRoute>>(
 
     // Execute loader and update reactive state
     const runLoaderAndUpdateState = Effect.gen(function* () {
-      const currentRouteName = yield* currentRoute.get;
-      if (currentRouteName === null) {
+      const currentRouteOption = yield* currentRoute.get;
+      if (Option.isNone(currentRouteOption)) {
         yield* loaderStateSignal.set({
           routeName: null,
           params: {},
@@ -219,6 +220,7 @@ export const make = <Routes extends Record<string, AnyRoute>>(
         });
         return;
       }
+      const currentRouteName = currentRouteOption.value;
 
       const routeDef = routes[currentRouteName as keyof Routes];
       const pathname = yield* pathnameSignal.get;
@@ -335,10 +337,11 @@ export const make = <Routes extends Record<string, AnyRoute>>(
       formData: FormData,
     ): Effect.Effect<ActionResult | null, unknown> =>
       Effect.gen(function* () {
-        const currentRouteName = yield* currentRoute.get;
-        if (currentRouteName === null) {
+        const currentRouteOption = yield* currentRoute.get;
+        if (Option.isNone(currentRouteOption)) {
           return null;
         }
+        const currentRouteName = currentRouteOption.value;
 
         const routeDef = routes[currentRouteName as keyof Routes];
         if (!routeDef || !routeDef.action) {
@@ -424,14 +427,15 @@ export const make = <Routes extends Record<string, AnyRoute>>(
     // Subscribe to route changes and execute loaders (client-side only)
     if (typeof window !== "undefined") {
       // Track last route to detect changes
-      let lastRouteName: string | null = null;
+      let lastRouteName: Option.Option<string> = Option.none();
+      const optionStringEq = Option.getEquivalence(Equivalence.string);
 
       yield* Effect.fork(
-        Stream.runForEach(currentRoute.changes, (newRouteName) =>
+        Stream.runForEach(currentRoute.changes, (newRouteOption) =>
           Effect.gen(function* () {
             // Only run loader if route actually changed
-            if (newRouteName !== lastRouteName) {
-              lastRouteName = newRouteName as string | null;
+            if (!optionStringEq(newRouteOption, lastRouteName)) {
+              lastRouteName = newRouteOption as Option.Option<string>;
               yield* runLoaderAndUpdateState;
             }
           }),
@@ -530,7 +534,7 @@ const tryMatchSync = (
  *
  * // Now you can yield the typed router from context
  * const router = yield* AppRouterContext
- * router.currentRoute // Readable<"home" | "user" | null>
+ * router.currentRoute // Readable<Option<"home" | "user">>
  * router.routes.user.params // Readable<{ id: string } | null>
  * ```
  */

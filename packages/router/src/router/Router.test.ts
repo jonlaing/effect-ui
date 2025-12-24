@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { Effect, Schema } from "effect";
+import { Effect, Option, Schema } from "effect";
 import { Route } from "./Route";
 import { Router } from "./Router";
 
@@ -66,7 +66,7 @@ describe("Router", () => {
       );
 
       expect(result.pathname).toBe("/");
-      expect(result.currentRoute).toBe("home");
+      expect(result.currentRoute).toEqual(Option.some("home"));
     });
 
     it("should use initialPath option", async () => {
@@ -89,7 +89,7 @@ describe("Router", () => {
       );
 
       expect(result.pathname).toBe("/users");
-      expect(result.currentRoute).toBe("users");
+      expect(result.currentRoute).toEqual(Option.some("users"));
     });
 
     it("should use initialSearch option", async () => {
@@ -132,7 +132,7 @@ describe("Router", () => {
         ),
       );
 
-      expect(result).toBe(null);
+      expect(result).toEqual(Option.none());
     });
   });
 
@@ -220,7 +220,7 @@ describe("Router", () => {
       );
 
       // Should match static "settings" before param ":id"
-      expect(result).toBe("userSettings");
+      expect(result).toEqual(Option.some("userSettings"));
     });
 
     it("should fall back to param route when no static match", async () => {
@@ -240,7 +240,7 @@ describe("Router", () => {
         ),
       );
 
-      expect(result).toBe("user");
+      expect(result).toEqual(Option.some("user"));
     });
 
     it("should fall back to catch-all when nothing else matches", async () => {
@@ -260,7 +260,7 @@ describe("Router", () => {
         ),
       );
 
-      expect(result).toBe("catchAll");
+      expect(result).toEqual(Option.some("catchAll"));
     });
   });
 
@@ -458,7 +458,7 @@ describe("Router", () => {
         );
 
         expect(result.pathname).toBe("/users/123");
-        expect(result.currentRoute).toBe("users");
+        expect(result.currentRoute).toEqual(Option.some("users"));
         expect(result.params).toEqual({ id: "123" });
         expect(result.search).toBe("profile");
       } finally {
@@ -491,7 +491,7 @@ describe("Router", () => {
         );
 
         expect(result.pathname).toBe("/");
-        expect(result.currentRoute).toBe("home");
+        expect(result.currentRoute).toEqual(Option.some("home"));
         expect(result.searchSize).toBe(0);
       } finally {
         // Restore window

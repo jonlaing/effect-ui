@@ -1,22 +1,22 @@
 {
-  "name": "@effex/platform",
+  "name": "@effex/vite-plugin",
   "version": "0.0.1",
-  "description": "Full-stack meta-framework for Effex applications",
+  "description": "Vite plugin for file-based routing in Effex applications",
   "type": "module",
   "license": "MIT",
   "author": "Jon Laing",
   "repository": {
     "type": "git",
     "url": "https://github.com/jonlaing/effex.git",
-    "directory": "packages/platform"
+    "directory": "packages/vite-plugin"
   },
   "keywords": [
     "effect",
     "effect-ts",
-    "framework",
-    "ssr",
-    "full-stack",
-    "meta-framework"
+    "vite",
+    "vite-plugin",
+    "file-based-routing",
+    "router"
   ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -36,17 +36,13 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@effex/dom": "workspace:*",
-    "@effex/form": "workspace:*",
-    "@effex/router": "workspace:*"
+    "fast-glob": "^3.3.2"
   },
   "peerDependencies": {
-    "@effect/platform": "^0.82.0",
-    "effect": "^3.0.0"
+    "vite": "^5.0.0 || ^6.0.0",
+    "@effex/router": "workspace:*"
   },
-  "peerDependenciesMeta": {
-    "@effect/platform": {
-      "optional": true
-    }
+  "devDependencies": {
+    "vite": "^6.0.0"
   }
 }

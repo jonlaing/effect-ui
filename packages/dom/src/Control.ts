@@ -27,6 +27,12 @@ import {
 import { SSRContext } from "./SSRContext";
 import { HydrationContext } from "./HydrationContext";
 
+/**
+ * Sentinel value to represent "not yet rendered" state.
+ * This is necessary because null/undefined could be valid pattern values.
+ */
+const NOT_RENDERED = Symbol("NOT_RENDERED");
+
 // Re-export the MatchCase type specialized for HTMLElement
 export interface MatchCase<A, E = never, R = never> extends CoreMatchCase<
   A,
@@ -389,7 +395,7 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
       : yield* createDefaultContainer(renderer);
 
     let currentElement: HTMLElement | null = null;
-    let currentPattern: A | null = null;
+    let currentPattern: A | typeof NOT_RENDERED = NOT_RENDERED;
     let currentElementScope: Scope.CloseableScope | null = null;
     const animate = config.animate;
 
@@ -398,7 +404,7 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
       isInitial: boolean = false,
     ): Effect.Effect<void, E | E2, Scope.Scope | RendererContext | R | R2> =>
       Effect.gen(function* () {
-        if (val === currentPattern) return;
+        if (currentPattern !== NOT_RENDERED && val === currentPattern) return;
 
         const previousElement = currentElement;
         const previousScope = currentElementScope;

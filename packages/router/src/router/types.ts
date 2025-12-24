@@ -1,4 +1,4 @@
-import type { Effect, Schema } from "effect";
+import type { Effect, Option, Schema } from "effect";
 import type { Readable } from "@effex/core";
 
 /**
@@ -233,8 +233,10 @@ export interface Router<Routes extends Record<string, AnyRoute>> {
   readonly pathname: Readable.Readable<string>;
   /** The current query params */
   readonly searchParams: Readable.Readable<URLSearchParams>;
-  /** The currently matched route name, or null if no match */
-  readonly currentRoute: Readable.Readable<keyof Routes | null>;
+  /** The currently matched route name, or Option.none() if no match */
+  readonly currentRoute: Readable.Readable<
+    Option.Option<keyof Routes & string>
+  >;
   /** Route-specific state for each defined route */
   readonly routes: {
     readonly [K in keyof Routes]: RouteState<
@@ -331,6 +333,8 @@ export interface BaseRouter {
   readonly pathname: Readable.Readable<string>;
   /** The current query params */
   readonly searchParams: Readable.Readable<URLSearchParams>;
+  /** The currently matched route name, or Option.none() if no match */
+  readonly currentRoute: Readable.Readable<Option.Option<string>>;
   /** Reactive action state for form submissions */
   readonly actionState: Readable.Readable<ActionState>;
   /** Navigate to a path */

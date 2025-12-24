@@ -55,3 +55,20 @@ export {
   type PlatformForm,
   type PlatformFormOptions,
 } from "./PlatformForm.js";
+
+// Routes component for rendering the active route
+export {
+  Routes,
+  type RoutesProps,
+  type RouteComponent,
+  type ComponentsMap,
+} from "./Routes.js";
+
+// Effect HTTP server integration
+export {
+  EffexServer,
+  type SSRResult,
+  type ActionData,
+  type EffexAppOptions,
+  type DocumentOptions,
+} from "./server.js";

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { Effect, Stream } from "effect";
+import { Effect, Option, Stream } from "effect";
 import {
   Link,
   RouterContext,
@@ -30,6 +30,7 @@ const createMockRouter = (initialPath = "/"): BaseRouter => {
   return {
     pathname: makeTestReadable(pathname),
     searchParams: makeTestReadable(new URLSearchParams()),
+    currentRoute: makeTestReadable(Option.some("test")),
     actionState: makeTestReadable({
       isSubmitting: false,
       data: null,

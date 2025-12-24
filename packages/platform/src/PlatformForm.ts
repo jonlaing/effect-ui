@@ -4,6 +4,7 @@ import {
   type FormType,
   type FormOptions,
   type FieldType,
+  type SubmitHandler,
 } from "@effex/form";
 import { RouterContext, type ActionResult } from "@effex/router";
 
@@ -30,7 +31,15 @@ export interface PlatformForm<
   S extends Schema.Schema.AnyNoContext,
   E = never,
   R = never,
-> extends FormType<S, E, R> {
+> extends Omit<FormType<S, E, R>, "submit"> {
+  /**
+   * Submit the form.
+   * When action mode is enabled, the handler is optional - form will POST to route action.
+   * When action mode is disabled, requires a handler like regular @effex/form.
+   */
+  readonly submit: <SE = never, SR = never>(
+    handler?: SubmitHandler<Schema.Schema.Type<S>, SE, SR>,
+  ) => Effect.Effect<void, E | SE | unknown, R | SR>;
   /**
    * Submit form data to the current route's action.
    * Returns the action result or null if no action handler exists.
