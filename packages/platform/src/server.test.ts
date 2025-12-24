@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { Effect, Option, Stream } from "effect";
 import { EffexServer } from "./server";
-import { div, component, DOMRendererLive } from "@effex/dom";
+import { div, component } from "@effex/dom";
 import { makeRouterLayer } from "@effex/router";
 import type { BaseRouter, ActionResult } from "@effex/router";
 import type { Readable } from "@effex/core";
@@ -28,7 +28,7 @@ const createMockRouter = (options?: {
   const {
     initialPath = "/",
     currentRoute = "home",
-    loaderData = null,
+    loaderData: _loaderData = null,
     actionResult = null,
   } = options ?? {};
 

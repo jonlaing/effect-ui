@@ -41,7 +41,7 @@
     "@effex/router": "workspace:*"
   },
   "peerDependencies": {
-    "@effect/platform": "^0.82.0",
+    "@effect/platform": "^0.94.0",
     "effect": "^3.0.0"
   },
   "peerDependenciesMeta": {

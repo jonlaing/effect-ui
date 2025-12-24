@@ -1,0 +1,39 @@
+{
+  "name": "create-effex",
+  "version": "0.0.1",
+  "description": "Create a new Effex application",
+  "type": "module",
+  "license": "MIT",
+  "author": "Jon Laing",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jonlaing/effex.git",
+    "directory": "packages/create-effex"
+  },
+  "keywords": [
+    "effex",
+    "effect",
+    "effect-ts",
+    "create",
+    "scaffold",
+    "cli"
+  ],
+  "bin": {
+    "create-effex": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "dependencies": {
+    "picocolors": "^1.1.0",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/prompts": "^2.4.9"
+  }
+}
