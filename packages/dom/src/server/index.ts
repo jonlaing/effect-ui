@@ -69,18 +69,11 @@ export const renderToString = (
   );
 
   const program = Effect.gen(function* () {
-    console.log("[renderToString] program starting, about to yield element...");
     const vnode = yield* element;
-    console.log("[renderToString] element yielded, got vnode");
     const result = vnodeToString(vnode as unknown as VNode);
-    console.log(
-      "[renderToString] vnodeToString complete, length:",
-      result?.length,
-    );
     return result;
   });
 
-  console.log("[renderToString] creating scoped effect with SSRContext...");
   return Effect.scoped(program).pipe(
     Effect.provide(StringRendererLayer),
     withSSRContext,

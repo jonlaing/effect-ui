@@ -1,6 +1,9 @@
 import * as http from "node:http";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { Effect, Layer } from "effect";
-import { HttpServer } from "@effect/platform";
+import { HttpServer, HttpServerResponse, HttpRouter } from "@effect/platform";
+import * as HttpServerRequest from "@effect/platform/HttpServerRequest";
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node";
 import {
   $,
@@ -13,6 +16,43 @@ import {
   RendererContext,
 } from "@effex/platform";
 import { routes, components } from "./generated/routes.js";
+
+// MIME types for static files
+const MIME_TYPES: Record<string, string> = {
+  ".js": "application/javascript",
+  ".css": "text/css",
+  ".html": "text/html",
+  ".json": "application/json",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".svg": "image/svg+xml",
+};
+
+// Static file handler
+const serveStatic = (distDir: string) =>
+  Effect.gen(function* () {
+    const request = yield* HttpServerRequest.HttpServerRequest;
+    const url = new URL(request.url, "http://localhost");
+    const filePath = path.join(distDir, url.pathname);
+
+    // Security: prevent directory traversal
+    if (!filePath.startsWith(distDir)) {
+      return yield* Effect.fail("forbidden" as const);
+    }
+
+    // Check if file exists
+    if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+      return yield* Effect.fail("not-found" as const);
+    }
+
+    const ext = path.extname(filePath);
+    const mimeType = MIME_TYPES[ext] || "application/octet-stream";
+    const content = fs.readFileSync(filePath);
+
+    return HttpServerResponse.raw(content, {
+      headers: { "content-type": mimeType },
+    });
+  });
 
 // 404 fallback component
 const NotFound = () =>
@@ -35,7 +75,7 @@ const main = Effect.gen(function* () {
 
   // Create the Effex HTTP app
   console.log("[5] Creating Effex HTTP app...");
-  const app = EffexServer.makeHttpApp({
+  const effexApp = EffexServer.makeHttpApp({
     app: () =>
       Routes({
         components,
@@ -50,6 +90,21 @@ const main = Effect.gen(function* () {
     provide: routerLayer as Layer.Layer<never, never, never>,
   });
   console.log("[6] Effex HTTP app created");
+
+  // Resolve the dist directory (relative to the built server.js location)
+  const distDir = path.resolve(process.cwd(), "dist");
+  console.log("[6.1] Static files from:", distDir);
+
+  // Combined app: try static files first, then Effex app
+  const app = Effect.gen(function* () {
+    // Try to serve static file
+    const staticResult = yield* Effect.either(serveStatic(distDir));
+    if (staticResult._tag === "Right") {
+      return staticResult.right;
+    }
+    // Fall back to Effex app
+    return yield* effexApp;
+  });
 
   const port = Number(process.env.PORT) || 5000;
   console.log(`[7] Port: ${port}`);

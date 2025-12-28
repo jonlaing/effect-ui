@@ -61,14 +61,22 @@ export const hydrate = (
     const hydrationContextLayer = yield* makeHydrationContext(container);
 
     yield* Effect.provide(element, hydrationContextLayer);
+
+    // Keep the scope alive - subscriptions run in forked fibers that need to persist
+    // Wait forever (until page unload) so subscription fibers stay alive
+    yield* Effect.never;
   });
 
-  return Effect.runPromise(
+  // Run without awaiting completion - the Effect.never keeps it alive
+  Effect.runFork(
     Effect.scoped(program).pipe(
       Effect.provide(HydrationRendererLayer),
       Effect.provide(SignalRegistry.Live),
     ),
   );
+
+  // Return immediately - hydration setup is synchronous, subscriptions are async
+  return Promise.resolve();
 };
 
 export type { HydrationRenderer } from "./HydrationRenderer";

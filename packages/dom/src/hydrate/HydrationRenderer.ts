@@ -1,5 +1,5 @@
 /**
- * Hydration renderer that attaches to existing DOM using querySelector lookups.
+ * Hydration renderer that attaches to existing DOM using tree walking.
  */
 
 import { Effect } from "effect";
@@ -19,7 +19,10 @@ export interface HydrationState {
  * Create a hydration renderer that attaches to existing DOM.
  *
  * Unlike DOMRenderer which creates new elements, HydrationRenderer
- * finds existing elements via data attributes and attaches handlers.
+ * finds existing elements via tree walking and attaches handlers.
+ *
+ * The renderer uses a stack-based approach to track the current parent
+ * and child index, properly handling nested element structures.
  */
 export const createHydrationRenderer = (
   container: HTMLElement,
@@ -33,59 +36,83 @@ export const createHydrationRenderer = (
       }
     });
 
-  // Stack to track current parent during hydration
-  let currentParent: Node = container;
-  let childIndex = 0;
+  // Stack to track parent context during hydration
+  // Each entry is [parent, childIndex]
+  const parentStack: Array<{ parent: Node; childIndex: number }> = [
+    { parent: container, childIndex: 0 },
+  ];
+
+  const getCurrentContext = () => parentStack[parentStack.length - 1];
 
   const renderer: Renderer<Node> = {
     createNode: (type: string, namespace?: string) =>
       Effect.sync(() => {
-        // During hydration, we expect the element to already exist
-        const children = currentParent.childNodes;
+        const ctx = getCurrentContext();
+        const children = ctx.parent.childNodes;
         let node: Node | null = null;
 
         // Find the next element node of the expected type
-        while (childIndex < children.length) {
-          const child = children[childIndex];
+        while (ctx.childIndex < children.length) {
+          const child = children[ctx.childIndex];
           if (
             child.nodeType === Node.ELEMENT_NODE &&
             (child as Element).tagName.toLowerCase() === type
           ) {
             node = child;
-            childIndex++;
+            ctx.childIndex++;
             break;
           } else if (child.nodeType === Node.TEXT_NODE) {
             // Skip whitespace text nodes
             if (child.textContent?.trim() === "") {
-              childIndex++;
+              ctx.childIndex++;
               continue;
             }
           }
-          childIndex++;
+          ctx.childIndex++;
         }
 
         if (!node) {
-          onMismatch(`Expected <${type}> but not found`, currentParent);
+          console.log(
+            "[Hydration] createNode MISS:",
+            type,
+            "in",
+            (ctx.parent as Element).tagName || "root",
+          );
+          onMismatch(
+            `Expected <${type}> but not found in ${(ctx.parent as Element).tagName || "root"}`,
+            ctx.parent,
+          );
           // Fallback: create the element (hydration failure recovery)
           return namespace
             ? document.createElementNS(namespace, type)
             : document.createElement(type);
         }
 
+        console.log(
+          "[Hydration] createNode HIT:",
+          type,
+          "->",
+          (node as Element).className || "(no class)",
+        );
+
+        // Push a new context for this element's children
+        parentStack.push({ parent: node, childIndex: 0 });
+
         return node;
       }),
 
     createTextNode: (text: string) =>
       Effect.sync(() => {
-        const children = currentParent.childNodes;
+        const ctx = getCurrentContext();
+        const children = ctx.parent.childNodes;
         let node: Node | null = null;
 
         // Find the next text node
-        while (childIndex < children.length) {
-          const child = children[childIndex];
+        while (ctx.childIndex < children.length) {
+          const child = children[ctx.childIndex];
           if (child.nodeType === Node.TEXT_NODE) {
             node = child;
-            childIndex++;
+            ctx.childIndex++;
             break;
           } else if (
             child.nodeType === Node.ELEMENT_NODE &&
@@ -94,10 +121,10 @@ export const createHydrationRenderer = (
           ) {
             // Reactive text is wrapped in a span
             node = child.firstChild ?? document.createTextNode(text);
-            childIndex++;
+            ctx.childIndex++;
             break;
           }
-          childIndex++;
+          ctx.childIndex++;
         }
 
         if (!node) {
@@ -117,9 +144,18 @@ export const createHydrationRenderer = (
         return node;
       }),
 
-    appendChild: (_parent: Node, _child: Node) =>
-      // During hydration, children are already in place
-      Effect.void,
+    appendChild: (_parent: Node, child: Node) =>
+      Effect.sync(() => {
+        // During hydration, children are already in place.
+        // But we need to pop the child's context from the stack.
+        // The child was pushed when createNode was called for it.
+        if (
+          parentStack.length > 1 &&
+          parentStack[parentStack.length - 1].parent === child
+        ) {
+          parentStack.pop();
+        }
+      }),
 
     removeChild: (parent: Node, child: Node) =>
       Effect.sync(() => {
@@ -198,6 +234,13 @@ export const createHydrationRenderer = (
     ) =>
       Effect.sync(() => {
         // This is where we attach event handlers during hydration
+        console.log(
+          "[Hydration] addEventListener:",
+          event,
+          "on",
+          (node as HTMLElement).tagName,
+          (node as HTMLElement).className,
+        );
         (node as HTMLElement).addEventListener(event, handler);
       }),
 

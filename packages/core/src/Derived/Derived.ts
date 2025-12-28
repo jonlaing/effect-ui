@@ -42,6 +42,10 @@ export const sync = <T extends readonly Readable<unknown>[], B>(
     const initialValues = yield* getCurrentValues(deps);
     let currentValue = compute(initialValues);
 
+    // Get always re-computes from current dependency values
+    // This ensures correct values during SSR where streams aren't subscribed
+    const get = getCurrentValues(deps).pipe(Effect.map(compute));
+
     // Create a fresh stream for each subscriber
     const getChangesStream = () =>
       combineReadables(deps).pipe(
@@ -56,10 +60,7 @@ export const sync = <T extends readonly Readable<unknown>[], B>(
         }),
       );
 
-    return makeReadable(
-      Effect.sync(() => currentValue),
-      getChangesStream,
-    );
+    return makeReadable(get, getChangesStream);
   });
 };
 

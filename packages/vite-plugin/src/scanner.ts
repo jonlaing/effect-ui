@@ -1,5 +1,5 @@
 import * as path from "node:path";
-import * as fg from "fast-glob";
+import fg from "fast-glob";
 import type { ScannedRoute, EffexPluginOptions } from "./types.js";
 import { parseRouteExports } from "./parser.js";
 import {
@@ -29,7 +29,7 @@ export const scanRoutes = async (
   const patterns = extensions.map((ext) => `**/*${ext}`);
 
   // Find all matching files
-  const files = await fg.glob(patterns, {
+  const files = await fg(patterns, {
     cwd: routesDir,
     onlyFiles: true,
     ignore: ["**/*.test.*", "**/*.spec.*", "**/__tests__/**"],

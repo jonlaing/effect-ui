@@ -25,6 +25,8 @@ import {
 } from "./Animation/index.js";
 import { SSRContext } from "./SSRContext";
 import { HydrationContext } from "./HydrationContext";
+import { createHydrationRenderer } from "./hydrate/HydrationRenderer";
+import { DOMRenderer } from "./DOMRenderer";
 
 /**
  * Sentinel value to represent "not yet rendered" state.
@@ -199,10 +201,64 @@ export const when = <E1 = never, R1 = never, E2 = never, R2 = never>(
       return container;
     }
 
-    // Hydration mode: advance the ID counter to stay in sync, then proceed normally
+    // Hydration mode: find existing container, render to attach event handlers
     const hydrationContext = yield* Effect.serviceOption(HydrationContext);
     if (Option.isSome(hydrationContext)) {
-      yield* hydrationContext.value.generateId;
+      const hydrationId = yield* hydrationContext.value.generateId;
+
+      // Find the existing container with hydration marker
+      const container = hydrationContext.value.root.querySelector(
+        `[data-effex-type="when"][data-effex-id="${hydrationId}"]`,
+      ) as HTMLElement | null;
+
+      if (container) {
+        const initialValue = yield* condition.get;
+
+        // Create a scoped renderer for children inside this container
+        const scopedRenderer = createHydrationRenderer(container);
+        const withScopedRenderer = <A, E, R>(
+          effect: Effect.Effect<A, E, R>,
+        ): Effect.Effect<A, E, Exclude<R, RendererContext>> =>
+          Effect.provideService(
+            effect,
+            RendererContext,
+            scopedRenderer as RendererInterface<unknown>,
+          );
+
+        // Render the current branch to attach event handlers to existing DOM
+        if (initialValue) {
+          yield* withScopedRenderer(config.onTrue());
+        } else {
+          yield* withScopedRenderer(config.onFalse());
+        }
+
+        // Set up reactive subscriptions for future changes
+        const scope = yield* Effect.scope;
+        yield* condition.changes.pipe(
+          Stream.runForEach((newValue) =>
+            Effect.gen(function* () {
+              // Clear container and render new branch
+              // Use DOMRenderer for creating new content (not hydration renderer)
+              container.innerHTML = "";
+              const element = newValue
+                ? yield* Effect.provideService(
+                    config.onTrue(),
+                    RendererContext,
+                    DOMRenderer as RendererInterface<unknown>,
+                  )
+                : yield* Effect.provideService(
+                    config.onFalse(),
+                    RendererContext,
+                    DOMRenderer as RendererInterface<unknown>,
+                  );
+              container.appendChild(element);
+            }),
+          ),
+          Effect.forkIn(scope),
+        );
+
+        return container;
+      }
     }
 
     // Client-side: if no animations, use the core implementation
@@ -332,61 +388,124 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
   config: MatchConfig<A, E, R, E2, R2>,
 ) =>
   Effect.gen(function* () {
-    console.log("[match] starting, getting renderer...");
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
-    console.log("[match] got renderer, checking SSRContext...");
     const ssrContext = yield* Effect.serviceOption(SSRContext);
-    console.log("[match] SSRContext isSome:", Option.isSome(ssrContext));
 
     // SSR mode: render initial value with hydration markers, no subscriptions
     if (Option.isSome(ssrContext)) {
-      console.log("[match] taking SSR path...");
       const hydrationId = yield* ssrContext.value.generateId;
-      console.log("[match] got hydrationId:", hydrationId);
       const initialValue = yield* value.get;
-      console.log("[match] got initialValue:", initialValue);
 
       const container = config.container
         ? yield* config.container()
         : yield* createDefaultContainer(renderer);
-      console.log("[match] created container");
 
       yield* addHydrationMarkers(renderer, container, "match", hydrationId, {
         pattern: JSON.stringify(initialValue),
       });
-      console.log("[match] added hydration markers");
 
       const matchedCase = config.cases.find((c) => c.pattern === initialValue);
-      console.log(
-        "[match] matchedCase found:",
-        !!matchedCase,
-        "pattern:",
-        initialValue,
-      );
       let element;
 
       if (matchedCase) {
-        console.log("[match] rendering matched case...");
         element = yield* matchedCase.render();
-        console.log("[match] matched case rendered");
       } else if (config.fallback) {
-        console.log("[match] rendering fallback...");
         element = yield* config.fallback();
-        console.log("[match] fallback rendered");
       }
 
       if (element) {
         yield* renderer.appendChild(container, element);
-        console.log("[match] appended element to container");
       }
-      console.log("[match] SSR complete, returning container");
       return container;
     }
 
-    // Hydration mode: advance the ID counter to stay in sync, then proceed normally
+    // Hydration mode: find existing container, render to attach event handlers
     const hydrationContext = yield* Effect.serviceOption(HydrationContext);
     if (Option.isSome(hydrationContext)) {
-      yield* hydrationContext.value.generateId;
+      const hydrationId = yield* hydrationContext.value.generateId;
+
+      // Find the existing container with hydration marker
+      const selector = `[data-effex-type="match"][data-effex-id="${hydrationId}"]`;
+      console.log("[Hydration] match looking for:", selector);
+      const container = hydrationContext.value.root.querySelector(
+        selector,
+      ) as HTMLElement | null;
+      console.log(
+        "[Hydration] match found container:",
+        container?.tagName,
+        container?.className,
+      );
+
+      if (container) {
+        const initialValue = yield* value.get;
+        console.log("[Hydration] match initialValue:", initialValue);
+        const matchedCase = config.cases.find(
+          (c) => c.pattern === initialValue,
+        );
+        console.log("[Hydration] match matchedCase:", matchedCase?.pattern);
+
+        // Create a scoped renderer for children inside this container
+        const scopedRenderer = createHydrationRenderer(container);
+        const withScopedRenderer = <A, E, R>(
+          effect: Effect.Effect<A, E, R>,
+        ): Effect.Effect<A, E, Exclude<R, RendererContext>> =>
+          Effect.provideService(
+            effect,
+            RendererContext,
+            scopedRenderer as RendererInterface<unknown>,
+          );
+
+        // Render the matched case to attach event handlers to existing DOM
+        if (matchedCase) {
+          yield* withScopedRenderer(matchedCase.render());
+        } else if (config.fallback) {
+          yield* withScopedRenderer(config.fallback());
+        }
+
+        // Set up reactive subscriptions for future changes
+        console.log(
+          "[Hydration] match setting up subscription to value.changes",
+        );
+        const scope = yield* Effect.scope;
+        yield* value.changes.pipe(
+          Stream.runForEach((newValue) =>
+            Effect.gen(function* () {
+              console.log("[Hydration] match received change:", newValue);
+              // Clear container and render new case
+              // Use DOMRenderer for creating new content (not hydration renderer)
+              container.innerHTML = "";
+              const newCase = config.cases.find((c) => c.pattern === newValue);
+              let element;
+              if (newCase) {
+                console.log(
+                  "[Hydration] match rendering new case:",
+                  newCase.pattern,
+                );
+                element = yield* Effect.provideService(
+                  newCase.render(),
+                  RendererContext,
+                  DOMRenderer as RendererInterface<unknown>,
+                );
+              } else if (config.fallback) {
+                console.log("[Hydration] match rendering fallback");
+                element = yield* Effect.provideService(
+                  config.fallback(),
+                  RendererContext,
+                  DOMRenderer as RendererInterface<unknown>,
+                );
+              }
+              if (element) {
+                console.log("[Hydration] match appending element");
+                container.appendChild(element);
+              }
+            }),
+          ),
+          Effect.forkIn(scope),
+        );
+        console.log("[Hydration] match subscription set up complete");
+
+        return container;
+      }
     }
 
     // Client-side: if no animations, use the core implementation
@@ -556,10 +675,197 @@ export const each = <A, E = never, R = never>(
       return container;
     }
 
-    // Hydration mode: advance the ID counter to stay in sync, then proceed normally
+    // Hydration mode: find existing container and render items to attach event handlers
     const hydrationContext = yield* Effect.serviceOption(HydrationContext);
     if (Option.isSome(hydrationContext)) {
-      yield* hydrationContext.value.generateId;
+      const hydrationId = yield* hydrationContext.value.generateId;
+
+      // Find the existing container with hydration marker
+      const container = hydrationContext.value.root.querySelector(
+        `[data-effex-type="each"][data-effex-id="${hydrationId}"]`,
+      ) as HTMLElement | null;
+
+      if (container) {
+        const initialItems = yield* items.get;
+
+        // Create item readables and render each to attach event handlers
+        const itemMap = new Map<
+          string,
+          {
+            element: HTMLElement;
+            readable: {
+              get: Effect.Effect<A>;
+              changes: Stream.Stream<A>;
+              values: Stream.Stream<A>;
+              map: <B>(f: (a: A) => B) => Readable<B>;
+              _update: (value: A) => void;
+            };
+          }
+        >();
+
+        for (const item of initialItems) {
+          const key = config.key(item);
+
+          // Find existing element by key
+          const existingElement = container.querySelector(
+            `[data-effex-key="${key}"]`,
+          ) as HTMLElement | null;
+
+          if (existingElement) {
+            let currentValue = item;
+            const subscribers = new Set<(value: A) => void>();
+
+            let cachedChanges: Stream.Stream<A> | null = null;
+            const getChanges = (): Stream.Stream<A> => {
+              if (!cachedChanges) {
+                cachedChanges = Stream.async<A>((emit) => {
+                  const handler = (value: A) => emit.single(value);
+                  subscribers.add(handler);
+                  return Effect.sync(() => {
+                    subscribers.delete(handler);
+                  });
+                });
+              }
+              return cachedChanges;
+            };
+
+            const itemReadable: {
+              get: Effect.Effect<A>;
+              changes: Stream.Stream<A>;
+              values: Stream.Stream<A>;
+              map: <B>(f: (a: A) => B) => Readable<B>;
+              _update: (value: A) => void;
+            } = {
+              get: Effect.sync(() => currentValue),
+              get changes(): Stream.Stream<A> {
+                return getChanges();
+              },
+              get values(): Stream.Stream<A> {
+                return Stream.concat(Stream.make(currentValue), this.changes);
+              },
+              map: function <B>(f: (a: A) => B): Readable<B> {
+                return mapReadable(this as Readable<A>, f);
+              },
+              _update: (value: A) => {
+                currentValue = value;
+                for (const handler of subscribers) {
+                  handler(value);
+                }
+              },
+            };
+
+            // Create scoped renderer for this item's children
+            const scopedRenderer = createHydrationRenderer(existingElement);
+
+            // Render to attach event handlers
+            yield* Effect.provideService(
+              config.render(itemReadable),
+              RendererContext,
+              scopedRenderer as RendererInterface<unknown>,
+            );
+
+            itemMap.set(key, {
+              element: existingElement,
+              readable: itemReadable,
+            });
+          }
+        }
+
+        // Set up reactive subscriptions for future changes
+        const scope = yield* Effect.scope;
+        yield* items.changes.pipe(
+          Stream.runForEach((newItems) =>
+            Effect.gen(function* () {
+              const newKeys = new Set(newItems.map(config.key));
+
+              // Remove items that no longer exist
+              for (const [key, entry] of itemMap) {
+                if (!newKeys.has(key)) {
+                  container.removeChild(entry.element);
+                  itemMap.delete(key);
+                }
+              }
+
+              // Update existing or add new items
+              for (let i = 0; i < newItems.length; i++) {
+                const item = newItems[i];
+                const key = config.key(item);
+                const existing = itemMap.get(key);
+
+                if (existing) {
+                  existing.readable._update(item);
+                } else {
+                  // Create new item
+                  let currentValue = item;
+                  const subscribers = new Set<(value: A) => void>();
+
+                  let cachedChanges: Stream.Stream<A> | null = null;
+                  const getChanges = (): Stream.Stream<A> => {
+                    if (!cachedChanges) {
+                      cachedChanges = Stream.async<A>((emit) => {
+                        const handler = (value: A) => emit.single(value);
+                        subscribers.add(handler);
+                        return Effect.sync(() => {
+                          subscribers.delete(handler);
+                        });
+                      });
+                    }
+                    return cachedChanges;
+                  };
+
+                  const itemReadable: {
+                    get: Effect.Effect<A>;
+                    changes: Stream.Stream<A>;
+                    values: Stream.Stream<A>;
+                    map: <B>(f: (a: A) => B) => Readable<B>;
+                    _update: (value: A) => void;
+                  } = {
+                    get: Effect.sync(() => currentValue),
+                    get changes(): Stream.Stream<A> {
+                      return getChanges();
+                    },
+                    get values(): Stream.Stream<A> {
+                      return Stream.concat(
+                        Stream.make(currentValue),
+                        this.changes,
+                      );
+                    },
+                    map: function <B>(f: (a: A) => B): Readable<B> {
+                      return mapReadable(this as Readable<A>, f);
+                    },
+                    _update: (value: A) => {
+                      currentValue = value;
+                      for (const handler of subscribers) {
+                        handler(value);
+                      }
+                    },
+                  };
+
+                  // Use DOMRenderer for creating new content (not hydration renderer)
+                  const element = yield* Effect.provideService(
+                    config.render(itemReadable),
+                    RendererContext,
+                    DOMRenderer as RendererInterface<unknown>,
+                  );
+
+                  // Insert at correct position
+                  const children = Array.from(container.children);
+                  if (i >= children.length) {
+                    container.appendChild(element);
+                  } else {
+                    container.insertBefore(element, children[i]);
+                  }
+
+                  itemMap.set(key, { element, readable: itemReadable });
+                }
+              }
+            }),
+          ),
+          Effect.forkIn(scope),
+        );
+
+        return container;
+      }
     }
 
     // Client-side: if no animations, use the core implementation

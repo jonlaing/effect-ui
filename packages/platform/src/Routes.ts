@@ -67,14 +67,11 @@ export interface RoutesProps<RouteNames extends string = string> {
  */
 export const Routes = component("Routes", (props: RoutesProps) =>
   Effect.gen(function* () {
-    console.log("[Routes] starting, getting RouterContext...");
     const router = yield* RouterContext;
-    console.log("[Routes] got router, mapping currentRoute...");
 
     // Map Option<string> to string | null for pattern matching
     // Option.none() becomes null, Option.some(name) becomes name
     const currentRouteName = router.currentRoute.map(Option.getOrNull);
-    console.log("[Routes] created currentRouteName readable");
 
     // Build match cases from components map
     const cases = Object.entries(props.components).map(
@@ -83,10 +80,6 @@ export const Routes = component("Routes", (props: RoutesProps) =>
         render: componentFn,
       }),
     );
-    console.log(
-      "[Routes] built cases:",
-      cases.map((c) => c.pattern),
-    );
 
     // Default fallback renders empty div with display:contents
     const fallback =
@@ -94,12 +87,9 @@ export const Routes = component("Routes", (props: RoutesProps) =>
 
     // Use match control flow to render the active route's component
     // When currentRoute is Option.none() (maps to null), fallback is rendered
-    console.log("[Routes] calling match...");
-    const result = yield* match(currentRouteName, {
+    return yield* match(currentRouteName, {
       cases,
       fallback,
     });
-    console.log("[Routes] match complete, returning");
-    return result;
   }),
 );
