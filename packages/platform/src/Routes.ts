@@ -100,9 +100,15 @@ export const Routes = component("Routes", (props: RoutesProps) =>
           const existingLoaderContext =
             yield* Effect.serviceOption(LoaderContextTag);
 
-          // If we already have LoaderContext, just render the component
+          // If we have existing context, determine whether to use it
           if (Option.isSome(existingLoaderContext)) {
-            return yield* componentFn();
+            // During SSR (no window), always use existing context
+            // router.loaderState isn't populated on the server
+            if (typeof window === "undefined") {
+              return yield* componentFn();
+            }
+
+            // Params changed or loaderState is stale - fall through to create new context
           }
 
           // Client-side navigation: wait for loader to complete for this route

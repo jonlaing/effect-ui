@@ -9,7 +9,9 @@ const hydrate = async () => {
     throw new Error("Root element not found");
   }
 
-  await Effect.runPromise(
+  // Use runFork to keep the scope alive for the lifetime of the app
+  // This ensures router subscriptions stay active
+  Effect.runFork(
     Effect.scoped(
       Effect.gen(function* () {
         // Create the router
@@ -27,11 +29,14 @@ const hydrate = async () => {
             >["router"],
           }),
         );
+
+        console.log("Effex app hydrated!");
+
+        // Keep the scope alive indefinitely
+        yield* Effect.never;
       }),
     ),
   );
-
-  console.log("Effex app hydrated!");
 };
 
 hydrate().catch(console.error);

@@ -428,19 +428,18 @@ export const make = <Routes extends Record<string, AnyRoute>>(
     // We subscribe to pathname instead of currentRoute to catch param changes
     // within the same route (e.g., /users/1 -> /users/2)
     if (typeof window !== "undefined") {
+      const scope = yield* Effect.scope;
       let lastPathname = initialPath;
 
-      yield* Effect.fork(
-        Stream.runForEach(pathnameSignal.changes, (newPathname) =>
-          Effect.gen(function* () {
-            // Only run loader if pathname actually changed
-            if (newPathname !== lastPathname) {
-              lastPathname = newPathname;
-              yield* runLoaderAndUpdateState;
-            }
-          }),
-        ),
-      );
+      yield* Stream.runForEach(pathnameSignal.changes, (newPathname) =>
+        Effect.gen(function* () {
+          // Only run loader if pathname actually changed
+          if (newPathname !== lastPathname) {
+            lastPathname = newPathname;
+            yield* runLoaderAndUpdateState;
+          }
+        }),
+      ).pipe(Effect.forkIn(scope));
     }
 
     const router: RouterType<Routes> = {
