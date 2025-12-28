@@ -1,4 +1,22 @@
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
+
+/**
+ * Error thrown when serialization fails
+ */
+export class SerializationError extends Data.TaggedError("SerializationError")<{
+  readonly message: string;
+  readonly cause?: unknown;
+}> {}
+
+/**
+ * Error thrown when deserialization fails
+ */
+export class DeserializationError extends Data.TaggedError(
+  "DeserializationError",
+)<{
+  readonly message: string;
+  readonly cause?: unknown;
+}> {}
 
 /**
  * Type tags for serialized values that JSON doesn't support natively
@@ -22,26 +40,32 @@ type SerializedSpecial =
  * Serialize a value to a JSON-safe representation
  * Handles: Date, BigInt, Map, Set, RegExp, URL, undefined, NaN, Infinity
  */
-export const serialize = <T>(value: T): Effect.Effect<string, Error> =>
+export const serialize = <T>(
+  value: T,
+): Effect.Effect<string, SerializationError> =>
   Effect.try({
     try: () => JSON.stringify(value, replacer),
     catch: (error) =>
-      new Error(
-        `Failed to serialize value: ${error instanceof Error ? error.message : String(error)}`,
-      ),
+      new SerializationError({
+        message: `Failed to serialize value: ${error instanceof Error ? error.message : String(error)}`,
+        cause: error,
+      }),
   });
 
 /**
  * Deserialize a JSON string back to its original value
  * Restores: Date, BigInt, Map, Set, RegExp, URL, undefined, NaN, Infinity
  */
-export const deserialize = <T>(json: string): Effect.Effect<T, Error> =>
+export const deserialize = <T>(
+  json: string,
+): Effect.Effect<T, DeserializationError> =>
   Effect.try({
     try: () => JSON.parse(json, reviver) as T,
     catch: (error) =>
-      new Error(
-        `Failed to deserialize value: ${error instanceof Error ? error.message : String(error)}`,
-      ),
+      new DeserializationError({
+        message: `Failed to deserialize value: ${error instanceof Error ? error.message : String(error)}`,
+        cause: error,
+      }),
   });
 
 /**
@@ -137,9 +161,13 @@ function replacer(this: unknown, key: string, value: unknown): unknown {
 }
 
 /**
- * JSON.parse reviver that restores special types
+ * Check if a value is a serialized type marker and revive it.
+ * Returns the revived value, or the original if not a type marker.
+ *
+ * This is the shared logic used by both JSON.parse reviver and
+ * manual object tree walking (for already-parsed data like window.__EFFEX_LOADER_DATA__).
  */
-function reviver(_key: string, value: unknown): unknown {
+export function reviveTypeMarker(value: unknown): unknown {
   if (value !== null && typeof value === "object" && TYPE_TAG in value) {
     const typed = value as SerializedSpecial;
 
@@ -182,10 +210,19 @@ function reviver(_key: string, value: unknown): unknown {
 }
 
 /**
+ * JSON.parse reviver that restores special types
+ */
+function reviver(_key: string, value: unknown): unknown {
+  return reviveTypeMarker(value);
+}
+
+/**
  * Serialize loader data for embedding in HTML
  * Returns an HTML-safe script content string
  */
-export const serializeForHtml = <T>(data: T): Effect.Effect<string, Error> =>
+export const serializeForHtml = <T>(
+  data: T,
+): Effect.Effect<string, SerializationError> =>
   Effect.map(serialize(data), (json) =>
     // Escape </script> and <!-- to prevent XSS
     json

@@ -24,9 +24,6 @@ export {
   type FormType,
 } from "@effex/form";
 
-// Re-export everything from @effex/primitives
-export * from "@effex/primitives";
-
 // Platform-specific exports
 export {
   Platform,
@@ -43,7 +40,17 @@ export {
   type ActionContext,
 } from "./RouteLoader.js";
 
-export { serialize, deserialize } from "./Serialization.js";
+export {
+  serialize,
+  deserialize,
+  serializeSync,
+  deserializeSync,
+  serializeForHtml,
+  serializeForHtmlSync,
+  reviveTypeMarker,
+  SerializationError,
+  DeserializationError,
+} from "./Serialization.js";
 
 export { render, type RenderOptions, type RenderResult } from "./render.js";
 

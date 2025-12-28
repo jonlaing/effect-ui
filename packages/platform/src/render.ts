@@ -1,5 +1,5 @@
 import { Effect, Layer } from "effect";
-import { RendererContext } from "@effex/core";
+import { RendererContext } from "@effex/dom";
 import type { Element } from "@effex/dom";
 import { renderToString } from "@effex/dom/server";
 import {

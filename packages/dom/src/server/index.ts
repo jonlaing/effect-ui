@@ -62,17 +62,25 @@ export interface RenderToStringOptions {
 export const renderToString = (
   element: Element<never, RendererContext>,
   _options: RenderToStringOptions = {},
-): Effect.Effect<string> => {
+) => {
   const StringRendererLayer = Layer.succeed(
     RendererContext,
     StringRenderer as Renderer<unknown>,
   );
 
   const program = Effect.gen(function* () {
+    console.log("[renderToString] program starting, about to yield element...");
     const vnode = yield* element;
-    return vnodeToString(vnode as unknown as VNode);
+    console.log("[renderToString] element yielded, got vnode");
+    const result = vnodeToString(vnode as unknown as VNode);
+    console.log(
+      "[renderToString] vnodeToString complete, length:",
+      result?.length,
+    );
+    return result;
   });
 
+  console.log("[renderToString] creating scoped effect with SSRContext...");
   return Effect.scoped(program).pipe(
     Effect.provide(StringRendererLayer),
     withSSRContext,

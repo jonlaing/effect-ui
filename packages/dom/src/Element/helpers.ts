@@ -1,4 +1,4 @@
-import { Array, Effect, Scope, Stream } from "effect";
+import { Array, Context, Effect, Option, Scope, Stream } from "effect";
 import type { Readable, RendererInterface } from "@effex/core";
 import type {
   Child,
@@ -35,7 +35,18 @@ export const subscribeToReadable = <A>(
     const initial = yield* readable.get;
     onValue(initial);
 
-    // Then subscribe to future changes
+    // During SSR, we don't need to subscribe to changes - just use initial value
+    // Check if we're in SSR by looking for SSRContext
+    const ssrContext = yield* Effect.serviceOption(
+      // Import SSRContext lazily to avoid circular dependency
+      Context.GenericTag<{ isSSR: true }>("@effex/SSRContext"),
+    );
+    if (Option.isSome(ssrContext)) {
+      // SSR mode - don't set up stream subscription
+      return;
+    }
+
+    // Client-side: subscribe to future changes
     const scope = yield* Effect.scope;
     yield* readable.changes.pipe(
       Stream.runForEach((value) => Effect.sync(() => onValue(value))),

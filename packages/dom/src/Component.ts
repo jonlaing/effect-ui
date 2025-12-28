@@ -132,7 +132,7 @@ export const component = <
   name: Name,
   render: (props: Props, children?: Children<never, never>) => Element<E, R>,
 ): Component<Name, Props, E, R> => {
-  const fn = (...args: unknown[]): Element<E, R> => {
+  const fn = (...args: unknown[]) => {
     // No arguments - call with empty props
     if (args.length === 0) {
       return render({} as Props, undefined);

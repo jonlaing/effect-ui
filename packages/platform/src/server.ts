@@ -4,7 +4,7 @@ import * as HttpRouter from "@effect/platform/HttpRouter";
 import * as HttpServerRequest from "@effect/platform/HttpServerRequest";
 import * as HttpServerResponse from "@effect/platform/HttpServerResponse";
 import type * as HttpServerError from "@effect/platform/HttpServerError";
-import { RendererContext } from "@effex/core";
+import { RendererContext } from "@effex/dom";
 import type { Element } from "@effex/dom";
 import { renderToString } from "@effex/dom/server";
 import {
@@ -113,6 +113,7 @@ const performSSR = (
   providedLayer: Layer.Layer<any, never, never> | undefined,
 ): Effect.Effect<SSRResult, never, never> =>
   Effect.gen(function* () {
+    console.log("Starting SSR process...");
     const platformContext = makeServerPlatformContext(request);
     const loaderDataCache = new Map<string, unknown>();
 
@@ -120,6 +121,7 @@ const performSSR = (
     let currentParams: Record<string, string> = {};
     let actionData: ActionData | null = null;
 
+    console.log("Processing router actions/loaders...");
     if (router) {
       const method = request.method.toUpperCase();
       const isActionRequest = ["POST", "PUT", "PATCH", "DELETE"].includes(
@@ -159,6 +161,7 @@ const performSSR = (
         }
       }
 
+      console.log("Executing loader for current route...");
       const loaderResult = yield* router.executeLoader() as Effect.Effect<{
         routeName: string;
         params: unknown;
@@ -172,10 +175,12 @@ const performSSR = (
       }
     }
 
+    console.log("Setting up loader context...");
     const paramsReadable = {
       get: Effect.succeed(currentParams),
     };
 
+    console.log("Creating loader context...");
     const loaderContext = makeLoaderContext({
       routeId: currentRouteName ?? "",
       params: paramsReadable,
@@ -187,16 +192,20 @@ const performSSR = (
     const platformLayer = Layer.succeed(PlatformContext, platformContext);
     const baseLayers = Layer.merge(loaderLayer, platformLayer);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const effectiveLayers = providedLayer
       ? Layer.merge(baseLayers, providedLayer)
       : baseLayers;
 
-    const html: string = yield* Effect.provide(
-      renderToString(element) as unknown as Effect.Effect<string, never, any>,
-      effectiveLayers as Layer.Layer<any, never, never>,
-    );
+    console.log("Rendering to string...");
+    console.log("effectiveLayers keys:", effectiveLayers);
+    const renderEffect = renderToString(element);
+    console.log("renderToString effect created, now providing layers...");
+    const providedEffect = Effect.provide(renderEffect, effectiveLayers);
+    console.log("Effect.provide complete, now yielding...");
+    const html = yield* providedEffect;
+    console.log("yield complete, html length:", html?.length);
 
+    console.log("Collecting loader data for hydration...");
     const loaderData: LoaderData = {};
     for (const [routeId, data] of loaderDataCache) {
       loaderData[routeId] = {
@@ -206,8 +215,12 @@ const performSSR = (
       };
     }
 
+    console.log("Serializing data for HTML embedding...");
+
     const loaderDataScript = serializeForHtmlSync(loaderData);
     const actionDataScript = serializeForHtmlSync(actionData);
+
+    console.log("SSR process complete.");
 
     return {
       html,
@@ -318,6 +331,7 @@ export const makeHttpApp = <R = never>(
   HttpServerRequest.HttpServerRequest
 > =>
   Effect.gen(function* () {
+    console.log("Effex HTTP app handling request...");
     const serverRequest = yield* HttpServerRequest.HttpServerRequest;
 
     // Convert Effect request to Web Request
@@ -326,23 +340,28 @@ export const makeHttpApp = <R = never>(
     // Create the Effex element
     const element = options.app(webRequest);
 
+    console.log("Performing SSR...");
     // Perform SSR - cast to handle the generic R constraint
     const result = yield* performSSR(
       webRequest,
       element as Element<never, RendererContext>,
       options.router,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      options.provide as any,
+      options.provide,
     );
+    console.log("SSR complete.");
 
     // Generate full HTML document
+    console.log("Generating HTML document...");
     const html = generateDocument(result, options.document);
+    console.log("HTML document generated.");
 
     // Convert platform headers to response headers
     const responseHeaders: Record<string, string> = {};
     result.headers.forEach((value, key) => {
       responseHeaders[key] = value;
     });
+
+    console.log("Ima coming");
 
     // Return HTML response
     return HttpServerResponse.html(html).pipe(
@@ -378,7 +397,7 @@ export const makeRouter = <R = never>(
 > => {
   const app = makeHttpApp(options);
 
-  return HttpRouter.empty.pipe(HttpRouter.all("/*", app));
+  return HttpRouter.empty.pipe(HttpRouter.all("*", app));
 };
 
 /**

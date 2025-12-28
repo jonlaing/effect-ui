@@ -6,5 +6,14 @@ export default defineConfig({
   dts: true,
   clean: true,
   sourcemap: true,
-  external: ["effect", "@effex/dom", "@effex/router"],
+  external: [
+    "effect",
+    "@effex/core",
+    "@effex/dom",
+    "@effex/router",
+    "@effex/form",
+    "@effex/primitives",
+    "@effect/platform",
+    "@effect/platform-node",
+  ],
 });

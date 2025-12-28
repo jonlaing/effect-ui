@@ -259,12 +259,27 @@ type HTMLAttributeAliases<K extends keyof HTMLElementTagNameMap> =
     : object;
 
 /**
- * Keys that are valid attributes for an element (excluding methods and handled keys).
+ * Filter out index signature types from a union of keys.
+ * Index signatures appear as the full `string` or `number` type, while actual
+ * property names are string/number literal types.
  */
-type ElementAttributeKeys<K extends keyof HTMLElementTagNameMap> = Exclude<
-  NonFunctionPropertyKeys<HTMLElementTagNameMap[K]>,
-  ExcludedKeys
->;
+type ExcludeIndexSignature<T> = T extends string
+  ? string extends T
+    ? never // This is the string index signature type
+    : T
+  : T extends number
+    ? number extends T
+      ? never // This is the number index signature type
+      : T
+    : T;
+
+/**
+ * Keys that are valid attributes for an element (excluding methods, handled keys, and index signatures).
+ */
+type ElementAttributeKeys<K extends keyof HTMLElementTagNameMap> =
+  ExcludeIndexSignature<
+    Exclude<NonFunctionPropertyKeys<HTMLElementTagNameMap[K]>, ExcludedKeys>
+  >;
 
 /**
  * Full HTML attributes for a specific element type, including base, events, and element-specific attributes.

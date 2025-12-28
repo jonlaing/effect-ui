@@ -1,6 +1,6 @@
 import { Effect } from "effect";
-import { Router } from "@effex/router";
-import { mount, Routes, makeRouterLayer } from "@effex/platform";
+import { Router, Routes, makeRouterLayer } from "@effex/platform";
+import { render } from "@effex/dom";
 import { routes, components } from "./generated/routes.js";
 
 // Mount the application
@@ -18,12 +18,12 @@ const app = async () => {
         const routerLayer = makeRouterLayer(router);
 
         // Create the app element
-        const appElement = yield* Routes({ components }).pipe(
+        const appElement = Routes({ components }).pipe(
           Effect.provide(routerLayer),
         );
 
         // Mount to DOM
-        yield* mount(appElement, container);
+        yield* render(appElement as Parameters<typeof render>[0], container);
       }),
     ),
   );

@@ -225,7 +225,7 @@ export const when = <N, E1 = never, R1 = never, E2 = never, R2 = never>(
 export const match = <A, N, E = never, R = never, E2 = never, R2 = never>(
   value: Readable<A>,
   config: MatchConfig<A, N, E, R, E2, R2>,
-): Element<N, E | E2, R | R2> =>
+) =>
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as Renderer<N>;
     const scope = yield* Effect.scope;
@@ -238,9 +238,7 @@ export const match = <A, N, E = never, R = never, E2 = never, R2 = never>(
     let currentPattern: A | typeof NOT_RENDERED = NOT_RENDERED;
     let currentElementScope: Scope.CloseableScope | null = null;
 
-    const render = (
-      val: A,
-    ): Effect.Effect<void, E | E2, Scope.Scope | RendererContext | R | R2> =>
+    const render = (val: A) =>
       Effect.gen(function* () {
         if (currentPattern !== NOT_RENDERED && val === currentPattern) return;
 
@@ -253,7 +251,8 @@ export const match = <A, N, E = never, R = never, E2 = never, R2 = never>(
 
         const matchedCase = config.cases.find((c) => c.pattern === val);
 
-        let newElement: N;
+        let newElement;
+
         if (matchedCase) {
           newElement = yield* matchedCase
             .render()

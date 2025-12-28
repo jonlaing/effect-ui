@@ -1,8 +1,9 @@
 import { Effect } from "effect";
-import { RendererContext } from "@effex/core";
 import type { Element } from "@effex/dom";
+import { RendererContext } from "@effex/dom";
 import { hydrate as domHydrate } from "@effex/dom/hydrate";
 import { type LoaderData } from "./RouteLoader.js";
+import { reviveTypeMarker } from "./Serialization.js";
 
 /**
  * Router interface for hydration (avoids cross-package Effect type issues)
@@ -131,7 +132,8 @@ function deserializeLoaderData(raw: LoaderData): LoaderData {
 }
 
 /**
- * Recursively deserialize a value, restoring special types
+ * Recursively deserialize a value, restoring special types.
+ * Uses reviveTypeMarker for the actual type conversion.
  */
 function deserializeValue(value: unknown): unknown {
   if (value === null || value === undefined) {
@@ -145,43 +147,23 @@ function deserializeValue(value: unknown): unknown {
   if (typeof value === "object") {
     const obj = value as Record<string, unknown>;
 
-    // Check for our special type markers
+    // Check for type marker - if found, revive it
     if ("__effex_type__" in obj) {
-      const typeTag = obj.__effex_type__ as string;
-      const valueTag = obj.__effex_value__;
+      const revived = reviveTypeMarker(obj);
 
-      switch (typeTag) {
-        case "undefined":
-          return undefined;
-        case "NaN":
-          return NaN;
-        case "Infinity":
-          return Infinity;
-        case "-Infinity":
-          return -Infinity;
-        case "BigInt":
-          return BigInt(valueTag as string);
-        case "Date":
-          return new Date(valueTag as string);
-        case "Map":
-          return new Map(
-            (valueTag as [unknown, unknown][]).map(([k, v]) => [
-              deserializeValue(k),
-              deserializeValue(v),
-            ]),
-          );
-        case "Set":
-          return new Set((valueTag as unknown[]).map(deserializeValue));
-        case "RegExp": {
-          const { source, flags } = valueTag as {
-            source: string;
-            flags: string;
-          };
-          return new RegExp(source, flags);
-        }
-        case "URL":
-          return new URL(valueTag as string);
+      // For Map and Set, we need to recursively deserialize the contents
+      // since reviveTypeMarker doesn't recurse
+      if (revived instanceof Map) {
+        const entries = Array.from(revived.entries()).map(
+          ([k, v]) => [deserializeValue(k), deserializeValue(v)] as const,
+        );
+        return new Map(entries);
       }
+      if (revived instanceof Set) {
+        return new Set(Array.from(revived).map(deserializeValue));
+      }
+
+      return revived;
     }
 
     // Regular object - deserialize all values

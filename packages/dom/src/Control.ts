@@ -9,9 +9,8 @@ import {
   when as coreWhen,
   match as coreMatch,
   each as coreEach,
-  type MatchCase as CoreMatchCase,
+  type MatchCase,
   type WhenConfig as CoreWhenConfig,
-  type MatchConfig as CoreMatchConfig,
   type EachConfig as CoreEachConfig,
 } from "@effex/core";
 import type { Element } from "./Element";
@@ -32,14 +31,6 @@ import { HydrationContext } from "./HydrationContext";
  * This is necessary because null/undefined could be valid pattern values.
  */
 const NOT_RENDERED = Symbol("NOT_RENDERED");
-
-// Re-export the MatchCase type specialized for HTMLElement
-export interface MatchCase<A, E = never, R = never> extends CoreMatchCase<
-  A,
-  HTMLElement,
-  E,
-  R
-> {}
 
 /**
  * Configuration for the `when` control flow (DOM-specific with animation support).
@@ -73,7 +64,7 @@ export interface MatchConfig<A, E = never, R = never, E2 = never, R2 = never> {
    */
   readonly container?: () => Element<never, never>;
   /** Array of pattern-render pairs */
-  readonly cases: readonly MatchCase<A, E, R>[];
+  readonly cases: readonly MatchCase<A, HTMLElement, E, R>[];
   /** Optional fallback if no pattern matches */
   readonly fallback?: () => Element<E2, R2>;
   /** Optional animation configuration */
@@ -339,36 +330,56 @@ export const when = <E1 = never, R1 = never, E2 = never, R2 = never>(
 export const match = <A, E = never, R = never, E2 = never, R2 = never>(
   value: Readable<A>,
   config: MatchConfig<A, E, R, E2, R2>,
-): Element<E | E2, R | R2> =>
+) =>
   Effect.gen(function* () {
+    console.log("[match] starting, getting renderer...");
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
+    console.log("[match] got renderer, checking SSRContext...");
     const ssrContext = yield* Effect.serviceOption(SSRContext);
+    console.log("[match] SSRContext isSome:", Option.isSome(ssrContext));
 
     // SSR mode: render initial value with hydration markers, no subscriptions
     if (Option.isSome(ssrContext)) {
+      console.log("[match] taking SSR path...");
       const hydrationId = yield* ssrContext.value.generateId;
+      console.log("[match] got hydrationId:", hydrationId);
       const initialValue = yield* value.get;
+      console.log("[match] got initialValue:", initialValue);
 
       const container = config.container
         ? yield* config.container()
         : yield* createDefaultContainer(renderer);
+      console.log("[match] created container");
 
       yield* addHydrationMarkers(renderer, container, "match", hydrationId, {
         pattern: JSON.stringify(initialValue),
       });
+      console.log("[match] added hydration markers");
 
       const matchedCase = config.cases.find((c) => c.pattern === initialValue);
-      let element: HTMLElement | undefined;
+      console.log(
+        "[match] matchedCase found:",
+        !!matchedCase,
+        "pattern:",
+        initialValue,
+      );
+      let element;
 
       if (matchedCase) {
+        console.log("[match] rendering matched case...");
         element = yield* matchedCase.render();
+        console.log("[match] matched case rendered");
       } else if (config.fallback) {
+        console.log("[match] rendering fallback...");
         element = yield* config.fallback();
+        console.log("[match] fallback rendered");
       }
 
       if (element) {
         yield* renderer.appendChild(container, element);
+        console.log("[match] appended element to container");
       }
+      console.log("[match] SSR complete, returning container");
       return container;
     }
 
@@ -382,9 +393,9 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
     if (!config.animate) {
       return yield* coreMatch(value, {
         container: config.container,
-        cases: config.cases as readonly CoreMatchCase<A, HTMLElement, E, R>[],
+        cases: config.cases,
         fallback: config.fallback,
-      } as CoreMatchConfig<A, HTMLElement, E, R, E2, R2>);
+      });
     }
 
     // Client-side with animations: use the DOM-specific implementation
@@ -399,10 +410,7 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
     let currentElementScope: Scope.CloseableScope | null = null;
     const animate = config.animate;
 
-    const render = (
-      val: A,
-      isInitial: boolean = false,
-    ): Effect.Effect<void, E | E2, Scope.Scope | RendererContext | R | R2> =>
+    const render = (val: A, isInitial: boolean = false) =>
       Effect.gen(function* () {
         if (currentPattern !== NOT_RENDERED && val === currentPattern) return;
 

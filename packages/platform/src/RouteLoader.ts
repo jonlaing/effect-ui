@@ -1,4 +1,4 @@
-import { Context, Effect, Option } from "effect";
+import { Context, Data, Effect, Option } from "effect";
 
 /**
  * Readable-like interface (avoids cross-package Effect type issues)
@@ -82,14 +82,12 @@ export interface LoaderData {
 /**
  * Redirect error for loader/action redirects
  */
-export class RedirectError {
-  readonly _tag = "RedirectError";
-  readonly url: string;
-  readonly status: 301 | 302 | 303 | 307 | 308;
-
-  constructor(url: string, status: 301 | 302 | 303 | 307 | 308 = 302) {
-    this.url = url;
-    this.status = status;
+export class RedirectError extends Data.TaggedError("RedirectError")<{
+  url: string;
+  status?: 301 | 302 | 303 | 307 | 308;
+}> {
+  constructor({ url, status = 302 }: Pick<RedirectError, "url" | "status">) {
+    super({ url, status });
   }
 }
 
@@ -162,7 +160,7 @@ export const RouteLoader = {
     url: string,
     status: 301 | 302 | 303 | 307 | 308 = 302,
   ): Effect.Effect<never, RedirectError> =>
-    Effect.fail(new RedirectError(url, status)),
+    Effect.fail(new RedirectError({ url, status })),
 
   /**
    * Get the request object (in actions)

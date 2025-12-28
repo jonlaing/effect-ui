@@ -27,7 +27,7 @@ describe("generateRoutes", () => {
       outputPath: "/app/src/generated/routes.ts",
     });
 
-    expect(code).toContain('import { Route } from "@effex/router"');
+    expect(code).toContain('import { Route } from "@effex/platform"');
     expect(code).toContain('import * as IndexRoute from "../routes/_index"');
     expect(code).toContain('import IndexComponent from "../routes/_index"');
     expect(code).toContain('index: Route.make("/")');
@@ -167,7 +167,7 @@ describe("generateRoutes", () => {
     expect(code).toContain("export type Routes = typeof routes");
     expect(code).toContain("export type RouteNames = keyof Routes");
     expect(code).toContain(
-      'export type AppRouter = import("@effex/router").RouterInfer<Routes>',
+      'export type AppRouter = import("@effex/platform").RouterInfer<Routes>',
     );
   });
 });

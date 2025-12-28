@@ -227,7 +227,7 @@ describe("RouteLoader", () => {
 
   describe("RedirectError", () => {
     it("should create with default status", () => {
-      const error = new RedirectError("/dashboard");
+      const error = new RedirectError({ url: "/dashboard" });
 
       expect(error._tag).toBe("RedirectError");
       expect(error.url).toBe("/dashboard");
@@ -235,7 +235,7 @@ describe("RouteLoader", () => {
     });
 
     it("should create with custom status", () => {
-      const error = new RedirectError("/new-location", 301);
+      const error = new RedirectError({ url: "/new-location", status: 301 });
 
       expect(error.status).toBe(301);
     });

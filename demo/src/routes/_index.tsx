@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { $, component, Link } from "@effex/platform";
 
 const HomePage = component("HomePage", () =>
@@ -6,21 +7,7 @@ const HomePage = component("HomePage", () =>
     $.p({}, ["A reactive UI framework built on Effect.ts primitives."]),
     $.div({ class: "card" }, [
       $.h2({}, ["Get Started"]),
-      $.p({}, [
-        "Edit ",
-        $.code(
-          {
-            style: {
-              background: "#f1f5f9",
-              padding: "0.125rem 0.375rem",
-              borderRadius: "0.25rem",
-              fontFamily: "monospace",
-            },
-          },
-          ["src/routes/_index.tsx"],
-        ),
-        " to modify this page.",
-      ]),
+      $.p({}, ["Edit src/routes/_index.tsx to modify this page."]),
     ]),
     $.div({ class: "card" }, [
       $.h2({}, ["Features"]),
@@ -34,7 +21,11 @@ const HomePage = component("HomePage", () =>
     ]),
     $.div({ class: "card" }, [
       $.h2({}, ["Navigation"]),
-      $.ul({}, [$.li({}, [Link({ href: "/about" }, "About")])]),
+      $.ul({}, [
+        $.li({}, [Link({ href: "/about" }, "About")]),
+        $.li({}, [Link({ href: "/users/1" }, "User Profile")]),
+        $.li({}, [Link({ href: "/contacts" }, "Contact Form")]),
+      ]),
     ]),
   ]),
 );
