@@ -335,6 +335,8 @@ export interface BaseRouter {
   readonly searchParams: Readable.Readable<URLSearchParams>;
   /** The currently matched route name, or Option.none() if no match */
   readonly currentRoute: Readable.Readable<Option.Option<string>>;
+  /** Reactive loader state for the current route */
+  readonly loaderState: Readable.Readable<LoaderState>;
   /** Reactive action state for form submissions */
   readonly actionState: Readable.Readable<ActionState>;
   /** Navigate to a path */

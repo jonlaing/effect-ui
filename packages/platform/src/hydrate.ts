@@ -1,8 +1,12 @@
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import type { Element } from "@effex/dom";
 import { RendererContext } from "@effex/dom";
 import { hydrate as domHydrate } from "@effex/dom/hydrate";
-import { type LoaderData } from "./RouteLoader.js";
+import {
+  type LoaderData,
+  LoaderContextTag,
+  makeLoaderContext,
+} from "./RouteLoader.js";
 import { reviveTypeMarker } from "./Serialization.js";
 
 /**
@@ -104,8 +108,30 @@ export const hydrateApp = async (
     }
   }
 
+  // Get current route info for LoaderContext
+  const routeIds = Object.keys(loaderData);
+  const currentRouteId = routeIds.length > 0 ? routeIds[0] : "";
+  const currentParams =
+    routeIds.length > 0 ? loaderData[routeIds[0]].params : {};
+
+  // Create a params readable for LoaderContext
+  const paramsReadable = {
+    get: Effect.succeed(currentParams),
+  };
+
+  // Create LoaderContext for hydration
+  const loaderContext = makeLoaderContext({
+    routeId: currentRouteId,
+    params: paramsReadable,
+    loaderDataCache: loaderDataCache,
+    isHydrating: true,
+  });
+
+  // Create the layer to provide during hydration
+  const loaderLayer = Layer.succeed(LoaderContextTag, loaderContext);
+
   // domHydrate returns a Promise
-  await domHydrate(element, container);
+  await domHydrate(element, container, { layers: loaderLayer });
 
   // Clean up the loader data from window after hydration
   // This frees memory and prevents stale data usage

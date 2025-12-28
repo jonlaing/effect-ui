@@ -24,7 +24,6 @@ export {
   Renderer,
   RendererContext,
   type RendererInterface,
-  type MatchCase,
 } from "@effex/core";
 
 // DOM Renderer
@@ -79,8 +78,8 @@ export {
 } from "./Element";
 
 // Control flow
-export { when, match, each } from "./Control";
-export type { WhenConfig, MatchConfig, EachConfig } from "./Control";
+export { when, match, each, HydrationMismatchError } from "./Control";
+export type { WhenConfig, MatchConfig, MatchCase, EachConfig } from "./Control";
 
 // Boundary (async and error handling)
 export { Boundary, suspense, error } from "./Boundary";

@@ -39,6 +39,7 @@ const users: Record<string, User> = {
 // Loader function - runs on the server
 export const loader = (p: { readonly id: string }) =>
   Effect.gen(function* () {
+    console.log("Running loader for user", p.id);
     yield* Effect.sleep(100);
     const user = users[p.id];
     if (!user) {

@@ -46,10 +46,6 @@ export { Renderer, RendererContext } from "./Renderer";
 // Element
 export type { Element, Child } from "./Element";
 
-// Control flow
-export type { WhenConfig, MatchCase, MatchConfig, EachConfig } from "./Control";
-export { when, match, each } from "./Control";
-
 // Boundary
 export type { SuspenseOptions, BoundarySuspenseOptions } from "./Boundary";
 export { Boundary, suspense, error } from "./Boundary";

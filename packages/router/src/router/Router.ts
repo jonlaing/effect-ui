@@ -1,4 +1,4 @@
-import { Effect, Equivalence, Option, Scope, Stream } from "effect";
+import { Effect, Option, Scope, Stream } from "effect";
 import type { Schema } from "effect";
 import { Signal, Derived } from "@effex/core";
 import type {
@@ -424,18 +424,18 @@ export const make = <Routes extends Record<string, AnyRoute>>(
         submissionId: null,
       });
 
-    // Subscribe to route changes and execute loaders (client-side only)
+    // Subscribe to pathname changes and execute loaders (client-side only)
+    // We subscribe to pathname instead of currentRoute to catch param changes
+    // within the same route (e.g., /users/1 -> /users/2)
     if (typeof window !== "undefined") {
-      // Track last route to detect changes
-      let lastRouteName: Option.Option<string> = Option.none();
-      const optionStringEq = Option.getEquivalence(Equivalence.string);
+      let lastPathname = initialPath;
 
       yield* Effect.fork(
-        Stream.runForEach(currentRoute.changes, (newRouteOption) =>
+        Stream.runForEach(pathnameSignal.changes, (newPathname) =>
           Effect.gen(function* () {
-            // Only run loader if route actually changed
-            if (!optionStringEq(newRouteOption, lastRouteName)) {
-              lastRouteName = newRouteOption as Option.Option<string>;
+            // Only run loader if pathname actually changed
+            if (newPathname !== lastPathname) {
+              lastPathname = newPathname;
               yield* runLoaderAndUpdateState;
             }
           }),

@@ -72,12 +72,6 @@ export const createHydrationRenderer = (
         }
 
         if (!node) {
-          console.log(
-            "[Hydration] createNode MISS:",
-            type,
-            "in",
-            (ctx.parent as Element).tagName || "root",
-          );
           onMismatch(
             `Expected <${type}> but not found in ${(ctx.parent as Element).tagName || "root"}`,
             ctx.parent,
@@ -87,13 +81,6 @@ export const createHydrationRenderer = (
             ? document.createElementNS(namespace, type)
             : document.createElement(type);
         }
-
-        console.log(
-          "[Hydration] createNode HIT:",
-          type,
-          "->",
-          (node as Element).className || "(no class)",
-        );
 
         // Push a new context for this element's children
         parentStack.push({ parent: node, childIndex: 0 });
@@ -233,14 +220,6 @@ export const createHydrationRenderer = (
       handler: (event: unknown) => void,
     ) =>
       Effect.sync(() => {
-        // This is where we attach event handlers during hydration
-        console.log(
-          "[Hydration] addEventListener:",
-          event,
-          "on",
-          (node as HTMLElement).tagName,
-          (node as HTMLElement).className,
-        );
         (node as HTMLElement).addEventListener(event, handler);
       }),
 

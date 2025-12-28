@@ -25,6 +25,13 @@ export interface HydrateOptions {
    * In production, the framework will attempt recovery.
    */
   readonly onMismatch?: (message: string, node: Node | null) => void;
+
+  /**
+   * Additional layers to provide to the element during hydration.
+   * Use this to provide services like LoaderContext that the element requires.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  readonly layers?: Layer.Layer<any, never, never>;
 }
 
 /**
@@ -60,7 +67,13 @@ export const hydrate = (
     // Create hydration context with ID counter matching SSR order
     const hydrationContextLayer = yield* makeHydrationContext(container);
 
-    yield* Effect.provide(element, hydrationContextLayer);
+    // Build the layers to provide to the element
+    let elementLayers = hydrationContextLayer;
+    if (options.layers) {
+      elementLayers = Layer.merge(hydrationContextLayer, options.layers);
+    }
+
+    yield* Effect.provide(element, elementLayers);
 
     // Keep the scope alive - subscriptions run in forked fibers that need to persist
     // Wait forever (until page unload) so subscription fibers stay alive
