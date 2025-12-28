@@ -82,11 +82,11 @@ export const Routes = component("Routes", (props: RoutesProps) =>
       return `${routeOpt.value}::${pathname}`;
     });
 
-    // Map the combined value back to just the route name for case pattern matching
-    const currentRouteName = routeWithPath.map((combined) => {
+    // Extract the route name from the combined value for pattern matching
+    const extractRouteName = (combined: string | null): string | null => {
       if (combined === null) return null;
       return combined.split("::")[0];
-    });
+    };
 
     // Create a wrapper that provides LoaderContext to each route component
     // Only provides LoaderContext during client-side navigation (not SSR or hydration)
@@ -102,13 +102,28 @@ export const Routes = component("Routes", (props: RoutesProps) =>
 
           // If we have existing context, determine whether to use it
           if (Option.isSome(existingLoaderContext)) {
-            // During SSR (no window), always use existing context
-            // router.loaderState isn't populated on the server
-            if (typeof window === "undefined") {
+            const ctx = existingLoaderContext.value;
+            // During SSR or hydration, use existing context IF it's for the same route
+            // - SSR: router.loaderState isn't populated on the server
+            // - Hydration: loader data was already fetched on server and provided
+            // - Client nav: old context from hydration may still be in scope, skip it
+            const isSSR = typeof window === "undefined";
+            const isHydratingThisRoute =
+              ctx.isHydrating && ctx.routeId === routeName;
+
+            // Special case: during initial hydration of a route WITHOUT a loader,
+            // ctx.routeId is "" but we should still use the context.
+            // We detect this by checking if loaderState hasn't been set yet
+            // (during initial hydration) vs client-side navigation (loaderState is set).
+            const loaderState = yield* router.loaderState.get;
+            const isInitialHydrationNoLoader =
+              ctx.isHydrating &&
+              ctx.routeId === "" &&
+              loaderState.routeName === null;
+
+            if (isSSR || isHydratingThisRoute || isInitialHydrationNoLoader) {
               return yield* componentFn();
             }
-
-            // Params changed or loaderState is stale - fall through to create new context
           }
 
           // Client-side navigation: wait for loader to complete for this route
@@ -166,10 +181,13 @@ export const Routes = component("Routes", (props: RoutesProps) =>
       props.fallback ?? (() => div({ style: { display: "contents" } }, []));
 
     // Use match control flow to render the active route's component
-    // When currentRoute is Option.none() (maps to null), fallback is rendered
-    return yield* match(currentRouteName, {
+    // routeWithPath includes the pathname for change detection (e.g., params changes)
+    // extractPattern extracts just the route name for case matching
+    // When routeWithPath is null, fallback is rendered
+    return yield* match(routeWithPath, {
       cases,
       fallback,
+      extractPattern: extractRouteName,
     });
   }),
 );

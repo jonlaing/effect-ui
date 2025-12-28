@@ -331,23 +331,35 @@ export const makeHttpApp = <R = never>(
     // Convert Effect request to Web Request
     const webRequest = yield* HttpServerRequest.toWeb(serverRequest);
 
+    console.log("[SSR] Rendering:", webRequest.url);
+
     // Create the Effex element
     const element = options.app(webRequest);
 
     // Perform SSR - cast to handle the generic R constraint
-    const result = yield* performSSR(
-      webRequest,
-      element as Element<never, RendererContext>,
-      options.router,
-      options.provide,
+    const result = yield* Effect.catchAllCause(
+      performSSR(
+        webRequest,
+        element as Element<never, RendererContext>,
+        options.router,
+        options.provide,
+      ),
+      (cause) =>
+        Effect.gen(function* () {
+          console.error("[SSR] Error rendering:", webRequest.url);
+          console.error("[SSR] Cause:", cause);
+          return yield* Effect.failCause(cause);
+        }),
     );
+
+    console.log("[SSR] Rendered successfully:", webRequest.url);
 
     // Generate full HTML document
     const html = generateDocument(result, options.document);
 
     // Convert platform headers to response headers
     const responseHeaders: Record<string, string> = {};
-    result.headers.forEach((value, key) => {
+    result.headers.forEach((value: string, key: string) => {
       responseHeaders[key] = value;
     });
 

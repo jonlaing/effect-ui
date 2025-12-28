@@ -71,7 +71,11 @@ export const ssrMatch = <A, E, R, E2, R2>(
       pattern: JSON.stringify(initialValue),
     });
 
-    const matchedCase = config.cases.find((c) => c.pattern === initialValue);
+    // Use extractPattern if provided, otherwise use the value directly
+    const patternValue = config.extractPattern
+      ? config.extractPattern(initialValue)
+      : initialValue;
+    const matchedCase = config.cases.find((c) => c.pattern === patternValue);
     let element;
 
     if (matchedCase) {

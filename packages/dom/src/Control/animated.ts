@@ -143,7 +143,13 @@ export const animatedMatch = <A, E, R, E2, R2>(
 
         currentElementScope = yield* Scope.make();
 
-        const matchedCase = config.cases.find((c) => c.pattern === val);
+        // Use extractPattern if provided, otherwise use the value directly
+        const patternValue = config.extractPattern
+          ? config.extractPattern(val)
+          : val;
+        const matchedCase = config.cases.find(
+          (c) => c.pattern === patternValue,
+        );
 
         let newElement: HTMLElement;
         if (matchedCase) {

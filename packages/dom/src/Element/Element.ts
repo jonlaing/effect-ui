@@ -94,6 +94,7 @@ const applyAttributes = <K extends keyof HTMLElementTagNameMap>(
         yield* renderer.setAttribute(element, "id", value as string);
       } else if (
         key === "value" &&
+        typeof HTMLInputElement !== "undefined" &&
         ((element as HTMLElement) instanceof HTMLInputElement ||
           (element as HTMLElement) instanceof HTMLTextAreaElement ||
           (element as HTMLElement) instanceof HTMLSelectElement)

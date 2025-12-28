@@ -131,7 +131,11 @@ export const hydrationMatch = <A, E, R, E2, R2>(
     }
 
     const initialValue = yield* value.get;
-    const matchedCase = config.cases.find((c) => c.pattern === initialValue);
+    // Use extractPattern if provided, otherwise use the value directly
+    const patternValue = config.extractPattern
+      ? config.extractPattern(initialValue)
+      : initialValue;
+    const matchedCase = config.cases.find((c) => c.pattern === patternValue);
 
     // Render the matched case to attach event handlers to existing DOM
     if (matchedCase) {
@@ -146,7 +150,13 @@ export const hydrationMatch = <A, E, R, E2, R2>(
       Stream.runForEach((newValue) =>
         Effect.gen(function* () {
           container.innerHTML = "";
-          const newCase = config.cases.find((c) => c.pattern === newValue);
+          // Use extractPattern if provided
+          const newPatternValue = config.extractPattern
+            ? config.extractPattern(newValue)
+            : newValue;
+          const newCase = config.cases.find(
+            (c) => c.pattern === newPatternValue,
+          );
           let element;
           if (newCase) {
             element = yield* withDOMRenderer(newCase.render());

@@ -45,6 +45,20 @@ export interface MatchConfig<A, E = never, R = never, E2 = never, R2 = never> {
   readonly fallback?: () => Element<E2, R2>;
   /** Optional animation configuration */
   readonly animate?: AnimationOptions;
+  /**
+   * Optional function to extract the pattern from the value for matching.
+   * Use this when the value contains additional information for change detection
+   * (like a path) but the pattern matching should use a subset (like route name).
+   *
+   * @example
+   * ```ts
+   * match(routeWithPath, {
+   *   cases: [{ pattern: "users", render: () => UsersPage() }],
+   *   extractPattern: (value) => value?.split("::")[0], // "users::/users/1" -> "users"
+   * })
+   * ```
+   */
+  readonly extractPattern?: (value: A) => unknown;
 }
 
 /**
