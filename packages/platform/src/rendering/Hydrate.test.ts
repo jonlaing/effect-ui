@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Effect } from "effect";
 import { div } from "@effex/dom";
 import { renderToString } from "@effex/dom/server";
-import { hydrateApp, isHydrating } from "./hydrate";
-import type { LoaderData } from "./RouteLoader";
+import { hydrateApp, isHydrating } from "./Hydrate";
+import type { LoaderData } from "../routing/RouteLoader";
 
 // Helper to run Effect.runPromise with cross-package type compatibility
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

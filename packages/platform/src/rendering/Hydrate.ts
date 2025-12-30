@@ -6,8 +6,8 @@ import {
   type LoaderData,
   LoaderContextTag,
   makeLoaderContext,
-} from "./RouteLoader.js";
-import { reviveTypeMarker } from "./Serialization.js";
+} from "../routing/RouteLoader.js";
+import { reviveTypeMarker } from "../Serialization.js";
 
 /**
  * Router interface for hydration (avoids cross-package Effect type issues)

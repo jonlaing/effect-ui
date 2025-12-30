@@ -1,4 +1,4 @@
-import { Effect, Layer, Option } from "effect";
+import { Effect, Layer } from "effect";
 import * as HttpApp from "@effect/platform/HttpApp";
 import * as HttpRouter from "@effect/platform/HttpRouter";
 import * as HttpServerRequest from "@effect/platform/HttpServerRequest";
@@ -6,65 +6,17 @@ import * as HttpServerResponse from "@effect/platform/HttpServerResponse";
 import type * as HttpServerError from "@effect/platform/HttpServerError";
 import { RendererContext } from "@effex/dom";
 import type { Element } from "@effex/dom";
-import { renderToString } from "@effex/dom/server";
+import { type SSRRouter, performSSR } from "../rendering/SSR.js";
 import {
-  makeServerPlatformContext,
-  PlatformContext,
-  type PlatformContextType,
-} from "./Platform.js";
-import {
-  type LoaderData,
-  LoaderContextTag,
-  makeLoaderContext,
-} from "./RouteLoader.js";
-import { serializeForHtmlSync } from "./Serialization.js";
+  type DocumentOptions,
+  generateDocument,
+} from "../rendering/Document.js";
 
-/**
- * Router interface for SSR (avoids cross-package Effect type issues)
- */
-interface SSRRouter {
-  executeLoader: () => Effect.Effect<
-    { routeName: string; params: unknown; data: unknown } | null,
-    unknown,
-    unknown
-  >;
-  executeAction: (
-    routeName: string,
-    formData: FormData,
-    request: Request,
-  ) => Effect.Effect<
-    { routeName: string; data: unknown } | null,
-    unknown,
-    unknown
-  >;
-  currentRoute: { get: Effect.Effect<Option.Option<string>> };
-  pathname: {
-    get: Effect.Effect<string>;
-    set: (path: string) => Effect.Effect<void>;
-  };
-}
-
-/**
- * Action data structure for hydration
- */
-export interface ActionData {
-  routeName: string;
-  data: unknown;
-  timestamp: number;
-}
-
-/**
- * Result of server-side rendering
- */
-export interface SSRResult {
-  readonly html: string;
-  readonly loaderData: LoaderData;
-  readonly loaderDataScript: string;
-  readonly actionData: ActionData | null;
-  readonly actionDataScript: string;
-  readonly headers: Headers;
-  readonly platformContext: PlatformContextType;
-}
+// Re-export types for convenience
+export type { SSRRouter } from "../rendering/SSR.js";
+export type { SSRResult } from "../rendering/SSR.js";
+export type { ActionData } from "../actions/Actions.js";
+export type { DocumentOptions } from "../rendering/Document.js";
 
 /**
  * Options for creating an Effex HTTP application
@@ -91,154 +43,6 @@ export interface EffexAppOptions<R> {
    * Additional Effect requirements to provide
    */
   readonly provide?: Layer.Layer<R, never, never>;
-}
-
-/**
- * Options for HTML document generation
- */
-export interface DocumentOptions {
-  title?: string;
-  scripts?: string[];
-  styles?: string[];
-  head?: string;
-  bodyAttributes?: string;
-  rootId?: string;
-}
-
-/**
- * Perform SSR for a request and return the result
- */
-const performSSR = (
-  request: Request,
-  element: Element<never, RendererContext>,
-  router: SSRRouter | undefined,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  providedLayer: Layer.Layer<any, never, never> | undefined,
-): Effect.Effect<SSRResult, never, never> =>
-  Effect.gen(function* () {
-    const platformContext = makeServerPlatformContext(request);
-    const loaderDataCache = new Map<string, unknown>();
-
-    const { routeName: currentRouteName, params: currentParams } =
-      yield* Effect.fromNullable(router).pipe(
-        Effect.flatMap((r) => r.executeLoader()),
-        Effect.tap((loaderResult) => {
-          if (loaderResult) {
-            loaderDataCache.set(loaderResult.routeName, loaderResult.data);
-          }
-        }),
-        Effect.catchAll(() => Effect.succeed({})),
-      ) as Effect.Effect<{
-        routeName: string;
-        params: Record<string, string>;
-      }>;
-
-    const actionData = yield* makeActionData(router, request);
-
-    // Update router pathname to match request URL for SSR
-    if (router) {
-      const url = new URL(request.url);
-      yield* router.pathname.set(url.pathname);
-    }
-
-    const paramsReadable = {
-      get: Effect.succeed(currentParams),
-    };
-
-    const loaderContext = makeLoaderContext({
-      routeId: currentRouteName ?? "",
-      params: paramsReadable,
-      loaderDataCache,
-      isHydrating: false,
-    });
-
-    const loaderLayer = Layer.succeed(LoaderContextTag, loaderContext);
-    const platformLayer = Layer.succeed(PlatformContext, platformContext);
-    const baseLayers = Layer.merge(loaderLayer, platformLayer);
-
-    const effectiveLayers = providedLayer
-      ? Layer.merge(baseLayers, providedLayer)
-      : baseLayers;
-
-    const html = yield* Effect.provide(
-      renderToString(element),
-      effectiveLayers,
-    );
-
-    const loaderData: LoaderData = {};
-    for (const [routeId, data] of loaderDataCache) {
-      loaderData[routeId] = {
-        data,
-        timestamp: Date.now(),
-        params: currentParams,
-      };
-    }
-
-    const loaderDataScript = serializeForHtmlSync(loaderData);
-    const actionDataScript = serializeForHtmlSync(actionData);
-
-    return {
-      html,
-      loaderData,
-      loaderDataScript,
-      actionData,
-      actionDataScript,
-      headers: platformContext.responseHeaders,
-      platformContext,
-    };
-  });
-
-/**
- * Generate a full HTML document from SSR result
- */
-const generateDocument = (
-  result: SSRResult,
-  options: DocumentOptions = {},
-): string => {
-  const {
-    title = "Effex App",
-    scripts = [],
-    styles = [],
-    head = "",
-    bodyAttributes = "",
-    rootId = "root",
-  } = options;
-
-  const styleLinks = styles
-    .map((href) => `<link rel="stylesheet" href="${escapeHtml(href)}">`)
-    .join("\n    ");
-
-  const scriptTags = scripts
-    .map((src) => `<script type="module" src="${escapeHtml(src)}"></script>`)
-    .join("\n    ");
-
-  return `<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>${escapeHtml(title)}</title>
-    ${styleLinks}
-    ${head}
-  </head>
-  <body${bodyAttributes ? ` ${bodyAttributes}` : ""}>
-    <div id="${escapeHtml(rootId)}">${result.html}</div>
-    <script>
-      window.__EFFEX_LOADER_DATA__ = ${result.loaderDataScript};
-      window.__EFFEX_ACTION_DATA__ = ${result.actionDataScript};
-    </script>
-    ${scriptTags}
-  </body>
-</html>`;
-};
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
 }
 
 /**
@@ -469,54 +273,6 @@ export const renderRequest = <R = never>(
     options.router,
     options.provide,
   ).pipe(Effect.map((result) => generateDocument(result, options.document)));
-
-const makeActionData = (
-  router: SSRRouter | undefined,
-  request: Request,
-): Effect.Effect<ActionData | null> => {
-  const isActionRequest = ["POST", "PUT", "PATCH", "DELETE"].includes(
-    request.method.toUpperCase(),
-  );
-
-  return Effect.fromNullable(router).pipe(
-    Effect.flatMap((r) =>
-      isActionRequest ? Effect.succeed(r) : Effect.fail(null),
-    ),
-    Effect.flatMap((r) =>
-      Effect.flatMap(r.currentRoute.get, (routeName) =>
-        Option.match(routeName, {
-          onSome: (name) => formatActionData(r, name, request),
-          onNone: () => Effect.succeed(null),
-        }),
-      ),
-    ),
-    Effect.catchAll(() => Effect.succeed(null)),
-  ) as Effect.Effect<ActionData | null>;
-};
-
-const formatActionData = (
-  router: SSRRouter,
-  routeName: string,
-  request: Request,
-) =>
-  Effect.promise(() => request.formData()).pipe(
-    Effect.flatMap((formData) =>
-      router.executeAction(routeName, formData, request),
-    ),
-    Effect.map((actionResult) => ({
-      routeName,
-      data: null,
-      ...(actionResult ?? {}),
-      timestamp: Date.now(),
-    })),
-    Effect.catchAll((error) =>
-      Effect.succeed({
-        routeName,
-        data: { error: String(error) },
-        timestamp: Date.now(),
-      } as ActionData),
-    ),
-  );
 
 /**
  * Effex server utilities for @effect/platform integration.

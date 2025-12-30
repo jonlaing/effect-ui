@@ -38,7 +38,7 @@ export {
   type LoaderContext,
   type LoaderData,
   type ActionContext,
-} from "./RouteLoader.js";
+} from "./routing/RouteLoader.js";
 
 export {
   serialize,
@@ -52,16 +52,20 @@ export {
   DeserializationError,
 } from "./Serialization.js";
 
-export { render, type RenderOptions, type RenderResult } from "./render.js";
+export {
+  render,
+  type RenderOptions,
+  type RenderResult,
+} from "./rendering/Render.js";
 
-export { hydrateApp, type HydrateOptions } from "./hydrate.js";
+export { hydrateApp, type HydrateOptions } from "./rendering/Hydrate.js";
 
 // Platform-integrated Form (wraps @effex/form with router action support)
 export {
   Form,
   type PlatformForm,
   type PlatformFormOptions,
-} from "./PlatformForm.js";
+} from "./actions/PlatformForm.js";
 
 // Routes component for rendering the active route
 export {
@@ -69,7 +73,7 @@ export {
   type RoutesProps,
   type RouteComponent,
   type ComponentsMap,
-} from "./Routes.js";
+} from "./routing/Routes.js";
 
 // Effect HTTP server integration
 export {
@@ -80,4 +84,4 @@ export {
   type EffexAppOptions,
   type DocumentOptions,
   type RenderRequestOptions,
-} from "./server.js";
+} from "./http/Server.js";

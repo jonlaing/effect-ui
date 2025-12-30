@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { div, span } from "@effex/dom";
-import { render, renderToDocument } from "./render";
+import { render, renderToDocument } from "./Render";
 
 describe("render", () => {
   describe("render function", () => {

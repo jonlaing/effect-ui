@@ -6,13 +6,13 @@ import {
   makeServerPlatformContext,
   PlatformContext,
   type PlatformContextType,
-} from "./Platform.js";
+} from "../Platform.js";
 import {
   type LoaderData,
   LoaderContextTag,
   makeLoaderContext,
-} from "./RouteLoader.js";
-import { serializeForHtmlSync } from "./Serialization.js";
+} from "../routing/RouteLoader.js";
+import { serializeForHtmlSync } from "../Serialization.js";
 
 /**
  * Router interface for SSR (avoids cross-package Effect type issues)
