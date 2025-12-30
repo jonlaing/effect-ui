@@ -71,10 +71,14 @@ export const effexSSR = (options: EffexSSROptions): Plugin => {
       // Return a function to run after Vite's internal middleware
       return () => {
         server.middlewares.use(async (req, res, next) => {
-          const url = req.url || "/";
+          // Use originalUrl to get the URL before Vite's historyFallback rewrites it
+          // Vite rewrites /contacts -> /index.html, but we need the original /contacts
+          const url =
+            (req as { originalUrl?: string }).originalUrl || req.url || "/";
 
-          // Normalize index.html to root path (Vite's SPA fallback rewrites / to /index.html)
-          const normalizedUrl = url === "/index.html" ? "/" : url;
+          // Normalize index.html to root path (only for actual root requests)
+          const normalizedUrl =
+            url === "/" || url === "/index.html" ? "/" : url;
 
           // Skip Vite internal requests and static assets (but not index.html)
           if (
