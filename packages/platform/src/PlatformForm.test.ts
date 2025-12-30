@@ -30,6 +30,13 @@ const createMockRouter = (options?: {
     pathname: makeTestReadable(pathname),
     searchParams: makeTestReadable(new URLSearchParams()),
     currentRoute: makeTestReadable(Option.some("test")),
+    loaderState: makeTestReadable({
+      routeName: "test",
+      params: {},
+      data: null,
+      isLoading: false,
+      error: null,
+    }),
     actionState: makeTestReadable({
       isSubmitting: false,
       data: null,
@@ -136,6 +143,13 @@ describe("PlatformForm", () => {
         pathname: makeTestReadable("/"),
         searchParams: makeTestReadable(new URLSearchParams()),
         currentRoute: makeTestReadable(Option.some("test")),
+        loaderState: makeTestReadable({
+          routeName: "test",
+          params: {},
+          data: null,
+          isLoading: false,
+          error: null,
+        }),
         actionState: makeTestReadable({
           isSubmitting: false,
           data: null,
@@ -263,6 +277,13 @@ describe("PlatformForm", () => {
         pathname: makeTestReadable("/"),
         searchParams: makeTestReadable(new URLSearchParams()),
         currentRoute: makeTestReadable(Option.some("test")),
+        loaderState: makeTestReadable({
+          routeName: "test",
+          params: {},
+          data: null,
+          isLoading: false,
+          error: null,
+        }),
         actionState: makeTestReadable({
           isSubmitting: false,
           data: null,
@@ -308,6 +329,13 @@ describe("PlatformForm", () => {
         pathname: makeTestReadable("/"),
         searchParams: makeTestReadable(new URLSearchParams()),
         currentRoute: makeTestReadable(Option.some("test")),
+        loaderState: makeTestReadable({
+          routeName: "test",
+          params: {},
+          data: null,
+          isLoading: false,
+          error: null,
+        }),
         actionState: makeTestReadable({
           isSubmitting: false,
           data: null,
@@ -352,6 +380,13 @@ describe("PlatformForm", () => {
         pathname: makeTestReadable("/"),
         searchParams: makeTestReadable(new URLSearchParams()),
         currentRoute: makeTestReadable(Option.some("test")),
+        loaderState: makeTestReadable({
+          routeName: "test",
+          params: {},
+          data: null,
+          isLoading: false,
+          error: null,
+        }),
         actionState: makeTestReadable({
           isSubmitting: false,
           data: null,
@@ -402,6 +437,13 @@ describe("PlatformForm", () => {
         pathname: makeTestReadable("/"),
         searchParams: makeTestReadable(new URLSearchParams()),
         currentRoute: makeTestReadable(Option.some("test")),
+        loaderState: makeTestReadable({
+          routeName: "test",
+          params: {},
+          data: null,
+          isLoading: false,
+          error: null,
+        }),
         actionState: makeTestReadable({
           isSubmitting: false,
           data: null,
@@ -449,6 +491,13 @@ describe("PlatformForm", () => {
         pathname: makeTestReadable("/"),
         searchParams: makeTestReadable(new URLSearchParams()),
         currentRoute: makeTestReadable(Option.some("test")),
+        loaderState: makeTestReadable({
+          routeName: "test",
+          params: {},
+          data: null,
+          isLoading: false,
+          error: null,
+        }),
         actionState: makeTestReadable({
           isSubmitting: false,
           data: null,
@@ -501,6 +550,13 @@ describe("PlatformForm", () => {
         pathname: makeTestReadable("/"),
         searchParams: makeTestReadable(new URLSearchParams()),
         currentRoute: makeTestReadable(Option.some("test")),
+        loaderState: makeTestReadable({
+          routeName: "test",
+          params: {},
+          data: null,
+          isLoading: false,
+          error: null,
+        }),
         actionState: makeTestReadable({
           isSubmitting: false,
           data: null,
@@ -549,6 +605,13 @@ describe("PlatformForm", () => {
         pathname: makeTestReadable("/"),
         searchParams: makeTestReadable(new URLSearchParams()),
         currentRoute: makeTestReadable(Option.some("test")),
+        loaderState: makeTestReadable({
+          routeName: "test",
+          params: {},
+          data: null,
+          isLoading: false,
+          error: null,
+        }),
         actionState: makeTestReadable({
           isSubmitting: false,
           data: null,

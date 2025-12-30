@@ -39,10 +39,10 @@
     "fast-glob": "^3.3.2"
   },
   "peerDependencies": {
-    "vite": "^5.0.0 || ^6.0.0",
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0",
     "@effex/router": "workspace:*"
   },
   "devDependencies": {
-    "vite": "^6.0.0"
+    "vite": "^7.0.0"
   }
 }

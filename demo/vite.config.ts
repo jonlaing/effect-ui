@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import { effexRoutes } from "@effex/vite-plugin";
+import { effexRoutes, effexSSR } from "@effex/vite-plugin";
 
 export default defineConfig({
   plugins: [
@@ -7,7 +7,14 @@ export default defineConfig({
       routesDir: "src/routes",
       outputPath: "src/generated/routes.ts",
     }),
+    effexSSR({
+      entry: "src/server-entry.ts",
+    }),
   ],
+  server: {
+    host: "127.0.0.1",
+    port: 5000,
+  },
   build: {
     rollupOptions: {
       input: {

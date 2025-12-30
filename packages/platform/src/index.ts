@@ -74,8 +74,10 @@ export {
 // Effect HTTP server integration
 export {
   EffexServer,
+  renderRequest,
   type SSRResult,
   type ActionData,
   type EffexAppOptions,
   type DocumentOptions,
+  type RenderRequestOptions,
 } from "./server.js";

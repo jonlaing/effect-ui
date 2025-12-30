@@ -35,6 +35,13 @@ const createMockRouter = (options?: {
     currentRoute: makeTestReadable(
       currentRoute === null ? Option.none() : Option.some(currentRoute),
     ),
+    loaderState: makeTestReadable({
+      routeName: currentRoute,
+      params: {},
+      data: null,
+      isLoading: false,
+      error: null,
+    }),
     actionState: makeTestReadable({
       isSubmitting: false,
       data: null,
@@ -180,15 +187,27 @@ describe("Routes", () => {
 
   describe("reactive updates", () => {
     it("should update when currentRoute changes", async () => {
-      // Create a signal-based router for testing reactivity
+      // Create signal-based router for testing reactivity
       const currentRouteSignal = await Effect.runPromise(
         Effect.scoped(Signal.make<Option.Option<string>>(Option.some("home"))),
+      );
+      const loaderStateSignal = await Effect.runPromise(
+        Effect.scoped(
+          Signal.make({
+            routeName: "home" as string | null,
+            params: {},
+            data: null,
+            isLoading: false,
+            error: null,
+          }),
+        ),
       );
 
       const router: BaseRouter = {
         pathname: makeTestReadable("/"),
         searchParams: makeTestReadable(new URLSearchParams()),
         currentRoute: currentRouteSignal,
+        loaderState: loaderStateSignal,
         actionState: makeTestReadable({
           isSubmitting: false,
           data: null,
@@ -216,8 +235,15 @@ describe("Routes", () => {
           expect(el.querySelector("#home")).not.toBeNull();
           expect(el.querySelector("#about")).toBeNull();
 
-          // Change route
+          // Change route and update loaderState together
           yield* currentRouteSignal.set(Option.some("about"));
+          yield* loaderStateSignal.set({
+            routeName: "about",
+            params: {},
+            data: null,
+            isLoading: false,
+            error: null,
+          });
           yield* Effect.sleep(10);
 
           // Should now show about

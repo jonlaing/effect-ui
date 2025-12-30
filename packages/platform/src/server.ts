@@ -119,66 +119,26 @@ const performSSR = (
     const platformContext = makeServerPlatformContext(request);
     const loaderDataCache = new Map<string, unknown>();
 
-    let currentRouteName: string | null = null;
-    let currentParams: Record<string, string> = {};
-    let actionData: ActionData | null = null;
+    const { routeName: currentRouteName, params: currentParams } =
+      yield* Effect.fromNullable(router).pipe(
+        Effect.flatMap((r) => r.executeLoader()),
+        Effect.tap((loaderResult) => {
+          if (loaderResult) {
+            loaderDataCache.set(loaderResult.routeName, loaderResult.data);
+          }
+        }),
+        Effect.catchAll(() => Effect.succeed({})),
+      ) as Effect.Effect<{
+        routeName: string;
+        params: Record<string, string>;
+      }>;
+
+    const actionData = yield* makeActionData(router, request);
 
     // Update router pathname to match request URL for SSR
     if (router) {
       const url = new URL(request.url);
       yield* router.pathname.set(url.pathname);
-    }
-
-    if (router) {
-      const method = request.method.toUpperCase();
-      const isActionRequest = ["POST", "PUT", "PATCH", "DELETE"].includes(
-        method,
-      );
-
-      if (isActionRequest) {
-        const routeNameOption = yield* router.currentRoute.get as Effect.Effect<
-          Option.Option<string>
-        >;
-        const routeName = Option.getOrNull(routeNameOption);
-
-        if (routeName) {
-          const formData = yield* Effect.promise(() => request.formData());
-
-          const actionResult = yield* Effect.either(
-            router.executeAction(
-              routeName,
-              formData,
-              request,
-            ) as Effect.Effect<{ routeName: string; data: unknown } | null>,
-          );
-
-          if (actionResult._tag === "Right" && actionResult.right) {
-            actionData = {
-              routeName: actionResult.right.routeName,
-              data: actionResult.right.data,
-              timestamp: Date.now(),
-            };
-          } else if (actionResult._tag === "Left") {
-            actionData = {
-              routeName,
-              data: { error: String(actionResult.left) },
-              timestamp: Date.now(),
-            };
-          }
-        }
-      }
-
-      const loaderResult = yield* router.executeLoader() as Effect.Effect<{
-        routeName: string;
-        params: unknown;
-        data: unknown;
-      } | null>;
-
-      if (loaderResult) {
-        currentRouteName = loaderResult.routeName;
-        currentParams = (loaderResult.params as Record<string, string>) ?? {};
-        loaderDataCache.set(loaderResult.routeName, loaderResult.data);
-      }
     }
 
     const paramsReadable = {
@@ -442,10 +402,128 @@ export const makeFullApp = <R = never>(
 };
 
 /**
+ * Options for rendering a request to HTML.
+ */
+export interface RenderRequestOptions<R = never> {
+  /**
+   * The Effex application element to render.
+   */
+  readonly app: Element<never, RendererContext | R>;
+
+  /**
+   * Optional router instance for executing loaders and actions.
+   */
+  readonly router?: SSRRouter;
+
+  /**
+   * Document template options.
+   */
+  readonly document?: DocumentOptions;
+
+  /**
+   * Additional Effect requirements to provide.
+   */
+  readonly provide?: Layer.Layer<R, never, never>;
+}
+
+/**
+ * Render a request to a full HTML string.
+ *
+ * This is the core SSR function that can be used by both production servers
+ * and development servers. It handles:
+ * - Router pathname setup
+ * - Action execution (for POST/PUT/PATCH/DELETE)
+ * - Loader execution
+ * - Component rendering
+ * - HTML document generation with hydration data
+ *
+ * @example
+ * ```ts
+ * // In a dev server entry or custom server
+ * import { renderRequest, Router, Routes, makeRouterLayer } from "@effex/platform";
+ *
+ * export async function render(request: Request): Promise<string> {
+ *   return Effect.runPromise(
+ *     Effect.scoped(
+ *       Effect.gen(function* () {
+ *         const router = yield* Router.make(routes);
+ *         return yield* renderRequest(request, {
+ *           app: Routes({ components }),
+ *           router,
+ *           document: { title: "My App", scripts: ["/client.js"] },
+ *           provide: makeRouterLayer(router),
+ *         });
+ *       })
+ *     )
+ *   );
+ * }
+ * ```
+ */
+export const renderRequest = <R = never>(
+  request: Request,
+  options: RenderRequestOptions<R>,
+): Effect.Effect<string, never, never> =>
+  performSSR(
+    request,
+    options.app as Element<never, RendererContext>,
+    options.router,
+    options.provide,
+  ).pipe(Effect.map((result) => generateDocument(result, options.document)));
+
+const makeActionData = (
+  router: SSRRouter | undefined,
+  request: Request,
+): Effect.Effect<ActionData | null> => {
+  const isActionRequest = ["POST", "PUT", "PATCH", "DELETE"].includes(
+    request.method.toUpperCase(),
+  );
+
+  return Effect.fromNullable(router).pipe(
+    Effect.flatMap((r) =>
+      isActionRequest ? Effect.succeed(r) : Effect.fail(null),
+    ),
+    Effect.flatMap((r) =>
+      Effect.flatMap(r.currentRoute.get, (routeName) =>
+        Option.match(routeName, {
+          onSome: (name) => formatActionData(r, name, request),
+          onNone: () => Effect.succeed(null),
+        }),
+      ),
+    ),
+    Effect.catchAll(() => Effect.succeed(null)),
+  ) as Effect.Effect<ActionData | null>;
+};
+
+const formatActionData = (
+  router: SSRRouter,
+  routeName: string,
+  request: Request,
+) =>
+  Effect.promise(() => request.formData()).pipe(
+    Effect.flatMap((formData) =>
+      router.executeAction(routeName, formData, request),
+    ),
+    Effect.map((actionResult) => ({
+      routeName,
+      data: null,
+      ...(actionResult ?? {}),
+      timestamp: Date.now(),
+    })),
+    Effect.catchAll((error) =>
+      Effect.succeed({
+        routeName,
+        data: { error: String(error) },
+        timestamp: Date.now(),
+      } as ActionData),
+    ),
+  );
+
+/**
  * Effex server utilities for @effect/platform integration.
  */
 export const EffexServer = {
   makeHttpApp,
   makeRouter,
   makeFullApp,
+  renderRequest,
 };

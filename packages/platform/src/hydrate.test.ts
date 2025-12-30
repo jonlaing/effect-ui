@@ -51,6 +51,9 @@ describe("hydrate", () => {
         container,
       );
 
+      // Wait for forked fiber to complete initial hydration setup
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
       const element = container.querySelector(".clickable") as HTMLElement;
       element?.click();
 

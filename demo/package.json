@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "vite",
     "build": "vite build && vite build --ssr src/server.ts --outDir dist/server",
     "start": "node dist/server/server.js",
     "generate-routes": "vite build --mode development"
