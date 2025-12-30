@@ -8,13 +8,13 @@ import { NodeHttpServer, NodeRuntime } from "@effect/platform-node";
 import {
   $,
   Router,
-  EffexServer,
   Routes,
   makeRouterLayer,
   Link,
   Element,
   RendererContext,
 } from "@effex/platform";
+import { EffexServer } from "@effex/platform/server";
 import { routes, components } from "./generated/routes.js";
 
 // MIME types for static files

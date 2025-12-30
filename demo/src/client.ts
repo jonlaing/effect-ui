@@ -1,5 +1,6 @@
 import { Effect } from "effect";
-import { Router, hydrateApp, Routes, makeRouterLayer } from "@effex/platform";
+import { Router, Routes, makeRouterLayer } from "@effex/platform";
+import { hydrateApp } from "@effex/platform/client";
 import { routes, components } from "./generated/routes.js";
 
 // Hydrate the application

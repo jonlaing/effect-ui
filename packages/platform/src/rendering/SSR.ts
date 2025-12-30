@@ -91,6 +91,9 @@ export const performSSR = <LE = never, LR = never, AE = never, AR = never>(
             loaderDataCache.set(loaderResult.routeName, loaderResult.data);
           }
         }),
+        Effect.map(
+          (loaderResult) => loaderResult ?? { routeName: "", params: {} },
+        ),
         Effect.catchAll(() => Effect.succeed({})),
       ) as Effect.Effect<
         { routeName: string; params: Record<string, string> },

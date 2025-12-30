@@ -350,7 +350,8 @@ export const make = <Routes extends Record<string, AnyRoute>>(
       });
 
     // Submit action and update reactive state
-    // TODO: On client, this should POST to server instead of running locally
+    // On client: POST to server via fetch
+    // On server: Execute action directly (for SSR form submissions)
     const submitAction = (
       formData: FormData,
     ): Effect.Effect<
@@ -382,20 +383,89 @@ export const make = <Routes extends Record<string, AnyRoute>>(
         });
 
         const pathname = yield* pathnameSignal.get;
+
+        // On client: POST to server via fetch
+        if (typeof window !== "undefined") {
+          const response = yield* Effect.tryPromise(() =>
+            fetch(window.location.href, {
+              method: "POST",
+              body: formData,
+              headers: {
+                "X-Effex-Action": "1",
+              },
+            }),
+          ).pipe(
+            Effect.mapError(
+              (error) => error as unknown as AllActionErrors<Routes>,
+            ),
+          );
+
+          if (!response.ok) {
+            const error = new Error(`Action failed: ${response.statusText}`);
+            yield* actionStateSignal.set({
+              isSubmitting: false,
+              data: null,
+              error,
+              routeName: currentRouteName as string,
+              submissionId,
+            });
+            return yield* Effect.fail(
+              error as unknown as AllActionErrors<Routes>,
+            );
+          }
+
+          const actionData = yield* Effect.tryPromise(
+            () =>
+              response.json() as Promise<{
+                routeName: string;
+                data: unknown;
+                timestamp: number;
+                error?: string;
+              }>,
+          ).pipe(
+            Effect.mapError(
+              (error) => error as unknown as AllActionErrors<Routes>,
+            ),
+          );
+
+          if (actionData.error) {
+            const error = new Error(actionData.error);
+            yield* actionStateSignal.set({
+              isSubmitting: false,
+              data: null,
+              error,
+              routeName: currentRouteName as string,
+              submissionId,
+            });
+            return yield* Effect.fail(
+              error as unknown as AllActionErrors<Routes>,
+            );
+          }
+
+          yield* actionStateSignal.set({
+            isSubmitting: false,
+            data: actionData.data,
+            error: null,
+            routeName: actionData.routeName,
+            submissionId,
+          });
+
+          // Re-run loader after successful action to get fresh data
+          yield* runLoaderAndUpdateState;
+
+          return {
+            routeName: actionData.routeName,
+            data: actionData.data,
+          } satisfies ActionResult;
+        }
+
+        // On server: Execute action directly
         const rawParams = tryMatchSync(routeDef, pathname) ?? {};
+        const request = new Request(`http://localhost${pathname}`, {
+          method: "POST",
+          body: formData,
+        });
 
-        // Create a mock request for client-side submissions
-        const request = new Request(
-          typeof window !== "undefined"
-            ? window.location.href
-            : `http://localhost${pathname}`,
-          {
-            method: "POST",
-            body: formData,
-          },
-        );
-
-        // Execute action
         const result = yield* Effect.either(
           routeDef.action({
             formData,

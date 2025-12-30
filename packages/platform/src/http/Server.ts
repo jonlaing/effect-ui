@@ -11,6 +11,7 @@ import {
   type DocumentOptions,
   generateDocument,
 } from "../rendering/Document.js";
+import { makeActionData } from "../actions/Actions.js";
 
 // Re-export types for convenience
 export type { SSRRouter } from "../rendering/SSR.js";
@@ -108,28 +109,37 @@ export const makeHttpApp = <R = never>(
     // Convert Effect request to Web Request
     const webRequest = yield* HttpServerRequest.toWeb(serverRequest);
 
-    console.log("[SSR] Rendering:", webRequest.url);
+    // Check if this is an AJAX action request (client-side form submission)
+    const isActionRequest = ["POST", "PUT", "PATCH", "DELETE"].includes(
+      webRequest.method.toUpperCase(),
+    );
+    const isAjaxRequest =
+      webRequest.headers.get("X-Effex-Action") === "1" ||
+      webRequest.headers.get("Accept")?.includes("application/json");
+
+    // For AJAX action requests, return JSON instead of full HTML
+    if (isActionRequest && isAjaxRequest && options.router) {
+      // Set the router's pathname to match the request
+      const url = new URL(webRequest.url);
+      yield* options.router.pathname.set(url.pathname);
+
+      const actionData = yield* makeActionData(options.router, webRequest);
+
+      return HttpServerResponse.json(
+        actionData ?? { error: "No action found" },
+      );
+    }
 
     // Create the Effex element
     const element = options.app(webRequest);
 
     // Perform SSR - cast to handle the generic R constraint
-    const result = yield* Effect.catchAllCause(
-      performSSR(
-        webRequest,
-        element as Element<never, RendererContext>,
-        options.router,
-        options.provide,
-      ),
-      (cause) =>
-        Effect.gen(function* () {
-          console.error("[SSR] Error rendering:", webRequest.url);
-          console.error("[SSR] Cause:", cause);
-          return yield* Effect.failCause(cause);
-        }),
+    const result = yield* performSSR(
+      webRequest,
+      element as Element<never, RendererContext>,
+      options.router,
+      options.provide,
     );
-
-    console.log("[SSR] Rendered successfully:", webRequest.url);
 
     // Generate full HTML document
     const html = generateDocument(result, options.document);

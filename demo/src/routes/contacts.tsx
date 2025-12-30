@@ -1,5 +1,14 @@
 import { Effect, Schema } from "effect";
-import { $, component, Link, Form, each } from "@effex/platform";
+import {
+  $,
+  component,
+  Link,
+  Form,
+  each,
+  RouterContext,
+  when,
+  t,
+} from "@effex/platform";
 import type { ActionFn } from "@effex/platform";
 
 const ContactSchema = Schema.Struct({
@@ -52,11 +61,21 @@ export const action: ActionFn<ActionResponse> = ({ formData }) =>
 // Page component
 const ContactPage = component("ContactPage", () =>
   Effect.gen(function* () {
+    const router = yield* RouterContext;
     const form = yield* Form.make({
       schema: ContactSchema,
       initial: { name: "", email: "", message: "" },
       action: true,
     });
+
+    // Derive success message from action state
+    const actionData = router.actionState.map(
+      (state) => state.data as ActionResponse | null,
+    );
+    const successMessage = actionData.map((data) =>
+      data?.success ? data.message : null,
+    );
+    const isSubmitting = router.actionState.map((state) => state.isSubmitting);
 
     // Helper to handle form submission - must return Effect for event handler
     const handleSubmit = (e: SubmitEvent) =>
@@ -72,6 +91,28 @@ const ContactPage = component("ContactPage", () =>
     return yield* $.div({ class: "page" }, [
       $.h1({}, ["Contact Us"]),
       $.p({}, ["Fill out the form below to get in touch."]),
+
+      // Show success message when action succeeds
+      when(
+        successMessage.map((s) => !!s),
+        {
+          onTrue: () =>
+            $.div(
+              {
+                class: "success",
+                style: {
+                  padding: "1rem",
+                  backgroundColor: "#d4edda",
+                  color: "#155724",
+                  borderRadius: "4px",
+                  marginBottom: "1rem",
+                },
+              },
+              t`${successMessage}`,
+            ),
+          onFalse: () => $.span(),
+        },
+      ),
 
       $.form({ class: "card", onSubmit: handleSubmit }, [
         // Name field
@@ -152,18 +193,19 @@ const ContactPage = component("ContactPage", () =>
           }),
         ]),
 
-        // Submit button
+        // Submit button with loading state
         $.div({ class: "actions" }, [
-          $.button({ type: "submit" }, [
-            // Could use form.isSubmitting to show loading state
-            "Send Message",
-          ]),
+          $.button(
+            {
+              type: "submit",
+              disabled: isSubmitting,
+            },
+            [isSubmitting.map((s) => (s ? "Sending..." : "Send Message"))],
+          ),
         ]),
       ]),
 
-      $.div({ class: "card" }, [
-        $.p({}, [Link({ href: "/" }, "Back to Home")]),
-      ]),
+      $.div({ class: "card" }, $.p({}, Link({ href: "/" }, "Back to Home"))),
     ]);
   }),
 );

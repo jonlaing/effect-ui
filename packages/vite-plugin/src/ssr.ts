@@ -73,8 +73,6 @@ export const effexSSR = (options: EffexSSROptions): Plugin => {
         server.middlewares.use(async (req, res, next) => {
           const url = req.url || "/";
 
-          console.log("[effex-ssr] Request:", req.method, url);
-
           // Normalize index.html to root path (Vite's SPA fallback rewrites / to /index.html)
           const normalizedUrl = url === "/index.html" ? "/" : url;
 
@@ -86,13 +84,10 @@ export const effexSSR = (options: EffexSSROptions): Plugin => {
             url.startsWith("/src/") || // Source files served by Vite
             (url.includes(".") && !url.endsWith("/") && url !== "/index.html") // Has file extension (static asset)
           ) {
-            console.log("[effex-ssr] Skipping (static/internal):", url);
             return next();
           }
 
           try {
-            console.log("[effex-ssr] SSR rendering:", normalizedUrl);
-
             // Load the server entry module with HMR
             const serverModule = await server.ssrLoadModule(entryPath);
 
@@ -129,6 +124,26 @@ export const effexSSR = (options: EffexSSROptions): Plugin => {
               ),
               body: body,
             });
+
+            // Check if this is an AJAX action request
+            const isActionRequest = ["POST", "PUT", "PATCH", "DELETE"].includes(
+              req.method || "",
+            );
+            const isAjaxRequest =
+              req.headers["x-effex-action"] === "1" ||
+              req.headers["accept"]?.includes("application/json");
+
+            if (isActionRequest && isAjaxRequest) {
+              // Handle AJAX action - expects server module to export an `action` function
+              if (typeof serverModule.action === "function") {
+                const actionResult = await serverModule.action(webRequest);
+                res.setHeader("Content-Type", "application/json");
+                res.statusCode = 200;
+                res.end(JSON.stringify(actionResult));
+                return;
+              }
+              // Fall back to render if no action export
+            }
 
             // Render the page
             const html = await serverModule.render(webRequest);
