@@ -1,5 +1,5 @@
 import { Context, Effect, Layer } from "effect";
-import { button } from "@effex/dom";
+import { a } from "@effex/dom";
 import { component } from "@effex/dom";
 import type { BaseRouter, ActionState } from "./types";
 import type { Readable } from "@effex/core";
@@ -96,6 +96,9 @@ export interface LinkProps {
  * A navigation link component that uses the RouterContext.
  * Components using Link will have RouterContext in their requirements.
  *
+ * Uses an `<a>` element for proper semantics - hover shows URL in browser,
+ * right-click works, middle-click opens in new tab, etc.
+ *
  * @example
  * ```ts
  * // Basic link with children as second argument
@@ -122,10 +125,15 @@ export const Link = component("Link", (props: LinkProps, children?) =>
       active ? `${baseClass} active` : baseClass,
     );
 
-    return yield* button(
+    return yield* a(
       {
+        href: props.href,
         class: classValue,
         onClick: (e) => {
+          // Allow ctrl/cmd+click and middle-click to work normally
+          if (e.ctrlKey || e.metaKey || e.button === 1) {
+            return Effect.void;
+          }
           e.preventDefault();
           return props.replace
             ? router.replace(props.href)

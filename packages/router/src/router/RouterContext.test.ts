@@ -90,7 +90,7 @@ describe("RouterContext", () => {
   });
 
   describe("Link", () => {
-    it("should create a button element when RouterContext is provided", async () => {
+    it("should create an anchor element when RouterContext is provided", async () => {
       const router = createMockRouter();
       const layer = makeRouterLayer(router);
 
@@ -103,7 +103,8 @@ describe("RouterContext", () => {
         ),
       );
 
-      expect(element.tagName).toBe("BUTTON");
+      expect(element.tagName).toBe("A");
+      expect(element.getAttribute("href")).toBe("/test");
       expect(element.textContent).toBe("Test");
     });
 
