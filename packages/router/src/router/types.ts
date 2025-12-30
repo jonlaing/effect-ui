@@ -224,6 +224,136 @@ export type AnyRoute = Route<
   unknown
 >;
 
+// ============================================================================
+// Utility types for extracting requirements from routes
+// ============================================================================
+
+/**
+ * Extract action requirements (AR) from a Route type.
+ * Returns `never` if the route has no action requirements.
+ */
+export type ExtractActionRequirements<R> =
+  R extends Route<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any,
+    any,
+    any,
+    any,
+    any, // Path, P, LA, LE, LR
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any, // AA
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any, // AE
+    infer AR // Action Requirements
+  >
+    ? AR
+    : never;
+
+/**
+ * Extract loader requirements (LR) from a Route type.
+ * Returns `never` if the route has no loader requirements.
+ */
+export type ExtractLoaderRequirements<R> =
+  R extends Route<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any,
+    any,
+    any,
+    any, // Path, P, LA, LE
+    infer LR, // Loader Requirements
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any,
+    any,
+    any // AA, AE, AR
+  >
+    ? LR
+    : never;
+
+/**
+ * Extract action error type (AE) from a Route type.
+ */
+export type ExtractActionError<R> =
+  R extends Route<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any,
+    any,
+    any,
+    any,
+    any, // Path, P, LA, LE, LR
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any, // AA
+    infer AE, // Action Error
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any // AR
+  >
+    ? AE
+    : never;
+
+/**
+ * Extract loader error type (LE) from a Route type.
+ */
+export type ExtractLoaderError<R> =
+  R extends Route<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any,
+    any,
+    any, // Path, P, LA
+    infer LE, // Loader Error
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any,
+    any,
+    any,
+    any // LR, AA, AE, AR
+  >
+    ? LE
+    : never;
+
+/**
+ * Aggregate all action requirements from a routes record.
+ * Creates a union of all AR types across all routes.
+ *
+ * @example
+ * ```ts
+ * const routes = {
+ *   users: Route.make("/users", { action: () => Effect.gen(function*() { yield* UserService; }) }),
+ *   posts: Route.make("/posts", { action: () => Effect.gen(function*() { yield* PostService; }) }),
+ * };
+ * // AllActionRequirements<typeof routes> = UserService | PostService
+ * ```
+ */
+export type AllActionRequirements<Routes extends Record<string, AnyRoute>> = {
+  [K in keyof Routes]: ExtractActionRequirements<Routes[K]>;
+}[keyof Routes];
+
+/**
+ * Aggregate all loader requirements from a routes record.
+ * Creates a union of all LR types across all routes.
+ */
+export type AllLoaderRequirements<Routes extends Record<string, AnyRoute>> = {
+  [K in keyof Routes]: ExtractLoaderRequirements<Routes[K]>;
+}[keyof Routes];
+
+/**
+ * Aggregate all action errors from a routes record.
+ */
+export type AllActionErrors<Routes extends Record<string, AnyRoute>> = {
+  [K in keyof Routes]: ExtractActionError<Routes[K]>;
+}[keyof Routes];
+
+/**
+ * Aggregate all loader errors from a routes record.
+ */
+export type AllLoaderErrors<Routes extends Record<string, AnyRoute>> = {
+  [K in keyof Routes]: ExtractLoaderError<Routes[K]>;
+}[keyof Routes];
+
+/**
+ * All requirements (both loader and action) from a routes record.
+ */
+export type AllRequirements<Routes extends Record<string, AnyRoute>> =
+  | AllLoaderRequirements<Routes>
+  | AllActionRequirements<Routes>;
+
 /**
  * The main Router interface.
  * @template Routes - Record of route names to Route definitions
@@ -273,30 +403,49 @@ export interface Router<Routes extends Record<string, AnyRoute>> {
   /**
    * Execute the loader for the currently matched route.
    * Returns the loader result, or null if no route matches or route has no loader.
+   *
+   * The requirements type is automatically inferred from all loader functions
+   * defined in the routes. TypeScript will error if you don't provide the
+   * required services.
    */
-  readonly executeLoader: <R = never>() => Effect.Effect<
+  readonly executeLoader: () => Effect.Effect<
     LoaderResult | null,
-    unknown,
-    R
+    AllLoaderErrors<Routes>,
+    AllLoaderRequirements<Routes>
   >;
   /**
    * Execute an action for the specified route.
    * @param routeName - The route to execute the action for
    * @param formData - The form data to pass to the action
    * @param request - The request object
+   *
+   * The requirements type is automatically inferred from all action functions
+   * defined in the routes. TypeScript will error if you don't provide the
+   * required services.
    */
-  readonly executeAction: <R = never>(
+  readonly executeAction: (
     routeName: string,
     formData: FormData,
     request: Request,
-  ) => Effect.Effect<ActionResult | null, unknown, R>;
+  ) => Effect.Effect<
+    ActionResult | null,
+    AllActionErrors<Routes>,
+    AllActionRequirements<Routes>
+  >;
   /**
    * Submit a form to the current route's action.
    * Updates actionState reactively during submission.
+   *
+   * The requirements type is automatically inferred from all action functions
+   * defined in the routes.
    */
   readonly submitAction: (
     formData: FormData,
-  ) => Effect.Effect<ActionResult | null, unknown>;
+  ) => Effect.Effect<
+    ActionResult | null,
+    AllActionErrors<Routes>,
+    AllActionRequirements<Routes>
+  >;
   /**
    * Initialize loader state with pre-loaded data (for SSR hydration).
    */

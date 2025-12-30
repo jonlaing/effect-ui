@@ -35,6 +35,16 @@ export {
   type ActionFn,
   type ActionResult,
   type ActionState,
+  // Utility types for extracting requirements
+  type ExtractActionRequirements,
+  type ExtractLoaderRequirements,
+  type ExtractActionError,
+  type ExtractLoaderError,
+  type AllActionRequirements,
+  type AllLoaderRequirements,
+  type AllActionErrors,
+  type AllLoaderErrors,
+  type AllRequirements,
   // Error constructor
   RouteMatchError,
 } from "./router";

@@ -114,8 +114,16 @@
   - [x] Comprehensive test suite (107 tests)
 
   **Still TODO (V2+):**
-  - [ ] Actions (mutations) - Form submissions with typed responses
-  - [ ] File-based routing (Vite plugin) - `src/routes/` convention
+  - [x] Actions (mutations) - Form submissions with typed responses
+    - ActionFn type with typed errors and requirements
+    - executeAction/submitAction on Router with reactive actionState
+    - SSR action execution via makeActionData
+    - PlatformForm component for form submissions
+  - [x] File-based routing (Vite plugin) - `src/routes/` convention
+    - effexRoutes plugin scans routes directory
+    - Parser detects loader, action, params exports
+    - Code generation for routes and components
+    - effexSSR plugin for dev server with HMR
   - [ ] Build orchestration - SSR build, client build, asset manifest
   - [ ] Platform adapters (Vercel, Cloudflare, Node)
   - [ ] CLI (`create-effex-app`, `effex dev`, `effex build`)
@@ -129,6 +137,9 @@
   - Separate service layers for server/client environments
   - No middleware needed - Effect composition handles cross-cutting concerns
   - Loaders are just Effects - fully testable in isolation
+  - Type-safe requirements - loader/action dependencies propagate through router types
+    - `AllLoaderRequirements<Routes>` / `AllActionRequirements<Routes>` utility types
+    - TypeScript errors if required services aren't provided
 
   **Route File Convention:**
   ```typescript
@@ -295,7 +306,10 @@
   - [x] RouterContext and typed router layers
   - [x] Link component
   - [ ] V2: Nested routes, hash routing, route guards, query param schemas
-  - [ ] V3: File-based routing (Vite plugin) - see detailed plan below
+  - [x] V3: File-based routing (Vite plugin) - implemented in `@effex/vite-plugin`
+    - effexRoutes plugin with route scanning and code generation
+    - effexSSR plugin for dev server with HMR
+    - See detailed plan below for reference
 
 - [ ] **Documentation site** - Full documentation with examples (TypeDoc is set up)
 
@@ -589,32 +603,33 @@ export default Effect.gen(function* () {
 
 **Implementation Phases:**
 
-1. **Phase 1: Vite Plugin MVP**
-   - Route directory scanning with chokidar
-   - Generate `routeTree.gen.ts` on startup and file changes
-   - Dynamic imports for code splitting
-   - HMR support for route file changes
-   - Basic path-to-pattern conversion (`$id` → `:id`, `[...slug]` → `*`)
+1. **Phase 1: Vite Plugin MVP** ✅ COMPLETE
+   - [x] Route directory scanning with fast-glob
+   - [x] Generate routes file on startup and file changes
+   - [x] Dynamic imports for code splitting
+   - [x] HMR support for route file changes (effexSSR plugin)
+   - [x] Basic path-to-pattern conversion (`$id` → `:id`, `[...slug]` → `*`)
 
-2. **Phase 2: Loaders & SSR Data**
-   - `loader` export convention
-   - `Route.loaderData()` hook to access loaded data
-   - Server-side execution during SSR
-   - Data serialization into HTML (`__EFFEX_DATA__`)
-   - Client-side cache to avoid refetch on hydration
+2. **Phase 2: Loaders & SSR Data** ✅ COMPLETE
+   - [x] `loader` export convention
+   - [x] `Route.loaderData()` hook to access loaded data
+   - [x] Server-side execution during SSR
+   - [x] Data serialization into HTML (`__EFFEX_LOADER_DATA__`)
+   - [x] Client-side cache to avoid refetch on hydration
+   - [x] Actions with typed errors and requirements
 
-3. **Phase 3: Layouts & Nesting**
-   - `__layout.ts` file convention
-   - `Route.outlet()` for nested rendering
-   - Layout data loaders
-   - Parallel route segments (like Next.js `@folder`)
+3. **Phase 3: Layouts & Nesting** (TODO)
+   - [ ] `__layout.ts` file convention
+   - [ ] `Route.outlet()` for nested rendering
+   - [ ] Layout data loaders
+   - [ ] Parallel route segments (like Next.js `@folder`)
 
-4. **Phase 4: Polish & DX**
-   - Route prefetching on hover/visibility
-   - Transitions between routes (View Transitions API?)
-   - Dev overlay showing current route, params, loader data
-   - Error overlay for loader failures
-   - `effex generate route users/$id` CLI command
+4. **Phase 4: Polish & DX** (TODO)
+   - [ ] Route prefetching on hover/visibility
+   - [ ] Transitions between routes (View Transitions API?)
+   - [ ] Dev overlay showing current route, params, loader data
+   - [ ] Error overlay for loader failures
+   - [ ] `effex generate route users/$id` CLI command
 
 **Open Questions:**
 

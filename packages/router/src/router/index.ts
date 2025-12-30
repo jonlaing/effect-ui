@@ -40,5 +40,15 @@ export type {
   ActionFn,
   ActionResult,
   ActionState,
+  // Utility types for extracting requirements
+  ExtractActionRequirements,
+  ExtractLoaderRequirements,
+  ExtractActionError,
+  ExtractLoaderError,
+  AllActionRequirements,
+  AllLoaderRequirements,
+  AllActionErrors,
+  AllLoaderErrors,
+  AllRequirements,
 } from "./types";
 export { RouteMatchError } from "./types";

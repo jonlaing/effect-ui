@@ -12,6 +12,10 @@ import type {
   LoaderState,
   ActionResult,
   ActionState,
+  AllLoaderRequirements,
+  AllLoaderErrors,
+  AllActionRequirements,
+  AllActionErrors,
 } from "./types";
 import { routeSpecificity } from "./Route";
 
@@ -174,10 +178,10 @@ export const make = <Routes extends Record<string, AnyRoute>>(
     const loaderStateSignal = yield* Signal.make(initialLoaderState);
 
     // Execute the loader for the currently matched route
-    const executeLoader = <R = never>(): Effect.Effect<
+    const executeLoader = (): Effect.Effect<
       LoaderResult | null,
-      unknown,
-      R
+      AllLoaderErrors<Routes>,
+      AllLoaderRequirements<Routes>
     > =>
       Effect.gen(function* () {
         const currentRouteOption = yield* currentRoute.get;
@@ -192,12 +196,17 @@ export const make = <Routes extends Record<string, AnyRoute>>(
         }
 
         const pathname = yield* pathnameSignal.get;
-        const params = yield* routeDef.match(pathname);
+        // Match can fail with RouteMatchError, but we catch that and return null
+        const matchResult = yield* Effect.either(routeDef.match(pathname));
+        if (matchResult._tag === "Left") {
+          return null;
+        }
+        const params = matchResult.right;
 
         const data = yield* routeDef.loader(params) as Effect.Effect<
           unknown,
-          unknown,
-          R
+          AllLoaderErrors<Routes>,
+          AllLoaderRequirements<Routes>
         >;
 
         return {
@@ -306,11 +315,15 @@ export const make = <Routes extends Record<string, AnyRoute>>(
     };
 
     // Execute an action for a specific route
-    const executeAction = <R = never>(
+    const executeAction = (
       routeName: string,
       formData: FormData,
       request: Request,
-    ): Effect.Effect<ActionResult | null, unknown, R> =>
+    ): Effect.Effect<
+      ActionResult | null,
+      AllActionErrors<Routes>,
+      AllActionRequirements<Routes>
+    > =>
       Effect.gen(function* () {
         const routeDef = routes[routeName as keyof Routes];
         if (!routeDef || !routeDef.action) {
@@ -324,7 +337,11 @@ export const make = <Routes extends Record<string, AnyRoute>>(
           formData,
           request,
           params: rawParams,
-        }) as Effect.Effect<unknown, unknown, R>;
+        }) as Effect.Effect<
+          unknown,
+          AllActionErrors<Routes>,
+          AllActionRequirements<Routes>
+        >;
 
         return {
           routeName,
@@ -336,7 +353,11 @@ export const make = <Routes extends Record<string, AnyRoute>>(
     // TODO: On client, this should POST to server instead of running locally
     const submitAction = (
       formData: FormData,
-    ): Effect.Effect<ActionResult | null, unknown> =>
+    ): Effect.Effect<
+      ActionResult | null,
+      AllActionErrors<Routes>,
+      AllActionRequirements<Routes>
+    > =>
       Effect.gen(function* () {
         const currentRouteOption = yield* currentRoute.get;
         if (Option.isNone(currentRouteOption)) {

@@ -1,3 +1,25 @@
+/**
+ * @effex/platform - Full-stack meta-framework for Effex applications
+ *
+ * This main entry exports only cross-compatible modules that work in both
+ * server and client environments. For environment-specific imports:
+ *
+ * - Server (SSR, HTTP handlers): import from "@effex/platform/server"
+ * - Client (hydration): import from "@effex/platform/client"
+ *
+ * @example
+ * ```ts
+ * // Shared code (works everywhere)
+ * import { Routes, Form, Platform } from "@effex/platform";
+ *
+ * // Server-only code
+ * import { render, EffexServer } from "@effex/platform/server";
+ *
+ * // Client-only code
+ * import { hydrateApp } from "@effex/platform/client";
+ * ```
+ */
+
 // Re-export everything from @effex/dom (which includes @effex/core)
 export * from "@effex/dom";
 
@@ -24,22 +46,29 @@ export {
   type FormType,
 } from "@effex/form";
 
-// Platform-specific exports
+// === Cross-compatible platform exports ===
+
+// Platform context (environment detection, cookies abstraction)
 export {
   Platform,
   PlatformContext,
   type PlatformEnvironment,
+  type PlatformContextType,
   type CookieOptions,
   type Cookies,
 } from "./Platform.js";
 
+// Route data loading
 export {
   RouteLoader,
+  LoaderContextTag,
+  RedirectError,
   type LoaderContext,
   type LoaderData,
   type ActionContext,
 } from "./routing/RouteLoader.js";
 
+// Serialization utilities
 export {
   serialize,
   deserialize,
@@ -51,14 +80,6 @@ export {
   SerializationError,
   DeserializationError,
 } from "./Serialization.js";
-
-export {
-  render,
-  type RenderOptions,
-  type RenderResult,
-} from "./rendering/Render.js";
-
-export { hydrateApp, type HydrateOptions } from "./rendering/Hydrate.js";
 
 // Platform-integrated Form (wraps @effex/form with router action support)
 export {
@@ -74,14 +95,3 @@ export {
   type RouteComponent,
   type ComponentsMap,
 } from "./routing/Routes.js";
-
-// Effect HTTP server integration
-export {
-  EffexServer,
-  renderRequest,
-  type SSRResult,
-  type ActionData,
-  type EffexAppOptions,
-  type DocumentOptions,
-  type RenderRequestOptions,
-} from "./http/Server.js";

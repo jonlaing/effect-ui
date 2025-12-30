@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Effect, Option, Schema } from "effect";
 import { Route } from "./Route";
 import { Router } from "./Router";
+import type { LoaderResult, ActionResult } from "./types";
 
 // Mock window and history for tests
 const mockHistory: string[] = [];
@@ -547,7 +548,8 @@ describe("Router", () => {
               },
               { initialPath: "/nonexistent" },
             );
-            return yield* router.executeLoader();
+            // Type assertion needed because TypeScript infers unknown requirements
+            return yield* router.executeLoader() as Effect.Effect<LoaderResult | null>;
           }),
         ),
       );
@@ -565,7 +567,8 @@ describe("Router", () => {
               },
               { initialPath: "/" },
             );
-            return yield* router.executeLoader();
+            // Type assertion needed because TypeScript infers unknown requirements
+            return yield* router.executeLoader() as Effect.Effect<LoaderResult | null>;
           }),
         ),
       );
@@ -876,7 +879,12 @@ describe("Router", () => {
               method: "POST",
             });
 
-            return yield* router.executeAction("home", formData, request);
+            // Type assertion needed because TypeScript infers unknown requirements
+            return yield* router.executeAction(
+              "home",
+              formData,
+              request,
+            ) as Effect.Effect<ActionResult | null>;
           }),
         ),
       );

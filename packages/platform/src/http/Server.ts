@@ -19,9 +19,18 @@ export type { ActionData } from "../actions/Actions.js";
 export type { DocumentOptions } from "../rendering/Document.js";
 
 /**
- * Options for creating an Effex HTTP application
+ * Options for creating an Effex HTTP application.
+ *
+ * @template R - Requirements for the element and router (loaders/actions)
+ *
+ * The R type parameter captures all Effect requirements needed:
+ * - Element requirements (e.g., custom contexts your components need)
+ * - Loader requirements (services your loaders depend on)
+ * - Action requirements (services your actions depend on)
+ *
+ * You must provide a Layer that satisfies all these requirements.
  */
-export interface EffexAppOptions<R> {
+export interface EffexAppOptions<R = never> {
   /**
    * Function that creates the Effex application element.
    * Receives the request for dynamic rendering.
@@ -31,8 +40,11 @@ export interface EffexAppOptions<R> {
   /**
    * Optional router instance for executing loaders and actions.
    * Create with Router.make() and pass it here.
+   *
+   * The router's loader/action requirements should be included in R
+   * and provided via the `provide` layer.
    */
-  readonly router?: SSRRouter;
+  readonly router?: SSRRouter<unknown, R, unknown, R>;
 
   /**
    * Document template options
@@ -40,7 +52,8 @@ export interface EffexAppOptions<R> {
   readonly document?: DocumentOptions;
 
   /**
-   * Additional Effect requirements to provide
+   * Layer that provides all requirements (R).
+   * This should satisfy both element requirements and router requirements.
    */
   readonly provide?: Layer.Layer<R, never, never>;
 }
@@ -87,7 +100,7 @@ export const makeHttpApp = <R = never>(
   options: EffexAppOptions<R>,
 ): HttpApp.Default<
   HttpServerError.RequestError,
-  HttpServerRequest.HttpServerRequest
+  HttpServerRequest.HttpServerRequest | R
 > =>
   Effect.gen(function* () {
     const serverRequest = yield* HttpServerRequest.HttpServerRequest;
@@ -131,7 +144,10 @@ export const makeHttpApp = <R = never>(
     return HttpServerResponse.html(html).pipe(
       HttpServerResponse.setHeaders(responseHeaders),
     );
-  });
+  }) as HttpApp.Default<
+    HttpServerError.RequestError,
+    HttpServerRequest.HttpServerRequest | R
+  >;
 
 /**
  * Create an HttpRouter that serves an Effex application.
@@ -157,7 +173,7 @@ export const makeRouter = <R = never>(
   options: EffexAppOptions<R>,
 ): HttpRouter.HttpRouter<
   HttpServerError.RequestError,
-  HttpServerRequest.HttpServerRequest
+  HttpServerRequest.HttpServerRequest | R
 > => {
   const app = makeHttpApp(options);
 
@@ -198,7 +214,7 @@ export const makeFullApp = <R = never>(
   },
 ): HttpApp.Default<
   HttpServerError.RequestError,
-  HttpServerRequest.HttpServerRequest
+  HttpServerRequest.HttpServerRequest | R
 > => {
   // Note: Static file handling requires @effect/platform-node or similar
   // For now, just return the app. Users can compose with HttpRouter.
@@ -207,6 +223,8 @@ export const makeFullApp = <R = never>(
 
 /**
  * Options for rendering a request to HTML.
+ *
+ * @template R - Requirements for the element and router (loaders/actions)
  */
 export interface RenderRequestOptions<R = never> {
   /**
@@ -216,8 +234,9 @@ export interface RenderRequestOptions<R = never> {
 
   /**
    * Optional router instance for executing loaders and actions.
+   * The router's requirements should be included in R.
    */
-  readonly router?: SSRRouter;
+  readonly router?: SSRRouter<unknown, R, unknown, R>;
 
   /**
    * Document template options.
@@ -225,7 +244,7 @@ export interface RenderRequestOptions<R = never> {
   readonly document?: DocumentOptions;
 
   /**
-   * Additional Effect requirements to provide.
+   * Layer that provides all requirements (R).
    */
   readonly provide?: Layer.Layer<R, never, never>;
 }
@@ -266,7 +285,7 @@ export interface RenderRequestOptions<R = never> {
 export const renderRequest = <R = never>(
   request: Request,
   options: RenderRequestOptions<R>,
-): Effect.Effect<string, never, never> =>
+): Effect.Effect<string, unknown, R> =>
   performSSR(
     request,
     options.app as Element<never, RendererContext>,

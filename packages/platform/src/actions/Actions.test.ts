@@ -6,7 +6,7 @@ const createMockActionRouter = (options?: {
   currentRoute?: string | null;
   actionResult?: { routeName: string; data: unknown } | null;
   actionError?: Error;
-}): ActionRouter => {
+}): ActionRouter<never, never> => {
   const {
     currentRoute = "test",
     actionResult = null,
@@ -21,7 +21,11 @@ const createMockActionRouter = (options?: {
     },
     executeAction: (_routeName, _formData, _request) => {
       if (actionError) {
-        return Effect.fail(actionError);
+        return Effect.fail(actionError) as unknown as Effect.Effect<
+          { routeName: string; data: unknown } | null,
+          never,
+          never
+        >;
       }
       return Effect.succeed(actionResult);
     },

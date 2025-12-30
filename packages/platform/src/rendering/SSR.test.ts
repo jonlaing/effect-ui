@@ -7,7 +7,7 @@ const createMockSSRRouter = (options?: {
   currentRoute?: string | null;
   loaderResult?: { routeName: string; params: unknown; data: unknown } | null;
   pathname?: string;
-}): SSRRouter => {
+}): SSRRouter<never, never, never, never> => {
   const {
     currentRoute = "home",
     loaderResult = { routeName: "home", params: {}, data: null },
@@ -92,7 +92,7 @@ describe("ssr", () => {
 
     it("should set router pathname from request URL", async () => {
       let capturedPathname = "";
-      const router: SSRRouter = {
+      const router: SSRRouter<never, never, never, never> = {
         currentRoute: { get: Effect.succeed(Option.some("test")) },
         executeLoader: () =>
           Effect.succeed({ routeName: "test", params: {}, data: null }),

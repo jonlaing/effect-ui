@@ -52,7 +52,7 @@ const createMockBaseRouter = (options?: {
 };
 
 // Mock SSRRouter for server-side rendering
-const createMockSSRRouter = (): SSRRouter => ({
+const createMockSSRRouter = (): SSRRouter<never, never, never, never> => ({
   executeLoader: () =>
     Effect.succeed({ routeName: "home", params: {}, data: null }),
   executeAction: () => Effect.succeed(null),
@@ -176,9 +176,11 @@ describe("EffexServer", () => {
       const request = new Request("http://localhost/");
 
       const html = await Effect.runPromise(
-        renderRequest(request, {
-          app: TestApp(),
-        }),
+        Effect.scoped(
+          renderRequest(request, {
+            app: TestApp(),
+          }),
+        ),
       );
 
       expect(html).toContain("<!DOCTYPE html>");
@@ -190,13 +192,15 @@ describe("EffexServer", () => {
       const request = new Request("http://localhost/");
 
       const html = await Effect.runPromise(
-        renderRequest(request, {
-          app: TestApp(),
-          document: {
-            title: "Custom Title",
-            scripts: ["/bundle.js"],
-          },
-        }),
+        Effect.scoped(
+          renderRequest(request, {
+            app: TestApp(),
+            document: {
+              title: "Custom Title",
+              scripts: ["/bundle.js"],
+            },
+          }),
+        ),
       );
 
       expect(html).toContain("<title>Custom Title</title>");
@@ -208,10 +212,12 @@ describe("EffexServer", () => {
       const request = new Request("http://localhost/");
 
       const html = await Effect.runPromise(
-        renderRequest(request, {
-          app: TestApp(),
-          router: ssrRouter,
-        }),
+        Effect.scoped(
+          renderRequest(request, {
+            app: TestApp(),
+            router: ssrRouter,
+          }),
+        ),
       );
 
       expect(html).toContain("Hello, World!");
@@ -221,9 +227,11 @@ describe("EffexServer", () => {
       const request = new Request("http://localhost/");
 
       const html = await Effect.runPromise(
-        renderRequest(request, {
-          app: TestApp(),
-        }),
+        Effect.scoped(
+          renderRequest(request, {
+            app: TestApp(),
+          }),
+        ),
       );
 
       expect(html).toContain("window.__EFFEX_LOADER_DATA__");

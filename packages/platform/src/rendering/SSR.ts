@@ -20,13 +20,26 @@ import {
 } from "../actions/Actions.js";
 
 /**
- * Router interface for SSR (avoids cross-package Effect type issues)
+ * Router interface for SSR (avoids cross-package Effect type issues).
+ *
+ * @template LE - Loader error type
+ * @template LR - Loader requirements (dependencies needed by loaders)
+ * @template AE - Action error type
+ * @template AR - Action requirements (dependencies needed by actions)
+ *
+ * When these are unions of services, TypeScript will enforce that all
+ * required services are provided when performing SSR.
  */
-export interface SSRRouter extends ActionRouter {
+export interface SSRRouter<
+  LE = unknown,
+  LR = unknown,
+  AE = unknown,
+  AR = unknown,
+> extends ActionRouter<AE, AR> {
   executeLoader: () => Effect.Effect<
     { routeName: string; params: unknown; data: unknown } | null,
-    unknown,
-    unknown
+    LE,
+    LR
   >;
   pathname: {
     get: Effect.Effect<string>;
@@ -48,15 +61,24 @@ export interface SSRResult {
 }
 
 /**
- * Perform SSR for a request and return the result
+ * Perform SSR for a request and return the result.
+ *
+ * The requirements (R) are inferred from the router's loader and action dependencies.
+ * If your loaders/actions require services like DatabaseService or UserService,
+ * those will be required in the returned Effect's R type parameter.
+ *
+ * @template LE - Loader error type
+ * @template LR - Loader requirements
+ * @template AE - Action error type
+ * @template AR - Action requirements
  */
-export const performSSR = (
+export const performSSR = <LE = never, LR = never, AE = never, AR = never>(
   request: Request,
   element: Element<never, RendererContext>,
-  router: SSRRouter | undefined,
+  router: SSRRouter<LE, LR, AE, AR> | undefined,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   providedLayer: Layer.Layer<any, never, never> | undefined,
-): Effect.Effect<SSRResult, never, never> =>
+): Effect.Effect<SSRResult, LE | AE, LR | AR> =>
   Effect.gen(function* () {
     const platformContext = makeServerPlatformContext(request);
     const loaderDataCache = new Map<string, unknown>();
@@ -70,10 +92,11 @@ export const performSSR = (
           }
         }),
         Effect.catchAll(() => Effect.succeed({})),
-      ) as Effect.Effect<{
-        routeName: string;
-        params: Record<string, string>;
-      }>;
+      ) as Effect.Effect<
+        { routeName: string; params: Record<string, string> },
+        LE,
+        LR
+      >;
 
     const actionData = yield* makeActionData(router, request);
 
