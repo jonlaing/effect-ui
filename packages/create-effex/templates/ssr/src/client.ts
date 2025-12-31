@@ -1,5 +1,6 @@
 import { Effect } from "effect";
-import { Router, hydrateApp, Routes, makeRouterLayer } from "@effex/platform";
+import { Router, Routes, makeRouterLayer } from "@effex/platform";
+import { hydrateApp } from "@effex/platform/client";
 import { routes, components } from "./generated/routes.js";
 
 // Hydrate the application
@@ -9,7 +10,9 @@ const hydrate = async () => {
     throw new Error("Root element not found");
   }
 
-  await Effect.runPromise(
+  // Use runFork to keep the scope alive for the lifetime of the app
+  // This ensures router subscriptions stay active
+  Effect.runFork(
     Effect.scoped(
       Effect.gen(function* () {
         // Create the router
@@ -27,11 +30,14 @@ const hydrate = async () => {
             >["router"],
           }),
         );
+
+        console.log("Effex app hydrated!");
+
+        // Keep the scope alive indefinitely
+        yield* Effect.never;
       }),
     ),
   );
-
-  console.log("Effex app hydrated!");
 };
 
 hydrate().catch(console.error);

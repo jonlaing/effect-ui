@@ -10,12 +10,13 @@
     "generate-routes": "vite build --mode development"
   },
   "dependencies": {
-    "@effex/platform": "^0.0.1",
+    "@effex/dom": "^0.0.1",
+    "@effex/router": "^0.0.1",
     "effect": "^3.19.13"
   },
   "devDependencies": {
     "@effex/vite-plugin": "^0.0.1",
     "typescript": "~5.9.3",
-    "vite": "^7.0.0"
+    "vite": "^7.3.0"
   }
 }

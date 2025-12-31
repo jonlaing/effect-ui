@@ -1,34 +1,45 @@
-import { Effect } from "effect";
-import { Router, Routes, makeRouterLayer } from "@effex/platform";
-import { render } from "@effex/dom";
+import { Effect, Option } from "effect";
+import { component, match, div, runApp, mount } from "@effex/dom";
+import { Router, makeRouterLayer, RouterContext } from "@effex/router";
 import { routes, components } from "./generated/routes.js";
 
-// Mount the application
-const app = async () => {
-  const container = document.getElementById("root");
-  if (!container) {
-    throw new Error("Root element not found");
-  }
+// Simple Routes component for SPA (no loader context needed)
+const Routes = component("Routes", () =>
+  Effect.gen(function* () {
+    const router = yield* RouterContext;
+    const currentRoute = router.currentRoute.map((opt) =>
+      Option.isSome(opt) ? opt.value : null,
+    );
 
-  await Effect.runPromise(
-    Effect.scoped(
-      Effect.gen(function* () {
-        // Create the router
-        const router = yield* Router.make(routes);
-        const routerLayer = makeRouterLayer(router);
-
-        // Create the app element
-        const appElement = Routes({ components }).pipe(
-          Effect.provide(routerLayer),
-        );
-
-        // Mount to DOM
-        yield* render(appElement as Parameters<typeof render>[0], container);
+    const cases = Object.entries(components).map(
+      ([routeName, componentFn]) => ({
+        pattern: routeName,
+        render: componentFn,
       }),
-    ),
-  );
+    );
 
-  console.log("Effex app mounted!");
-};
+    return yield* match(currentRoute, {
+      cases,
+      fallback: () => div({ class: "page" }, ["Page not found"]),
+    });
+  }),
+);
 
-app().catch(console.error);
+// Mount the application
+const container = document.getElementById("root");
+if (!container) {
+  throw new Error("Root element not found");
+}
+
+runApp(
+  Effect.gen(function* () {
+    const router = yield* Router.make(routes);
+    const routerLayer = makeRouterLayer(router);
+
+    const app = Routes().pipe(Effect.provide(routerLayer));
+
+    yield* mount(app as Parameters<typeof mount>[0], container);
+
+    console.log("Effex app mounted!");
+  }),
+);

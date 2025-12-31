@@ -1,11 +1,14 @@
 import { defineConfig } from "vite";
-import { effexRoutes } from "@effex/vite-plugin";
+import { effexRoutes, effexSSR } from "@effex/vite-plugin";
 
 export default defineConfig({
   plugins: [
     effexRoutes({
       routesDir: "src/routes",
       outputPath: "src/generated/routes.ts",
+    }),
+    effexSSR({
+      entry: "src/server-entry.ts",
     }),
   ],
   build: {
