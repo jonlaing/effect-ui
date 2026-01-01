@@ -28,3 +28,6 @@ effect-ui-notes.md
 
 *storybook.log
 storybook-static
+
+# Generated API docs (regenerate with `pnpm docs`)
+docs/api

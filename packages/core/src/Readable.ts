@@ -297,9 +297,6 @@ export const lift = <T extends Record<string, unknown>, R>(
   };
 };
 
-/**
- * Readable namespace containing factory functions and type utilities.
- */
 export const Readable = {
   isReadable,
   of,

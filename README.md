@@ -163,7 +163,11 @@ We have migration guides with concept mapping and side-by-side examples:
 
 ## API Documentation
 
-See the [docs/api](./docs/api) folder for full API documentation.
+Generate full API docs locally:
+
+```bash
+pnpm docs:gen
+```
 
 ## Acknowledgments
 

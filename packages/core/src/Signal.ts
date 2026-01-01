@@ -118,9 +118,6 @@ export class SignalRegistry extends Context.Tag("effect-ui/SignalRegistry")<
   });
 }
 
-/**
- * Signal namespace containing factory functions.
- */
 export const Signal = {
   make,
   SignalRegistry,
