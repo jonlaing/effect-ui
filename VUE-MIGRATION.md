@@ -18,7 +18,7 @@ mount(UserProfile(), document.body); // Type error!
 
 // Handle the error first
 mount(
-  ErrorBoundary(
+  Boundary.error(
     () => UserProfile(),
     (error) => $.div(`Failed to load: ${error.message}`),
   ),
@@ -96,7 +96,7 @@ yield* eventSource.pipe(
 Vue's `<Suspense>` is limited and doesn't integrate well with error handling. Effex unifies loading and error states:
 
 ```ts
-Suspense({
+Boundary.suspense({
   render: () =>
     Effect.gen(function* () {
       const user = yield* fetchUser(id); // Can fail!
@@ -110,25 +110,25 @@ Suspense({
 
 ## Concept Mapping
 
-| Vue (Composition API)      | Effex                              | Notes                        |
-| -------------------------- | ---------------------------------- | ---------------------------- |
-| `ref(initial)`             | `Signal.make(initial)`             | Must `yield*` to create      |
-| `reactive(obj)`            | `Signal.make(obj)`                 | Same as ref for objects      |
-| `computed(() => x)`        | `Derived.sync([deps], () => x)`    | Deps are explicit signals    |
-| `watch(source, cb)`        | `Reaction`                         | Automatic cleanup            |
-| `watchEffect(cb)`          | `Reaction` with immediate          | Explicit dependencies        |
-| `provide/inject`           | `yield* ServiceTag`                | Effect services              |
-| `ref` (template ref)       | `Ref.make()`                       | For DOM refs                 |
-| `v-if / v-else`            | `when(cond, truthy, falsy)`        | Always two branches          |
-| `v-show`                   | Signal-based class/style           | No direct equivalent         |
-| `v-for`                    | `each(arr, keyFn, renderFn)`       | Key function, not `:key`     |
-| `@click` / `v-on`          | `onClick` / event props            | Camel case handlers          |
-| `:class` / `v-bind:class`  | `class` prop with Readable         | Reactive by default          |
-| `<Teleport>`               | `Portal()`                         | Similar API                  |
-| `<Suspense>`               | `Suspense({ render, fallback })`   | With typed `catch`           |
-| `defineProps`              | Function parameters                | Plain TypeScript             |
-| `defineEmits`              | Callback props                     | Plain functions              |
-| SFC `.vue` files           | Plain `.ts` files                  | No special file format       |
+| Vue (Composition API)      | Effex                                            | Notes                        |
+| -------------------------- | ------------------------------------------------ | ---------------------------- |
+| `ref(initial)`             | `Signal.make(initial)`                           | Must `yield*` to create      |
+| `reactive(obj)`            | `Signal.make(obj)`                               | Same as ref for objects      |
+| `computed(() => x)`        | `Derived.sync([deps], () => x)`                  | Deps are explicit signals    |
+| `watch(source, cb)`        | `Reaction`                                       | Automatic cleanup            |
+| `watchEffect(cb)`          | `Reaction` with immediate                        | Explicit dependencies        |
+| `provide/inject`           | `yield* ServiceTag`                              | Effect services              |
+| `ref` (template ref)       | `Ref.make()`                                     | For DOM refs                 |
+| `v-if / v-else`            | `when(cond, { onTrue, onFalse })`                | Object config                |
+| `v-show`                   | Signal-based class/style                         | No direct equivalent         |
+| `v-for`                    | `each(arr, { key, render })`                     | Key function, not `:key`     |
+| `@click` / `v-on`          | `onClick` / event props                          | Camel case handlers          |
+| `:class` / `v-bind:class`  | `class` prop with Readable                       | Reactive by default          |
+| `<Teleport>`               | `Portal()`                                       | Similar API                  |
+| `<Suspense>`               | `Boundary.suspense({ render, fallback })`        | With typed `catch`           |
+| `defineProps`              | Function parameters                              | Plain TypeScript             |
+| `defineEmits`              | Callback props                                   | Plain functions              |
+| SFC `.vue` files           | Plain `.ts` files                                | No special file format       |
 
 ## Side-by-Side Examples
 
@@ -207,11 +207,10 @@ const isLoggedIn = ref(false)
 ```ts
 // Effex
 const Auth = component("Auth", (props: { isLoggedIn: Readable<boolean> }) =>
-  when(
-    props.isLoggedIn,
-    () => Dashboard(),
-    () => Login(),
-  ),
+  when(props.isLoggedIn, {
+    onTrue: () => Dashboard(),
+    onFalse: () => Login(),
+  }),
 );
 ```
 
@@ -236,13 +235,11 @@ const todos = ref([])
 ```ts
 // Effex
 const TodoList = component("TodoList", (props: { todos: Readable<Todo[]> }) =>
-  $.ul([
-    each(
-      props.todos,
-      (todo) => todo.id, // Key function
-      (todo) => $.li(todo.map((t) => t.text)), // Render function
-    ),
-  ]),
+  each(props.todos, {
+    container: () => $.ul(),
+    key: (todo) => todo.id,
+    render: (todo) => $.li(todo.map((t) => t.text)),
+  }),
 );
 ```
 
@@ -253,31 +250,43 @@ const TodoList = component("TodoList", (props: { todos: Readable<Todo[]> }) =>
 <script setup>
 import { ref, watch } from 'vue'
 
-const searchQuery = ref('')
+const title = ref('My App')
+const unreadCount = ref(0)
 
-watch(searchQuery, async (newQuery) => {
-  const results = await search(newQuery)
-  // update results...
+watch([title, unreadCount], ([newTitle, count]) => {
+  document.title = count > 0 ? `(${count}) ${newTitle}` : newTitle
+})
+
+watch(title, (newTitle) => {
+  localStorage.setItem('lastTitle', newTitle)
 })
 </script>
+
+<template>
+  <h1>{{ title }}</h1>
+</template>
 ```
 
 ```ts
 // Effex
-const Search = component("Search", () =>
-  Effect.gen(function* () {
-    const query = yield* Signal.make("");
-    const scope = yield* Effect.scope;
+const DocumentTitle = component(
+  "DocumentTitle",
+  (props: { title: Readable<string>; unreadCount: Readable<number> }) =>
+    Effect.gen(function* () {
+      // Runs whenever title or unreadCount changes
+      yield* Reaction.make([props.title, props.unreadCount], ([title, count]) =>
+        Effect.sync(() => {
+          document.title = count > 0 ? `(${count}) ${title}` : title;
+        }),
+      );
 
-    yield* Reaction.make(query, (newQuery) =>
-      Effect.gen(function* () {
-        const results = yield* search(newQuery);
-        // update results...
-      }),
-    );
+      // Runs whenever title changes
+      yield* Reaction.make([props.title], ([title]) =>
+        Effect.sync(() => localStorage.setItem("lastTitle", title)),
+      );
 
-    // ... rest of component
-  }),
+      return yield* $.h1(props.title);
+    }),
 );
 ```
 
@@ -313,7 +322,17 @@ const Page = component("Page", () =>
   }),
 );
 
+// Provide at mount (like wrapping the root)
 runApp(mount(Page().pipe(Effect.provideService(ThemeService, "dark")), root));
+
+// Or provide inline with the provide helper
+$.div(
+  { class: "app" },
+  provide(ThemeService, "dark", [
+    Page(),
+    AnotherComponent(),
+  ]),
+);
 ```
 
 ### Two-Way Binding (v-model)
@@ -341,7 +360,7 @@ const TextInput = component("TextInput", () =>
         value: text,
         onInput: (e) => text.set((e.target as HTMLInputElement).value),
       }),
-      $.p(text.map((t) => `You typed: ${t}`)),
+      $.p(t`You typed: ${text}`),
     ]);
   }),
 );
@@ -374,7 +393,7 @@ const Modal = component("Modal", () =>
 
 2. **Explicit dependencies** - Vue's reactivity auto-tracks. Effex's `Derived.sync` requires explicit dependency arrays (but they're type-checked).
 
-3. **Errors are values** - Instead of `errorCaptured` hooks, errors flow through the type system. Handle them explicitly with `ErrorBoundary`.
+3. **Errors are values** - Instead of `errorCaptured` hooks, errors flow through the type system. Handle them explicitly with `Boundary.error`.
 
 4. **Effects are explicit** - Side effects aren't hidden in `watchEffect`. They're Effect values that you compose and run explicitly.
 

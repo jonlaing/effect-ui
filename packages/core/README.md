@@ -109,6 +109,7 @@ todos.length  // Readable<number>
 
 // Use with Control.each
 each(todos, {
+  container: () => $.ul({ class: "todo-list" }),
   key: todo => todo.id,
   render: todo => TodoItem(todo),
 });

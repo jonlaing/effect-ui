@@ -22,7 +22,7 @@ import { Readable as ReadableNS } from "./Readable.js";
  * yield* todos.update(arr => arr.filter(t => !t.done));
  *
  * // Use with Control.each
- * Control.each(todos, t => t.id, renderTodo)
+ * each(todos, { container: () => $.ul(), key: t => t.id, render: renderTodo })
  * ```
  */
 export interface SignalArray<T> extends Signal<readonly T[]> {

@@ -18,7 +18,7 @@ mount(UserProfile(), document.body); // Type error!
 
 // Handle the error first
 mount(
-  ErrorBoundary(
+  Boundary.error(
     () => UserProfile(),
     (error) => $.div(`Failed to load: ${error.message}`),
   ),
@@ -122,7 +122,7 @@ const Parent = component("Parent", () =>
 React's Suspense requires experimental features for data fetching, and error handling is separate from loading states. In Effex, it's unified:
 
 ```ts
-Suspense({
+Boundary.suspense({
   render: () =>
     Effect.gen(function* () {
       const user = yield* fetchUser(id); // Can fail!
@@ -136,22 +136,22 @@ Suspense({
 
 ## Concept Mapping
 
-| React                          | Effex                                    | Notes                     |
-| ------------------------------ | ---------------------------------------- | ------------------------- |
-| `useState(initial)`            | `Signal.make(initial)`                   | Must `yield*` to create   |
-| `useMemo(() => x, deps)`       | `Derived.sync([deps], () => x)`          | Deps are explicit signals |
-| `useEffect(() => {...}, deps)` | `Reaction` or scope finalizers           | Automatic cleanup         |
-| `useCallback(fn, deps)`        | Just use the function                    | No stale closures         |
-| `useContext(Ctx)`              | `yield* ServiceTag`                      | Effect services           |
-| `useRef(initial)`              | `Ref.make(initial)`                      | For DOM refs              |
-| `<Component prop={x} />`       | `Component({ prop: x })`                 | Function calls            |
-| `{cond && <El/>}`              | `when(cond, () => El(), () => $.span())` | Always two branches       |
-| `{arr.map(x => <El key/>)}`    | `each(arr, keyFn, renderFn)`             | Key function, not prop    |
-| `<ErrorBoundary>`              | `ErrorBoundary(try, catch)`              | Typed errors!             |
-| `<Suspense>`                   | `Suspense({ render, fallback })`         | With typed `catch`        |
-| Component re-render            | Doesn't exist                            | Only signals update DOM   |
-| Virtual DOM diff               | Doesn't exist                            | Direct DOM updates        |
-| `React.memo()`                 | Not needed                               | Fine-grained by default   |
+| React                          | Effex                                          | Notes                     |
+| ------------------------------ | ---------------------------------------------- | ------------------------- |
+| `useState(initial)`            | `Signal.make(initial)`                         | Must `yield*` to create   |
+| `useMemo(() => x, deps)`       | `Derived.sync([deps], () => x)`                | Deps are explicit signals |
+| `useEffect(() => {...}, deps)` | `Reaction.make([deps], fn)`                    | Automatic cleanup         |
+| `useCallback(fn, deps)`        | Just use the function                          | No stale closures         |
+| `useContext(Ctx)`              | `yield* ServiceTag`                            | Effect services           |
+| `useRef(initial)`              | `Ref.make(initial)`                            | For DOM refs              |
+| `<Component prop={x} />`       | `Component({ prop: x })`                       | Function calls            |
+| `{cond && <El/>}`              | `when(cond, { onTrue: () => El(), onFalse: () => $.span() })` | Object config  |
+| `{arr.map(x => <El key/>)}`    | `each(arr, { key: x => x.id, render: x => El() })` | Key function, not prop |
+| `<ErrorBoundary>`              | `Boundary.error(try, catch)`                   | Typed errors!             |
+| `<Suspense>`                   | `Boundary.suspense({ render, fallback })`      | With typed `catch`        |
+| Component re-render            | Doesn't exist                                  | Only signals update DOM   |
+| Virtual DOM diff               | Doesn't exist                                  | Direct DOM updates        |
+| `React.memo()`                 | Not needed                                     | Fine-grained by default   |
 
 ## Side-by-Side Examples
 
@@ -194,7 +194,7 @@ const Cart = component("Cart", (props: { items: Readable<Item[]> }) =>
     const total = yield* Derived.sync([props.items], ([items]) =>
       items.reduce((sum, i) => sum + i.price, 0),
     );
-    return yield* $.div(total.map((t) => `Total: $${t}`));
+    return yield* $.div(t`Total: $${t}`);
   }),
 );
 ```
@@ -209,11 +209,10 @@ function Auth({ isLoggedIn }) {
 
 // Effex
 const Auth = component("Auth", (props: { isLoggedIn: Readable<boolean> }) =>
-  when(
-    props.isLoggedIn,
-    () => Dashboard(),
-    () => Login(),
-  ),
+  when(props.isLoggedIn, {
+    onTrue: () => Dashboard(),
+    onFalse: () => Login(),
+  }),
 );
 ```
 
@@ -233,13 +232,11 @@ function TodoList({ todos }) {
 
 // Effex
 const TodoList = component("TodoList", (props: { todos: Readable<Todo[]> }) =>
-  $.ul([
-    each(
-      props.todos,
-      (todo) => todo.id, // Key function
-      (todo) => $.li(todo.map((t) => t.text)), // Render function
-    ),
-  ]),
+  each(props.todos, {
+    container: () => $.ul(),
+    key: (todo) => todo.id,
+    render: (todo) => $.li(todo.map((t) => t.text)),
+  }),
 );
 ```
 
@@ -256,7 +253,7 @@ function UserProfile({ id }) {
 
 // Effex (all-in-one)
 const UserProfile = component("UserProfile", (props: { id: string }) =>
-  Suspense({
+  Boundary.suspense({
     render: () =>
       Effect.gen(function* () {
         const user = yield* fetchUser(props.id);
@@ -295,20 +292,71 @@ const Page = component("Page", () =>
   }),
 );
 
+// Provide at mount (like wrapping the root)
 runApp(mount(Page().pipe(Effect.provideService(ThemeService, "dark")), root));
+
+// Or provide inline with the provide helper
+$.div(
+  { class: "app" },
+  provide(ThemeService, "dark", [
+    Page(),
+    AnotherComponent(),
+  ]),
+);
 ```
+
+### Effects / Reactions
+
+```tsx
+// React
+function DocumentTitle({ title, unreadCount }) {
+  useEffect(() => {
+    document.title = unreadCount > 0 ? `(${unreadCount}) ${title}` : title;
+  }, [title, unreadCount]);
+
+  useEffect(() => {
+    localStorage.setItem("lastTitle", title);
+  }, [title]);
+
+  return <h1>{title}</h1>;
+}
+
+// Effex
+const DocumentTitle = component(
+  "DocumentTitle",
+  (props: { title: Readable<string>; unreadCount: Readable<number> }) =>
+    Effect.gen(function* () {
+      // Runs whenever title or unreadCount changes
+      yield* Reaction.make([props.title, props.unreadCount], ([title, count]) =>
+        Effect.sync(() => {
+          document.title = count > 0 ? `(${count}) ${title}` : title;
+        }),
+      );
+
+      // Runs whenever title changes
+      yield* Reaction.make([props.title], ([title]) =>
+        Effect.sync(() => localStorage.setItem("lastTitle", title)),
+      );
+
+      return yield* $.h1(props.title);
+    }),
+);
+```
+
+Key differences:
+- **No dependency arrays to maintain** - Dependencies are explicit signals passed to `Reaction.make`
+- **No stale closure bugs** - Values are passed as parameters, not captured from scope
+- **Automatic cleanup** - Reactions stop when the component unmounts
 
 ## Key Mindset Shifts
 
 1. **Components don't re-render** - There's no render cycle. Signals update, and only their subscribers react.
 
-2. **Errors are values** - Instead of try/catch around everything, errors flow through the type system. Handle them explicitly with `ErrorBoundary` or Effect combinators.
+2. **Errors are values** - Instead of try/catch around everything, errors flow through the type system. Handle them explicitly with `Boundary.error` or Effect combinators.
 
 3. **Effects are explicit** - Side effects aren't hidden in `useEffect`. They're Effect values that you compose and run explicitly.
 
-4. **No dependency arrays** - The reactive system tracks dependencies automatically. You never list them manually.
-
-5. **Cleanup is automatic** - Effect's scope system handles resource cleanup. No more forgotten unsubscribes.
+4. **Cleanup is automatic** - Effect's scope system handles resource cleanup. No more forgotten unsubscribes.
 
 ## Custom Equality
 

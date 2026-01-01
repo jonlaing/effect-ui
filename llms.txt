@@ -1,11 +1,15 @@
-# Effect-UI
+# Effex
 
 A reactive UI framework built on Effect.ts primitives. Uses signals for state, derived values for computations, and represents DOM elements as Effects with automatic scope management.
 
 ## Installation
 
 ```bash
-npm install @jonlaing/effect-ui effect
+# For SPA (client-only)
+pnpm add @effex/dom @effex/router effect
+
+# For SSR (full-stack)
+pnpm add @effex/platform effect
 ```
 
 ## Core Concepts
@@ -33,10 +37,10 @@ const user = yield* Derived.async([userId], ([id]) => fetchUser(id))
 Use the `$` namespace for all HTML elements:
 
 ```ts
-import { $ } from "@jonlaing/effect-ui"
+import { $ } from "@effex/dom"
 
 // Elements are Effect<HTMLElement, E, Scope>
-$.div({ className: "container" }, [
+$.div({ class: "container" }, [
   $.h1("Hello"),
   $.p(count),  // Reactive - updates when count changes
   $.button({ onClick: () => count.update(n => n + 1) }, "+"),
@@ -60,22 +64,27 @@ const Counter = component("Counter", () =>
 ### Control Flow
 ```ts
 // Conditional rendering
-when(isLoggedIn,
-  () => Dashboard({}),
-  () => LoginForm({})
-)
+when(isLoggedIn, {
+  onTrue: () => Dashboard(),
+  onFalse: () => LoginForm(),
+})
 
 // Pattern matching
-match(status, [
-  { pattern: "loading", render: () => Spinner({}) },
-  { pattern: "error", render: () => ErrorMessage({}) },
-  { pattern: "success", render: () => Content({}) },
-])
+match(status, {
+  cases: [
+    { pattern: "loading", render: () => Spinner() },
+    { pattern: "error", render: () => ErrorMessage() },
+    { pattern: "success", render: () => Content() },
+  ],
+  fallback: () => $.div("Unknown"),
+})
 
 // Lists with keyed updates
-each(todos, todo => todo.id, (todoReadable) =>
-  TodoItem({ todo: todoReadable })
-)
+each(todos, {
+  container: () => $.ul({ class: "todo-list" }),
+  key: todo => todo.id,
+  render: (todoReadable) => TodoItem({ todo: todoReadable }),
+})
 ```
 
 ### Error Handling
@@ -87,7 +96,7 @@ const riskyComponent: Element<FetchError> = Effect.gen(function* () {
 })
 
 // Handle errors before mounting
-const safeComponent = ErrorBoundary(
+const safeComponent = Boundary.error(
   () => riskyComponent,
   (error) => $.div(["Error: ", String(error)])
 )
@@ -96,18 +105,28 @@ const safeComponent = ErrorBoundary(
 yield* mount(safeComponent, document.getElementById("root")!)
 ```
 
+### Async Boundaries
+```ts
+Boundary.suspense({
+  render: () =>
+    Effect.gen(function* () {
+      const user = yield* fetchUser(id)
+      return yield* UserProfile({ user })
+    }),
+  fallback: () => $.div("Loading..."),
+  catch: (error) => $.div(`Error: ${error.message}`),
+  delay: "200 millis",  // Avoid loading flash
+})
+```
+
 ### Mounting
 ```ts
-const program = Effect.gen(function* () {
-  yield* mount(App({}), document.getElementById("root")!)
-  yield* Effect.never  // Keep alive
-})
+import { mount, runApp } from "@effex/dom"
 
-Effect.runPromise(
-  program.pipe(
-    Effect.scoped,
-    Effect.provide(SignalRegistry.Live)
-  )
+runApp(
+  Effect.gen(function* () {
+    yield* mount(App(), document.getElementById("root")!)
+  })
 )
 ```
 
@@ -125,7 +144,7 @@ Effect.runPromise(
 The `$` namespace contains all HTML elements:
 
 ```ts
-import { $ } from "@jonlaing/effect-ui"
+import { $ } from "@effex/dom"
 
 $.div, $.span, $.p, $.h1-$.h6, $.button, $.input, $.form, $.label,
 $.ul, $.ol, $.li, $.a, $.img, $.nav, $.header, $.footer, $.main,
@@ -133,46 +152,45 @@ $.section, $.article, $.aside, $.textarea, $.select, $.option,
 $.table, $.thead, $.tbody, $.tr, $.th, $.td
 ```
 
-Individual imports also available: `import { div, span } from "@jonlaing/effect-ui"`
+Individual imports also available: `import { div, span } from "@effex/dom"`
 
 ## Attributes
 
 ```ts
 $.div({
-  className: "static-class",                    // or Readable<string>
-  style: { color: "red", fontSize: "16px" },   // or Readable<Record>
+  class: "static-class",                    // or Readable<string>
+  style: { color: "red", fontSize: "16px" }, // or Readable<Record>
   id: "my-id",
-  onClick: (e) => Effect.log("clicked"),       // Event handlers can return Effects
-  disabled: isDisabled,                         // boolean or Readable<boolean>
+  onClick: (e) => Effect.log("clicked"),    // Event handlers can return Effects
+  disabled: isDisabled,                      // boolean or Readable<boolean>
 }, [children])
 ```
 
-## Project Structure
+## Packages
 
-```
-src/
-  core/           # Reactive primitives (Signal, Derived, Readable, Reaction)
-  dom/            # DOM rendering (Element, Control, Component, Mount, Ref)
-  index.ts        # Public exports
-```
+- `@effex/core` - Reactive primitives (Signal, Derived, Readable)
+- `@effex/dom` - DOM rendering, elements, control flow, components
+- `@effex/router` - Type-safe routing
+- `@effex/form` - Form handling with Effect Schema validation
+- `@effex/primitives` - Headless UI components
+- `@effex/platform` - Full-stack SSR framework (re-exports all packages)
 
 ## Patterns
 
 ### Fetching Data
 ```ts
 const UserProfile = component("UserProfile", (props: { userId: string }) =>
-  Effect.gen(function* () {
-    const user = yield* Derived.async(
-      [Signal.of(props.userId)],
-      ([id]) => fetchUser(id)
-    )
-
-    return yield* $.div([
-      when(user.map(s => s.isLoading),
-        () => $.span("Loading..."),
-        () => $.span(user.map(s => s.value.pipe(Option.map(u => u.name), Option.getOrElse(() => ""))))
-      )
-    ])
+  Boundary.suspense({
+    render: () =>
+      Effect.gen(function* () {
+        const user = yield* fetchUser(props.userId)
+        return yield* $.div([
+          $.h1(user.name),
+          $.p(user.email),
+        ])
+      }),
+    fallback: () => $.span("Loading..."),
+    catch: (error) => $.span(`Error: ${error.message}`),
   })
 )
 ```
@@ -205,6 +223,28 @@ const LoginForm = component("LoginForm", () =>
       }),
       $.button({ type: "submit" }, "Login"),
     ])
+  })
+)
+```
+
+### Routing
+```ts
+import { Route, Router, Link, makeRouterLayer } from "@effex/router"
+
+const routes = {
+  home: Route.make("/"),
+  user: Route.make("/users/:id"),
+}
+
+runApp(
+  Effect.gen(function* () {
+    const router = yield* Router.make(routes)
+    const routerLayer = makeRouterLayer(router)
+
+    yield* mount(
+      App().pipe(Effect.provide(routerLayer)),
+      document.getElementById("root")!
+    )
   })
 )
 ```
