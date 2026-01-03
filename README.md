@@ -91,7 +91,7 @@ const Counter = component("Counter", () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0);
 
- ]   return yield* $.div([
+    return yield* $.div([
       $.button({ onClick: () => count.update((n) => n - 1) }, "-"),
       $.span(count),
       $.button({ onClick: () => count.update((n) => n + 1) }, "+"),
