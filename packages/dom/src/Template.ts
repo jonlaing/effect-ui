@@ -1,13 +1,5 @@
 import { Effect, Stream } from "effect";
-import type { Readable } from "@effex/core";
-import { mapReadable } from "@effex/core";
-
-const isReadable = (value: unknown): value is Readable<unknown> =>
-  value !== null &&
-  typeof value === "object" &&
-  "get" in value &&
-  "changes" in value &&
-  "values" in value;
+import { Readable, mapReadable } from "@effex/core";
 
 /**
  * Tagged template literal for creating reactive strings.
@@ -32,7 +24,7 @@ export const t = (
   const readables: Readable<unknown>[] = [];
 
   values.forEach((value) => {
-    if (isReadable(value)) {
+    if (Readable.isReadable(value)) {
       readables.push(value);
     }
   });
@@ -60,7 +52,7 @@ export const t = (
       result += strings[i];
       if (i < values.length) {
         const value = values[i];
-        if (isReadable(value)) {
+        if (Readable.isReadable(value)) {
           result += String(currentValues[readableIndex]);
           readableIndex++;
         } else {
