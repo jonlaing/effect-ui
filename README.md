@@ -1,4 +1,8 @@
-# Effex
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./effex-logo-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="./effex-logo-light.svg">
+  <img src="./effex-logo-dark.svg" alt="Effex" width="200">
+</picture>
 
 A reactive UI framework built on [Effect](https://effect.website/). Effex provides a declarative way to build web interfaces with fine-grained reactivity, automatic cleanup, and full type safety.
 
