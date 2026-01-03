@@ -51,6 +51,9 @@ const renderVNode = (node: VNode): string => {
     case "VText":
       return escapeHtml(node.content);
 
+    case "VComment":
+      return `<!--${node.content}-->`;
+
     case "VElement": {
       const elem = node as VElement;
       const attrs = renderAttributes(elem.attributes);

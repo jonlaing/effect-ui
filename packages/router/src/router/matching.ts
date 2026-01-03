@@ -38,7 +38,7 @@ export const tryMatchSync = (
     }
   }
 
-  matchResult._tag === "Left"; // Extra path parts that weren't matched
+  // Extra path parts that weren't matched
   if (parts.length > route.segments.length) {
     return null;
   }

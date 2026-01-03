@@ -1,4 +1,4 @@
-import { Duration, Effect, Scope } from "effect";
+import { Duration, Effect, Either, Scope } from "effect";
 import type { Element } from "./Element";
 import { RendererContext, type Renderer } from "./Renderer";
 
@@ -120,20 +120,17 @@ const suspenseSimple = <N, R1 = never, EF = never>(
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as Renderer<N>;
     const scope = yield* Effect.scope;
-    const container = yield* renderer.createNode("div");
-    yield* renderer.setStyleProperty(container, "display", "contents");
+    const slot = yield* renderer.createSlot();
 
     const fallback = yield* fallbackRender();
-    yield* renderer.appendChild(container, fallback);
+    yield* slot.setContent(fallback);
 
     yield* asyncRender().pipe(
-      Effect.tap((element) =>
-        renderer.replaceChild(container, element, fallback),
-      ),
+      Effect.tap((element) => slot.setContent(element)),
       Effect.forkIn(scope),
     );
 
-    return container;
+    return slot.marker;
   });
 
 const suspenseWithCatch = <N, E, R1 = never, EF = never>(
@@ -144,28 +141,27 @@ const suspenseWithCatch = <N, E, R1 = never, EF = never>(
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as Renderer<N>;
     const scope = yield* Effect.scope;
-    const container = yield* renderer.createNode("div");
-    yield* renderer.setStyleProperty(container, "display", "contents");
+    const slot = yield* renderer.createSlot();
 
     const fallback = yield* fallbackRender();
-    yield* renderer.appendChild(container, fallback);
+    yield* slot.setContent(fallback);
 
     yield* asyncRender().pipe(
       Effect.either,
       Effect.tap((result) =>
         Effect.gen(function* () {
-          if (result._tag === "Left") {
+          if (Either.isLeft(result)) {
             const errorElement = yield* catchRender(result.left);
-            yield* renderer.replaceChild(container, errorElement, fallback);
+            yield* slot.setContent(errorElement);
           } else {
-            yield* renderer.replaceChild(container, result.right, fallback);
+            yield* slot.setContent(result.right);
           }
         }),
       ),
       Effect.forkIn(scope),
     );
 
-    return container;
+    return slot.marker;
   });
 
 const suspenseWithDelay = <N, R1 = never, EF = never>(
@@ -176,20 +172,18 @@ const suspenseWithDelay = <N, R1 = never, EF = never>(
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as Renderer<N>;
     const scope = yield* Effect.scope;
-    const container = yield* renderer.createNode("div");
-    yield* renderer.setStyleProperty(container, "display", "contents");
+    const slot = yield* renderer.createSlot();
 
     let completed = false;
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
-    let fallbackElement: N | null = null;
 
     timeoutId = setTimeout(() => {
       if (!completed) {
         Effect.runPromise(
           Effect.gen(function* () {
-            fallbackElement = yield* Effect.scoped(fallbackRender());
+            const fallbackElement = yield* Effect.scoped(fallbackRender());
             if (!completed) {
-              yield* renderer.appendChild(container, fallbackElement);
+              yield* slot.setContent(fallbackElement);
             }
           }).pipe(
             Effect.provideService(
@@ -217,17 +211,13 @@ const suspenseWithDelay = <N, R1 = never, EF = never>(
             clearTimeout(timeoutId);
             timeoutId = null;
           }
-          if (fallbackElement) {
-            yield* renderer.replaceChild(container, element, fallbackElement);
-          } else {
-            yield* renderer.appendChild(container, element);
-          }
+          yield* slot.setContent(element);
         }),
       ),
       Effect.forkIn(scope),
     );
 
-    return container;
+    return slot.marker;
   });
 
 const suspenseWithDelayAndCatch = <N, E, R1 = never, EF = never>(
@@ -239,20 +229,18 @@ const suspenseWithDelayAndCatch = <N, E, R1 = never, EF = never>(
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as Renderer<N>;
     const scope = yield* Effect.scope;
-    const container = yield* renderer.createNode("div");
-    yield* renderer.setStyleProperty(container, "display", "contents");
+    const slot = yield* renderer.createSlot();
 
     let completed = false;
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
-    let fallbackElement: N | null = null;
 
     timeoutId = setTimeout(() => {
       if (!completed) {
         Effect.runPromise(
           Effect.gen(function* () {
-            fallbackElement = yield* Effect.scoped(fallbackRender());
+            const fallbackElement = yield* Effect.scoped(fallbackRender());
             if (!completed) {
-              yield* renderer.appendChild(container, fallbackElement);
+              yield* slot.setContent(fallbackElement);
             }
           }).pipe(
             Effect.provideService(
@@ -282,26 +270,17 @@ const suspenseWithDelayAndCatch = <N, E, R1 = never, EF = never>(
             timeoutId = null;
           }
 
-          const newElement =
-            result._tag === "Left"
-              ? yield* catchRender(result.left)
-              : result.right;
+          const newElement = Either.isLeft(result)
+            ? yield* catchRender(result.left)
+            : result.right;
 
-          if (fallbackElement) {
-            yield* renderer.replaceChild(
-              container,
-              newElement,
-              fallbackElement,
-            );
-          } else {
-            yield* renderer.appendChild(container, newElement);
-          }
+          yield* slot.setContent(newElement);
         }),
       ),
       Effect.forkIn(scope),
     );
 
-    return container;
+    return slot.marker;
   });
 
 /**
@@ -325,7 +304,7 @@ export const error = <N, E, R1 = never, E2 = never, R2 = never>(
   Effect.gen(function* () {
     const result = yield* tryRender().pipe(Effect.either);
 
-    if (result._tag === "Left") {
+    if (Either.isLeft(result)) {
       return yield* catchRender(result.left);
     }
 

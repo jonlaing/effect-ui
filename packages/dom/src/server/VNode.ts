@@ -3,7 +3,7 @@
  * These are used by StringRenderer to build a tree that can be serialized to HTML.
  */
 
-export type VNode = VElement | VText;
+export type VNode = VElement | VText | VComment;
 
 export interface VElement {
   readonly _tag: "VElement";
@@ -19,6 +19,11 @@ export interface VText {
   content: string;
 }
 
+export interface VComment {
+  readonly _tag: "VComment";
+  content: string;
+}
+
 export const vElement = (type: string): VElement => ({
   _tag: "VElement",
   type,
@@ -28,5 +33,10 @@ export const vElement = (type: string): VElement => ({
 
 export const vText = (content: string): VText => ({
   _tag: "VText",
+  content,
+});
+
+export const vComment = (content: string): VComment => ({
+  _tag: "VComment",
   content,
 });

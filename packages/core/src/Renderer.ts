@@ -1,6 +1,33 @@
 import { Context, Effect } from "effect";
 
 /**
+ * A slot is a swappable content placeholder.
+ * Used by Boundary.suspense to swap fallback content with actual content
+ * without needing a container element.
+ *
+ * @template Node - The node type for this renderer
+ */
+export interface Slot<Node> {
+  /**
+   * The marker node that represents this slot in the tree.
+   * This is typically a Comment node in DOM, or a VComment in SSR.
+   */
+  readonly marker: Node;
+
+  /**
+   * Set the content of this slot.
+   * Replaces any existing content with the new node.
+   */
+  readonly setContent: (content: Node) => Effect.Effect<void>;
+
+  /**
+   * Clear the content of this slot.
+   * Removes the current content, leaving only the marker.
+   */
+  readonly clear: () => Effect.Effect<void>;
+}
+
+/**
  * Abstract renderer interface for creating and manipulating a node tree.
  * Implementations can target DOM, strings (SSR), terminal, native, etc.
  *
@@ -116,6 +143,13 @@ export interface Renderer<Node> {
    * Check if the renderer is in hydration mode.
    */
   readonly isHydrating: Effect.Effect<boolean>;
+
+  /**
+   * Create a slot for swappable content.
+   * Used by Boundary.suspense to swap fallback with actual content.
+   * Returns a Slot with a marker node and methods to set/clear content.
+   */
+  readonly createSlot: () => Effect.Effect<Slot<Node>>;
 }
 
 /**

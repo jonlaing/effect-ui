@@ -1,8 +1,9 @@
 import { Effect } from "effect";
-import type { Renderer } from "@effex/core";
+import type { Renderer, Slot } from "@effex/core";
 import {
   vElement,
   vText,
+  vComment,
   type VNode,
   type VElement,
   type VText,
@@ -22,6 +23,10 @@ export const StringRenderer: Renderer<VNode> = {
     Effect.sync(() => {
       if (parent._tag === "VElement") {
         parent.children.push(child);
+        // Track parent reference for slot markers
+        if (child._tag === "VComment") {
+          (child as unknown as { _parent?: VElement })._parent = parent;
+        }
       }
     }),
 
@@ -57,6 +62,10 @@ export const StringRenderer: Renderer<VNode> = {
           } else {
             parent.children.push(child);
           }
+        }
+        // Track parent reference for slot markers
+        if (child._tag === "VComment") {
+          (child as unknown as { _parent?: VElement })._parent = parent;
         }
       }
     }),
@@ -145,4 +154,60 @@ export const StringRenderer: Renderer<VNode> = {
     Effect.sync(() => (node._tag === "VElement" ? node.children : [])),
 
   isHydrating: Effect.succeed(false),
+
+  createSlot: () =>
+    Effect.sync((): Slot<VNode> => {
+      const marker = vComment("effex-slot");
+      let currentContent: VNode | null = null;
+
+      // Helper to find parent and index of marker
+      const findMarkerContext = (): {
+        parent: VElement;
+        index: number;
+      } | null => {
+        // For SSR, we need a way to track the parent.
+        // We'll use a simple approach: store parent reference on marker
+        const parent = (marker as unknown as { _parent?: VElement })._parent;
+        if (!parent) return null;
+        const index = parent.children.indexOf(marker);
+        if (index === -1) return null;
+        return { parent, index };
+      };
+
+      return {
+        marker,
+        setContent: (content: VNode) =>
+          Effect.sync(() => {
+            const ctx = findMarkerContext();
+            if (!ctx) return;
+
+            const { parent, index } = ctx;
+            const contentIndex = index + 1;
+
+            if (currentContent) {
+              // Replace existing content
+              const existingIndex = parent.children.indexOf(currentContent);
+              if (existingIndex !== -1) {
+                parent.children[existingIndex] = content;
+              }
+            } else {
+              // Insert content after marker
+              parent.children.splice(contentIndex, 0, content);
+            }
+            currentContent = content;
+          }),
+        clear: () =>
+          Effect.sync(() => {
+            const ctx = findMarkerContext();
+            if (!ctx || !currentContent) return;
+
+            const { parent } = ctx;
+            const contentIndex = parent.children.indexOf(currentContent);
+            if (contentIndex !== -1) {
+              parent.children.splice(contentIndex, 1);
+            }
+            currentContent = null;
+          }),
+      };
+    }),
 };

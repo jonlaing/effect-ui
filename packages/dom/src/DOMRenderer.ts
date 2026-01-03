@@ -1,5 +1,9 @@
 import { Effect, Layer } from "effect";
-import { type RendererInterface, RendererContext } from "@effex/core";
+import {
+  type RendererInterface,
+  RendererContext,
+  type Slot,
+} from "@effex/core";
 
 /**
  * DOM implementation of the Renderer interface.
@@ -98,6 +102,44 @@ export const DOMRenderer: RendererInterface<Node> = {
   getChildren: (node: Node) => Effect.sync(() => Array.from(node.childNodes)),
 
   isHydrating: Effect.succeed(false),
+
+  createSlot: () =>
+    Effect.sync((): Slot<Node> => {
+      // Use a fragment to hold marker and initial content before DOM insertion
+      const fragment = document.createDocumentFragment();
+      const marker = document.createComment("effex-slot");
+      fragment.appendChild(marker);
+      let currentContent: Node | null = null;
+
+      return {
+        // Return fragment so both marker and content get inserted together
+        marker: fragment,
+        setContent: (content: Node) =>
+          Effect.sync(() => {
+            if (currentContent) {
+              // Replace existing content
+              const parent = currentContent.parentNode;
+              if (parent) {
+                parent.replaceChild(content, currentContent);
+              }
+            } else {
+              // Initial content - marker is either in fragment or real DOM
+              const parent = marker.parentNode;
+              if (parent) {
+                parent.insertBefore(content, marker.nextSibling);
+              }
+            }
+            currentContent = content;
+          }),
+        clear: () =>
+          Effect.sync(() => {
+            if (currentContent && currentContent.parentNode) {
+              currentContent.parentNode.removeChild(currentContent);
+              currentContent = null;
+            }
+          }),
+      };
+    }),
 };
 
 /**

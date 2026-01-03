@@ -3,7 +3,7 @@
  */
 
 import { Effect } from "effect";
-import type { Renderer } from "@effex/core";
+import type { Renderer, Slot } from "@effex/core";
 import type { HydrateOptions } from "./index";
 
 /**
@@ -226,6 +226,57 @@ export const createHydrationRenderer = (
     getChildren: (node: Node) => Effect.sync(() => Array.from(node.childNodes)),
 
     isHydrating: Effect.succeed(true),
+
+    createSlot: () =>
+      Effect.sync((): Slot<Node> => {
+        const ctx = getCurrentContext();
+        const children = ctx.parent.childNodes;
+        let marker: Comment | null = null;
+
+        // Find an existing comment marker
+        while (ctx.childIndex < children.length) {
+          const child = children[ctx.childIndex];
+          if (
+            child.nodeType === Node.COMMENT_NODE &&
+            (child as Comment).textContent === "effex-slot"
+          ) {
+            marker = child as Comment;
+            ctx.childIndex++;
+            break;
+          }
+          ctx.childIndex++;
+        }
+
+        // Fallback: create a new marker if not found
+        if (!marker) {
+          marker = document.createComment("effex-slot");
+        }
+
+        let currentContent: Node | null = null;
+
+        return {
+          marker,
+          setContent: (content: Node) =>
+            Effect.sync(() => {
+              const parent = marker!.parentNode;
+              if (!parent) return;
+
+              if (currentContent) {
+                parent.replaceChild(content, currentContent);
+              } else {
+                parent.insertBefore(content, marker!.nextSibling);
+              }
+              currentContent = content;
+            }),
+          clear: () =>
+            Effect.sync(() => {
+              if (currentContent && currentContent.parentNode) {
+                currentContent.parentNode.removeChild(currentContent);
+                currentContent = null;
+              }
+            }),
+        };
+      }),
   };
 
   return renderer;

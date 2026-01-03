@@ -58,7 +58,11 @@ describe("Boundary", () => {
     it("should show fallback then content", async () => {
       const el = await runTest(
         Effect.gen(function* () {
-          const container = yield* Boundary.suspense({
+          // Create a parent container to hold the slot
+          const parent = yield* div([]);
+          document.body.appendChild(parent);
+
+          const marker = yield* Boundary.suspense({
             render: () =>
               Effect.gen(function* () {
                 yield* Effect.sleep(20);
@@ -67,16 +71,19 @@ describe("Boundary", () => {
             fallback: () => div("Loading..."),
           });
 
-          // Should show fallback initially
-          expect(container.textContent).toBe("Loading...");
+          // Append the marker to the parent
+          parent.appendChild(marker);
+
+          // Should show fallback initially (content is after the marker)
+          expect(parent.textContent).toBe("Loading...");
 
           // Wait for async content
           yield* Effect.sleep(50);
 
           // Should now show loaded content
-          expect(container.textContent).toBe("Loaded!");
+          expect(parent.textContent).toBe("Loaded!");
 
-          return container;
+          return marker;
         }),
       );
 
