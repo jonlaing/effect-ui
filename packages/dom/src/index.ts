@@ -78,8 +78,22 @@ export {
 } from "./Element";
 
 // Control flow
-export { when, match, each, HydrationMismatchError } from "./Control";
-export type { WhenConfig, MatchConfig, MatchCase, EachConfig } from "./Control";
+export {
+  when,
+  match,
+  each,
+  matchOption,
+  matchEither,
+  HydrationMismatchError,
+} from "./Control";
+export type {
+  WhenConfig,
+  MatchConfig,
+  MatchCase,
+  EachConfig,
+  MatchOptionConfig,
+  MatchEitherConfig,
+} from "./Control";
 
 // Boundary (async and error handling)
 export { Boundary, suspense, error } from "./Boundary";

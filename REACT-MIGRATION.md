@@ -146,6 +146,7 @@ Boundary.suspense({
 | `useRef(initial)`              | `Ref.make(initial)`                            | For DOM refs              |
 | `<Component prop={x} />`       | `Component({ prop: x })`                       | Function calls            |
 | `{cond && <El/>}`              | `when(cond, { onTrue: () => El(), onFalse: () => $.span() })` | Object config  |
+| `{x != null && <El x={x}/>}`   | `matchOption(optX, { onSome: (x) => El({ x }), onNone: ... })` | Unwraps Option |
 | `{arr.map(x => <El key/>)}`    | `each(arr, { key: x => x.id, render: x => El() })` | Key function, not prop |
 | `<ErrorBoundary>`              | `Boundary.error(try, catch)`                   | Typed errors!             |
 | `<Suspense>`                   | `Boundary.suspense({ render, fallback })`      | With typed `catch`        |
@@ -251,7 +252,7 @@ function UserProfile({ id }) {
 
 // Wrapped in error boundary + suspense elsewhere...
 
-// Effex (all-in-one)
+// Effex - Option 1: Boundary.suspense (one-shot)
 const UserProfile = component("UserProfile", (props: { id: string }) =>
   Boundary.suspense({
     render: () =>
@@ -261,6 +262,29 @@ const UserProfile = component("UserProfile", (props: { id: string }) =>
       }),
     fallback: () => $.div("Loading..."),
     catch: (e) => $.div(`Error: ${e}`),
+  }),
+);
+
+// Effex - Option 2: Derived.async (reactive, refetches when deps change)
+const UserProfile = component("UserProfile", (props: { userId: Readable<string> }) =>
+  Effect.gen(function* () {
+    const userData = yield* Derived.async([props.userId], ([id]) => fetchUser(id));
+
+    // AsyncState has separate Readables for each piece of state
+    return yield* $.div([
+      when(userData.isLoading, {
+        onTrue: () => $.div("Loading..."),
+        onFalse: () => $.span(),
+      }),
+      matchOption(userData.error, {
+        onSome: (err) => $.div({ class: "error" }, err.map((e) => e.message)),
+        onNone: () => $.span(),
+      }),
+      matchOption(userData.value, {
+        onSome: (user) => $.div(user.map((u) => u.name)), // user is Readable<User>
+        onNone: () => $.span(),
+      }),
+    ]);
   }),
 );
 ```

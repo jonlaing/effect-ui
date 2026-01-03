@@ -8,8 +8,8 @@
  * - Client (plain): Reactive DOM updates without animations
  */
 
-import { Effect, Option } from "effect";
-import type { Readable } from "@effex/core";
+import { Effect, Either, Option } from "effect";
+import { Readable } from "@effex/core";
 import type { Element } from "../Element";
 import { SSRContext } from "../SSRContext";
 import { HydrationContext } from "../HydrationContext";
@@ -42,7 +42,13 @@ import { animatedWhen, animatedMatch, animatedEach } from "./animated";
 import { clientWhen, clientMatch, clientEach } from "./client";
 
 // Types
-import type { WhenConfig, MatchConfig, EachConfig } from "./types";
+import type {
+  WhenConfig,
+  MatchConfig,
+  EachConfig,
+  MatchOptionConfig,
+  MatchEitherConfig,
+} from "./types";
 
 // Re-export types
 export {
@@ -50,6 +56,8 @@ export {
   type MatchConfig,
   type MatchCase,
   type EachConfig,
+  type MatchOptionConfig,
+  type MatchEitherConfig,
 } from "./types";
 
 // Re-export errors
@@ -244,3 +252,91 @@ export const each = <A, E = never, R = never>(
 
     return yield* clientEach(items, config);
   });
+
+/**
+ * Match on an Option and render different elements for Some/None cases.
+ * The `onSome` callback receives an unwrapped `Readable<A>` for convenient access.
+ *
+ * @example
+ * ```ts
+ * const userData = yield* Derived.async([userId], ([id]) => fetchUser(id));
+ *
+ * matchOption(userData.value, {
+ *   onSome: (user) => $.div(user.map(u => u.name)),
+ *   onNone: () => $.div("No user loaded"),
+ * })
+ * ```
+ *
+ * @example
+ * ```ts
+ * // With animations
+ * matchOption(selectedItem, {
+ *   onSome: (item) => ItemDetails({ item }),
+ *   onNone: () => $.div("Select an item"),
+ *   animate: { enter: "fade-in", exit: "fade-out" },
+ * })
+ * ```
+ */
+export const matchOption = <A, E1 = never, R1 = never, E2 = never, R2 = never>(
+  option: Readable<Option.Option<A>>,
+  config: MatchOptionConfig<A, E1, R1, E2, R2>,
+): Element<E1 | E2, R1 | R2> => {
+  // Create condition Readable
+  const isSome = option.map(Option.isSome);
+
+  // Create unwrapped value Readable (safe because only used when isSome)
+  const unwrapped = option.map((opt) =>
+    Option.isSome(opt) ? opt.value : (undefined as never),
+  );
+
+  return when(isSome, {
+    container: config.container,
+    onTrue: () => config.onSome(unwrapped),
+    onFalse: config.onNone,
+    animate: config.animate,
+  });
+};
+
+/**
+ * Match on an Either and render different elements for Right/Left cases.
+ * Both callbacks receive unwrapped `Readable` values for convenient access.
+ *
+ * @example
+ * ```ts
+ * const result = yield* Derived.async([input], ([val]) => validateInput(val));
+ *
+ * matchEither(result, {
+ *   onRight: (validated) => $.div(validated.map(v => v.formatted)),
+ *   onLeft: (error) => $.span({ class: "error" }, error.map(e => e.message)),
+ * })
+ * ```
+ */
+export const matchEither = <
+  A,
+  E,
+  E1 = never,
+  R1 = never,
+  E2 = never,
+  R2 = never,
+>(
+  either: Readable<Either.Either<A, E>>,
+  config: MatchEitherConfig<A, E, E1, R1, E2, R2>,
+): Element<E1 | E2, R1 | R2> => {
+  // Create condition Readable
+  const isRight = either.map(Either.isRight);
+
+  // Create unwrapped value Readables (safe because only used in respective branches)
+  const rightValue = either.map((e) =>
+    Either.isRight(e) ? e.right : (undefined as never),
+  );
+  const leftValue = either.map((e) =>
+    Either.isLeft(e) ? e.left : (undefined as never),
+  );
+
+  return when(isRight, {
+    container: config.container,
+    onTrue: () => config.onRight(rightValue),
+    onFalse: () => config.onLeft(leftValue),
+    animate: config.animate,
+  });
+};

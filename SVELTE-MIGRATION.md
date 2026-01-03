@@ -87,7 +87,7 @@ Both Svelte and Effex use fine-grained reactivity (not virtual DOM diffing). The
 ```
 
 ```ts
-// Effex
+// Effex - Option 1: Boundary.suspense (one-shot)
 Boundary.suspense({
   render: () =>
     Effect.gen(function* () {
@@ -98,9 +98,28 @@ Boundary.suspense({
   catch: (error) => $.div(`Error: ${error.message}`),
   delay: "200 millis", // Avoid loading flash - Svelte can't do this
 })
+
+// Effex - Option 2: Derived.async (reactive, refetches when deps change)
+const userData = yield* Derived.async([userId], ([id]) => fetchUser(id));
+
+// AsyncState has separate Readables for fine-grained reactivity
+$.div([
+  when(userData.isLoading, {
+    onTrue: () => $.div("Loading..."),
+    onFalse: () => $.span(),
+  }),
+  matchOption(userData.error, {
+    onSome: (err) => $.div({ class: "error" }, err.map((e) => e.message)),
+    onNone: () => $.span(),
+  }),
+  matchOption(userData.value, {
+    onSome: (user) => UserProfile({ user }), // user is Readable<User>
+    onNone: () => $.span(),
+  }),
+])
 ```
 
-The `delay` option prevents flash of loading state for fast responses - something Svelte's `{#await}` can't do without manual work.
+The `delay` option on `Boundary.suspense` prevents flash of loading state for fast responses - something Svelte's `{#await}` can't do without manual work. `Derived.async` is better when you need the data to reactively refetch when dependencies change.
 
 ### Automatic Resource Cleanup
 
@@ -136,8 +155,9 @@ yield* eventSource.pipe(
 | `getContext/setContext`    | `getContext/setContext`    | `yield* ServiceTag`                      | Effect services           |
 | `bind:this`                | `bind:this`                | `Ref.make()`                             | For DOM refs              |
 | `{#if} {:else}`            | `{#if} {:else}`            | `when(cond, { onTrue, onFalse })`        | Object config             |
+| `{#if x != null}`          | `{#if x != null}`          | `matchOption(optX, { onSome, onNone })`  | Unwraps Option            |
 | `{#each}`                  | `{#each}`                  | `each(arr, { key, render })`             | Key function required     |
-| `{#await}`                 | `{#await}`                 | `Boundary.suspense({ render, fallback })` | With typed `catch`       |
+| `{#await}`                 | `{#await}`                 | `Boundary.suspense` or `Derived.async`   | Multiple options          |
 | `on:click`                 | `on:click`                 | `onClick`                                | Camel case handlers       |
 | `class:active={isActive}`  | `class:active={isActive}`  | `class` prop with Readable               | Different syntax          |
 | `<svelte:component>`       | `<svelte:component>`       | Dynamic function call                    | Just call the component   |

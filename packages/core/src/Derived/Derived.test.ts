@@ -159,8 +159,9 @@ describe("Derived.async", () => {
           // Wait for initial computation
           yield* Effect.sleep(50);
 
-          const state = yield* userData.get;
-          return state.value;
+          // Access value through the Readable property
+          const value = yield* userData.value.get;
+          return value;
         }),
       ),
     );
@@ -186,10 +187,14 @@ describe("Derived.async", () => {
 
           // After computation completes
           yield* Effect.sleep(150);
-          const state = yield* userData.get;
+
+          // Access each property through its Readable
+          const isLoading = yield* userData.isLoading.get;
+          const value = yield* userData.value.get;
+
           return {
-            isLoading: state.isLoading,
-            hasValue: state.value._tag === "Some",
+            isLoading,
+            hasValue: value._tag === "Some",
           };
         }),
       ),
@@ -198,7 +203,7 @@ describe("Derived.async", () => {
     expect(result).toEqual({ isLoading: false, hasValue: true });
   });
 
-  it("should map async derived values", async () => {
+  it("should map value readable", async () => {
     const result = await Effect.runPromise(
       Effect.scoped(
         Effect.gen(function* () {
@@ -213,11 +218,36 @@ describe("Derived.async", () => {
 
           yield* Effect.sleep(50);
 
-          const mapped = asyncDouble.map((state) =>
-            state.value._tag === "Some" ? state.value.value : 0,
+          // Map the value Readable
+          const mapped = asyncDouble.value.map((opt) =>
+            opt._tag === "Some" ? opt.value : 0,
           );
 
           return yield* mapped.get;
+        }),
+      ),
+    );
+
+    expect(result).toBe(10);
+  });
+
+  it("should use await to get value directly", async () => {
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const num = yield* Signal.make(5);
+
+          const asyncDouble = yield* Derived.async([num], ([n]) =>
+            Effect.gen(function* () {
+              yield* Effect.sleep(10);
+              return n * 2;
+            }),
+          );
+
+          yield* Effect.sleep(50);
+
+          // Use await to get the value directly
+          return yield* asyncDouble.await;
         }),
       ),
     );

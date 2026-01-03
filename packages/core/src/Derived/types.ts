@@ -12,16 +12,17 @@ export interface DerivedOptions<A> {
 
 /**
  * State of an asynchronous derived value.
+ * Each property is a Readable for fine-grained reactivity.
  * @template A - The type of the successful value
  * @template E - The type of the error
  */
 export interface AsyncState<A, E = never> {
   /** Whether a computation is currently in progress */
-  readonly isLoading: boolean;
+  readonly isLoading: Readable<boolean>;
   /** The most recent successful value, if any */
-  readonly value: Option.Option<A>;
+  readonly value: Readable<Option.Option<A>>;
   /** The most recent error, if any */
-  readonly error: Option.Option<E>;
+  readonly error: Readable<Option.Option<E>>;
 }
 
 /**
@@ -50,7 +51,7 @@ export interface AsyncDerivedOptions<A> {
  * @template A - The type of the successful value
  * @template E - The type of the error
  */
-export interface AsyncDerived<A, E = never> extends Readable<AsyncState<A, E>> {
+export interface AsyncDerived<A, E = never> extends AsyncState<A, E> {
   /** Effect that resolves to the current value or fails with the current error */
   readonly await: Effect.Effect<A, E>;
 }

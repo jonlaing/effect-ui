@@ -30,7 +30,9 @@ yield* count.update((n) => n + 1);
 
 ## Derived Values
 
-Derived values automatically recompute when their dependencies change:
+Derived values automatically recompute when their dependencies change.
+
+### Synchronous Derived
 
 ```ts
 import { Derived } from "@effex/core";
@@ -42,6 +44,52 @@ const fullName = yield* Derived.sync(
   [firstName, lastName],
   ([first, last]) => `${first} ${last}`,
 );
+```
+
+### Async Derived
+
+For async computations like data fetching, use `Derived.async`. It returns an `AsyncState` object with separate `Readable` properties for fine-grained reactivity:
+
+```ts
+const userId = yield* Signal.make(1);
+
+const userData = yield* Derived.async([userId], ([id]) =>
+  Effect.gen(function* () {
+    const response = yield* fetchUser(id);
+    return response.data;
+  }),
+);
+
+// AsyncState has three Readable properties:
+userData.isLoading  // Readable<boolean>
+userData.value      // Readable<Option<User>>
+userData.error      // Readable<Option<Error>>
+
+// Plus an Effect to await the value directly:
+const user = yield* userData.await;  // Effect<User, Error>
+```
+
+Use with control flow primitives:
+
+```ts
+import { when, matchOption } from "@effex/dom";
+
+// Check loading state directly
+when(userData.isLoading, {
+  onTrue: () => Spinner(),
+  onFalse: () => $.span(),
+});
+
+// matchOption unwraps the Option for you
+matchOption(userData.value, {
+  onSome: (user) => UserCard({ user }),  // user is Readable<User>
+  onNone: () => $.span("No data"),
+});
+
+matchOption(userData.error, {
+  onSome: (err) => $.div({ class: "error" }, err.map((e) => e.message)),
+  onNone: () => $.span(),
+});
 ```
 
 ## Custom Equality
@@ -324,7 +372,16 @@ $.p([count, " items remaining (", completed, " done)"]);
 ### Derived
 
 - `Derived.sync(deps, fn, options?)` - Create a synchronous derived value
-- `Derived.async(deps, fn, options?)` - Create an async derived value
+- `Derived.async(deps, fn, options?)` - Create an async derived value (returns `AsyncState`)
+
+### AsyncState
+
+The result of `Derived.async()`:
+
+- `asyncState.isLoading` - `Readable<boolean>` - Whether computation is in progress
+- `asyncState.value` - `Readable<Option<A>>` - The most recent successful value
+- `asyncState.error` - `Readable<Option<E>>` - The most recent error
+- `asyncState.await` - `Effect<A, E>` - Effect that resolves to value or fails with error
 
 ### Readable
 

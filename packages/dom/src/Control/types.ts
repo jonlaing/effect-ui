@@ -62,6 +62,53 @@ export interface MatchConfig<A, E = never, R = never, E2 = never, R2 = never> {
 }
 
 /**
+ * Configuration for `matchOption` control flow.
+ */
+export interface MatchOptionConfig<
+  A,
+  E1 = never,
+  R1 = never,
+  E2 = never,
+  R2 = never,
+> {
+  /**
+   * Optional custom container element. If not provided, defaults to a div
+   * with `display: contents`.
+   */
+  readonly container?: () => Element<never, never>;
+  /** Render when Option is Some. Receives unwrapped value as a Readable. */
+  readonly onSome: (value: Readable<A>) => Element<E1, R1>;
+  /** Render when Option is None */
+  readonly onNone: () => Element<E2, R2>;
+  /** Optional animation configuration */
+  readonly animate?: AnimationOptions;
+}
+
+/**
+ * Configuration for `matchEither` control flow.
+ */
+export interface MatchEitherConfig<
+  A,
+  E,
+  E1 = never,
+  R1 = never,
+  E2 = never,
+  R2 = never,
+> {
+  /**
+   * Optional custom container element. If not provided, defaults to a div
+   * with `display: contents`.
+   */
+  readonly container?: () => Element<never, never>;
+  /** Render when Either is Right. Receives unwrapped value as a Readable. */
+  readonly onRight: (value: Readable<A>) => Element<E1, R1>;
+  /** Render when Either is Left. Receives unwrapped error as a Readable. */
+  readonly onLeft: (error: Readable<E>) => Element<E2, R2>;
+  /** Optional animation configuration */
+  readonly animate?: AnimationOptions;
+}
+
+/**
  * Configuration for the `each` control flow (DOM-specific with animation support).
  */
 export interface EachConfig<A, E = never, R = never> {

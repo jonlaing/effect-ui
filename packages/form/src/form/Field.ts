@@ -1,11 +1,5 @@
 import { Effect, Option, Scope } from "effect";
-import {
-  Signal,
-  Derived,
-  defaultEquals,
-  type AsyncState,
-  Readable,
-} from "@effex/dom";
+import { Signal, Derived, defaultEquals, Readable } from "@effex/dom";
 import type { Field as FieldType, FieldArray, ValidationTiming } from "./types";
 
 /**
@@ -80,15 +74,12 @@ export const makeField = <A>(
     );
 
     // Combine validation errors with manual errors
-    // validationErrors is Readable.Readable<AsyncState<readonly string[], never>>
+    // validationErrors.value is Readable<Option<readonly string[]>>
     const errors: Readable.Readable<readonly string[]> = yield* Derived.sync(
-      [validationErrors, manualErrors],
-      (values) => {
-        const validation = values[0] as AsyncState<readonly string[], never>;
-        const manual = values[1] as readonly string[];
-        const validationValue = validation.value;
-        if (Option.isSome(validationValue)) {
-          return [...validationValue.value, ...manual];
+      [validationErrors.value, manualErrors] as const,
+      ([validationOpt, manual]) => {
+        if (Option.isSome(validationOpt)) {
+          return [...validationOpt.value, ...manual];
         }
         return [...manual];
       },

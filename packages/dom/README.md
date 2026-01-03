@@ -134,6 +134,50 @@ each(todos, {
 });
 ```
 
+### matchOption
+
+Match on an Option value, receiving an unwrapped `Readable` in the `onSome` branch:
+
+```ts
+import { matchOption } from "@effex/dom";
+
+// userData.value is Readable<Option<User>>
+matchOption(userData.value, {
+  onSome: (user) => $.div(user.map((u) => u.name)), // user is Readable<User>
+  onNone: () => $.div("No user loaded"),
+});
+```
+
+This is much cleaner than using `when` with manual Option unwrapping:
+
+```ts
+// Without matchOption (verbose)
+when(userData.value.map(Option.isSome), {
+  onTrue: () => $.div(userData.value.map((opt) =>
+    Option.isSome(opt) ? opt.value.name : "")),
+  onFalse: () => $.div("No user loaded"),
+});
+
+// With matchOption (clean)
+matchOption(userData.value, {
+  onSome: (user) => $.div(user.map((u) => u.name)),
+  onNone: () => $.div("No user loaded"),
+});
+```
+
+### matchEither
+
+Match on an Either value, receiving unwrapped `Readable` values in both branches:
+
+```ts
+import { matchEither } from "@effex/dom";
+
+matchEither(validationResult, {
+  onRight: (value) => $.div(value.map((v) => v.formatted)),
+  onLeft: (error) => $.span({ class: "error" }, error.map((e) => e.message)),
+});
+```
+
 ## Async Boundaries
 
 ### Suspense
@@ -387,6 +431,8 @@ runApp(
 - `when(condition, options)` - Conditional rendering
 - `match(value, options)` - Pattern matching
 - `each(items, options)` - List rendering
+- `matchOption(option, options)` - Match on Option with unwrapped Readable
+- `matchEither(either, options)` - Match on Either with unwrapped Readables
 
 ### Boundaries
 

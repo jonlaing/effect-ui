@@ -93,9 +93,10 @@ yield* eventSource.pipe(
 
 ### Better Async Integration
 
-Vue's `<Suspense>` is limited and doesn't integrate well with error handling. Effex unifies loading and error states:
+Vue's `<Suspense>` is limited and doesn't integrate well with error handling. Effex has two approaches:
 
 ```ts
+// Option 1: Boundary.suspense (one-shot)
 Boundary.suspense({
   render: () =>
     Effect.gen(function* () {
@@ -106,6 +107,25 @@ Boundary.suspense({
   catch: (error) => $.div(`Error: ${error.message}`), // Same place
   delay: "200 millis", // Avoid loading flash
 })
+
+// Option 2: Derived.async (reactive, refetches when deps change)
+const userData = yield* Derived.async([userId], ([id]) => fetchUser(id));
+
+// AsyncState has separate Readables for fine-grained reactivity
+$.div([
+  when(userData.isLoading, {
+    onTrue: () => $.div("Loading..."),
+    onFalse: () => $.span(),
+  }),
+  matchOption(userData.error, {
+    onSome: (err) => $.div({ class: "error" }, err.map((e) => e.message)),
+    onNone: () => $.span(),
+  }),
+  matchOption(userData.value, {
+    onSome: (user) => UserProfile({ user }), // user is Readable<User>
+    onNone: () => $.span(),
+  }),
+])
 ```
 
 ## Concept Mapping
@@ -120,12 +140,13 @@ Boundary.suspense({
 | `provide/inject`           | `yield* ServiceTag`                              | Effect services              |
 | `ref` (template ref)       | `Ref.make()`                                     | For DOM refs                 |
 | `v-if / v-else`            | `when(cond, { onTrue, onFalse })`                | Object config                |
+| `v-if="x != null"`         | `matchOption(optX, { onSome, onNone })`          | Unwraps Option               |
 | `v-show`                   | Signal-based class/style                         | No direct equivalent         |
 | `v-for`                    | `each(arr, { key, render })`                     | Key function, not `:key`     |
 | `@click` / `v-on`          | `onClick` / event props                          | Camel case handlers          |
 | `:class` / `v-bind:class`  | `class` prop with Readable                       | Reactive by default          |
 | `<Teleport>`               | `Portal()`                                       | Similar API                  |
-| `<Suspense>`               | `Boundary.suspense({ render, fallback })`        | With typed `catch`           |
+| `<Suspense>`               | `Boundary.suspense` or `Derived.async`           | Multiple options             |
 | `defineProps`              | Function parameters                              | Plain TypeScript             |
 | `defineEmits`              | Callback props                                   | Plain functions              |
 | SFC `.vue` files           | Plain `.ts` files                                | No special file format       |
