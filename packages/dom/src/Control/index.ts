@@ -4,8 +4,7 @@
  * This module composes different implementations based on the current mode:
  * - SSR: Render once with hydration markers, no subscriptions
  * - Hydration: Find existing DOM, attach handlers, then subscribe
- * - Client (animated): Full client rendering with enter/exit animations
- * - Client (plain): Reactive DOM updates without animations
+ * - Client: Full client rendering with optional enter/exit animations
  */
 
 import { Effect, Either, Option } from "effect";
@@ -35,10 +34,7 @@ const warnHydrationMismatch = (error: unknown): void => {
   }
 };
 
-// Animated implementations
-import { animatedWhen, animatedMatch, animatedEach } from "./animated";
-
-// Plain client implementations
+// Client implementations (with optional animation support)
 import { clientWhen, clientMatch, clientEach } from "./client";
 
 // Types
@@ -117,11 +113,7 @@ export const when = <E1 = never, R1 = never, E2 = never, R2 = never>(
       // Fall through to client mode on hydration mismatch
     }
 
-    // Client mode - animated or plain
-    if (config.animate) {
-      return yield* animatedWhen(condition, config);
-    }
-
+    // Client mode (with optional animation support)
     return yield* clientWhen(condition, config);
   });
 
@@ -183,11 +175,7 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
       // Fall through to client mode on hydration mismatch
     }
 
-    // Client mode - animated or plain
-    if (config.animate) {
-      return yield* animatedMatch(value, config);
-    }
-
+    // Client mode (with optional animation support)
     return yield* clientMatch(value, config);
   });
 
@@ -245,11 +233,7 @@ export const each = <A, E = never, R = never>(
       // Fall through to client mode on hydration mismatch
     }
 
-    // Client mode - animated or plain
-    if (config.animate) {
-      return yield* animatedEach(items, config);
-    }
-
+    // Client mode (with optional animation support)
     return yield* clientEach(items, config);
   });
 

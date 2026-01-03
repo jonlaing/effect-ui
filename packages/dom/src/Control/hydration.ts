@@ -1,20 +1,22 @@
 /**
  * Hydration-specific control flow implementations.
- * These find existing DOM elements and attach event handlers, then subscribe.
+ * These find existing DOM elements and attach event handlers, then delegate
+ * to shared updaters for reactive changes (with animation support).
  */
 
 import { Effect, Scope, Stream } from "effect";
 import type { Readable } from "@effex/core";
-import {
-  mapReadable,
-  RendererContext,
-  type RendererInterface,
-} from "@effex/core";
+import { RendererContext, type RendererInterface } from "@effex/core";
 import type { HydrationContextService } from "../HydrationContext";
 import { createHydrationRenderer } from "../hydrate/HydrationRenderer";
-import { DOMRenderer } from "../DOMRenderer";
 import type { WhenConfig, MatchConfig, EachConfig } from "./types";
 import { HydrationMismatchError } from "./errors";
+import {
+  createWhenUpdater,
+  createMatchUpdater,
+  createEachUpdater,
+  createItemReadable,
+} from "./updaters";
 
 /**
  * Create a scoped renderer for hydrating children inside a container.
@@ -32,20 +34,8 @@ const withScopedRenderer = <A, E, R>(
 };
 
 /**
- * Provide DOMRenderer for creating new content after hydration.
- */
-const withDOMRenderer = <A, E, R>(
-  effect: Effect.Effect<A, E, R>,
-): Effect.Effect<A, E, Exclude<R, RendererContext>> =>
-  Effect.provideService(
-    effect,
-    RendererContext,
-    DOMRenderer as RendererInterface<unknown>,
-  );
-
-/**
  * Hydration implementation of `when`.
- * Finds existing container, attaches handlers, subscribes to changes.
+ * Finds existing container, attaches handlers, then delegates to shared updater.
  */
 export const hydrationWhen = <E1, R1, E2, R2>(
   ctx: HydrationContextService,
@@ -74,35 +64,35 @@ export const hydrationWhen = <E1, R1, E2, R2>(
     }
 
     const initialValue = yield* condition.get;
+    const updater = createWhenUpdater(container, config);
 
-    // Render the current branch to attach event handlers to existing DOM
-    if (initialValue) {
-      yield* withScopedRenderer(container, config.onTrue());
-    } else {
-      yield* withScopedRenderer(container, config.onFalse());
-    }
+    // Hydrate initial element and attach handlers
+    const initialScope = yield* Scope.make();
+    const initialElement = initialValue
+      ? yield* withScopedRenderer(container, config.onTrue()).pipe(
+          Effect.provideService(Scope.Scope, initialScope),
+        )
+      : yield* withScopedRenderer(container, config.onFalse()).pipe(
+          Effect.provideService(Scope.Scope, initialScope),
+        );
 
-    // Set up reactive subscriptions for future changes
+    updater.initialize(initialElement, initialValue, initialScope);
+
+    // Subscribe to changes using shared updater
     const scope = yield* Effect.scope;
     yield* condition.changes.pipe(
-      Stream.runForEach((newValue) =>
-        Effect.gen(function* () {
-          container.innerHTML = "";
-          const element = newValue
-            ? yield* withDOMRenderer(config.onTrue())
-            : yield* withDOMRenderer(config.onFalse());
-          container.appendChild(element);
-        }),
-      ),
+      Stream.runForEach(updater.update),
       Effect.forkIn(scope),
     );
+
+    yield* Effect.addFinalizer(updater.cleanup);
 
     return container;
   });
 
 /**
  * Hydration implementation of `match`.
- * Finds existing container, attaches handlers, subscribes to changes.
+ * Finds existing container, attaches handlers, then delegates to shared updater.
  */
 export const hydrationMatch = <A, E, R, E2, R2>(
   ctx: HydrationContextService,
@@ -131,95 +121,45 @@ export const hydrationMatch = <A, E, R, E2, R2>(
     }
 
     const initialValue = yield* value.get;
-    // Use extractPattern if provided, otherwise use the value directly
+    const updater = createMatchUpdater(container, config);
+
+    // Use extractPattern if provided
     const patternValue = config.extractPattern
       ? config.extractPattern(initialValue)
       : initialValue;
     const matchedCase = config.cases.find((c) => c.pattern === patternValue);
 
-    // Render the matched case to attach event handlers to existing DOM
-    if (matchedCase) {
-      yield* withScopedRenderer(container, matchedCase.render());
-    } else if (config.fallback) {
-      yield* withScopedRenderer(container, config.fallback());
+    // Hydrate initial element and attach handlers
+    if (matchedCase || config.fallback) {
+      const initialScope = yield* Scope.make();
+      const initialElement = matchedCase
+        ? yield* withScopedRenderer(container, matchedCase.render()).pipe(
+            Effect.provideService(Scope.Scope, initialScope),
+          )
+        : yield* withScopedRenderer(container, config.fallback!()).pipe(
+            Effect.provideService(Scope.Scope, initialScope),
+          );
+
+      updater.initialize(initialElement, initialValue, initialScope);
+    } else {
+      updater.initialize(null, initialValue, null);
     }
 
-    // Set up reactive subscriptions for future changes
+    // Subscribe to changes using shared updater
     const scope = yield* Effect.scope;
     yield* value.changes.pipe(
-      Stream.runForEach((newValue) =>
-        Effect.gen(function* () {
-          container.innerHTML = "";
-          // Use extractPattern if provided
-          const newPatternValue = config.extractPattern
-            ? config.extractPattern(newValue)
-            : newValue;
-          const newCase = config.cases.find(
-            (c) => c.pattern === newPatternValue,
-          );
-          let element;
-          if (newCase) {
-            element = yield* withDOMRenderer(newCase.render());
-          } else if (config.fallback) {
-            element = yield* withDOMRenderer(config.fallback());
-          }
-          if (element) {
-            container.appendChild(element);
-          }
-        }),
-      ),
+      Stream.runForEach(updater.update),
       Effect.forkIn(scope),
     );
+
+    yield* Effect.addFinalizer(updater.cleanup);
 
     return container;
   });
 
 /**
- * Create an updatable readable for list items.
- */
-const createItemReadable = <A>(initialValue: A) => {
-  let currentValue = initialValue;
-  const subscribers = new Set<(value: A) => void>();
-
-  let cachedChanges: Stream.Stream<A> | null = null;
-  const getChanges = (): Stream.Stream<A> => {
-    if (!cachedChanges) {
-      cachedChanges = Stream.async<A>((emit) => {
-        const handler = (value: A) => emit.single(value);
-        subscribers.add(handler);
-        return Effect.sync(() => {
-          subscribers.delete(handler);
-        });
-      });
-    }
-    return cachedChanges;
-  };
-
-  const readable: Readable<A> & { _update: (value: A) => void } = {
-    get: Effect.sync(() => currentValue),
-    get changes(): Stream.Stream<A> {
-      return getChanges();
-    },
-    get values(): Stream.Stream<A> {
-      return Stream.concat(Stream.make(currentValue), this.changes);
-    },
-    map<B>(f: (a: A) => B): Readable<B> {
-      return mapReadable(this as Readable<A>, f);
-    },
-    _update: (value: A) => {
-      currentValue = value;
-      for (const handler of subscribers) {
-        handler(value);
-      }
-    },
-  };
-
-  return readable;
-};
-
-/**
  * Hydration implementation of `each`.
- * Finds existing items, attaches handlers, subscribes to changes.
+ * Finds existing items, attaches handlers, then delegates to shared updater.
  */
 export const hydrationEach = <A, E, R>(
   ctx: HydrationContextService,
@@ -244,16 +184,9 @@ export const hydrationEach = <A, E, R>(
     }
 
     const initialItems = yield* items.get;
+    const updater = createEachUpdater(container, config);
 
-    // Create item readables and render each to attach event handlers
-    const itemMap = new Map<
-      string,
-      {
-        element: HTMLElement;
-        readable: Readable<A> & { _update: (value: A) => void };
-      }
-    >();
-
+    // Hydrate each existing item and attach handlers
     for (const item of initialItems) {
       const key = config.key(item);
 
@@ -261,70 +194,31 @@ export const hydrationEach = <A, E, R>(
         `[data-effex-key="${key}"]`,
       ) as HTMLElement | null;
 
-      if (existingElement) {
-        const itemReadable = createItemReadable(item);
+      if (!existingElement) continue;
 
-        // Create scoped renderer for this item's children
-        const scopedRenderer = createHydrationRenderer(existingElement);
+      const itemScope = yield* Scope.make();
+      const itemReadable = createItemReadable(item);
+      const scopedRenderer = createHydrationRenderer(existingElement);
 
-        // Render to attach event handlers
-        yield* Effect.provideService(
-          config.render(itemReadable),
-          RendererContext,
-          scopedRenderer as RendererInterface<unknown>,
-        );
+      yield* Effect.provideService(
+        config
+          .render(itemReadable)
+          .pipe(Effect.provideService(Scope.Scope, itemScope)),
+        RendererContext,
+        scopedRenderer as RendererInterface<unknown>,
+      );
 
-        itemMap.set(key, {
-          element: existingElement,
-          readable: itemReadable,
-        });
-      }
+      updater.addHydratedItem(key, existingElement, itemScope, itemReadable);
     }
 
-    // Set up reactive subscriptions for future changes
+    // Subscribe to changes using shared updater
     const scope = yield* Effect.scope;
     yield* items.changes.pipe(
-      Stream.runForEach((newItems) =>
-        Effect.gen(function* () {
-          const newKeys = new Set(newItems.map(config.key));
-
-          // Remove items that no longer exist
-          for (const [key, entry] of itemMap) {
-            if (!newKeys.has(key)) {
-              container.removeChild(entry.element);
-              itemMap.delete(key);
-            }
-          }
-
-          // Update existing or add new items
-          for (let i = 0; i < newItems.length; i++) {
-            const item = newItems[i];
-            const key = config.key(item);
-            const existing = itemMap.get(key);
-
-            if (existing) {
-              existing.readable._update(item);
-            } else {
-              const itemReadable = createItemReadable(item);
-              const element = yield* withDOMRenderer(
-                config.render(itemReadable),
-              );
-
-              // Insert at correct position
-              const children = Array.from(container.children);
-              if (i >= children.length) {
-                container.appendChild(element);
-              } else {
-                container.insertBefore(element, children[i]);
-              }
-
-              itemMap.set(key, { element, readable: itemReadable });
-            }
-          }
-        }),
-      ),
+      Stream.runForEach(updater.update),
       Effect.forkIn(scope),
     );
+
+    yield* Effect.addFinalizer(updater.cleanup);
 
     return container;
   });
