@@ -100,7 +100,7 @@ export const make = <A>(
 /**
  * Context service for creating and managing Signals within a scope.
  */
-export class SignalRegistry extends Context.Tag("effect-ui/SignalRegistry")<
+export class SignalRegistry extends Context.Tag("effex/SignalRegistry")<
   SignalRegistry,
   {
     readonly make: <A>(

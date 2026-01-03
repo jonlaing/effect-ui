@@ -12,9 +12,9 @@
     "url": "https://github.com/jonlaing/effex.git"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "pnpm -C demo dev",
     "build": "pnpm -r build",
-    "preview": "vite preview",
+    "preview": "pnpm -C demo preview",
     "lint": "eslint .",
     "format": "prettier --log-level=silent --write .",
     "test": "vitest",

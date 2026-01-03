@@ -1,13 +1,4 @@
-import {
-  Cause,
-  Chunk,
-  Effect,
-  Exit,
-  Fiber,
-  Option,
-  Scope,
-  Stream,
-} from "effect";
+import { Effect, Either, Option, Scope, Stream } from "effect";
 import type { Readable } from "../Readable";
 import { make as makeReadable } from "../Readable";
 import { make as makeSignal } from "../Signal";
@@ -93,38 +84,21 @@ export const async = <T extends readonly Readable<unknown>[], A, E = never>(
   const equals = options?.equals ?? defaultEquals;
 
   return Effect.gen(function* () {
-    // Create separate signals for each piece of state
     const isLoadingSignal = yield* makeSignal(true);
     const valueSignal = yield* makeSignal<Option.Option<A>>(Option.none());
     const errorSignal = yield* makeSignal<Option.Option<E>>(Option.none());
 
-    let currentFiber: Fiber.RuntimeFiber<A, E> | null = null;
     const scope = yield* Effect.scope;
-
-    const abortCurrentFiber = Effect.suspend(() => {
-      if (strategy !== "abort" || currentFiber === null) {
-        return Effect.void;
-      }
-      const fiber = currentFiber;
-      currentFiber = null;
-      return Fiber.interrupt(fiber);
-    });
 
     const runComputation = (values: ReadableValues<T>): Effect.Effect<void> =>
       Effect.gen(function* () {
-        yield* abortCurrentFiber;
         yield* isLoadingSignal.set(true);
         yield* errorSignal.set(Option.none());
 
-        const fiber = yield* Effect.forkIn(compute(values), scope);
-        currentFiber = fiber;
+        const result = yield* compute(values).pipe(Effect.either);
 
-        const exit = yield* Fiber.await(fiber);
-        currentFiber = null;
-
-        if (Exit.isSuccess(exit)) {
-          const newValue = exit.value;
-          // Check equality before updating
+        if (Either.isRight(result)) {
+          const newValue = result.right;
           const currentValue = yield* valueSignal.get;
           const shouldUpdate =
             Option.isNone(currentValue) ||
@@ -133,10 +107,7 @@ export const async = <T extends readonly Readable<unknown>[], A, E = never>(
             yield* valueSignal.set(Option.some(newValue));
           }
         } else {
-          // Extract first error from cause
-          const failures = Cause.failures(exit.cause);
-          const firstFailure = Chunk.head(failures);
-          yield* errorSignal.set(firstFailure);
+          yield* errorSignal.set(Option.some(result.left));
         }
 
         yield* isLoadingSignal.set(false);
@@ -147,18 +118,27 @@ export const async = <T extends readonly Readable<unknown>[], A, E = never>(
     yield* runComputation(initialValues);
 
     // Set up subscription to dependency changes
-    const changesStream = combineReadables(deps).pipe(
-      Stream.drop(1),
-      Stream.mapEffect(runComputation),
-    );
+    let changesStream = combineReadables(deps).pipe(Stream.drop(1));
 
-    const finalStream =
-      strategy === "debounce" && debounceMs > 0
-        ? Stream.debounce(changesStream, debounceMs)
-        : changesStream;
+    // Apply debounce before processing if configured
+    if (strategy === "debounce" && debounceMs > 0) {
+      changesStream = Stream.debounce(changesStream, debounceMs);
+    }
+
+    // For abort strategy, use flatMap with switch to cancel in-flight computations
+    // For other strategies, use sequential mapEffect
+    const processedStream =
+      strategy === "abort"
+        ? changesStream.pipe(
+            Stream.flatMap(
+              (values) => Stream.fromEffect(runComputation(values)),
+              { switch: true },
+            ),
+          )
+        : changesStream.pipe(Stream.mapEffect(runComputation));
 
     // Fork the stream processing to run in background
-    yield* Stream.runDrain(finalStream).pipe(Effect.forkIn(scope));
+    yield* Stream.runDrain(processedStream).pipe(Effect.forkIn(scope));
 
     // Create the await effect
     const awaitEffect: Effect.Effect<A, E> = Effect.gen(function* () {
