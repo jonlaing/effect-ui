@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Effect } from "effect";
 import { Signal } from "@effex/core";
-import { virtualEach, VirtualListRef } from "./VirtualList";
+import { virtualEach, VirtualListRef } from "./index";
 import { div } from "../Element";
 import { DOMRendererLive } from "../DOMRenderer";
 import {

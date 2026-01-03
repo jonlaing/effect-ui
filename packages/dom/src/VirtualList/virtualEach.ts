@@ -1,14 +1,14 @@
-import { Deferred, Effect, Exit, Scope, Stream } from "effect";
+import { Effect, Exit, Scope, Stream } from "effect";
 import { mapReadable, RendererContext } from "@effex/core";
 import type { Readable } from "@effex/core";
 import type { Element } from "../Element";
 import { Signal } from "@effex/core";
 import { Derived } from "@effex/core";
+import { createItemReadable } from "../Control/updaters";
 import type {
   VirtualEachOptions,
   VirtualItemEntry,
   VirtualListControl,
-  VirtualListRef as VirtualListRefType,
   VisibleRange,
 } from "./types";
 import {
@@ -21,48 +21,47 @@ import {
 } from "./helpers";
 
 /**
- * Create a VirtualListRef to access scroll control methods.
- *
- * @example
- * ```ts
- * const listRef = yield* VirtualListRef.make()
- *
- * yield* virtualEach(items, {
- *   key: (item) => item.id,
- *   itemHeight: 48,
- *   ref: listRef,
- *   render: (item) => $.li(item.map(i => i.text)),
- * })
- *
- * // Later, scroll to a specific item
- * yield* listRef.ready.pipe(
- *   Effect.flatMap((control) => control.scrollTo(50))
- * )
- * ```
+ * Create an index readable for tracking item indices.
  */
-export const makeVirtualListRef = (): Effect.Effect<
-  VirtualListRefType,
-  never,
-  Scope.Scope
-> =>
-  Effect.gen(function* () {
-    const deferred = yield* Deferred.make<VirtualListControl>();
-    let current: VirtualListControl | null = null;
+const createIndexReadable = (initialIndex: number) => {
+  let currentIndex = initialIndex;
+  const subscribers = new Set<(value: number) => void>();
 
-    const ref: VirtualListRefType = {
-      get current() {
-        return current;
-      },
-      ready: Deferred.await(deferred),
-      _set: (control: VirtualListControl) => {
-        current = control;
-        Effect.runSync(Deferred.succeed(deferred, control));
-      },
-      _deferred: deferred,
-    };
+  let cachedChanges: Stream.Stream<number> | null = null;
+  const getChanges = (): Stream.Stream<number> => {
+    if (!cachedChanges) {
+      cachedChanges = Stream.async<number>((emit) => {
+        const handler = (value: number) => emit.single(value);
+        subscribers.add(handler);
+        return Effect.sync(() => {
+          subscribers.delete(handler);
+        });
+      });
+    }
+    return cachedChanges;
+  };
 
-    return ref;
-  });
+  return {
+    get: Effect.sync(() => currentIndex),
+    get changes(): Stream.Stream<number> {
+      return getChanges();
+    },
+    get values(): Stream.Stream<number> {
+      return Stream.concat(Stream.make(currentIndex), this.changes);
+    },
+    map: function <B>(f: (n: number) => B): Readable<B> {
+      return mapReadable(this as Readable<number>, f);
+    },
+    _update: (index: number) => {
+      if (currentIndex !== index) {
+        currentIndex = index;
+        for (const handler of subscribers) {
+          handler(index);
+        }
+      }
+    },
+  };
+};
 
 /**
  * Render a virtualized list of items, only rendering items visible in the viewport.
@@ -160,86 +159,6 @@ export const virtualEach = <A, E = never, R = never>(
 
     // Track rendered items
     const itemMap = new Map<string, VirtualItemEntry<A>>();
-
-    // Create item readable (similar to each())
-    const createItemReadable = (item: A) => {
-      let currentValue = item;
-      const subscribers = new Set<(value: A) => void>();
-
-      let cachedChanges: Stream.Stream<A> | null = null;
-      const getChanges = (): Stream.Stream<A> => {
-        if (!cachedChanges) {
-          cachedChanges = Stream.async<A>((emit) => {
-            const handler = (value: A) => emit.single(value);
-            subscribers.add(handler);
-            return Effect.sync(() => {
-              subscribers.delete(handler);
-            });
-          });
-        }
-        return cachedChanges;
-      };
-
-      return {
-        get: Effect.sync(() => currentValue),
-        get changes(): Stream.Stream<A> {
-          return getChanges();
-        },
-        get values(): Stream.Stream<A> {
-          return Stream.concat(Stream.make(currentValue), this.changes);
-        },
-        map: function <B>(f: (a: A) => B): Readable<B> {
-          return mapReadable(this as Readable<A>, f);
-        },
-        _update: (value: A) => {
-          currentValue = value;
-          for (const handler of subscribers) {
-            handler(value);
-          }
-        },
-      };
-    };
-
-    // Create index readable
-    const createIndexReadable = (initialIndex: number) => {
-      let currentIndex = initialIndex;
-      const subscribers = new Set<(value: number) => void>();
-
-      let cachedChanges: Stream.Stream<number> | null = null;
-      const getChanges = (): Stream.Stream<number> => {
-        if (!cachedChanges) {
-          cachedChanges = Stream.async<number>((emit) => {
-            const handler = (value: number) => emit.single(value);
-            subscribers.add(handler);
-            return Effect.sync(() => {
-              subscribers.delete(handler);
-            });
-          });
-        }
-        return cachedChanges;
-      };
-
-      return {
-        get: Effect.sync(() => currentIndex),
-        get changes(): Stream.Stream<number> {
-          return getChanges();
-        },
-        get values(): Stream.Stream<number> {
-          return Stream.concat(Stream.make(currentIndex), this.changes);
-        },
-        map: function <B>(f: (n: number) => B): Readable<B> {
-          return mapReadable(this as Readable<number>, f);
-        },
-        _update: (index: number) => {
-          if (currentIndex !== index) {
-            currentIndex = index;
-            for (const handler of subscribers) {
-              handler(index);
-            }
-          }
-        },
-      };
-    };
 
     // Update visible items based on current range
     const updateVisibleItems = (
@@ -458,10 +377,3 @@ export const virtualEach = <A, E = never, R = never>(
 
     return viewport as HTMLElement;
   }) as Element<E, R>;
-
-/**
- * VirtualListRef module for creating refs to access scroll control.
- */
-export const VirtualListRef = {
-  make: makeVirtualListRef,
-};

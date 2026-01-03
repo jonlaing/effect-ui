@@ -1,6 +1,6 @@
 import { Array, Effect, Scope } from "effect";
 import type { Readable, RendererInterface } from "@effex/core";
-import { RendererContext } from "@effex/core";
+import { isReadable, RendererContext } from "@effex/core";
 import {
   applyClassWithRenderer,
   applyEventHandlerWithRenderer,
@@ -9,7 +9,6 @@ import {
   applyStyleWithRenderer,
   flattenChildren,
   isElement,
-  isReadable,
   subscribeToReadable,
 } from "./helpers";
 import type {
@@ -121,7 +120,7 @@ const appendChildren = <E, R>(
       } else if (isElement(child)) {
         const childElement = yield* child;
         yield* renderer.appendChild(parent, childElement as Node);
-      } else if (isReadable(child)) {
+      } else if (isReadable(child as unknown)) {
         const textNode = yield* renderer.createTextNode("");
         yield* renderer.appendChild(parent, textNode);
         yield* subscribeToReadable(

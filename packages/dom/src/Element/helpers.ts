@@ -1,5 +1,6 @@
 import { Array, Context, Effect, Option, Scope, Stream } from "effect";
-import type { Readable, RendererInterface } from "@effex/core";
+import { Readable } from "@effex/core";
+import type { RendererInterface } from "@effex/core";
 import type {
   Child,
   ClassItem,
@@ -8,13 +9,6 @@ import type {
   EventHandler,
   StyleValue,
 } from "./types";
-
-export const isReadable = (value: unknown): value is Readable<unknown> =>
-  value !== null &&
-  typeof value === "object" &&
-  "get" in value &&
-  "changes" in value &&
-  "values" in value;
 
 export const isElement = (value: unknown): value is Element<unknown, unknown> =>
   Effect.isEffect(value);
@@ -58,7 +52,7 @@ const classValueToString = (value: string | readonly string[]): string =>
   typeof value === "string" ? value : value.join(" ");
 
 const hasReactiveItems = (items: readonly ClassItem[]): boolean =>
-  items.some(isReadable);
+  items.some(Readable.isReadable);
 
 // ============================================================
 // Renderer-aware helper functions
@@ -70,7 +64,7 @@ export const applyClassWithRenderer = (
   value: ClassValue,
 ): Effect.Effect<void, never, Scope.Scope> => {
   // Single reactive value (string or string[])
-  if (isReadable(value)) {
+  if (Readable.isReadable(value)) {
     return subscribeToReadable(
       value as Readable<string | readonly string[]>,
       (v) => {
@@ -109,7 +103,7 @@ export const applyClassWithRenderer = (
     yield* Effect.forEach(
       value,
       (item, index) => {
-        if (isReadable(item)) {
+        if (Readable.isReadable(item)) {
           return subscribeToReadable(item as Readable<string>, (v) => {
             currentValues[index] = v;
             updateClassName();
@@ -130,7 +124,7 @@ export const applyStyleWithRenderer = (
   element: Node,
   value: Record<string, StyleValue> | Readable<Record<string, string>>,
 ): Effect.Effect<void, never, Scope.Scope> => {
-  if (isReadable(value)) {
+  if (Readable.isReadable(value)) {
     return subscribeToReadable(value, (styles) => {
       for (const [prop, val] of Object.entries(styles)) {
         Effect.runSync(renderer.setStyleProperty(element, prop, val));
@@ -140,7 +134,7 @@ export const applyStyleWithRenderer = (
   return Effect.forEach(
     Object.entries(value),
     ([prop, styleVal]) => {
-      if (isReadable(styleVal)) {
+      if (Readable.isReadable(styleVal)) {
         return subscribeToReadable(
           styleVal as Readable<string | number>,
           (v) => {
@@ -175,7 +169,7 @@ export const applyGenericAttributeWithRenderer = (
   key: string,
   value: unknown,
 ): Effect.Effect<void, never, Scope.Scope> => {
-  if (isReadable(value)) {
+  if (Readable.isReadable(value)) {
     return subscribeToReadable(value as Readable<unknown>, (v) => {
       Effect.runSync(renderer.setAttribute(element, key, v));
     });
@@ -188,7 +182,7 @@ export const applyInputValueWithRenderer = (
   element: Node,
   value: unknown,
 ): Effect.Effect<void, never, Scope.Scope> => {
-  if (isReadable(value)) {
+  if (Readable.isReadable(value)) {
     return subscribeToReadable(value as Readable<unknown>, (v) => {
       Effect.runSync(renderer.setInputValue(element, String(v)));
     });
@@ -206,7 +200,7 @@ export const applyClass = (
   value: ClassValue,
 ): Effect.Effect<void, never, Scope.Scope> => {
   // Single reactive value (string or string[])
-  if (isReadable(value)) {
+  if (Readable.isReadable(value)) {
     return subscribeToReadable(
       value as Readable<string | readonly string[]>,
       (v) => {
@@ -239,7 +233,7 @@ export const applyClass = (
     yield* Effect.forEach(
       value,
       (item, index) => {
-        if (isReadable(item)) {
+        if (Readable.isReadable(item)) {
           return subscribeToReadable(item as Readable<string>, (v) => {
             currentValues[index] = v;
             updateClassName();
@@ -259,7 +253,7 @@ export const applyStyle = (
   element: HTMLElement,
   value: Record<string, StyleValue> | Readable<Record<string, string>>,
 ): Effect.Effect<void, never, Scope.Scope> => {
-  if (isReadable(value)) {
+  if (Readable.isReadable(value)) {
     return subscribeToReadable(value, (styles) => {
       for (const [prop, val] of Object.entries(styles)) {
         element.style.setProperty(prop, val);
@@ -269,7 +263,7 @@ export const applyStyle = (
   return Effect.forEach(
     Object.entries(value),
     ([prop, styleVal]) => {
-      if (isReadable(styleVal)) {
+      if (Readable.isReadable(styleVal)) {
         return subscribeToReadable(
           styleVal as Readable<string | number>,
           (v) => {
@@ -319,7 +313,7 @@ export const applyGenericAttribute = (
   key: string,
   value: unknown,
 ): Effect.Effect<void, never, Scope.Scope> => {
-  if (isReadable(value)) {
+  if (Readable.isReadable(value)) {
     return subscribeToReadable(value as Readable<unknown>, (v) => {
       setBooleanOrStringAttribute(element, key, v);
     });
@@ -332,7 +326,7 @@ export const applyInputValue = (
   element: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement,
   value: unknown,
 ): Effect.Effect<void, never, Scope.Scope> => {
-  if (isReadable(value)) {
+  if (Readable.isReadable(value)) {
     return subscribeToReadable(value as Readable<unknown>, (v) => {
       const stringValue = String(v);
       // Only update if different - prevents cursor position reset

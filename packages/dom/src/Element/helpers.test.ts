@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Effect } from "effect";
-import { Signal } from "@effex/core";
+import { isReadable, Signal } from "@effex/core";
 import {
-  isReadable,
   isElement,
   flattenChildren,
   subscribeToReadable,

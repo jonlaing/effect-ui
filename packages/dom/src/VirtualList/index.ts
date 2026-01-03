@@ -4,7 +4,8 @@
  * @module VirtualList
  */
 
-export { virtualEach, VirtualListRef, makeVirtualListRef } from "./VirtualList";
+export { virtualEach } from "./virtualEach";
+export { VirtualListRef, makeVirtualListRef } from "./VirtualListRef";
 export type {
   VirtualEachOptions,
   VirtualListRef as VirtualListRefType,
