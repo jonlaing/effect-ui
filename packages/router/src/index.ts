@@ -13,9 +13,6 @@ export {
   getActionState,
   makeRouterLayer,
   makeTypedRouterLayer,
-  setRouter,
-  clearRouter,
-  getRouter,
   type LinkProps,
   // Types
   type PathSegment,

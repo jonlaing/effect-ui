@@ -8,7 +8,7 @@ Effex brings the power of [Effect](https://effect.website/) to frontend developm
 
 ### Typed Error Handling
 
-Every element has type `Element<E>` where `E` is the error channel. Errors propagate through the component tree, and you **must** handle them before mounting:
+Every element has type `Element<E, R>` where `E` is the error channel. Errors propagate through the component tree, and you **must** handle them before mounting:
 
 ```ts
 // This won't compile - UserProfile might fail with ApiError
@@ -91,7 +91,7 @@ const Counter = component("Counter", () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0);
 
-    return yield* $.div([
+ ]   return yield* $.div([
       $.button({ onClick: () => count.update((n) => n - 1) }, "-"),
       $.span(count),
       $.button({ onClick: () => count.update((n) => n + 1) }, "+"),
@@ -131,7 +131,7 @@ Effex uses function calls instead of JSX:
 // Effex
 $.div({ class: "container" }, [
   $.h1("Hello"),
-  $.p(["Count: ", count]),
+  $.p(t`Count: ${count}`),
   Counter(),
 ])
 

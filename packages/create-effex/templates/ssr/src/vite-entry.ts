@@ -1,19 +1,11 @@
 /**
- * Server entry for Vite SSR dev mode.
- * This is a thin wrapper around renderRequest that's loaded via vite.ssrLoadModule.
+ * Vite SSR entry point.
+ * Loaded via vite.ssrLoadModule during development.
  */
 import { Effect, Option } from "effect";
-import { $, Router, Routes, makeRouterLayer, Link } from "@effex/platform";
+import { Router, makeRouterLayer } from "@effex/platform";
 import { renderRequest, type ActionData } from "@effex/platform/server";
-import { routes, components } from "./generated/routes.js";
-
-// 404 fallback component
-const NotFound = () =>
-  $.div({ class: "page" }, [
-    $.h1({}, ["404 - Page Not Found"]),
-    $.p({}, ["The page you're looking for doesn't exist."]),
-    $.p({}, [Link({ href: "/" }, "Go Home")]),
-  ]);
+import { routes, App, baseDocumentConfig } from "./app.js";
 
 /**
  * Handle an action request.
@@ -71,12 +63,11 @@ export async function render(request: Request): Promise<string> {
         });
 
         return yield* renderRequest(request, {
-          app: Routes({ components, fallback: NotFound }),
+          app: App(),
           router,
           document: {
-            title: "Effex Demo",
-            styles: ["/styles.css"],
-            scripts: ["/src/client.ts"],
+            ...baseDocumentConfig,
+            scripts: ["/src/client.ts"], // Dev uses source file
           },
           provide: makeRouterLayer(router),
         });

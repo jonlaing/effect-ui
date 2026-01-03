@@ -1,13 +1,6 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { Effect, Option, Stream } from "effect";
-import {
-  Link,
-  RouterContext,
-  setRouter,
-  clearRouter,
-  getRouter,
-  makeRouterLayer,
-} from "./RouterContext";
+import { Link, RouterContext, makeRouterLayer } from "./RouterContext";
 import type { BaseRouter } from "./types";
 import type { Readable } from "@effex/core";
 import { DOMRendererLive } from "@effex/dom";
@@ -60,23 +53,6 @@ const createMockRouter = (initialPath = "/"): BaseRouter => {
 };
 
 describe("RouterContext", () => {
-  beforeEach(() => {
-    clearRouter();
-  });
-
-  describe("legacy global setRouter / getRouter / clearRouter", () => {
-    it("should set and get router", () => {
-      const router = createMockRouter();
-      expect(getRouter()).toBe(null);
-
-      setRouter(router);
-      expect(getRouter()).toBe(router);
-
-      clearRouter();
-      expect(getRouter()).toBe(null);
-    });
-  });
-
   describe("RouterContext", () => {
     it("should return router when provided via layer", async () => {
       const router = createMockRouter();

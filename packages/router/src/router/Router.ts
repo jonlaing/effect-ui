@@ -1,23 +1,21 @@
-import { Effect, Option, Scope, Stream } from "effect";
-import type { Schema } from "effect";
+import { Effect, Layer, Option, Scope } from "effect";
 import { Signal, Derived } from "@effex/core";
 import type {
   AnyRoute,
-  Route,
   Router as RouterType,
   RouterOptions,
-  RouteState,
-  NavigateOptions,
-  LoaderResult,
   LoaderState,
-  ActionResult,
   ActionState,
-  AllLoaderRequirements,
-  AllLoaderErrors,
-  AllActionRequirements,
-  AllActionErrors,
 } from "./types";
 import { routeSpecificity } from "./Route";
+import { isBrowser, RouterInternalsContext } from "./internals";
+import { tryMatchSync } from "./matching";
+import { createNavigationMethods } from "./navigation";
+import { createRouteStates } from "./routeState";
+import { setupHistoryListener } from "./history";
+import { createLoaderMethods } from "./loader";
+import { createActionMethods } from "./action";
+import { setupPathnameSubscription } from "./subscription";
 
 /**
  * Create a Router from a record of routes.
@@ -52,11 +50,9 @@ export const make = <Routes extends Record<string, AnyRoute>>(
   Effect.gen(function* () {
     // Get initial path and search from options or window.location
     const initialPath =
-      options?.initialPath ??
-      (typeof window !== "undefined" ? window.location.pathname : "/");
+      options?.initialPath ?? (isBrowser() ? window.location.pathname : "/");
     const initialSearch =
-      options?.initialSearch ??
-      (typeof window !== "undefined" ? window.location.search : "");
+      options?.initialSearch ?? (isBrowser() ? window.location.search : "");
 
     // Create signals for pathname and search params
     const pathnameSignal = yield* Signal.make(initialPath);
@@ -75,7 +71,6 @@ export const make = <Routes extends Record<string, AnyRoute>>(
       [pathnameSignal],
       ([pathname]): Option.Option<keyof Routes & string> => {
         for (const [name, route] of sortedRouteEntries) {
-          // Try to match synchronously by checking segments
           const result = tryMatchSync(route, pathname);
           if (result !== null) {
             return Option.some(name as keyof Routes & string);
@@ -85,89 +80,7 @@ export const make = <Routes extends Record<string, AnyRoute>>(
       },
     );
 
-    // Create route-specific state for each route
-    const routeStates = {} as {
-      [K in keyof Routes]: RouteState<
-        Routes[K] extends Route<string, infer P>
-          ? P extends Schema.Schema.AnyNoContext
-            ? Schema.Schema.Type<P>
-            : Record<string, never>
-          : Record<string, never>
-      >;
-    };
-
-    for (const [name, route] of Object.entries(routes)) {
-      const isActive = yield* Derived.sync(
-        [currentRoute],
-        ([current]) => Option.isSome(current) && current.value === name,
-      );
-
-      // Derive params synchronously using the raw matching (without schema validation)
-      // Schema validation happens on route.match() when explicitly called
-      const params = yield* Derived.sync([pathnameSignal], (values) => {
-        const pathname = values[0];
-        const rawMatch = tryMatchSync(route, pathname);
-        return rawMatch as unknown | null;
-      });
-
-      (routeStates as Record<string, RouteState<unknown>>)[name] = {
-        isActive,
-        params,
-      };
-    }
-
-    // Set up history listener
-    if (typeof window !== "undefined") {
-      const handlePopState = () => {
-        Effect.runSync(pathnameSignal.set(window.location.pathname));
-        Effect.runSync(
-          searchParamsSignal.set(new URLSearchParams(window.location.search)),
-        );
-      };
-
-      window.addEventListener("popstate", handlePopState);
-
-      // Clean up listener when scope is closed
-      yield* Effect.addFinalizer(() =>
-        Effect.sync(() => {
-          window.removeEventListener("popstate", handlePopState);
-        }),
-      );
-    }
-
-    // Navigation functions
-    const push = (path: string, opts?: NavigateOptions): Effect.Effect<void> =>
-      Effect.sync(() => {
-        if (typeof window !== "undefined") {
-          const url = new URL(path, window.location.origin);
-          if (opts?.replace) {
-            window.history.replaceState(null, "", url.pathname + url.search);
-          } else {
-            window.history.pushState(null, "", url.pathname + url.search);
-          }
-          Effect.runSync(pathnameSignal.set(url.pathname));
-          Effect.runSync(searchParamsSignal.set(url.searchParams));
-        }
-      });
-
-    const replace = (path: string): Effect.Effect<void> =>
-      push(path, { replace: true });
-
-    const back = (): Effect.Effect<void> =>
-      Effect.sync(() => {
-        if (typeof window !== "undefined") {
-          window.history.back();
-        }
-      });
-
-    const forward = (): Effect.Effect<void> =>
-      Effect.sync(() => {
-        if (typeof window !== "undefined") {
-          window.history.forward();
-        }
-      });
-
-    // Create reactive loader state
+    // Create loader and action state signals
     const initialLoaderState: LoaderState = {
       routeName: null,
       params: {},
@@ -177,127 +90,6 @@ export const make = <Routes extends Record<string, AnyRoute>>(
     };
     const loaderStateSignal = yield* Signal.make(initialLoaderState);
 
-    // Execute the loader for the currently matched route
-    const executeLoader = (): Effect.Effect<
-      LoaderResult | null,
-      AllLoaderErrors<Routes>,
-      AllLoaderRequirements<Routes>
-    > =>
-      Effect.gen(function* () {
-        const currentRouteOption = yield* currentRoute.get;
-        if (Option.isNone(currentRouteOption)) {
-          return null;
-        }
-        const currentRouteName = currentRouteOption.value;
-
-        const routeDef = routes[currentRouteName as keyof Routes];
-        if (!routeDef || !routeDef.loader) {
-          return null;
-        }
-
-        const pathname = yield* pathnameSignal.get;
-        // Match can fail with RouteMatchError, but we catch that and return null
-        const matchResult = yield* Effect.either(routeDef.match(pathname));
-        if (matchResult._tag === "Left") {
-          return null;
-        }
-        const params = matchResult.right;
-
-        const data = yield* routeDef.loader(params) as Effect.Effect<
-          unknown,
-          AllLoaderErrors<Routes>,
-          AllLoaderRequirements<Routes>
-        >;
-
-        return {
-          routeName: currentRouteName as string,
-          params,
-          data,
-        } satisfies LoaderResult;
-      });
-
-    // Execute loader and update reactive state
-    const runLoaderAndUpdateState = Effect.gen(function* () {
-      const currentRouteOption = yield* currentRoute.get;
-      if (Option.isNone(currentRouteOption)) {
-        yield* loaderStateSignal.set({
-          routeName: null,
-          params: {},
-          data: null,
-          isLoading: false,
-          error: null,
-        });
-        return;
-      }
-      const currentRouteName = currentRouteOption.value;
-
-      const routeDef = routes[currentRouteName as keyof Routes];
-      const pathname = yield* pathnameSignal.get;
-      const rawParams = tryMatchSync(routeDef, pathname) ?? {};
-
-      // If route has no loader, just update with null data
-      if (!routeDef || !routeDef.loader) {
-        yield* loaderStateSignal.set({
-          routeName: currentRouteName as string,
-          params: rawParams,
-          data: null,
-          isLoading: false,
-          error: null,
-        });
-        return;
-      }
-
-      // Set loading state
-      yield* loaderStateSignal.set({
-        routeName: currentRouteName as string,
-        params: rawParams,
-        data: null,
-        isLoading: true,
-        error: null,
-      });
-
-      // Execute loader
-      const result = yield* Effect.either(
-        Effect.gen(function* () {
-          const params = yield* routeDef.match(pathname);
-          return yield* routeDef.loader!(params) as Effect.Effect<unknown>;
-        }),
-      );
-
-      if (result._tag === "Right") {
-        yield* loaderStateSignal.set({
-          routeName: currentRouteName as string,
-          params: rawParams,
-          data: result.right,
-          isLoading: false,
-          error: null,
-        });
-      } else {
-        yield* loaderStateSignal.set({
-          routeName: currentRouteName as string,
-          params: rawParams,
-          data: null,
-          isLoading: false,
-          error: result.left,
-        });
-      }
-    });
-
-    // Initialize loader data from SSR (for hydration)
-    const initializeLoaderData = (
-      routeName: string,
-      params: Record<string, string>,
-      data: unknown,
-    ): Effect.Effect<void> =>
-      loaderStateSignal.set({
-        routeName,
-        params,
-        data,
-        isLoading: false,
-        error: null,
-      });
-
-    // Create reactive action state
     const initialActionState: ActionState = {
       isSubmitting: false,
       data: null,
@@ -307,234 +99,44 @@ export const make = <Routes extends Record<string, AnyRoute>>(
     };
     const actionStateSignal = yield* Signal.make(initialActionState);
 
-    // Generate unique submission ID
-    let submissionCounter = 0;
-    const generateSubmissionId = () => {
-      submissionCounter += 1;
-      return `submission-${submissionCounter}-${Date.now()}`;
-    };
+    // Create context layer with all shared state
+    const internalsLayer = Layer.succeed(RouterInternalsContext, {
+      routes,
+      currentRoute,
+      pathnameSignal,
+      searchParamsSignal,
+      loaderStateSignal,
+      actionStateSignal,
+    });
 
-    // Execute an action for a specific route
-    const executeAction = (
-      routeName: string,
-      formData: FormData,
-      request: Request,
-    ): Effect.Effect<
-      ActionResult | null,
-      AllActionErrors<Routes>,
-      AllActionRequirements<Routes>
-    > =>
-      Effect.gen(function* () {
-        const routeDef = routes[routeName as keyof Routes];
-        if (!routeDef || !routeDef.action) {
-          return null;
-        }
+    // Create route-specific state for each route
+    const routeStates = yield* createRouteStates<Routes>().pipe(
+      Effect.provide(internalsLayer),
+    );
 
-        const pathname = yield* pathnameSignal.get;
-        const rawParams = tryMatchSync(routeDef, pathname) ?? {};
+    // Set up history listener
+    yield* setupHistoryListener().pipe(Effect.provide(internalsLayer));
 
-        const data = yield* routeDef.action({
-          formData,
-          request,
-          params: rawParams,
-        }) as Effect.Effect<
-          unknown,
-          AllActionErrors<Routes>,
-          AllActionRequirements<Routes>
-        >;
+    // Create navigation methods
+    const { push, replace, back, forward } =
+      yield* createNavigationMethods().pipe(Effect.provide(internalsLayer));
 
-        return {
-          routeName,
-          data,
-        } satisfies ActionResult;
-      });
+    // Create loader methods
+    const { executeLoader, runLoaderAndUpdateState, initializeLoaderData } =
+      yield* createLoaderMethods<Routes>().pipe(Effect.provide(internalsLayer));
 
-    // Submit action and update reactive state
-    // On client: POST to server via fetch
-    // On server: Execute action directly (for SSR form submissions)
-    const submitAction = (
-      formData: FormData,
-    ): Effect.Effect<
-      ActionResult | null,
-      AllActionErrors<Routes>,
-      AllActionRequirements<Routes>
-    > =>
-      Effect.gen(function* () {
-        const currentRouteOption = yield* currentRoute.get;
-        if (Option.isNone(currentRouteOption)) {
-          return null;
-        }
-        const currentRouteName = currentRouteOption.value;
+    // Create action methods (needs runLoaderAndUpdateState as parameter)
+    const { executeAction, submitAction, initializeActionData } =
+      yield* createActionMethods<Routes>(runLoaderAndUpdateState).pipe(
+        Effect.provide(internalsLayer),
+      );
 
-        const routeDef = routes[currentRouteName as keyof Routes];
-        if (!routeDef || !routeDef.action) {
-          return null;
-        }
+    // Subscribe to pathname changes and execute loaders
+    yield* setupPathnameSubscription(initialPath, runLoaderAndUpdateState).pipe(
+      Effect.provide(internalsLayer),
+    );
 
-        const submissionId = generateSubmissionId();
-
-        // Set submitting state
-        yield* actionStateSignal.set({
-          isSubmitting: true,
-          data: null,
-          error: null,
-          routeName: currentRouteName as string,
-          submissionId,
-        });
-
-        const pathname = yield* pathnameSignal.get;
-
-        // On client: POST to server via fetch
-        if (typeof window !== "undefined") {
-          const response = yield* Effect.tryPromise(() =>
-            fetch(window.location.href, {
-              method: "POST",
-              body: formData,
-              headers: {
-                "X-Effex-Action": "1",
-              },
-            }),
-          ).pipe(
-            Effect.mapError(
-              (error) => error as unknown as AllActionErrors<Routes>,
-            ),
-          );
-
-          if (!response.ok) {
-            const error = new Error(`Action failed: ${response.statusText}`);
-            yield* actionStateSignal.set({
-              isSubmitting: false,
-              data: null,
-              error,
-              routeName: currentRouteName as string,
-              submissionId,
-            });
-            return yield* Effect.fail(
-              error as unknown as AllActionErrors<Routes>,
-            );
-          }
-
-          const actionData = yield* Effect.tryPromise(
-            () =>
-              response.json() as Promise<{
-                routeName: string;
-                data: unknown;
-                timestamp: number;
-                error?: string;
-              }>,
-          ).pipe(
-            Effect.mapError(
-              (error) => error as unknown as AllActionErrors<Routes>,
-            ),
-          );
-
-          if (actionData.error) {
-            const error = new Error(actionData.error);
-            yield* actionStateSignal.set({
-              isSubmitting: false,
-              data: null,
-              error,
-              routeName: currentRouteName as string,
-              submissionId,
-            });
-            return yield* Effect.fail(
-              error as unknown as AllActionErrors<Routes>,
-            );
-          }
-
-          yield* actionStateSignal.set({
-            isSubmitting: false,
-            data: actionData.data,
-            error: null,
-            routeName: actionData.routeName,
-            submissionId,
-          });
-
-          // Re-run loader after successful action to get fresh data
-          yield* runLoaderAndUpdateState;
-
-          return {
-            routeName: actionData.routeName,
-            data: actionData.data,
-          } satisfies ActionResult;
-        }
-
-        // On server: Execute action directly
-        const rawParams = tryMatchSync(routeDef, pathname) ?? {};
-        const request = new Request(`http://localhost${pathname}`, {
-          method: "POST",
-          body: formData,
-        });
-
-        const result = yield* Effect.either(
-          routeDef.action({
-            formData,
-            request,
-            params: rawParams,
-          }) as Effect.Effect<unknown>,
-        );
-
-        if (result._tag === "Right") {
-          yield* actionStateSignal.set({
-            isSubmitting: false,
-            data: result.right,
-            error: null,
-            routeName: currentRouteName as string,
-            submissionId,
-          });
-
-          // Re-run loader after successful action to get fresh data
-          yield* runLoaderAndUpdateState;
-
-          return {
-            routeName: currentRouteName as string,
-            data: result.right,
-          } satisfies ActionResult;
-        } else {
-          yield* actionStateSignal.set({
-            isSubmitting: false,
-            data: null,
-            error: result.left,
-            routeName: currentRouteName as string,
-            submissionId,
-          });
-
-          return yield* Effect.fail(result.left);
-        }
-      });
-
-    // Initialize action data from SSR (for form submission hydration)
-    const initializeActionData = (
-      routeName: string,
-      data: unknown,
-    ): Effect.Effect<void> =>
-      actionStateSignal.set({
-        isSubmitting: false,
-        data,
-        error: null,
-        routeName,
-        submissionId: null,
-      });
-
-    // Subscribe to pathname changes and execute loaders (client-side only)
-    // We subscribe to pathname instead of currentRoute to catch param changes
-    // within the same route (e.g., /users/1 -> /users/2)
-    if (typeof window !== "undefined") {
-      const scope = yield* Effect.scope;
-      let lastPathname = initialPath;
-
-      yield* Stream.runForEach(pathnameSignal.changes, (newPathname) =>
-        Effect.gen(function* () {
-          // Only run loader if pathname actually changed
-          if (newPathname !== lastPathname) {
-            lastPathname = newPathname;
-            yield* runLoaderAndUpdateState;
-          }
-        }),
-      ).pipe(Effect.forkIn(scope));
-    }
-
-    const router: RouterType<Routes> = {
+    return {
       pathname: pathnameSignal,
       searchParams: searchParamsSignal,
       currentRoute,
@@ -552,56 +154,7 @@ export const make = <Routes extends Record<string, AnyRoute>>(
       initializeLoaderData,
       initializeActionData,
     };
-
-    return router;
   });
-
-/**
- * Synchronously try to match a route against a pathname.
- * Returns the raw params if matched, null if no match.
- * This doesn't validate with Schema - just checks if the path pattern matches.
- */
-const tryMatchSync = (
-  route: AnyRoute,
-  pathname: string,
-): Record<string, string> | null => {
-  const parts = pathname.split("/").filter((p) => p.length > 0);
-  const params: Record<string, string> = {};
-
-  let segmentIndex = 0;
-  let partIndex = 0;
-
-  while (segmentIndex < route.segments.length) {
-    const segment = route.segments[segmentIndex];
-
-    if (segment.type === "catchAll") {
-      return params;
-    }
-
-    if (partIndex >= parts.length) {
-      return null;
-    }
-
-    const part = parts[partIndex];
-
-    if (segment.type === "static") {
-      if (segment.value !== part) {
-        return null;
-      }
-    } else if (segment.type === "param") {
-      params[segment.name] = part;
-    }
-
-    segmentIndex++;
-    partIndex++;
-  }
-
-  if (partIndex < parts.length) {
-    return null;
-  }
-
-  return params;
-};
 
 /**
  * Infer the Router type from a routes record.

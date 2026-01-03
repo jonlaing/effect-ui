@@ -174,30 +174,3 @@ export const getActionState = (): Effect.Effect<
     const router = yield* RouterContext;
     return router.actionState;
   });
-
-// Legacy global router support for backwards compatibility during migration
-// These can be removed once all code is migrated to use RouterContext
-
-let currentRouter: BaseRouter | null = null;
-
-/**
- * @deprecated Use RouterContext and makeRouterLayer instead.
- * Set the current router for the application.
- */
-export const setRouter = (router: BaseRouter): void => {
-  currentRouter = router;
-};
-
-/**
- * @deprecated Use RouterContext and makeRouterLayer instead.
- * Clear the current router.
- */
-export const clearRouter = (): void => {
-  currentRouter = null;
-};
-
-/**
- * @deprecated Use RouterContext and makeRouterLayer instead.
- * Get the current router.
- */
-export const getRouter = (): BaseRouter | null => currentRouter;

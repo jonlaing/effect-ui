@@ -15,9 +15,6 @@ export {
   getActionState,
   makeRouterLayer,
   makeTypedRouterLayer,
-  setRouter,
-  clearRouter,
-  getRouter,
   type LinkProps,
 } from "./RouterContext";
 

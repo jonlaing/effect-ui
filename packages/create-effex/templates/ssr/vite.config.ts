@@ -8,7 +8,7 @@ export default defineConfig({
       outputPath: "src/generated/routes.ts",
     }),
     effexSSR({
-      entry: "src/server-entry.ts",
+      entry: "src/vite-entry.ts",
     }),
   ],
   build: {

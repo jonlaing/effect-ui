@@ -6,9 +6,9 @@ import type { Plugin, ViteDevServer } from "vite";
  */
 export interface EffexSSROptions {
   /**
-   * Path to the server entry module that exports a `render` function.
+   * Path to the Vite SSR entry module that exports a `render` function.
    * The render function should have the signature: (request: Request) => Promise<string>
-   * @example "src/server-entry.ts"
+   * @example "src/vite-entry.ts"
    */
   readonly entry: string;
 }
@@ -17,7 +17,7 @@ export interface EffexSSROptions {
  * Vite plugin that provides SSR dev server with HMR for Effex applications.
  *
  * In dev mode, this plugin:
- * - Intercepts HTML requests and uses `vite.ssrLoadModule` to load your server entry
+ * - Intercepts HTML requests and uses `vite.ssrLoadModule` to load your Vite entry
  * - Injects Vite's HMR client into the rendered HTML
  * - Provides full HMR for both client and server code
  *
@@ -30,14 +30,14 @@ export interface EffexSSROptions {
  * export default defineConfig({
  *   plugins: [
  *     effexRoutes({ routesDir: "src/routes" }),
- *     effexSSR({ entry: "src/server-entry.ts" }),
+ *     effexSSR({ entry: "src/vite-entry.ts" }),
  *   ],
  * });
  * ```
  *
  * @example
  * ```ts
- * // src/server-entry.ts
+ * // src/vite-entry.ts
  * import { Effect, Layer } from "effect";
  * import { Router, Routes, makeRouterLayer, renderToString } from "@effex/platform";
  * import { routes, components } from "./generated/routes.js";

@@ -5,9 +5,14 @@ import { Effect, Layer } from "effect";
 import { HttpServer, HttpServerResponse } from "@effect/platform";
 import * as HttpServerRequest from "@effect/platform/HttpServerRequest";
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node";
-import { $, Router, Routes, makeRouterLayer, Link } from "@effex/platform";
+import {
+  Router,
+  makeRouterLayer,
+  Element,
+  RendererContext,
+} from "@effex/platform";
 import { EffexServer } from "@effex/platform/server";
-import { routes, components } from "./generated/routes.js";
+import { routes, App, baseDocumentConfig } from "./app.js";
 
 // MIME types for static files
 const MIME_TYPES: Record<string, string> = {
@@ -46,14 +51,6 @@ const serveStatic = (distDir: string) =>
     });
   });
 
-// 404 fallback component
-const NotFound = () =>
-  $.div({ class: "page" }, [
-    $.h1({}, ["404 - Page Not Found"]),
-    $.p({}, ["The page you're looking for doesn't exist."]),
-    $.p({}, [Link({ href: "/" }, "Go Home")]),
-  ]);
-
 // Main server program
 const main = Effect.gen(function* () {
   // Create the router
@@ -62,12 +59,11 @@ const main = Effect.gen(function* () {
 
   // Create the Effex HTTP app
   const effexApp = EffexServer.makeHttpApp({
-    app: () => Routes({ components, fallback: NotFound }),
+    app: () => App() as Element<never, RendererContext>,
     router: router as Parameters<typeof EffexServer.makeHttpApp>[0]["router"],
     document: {
-      title: "Effex App",
-      scripts: ["/client.js"],
-      styles: ["/styles.css"],
+      ...baseDocumentConfig,
+      scripts: ["/client.js"], // Prod uses built file
     },
     provide: routerLayer as Layer.Layer<never, never, never>,
   });

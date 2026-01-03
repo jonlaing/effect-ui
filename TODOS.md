@@ -32,7 +32,7 @@
   - [x] Create render helpers for Effect UI components
   - [x] Create Collapsible stories (Default, Animated, Controlled, Nested, etc.)
   - [x] Added storysource addon for viewing Effect-UI code in stories
-  - [ ] Create stories for other built-in components as they're developed
+  - [x] Create stories for other built-in components as they're developed
   - [ ] Custom Storybook addon to show clean Effex code snippets (instead of full story source)
 
 - [x] **Clean up unused imports** - Fixed build warnings (ParseResult type-only import)
@@ -145,7 +145,7 @@
   ```typescript
   // src/routes/users/$id.ts
   import { Effect } from "effect";
-  import { Route, $ } from "@effex/platform";
+  import { component, Route, $ } from "@effex/platform";
 
   // Loader runs on server (SSR) and client (navigation)
   export const loader = Effect.gen(function* () {
@@ -163,10 +163,12 @@
   });
 
   // Component receives loader data automatically
-  export default Effect.gen(function* () {
-    const { user } = yield* Route.loaderData<typeof loader>();
-    return yield* $.div([$.h1(user.name), $.p(user.email)]);
-  });
+  export default component("UserProfile", () => 
+      Effect.gen(function* () {
+        const { user } = yield* Route.loaderData<typeof loader>();
+        return yield* $.div([$.h1(user.name), $.p(user.email)]);
+      })
+  );
   ```
 
   **Server/Client Service Layers:**

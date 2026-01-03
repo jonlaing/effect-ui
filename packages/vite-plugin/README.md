@@ -44,7 +44,7 @@ export default defineConfig({
       outputPath: "src/generated/routes.ts",
     }),
     effexSSR({
-      serverEntry: "src/server-entry.ts",
+      entry: "src/vite-entry.ts",
     }),
   ],
   resolve: {
@@ -160,17 +160,17 @@ export type RouteNames = keyof Routes;
 
 ```ts
 effexSSR({
-  // Path to server entry module
-  serverEntry: "src/server-entry.ts",
+  // Path to Vite SSR entry module
+  entry: "src/vite-entry.ts",
 })
 ```
 
-### Server Entry Requirements
+### Vite Entry Requirements
 
-Your server entry must export a `render` function:
+Your Vite entry must export a `render` function:
 
 ```ts
-// src/server-entry.ts
+// src/vite-entry.ts
 import { Effect } from "effect";
 import { render as effexRender, renderToDocument } from "@effex/platform/server";
 import { Router, Routes, makeRouterLayer } from "@effex/platform";
@@ -237,4 +237,4 @@ Routes are regenerated automatically when:
 
 ### effexSSR Options
 
-- `serverEntry` - Path to server entry module
+- `entry` - Path to Vite SSR entry module

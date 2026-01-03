@@ -94,4 +94,6 @@ export {
   type RoutesProps,
   type RouteComponent,
   type ComponentsMap,
+  type ComponentsError,
+  type ComponentsRequirements,
 } from "./routing/Routes.js";
