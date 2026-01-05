@@ -79,6 +79,11 @@ export interface SignalArray<T> extends Signal<readonly T[]> {
   readonly move: (fromIndex: number, toIndex: number) => Effect.Effect<void>;
 
   /**
+   * Swap two elements at the given indices.
+   */
+  readonly swap: (indexA: number, indexB: number) => Effect.Effect<void>;
+
+  /**
    * Sort the array in-place.
    */
   readonly sort: (compareFn?: (a: T, b: T) => number) => Effect.Effect<void>;
@@ -227,6 +232,23 @@ export const make = <T>(
           }
           const [item] = arr.splice(fromIndex, 1);
           arr.splice(toIndex, 0, item);
+          yield* notify;
+        }),
+
+      swap: (indexA, indexB) =>
+        Effect.gen(function* () {
+          const arr = yield* SubscriptionRef.get(ref);
+          if (
+            indexA < 0 ||
+            indexA >= arr.length ||
+            indexB < 0 ||
+            indexB >= arr.length
+          ) {
+            return;
+          }
+          const temp = arr[indexA];
+          arr[indexA] = arr[indexB];
+          arr[indexB] = temp;
           yield* notify;
         }),
 

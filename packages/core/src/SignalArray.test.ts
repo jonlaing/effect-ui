@@ -231,6 +231,38 @@ describe("Signal.Array", () => {
       ));
   });
 
+  describe("swap", () => {
+    it("should swap two elements", () =>
+      runTest(
+        Effect.gen(function* () {
+          const arr = yield* Signal.Array.make([1, 2, 3, 4]);
+          yield* arr.swap(0, 2);
+          const value = yield* arr.get;
+          expect(value).toEqual([3, 2, 1, 4]);
+        }),
+      ));
+
+    it("should swap adjacent elements", () =>
+      runTest(
+        Effect.gen(function* () {
+          const arr = yield* Signal.Array.make([1, 2, 3]);
+          yield* arr.swap(1, 2);
+          const value = yield* arr.get;
+          expect(value).toEqual([1, 3, 2]);
+        }),
+      ));
+
+    it("should do nothing for out of bounds", () =>
+      runTest(
+        Effect.gen(function* () {
+          const arr = yield* Signal.Array.make([1, 2, 3]);
+          yield* arr.swap(0, 10);
+          const value = yield* arr.get;
+          expect(value).toEqual([1, 2, 3]);
+        }),
+      ));
+  });
+
   describe("sort", () => {
     it("should sort in place", () =>
       runTest(

@@ -175,14 +175,7 @@ export const makeFieldArray = <A>(
         }).pipe(Effect.scoped),
       remove: (index) => fields.removeAt(index).pipe(Effect.asVoid),
       move: (fromIndex, toIndex) => fields.move(fromIndex, toIndex),
-      swap: (indexA, indexB) =>
-        fields.update((arr) => {
-          const copy = [...arr];
-          const temp = copy[indexA];
-          copy[indexA] = copy[indexB];
-          copy[indexB] = temp;
-          return copy;
-        }),
+      swap: (indexA, indexB) => fields.swap(indexA, indexB),
       replace: (values) =>
         Effect.gen(function* () {
           const newFields = yield* Effect.all(
