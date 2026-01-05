@@ -1,47 +1,51 @@
+// Route
+export { Route, make as makeRoute, routeSpecificity } from "./Route";
+
+// Router
 export {
-  // Route
-  Route,
-  makeRoute,
-  routeSpecificity,
-  // Router
   Router,
-  makeRouter,
-  type RouterInfer,
-  // RouterContext and Link
+  make as makeRouter,
+  type Infer as RouterInfer,
+} from "./Router";
+
+// RouterContext and Link
+export {
   RouterContext,
   Link,
   getActionState,
   makeRouterLayer,
   makeTypedRouterLayer,
   type LinkProps,
-  // Types
-  type PathSegment,
-  type RouteOptions,
-  type RouteType,
-  type RouteMatchErrorType,
-  type MatchedRoute,
-  type RouteState,
-  type NavigateOptions,
-  type RouterType,
-  type RouterOptions,
-  type BaseRouter,
-  type AnyRoute,
-  type LoaderFn,
-  type LoaderResult,
-  type LoaderState,
-  type ActionFn,
-  type ActionResult,
-  type ActionState,
+} from "./RouterContext";
+
+// Types
+export type {
+  PathSegment,
+  RouteOptions,
+  Route as RouteType,
+  RouteMatchError as RouteMatchErrorType,
+  MatchedRoute,
+  RouteState,
+  NavigateOptions,
+  Router as RouterType,
+  RouterOptions,
+  BaseRouter,
+  AnyRoute,
+  LoaderFn,
+  LoaderResult,
+  LoaderState,
+  ActionFn,
+  ActionResult,
+  ActionState,
   // Utility types for extracting requirements
-  type ExtractActionRequirements,
-  type ExtractLoaderRequirements,
-  type ExtractActionError,
-  type ExtractLoaderError,
-  type AllActionRequirements,
-  type AllLoaderRequirements,
-  type AllActionErrors,
-  type AllLoaderErrors,
-  type AllRequirements,
-  // Error constructor
-  RouteMatchError,
-} from "./router";
+  ExtractActionRequirements,
+  ExtractLoaderRequirements,
+  ExtractActionError,
+  ExtractLoaderError,
+  AllActionRequirements,
+  AllLoaderRequirements,
+  AllActionErrors,
+  AllLoaderErrors,
+  AllRequirements,
+} from "./types";
+export { RouteMatchError } from "./types";

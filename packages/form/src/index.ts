@@ -1,19 +1,26 @@
+// Form
+export { Form, make as makeForm } from "./Form";
+
+// Field
+export { Field, makeField, makeFieldArray } from "./Field";
+
+// Types
+export type {
+  ValidationTiming,
+  Field as FieldType,
+  FieldArray,
+  AsyncValidator,
+  Validators,
+  FormOptions,
+  FormFields,
+  SubmitHandler,
+  Form as FormType,
+} from "./types";
+
+// Helpers (internal use, but exported for testing)
 export {
-  // Form
-  Form,
-  makeForm,
-  // Field
-  Field,
-  makeField,
-  makeFieldArray,
-  // Types
-  type ValidationTiming,
-  type FieldType,
-  type FieldArray,
-  type AsyncValidator,
-  type Validators,
-  type FormOptions,
-  type FormFields,
-  type SubmitHandler,
-  type FormType,
-} from "./form";
+  validateField,
+  validateForm,
+  extractFieldErrors,
+  hasNoErrors,
+} from "./helpers";
