@@ -153,50 +153,31 @@ export const makeFieldArray = <A>(
       options.initial.map((v) => createItemField(v)),
     );
 
-    // Signal holding the array of fields
-    const fieldsSignal =
-      yield* Signal.make<readonly FieldType<A>[]>(initialFields);
-
-    // Cast to satisfy the interface - items should be Readable
-    const items: Readable.Readable<readonly FieldType<A>[]> = fieldsSignal;
+    // Use SignalArray for built-in array manipulation methods
+    const fields = yield* Signal.Array.make<FieldType<A>>(initialFields);
 
     const fieldArray: FieldArray<A> = {
-      items,
-      append: (appendValue) =>
+      items: fields,
+      append: (value) =>
         Effect.gen(function* () {
-          const newField = yield* createItemField(appendValue);
-          yield* fieldsSignal.update((fields) => [...fields, newField]);
+          const newField = yield* createItemField(value);
+          yield* fields.push(newField);
         }).pipe(Effect.scoped),
-      prepend: (prependValue) =>
+      prepend: (value) =>
         Effect.gen(function* () {
-          const newField = yield* createItemField(prependValue);
-          yield* fieldsSignal.update((fields) => [newField, ...fields]);
+          const newField = yield* createItemField(value);
+          yield* fields.unshift(newField);
         }).pipe(Effect.scoped),
-      insert: (index, insertValue) =>
+      insert: (index, value) =>
         Effect.gen(function* () {
-          const newField = yield* createItemField(insertValue);
-          yield* fieldsSignal.update((fields) => {
-            const copy = [...fields];
-            copy.splice(index, 0, newField);
-            return copy;
-          });
+          const newField = yield* createItemField(value);
+          yield* fields.insertAt(index, newField);
         }).pipe(Effect.scoped),
-      remove: (index) =>
-        fieldsSignal.update((fields) => {
-          const copy = [...fields];
-          copy.splice(index, 1);
-          return copy;
-        }),
-      move: (fromIndex, toIndex) =>
-        fieldsSignal.update((fields) => {
-          const copy = [...fields];
-          const [item] = copy.splice(fromIndex, 1);
-          copy.splice(toIndex, 0, item);
-          return copy;
-        }),
+      remove: (index) => fields.removeAt(index).pipe(Effect.asVoid),
+      move: (fromIndex, toIndex) => fields.move(fromIndex, toIndex),
       swap: (indexA, indexB) =>
-        fieldsSignal.update((fields) => {
-          const copy = [...fields];
+        fields.update((arr) => {
+          const copy = [...arr];
           const temp = copy[indexA];
           copy[indexA] = copy[indexB];
           copy[indexB] = temp;
@@ -207,7 +188,7 @@ export const makeFieldArray = <A>(
           const newFields = yield* Effect.all(
             values.map((v) => createItemField(v)),
           );
-          yield* fieldsSignal.set(newFields);
+          yield* fields.set(newFields);
         }).pipe(Effect.scoped),
     };
 
