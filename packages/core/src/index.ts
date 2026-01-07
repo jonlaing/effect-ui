@@ -49,3 +49,13 @@ export type { Element, Child } from "./Element";
 // Boundary
 export type { SuspenseOptions, BoundarySuspenseOptions } from "./Boundary";
 export { Boundary, suspense, error } from "./Boundary";
+
+// Transition
+export type {
+  Transition as TransitionType,
+  TransitionConfig,
+  TransitionTarget,
+  GuardedTarget,
+  GuardOptions,
+} from "./Transition";
+export { Transition, InvalidTransition } from "./Transition";

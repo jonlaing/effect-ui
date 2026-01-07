@@ -325,7 +325,72 @@
 
 - [x] **Rename project directory** - Rename /Users/jon/projects/effect-ui to /Users/jon/projects/effex
 
-- [ ] **Full-fledged demo application ("Effex PM")** - Jira-lite project management tool showcasing all Effex features
+- [ ] **Demo: Effex IDE** - VSCode-like IDE clone that showcases Effex features while displaying its own source code
+  - **Concept:** A self-documenting demo that demonstrates Effex capabilities by being a functional code editor showing its own implementation
+  - **Core Layout:**
+    - File explorer (TreeView primitive) - shows the demo's own source files
+    - Editor tabs with syntax highlighting
+    - Resizable panels (Splitter primitive) - sidebar, editor, terminal
+    - Command palette (Combobox primitive with Cmd+K)
+    - Status bar with reactive state indicators
+  - **Key Features to Showcase:**
+    - **Splitter** - Resizable panels for sidebar/editor/terminal layout
+    - **TreeView** - File explorer with expand/collapse
+    - **Tabs** - Editor tabs with close buttons, reordering
+    - **Combobox** - Command palette, file search (Cmd+P)
+    - **ContextMenu** - Right-click menus in explorer and editor
+    - **Toast** - Notifications for actions (save, errors)
+    - **Tooltip** - Hover info on toolbar buttons
+    - **ScrollArea** - Custom scrollbars in editor and file tree
+    - **Signal/Derived** - Live reactive state (unsaved indicators, line counts)
+    - **Keyboard navigation** - Full keyboard support throughout
+  - **Bonus Features:**
+    - "View Source" button that highlights the component code for whatever you're interacting with
+    - Split view showing live component and its source side-by-side
+    - Terminal panel with mock output
+    - Minimap (simplified)
+    - Breadcrumb navigation
+  - **Why this demo:**
+    - Immediately familiar UX (everyone knows VSCode)
+    - Shows complex nested primitives working together
+    - Self-documenting - the demo IS the documentation
+    - Impressive "wow factor" for potential adopters
+  - **Third-party integration pattern:**
+    - Use CodeMirror for the actual editor (not a custom implementation)
+    - Demonstrates that Effex integrates with the broader JS ecosystem
+    - Pattern: wrap imperative libraries with Ref + Reaction for two-way sync
+    - Same approach works for charts (ECharts), maps (Mapbox), rich text (Tiptap), etc.
+    ```typescript
+    // General pattern for wrapping imperative libraries:
+    const ref = yield* Ref.make<HTMLElement>();
+    let instance: LibraryInstance | null = null;
+
+    // Initialize when DOM ready
+    yield* ref.value.pipe(Effect.tap((el) => {
+      instance = new Library(el, { initialValue: Effect.runSync(signal.get) });
+      instance.on("change", (v) => Effect.runSync(signal.set(v)));
+    }));
+
+    // Sync signal → library
+    yield* Reaction.make(signal, (v) => instance?.setValue(v));
+
+    // Cleanup
+    yield* Effect.addFinalizer(() => Effect.sync(() => instance?.destroy()));
+    ```
+  - **Future consideration: `wrapLibrary` utility** - The above pattern could potentially be abstracted into a reusable utility:
+    ```typescript
+    // Potential API (not yet implemented)
+    const { element, signal } = yield* wrapLibrary({
+      create: (el, initial) => new CodeMirror(el, { value: initial }),
+      getValue: (instance) => instance.getValue(),
+      setValue: (instance, value) => instance.setValue(value),
+      onChange: (instance, callback) => instance.on("change", () => callback(instance.getValue())),
+      destroy: (instance) => instance.destroy(),
+    });
+    ```
+    This would handle: ref setup, library initialization, two-way sync, cleanup. Worth exploring after more real-world usage of the manual pattern.
+
+- [ ] **Demo: Effex PM** - Jira-lite project management tool showcasing all Effex features
   - **Backend:** Effect HTTP server with in-memory state (no RDS - it's just a demo)
   - **Core Pages:**
     - **Dashboard** - Project list, recent activity, quick actions. Shows SSR, reactive lists
@@ -410,8 +475,8 @@
     - [x] Image
     - [x] Separator
     - [x] Toolbar (grouped controls container)
-    - [ ] Tree View (hierarchical expandable list)
-    - [ ] Splitter (resizable panel divider)
+    - [x] Tree View (hierarchical expandable list)
+    - [x] Splitter (resizable panel divider)
     - [ ] Carousel (rotating panels, autoplay, swipe gestures)
   - Design principles:
     - Composable parts (e.g., `Dialog.Root`, `Dialog.Trigger`, `Dialog.Content`)

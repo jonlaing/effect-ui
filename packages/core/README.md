@@ -231,6 +231,93 @@ setSet(new Set(set).add(item));
 
 With Effex's reactive collections, mutations are O(1) and automatically trigger updates.
 
+## Transition (State Machines)
+
+`Transition` provides declarative state machines with type-safe transitions and reactive guards:
+
+```ts
+import { Transition } from "@effex/core";
+
+const status = yield* Transition.make(
+  {
+    idle: ["loading"],
+    loading: ["success", "error"],
+    success: ["idle"],
+    error: ["idle", "loading"],
+  },
+  "idle"
+);
+
+// Current state (read-only Readable)
+status.current;  // Readable<"idle" | "loading" | "success" | "error">
+
+// Transition to a new state (fails if not allowed)
+yield* status.to("loading");  // Effect<void, InvalidTransition>
+
+// Check current state (reactive)
+status.is("idle");  // Readable<boolean>
+
+// Check if transition is allowed (reactive)
+status.canTransitionTo("success");  // Readable<boolean>
+```
+
+### Guarded Transitions
+
+Add reactive guards to transitions that must be satisfied:
+
+```ts
+const isOnline = yield* Signal.make(true);
+
+const status = yield* Transition.make(
+  {
+    idle: [{ to: "loading", when: isOnline }, "error"],  // guarded + unguarded
+    loading: ["success", "error"],
+    success: ["idle"],
+    error: ["idle"],
+  },
+  "idle"
+);
+
+// canTransitionTo respects guards - updates reactively
+status.canTransitionTo("loading");  // true only when isOnline is true
+
+// Transition fails if guard is false
+yield* status.to("loading");  // InvalidTransition if offline
+```
+
+Multiple guards to the same target use OR logic - transition is allowed if any guard passes.
+
+### Guarded Callbacks
+
+Create callbacks that only run when in specific states:
+
+```ts
+const submit = status.guard(
+  ["idle"],  // only enabled in these states
+  (data: FormData) => Effect.gen(function* () {
+    yield* status.to("loading");
+    return yield* api.submit(data);
+  }),
+  { onBlocked: "ignore" }  // or "fail" (default)
+);
+
+// Returns Effect.void if not in "idle" state (with onBlocked: "ignore")
+// Returns Effect.fail(InvalidTransition) if onBlocked: "fail"
+yield* submit(formData);
+```
+
+### Usage in UI
+
+```ts
+$.button(
+  {
+    onClick: () => Effect.runPromise(status.to("loading")),
+    disabled: status.canTransitionTo("loading").map(can => !can),
+  },
+  "Start"
+)
+```
+
 ## Reactive Props
 
 Many components accept props that can be either static values or reactive `Readable` values. This is expressed using the `Readable.Reactive<T>` type:
@@ -395,3 +482,12 @@ The result of `Derived.async()`:
 - `Signal.Array.make<T>(initial?)` - Create a reactive array
 - `Signal.Map.make<K, V>(initial?)` - Create a reactive map
 - `Signal.Set.make<T>(initial?)` - Create a reactive set
+
+### Transition
+
+- `Transition.make(config, initial)` - Create a state machine with declarative transitions
+- `transition.current` - `Readable<S>` - Current state (read-only)
+- `transition.to(state)` - `Effect<void, InvalidTransition>` - Transition to a new state
+- `transition.is(state)` - `Readable<boolean>` - Check if in a specific state
+- `transition.canTransitionTo(state)` - `Readable<boolean>` - Check if transition is allowed (respects guards)
+- `transition.guard(states, callback, options?)` - Create a callback that only runs in specified states
