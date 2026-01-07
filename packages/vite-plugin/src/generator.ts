@@ -61,23 +61,23 @@ export const generateRoutes = (
   lines.push("export const routes = {");
 
   for (const route of routes) {
-    const routeOptions: string[] = [];
+    if (route.exports.hasRoute) {
+      // Use DefinedRoute - extract config and create route from it
+      // The __path is injected by the vite-plugin transform
+      const routeOptions: string[] = [];
+      routeOptions.push(
+        `    params: ${route.importName}.route._config.paramsSchema`,
+      );
+      routeOptions.push(`    loader: ${route.importName}.route._config.loader`);
+      routeOptions.push(`    action: ${route.importName}.route._config.action`);
 
-    if (route.exports.hasParams) {
-      routeOptions.push(`    params: ${route.importName}.params`);
-    }
-    if (route.exports.hasLoader) {
-      routeOptions.push(`    loader: ${route.importName}.loader`);
-    }
-    if (route.exports.hasAction) {
-      routeOptions.push(`    action: ${route.importName}.action`);
-    }
-
-    if (routeOptions.length > 0) {
-      lines.push(`  ${route.routeName}: Route.make("${route.routePath}", {`);
+      lines.push(
+        `  ${route.routeName}: Route.make(${route.importName}.route._path, {`,
+      );
       lines.push(routeOptions.join(",\n") + ",");
       lines.push("  }),");
     } else {
+      // No Route.define - create a basic route with just the path
       lines.push(`  ${route.routeName}: Route.make("${route.routePath}"),`);
     }
   }

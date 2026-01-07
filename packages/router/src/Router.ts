@@ -16,6 +16,7 @@ import { setupHistoryListener } from "./history";
 import { createLoaderMethods } from "./loader";
 import { createActionMethods } from "./action";
 import { setupPathnameSubscription } from "./subscription";
+import { RouterContext } from "./RouterContext";
 
 /**
  * Create a Router from a record of routes.
@@ -34,6 +35,9 @@ import { setupPathnameSubscription } from "./subscription";
  *   home: HomeRoute,
  *   user: UserRoute,
  * })
+ *
+ * // Provide to your app using router.layer
+ * yield* mount(App().pipe(Effect.provide(router.layer)), root)
  *
  * // Navigate
  * yield* router.push("/users/123")
@@ -136,7 +140,7 @@ export const make = <Routes extends Record<string, AnyRoute>>(
       Effect.provide(internalsLayer),
     );
 
-    return {
+    const router: RouterType<Routes> = {
       pathname: pathnameSignal,
       searchParams: searchParamsSignal,
       currentRoute,
@@ -153,7 +157,17 @@ export const make = <Routes extends Record<string, AnyRoute>>(
       submitAction,
       initializeLoaderData,
       initializeActionData,
+      // Layer is added below after router object is created
+      layer: null as unknown as Layer.Layer<unknown>,
     };
+
+    // Add the layer property (needs router reference)
+    (router as { layer: Layer.Layer<RouterContext> }).layer = Layer.succeed(
+      RouterContext,
+      router,
+    );
+
+    return router;
   });
 
 /**

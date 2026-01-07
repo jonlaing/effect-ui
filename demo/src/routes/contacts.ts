@@ -8,8 +8,8 @@ import {
   RouterContext,
   when,
   t,
+  Route,
 } from "@effex/platform";
-import type { ActionFn } from "@effex/platform";
 
 const ContactSchema = Schema.Struct({
   name: Schema.String.pipe(
@@ -30,33 +30,34 @@ interface ActionResponse {
   errors?: Record<string, string[]>;
 }
 
-// Action function - handles form submission
-export const action: ActionFn<ActionResponse> = ({ formData }) =>
-  Effect.gen(function* () {
-    const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
-    const message = formData.get("message") as string;
+export const route = Route.define({
+  action: ({ formData }) =>
+    Effect.gen(function* () {
+      const name = formData.get("name") as string;
+      const email = formData.get("email") as string;
+      const message = formData.get("message") as string;
 
-    if (!name || !email || !message) {
+      if (!name || !email || !message) {
+        return {
+          success: false,
+          message: "Please fill in all fields",
+          errors: {
+            ...(name ? {} : { name: ["Name is required"] }),
+            ...(email ? {} : { email: ["Email is required"] }),
+            ...(message ? {} : { message: ["Message is required"] }),
+          },
+        };
+      }
+
+      yield* Effect.sleep(500);
+      console.log(`Contact form submitted: ${name} <${email}>`);
+
       return {
-        success: false,
-        message: "Please fill in all fields",
-        errors: {
-          ...(name ? {} : { name: ["Name is required"] }),
-          ...(email ? {} : { email: ["Email is required"] }),
-          ...(message ? {} : { message: ["Message is required"] }),
-        },
+        success: true,
+        message: `Thanks ${name}! We'll get back to you soon.`,
       };
-    }
-
-    yield* Effect.sleep(500);
-    console.log(`Contact form submitted: ${name} <${email}>`);
-
-    return {
-      success: true,
-      message: `Thanks ${name}! We'll get back to you soon.`,
-    };
-  });
+    }),
+});
 
 // Page component
 const ContactPage = component("ContactPage", () =>

@@ -1,7 +1,8 @@
 import { Effect, Schema } from "effect";
-import type { PathSegment, RouteOptions } from "./types";
+import type { PathSegment, RouteOptions, LoaderFn, ActionFn } from "./types";
 import type { Route as RouteType } from "./types";
 import { RouteMatchError } from "./types";
+import { RouterContext } from "./RouterContext";
 
 /**
  * Parse a path pattern into segments.
@@ -170,9 +171,195 @@ export const make = <
   return route;
 };
 
+// ============================================================================
+// Route.define - Co-located route definition with accessor methods
+// ============================================================================
+
+/**
+ * Options for defining a route with co-located configuration.
+ * The path is injected by the vite-plugin based on file location.
+ */
+export interface DefineOptions<
+  P extends Schema.Schema.AnyNoContext = Schema.Schema.AnyNoContext,
+  LA = unknown,
+  LE = never,
+  LR = never,
+  AA = unknown,
+  AE = never,
+  AR = never,
+> {
+  /** Schema for validating and typing path parameters */
+  readonly params?: P;
+  /** Loader function to fetch data for this route */
+  readonly loader?: LoaderFn<Schema.Schema.Type<P>, LA, LE, LR>;
+  /** Action function to handle form submissions for this route */
+  readonly action?: ActionFn<AA, AE, AR>;
+  /**
+   * @internal Injected by vite-plugin - do not set manually
+   */
+  readonly __path?: string;
+}
+
+/**
+ * A defined route with accessor methods for use in components.
+ * Created by Route.define() and used within page components.
+ */
+export interface DefinedRoute<
+  P extends Schema.Schema.AnyNoContext = Schema.Schema.AnyNoContext,
+  LA = unknown,
+  LE = never,
+  LR = never,
+  AA = unknown,
+  AE = never,
+  AR = never,
+> {
+  /**
+   * Get the current route params (type-safe based on params schema).
+   * Only valid when this route is active.
+   *
+   * @example
+   * ```ts
+   * const { id } = yield* route.params()
+   * ```
+   */
+  readonly params: () => Effect.Effect<
+    Schema.Schema.Type<P>,
+    RouteMatchError,
+    RouterContext
+  >;
+
+  /**
+   * Get the loader data for this route (type-safe based on loader return type).
+   * Only valid when this route is active and has a loader.
+   *
+   * @example
+   * ```ts
+   * const user = yield* route.loaderData()
+   * ```
+   */
+  readonly loaderData: () => Effect.Effect<LA, never, RouterContext>;
+
+  /**
+   * Check if this route is currently active.
+   *
+   * @example
+   * ```ts
+   * const active = yield* route.isActive()
+   * ```
+   */
+  readonly isActive: () => Effect.Effect<boolean, never, RouterContext>;
+
+  // Internal properties for the router to use
+  /** @internal */
+  readonly _config: {
+    readonly paramsSchema: P | undefined;
+    readonly loader: LoaderFn<Schema.Schema.Type<P>, LA, LE, LR> | undefined;
+    readonly action: ActionFn<AA, AE, AR> | undefined;
+  };
+  /** @internal */
+  readonly _path: string;
+  /** @internal */
+  readonly _segments: readonly PathSegment[];
+}
+
+/**
+ * Define a route with co-located configuration.
+ * Use this in page files to define routes alongside components.
+ *
+ * The path is automatically injected by the vite-plugin based on the file location.
+ *
+ * @example
+ * ```ts
+ * // routes/users.$id.ts
+ * import { Route } from "@effex/router";
+ * import { Schema, Effect } from "effect";
+ *
+ * export const route = Route.define({
+ *   params: Schema.Struct({ id: Schema.String }),
+ *   loader: (params) => Effect.gen(function* () {
+ *     return yield* fetchUser(params.id);
+ *   }),
+ * });
+ *
+ * export default component("UserPage", () =>
+ *   Effect.gen(function* () {
+ *     const { id } = yield* route.params();
+ *     const user = yield* route.loaderData();
+ *     // ...
+ *   })
+ * );
+ * ```
+ */
+export const define = <
+  P extends Schema.Schema.AnyNoContext = Schema.Schema.AnyNoContext,
+  LA = unknown,
+  LE = never,
+  LR = never,
+  AA = unknown,
+  AE = never,
+  AR = never,
+>(
+  options: DefineOptions<P, LA, LE, LR, AA, AE, AR> = {},
+): DefinedRoute<P, LA, LE, LR, AA, AE, AR> => {
+  // Path is injected by vite-plugin, default to "/" if not set
+  const path = options.__path ?? "/";
+  const segments = parsePath(path);
+  const paramsSchema = options.params;
+
+  const definedRoute: DefinedRoute<P, LA, LE, LR, AA, AE, AR> = {
+    params: () =>
+      Effect.gen(function* () {
+        const router = yield* RouterContext;
+        const pathname = yield* router.pathname.get;
+        const rawParams = matchSegments(segments, pathname);
+
+        if (rawParams === null) {
+          return yield* Effect.fail(RouteMatchError(pathname, "no-match"));
+        }
+
+        if (paramsSchema) {
+          const decode = Schema.decodeUnknown(paramsSchema);
+          const result = yield* decode(rawParams).pipe(
+            Effect.mapError((e) =>
+              RouteMatchError(pathname, "validation-failed", String(e)),
+            ),
+          );
+          return result as Schema.Schema.Type<P>;
+        }
+
+        return rawParams as Schema.Schema.Type<P>;
+      }),
+
+    loaderData: () =>
+      Effect.gen(function* () {
+        const router = yield* RouterContext;
+        const state = yield* router.loaderState.get;
+        return state.data as LA;
+      }),
+
+    isActive: () =>
+      Effect.gen(function* () {
+        const router = yield* RouterContext;
+        const pathname = yield* router.pathname.get;
+        return matchSegments(segments, pathname) !== null;
+      }),
+
+    _config: {
+      paramsSchema: options.params,
+      loader: options.loader,
+      action: options.action,
+    },
+    _path: path,
+    _segments: segments,
+  };
+
+  return definedRoute;
+};
+
 /**
  * Route module namespace.
  */
 export const Route = {
   make,
+  define,
 };

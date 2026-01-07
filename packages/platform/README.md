@@ -19,11 +19,48 @@ import {
   Signal,
   component,
   Router,
+  Route,
   Form,
   Routes,
   Platform,
-  RouteLoader,
 } from "@effex/platform";
+```
+
+## File-Based Routing with Route.define
+
+Define routes with co-located params, loaders, and actions:
+
+```ts
+// src/routes/users.$id.ts
+import { Effect, Schema } from "effect";
+import { $, component, Route } from "@effex/platform";
+
+// Define route configuration
+export const route = Route.define({
+  params: Schema.Struct({ id: Schema.String }),
+  loader: (params) =>
+    Effect.gen(function* () {
+      return yield* fetchUser(params.id);
+    }),
+});
+
+// Component with type-safe access
+const UserPage = component("UserPage", () =>
+  Effect.gen(function* () {
+    // Type-safe params
+    const params = yield* route.params();
+
+    // Type-safe loader data
+    const user = yield* route.loaderData<User>();
+
+    return yield* $.div([
+      $.h1([user.name]),
+      $.p([user.email]),
+    ]);
+  }),
+);
+
+export default UserPage;
 ```
 
 ## Server-Side Rendering
@@ -34,7 +71,7 @@ import {
 // server-entry.ts
 import { Effect } from "effect";
 import { render, renderToDocument } from "@effex/platform/server";
-import { Router, Routes, makeRouterLayer } from "@effex/platform";
+import { Router, Routes } from "@effex/platform";
 import { routes, components } from "./generated/routes.js";
 
 export async function renderPage(request: Request): Promise<string> {
@@ -46,9 +83,8 @@ export async function renderPage(request: Request): Promise<string> {
           initialPath: url.pathname,
           initialSearch: url.search,
         });
-        const routerLayer = makeRouterLayer(router);
 
-        const app = Routes({ components }).pipe(Effect.provide(routerLayer));
+        const app = Routes({ components }).pipe(Effect.provide(router.layer));
 
         const result = yield* render(app, { request, router });
 
@@ -68,7 +104,7 @@ export async function renderPage(request: Request): Promise<string> {
 ```ts
 // client.ts
 import { Effect } from "effect";
-import { Router, Routes, makeRouterLayer } from "@effex/platform";
+import { Router, Routes } from "@effex/platform";
 import { hydrateApp } from "@effex/platform/client";
 import { routes, components } from "./generated/routes.js";
 
@@ -76,9 +112,8 @@ Effect.runFork(
   Effect.scoped(
     Effect.gen(function* () {
       const router = yield* Router.make(routes);
-      const routerLayer = makeRouterLayer(router);
 
-      const app = Routes({ components }).pipe(Effect.provide(routerLayer));
+      const app = Routes({ components }).pipe(Effect.provide(router.layer));
 
       yield* Effect.promise(() =>
         hydrateApp(app, document.getElementById("root")!, { router }),
@@ -95,31 +130,30 @@ Effect.runFork(
 Load data on the server before rendering:
 
 ```ts
-import { Route, RouteLoader } from "@effex/platform";
+// src/routes/users.$id.ts
+import { Effect, Schema } from "effect";
+import { $, component, Route } from "@effex/platform";
 
-// Define route with loader
-const routes = {
-  user: Route.make("/users/:id", {
-    params: Schema.Struct({ id: Schema.String }),
-    loader: (ctx) =>
-      Effect.gen(function* () {
-        const params = yield* ctx.params.get;
-        return yield* fetchUser(params.id);
-      }),
-  }),
-};
+export const route = Route.define({
+  params: Schema.Struct({ id: Schema.String }),
+  loader: (params) =>
+    Effect.gen(function* () {
+      return yield* fetchUser(params.id);
+    }),
+});
 
-// Access loader data in component
 const UserPage = component("UserPage", () =>
   Effect.gen(function* () {
-    const user = yield* RouteLoader.loaderData<User>();
+    const user = yield* route.loaderData<User>();
 
     return yield* $.div([
-      $.h1(user.name),
-      $.p(user.email),
+      $.h1([user.name]),
+      $.p([user.email]),
     ]);
   }),
 );
+
+export default UserPage;
 ```
 
 ## Actions
@@ -127,44 +161,40 @@ const UserPage = component("UserPage", () =>
 Handle form submissions on the server:
 
 ```ts
-import { Route, Form } from "@effex/platform";
+// src/routes/contact.ts
+import { Effect } from "effect";
+import { $, component, Route, Form, when, RouterContext } from "@effex/platform";
 
-// Define route with action
-const routes = {
-  contact: Route.make("/contact", {
-    action: (ctx) =>
-      Effect.gen(function* () {
-        const formData = yield* ctx.formData;
-        const name = formData.get("name");
-        const message = formData.get("message");
+export const route = Route.define({
+  action: ({ formData }) =>
+    Effect.gen(function* () {
+      const name = formData.get("name") as string;
+      const message = formData.get("message") as string;
 
-        yield* sendEmail({ name, message });
+      yield* sendEmail({ name, message });
 
-        return { success: true, message: "Message sent!" };
-      }),
-  }),
-};
+      return { success: true, message: "Message sent!" };
+    }),
+});
 
-// Use Form component for submissions
 const ContactForm = component("ContactForm", () =>
   Effect.gen(function* () {
     const router = yield* RouterContext;
     const actionState = router.actionState;
 
-    return yield* Form.make({
-      action: "contact",
-      children: [
-        $.input({ name: "name", placeholder: "Name" }),
-        $.textarea({ name: "message", placeholder: "Message" }),
-        $.button({ type: "submit" }, "Send"),
-        when(actionState.map((s) => s.data?.success), {
-          onTrue: () => $.p({ class: "success" }, "Message sent!"),
-          onFalse: () => $.span(),
-        }),
-      ],
-    });
+    return yield* $.form({ method: "post" }, [
+      $.input({ name: "name", placeholder: "Name" }),
+      $.textarea({ name: "message", placeholder: "Message" }),
+      $.button({ type: "submit" }, ["Send"]),
+      when(actionState.map((s) => s.data?.success), {
+        onTrue: () => $.p({ class: "success" }, ["Message sent!"]),
+        onFalse: () => $.span(),
+      }),
+    ]);
   }),
 );
+
+export default ContactForm;
 ```
 
 ## Platform Services
@@ -256,6 +286,13 @@ import { Routes, Form, Platform } from "@effex/platform";
 
 ## API Reference
 
+### Route
+
+- `Route.define(options?)` - Define a route with params, loader, action
+- `route.params()` - Effect returning current params (or null)
+- `route.loaderData<T>()` - Effect returning loader data
+- `route.isActive()` - Readable signal for active state
+
 ### Server
 
 - `render(element, options)` - Render to HTML
@@ -265,14 +302,6 @@ import { Routes, Form, Platform } from "@effex/platform";
 ### Client
 
 - `hydrateApp(element, container, options)` - Hydrate server-rendered HTML
-
-### Loaders
-
-- `RouteLoader.loaderData<T>()` - Get loader data for current route
-
-### Actions
-
-- `Form.make(options)` - Create action form
 
 ### Platform
 

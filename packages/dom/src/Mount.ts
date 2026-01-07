@@ -20,7 +20,7 @@ import { DOMRenderer } from "./DOMRenderer";
  * @example
  * ```ts
  * const app = div([
- *   h1(["Hello, Effect UI!"])
+ *   h1(["Hello, Effex!"])
  * ])
  *
  * // Mount the app and run it
@@ -86,7 +86,7 @@ export const mount = (
   });
 
 /**
- * Run an Effect UI application. This is the main entry point for Effect UI apps.
+ * Run an Effex application. This is the main entry point for Effex apps.
  *
  * Handles all the boilerplate:
  * - Scopes the effect for proper resource cleanup

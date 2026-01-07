@@ -1,10 +1,5 @@
 import { Effect, Schema } from "effect";
-import { $, component, Link, RouteLoader } from "@effex/platform";
-
-// Param schema for validation
-export const params = Schema.Struct({
-  id: Schema.String,
-});
+import { $, component, Link, Route } from "@effex/platform";
 
 // User type
 interface User {
@@ -36,22 +31,26 @@ const users: Record<string, User> = {
   },
 };
 
-// Loader function - runs on the server
-export const loader = (p: { readonly id: string }) =>
-  Effect.gen(function* () {
-    console.log("Running loader for user", p.id);
-    yield* Effect.sleep(100);
-    const user = users[p.id];
-    if (!user) {
-      return yield* Effect.fail(new Error(`User ${p.id} not found`));
-    }
-    return user;
-  });
+export const route = Route.define({
+  params: Schema.Struct({
+    id: Schema.String,
+  }),
+  loader: (p: { readonly id: string }) =>
+    Effect.gen(function* () {
+      console.log("Running loader for user", p.id);
+      yield* Effect.sleep(100);
+      const user = users[p.id];
+      if (!user) {
+        return yield* Effect.fail(new Error(`User ${p.id} not found`));
+      }
+      return user;
+    }),
+});
 
 // Page component
 const UserPage = component("UserPage", () =>
   Effect.gen(function* () {
-    const user = yield* RouteLoader.loaderData<User>();
+    const user = yield* route.loaderData() as Effect.Effect<User>;
 
     return yield* $.div({ class: "page" }, [
       $.h1({}, [`User: ${user.name}`]),

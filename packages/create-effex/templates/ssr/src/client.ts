@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { Router, Routes, makeRouterLayer } from "@effex/platform";
+import { Router, Routes } from "@effex/platform";
 import { hydrateApp } from "@effex/platform/client";
 import { routes, components } from "./generated/routes.js";
 
@@ -17,10 +17,9 @@ const hydrate = async () => {
       Effect.gen(function* () {
         // Create the router
         const router = yield* Router.make(routes);
-        const routerLayer = makeRouterLayer(router);
 
         // Create the app element with router context provided
-        const app = Routes({ components }).pipe(Effect.provide(routerLayer));
+        const app = Routes({ components }).pipe(Effect.provide(router.layer));
 
         // Hydrate - cast types to work around cross-package Effect type issues
         yield* Effect.promise(() =>

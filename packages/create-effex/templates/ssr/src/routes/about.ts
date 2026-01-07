@@ -1,5 +1,7 @@
 import { Effect } from "effect";
-import { $, component, Link } from "@effex/platform";
+import { $, component, Link, Route } from "@effex/platform";
+
+export const route = Route.define();
 
 const AboutPage = component("AboutPage", () =>
   Effect.gen(function* () {

@@ -21,31 +21,20 @@ export const parseRouteExports = async (
  * Parse route exports from file content (for testing).
  */
 export const parseRouteExportsFromContent = (content: string): RouteExports => {
-  // Detect named exports
-  // Matches: export const params, export const loader, etc.
-  // Also handles: export { params }, export { loader as default }, etc.
-  const hasParams =
-    /export\s+(const|let|var|function)\s+params\b/.test(content) ||
-    /export\s*\{\s*[^}]*\bparams\b/.test(content);
-
-  const hasLoader =
-    /export\s+(const|let|var|function)\s+loader\b/.test(content) ||
-    /export\s*\{\s*[^}]*\bloader\b/.test(content);
-
-  const hasAction =
-    /export\s+(const|let|var|function)\s+action\b/.test(content) ||
-    /export\s*\{\s*[^}]*\baction\b/.test(content);
-
   // Detect default export
   // Matches: export default, export { X as default }
   const hasDefaultExport =
     /export\s+default\b/.test(content) ||
     /export\s*\{[^}]*\bas\s+default\b/.test(content);
 
+  // Detect route export (DefinedRoute from Route.define)
+  // Matches: export const route, export { route }
+  const hasRoute =
+    /export\s+(const|let|var)\s+route\b/.test(content) ||
+    /export\s*\{\s*[^}]*\broute\b/.test(content);
+
   return {
-    hasParams,
-    hasLoader,
-    hasAction,
     hasDefaultExport,
+    hasRoute,
   };
 };

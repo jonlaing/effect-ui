@@ -175,10 +175,7 @@ export const WithFeaturedItem: Story = {
                 { style: { display: "grid", gridTemplateColumns: "1fr 2fr" } },
                 [
                   $.a({ href: "#intro", class: "navigationmenu-featured" }, [
-                    $.span(
-                      { class: "navigationmenu-featured-title" },
-                      "Effect UI",
-                    ),
+                    $.span({ class: "navigationmenu-featured-title" }, "Effex"),
                     $.span(
                       { class: "navigationmenu-featured-description" },
                       "Build reactive UIs with Effect-TS. Type-safe, composable, and elegant.",
@@ -194,7 +191,7 @@ export const WithFeaturedItem: Story = {
                         ),
                         $.span(
                           { class: "navigationmenu-link-description" },
-                          "How to install and set up Effect UI",
+                          "How to install and set up Effex",
                         ),
                       ],
                     ),

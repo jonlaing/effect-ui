@@ -1,6 +1,6 @@
 import { Effect, Option } from "effect";
 import { component, match, div, runApp, mount } from "@effex/dom";
-import { Router, makeRouterLayer, RouterContext } from "@effex/router";
+import { Router, RouterContext } from "@effex/router";
 import { routes, components } from "./generated/routes.js";
 
 // Simple Routes component for SPA (no loader context needed)
@@ -34,9 +34,8 @@ if (!container) {
 runApp(
   Effect.gen(function* () {
     const router = yield* Router.make(routes);
-    const routerLayer = makeRouterLayer(router);
 
-    const app = Routes().pipe(Effect.provide(routerLayer));
+    const app = Routes().pipe(Effect.provide(router.layer));
 
     yield* mount(app as Parameters<typeof mount>[0], container);
 

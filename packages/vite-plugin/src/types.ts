@@ -2,14 +2,10 @@
  * Information about exports detected in a route file.
  */
 export interface RouteExports {
-  /** Whether the file exports a `params` schema */
-  readonly hasParams: boolean;
-  /** Whether the file exports a `loader` function */
-  readonly hasLoader: boolean;
-  /** Whether the file exports an `action` function */
-  readonly hasAction: boolean;
   /** Whether the file has a default export (the component) */
   readonly hasDefaultExport: boolean;
+  /** Whether the file exports a `route` (DefinedRoute from Route.define) */
+  readonly hasRoute: boolean;
 }
 
 /**
@@ -55,4 +51,12 @@ export interface EffexPluginOptions {
    * @default [".tsx", ".ts", ".jsx", ".js"]
    */
   readonly extensions?: readonly string[];
+
+  /**
+   * Automatically scaffold new route files with a base component and route definition.
+   * When enabled, creating a new empty file in the routes directory will populate it
+   * with a Route.define and default component.
+   * @default false
+   */
+  readonly scaffold?: boolean;
 }

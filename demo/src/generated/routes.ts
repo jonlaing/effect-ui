@@ -17,15 +17,26 @@ import IndexComponent from "../routes/_index";
 
 // Route definitions
 export const routes = {
-  users_$id: Route.make("/users/:id", {
-    params: UsersIdRoute.params,
-    loader: UsersIdRoute.loader,
+  users_$id: Route.make(UsersIdRoute.route._path, {
+    params: UsersIdRoute.route._config.paramsSchema,
+    loader: UsersIdRoute.route._config.loader,
+    action: UsersIdRoute.route._config.action,
   }),
-  about: Route.make("/about"),
-  contacts: Route.make("/contacts", {
-    action: ContactsRoute.action,
+  about: Route.make(AboutRoute.route._path, {
+    params: AboutRoute.route._config.paramsSchema,
+    loader: AboutRoute.route._config.loader,
+    action: AboutRoute.route._config.action,
   }),
-  index: Route.make("/"),
+  contacts: Route.make(ContactsRoute.route._path, {
+    params: ContactsRoute.route._config.paramsSchema,
+    loader: ContactsRoute.route._config.loader,
+    action: ContactsRoute.route._config.action,
+  }),
+  index: Route.make(IndexRoute.route._path, {
+    params: IndexRoute.route._config.paramsSchema,
+    loader: IndexRoute.route._config.loader,
+    action: IndexRoute.route._config.action,
+  }),
 } as const;
 
 // Component map for rendering routes

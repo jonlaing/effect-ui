@@ -2,19 +2,23 @@ import { describe, it, expect } from "vitest";
 import { parseRouteExportsFromContent } from "./parser";
 
 describe("parseRouteExportsFromContent", () => {
-  it("should detect named export const", () => {
+  it("should detect route export from Route.define", () => {
     const content = `
-      export const params = Schema.Struct({ id: Schema.String });
-      export const loader = (params) => Effect.succeed(params);
-      export const action = ({ formData }) => Effect.succeed({});
+      import { Route } from "@effex/router";
+      import { Schema } from "effect";
+
+      export const route = Route.define({
+        params: Schema.Struct({ id: Schema.String }),
+        loader: (params) => Effect.succeed({ name: "test" }),
+      });
+
+      export default component("UserPage", () => div([]));
     `;
 
     const exports = parseRouteExportsFromContent(content);
 
-    expect(exports.hasParams).toBe(true);
-    expect(exports.hasLoader).toBe(true);
-    expect(exports.hasAction).toBe(true);
-    expect(exports.hasDefaultExport).toBe(false);
+    expect(exports.hasRoute).toBe(true);
+    expect(exports.hasDefaultExport).toBe(true);
   });
 
   it("should detect default export", () => {
@@ -26,6 +30,7 @@ describe("parseRouteExportsFromContent", () => {
     const exports = parseRouteExportsFromContent(content);
 
     expect(exports.hasDefaultExport).toBe(true);
+    expect(exports.hasRoute).toBe(false);
   });
 
   it("should detect inline default export", () => {
@@ -36,18 +41,6 @@ describe("parseRouteExportsFromContent", () => {
     const exports = parseRouteExportsFromContent(content);
 
     expect(exports.hasDefaultExport).toBe(true);
-  });
-
-  it("should detect export function syntax", () => {
-    const content = `
-      export function loader(params) {
-        return Effect.succeed(params);
-      }
-    `;
-
-    const exports = parseRouteExportsFromContent(content);
-
-    expect(exports.hasLoader).toBe(true);
   });
 
   it("should detect re-exports with as default", () => {
@@ -61,24 +54,45 @@ describe("parseRouteExportsFromContent", () => {
     expect(exports.hasDefaultExport).toBe(true);
   });
 
-  it("should handle a complete route file", () => {
+  it("should handle file with only component (no Route.define)", () => {
+    const content = `
+      import { component, div } from "@effex/dom";
+
+      const AboutPage = component("AboutPage", () => div(["About us"]));
+
+      export default AboutPage;
+    `;
+
+    const exports = parseRouteExportsFromContent(content);
+
+    expect(exports.hasRoute).toBe(false);
+    expect(exports.hasDefaultExport).toBe(true);
+  });
+
+  it("should detect route export with re-export syntax", () => {
+    const content = `
+      const route = Route.define({});
+      export { route };
+      export default MyPage;
+    `;
+
+    const exports = parseRouteExportsFromContent(content);
+
+    expect(exports.hasRoute).toBe(true);
+    expect(exports.hasDefaultExport).toBe(true);
+  });
+
+  it("should handle complete route file with Route.define", () => {
     const content = `
       import { Effect, Schema } from "effect";
       import { component, div, h1 } from "@effex/dom";
+      import { Route } from "@effex/router";
 
-      export const params = Schema.Struct({
-        id: Schema.String,
+      export const route = Route.define({
+        params: Schema.Struct({ id: Schema.String }),
+        loader: (params) => Effect.succeed({ id: params.id, name: "Test" }),
+        action: ({ formData }) => Effect.succeed({ success: true }),
       });
-
-      export const loader = (params) =>
-        Effect.gen(function* () {
-          return { id: params.id, name: "Test" };
-        });
-
-      export const action = ({ formData, params }) =>
-        Effect.gen(function* () {
-          return { success: true };
-        });
 
       const UserPage = component("UserPage", () =>
         Effect.gen(function* () {
@@ -91,43 +105,7 @@ describe("parseRouteExportsFromContent", () => {
 
     const exports = parseRouteExportsFromContent(content);
 
-    expect(exports.hasParams).toBe(true);
-    expect(exports.hasLoader).toBe(true);
-    expect(exports.hasAction).toBe(true);
-    expect(exports.hasDefaultExport).toBe(true);
-  });
-
-  it("should handle file with only component", () => {
-    const content = `
-      import { component, div } from "@effex/dom";
-
-      const AboutPage = component("AboutPage", () => div(["About us"]));
-
-      export default AboutPage;
-    `;
-
-    const exports = parseRouteExportsFromContent(content);
-
-    expect(exports.hasParams).toBe(false);
-    expect(exports.hasLoader).toBe(false);
-    expect(exports.hasAction).toBe(false);
-    expect(exports.hasDefaultExport).toBe(true);
-  });
-
-  it("should not false positive on similar names", () => {
-    const content = `
-      const myParams = { id: "123" };
-      const loaderData = {};
-      const actionResult = {};
-
-      export default component("Page", () => div([]));
-    `;
-
-    const exports = parseRouteExportsFromContent(content);
-
-    expect(exports.hasParams).toBe(false);
-    expect(exports.hasLoader).toBe(false);
-    expect(exports.hasAction).toBe(false);
+    expect(exports.hasRoute).toBe(true);
     expect(exports.hasDefaultExport).toBe(true);
   });
 });

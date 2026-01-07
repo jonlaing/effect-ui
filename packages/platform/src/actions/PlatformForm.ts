@@ -39,12 +39,16 @@ export interface PlatformForm<
    */
   readonly submit: <SE = never, SR = never>(
     handler?: SubmitHandler<Schema.Schema.Type<S>, SE, SR>,
-  ) => Effect.Effect<void, E | SE | unknown, R | SR>;
+  ) => Effect.Effect<void, E | SE | unknown, R | SR | unknown>;
   /**
    * Submit form data to the current route's action.
    * Returns the action result or null if no action handler exists.
    */
-  readonly submitToAction: () => Effect.Effect<ActionResult | null, unknown>;
+  readonly submitToAction: () => Effect.Effect<
+    ActionResult | null,
+    unknown,
+    unknown
+  >;
 }
 
 /**
@@ -134,7 +138,11 @@ export const make = <
     const router = yield* RouterContext;
 
     // Submit to route action
-    const submitToAction = (): Effect.Effect<ActionResult | null, unknown> =>
+    const submitToAction = (): Effect.Effect<
+      ActionResult | null,
+      unknown,
+      unknown
+    > =>
       Effect.gen(function* () {
         // Get current values
         const values = yield* coreForm.getValues();
@@ -162,7 +170,7 @@ export const make = <
     const submit = options.action
       ? <SE, SR>(
           handler?: (values: T) => Effect.Effect<void, SE, SR>,
-        ): Effect.Effect<void, E | SE | unknown, R | SR> =>
+        ): Effect.Effect<void, E | SE | unknown, R | SR | unknown> =>
           Effect.gen(function* () {
             // Touch all fields
             for (const field of Object.values(coreForm.fields)) {

@@ -1,4 +1,4 @@
-import type { Effect, Option, Schema } from "effect";
+import type { Effect, Layer, Option, Schema } from "effect";
 import type { Readable } from "@effex/core";
 
 /**
@@ -461,6 +461,17 @@ export interface Router<Routes extends Record<string, AnyRoute>> {
     routeName: string,
     data: unknown,
   ) => Effect.Effect<void>;
+  /**
+   * Layer that provides RouterContext for components.
+   * Use this to provide the router to your app.
+   *
+   * @example
+   * ```ts
+   * const router = yield* Router.make(routes)
+   * yield* mount(App().pipe(Effect.provide(router.layer)), root)
+   * ```
+   */
+  readonly layer: Layer.Layer<unknown>;
 }
 
 /**
@@ -502,5 +513,9 @@ export interface BaseRouter {
   /** Submit a form to the current route's action */
   readonly submitAction: (
     formData: FormData,
-  ) => Effect.Effect<ActionResult | null, unknown>;
+  ) => Effect.Effect<ActionResult | null, unknown, unknown>;
+  /**
+   * Layer that provides RouterContext for components.
+   */
+  readonly layer: Layer.Layer<unknown>;
 }

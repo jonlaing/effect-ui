@@ -3,7 +3,7 @@ import { generateRoutes } from "./generator";
 import type { ScannedRoute } from "./types";
 
 describe("generateRoutes", () => {
-  it("should generate routes file for a single route", () => {
+  it("should generate routes file for a single route without Route.define", () => {
     const routes: ScannedRoute[] = [
       {
         filePath: "_index.tsx",
@@ -14,10 +14,8 @@ describe("generateRoutes", () => {
         isLayout: false,
         isIndex: true,
         exports: {
-          hasParams: false,
-          hasLoader: false,
-          hasAction: false,
           hasDefaultExport: true,
+          hasRoute: false,
         },
       },
     ];
@@ -30,12 +28,12 @@ describe("generateRoutes", () => {
     expect(code).toContain('import { Route } from "@effex/platform"');
     expect(code).toContain('import * as IndexRoute from "../routes/_index"');
     expect(code).toContain('import IndexComponent from "../routes/_index"');
-    expect(code).toContain('index: Route.make("/")');
+    expect(code).toContain('index: Route.make("/"),');
     expect(code).toContain("index: IndexComponent");
     expect(code).toContain("export type Routes = typeof routes");
   });
 
-  it("should generate routes with loader and params", () => {
+  it("should generate routes from DefinedRoute export", () => {
     const routes: ScannedRoute[] = [
       {
         filePath: "users.$id.tsx",
@@ -46,10 +44,8 @@ describe("generateRoutes", () => {
         isLayout: false,
         isIndex: false,
         exports: {
-          hasParams: true,
-          hasLoader: true,
-          hasAction: false,
           hasDefaultExport: true,
+          hasRoute: true,
         },
       },
     ];
@@ -59,42 +55,13 @@ describe("generateRoutes", () => {
       outputPath: "/app/src/generated/routes.ts",
     });
 
-    expect(code).toContain('users_$id: Route.make("/users/:id", {');
-    expect(code).toContain("params: UsersIdRoute.params");
-    expect(code).toContain("loader: UsersIdRoute.loader");
-    expect(code).not.toContain("action: UsersIdRoute.action");
+    expect(code).toContain("users_$id: Route.make(UsersIdRoute.route._path, {");
+    expect(code).toContain("params: UsersIdRoute.route._config.paramsSchema");
+    expect(code).toContain("loader: UsersIdRoute.route._config.loader");
+    expect(code).toContain("action: UsersIdRoute.route._config.action");
   });
 
-  it("should generate routes with all exports", () => {
-    const routes: ScannedRoute[] = [
-      {
-        filePath: "contacts.$id.tsx",
-        routePath: "/contacts/:id",
-        routeName: "contacts_$id",
-        importName: "ContactsIdRoute",
-        componentImportName: "ContactsIdComponent",
-        isLayout: false,
-        isIndex: false,
-        exports: {
-          hasParams: true,
-          hasLoader: true,
-          hasAction: true,
-          hasDefaultExport: true,
-        },
-      },
-    ];
-
-    const code = generateRoutes(routes, {
-      routesDir: "/app/src/routes",
-      outputPath: "/app/src/generated/routes.ts",
-    });
-
-    expect(code).toContain("params: ContactsIdRoute.params");
-    expect(code).toContain("loader: ContactsIdRoute.loader");
-    expect(code).toContain("action: ContactsIdRoute.action");
-  });
-
-  it("should generate multiple routes", () => {
+  it("should generate multiple routes with mixed styles", () => {
     const routes: ScannedRoute[] = [
       {
         filePath: "_index.tsx",
@@ -105,10 +72,8 @@ describe("generateRoutes", () => {
         isLayout: false,
         isIndex: true,
         exports: {
-          hasParams: false,
-          hasLoader: false,
-          hasAction: false,
           hasDefaultExport: true,
+          hasRoute: true,
         },
       },
       {
@@ -120,10 +85,8 @@ describe("generateRoutes", () => {
         isLayout: false,
         isIndex: false,
         exports: {
-          hasParams: false,
-          hasLoader: false,
-          hasAction: false,
           hasDefaultExport: true,
+          hasRoute: false,
         },
       },
       {
@@ -135,10 +98,8 @@ describe("generateRoutes", () => {
         isLayout: false,
         isIndex: false,
         exports: {
-          hasParams: true,
-          hasLoader: true,
-          hasAction: true,
           hasDefaultExport: true,
+          hasRoute: true,
         },
       },
     ];
@@ -148,9 +109,13 @@ describe("generateRoutes", () => {
       outputPath: "/app/src/generated/routes.ts",
     });
 
-    expect(code).toContain("index: Route.make");
-    expect(code).toContain("about: Route.make");
-    expect(code).toContain("users_$id: Route.make");
+    // Route with Route.define uses _path and _config
+    expect(code).toContain("index: Route.make(IndexRoute.route._path, {");
+    // Route without Route.define uses hardcoded path
+    expect(code).toContain('about: Route.make("/about"),');
+    // Route with Route.define uses _path and _config
+    expect(code).toContain("users_$id: Route.make(UsersIdRoute.route._path, {");
+
     expect(code).toContain("index: IndexComponent");
     expect(code).toContain("about: AboutComponent");
     expect(code).toContain("users_$id: UsersIdComponent");
@@ -168,6 +133,36 @@ describe("generateRoutes", () => {
     expect(code).toContain("export type RouteNames = keyof Routes");
     expect(code).toContain(
       'export type AppRouter = import("@effex/platform").RouterInfer<Routes>',
+    );
+  });
+
+  it("should handle nested route paths correctly", () => {
+    const routes: ScannedRoute[] = [
+      {
+        filePath: "users/_index.tsx",
+        routePath: "/users",
+        routeName: "users_index",
+        importName: "UsersIndexRoute",
+        componentImportName: "UsersIndexComponent",
+        isLayout: false,
+        isIndex: true,
+        exports: {
+          hasDefaultExport: true,
+          hasRoute: true,
+        },
+      },
+    ];
+
+    const code = generateRoutes(routes, {
+      routesDir: "/app/src/routes",
+      outputPath: "/app/src/generated/routes.ts",
+    });
+
+    expect(code).toContain(
+      'import * as UsersIndexRoute from "../routes/users/_index"',
+    );
+    expect(code).toContain(
+      "users_index: Route.make(UsersIndexRoute.route._path, {",
     );
   });
 });

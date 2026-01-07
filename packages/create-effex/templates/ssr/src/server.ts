@@ -5,12 +5,7 @@ import { Effect, Layer } from "effect";
 import { HttpServer, HttpServerResponse } from "@effect/platform";
 import * as HttpServerRequest from "@effect/platform/HttpServerRequest";
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node";
-import {
-  Router,
-  makeRouterLayer,
-  Element,
-  RendererContext,
-} from "@effex/platform";
+import { Router, Element, RendererContext } from "@effex/platform";
 import { EffexServer } from "@effex/platform/server";
 import { routes, App, baseDocumentConfig } from "./app.js";
 
@@ -55,7 +50,6 @@ const serveStatic = (distDir: string) =>
 const main = Effect.gen(function* () {
   // Create the router
   const router = yield* Router.make(routes);
-  const routerLayer = makeRouterLayer(router);
 
   // Create the Effex HTTP app
   const effexApp = EffexServer.makeHttpApp({
@@ -65,7 +59,7 @@ const main = Effect.gen(function* () {
       ...baseDocumentConfig,
       scripts: ["/client.js"], // Prod uses built file
     },
-    provide: routerLayer as Layer.Layer<never, never, never>,
+    provide: router.layer as Layer.Layer<never, never, never>,
   });
 
   // Resolve the dist directory

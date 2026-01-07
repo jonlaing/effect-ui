@@ -6,6 +6,7 @@ export default defineConfig({
     effexRoutes({
       routesDir: "src/routes",
       outputPath: "src/generated/routes.ts",
+      scaffold: true,
     }),
     effexSSR({
       entry: "src/vite-entry.ts",

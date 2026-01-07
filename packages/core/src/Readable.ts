@@ -61,6 +61,25 @@ export declare namespace Readable {
  */
 export type Reactive<T> = T | Readable<T>;
 
+/**
+ * Create a constant Readable from a value (identity).
+ * The Readable always returns the same value and never changes.
+ *
+ * Named after the identity function in Haskell - it lifts a pure value
+ * into the Readable context without adding any reactivity.
+ *
+ * @example
+ * ```ts
+ * const constant = Readable.id(42);
+ * // constant.get returns 42, constant.changes is empty
+ *
+ * // Useful when an API expects Readable but you have a static value
+ * const value = Readable.id("hello");
+ * ```
+ */
+export const id = <A>(value: A): Readable<A> =>
+  make(Effect.succeed(value), () => Stream.empty);
+
 export const isReadable = <A>(value: A | Readable<A>): value is Readable<A> =>
   value !== null &&
   typeof value === "object" &&
@@ -298,6 +317,7 @@ export const lift = <T extends Record<string, unknown>, R>(
 };
 
 export const Readable = {
+  id,
   isReadable,
   of,
   make,

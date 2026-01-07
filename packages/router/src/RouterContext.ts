@@ -26,16 +26,18 @@ export class RouterContext extends Context.Tag("RouterContext")<
  * Convenience function to create a RouterContext layer.
  * @param router - The router instance to provide
  *
+ * @deprecated Use `router.layer` instead. The router now includes a layer property.
+ *
  * @example
  * ```ts
+ * // Old way (deprecated):
  * const router = yield* Router.make(routes)
  * const layer = makeRouterLayer(router)
+ * mount(app.pipe(Effect.provide(layer)), root)
  *
- * // Use in mount
- * mount(
- *   app.pipe(Effect.provide(layer)),
- *   document.getElementById("root")!
- * )
+ * // New way:
+ * const router = yield* Router.make(routes)
+ * mount(app.pipe(Effect.provide(router.layer)), root)
  * ```
  */
 export const makeRouterLayer = (

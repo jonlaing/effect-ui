@@ -1,5 +1,12 @@
 // Route
-export { Route, make as makeRoute, routeSpecificity } from "./Route";
+export {
+  Route,
+  make as makeRoute,
+  define as defineRoute,
+  routeSpecificity,
+  type DefineOptions,
+  type DefinedRoute,
+} from "./Route";
 
 // Router
 export {
@@ -17,6 +24,9 @@ export {
   makeTypedRouterLayer,
   type LinkProps,
 } from "./RouterContext";
+
+// matchRoute
+export { matchRoute, type RouteCases } from "./matchRoute";
 
 // Types
 export type {

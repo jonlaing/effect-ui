@@ -5,12 +5,7 @@ import { Effect, Layer } from "effect";
 import { HttpServer, HttpServerResponse } from "@effect/platform";
 import * as HttpServerRequest from "@effect/platform/HttpServerRequest";
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node";
-import {
-  Router,
-  makeRouterLayer,
-  Element,
-  RendererContext,
-} from "@effex/platform";
+import { Router, Element, RendererContext } from "@effex/platform";
 import { EffexServer } from "@effex/platform/server";
 import { routes, App, baseDocumentConfig } from "./app.js";
 
@@ -58,12 +53,10 @@ const main = Effect.gen(function* () {
   // Create the router
   console.log("[2] Creating router...");
   const router = yield* Router.make(routes);
-  console.log("[3] Router created, making router layer...");
-  const routerLayer = makeRouterLayer(router);
-  console.log("[4] Router layer created");
+  console.log("[3] Router created");
 
   // Create the Effex HTTP app
-  console.log("[5] Creating Effex HTTP app...");
+  console.log("[4] Creating Effex HTTP app...");
   const effexApp = EffexServer.makeHttpApp({
     app: () => App() as Element<never, RendererContext>,
     router: router as Parameters<typeof EffexServer.makeHttpApp>[0]["router"],
@@ -71,7 +64,7 @@ const main = Effect.gen(function* () {
       ...baseDocumentConfig,
       scripts: ["/client.js"], // Prod uses built file
     },
-    provide: routerLayer as Layer.Layer<never, never, never>,
+    provide: router.layer as Layer.Layer<never, never, never>,
   });
   console.log("[6] Effex HTTP app created");
 

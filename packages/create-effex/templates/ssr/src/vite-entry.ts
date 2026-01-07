@@ -3,7 +3,7 @@
  * Loaded via vite.ssrLoadModule during development.
  */
 import { Effect, Option } from "effect";
-import { Router, makeRouterLayer } from "@effex/platform";
+import { Router } from "@effex/platform";
 import { renderRequest, type ActionData } from "@effex/platform/server";
 import { routes, App, baseDocumentConfig } from "./app.js";
 
@@ -69,7 +69,7 @@ export async function render(request: Request): Promise<string> {
             ...baseDocumentConfig,
             scripts: ["/src/client.ts"], // Dev uses source file
           },
-          provide: makeRouterLayer(router),
+          provide: router.layer,
         });
       }),
     ),

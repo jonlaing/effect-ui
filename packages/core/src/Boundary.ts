@@ -1,6 +1,6 @@
-import { Duration, Effect, Either, Scope } from "effect";
+import { Duration, Effect, Either, Fiber, pipe, Scope } from "effect";
 import type { Element } from "./Element";
-import { RendererContext, type Renderer } from "./Renderer";
+import { RendererContext, type Renderer, type Slot } from "./Renderer";
 
 /**
  * Options for the suspense boundary.
@@ -33,6 +33,44 @@ export interface SuspenseOptions<N, E, R1, EF> {
    */
   readonly delay?: Duration.DurationInput;
 }
+
+// ============================================================================
+// Composable building blocks
+// ============================================================================
+
+/**
+ * Handle the result of an async render, updating the slot with either
+ * the success value or an error element (if catch handler is provided).
+ */
+const handleRenderResult =
+  <N, E>(slot: Slot<N>, catchRender?: (error: E) => Element<N, never, never>) =>
+  (result: Either.Either<N, E>) =>
+    Either.match(result, {
+      onLeft: (error) =>
+        catchRender
+          ? pipe(
+              catchRender(error),
+              Effect.flatMap((el) => slot.setContent(el)),
+            )
+          : Effect.void, // No catch handler means E = never, so this branch is unreachable
+      onRight: (element) => slot.setContent(element),
+    });
+
+/**
+ * Create a fallback display effect that shows the fallback in a slot.
+ */
+const createFallbackEffect = <N, EF>(
+  fallbackRender: () => Element<N, EF, never>,
+  slot: Slot<N>,
+) =>
+  pipe(
+    fallbackRender(),
+    Effect.flatMap((el) => slot.setContent(el)),
+  );
+
+// ============================================================================
+// Main suspense implementation
+// ============================================================================
 
 /**
  * Suspense boundary for async rendering with loading states.
@@ -77,211 +115,44 @@ export const suspense: {
   ): Element<N, EF, R1>;
 } = <N, E, R1 = never, EF = never>(
   options: SuspenseOptions<N, E, R1, EF>,
-): Element<N, EF, R1> => {
-  const delayMs =
-    options.delay !== undefined ? Duration.toMillis(options.delay) : 0;
-  const hasCatch = options.catch !== undefined;
-  const hasDelay = delayMs > 0;
-
-  // Dispatch to the appropriate implementation
-  if (hasDelay && hasCatch) {
-    return suspenseWithDelayAndCatch(
-      options.render as () => Effect.Effect<N, E, Scope.Scope | R1>,
-      options.fallback,
-      options.catch as (error: E) => Element<N, never, never>,
-      delayMs,
-    ) as Element<N, EF, R1>;
-  } else if (hasDelay) {
-    return suspenseWithDelay(
-      options.render as () => Effect.Effect<N, never, Scope.Scope | R1>,
-      options.fallback,
-      delayMs,
-    ) as Element<N, EF, R1>;
-  } else if (hasCatch) {
-    return suspenseWithCatch(
-      options.render as () => Effect.Effect<N, E, Scope.Scope | R1>,
-      options.fallback,
-      options.catch as (error: E) => Element<N, never, never>,
-    ) as Element<N, EF, R1>;
-  } else {
-    return suspenseSimple(
-      options.render as () => Effect.Effect<N, never, Scope.Scope | R1>,
-      options.fallback,
-    ) as Element<N, EF, R1>;
-  }
-};
-
-// Internal implementations
-
-const suspenseSimple = <N, R1 = never, EF = never>(
-  asyncRender: () => Effect.Effect<N, never, Scope.Scope | R1>,
-  fallbackRender: () => Element<N, EF, never>,
 ): Element<N, EF, R1> =>
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as Renderer<N>;
     const scope = yield* Effect.scope;
     const slot = yield* renderer.createSlot();
 
-    const fallback = yield* fallbackRender();
-    yield* slot.setContent(fallback);
+    const delayMs =
+      options.delay !== undefined ? Duration.toMillis(options.delay) : 0;
 
-    yield* asyncRender().pipe(
-      Effect.tap((element) => slot.setContent(element)),
-      Effect.forkIn(scope),
-    );
+    // Show fallback: immediately if no delay, otherwise fork with delay
+    const fallbackFiber =
+      delayMs > 0
+        ? yield* pipe(
+            createFallbackEffect(options.fallback, slot),
+            Effect.delay(Duration.millis(delayMs)),
+            Effect.interruptible,
+            Effect.forkIn(scope),
+          )
+        : null;
 
-    return slot.marker;
-  });
+    // If no delay, show fallback synchronously before forking render
+    if (fallbackFiber === null) {
+      yield* createFallbackEffect(options.fallback, slot);
+    }
 
-const suspenseWithCatch = <N, E, R1 = never, EF = never>(
-  asyncRender: () => Effect.Effect<N, E, Scope.Scope | R1>,
-  fallbackRender: () => Element<N, EF, never>,
-  catchRender: (error: E) => Element<N, never, never>,
-): Element<N, EF, R1> =>
-  Effect.gen(function* () {
-    const renderer = (yield* RendererContext) as Renderer<N>;
-    const scope = yield* Effect.scope;
-    const slot = yield* renderer.createSlot();
-
-    const fallback = yield* fallbackRender();
-    yield* slot.setContent(fallback);
-
-    yield* asyncRender().pipe(
+    // Fork main render: interrupt fallback timer (if any), then handle result
+    yield* pipe(
+      options.render(),
       Effect.either,
-      Effect.tap((result) =>
-        Effect.gen(function* () {
-          if (Either.isLeft(result)) {
-            const errorElement = yield* catchRender(result.left);
-            yield* slot.setContent(errorElement);
-          } else {
-            yield* slot.setContent(result.right);
-          }
-        }),
+      Effect.tap(() =>
+        fallbackFiber ? Fiber.interrupt(fallbackFiber) : Effect.void,
       ),
+      Effect.flatMap(handleRenderResult(slot, options.catch)),
       Effect.forkIn(scope),
     );
 
     return slot.marker;
-  });
-
-const suspenseWithDelay = <N, R1 = never, EF = never>(
-  asyncRender: () => Effect.Effect<N, never, Scope.Scope | R1>,
-  fallbackRender: () => Element<N, EF, never>,
-  delayMs: number,
-): Element<N, EF, R1> =>
-  Effect.gen(function* () {
-    const renderer = (yield* RendererContext) as Renderer<N>;
-    const scope = yield* Effect.scope;
-    const slot = yield* renderer.createSlot();
-
-    let completed = false;
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-    timeoutId = setTimeout(() => {
-      if (!completed) {
-        Effect.runPromise(
-          Effect.gen(function* () {
-            const fallbackElement = yield* Effect.scoped(fallbackRender());
-            if (!completed) {
-              yield* slot.setContent(fallbackElement);
-            }
-          }).pipe(
-            Effect.provideService(
-              RendererContext,
-              renderer as Renderer<unknown>,
-            ),
-          ),
-        );
-      }
-    }, delayMs);
-
-    yield* Effect.addFinalizer(() =>
-      Effect.sync(() => {
-        if (timeoutId !== null) {
-          clearTimeout(timeoutId);
-        }
-      }),
-    );
-
-    yield* asyncRender().pipe(
-      Effect.tap((element) =>
-        Effect.gen(function* () {
-          completed = true;
-          if (timeoutId !== null) {
-            clearTimeout(timeoutId);
-            timeoutId = null;
-          }
-          yield* slot.setContent(element);
-        }),
-      ),
-      Effect.forkIn(scope),
-    );
-
-    return slot.marker;
-  });
-
-const suspenseWithDelayAndCatch = <N, E, R1 = never, EF = never>(
-  asyncRender: () => Effect.Effect<N, E, Scope.Scope | R1>,
-  fallbackRender: () => Element<N, EF, never>,
-  catchRender: (error: E) => Element<N, never, never>,
-  delayMs: number,
-): Element<N, EF, R1> =>
-  Effect.gen(function* () {
-    const renderer = (yield* RendererContext) as Renderer<N>;
-    const scope = yield* Effect.scope;
-    const slot = yield* renderer.createSlot();
-
-    let completed = false;
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-    timeoutId = setTimeout(() => {
-      if (!completed) {
-        Effect.runPromise(
-          Effect.gen(function* () {
-            const fallbackElement = yield* Effect.scoped(fallbackRender());
-            if (!completed) {
-              yield* slot.setContent(fallbackElement);
-            }
-          }).pipe(
-            Effect.provideService(
-              RendererContext,
-              renderer as Renderer<unknown>,
-            ),
-          ),
-        );
-      }
-    }, delayMs);
-
-    yield* Effect.addFinalizer(() =>
-      Effect.sync(() => {
-        if (timeoutId !== null) {
-          clearTimeout(timeoutId);
-        }
-      }),
-    );
-
-    yield* asyncRender().pipe(
-      Effect.either,
-      Effect.tap((result) =>
-        Effect.gen(function* () {
-          completed = true;
-          if (timeoutId !== null) {
-            clearTimeout(timeoutId);
-            timeoutId = null;
-          }
-
-          const newElement = Either.isLeft(result)
-            ? yield* catchRender(result.left)
-            : result.right;
-
-          yield* slot.setContent(newElement);
-        }),
-      ),
-      Effect.forkIn(scope),
-    );
-
-    return slot.marker;
-  });
+  }) as Element<N, EF, R1>;
 
 /**
  * Error boundary that catches errors from a render function and displays a fallback element.

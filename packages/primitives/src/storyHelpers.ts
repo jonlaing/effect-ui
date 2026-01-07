@@ -3,7 +3,7 @@ import type { Element } from "@effex/dom";
 import { DOMRendererLive } from "@effex/dom";
 
 /**
- * Render an Effect UI component for Storybook.
+ * Render an Effex component for Storybook.
  * Creates a scoped container and mounts the component.
  *
  * IMPORTANT: Uses Effect.runFork with Effect.never to keep the scope alive,
