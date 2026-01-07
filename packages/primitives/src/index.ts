@@ -229,4 +229,16 @@ export {
   Separator,
   type SeparatorProps,
   type SeparatorOrientation,
+  // Toolbar
+  Toolbar,
+  ToolbarCtx,
+  ToolbarToggleGroupCtx,
+  type ToolbarContext,
+  type ToolbarToggleGroupContext,
+  type ToolbarRootProps,
+  type ToolbarButtonProps,
+  type ToolbarToggleItemProps,
+  type ToolbarToggleGroupProps,
+  type ToolbarSeparatorProps,
+  type ToolbarLinkProps,
 } from "./primitives";

@@ -409,6 +409,10 @@
     - [x] Progress
     - [x] Image
     - [x] Separator
+    - [x] Toolbar (grouped controls container)
+    - [ ] Tree View (hierarchical expandable list)
+    - [ ] Splitter (resizable panel divider)
+    - [ ] Carousel (rotating panels, autoplay, swipe gestures)
   - Design principles:
     - Composable parts (e.g., `Dialog.Root`, `Dialog.Trigger`, `Dialog.Content`)
     - Render props or slot pattern for full control

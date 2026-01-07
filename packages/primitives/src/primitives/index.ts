@@ -287,3 +287,18 @@ export {
   type SeparatorProps,
   type SeparatorOrientation,
 } from "./Separator/index.js";
+
+// Toolbar
+export {
+  Toolbar,
+  ToolbarCtx,
+  ToolbarToggleGroupCtx,
+  type ToolbarContext,
+  type ToolbarToggleGroupContext,
+  type ToolbarRootProps,
+  type ToolbarButtonProps,
+  type ToolbarToggleItemProps,
+  type ToolbarToggleGroupProps,
+  type ToolbarSeparatorProps,
+  type ToolbarLinkProps,
+} from "./Toolbar/index.js";
