@@ -85,9 +85,10 @@ export interface CheckboxProps {
  */
 export const Checkbox = component("Checkbox", (props: CheckboxProps) =>
   Effect.gen(function* () {
-    const checked: Signal<CheckedState> = props.checked
-      ? props.checked
-      : yield* Signal.make(props.defaultChecked ?? false);
+    const checked = yield* Signal.fromNullable(
+      props.checked,
+      props.defaultChecked ?? false,
+    );
 
     // Normalize props to Readables
     const disabled = Readable.of(props.disabled ?? false);

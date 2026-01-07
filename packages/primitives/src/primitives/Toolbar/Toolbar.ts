@@ -362,8 +362,10 @@ const ToggleItem = component(
       // Pressed state - either from ToggleGroup, controlled, or internal
       const pressed = inToggleGroup
         ? toggleGroupCtx.value.isSelected(props.value)
-        : (props.pressed ??
-          (yield* Signal.make(props.defaultPressed ?? false)));
+        : yield* Signal.fromNullable(
+            props.pressed,
+            props.defaultPressed ?? false,
+          );
 
       const setPressed = (newPressed: boolean): Effect.Effect<void> => {
         if (inToggleGroup) {
@@ -457,9 +459,10 @@ const ToggleGroup = (
     const disabled = Readable.of(props.disabled ?? false);
 
     // Single mode state
-    const singleValue: Signal<string | null> = props.value
-      ? props.value
-      : yield* Signal.make(props.defaultValue ?? null);
+    const singleValue = yield* Signal.fromNullable(
+      props.value,
+      props.defaultValue ?? null,
+    );
 
     // Multiple mode state
     const multipleValue: SignalArray<string> = props.values

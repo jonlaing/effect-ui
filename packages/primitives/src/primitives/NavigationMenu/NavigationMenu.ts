@@ -111,9 +111,10 @@ const Root = (
     const skipDelayDuration = props.skipDelayDuration ?? 300;
 
     // Active item state
-    const activeItem: Signal<string | null> = props.value
-      ? props.value
-      : yield* Signal.make<string | null>(props.defaultValue ?? null);
+    const activeItem = yield* Signal.fromNullable(
+      props.value,
+      props.defaultValue ?? null,
+    );
 
     // Refs and maps
     const viewportRef = yield* Ref.make<HTMLDivElement>();

@@ -84,9 +84,10 @@ export interface SwitchProps {
  */
 export const Switch = component("Switch", (props: SwitchProps) =>
   Effect.gen(function* () {
-    const checked: Signal<boolean> = props.checked
-      ? props.checked
-      : yield* Signal.make(props.defaultChecked ?? false);
+    const checked = yield* Signal.fromNullable(
+      props.checked,
+      props.defaultChecked ?? false,
+    );
 
     // Normalize props to Readables
     const disabled = Readable.of(props.disabled ?? false);

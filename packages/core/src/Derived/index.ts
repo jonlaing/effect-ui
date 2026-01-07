@@ -7,6 +7,6 @@ export type {
   ReadableValues,
 } from "./types";
 
-export { async, Derived, sync } from "./Derived";
+export { async, Derived, sync, every, some } from "./Derived";
 
 export { defaultEquals } from "./helpers";

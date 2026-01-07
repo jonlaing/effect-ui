@@ -114,11 +114,10 @@ const Root = (
 
     // Handle controlled vs uncontrolled state
     // For single: string | null, for multiple: string[]
-    const value: Signal<string | string[] | null> = props.value
-      ? (props.value as Signal<string | string[] | null>)
-      : yield* Signal.make(
-          props.defaultValue ?? (type === "multiple" ? [] : null),
-        );
+    const value = yield* Signal.fromNullable(
+      props.value as Signal<string | string[] | null> | undefined,
+      props.defaultValue ?? (type === "multiple" ? [] : null),
+    );
 
     const disabled: Readable.Readable<boolean> = Readable.of(
       props.disabled ?? false,

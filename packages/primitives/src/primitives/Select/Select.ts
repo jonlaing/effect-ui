@@ -9,6 +9,7 @@ import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
 import { Ref } from "@effex/dom";
+import { onClickOutside } from "@effex/dom";
 import type { Element } from "@effex/dom";
 import { calculatePosition, getTransform } from "../helpers";
 
@@ -127,13 +128,14 @@ const Root = (
   children: Element<never, SelectCtx> | Element<never, SelectCtx>[],
 ): Element =>
   Effect.gen(function* () {
-    const isOpen: Signal<boolean> = props.open
-      ? props.open
-      : yield* Signal.make(props.defaultOpen ?? false);
-
-    const value: Signal<string> = props.value
-      ? props.value
-      : yield* Signal.make(props.defaultValue ?? "");
+    const isOpen = yield* Signal.fromNullable(
+      props.open,
+      props.defaultOpen ?? false,
+    );
+    const value = yield* Signal.fromNullable(
+      props.value,
+      props.defaultValue ?? "",
+    );
 
     const valueLabels = yield* Signal.make<Map<string, string>>(new Map());
     const triggerRef = yield* Ref.make<HTMLButtonElement>();
@@ -408,29 +410,8 @@ const Content = component(
               );
 
               // Click outside handler
-              const handleDocumentClick = (e: MouseEvent) => {
-                const trigger = ctx.triggerRef.current;
-
-                if (
-                  contentEl &&
-                  !contentEl.contains(e.target as Node) &&
-                  trigger &&
-                  !trigger.contains(e.target as Node)
-                ) {
-                  Effect.runSync(ctx.close());
-                }
-              };
-
-              document.addEventListener("click", handleDocumentClick, true);
-
-              yield* Effect.addFinalizer(() =>
-                Effect.sync(() => {
-                  document.removeEventListener(
-                    "click",
-                    handleDocumentClick,
-                    true,
-                  );
-                }),
+              yield* onClickOutside([ctx.triggerRef, contentEl], () =>
+                ctx.close(),
               );
 
               contentEl.focus();

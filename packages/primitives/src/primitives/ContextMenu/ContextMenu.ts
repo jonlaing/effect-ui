@@ -7,6 +7,7 @@ import { when } from "@effex/dom";
 import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
+import { onClickOutside } from "@effex/dom";
 import type { Element, Child } from "@effex/dom";
 import { getMenuNavigationState, handleMenuArrowNavigation } from "../helpers";
 
@@ -125,7 +126,7 @@ const Root = (
   children: Element<never, ContextMenuCtx> | Element<never, ContextMenuCtx>[],
 ): Element =>
   Effect.gen(function* () {
-    const isOpen: Signal<boolean> = props.open ?? (yield* Signal.make(false));
+    const isOpen = yield* Signal.fromNullable(props.open, false);
     const position = yield* Signal.make({ x: 0, y: 0 });
 
     const contentId = yield* UniqueId.make("context-menu-content");
@@ -297,20 +298,15 @@ const Content = component(
               );
 
               // Click outside handler
-              const handleDocumentClick = (e: MouseEvent) => {
-                if (contentEl && !contentEl.contains(e.target as Node)) {
-                  Effect.runSync(ctx.close());
-                }
-              };
+              yield* onClickOutside([contentEl], () => ctx.close());
 
-              // Also close on right-click outside
+              // Also close on right-click outside (context menus need special handling)
               const handleDocumentContextMenu = (e: MouseEvent) => {
                 if (contentEl && !contentEl.contains(e.target as Node)) {
                   Effect.runSync(ctx.close());
                 }
               };
 
-              document.addEventListener("click", handleDocumentClick, true);
               document.addEventListener(
                 "contextmenu",
                 handleDocumentContextMenu,
@@ -319,11 +315,6 @@ const Content = component(
 
               yield* Effect.addFinalizer(() =>
                 Effect.sync(() => {
-                  document.removeEventListener(
-                    "click",
-                    handleDocumentClick,
-                    true,
-                  );
                   document.removeEventListener(
                     "contextmenu",
                     handleDocumentContextMenu,
@@ -540,9 +531,10 @@ const CheckboxItem = component(
       const dataDisabled = disabled.map((d) => (d ? "" : undefined));
       const tabIndex = disabled.map((d) => (d ? -1 : 0));
 
-      const checked: Signal<boolean> = props.checked
-        ? props.checked
-        : yield* Signal.make(props.defaultChecked ?? false);
+      const checked = yield* Signal.fromNullable(
+        props.checked,
+        props.defaultChecked ?? false,
+      );
 
       const dataState = checked.map((c) => (c ? "checked" : "unchecked"));
       const ariaChecked = checked.map((c) => (c ? "true" : "false"));
@@ -613,9 +605,10 @@ const RadioGroup = (
   children: Child<never, ContextMenuCtx | ContextMenuRadioGroupCtx>[],
 ): Element<never, ContextMenuCtx> =>
   Effect.gen(function* () {
-    const value: Signal<string> = props.value
-      ? props.value
-      : yield* Signal.make(props.defaultValue ?? "");
+    const value = yield* Signal.fromNullable(
+      props.value,
+      props.defaultValue ?? "",
+    );
 
     const setValue = (newValue: string) =>
       Effect.gen(function* () {
@@ -738,9 +731,10 @@ const Sub = (
   children: Child<never, ContextMenuCtx | ContextMenuSubCtx>[],
 ): Element<never, ContextMenuCtx> =>
   Effect.gen(function* () {
-    const isOpen: Signal<boolean> = props.open
-      ? props.open
-      : yield* Signal.make(props.defaultOpen ?? false);
+    const isOpen = yield* Signal.fromNullable(
+      props.open,
+      props.defaultOpen ?? false,
+    );
 
     const triggerEl = yield* Signal.make<HTMLElement | null>(null);
     const contentId = yield* UniqueId.make("context-submenu-content");

@@ -344,6 +344,9 @@
     - **ScrollArea** - Custom scrollbars in editor and file tree
     - **Signal/Derived** - Live reactive state (unsaved indicators, line counts)
     - **Keyboard navigation** - Full keyboard support throughout
+    - **Transition** - State machines for:
+      - Terminal panel: `idle → running → completed/error/cancelled` with guard preventing concurrent commands
+      - File save state (per tab): `clean → dirty → saving → clean/error` with visual indicators (dot for dirty, spinner for saving)
   - **Bonus Features:**
     - "View Source" button that highlights the component code for whatever you're interacting with
     - Split view showing live component and its source side-by-side

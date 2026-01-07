@@ -8,6 +8,7 @@ import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
 import { Ref } from "@effex/dom";
+import { onClickOutside } from "@effex/dom";
 import type { Element, Child } from "@effex/dom";
 import {
   calculatePosition,
@@ -135,9 +136,10 @@ const Root = (
   children: Element<never, DropdownMenuCtx> | Element<never, DropdownMenuCtx>[],
 ): Element =>
   Effect.gen(function* () {
-    const isOpen: Signal<boolean> = props.open
-      ? props.open
-      : yield* Signal.make(props.defaultOpen ?? false);
+    const isOpen = yield* Signal.fromNullable(
+      props.open,
+      props.defaultOpen ?? false,
+    );
 
     const triggerRef = yield* Ref.make<HTMLButtonElement>();
     const contentId = yield* UniqueId.make("menu-content");
@@ -386,29 +388,8 @@ const Content = component(
               );
 
               // Click outside handler
-              const handleDocumentClick = (e: MouseEvent) => {
-                const trigger = ctx.triggerRef.current;
-
-                if (
-                  contentEl &&
-                  !contentEl.contains(e.target as Node) &&
-                  trigger &&
-                  !trigger.contains(e.target as Node)
-                ) {
-                  Effect.runSync(ctx.close());
-                }
-              };
-
-              document.addEventListener("click", handleDocumentClick, true);
-
-              yield* Effect.addFinalizer(() =>
-                Effect.sync(() => {
-                  document.removeEventListener(
-                    "click",
-                    handleDocumentClick,
-                    true,
-                  );
-                }),
+              yield* onClickOutside([ctx.triggerRef, contentEl], () =>
+                ctx.close(),
               );
 
               // Focus first item on open
@@ -616,9 +597,10 @@ const CheckboxItem = component(
       const dataDisabled = disabled.map((d) => (d ? "" : undefined));
       const tabIndex = disabled.map((d) => (d ? -1 : 0));
 
-      const checked: Signal<boolean> = props.checked
-        ? props.checked
-        : yield* Signal.make(props.defaultChecked ?? false);
+      const checked = yield* Signal.fromNullable(
+        props.checked,
+        props.defaultChecked ?? false,
+      );
 
       const dataState = checked.map((c) => (c ? "checked" : "unchecked"));
       const ariaChecked = checked.map((c) => (c ? "true" : "false"));
@@ -689,9 +671,10 @@ const RadioGroup = (
   children: Child<never, DropdownMenuCtx | DropdownMenuRadioGroupCtx>[],
 ): Element<never, DropdownMenuCtx> =>
   Effect.gen(function* () {
-    const value: Signal<string> = props.value
-      ? props.value
-      : yield* Signal.make(props.defaultValue ?? "");
+    const value = yield* Signal.fromNullable(
+      props.value,
+      props.defaultValue ?? "",
+    );
 
     const setValue = (newValue: string) =>
       Effect.gen(function* () {
@@ -812,9 +795,10 @@ const Sub = (
   children: Child<never, DropdownMenuCtx | DropdownMenuSubCtx>[],
 ): Element<never, DropdownMenuCtx> =>
   Effect.gen(function* () {
-    const isOpen: Signal<boolean> = props.open
-      ? props.open
-      : yield* Signal.make(props.defaultOpen ?? false);
+    const isOpen = yield* Signal.fromNullable(
+      props.open,
+      props.defaultOpen ?? false,
+    );
 
     const triggerRef = yield* Ref.make<HTMLDivElement>();
     const contentId = yield* UniqueId.make("submenu-content");

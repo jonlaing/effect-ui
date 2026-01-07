@@ -82,9 +82,10 @@ const Root = (
   children: Element<never, RadioGroupCtx> | Element<never, RadioGroupCtx>[],
 ): Element =>
   Effect.gen(function* () {
-    const value: Signal<string> = props.value
-      ? props.value
-      : yield* Signal.make(props.defaultValue ?? "");
+    const value = yield* Signal.fromNullable(
+      props.value,
+      props.defaultValue ?? "",
+    );
 
     // Normalize props to Readables
     const orientation = Readable.of(props.orientation ?? "vertical");

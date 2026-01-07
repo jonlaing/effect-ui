@@ -1,6 +1,6 @@
 import { Effect, Either, Option, Scope, Stream } from "effect";
 import type { Readable } from "../Readable";
-import { make as makeReadable } from "../Readable";
+import { make as makeReadable, combine as combineReadable } from "../Readable";
 import { make as makeSignal } from "../Signal";
 import type {
   AsyncDerived,
@@ -165,9 +165,46 @@ export const async = <T extends readonly Readable<unknown>[], A, E = never>(
 };
 
 /**
+ * Combine multiple boolean Readables with AND logic.
+ * Returns true only if ALL inputs are true.
+ *
+ * @param deps - Array of boolean Readables to combine
+ * @returns A Readable that is true when all inputs are true
+ *
+ * @example
+ * ```ts
+ * const canSubmit = Derived.every([isValid, isOnline, hasChanges]);
+ * // canSubmit is true only when all three are true
+ * ```
+ */
+export const every = (deps: Readable<boolean>[]): Readable<boolean> =>
+  combineReadable(deps).map((values) => values.every(Boolean));
+
+/**
+ * Combine multiple boolean Readables with OR logic.
+ * Returns true if ANY input is true.
+ *
+ * @param deps - Array of boolean Readables to combine
+ * @returns A Readable that is true when at least one input is true
+ *
+ * @example
+ * ```ts
+ * const hasError = Derived.some([nameError, emailError, passwordError]);
+ * // hasError is true if any field has an error
+ *
+ * // Also useful for combining disabled states:
+ * const isDisabled = Derived.some([ctx.disabled, props.disabled]);
+ * ```
+ */
+export const some = (deps: Readable<boolean>[]): Readable<boolean> =>
+  combineReadable(deps).map((values) => values.some(Boolean));
+
+/**
  * Derived module namespace for creating computed reactive values.
  */
 export const Derived = {
   sync,
   async,
+  every,
+  some,
 };

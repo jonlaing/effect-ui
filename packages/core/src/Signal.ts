@@ -98,6 +98,32 @@ export const make = <A>(
 };
 
 /**
+ * Use an existing Signal if provided, otherwise create a new one with the default value.
+ * This enables the controlled/uncontrolled component pattern.
+ *
+ * @param existing - An optional Signal to use if provided
+ * @param defaultValue - The default value to use when creating a new Signal
+ * @param options - Optional configuration for the new Signal
+ *
+ * @example
+ * ```ts
+ * // In a component that supports both controlled and uncontrolled modes:
+ * const value = yield* Signal.fromNullable(props.value, props.defaultValue ?? "");
+ *
+ * // If props.value is a Signal, it will be used directly
+ * // If props.value is undefined, a new Signal is created with defaultValue
+ * ```
+ */
+export const fromNullable = <A>(
+  existing: Signal<A> | undefined,
+  defaultValue: A,
+  options?: SignalOptions<A>,
+): Effect.Effect<Signal<A>, never, Scope.Scope> =>
+  existing !== undefined
+    ? Effect.succeed(existing)
+    : make(defaultValue, options);
+
+/**
  * Context service for creating and managing Signals within a scope.
  */
 export class SignalRegistry extends Context.Tag("effex/SignalRegistry")<
@@ -120,6 +146,7 @@ export class SignalRegistry extends Context.Tag("effex/SignalRegistry")<
 
 export const Signal = {
   make,
+  fromNullable,
   SignalRegistry,
   /**
    * Create a reactive array with in-place mutation methods.

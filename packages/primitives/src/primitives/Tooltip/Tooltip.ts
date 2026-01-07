@@ -75,9 +75,10 @@ const Root = (
   children: Element<never, TooltipCtx> | Element<never, TooltipCtx>[],
 ): Element =>
   Effect.gen(function* () {
-    const isOpen: Signal<boolean> = props.open
-      ? props.open
-      : yield* Signal.make(props.defaultOpen ?? false);
+    const isOpen = yield* Signal.fromNullable(
+      props.open,
+      props.defaultOpen ?? false,
+    );
 
     const triggerRef = yield* Signal.make<HTMLElement | null>(null);
     const contentId = yield* UniqueId.make("tooltip-content");

@@ -8,6 +8,7 @@ import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
 import { Ref } from "@effex/dom";
+import { onClickOutside } from "@effex/dom";
 import type { Element } from "@effex/dom";
 import { calculatePosition, getTransform } from "../helpers";
 
@@ -79,9 +80,10 @@ const Root = (
   children: Element<never, PopoverCtx> | Element<never, PopoverCtx>[],
 ): Element =>
   Effect.gen(function* () {
-    const isOpen: Signal<boolean> = props.open
-      ? props.open
-      : yield* Signal.make(props.defaultOpen ?? false);
+    const isOpen = yield* Signal.fromNullable(
+      props.open,
+      props.defaultOpen ?? false,
+    );
 
     const triggerRef = yield* Ref.make<HTMLButtonElement>();
     const anchorRef = yield* Ref.make<HTMLDivElement>();
@@ -308,37 +310,12 @@ const Content = component(
               );
 
               // Click outside handler
-              const handleDocumentClick = (e: MouseEvent) => {
-                const trigger = ctx.triggerRef.current;
-
-                if (
-                  contentEl &&
-                  !contentEl.contains(e.target as Node) &&
-                  trigger &&
-                  !trigger.contains(e.target as Node)
-                ) {
-                  Effect.runSync(
-                    Effect.gen(function* () {
-                      if (props.onClickOutside) {
-                        yield* props.onClickOutside();
-                      }
-                      yield* ctx.close();
-                    }),
-                  );
-                }
-              };
-
-              // Add click outside listener
-              document.addEventListener("click", handleDocumentClick, true);
-
-              // Cleanup listener on unmount
-              yield* Effect.addFinalizer(() =>
-                Effect.sync(() => {
-                  document.removeEventListener(
-                    "click",
-                    handleDocumentClick,
-                    true,
-                  );
+              yield* onClickOutside([ctx.triggerRef, contentEl], () =>
+                Effect.gen(function* () {
+                  if (props.onClickOutside) {
+                    yield* props.onClickOutside();
+                  }
+                  yield* ctx.close();
                 }),
               );
 

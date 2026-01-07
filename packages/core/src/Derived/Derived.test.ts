@@ -255,3 +255,129 @@ describe("Derived.async", () => {
     expect(result).toBe(10);
   });
 });
+
+describe("Derived.every", () => {
+  it("should return true when all inputs are true", async () => {
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const a = yield* Signal.make(true);
+          const b = yield* Signal.make(true);
+          const c = yield* Signal.make(true);
+          const allTrue = Derived.every([a, b, c]);
+          return yield* allTrue.get;
+        }),
+      ),
+    );
+    expect(result).toBe(true);
+  });
+
+  it("should return false when any input is false", async () => {
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const a = yield* Signal.make(true);
+          const b = yield* Signal.make(false);
+          const c = yield* Signal.make(true);
+          const allTrue = Derived.every([a, b, c]);
+          return yield* allTrue.get;
+        }),
+      ),
+    );
+    expect(result).toBe(false);
+  });
+
+  it("should update reactively when inputs change", async () => {
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const a = yield* Signal.make(true);
+          const b = yield* Signal.make(false);
+          const allTrue = Derived.every([a, b]);
+
+          const before = yield* allTrue.get;
+          yield* b.set(true);
+          const after = yield* allTrue.get;
+
+          return { before, after };
+        }),
+      ),
+    );
+    expect(result).toEqual({ before: false, after: true });
+  });
+
+  it("should return true for empty array", async () => {
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const allTrue = Derived.every([]);
+          return yield* allTrue.get;
+        }),
+      ),
+    );
+    expect(result).toBe(true);
+  });
+});
+
+describe("Derived.some", () => {
+  it("should return true when any input is true", async () => {
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const a = yield* Signal.make(false);
+          const b = yield* Signal.make(true);
+          const c = yield* Signal.make(false);
+          const anyTrue = Derived.some([a, b, c]);
+          return yield* anyTrue.get;
+        }),
+      ),
+    );
+    expect(result).toBe(true);
+  });
+
+  it("should return false when all inputs are false", async () => {
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const a = yield* Signal.make(false);
+          const b = yield* Signal.make(false);
+          const c = yield* Signal.make(false);
+          const anyTrue = Derived.some([a, b, c]);
+          return yield* anyTrue.get;
+        }),
+      ),
+    );
+    expect(result).toBe(false);
+  });
+
+  it("should update reactively when inputs change", async () => {
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const a = yield* Signal.make(false);
+          const b = yield* Signal.make(false);
+          const anyTrue = Derived.some([a, b]);
+
+          const before = yield* anyTrue.get;
+          yield* a.set(true);
+          const after = yield* anyTrue.get;
+
+          return { before, after };
+        }),
+      ),
+    );
+    expect(result).toEqual({ before: false, after: true });
+  });
+
+  it("should return false for empty array", async () => {
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const anyTrue = Derived.some([]);
+          return yield* anyTrue.get;
+        }),
+      ),
+    );
+    expect(result).toBe(false);
+  });
+});

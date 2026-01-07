@@ -158,3 +158,7 @@ export { FocusTrap } from "./FocusTrap";
 
 // Scroll Lock
 export { ScrollLock } from "./ScrollLock";
+
+// DOM Helpers
+export type { KeyboardNavOptions, ElementRef } from "./helpers/index.js";
+export { onClickOutside, createKeyboardNav } from "./helpers/index.js";

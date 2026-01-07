@@ -84,9 +84,10 @@ const Root = (
 ): Element =>
   Effect.gen(function* () {
     // Handle controlled vs uncontrolled state
-    const isOpen: Signal<boolean> = props.open
-      ? props.open
-      : yield* Signal.make(props.defaultOpen ?? false);
+    const isOpen = yield* Signal.fromNullable(
+      props.open,
+      props.defaultOpen ?? false,
+    );
 
     const titleId = yield* UniqueId.make("dialog-title");
     const descriptionId = yield* UniqueId.make("dialog-description");

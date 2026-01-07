@@ -2,6 +2,54 @@ import { describe, it, expect } from "vitest";
 import { Effect } from "effect";
 import { Signal } from "./Signal";
 
+describe("Signal.fromNullable", () => {
+  it("should return existing signal when provided", async () => {
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const existing = yield* Signal.make(42);
+          const signal = yield* Signal.fromNullable(existing, 0);
+          return signal === existing;
+        }),
+      ),
+    );
+    expect(result).toBe(true);
+  });
+
+  it("should create new signal with default when existing is undefined", async () => {
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const signal = yield* Signal.fromNullable(undefined, 42);
+          return yield* signal.get;
+        }),
+      ),
+    );
+    expect(result).toBe(42);
+  });
+
+  it("should pass options to new signal", async () => {
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const signal = yield* Signal.fromNullable(
+            undefined,
+            { id: 1 },
+            {
+              equals: (a, b) => a.id === b.id,
+            },
+          );
+          // Same id, should not update
+          yield* signal.set({ id: 1 });
+          const value = yield* signal.get;
+          return value.id;
+        }),
+      ),
+    );
+    expect(result).toBe(1);
+  });
+});
+
 describe("Signal", () => {
   it("should create a signal with initial value", async () => {
     const result = await Effect.runPromise(

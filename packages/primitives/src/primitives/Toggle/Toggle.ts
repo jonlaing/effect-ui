@@ -72,9 +72,10 @@ export interface ToggleProps {
 export const Toggle = component("Toggle", (props: ToggleProps, children) =>
   Effect.gen(function* () {
     // Handle controlled vs uncontrolled state
-    const pressed: Signal<boolean> = props.pressed
-      ? props.pressed
-      : yield* Signal.make(props.defaultPressed ?? false);
+    const pressed = yield* Signal.fromNullable(
+      props.pressed,
+      props.defaultPressed ?? false,
+    );
 
     // Normalize disabled to Readable
     const disabled = Readable.of(props.disabled ?? false);

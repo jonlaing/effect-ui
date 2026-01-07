@@ -8,9 +8,10 @@ import { when } from "@effex/dom";
 import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
+import { Ref } from "@effex/dom";
+import { onClickOutside } from "@effex/dom";
 import type { Element } from "@effex/dom";
 import { calculatePosition, getTransform } from "../helpers";
-import { Ref } from "@effex/dom";
 
 // ============================================================================
 // Types & Interfaces
@@ -219,14 +220,18 @@ const Root = (
 ): Element =>
   Effect.gen(function* () {
     // State initialization - controlled/uncontrolled pattern
-    const isOpen: Signal<boolean> =
-      props.open ?? (yield* Signal.make(props.defaultOpen ?? false));
-
-    const value: Signal<string> =
-      props.value ?? (yield* Signal.make(props.defaultValue ?? ""));
-
-    const inputValue: Signal<string> =
-      props.inputValue ?? (yield* Signal.make(props.defaultInputValue ?? ""));
+    const isOpen = yield* Signal.fromNullable(
+      props.open,
+      props.defaultOpen ?? false,
+    );
+    const value = yield* Signal.fromNullable(
+      props.value,
+      props.defaultValue ?? "",
+    );
+    const inputValue = yield* Signal.fromNullable(
+      props.inputValue,
+      props.defaultInputValue ?? "",
+    );
 
     const highlightedValue = yield* Signal.make<string | null>(null);
     const items = yield* Signal.make<
@@ -660,29 +665,8 @@ const Content = component(
               );
 
               // Click outside handler
-              const handleDocumentClick = (e: MouseEvent) => {
-                const input = ctx.inputRef.current;
-
-                if (
-                  contentEl &&
-                  !contentEl.contains(e.target as Node) &&
-                  input &&
-                  !input.contains(e.target as Node)
-                ) {
-                  Effect.runSync(ctx.close());
-                }
-              };
-
-              document.addEventListener("click", handleDocumentClick, true);
-
-              yield* Effect.addFinalizer(() =>
-                Effect.sync(() => {
-                  document.removeEventListener(
-                    "click",
-                    handleDocumentClick,
-                    true,
-                  );
-                }),
+              yield* onClickOutside([ctx.inputRef, contentEl], () =>
+                ctx.close(),
               );
 
               return contentEl;
