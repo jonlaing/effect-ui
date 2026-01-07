@@ -1,7 +1,6 @@
-import { Context, Effect, Option } from "effect";
-import { Signal } from "@effex/core";
-import type { SignalArray } from "@effex/core";
-import { Readable } from "@effex/dom";
+import { Context, Effect, Match, Option } from "effect";
+import type { SignalArray } from "@effex/dom";
+import { Readable, Signal } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { component, Derived } from "@effex/dom";
@@ -196,46 +195,43 @@ const Root = (
         const prevKey = isHorizontal ? "ArrowLeft" : "ArrowUp";
         const nextKey = isHorizontal ? "ArrowRight" : "ArrowDown";
 
-        if ([prevKey, nextKey, "Home", "End"].includes(e.key)) {
-          e.preventDefault();
+        if (![prevKey, nextKey, "Home", "End"].includes(e.key)) return;
 
-          const toolbarItems = Array.from(
-            document.querySelectorAll(
-              "[data-toolbar-item]:not([data-disabled])",
-            ),
-          ) as HTMLElement[];
+        e.preventDefault();
 
-          if (toolbarItems.length === 0) return;
+        const toolbarItems = Array.from(
+          document.querySelectorAll("[data-toolbar-item]:not([data-disabled])"),
+        ) as HTMLElement[];
 
-          const currentItem = toolbarItems.find((t) =>
-            t.contains(document.activeElement),
-          );
-          const index = currentItem ? toolbarItems.indexOf(currentItem) : -1;
+        if (toolbarItems.length === 0) return;
 
-          let nextIndex: number;
-          if (e.key === prevKey) {
-            nextIndex = loop
+        const index = toolbarItems.findIndex((t) =>
+          t.contains(document.activeElement),
+        );
+
+        const nextIndex = Match.value(e.key).pipe(
+          Match.when(prevKey, () =>
+            loop
               ? (index - 1 + toolbarItems.length) % toolbarItems.length
-              : Math.max(0, index - 1);
-          } else if (e.key === nextKey) {
-            nextIndex = loop
+              : Math.max(0, index - 1),
+          ),
+          Match.when(nextKey, () =>
+            loop
               ? (index + 1) % toolbarItems.length
-              : Math.min(toolbarItems.length - 1, index + 1);
-          } else if (e.key === "Home") {
-            nextIndex = 0;
-          } else {
-            nextIndex = toolbarItems.length - 1;
-          }
+              : Math.min(toolbarItems.length - 1, index + 1),
+          ),
+          Match.when("Home", () => 0),
+          Match.orElse(() => toolbarItems.length - 1),
+        );
 
-          const nextItem = toolbarItems[nextIndex];
-          if (nextItem) {
-            nextItem.focus();
-            const itemId = nextItem.id;
-            if (itemId) {
-              yield* activeId.set(itemId);
-            }
-          }
-        }
+        yield* Effect.fromNullable(toolbarItems[nextIndex]).pipe(
+          Effect.tap((nextItem) => nextItem.focus()),
+          Effect.map((nextItem) => nextItem.id),
+          Effect.flatMap(Effect.fromNullable),
+          Effect.tap(activeId.set),
+          Effect.flatMap(() => Effect.void),
+          Effect.catchAll(() => Effect.void),
+        );
       });
 
     return yield* $.div(
@@ -308,6 +304,7 @@ const Button = component(
       const handleClick = () =>
         Effect.gen(function* () {
           if (yield* isDisabled.get) return;
+
           yield* ctx.rovingTabIndex.activeId.set(id);
           if (props.onPress) {
             yield* props.onPress();
@@ -363,28 +360,23 @@ const ToggleItem = component(
         Option.isSome(toggleGroupCtx) && props.value !== undefined;
 
       // Pressed state - either from ToggleGroup, controlled, or internal
-      let pressed: Readable.Readable<boolean>;
-      let setPressed: (newPressed: boolean) => Effect.Effect<void>;
+      const pressed = inToggleGroup
+        ? toggleGroupCtx.value.isSelected(props.value)
+        : (props.pressed ??
+          (yield* Signal.make(props.defaultPressed ?? false)));
 
-      if (inToggleGroup && props.value !== undefined) {
-        // Use ToggleGroup's state
-        const groupCtx = toggleGroupCtx.value;
-        pressed = groupCtx.isSelected(props.value);
-        setPressed = () => groupCtx.toggle(props.value!);
-      } else {
-        // Standalone toggle
-        const internalPressed: Signal<boolean> = props.pressed
-          ? props.pressed
-          : yield* Signal.make(props.defaultPressed ?? false);
-        pressed = internalPressed;
-        setPressed = (newPressed: boolean) =>
-          Effect.gen(function* () {
-            yield* internalPressed.set(newPressed);
-            if (props.onPressedChange) {
-              yield* props.onPressedChange(newPressed);
-            }
-          });
-      }
+      const setPressed = (newPressed: boolean): Effect.Effect<void> => {
+        if (inToggleGroup) {
+          return toggleGroupCtx.value.toggle(props.value!);
+        }
+
+        return Effect.gen(function* () {
+          yield* (pressed as Signal<boolean>).set(newPressed);
+          if (props.onPressedChange) {
+            yield* props.onPressedChange(newPressed);
+          }
+        });
+      };
 
       const itemDisabled = Readable.of(props.disabled ?? false);
       const groupDisabled = inToggleGroup
@@ -411,11 +403,8 @@ const ToggleItem = component(
 
       const tabIndex = yield* Derived.sync(
         [isActive, isFirstItem, noActiveItem] as const,
-        ([active, isFirst, noActive]) => {
-          if (active) return 0;
-          if (isFirst && noActive) return 0;
-          return -1;
-        },
+        ([active, isFirst, noActive]) =>
+          active || (isFirst && noActive) ? 0 : -1,
       );
 
       const dataState = pressed.map((p) => (p ? "on" : "off"));
@@ -425,7 +414,9 @@ const ToggleItem = component(
       const handleClick = () =>
         Effect.gen(function* () {
           if (yield* isDisabled.get) return;
+
           yield* ctx.rovingTabIndex.activeId.set(id);
+
           const currentPressed = yield* pressed.get;
           yield* setPressed(!currentPressed);
         });
@@ -480,17 +471,21 @@ const ToggleGroup = (
         if (type === "single") {
           const current = yield* singleValue.get;
           const newValue = current === value ? null : value;
+
           yield* singleValue.set(newValue);
+
           if (props.onValueChange) {
             yield* props.onValueChange(newValue);
           }
         } else {
           const current = yield* multipleValue.get;
+
           if (current.includes(value)) {
             yield* multipleValue.remove(value);
           } else {
             yield* multipleValue.push(value);
           }
+
           if (props.onValuesChange) {
             const updated = yield* multipleValue.get;
             yield* props.onValuesChange(updated);
@@ -591,11 +586,8 @@ const Link = component("ToolbarLink", (props: ToolbarLinkProps, children) =>
 
     const tabIndex = yield* Derived.sync(
       [isActive, isFirstItem, noActiveItem] as const,
-      ([active, isFirst, noActive]) => {
-        if (active) return 0;
-        if (isFirst && noActive) return 0;
-        return -1;
-      },
+      ([active, isFirst, noActive]) =>
+        active || (isFirst && noActive) ? 0 : -1,
     );
 
     const dataDisabled = isDisabled.map((d) => (d ? "" : undefined));
