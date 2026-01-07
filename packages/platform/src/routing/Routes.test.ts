@@ -24,12 +24,14 @@ const makeTestReadable = <A>(value: A): Readable.Readable<A> => {
 };
 
 // Mock router for testing
+// Note: We use `unknown` cast here because BaseRouter.layer is self-referential
 const createMockRouter = (options?: {
   currentRoute?: string | null;
 }): BaseRouter => {
   const { currentRoute = "home" } = options ?? {};
 
-  return {
+  // Create partial router first (all properties except layer)
+  const partialRouter = {
     pathname: makeTestReadable("/"),
     searchParams: makeTestReadable(new URLSearchParams()),
     currentRoute: makeTestReadable(
@@ -55,6 +57,10 @@ const createMockRouter = (options?: {
     forward: () => Effect.void,
     submitAction: () => Effect.succeed(null),
   };
+
+  // Create layer then combine into full router using Object.assign
+  const layer = makeRouterLayer(partialRouter as unknown as BaseRouter);
+  return Object.assign({}, partialRouter, { layer }) as BaseRouter;
 };
 
 // Sample page components for testing
@@ -203,7 +209,8 @@ describe("Routes", () => {
         ),
       );
 
-      const router: BaseRouter = {
+      // Create partial router first (all properties except layer)
+      const partialRouter = {
         pathname: makeTestReadable("/"),
         searchParams: makeTestReadable(new URLSearchParams()),
         currentRoute: currentRouteSignal,
@@ -222,7 +229,10 @@ describe("Routes", () => {
         submitAction: () => Effect.succeed(null),
       };
 
-      const routerLayer = makeRouterLayer(router);
+      // Create layer then combine into full router using Object.assign
+      const layer = makeRouterLayer(partialRouter as unknown as BaseRouter);
+      const router = Object.assign({}, partialRouter, { layer }) as BaseRouter;
+      const routerLayer = router.layer;
 
       await runScoped(
         Effect.gen(function* () {

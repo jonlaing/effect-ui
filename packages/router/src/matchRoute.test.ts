@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { Effect, Option, Stream } from "effect";
 import { matchRoute } from "./matchRoute";
-import { RouterContext, makeRouterLayer } from "./RouterContext";
+import { makeRouterLayer } from "./RouterContext";
 import type { BaseRouter } from "./types";
 import type { Readable } from "@effex/core";
 import { DOMRendererLive, $, component } from "@effex/dom";
