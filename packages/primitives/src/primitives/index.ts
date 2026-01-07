@@ -302,3 +302,16 @@ export {
   type ToolbarSeparatorProps,
   type ToolbarLinkProps,
 } from "./Toolbar/index.js";
+
+// TreeView
+export {
+  TreeView,
+  TreeViewCtx,
+  TreeViewItemCtx,
+  type TreeViewContext,
+  type TreeViewItemContext,
+  type TreeViewRootProps,
+  type TreeViewItemProps,
+  type TreeViewItemLabelProps,
+  type TreeViewItemContentProps,
+} from "./TreeView/index.js";
