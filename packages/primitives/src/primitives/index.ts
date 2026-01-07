@@ -315,3 +315,15 @@ export {
   type TreeViewItemLabelProps,
   type TreeViewItemContentProps,
 } from "./TreeView/index.js";
+
+// Splitter
+export {
+  Splitter,
+  SplitterCtx,
+  SplitterPanelCtx,
+  type SplitterContext,
+  type SplitterPanelContext,
+  type SplitterRootProps,
+  type SplitterPanelProps,
+  type SplitterHandleProps,
+} from "./Splitter/index.js";

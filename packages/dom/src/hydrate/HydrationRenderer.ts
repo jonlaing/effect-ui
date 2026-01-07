@@ -193,7 +193,12 @@ export const createHydrationRenderer = (
 
     setStyleProperty: (node: Node, property: string, value: string) =>
       Effect.sync(() => {
-        (node as HTMLElement).style.setProperty(property, value);
+        // Convert camelCase to kebab-case for CSS (setProperty requires kebab-case)
+        const cssProperty = property.replace(
+          /[A-Z]/g,
+          (m) => `-${m.toLowerCase()}`,
+        );
+        (node as HTMLElement).style.setProperty(cssProperty, value);
       }),
 
     setTextContent: (node: Node, text: string) =>

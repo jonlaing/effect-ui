@@ -251,4 +251,13 @@ export {
   type TreeViewItemProps,
   type TreeViewItemLabelProps,
   type TreeViewItemContentProps,
+  // Splitter
+  Splitter,
+  SplitterCtx,
+  SplitterPanelCtx,
+  type SplitterContext,
+  type SplitterPanelContext,
+  type SplitterRootProps,
+  type SplitterPanelProps,
+  type SplitterHandleProps,
 } from "./primitives";
