@@ -1147,6 +1147,132 @@ Benefits:
 - Async boundaries - wait for all data vs stream vs placeholders?
 - Multiple bindings from same signal - need compound IDs like `s:0:0`, `s:0:1`?
 
+## Refactoring: createKeyboardNav Helper Adoption
+
+The `createKeyboardNav` helper (in `@effex/dom`) provides standardized arrow key navigation with orientation support, looping, Home/End keys, and activation callbacks. The following primitives have keyboard navigation that could potentially use this helper.
+
+### Good Candidates (Standard Pattern)
+
+These primitives have straightforward arrow key navigation that matches the helper's capabilities:
+
+- [x] **Tabs** (`Tabs.ts`) - Refactored to use `createKeyboardNav`
+  - Selector: `[data-tabs-trigger]:not([data-disabled])`
+  - Orientation: Dynamic (horizontal/vertical)
+  - Loop: Configurable via props
+  - Special: `activationMode` determines if `onFocus` triggers selection ("automatic") or only `onActivate` does ("manual")
+
+- [x] **RadioGroup** (`RadioGroup.ts`) - Refactored to use `createKeyboardNav`
+  - Selector: `[data-radio-item]:not([data-disabled])`
+  - Orientation: Dynamic (horizontal/vertical)
+  - Loop: Configurable via props
+  - Special: Always selects on focus (roving tabindex pattern)
+
+- [x] **Toolbar** (`Toolbar.ts`) - Refactored to use `createKeyboardNav`
+  - Selector: `[data-toolbar-item]:not([data-disabled])`
+  - Orientation: Dynamic (horizontal/vertical)
+  - Loop: Usually true
+  - Special: Contains heterogeneous items (buttons, toggles, separators)
+
+- [x] **Accordion** (`Accordion.ts`) - Refactored to use `createKeyboardNav`
+  - Selector: `[data-accordion-trigger]:not([data-disabled])`
+  - Orientation: Always vertical
+  - Loop: true
+  - Special: Shared handler defined at module level (static orientation)
+
+### Partial Candidates (Refactored)
+
+These primitives have been refactored to use `createKeyboardNav`:
+
+- [x] **DropdownMenu** (`DropdownMenu.ts`) - Refactored to use `createKeyboardNav`
+  - Content and SubContent use `onEscape` and `onActivate`
+  - SubContent handles ArrowLeft separately for submenu closing
+  - Tab handling kept separate (closes without preventDefault)
+
+- [x] **ContextMenu** (`ContextMenu.ts`) - Refactored to use `createKeyboardNav`
+  - Same pattern as DropdownMenu
+  - Content and SubContent both use the helper
+
+- [x] **Select** (`Select.ts`) - Refactored to use `createKeyboardNav`
+  - Uses `onEscape` and `onActivate`
+  - Now has full arrow/Home/End navigation (was previously missing!)
+
+### Remaining Partial Candidates
+
+- [ ] **Combobox** (`Combobox.ts`)
+  - Input field + listbox coordination
+  - Special: Navigation in listbox while typing in input
+  - Would need: Significant extension for input/listbox coordination
+
+- [ ] **NavigationMenu** (`NavigationMenu.ts`)
+  - Horizontal top-level + vertical submenus
+  - Arrow keys switch between open/close of items
+  - Delay-based open/close logic
+  - Would need: Multi-level navigation, delay integration
+
+- [ ] **TreeView** (`TreeView.ts`)
+  - Hierarchical navigation (ArrowRight expands, ArrowLeft collapses/goes to parent)
+  - Can use `hierarchy` extension once TreeView is implemented
+  - Additional keys: asterisk (*) to expand all siblings
+
+### Not Applicable (Different Purpose)
+
+These use arrow keys for value adjustment, not focus navigation:
+
+- **Slider** - Arrow keys adjust the slider value, not focus
+- **Splitter** - Arrow keys resize panels, not focus navigation
+
+### Helper Extensions (Implemented)
+
+The following extensions have been added to `createKeyboardNav`:
+
+```typescript
+interface KeyboardNavOptions {
+  // ... existing options ...
+
+  /** Called when Escape is pressed */
+  onEscape?: () => Effect.Effect<void>;
+
+  /** Enable typeahead search (for menus, selects) */
+  typeahead?: TypeaheadOptions;
+
+  /** For hierarchical navigation (TreeView) */
+  hierarchy?: HierarchyOptions;
+}
+
+interface TypeaheadOptions {
+  /** Get text content from element for matching */
+  getText: (el: HTMLElement) => string;
+  /** Called when typeahead matches an item */
+  onMatch?: (el: HTMLElement, index: number) => Effect.Effect<void>;
+  /** Timeout before resetting search buffer (default: 500ms) */
+  timeout?: number;
+}
+
+interface HierarchyOptions {
+  /** Get parent item of current item */
+  getParent: (el: HTMLElement) => Option<HTMLElement>;
+  /** Get first child of current item */
+  getFirstChild: (el: HTMLElement) => Option<HTMLElement>;
+  /** Whether item is expanded */
+  isExpanded: (el: HTMLElement) => boolean;
+  /** Expand/collapse callbacks */
+  onExpand: (el: HTMLElement) => Effect.Effect<void>;
+  onCollapse: (el: HTMLElement) => Effect.Effect<void>;
+}
+```
+
+**Behavior:**
+- `onEscape`: Called when Escape key is pressed, useful for closing menus/selects
+- `typeahead`: Type-to-search functionality with buffer accumulation and automatic timeout reset
+- `hierarchy`: TreeView-style navigation where ArrowRight expands/enters children and ArrowLeft collapses/moves to parent
+
+### Implementation Priority
+
+1. **Tabs** and **RadioGroup** - Most straightforward, high usage
+2. **Accordion** and **Toolbar** - Simple vertical navigation
+3. **Menu components** - Requires typeahead/Escape extensions
+4. **TreeView** - Requires hierarchy extensions
+
 ## Notes
 
 - TypeDoc is configured for Markdown output (`pnpm docs:gen`)

@@ -9,7 +9,7 @@ import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
 import { Ref } from "@effex/dom";
-import { onClickOutside } from "@effex/dom";
+import { onClickOutside, createKeyboardNav } from "@effex/dom";
 import type { Element } from "@effex/dom";
 import { calculatePosition, getTransform } from "../helpers";
 
@@ -382,15 +382,32 @@ const Content = component(
                 };
               }
 
+              const keyboardNav = createKeyboardNav({
+                selector: "[data-select-item]:not([data-disabled])",
+                orientation: "vertical",
+                loop: true,
+                onActivate: (el) =>
+                  Effect.gen(function* () {
+                    const value = el.getAttribute("data-value");
+                    if (value) {
+                      yield* ctx.selectValue(value);
+                    }
+                  }),
+                onEscape: () =>
+                  Effect.gen(function* () {
+                    yield* ctx.close();
+                    ctx.triggerRef.current?.focus();
+                  }),
+              });
+
               const handleKeyDown = (event: KeyboardEvent) =>
                 Effect.gen(function* () {
-                  if (event.key === "Escape") {
-                    event.preventDefault();
-                    event.stopPropagation();
+                  // Tab closes select without preventing default
+                  if (event.key === "Tab") {
                     yield* ctx.close();
-                    // Return focus to trigger
-                    ctx.triggerRef.current?.focus();
+                    return;
                   }
+                  yield* keyboardNav(event);
                 });
 
               const contentEl = yield* $.div(
@@ -497,16 +514,6 @@ const Item = (
         yield* ctx.selectValue(props.value);
       });
 
-    const handleKeyDown = (event: KeyboardEvent) =>
-      Effect.gen(function* () {
-        if (yield* disabled.get) return;
-
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          yield* ctx.selectValue(props.value);
-        }
-      });
-
     return yield* $.div(
       {
         class: props.class,
@@ -518,7 +525,6 @@ const Item = (
         "data-value": props.value,
         tabIndex,
         onClick: handleClick,
-        onKeyDown: handleKeyDown,
       },
       provide(SelectItemCtx, itemCtx, children),
     );

@@ -5,6 +5,7 @@ import { Derived } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { component } from "@effex/dom";
+import { createKeyboardNav } from "@effex/dom";
 import type { Element } from "@effex/dom";
 
 /**
@@ -111,52 +112,22 @@ const Root = (
       loop,
     };
 
-    const handleKeyDown = (e: KeyboardEvent) =>
+    const setValueFromElement = (el: HTMLElement) =>
       Effect.gen(function* () {
-        const currentOrientation = yield* orientation.get;
-        const isVertical = currentOrientation === "vertical";
-        const prevKey = isVertical ? "ArrowUp" : "ArrowLeft";
-        const nextKey = isVertical ? "ArrowDown" : "ArrowRight";
-
-        if ([prevKey, nextKey, "Home", "End"].includes(e.key)) {
-          e.preventDefault();
-
-          const items = Array.from(
-            document.querySelectorAll("[data-radio-item]:not([data-disabled])"),
-          ) as HTMLElement[];
-
-          if (items.length === 0) return;
-
-          const currentItem = items.find((t) =>
-            t.contains(document.activeElement),
-          );
-          const index = currentItem ? items.indexOf(currentItem) : -1;
-
-          let nextIndex: number;
-          if (e.key === prevKey) {
-            nextIndex = loop
-              ? (index - 1 + items.length) % items.length
-              : Math.max(0, index - 1);
-          } else if (e.key === nextKey) {
-            nextIndex = loop
-              ? (index + 1) % items.length
-              : Math.min(items.length - 1, index + 1);
-          } else if (e.key === "Home") {
-            nextIndex = 0;
-          } else {
-            nextIndex = items.length - 1;
-          }
-
-          const nextItem = items[nextIndex];
-          nextItem?.focus();
-
-          // Radio buttons select on focus (standard behavior)
-          const itemValue = nextItem?.getAttribute("data-value");
-          if (itemValue) {
-            yield* setValue(itemValue);
-          }
+        const itemValue = el.getAttribute("data-value");
+        if (itemValue) {
+          yield* setValue(itemValue);
         }
       });
+
+    // Radio buttons always select on focus (standard behavior)
+    const handleKeyDown = createKeyboardNav({
+      selector: "[data-radio-item]:not([data-disabled])",
+      orientation,
+      loop,
+      onFocus: setValueFromElement,
+      onActivate: setValueFromElement, // Space also selects
+    });
 
     const ariaRequired = required.map((r) => (r ? "true" : undefined));
     const dataDisabled = disabled.map((d) => (d ? "" : undefined));
@@ -226,16 +197,6 @@ const Item = component(
           yield* ctx.setValue(props.value);
         });
 
-      const handleKeyDown = (e: KeyboardEvent) =>
-        Effect.gen(function* () {
-          if (e.key === " ") {
-            e.preventDefault();
-            if (!(yield* isDisabled.get)) {
-              yield* ctx.setValue(props.value);
-            }
-          }
-        });
-
       // Default indicator (visual dot)
       const defaultIndicator = $.span({
         "data-radio-indicator": "",
@@ -257,7 +218,6 @@ const Item = component(
           "data-radio-item": "",
           name: ctx.name,
           onClick: handleClick,
-          onKeyDown: handleKeyDown,
         },
         children ?? [defaultIndicator],
       );

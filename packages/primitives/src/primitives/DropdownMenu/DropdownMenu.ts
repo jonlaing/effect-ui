@@ -8,14 +8,9 @@ import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
 import { Ref } from "@effex/dom";
-import { onClickOutside } from "@effex/dom";
+import { onClickOutside, createKeyboardNav } from "@effex/dom";
 import type { Element, Child } from "@effex/dom";
-import {
-  calculatePosition,
-  getTransform,
-  getMenuNavigationState,
-  handleMenuArrowNavigation,
-} from "../helpers";
+import { calculatePosition, getTransform } from "../helpers";
 
 // ============================================================================
 // Types & Interfaces
@@ -340,34 +335,26 @@ const Content = component(
                 };
               }
 
+              const keyboardNav = createKeyboardNav({
+                selector: "[data-menu-item]:not([data-disabled])",
+                orientation: "vertical",
+                loop,
+                onActivate: (el) => Effect.sync(() => el.click()),
+                onEscape: () =>
+                  Effect.gen(function* () {
+                    yield* ctx.close();
+                    ctx.triggerRef.current?.focus();
+                  }),
+              });
+
               const handleKeyDown = (event: KeyboardEvent) =>
                 Effect.gen(function* () {
-                  const state = getMenuNavigationState(ctx.contentId, loop);
-
-                  // Handle arrow navigation
-                  if (handleMenuArrowNavigation(event, state)) {
+                  // Tab closes menu without preventing default
+                  if (event.key === "Tab") {
+                    yield* ctx.close();
                     return;
                   }
-
-                  switch (event.key) {
-                    case "Enter":
-                    case " ":
-                      event.preventDefault();
-                      if (state.currentItem) {
-                        state.currentItem.click();
-                      }
-                      break;
-                    case "Escape":
-                      event.preventDefault();
-                      event.stopPropagation();
-                      yield* ctx.close();
-                      ctx.triggerRef.current?.focus();
-                      break;
-                    case "Tab":
-                      // Close menu on Tab
-                      yield* ctx.close();
-                      break;
-                  }
+                  yield* keyboardNav(event);
                 });
 
               const contentEl = yield* $.div(
@@ -1060,48 +1047,43 @@ const SubContent = component(
                   subCtx.scheduleClose(); // Use shared close timeout
                 });
 
+              const keyboardNav = createKeyboardNav({
+                selector: "[data-menu-item]:not([data-disabled])",
+                orientation: "vertical",
+                loop,
+                onActivate: (el) =>
+                  Effect.sync(() => {
+                    // Don't activate subtriggers (they open on ArrowRight/Enter via their own handler)
+                    if (!el.hasAttribute("data-menu-subtrigger")) {
+                      el.click();
+                    }
+                  }),
+                onEscape: () =>
+                  Effect.gen(function* () {
+                    yield* subCtx.close();
+                    subCtx.triggerRef.current?.focus();
+                  }),
+              });
+
               const handleKeyDown = (event: KeyboardEvent) =>
                 Effect.gen(function* () {
-                  const state = getMenuNavigationState(subCtx.contentId, loop);
-
-                  // Handle arrow navigation (except ArrowLeft which closes submenu)
-                  if (
-                    event.key !== "ArrowLeft" &&
-                    handleMenuArrowNavigation(event, state)
-                  ) {
+                  // ArrowLeft closes submenu and returns to parent
+                  if (event.key === "ArrowLeft") {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    yield* subCtx.close();
+                    subCtx.triggerRef.current?.focus();
                     return;
                   }
 
-                  switch (event.key) {
-                    case "ArrowLeft":
-                      // Close submenu and return focus to SubTrigger
-                      event.preventDefault();
-                      event.stopPropagation();
-                      yield* subCtx.close();
-                      subCtx.triggerRef.current?.focus();
-                      break;
-                    case "Enter":
-                    case " ":
-                      event.preventDefault();
-                      if (
-                        state.currentItem &&
-                        !state.currentItem.hasAttribute("data-menu-subtrigger")
-                      ) {
-                        state.currentItem.click();
-                      }
-                      break;
-                    case "Escape":
-                      event.preventDefault();
-                      event.stopPropagation();
-                      yield* subCtx.close();
-                      subCtx.triggerRef.current?.focus();
-                      break;
-                    case "Tab":
-                      // Close entire menu tree on Tab
-                      yield* subCtx.close();
-                      yield* rootCtx.close();
-                      break;
+                  // Tab closes entire menu tree
+                  if (event.key === "Tab") {
+                    yield* subCtx.close();
+                    yield* rootCtx.close();
+                    return;
                   }
+
+                  yield* keyboardNav(event);
                 });
 
               const contentEl = yield* $.div(

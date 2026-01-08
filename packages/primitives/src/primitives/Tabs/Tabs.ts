@@ -5,6 +5,7 @@ import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { when } from "@effex/dom";
 import { component } from "@effex/dom";
+import { createKeyboardNav } from "@effex/dom";
 import type { Element } from "@effex/dom";
 
 /**
@@ -128,56 +129,26 @@ export interface TabsListProps {
 const List = component("TabsList", (props: TabsListProps, children) =>
   Effect.gen(function* () {
     const ctx = yield* TabsCtx;
-    const loop = props.loop ?? true;
 
-    const handleKeyDown = (e: KeyboardEvent) =>
+    const setValueFromElement = (el: HTMLElement) =>
       Effect.gen(function* () {
-        const currentOrientation = yield* ctx.orientation.get;
-        const isHorizontal = currentOrientation === "horizontal";
-        const prevKey = isHorizontal ? "ArrowLeft" : "ArrowUp";
-        const nextKey = isHorizontal ? "ArrowRight" : "ArrowDown";
-
-        if ([prevKey, nextKey, "Home", "End"].includes(e.key)) {
-          e.preventDefault();
-
-          const triggers = Array.from(
-            document.querySelectorAll(
-              "[data-tabs-trigger]:not([data-disabled])",
-            ),
-          ) as HTMLElement[];
-
-          if (triggers.length === 0) return;
-
-          const currentTrigger = triggers.find((t) =>
-            t.contains(document.activeElement),
-          );
-          const index = currentTrigger ? triggers.indexOf(currentTrigger) : -1;
-
-          let nextIndex: number;
-          if (e.key === prevKey) {
-            nextIndex = loop
-              ? (index - 1 + triggers.length) % triggers.length
-              : Math.max(0, index - 1);
-          } else if (e.key === nextKey) {
-            nextIndex = loop
-              ? (index + 1) % triggers.length
-              : Math.min(triggers.length - 1, index + 1);
-          } else if (e.key === "Home") {
-            nextIndex = 0;
-          } else {
-            nextIndex = triggers.length - 1;
-          }
-
-          triggers[nextIndex]?.focus();
-
-          if (ctx.activationMode === "automatic") {
-            const tabValue = triggers[nextIndex]?.getAttribute("data-value");
-            if (tabValue) {
-              yield* ctx.setValue(tabValue);
-            }
-          }
+        const tabValue = el.getAttribute("data-value");
+        if (tabValue) {
+          yield* ctx.setValue(tabValue);
         }
       });
+
+    const handleKeyDown = createKeyboardNav({
+      selector: "[data-tabs-trigger]:not([data-disabled])",
+      orientation: ctx.orientation,
+      loop: props.loop ?? true,
+      // In automatic mode, selecting happens on focus
+      onFocus:
+        ctx.activationMode === "automatic" ? setValueFromElement : undefined,
+      // In manual mode, selecting happens on Enter/Space
+      onActivate:
+        ctx.activationMode === "manual" ? setValueFromElement : undefined,
+    });
 
     return yield* $.div(
       {
@@ -227,14 +198,6 @@ const Trigger = component("TabsTrigger", (props: TabsTriggerProps, children) =>
 
     const handleClick = () => ctx.setValue(props.value);
 
-    const handleKeyDown = (e: KeyboardEvent) =>
-      Effect.gen(function* () {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          yield* ctx.setValue(props.value);
-        }
-      });
-
     return yield* $.button(
       {
         id: `tabs-trigger-${props.value}`,
@@ -250,7 +213,6 @@ const Trigger = component("TabsTrigger", (props: TabsTriggerProps, children) =>
         "data-disabled": dataDisabled,
         "data-tabs-trigger": "",
         onClick: handleClick,
-        onKeyDown: ctx.activationMode === "manual" ? handleKeyDown : undefined,
       },
       children ?? [],
     );

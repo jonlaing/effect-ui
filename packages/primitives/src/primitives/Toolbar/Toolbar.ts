@@ -1,9 +1,9 @@
-import { Context, Effect, Match, Option } from "effect";
+import { Context, Effect, Option } from "effect";
 import type { SignalArray } from "@effex/dom";
 import { Readable, Signal } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
-import { component, Derived } from "@effex/dom";
+import { component, Derived, createKeyboardNav } from "@effex/dom";
 import type { Element } from "@effex/dom";
 
 // ============================================================================
@@ -188,51 +188,12 @@ const Root = (
       rovingTabIndex: { activeId, items },
     };
 
-    const handleKeyDown = (e: KeyboardEvent) =>
-      Effect.gen(function* () {
-        const currentOrientation = yield* orientation.get;
-        const isHorizontal = currentOrientation === "horizontal";
-        const prevKey = isHorizontal ? "ArrowLeft" : "ArrowUp";
-        const nextKey = isHorizontal ? "ArrowRight" : "ArrowDown";
-
-        if (![prevKey, nextKey, "Home", "End"].includes(e.key)) return;
-
-        e.preventDefault();
-
-        const toolbarItems = Array.from(
-          document.querySelectorAll("[data-toolbar-item]:not([data-disabled])"),
-        ) as HTMLElement[];
-
-        if (toolbarItems.length === 0) return;
-
-        const index = toolbarItems.findIndex((t) =>
-          t.contains(document.activeElement),
-        );
-
-        const nextIndex = Match.value(e.key).pipe(
-          Match.when(prevKey, () =>
-            loop
-              ? (index - 1 + toolbarItems.length) % toolbarItems.length
-              : Math.max(0, index - 1),
-          ),
-          Match.when(nextKey, () =>
-            loop
-              ? (index + 1) % toolbarItems.length
-              : Math.min(toolbarItems.length - 1, index + 1),
-          ),
-          Match.when("Home", () => 0),
-          Match.orElse(() => toolbarItems.length - 1),
-        );
-
-        yield* Effect.fromNullable(toolbarItems[nextIndex]).pipe(
-          Effect.tap((nextItem) => nextItem.focus()),
-          Effect.map((nextItem) => nextItem.id),
-          Effect.flatMap(Effect.fromNullable),
-          Effect.tap(activeId.set),
-          Effect.flatMap(() => Effect.void),
-          Effect.catchAll(() => Effect.void),
-        );
-      });
+    const handleKeyDown = createKeyboardNav({
+      selector: "[data-toolbar-item]:not([data-disabled])",
+      orientation,
+      loop,
+      onFocus: (el) => (el.id ? activeId.set(el.id) : Effect.void),
+    });
 
     return yield* $.div(
       {

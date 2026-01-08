@@ -4,6 +4,7 @@ import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { component } from "@effex/dom";
+import { createKeyboardNav } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import type { Element } from "@effex/dom";
 
@@ -266,6 +267,13 @@ export interface AccordionTriggerProps {
  * Accordion.Trigger({ class: "accordion-trigger" }, "Click to expand")
  * ```
  */
+// Shared keyboard navigation handler for accordion triggers
+const accordionKeyboardNav = createKeyboardNav({
+  selector: "[data-accordion-trigger]:not([data-disabled])",
+  orientation: "vertical",
+  loop: true,
+});
+
 const Trigger = component(
   "AccordionTrigger",
   (props: AccordionTriggerProps, children) =>
@@ -274,37 +282,6 @@ const Trigger = component(
       const itemCtx = yield* AccordionItemCtx;
 
       const handleClick = () => accordionCtx.toggle(itemCtx.value);
-
-      const handleKeyDown = (e: KeyboardEvent) =>
-        Effect.suspend(() => {
-          // Arrow key navigation between triggers
-          if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-            e.preventDefault();
-            const triggers = document.querySelectorAll(
-              "[data-accordion-trigger]",
-            );
-            const current = e.currentTarget as HTMLElement;
-            const index = Array.from(triggers).indexOf(current);
-            const nextIndex =
-              e.key === "ArrowDown"
-                ? (index + 1) % triggers.length
-                : (index - 1 + triggers.length) % triggers.length;
-            (triggers[nextIndex] as HTMLElement)?.focus();
-          } else if (e.key === "Home") {
-            e.preventDefault();
-            const triggers = document.querySelectorAll(
-              "[data-accordion-trigger]",
-            );
-            (triggers[0] as HTMLElement)?.focus();
-          } else if (e.key === "End") {
-            e.preventDefault();
-            const triggers = document.querySelectorAll(
-              "[data-accordion-trigger]",
-            );
-            (triggers[triggers.length - 1] as HTMLElement)?.focus();
-          }
-          return Effect.void;
-        });
 
       const dataState = itemCtx.isOpen.map((open) =>
         open ? "open" : "closed",
@@ -326,7 +303,7 @@ const Trigger = component(
           "data-disabled": dataDisabled,
           "data-accordion-trigger": "",
           onClick: handleClick,
-          onKeyDown: handleKeyDown,
+          onKeyDown: accordionKeyboardNav,
         },
         children ?? [],
       );
