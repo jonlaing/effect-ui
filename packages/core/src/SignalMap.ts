@@ -1,4 +1,4 @@
-import { Effect, Scope, SubscriptionRef } from "effect";
+import { Effect, Option, Scope, SubscriptionRef } from "effect";
 
 import type { Readable } from "./Readable.js";
 import { Readable as ReadableNS } from "./Readable.js";
@@ -34,9 +34,9 @@ export interface SignalMap<K, V> {
   readonly set: (key: K, value: V) => Effect.Effect<void>;
 
   /**
-   * Get the value for a key.
+   * Get the value for a key, returning Option.none() if not found.
    */
-  readonly get: (key: K) => Effect.Effect<V | undefined>;
+  readonly get: (key: K) => Effect.Effect<Option.Option<V>>;
 
   /**
    * Check if a key exists.
@@ -134,7 +134,7 @@ export const make = <K, V>(
       get: (key) =>
         Effect.gen(function* () {
           const map = yield* SubscriptionRef.get(ref);
-          return map.get(key);
+          return Option.fromNullable(map.get(key));
         }),
 
       has: (key) =>

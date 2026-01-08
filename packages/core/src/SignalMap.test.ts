@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Effect, Fiber, Scope, Stream } from "effect";
+import { Effect, Fiber, Option, Scope, Stream } from "effect";
 import { Signal } from "./Signal";
 import { combine } from "./Readable";
 
@@ -27,8 +27,8 @@ describe("Signal.Map", () => {
           const map = yield* Signal.Map.make(initial);
           const a = yield* map.get("a");
           const b = yield* map.get("b");
-          expect(a).toBe(1);
-          expect(b).toBe(2);
+          expect(Option.getOrThrow(a)).toBe(1);
+          expect(Option.getOrThrow(b)).toBe(2);
         }),
       ));
 
@@ -40,7 +40,7 @@ describe("Signal.Map", () => {
             ["y", 20],
           ]);
           const x = yield* map.get("x");
-          expect(x).toBe(10);
+          expect(Option.getOrThrow(x)).toBe(10);
         }),
       ));
   });
@@ -52,7 +52,7 @@ describe("Signal.Map", () => {
           const map = yield* Signal.Map.make<string, number>();
           yield* map.set("key", 42);
           const value = yield* map.get("key");
-          expect(value).toBe(42);
+          expect(Option.getOrThrow(value)).toBe(42);
         }),
       ));
 
@@ -78,21 +78,22 @@ describe("Signal.Map", () => {
   });
 
   describe("get", () => {
-    it("should return value for existing key", () =>
+    it("should return Some for existing key", () =>
       runTest(
         Effect.gen(function* () {
           const map = yield* Signal.Map.make<string, number>([["a", 1]]);
           const value = yield* map.get("a");
-          expect(value).toBe(1);
+          expect(Option.isSome(value)).toBe(true);
+          expect(Option.getOrThrow(value)).toBe(1);
         }),
       ));
 
-    it("should return undefined for missing key", () =>
+    it("should return None for missing key", () =>
       runTest(
         Effect.gen(function* () {
           const map = yield* Signal.Map.make<string, number>();
           const value = yield* map.get("missing");
-          expect(value).toBeUndefined();
+          expect(Option.isNone(value)).toBe(true);
         }),
       ));
   });
@@ -164,8 +165,8 @@ describe("Signal.Map", () => {
 
           const a = yield* map.get("a");
           const x = yield* map.get("x");
-          expect(a).toBeUndefined();
-          expect(x).toBe(100);
+          expect(Option.isNone(a)).toBe(true);
+          expect(Option.getOrThrow(x)).toBe(100);
         }),
       ));
   });

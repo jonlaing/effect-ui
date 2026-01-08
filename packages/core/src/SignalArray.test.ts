@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Effect, Fiber, Scope, Stream } from "effect";
+import { Effect, Fiber, Option, Scope, Stream } from "effect";
 import { Signal } from "./Signal";
 
 const runTest = <A>(effect: Effect.Effect<A, never, Scope.Scope>): Promise<A> =>
@@ -59,24 +59,25 @@ describe("Signal.Array", () => {
   });
 
   describe("pop", () => {
-    it("should remove and return the last element", () =>
+    it("should remove and return Some with the last element", () =>
       runTest(
         Effect.gen(function* () {
           const arr = yield* Signal.Array.make([1, 2, 3]);
           const popped = yield* arr.pop();
-          expect(popped).toBe(3);
+          expect(Option.isSome(popped)).toBe(true);
+          expect(Option.getOrThrow(popped)).toBe(3);
 
           const value = yield* arr.get;
           expect(value).toEqual([1, 2]);
         }),
       ));
 
-    it("should return undefined for empty array", () =>
+    it("should return None for empty array", () =>
       runTest(
         Effect.gen(function* () {
           const arr = yield* Signal.Array.make<number>([]);
           const popped = yield* arr.pop();
-          expect(popped).toBeUndefined();
+          expect(Option.isNone(popped)).toBe(true);
         }),
       ));
   });
@@ -94,12 +95,13 @@ describe("Signal.Array", () => {
   });
 
   describe("shift", () => {
-    it("should remove and return the first element", () =>
+    it("should remove and return Some with the first element", () =>
       runTest(
         Effect.gen(function* () {
           const arr = yield* Signal.Array.make([1, 2, 3]);
           const shifted = yield* arr.shift();
-          expect(shifted).toBe(1);
+          expect(Option.isSome(shifted)).toBe(true);
+          expect(Option.getOrThrow(shifted)).toBe(1);
 
           const value = yield* arr.get;
           expect(value).toEqual([2, 3]);
@@ -154,24 +156,25 @@ describe("Signal.Array", () => {
   });
 
   describe("removeAt", () => {
-    it("should remove at specific index", () =>
+    it("should remove at specific index and return Some", () =>
       runTest(
         Effect.gen(function* () {
           const arr = yield* Signal.Array.make([1, 2, 3]);
           const removed = yield* arr.removeAt(1);
-          expect(removed).toBe(2);
+          expect(Option.isSome(removed)).toBe(true);
+          expect(Option.getOrThrow(removed)).toBe(2);
 
           const value = yield* arr.get;
           expect(value).toEqual([1, 3]);
         }),
       ));
 
-    it("should return undefined for out of bounds", () =>
+    it("should return None for out of bounds", () =>
       runTest(
         Effect.gen(function* () {
           const arr = yield* Signal.Array.make([1, 2]);
           const removed = yield* arr.removeAt(5);
-          expect(removed).toBeUndefined();
+          expect(Option.isNone(removed)).toBe(true);
         }),
       ));
   });

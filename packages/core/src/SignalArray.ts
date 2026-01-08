@@ -1,4 +1,4 @@
-import { Effect, Scope, SubscriptionRef } from "effect";
+import { Effect, Option, Scope, SubscriptionRef } from "effect";
 
 import type { Signal } from "./Signal.js";
 import type { Readable } from "./Readable.js";
@@ -32,9 +32,9 @@ export interface SignalArray<T> extends Signal<readonly T[]> {
   readonly push: (...items: T[]) => Effect.Effect<void>;
 
   /**
-   * Remove and return the last element.
+   * Remove and return the last element, returning Option.none() if empty.
    */
-  readonly pop: () => Effect.Effect<T | undefined>;
+  readonly pop: () => Effect.Effect<Option.Option<T>>;
 
   /**
    * Add one or more elements to the beginning of the array.
@@ -42,9 +42,9 @@ export interface SignalArray<T> extends Signal<readonly T[]> {
   readonly unshift: (...items: T[]) => Effect.Effect<void>;
 
   /**
-   * Remove and return the first element.
+   * Remove and return the first element, returning Option.none() if empty.
    */
-  readonly shift: () => Effect.Effect<T | undefined>;
+  readonly shift: () => Effect.Effect<Option.Option<T>>;
 
   /**
    * Insert, remove, or replace elements at a specific index.
@@ -62,9 +62,9 @@ export interface SignalArray<T> extends Signal<readonly T[]> {
   readonly insertAt: (index: number, item: T) => Effect.Effect<void>;
 
   /**
-   * Remove the element at a specific index.
+   * Remove the element at a specific index, returning Option.none() if out of bounds.
    */
-  readonly removeAt: (index: number) => Effect.Effect<T | undefined>;
+  readonly removeAt: (index: number) => Effect.Effect<Option.Option<T>>;
 
   /**
    * Remove the first occurrence of an element (by reference equality).
@@ -163,7 +163,7 @@ export const make = <T>(
           const arr = yield* SubscriptionRef.get(ref);
           const item = arr.pop();
           yield* notify;
-          return item;
+          return Option.fromNullable(item);
         }),
 
       unshift: (...items) =>
@@ -178,7 +178,7 @@ export const make = <T>(
           const arr = yield* SubscriptionRef.get(ref);
           const item = arr.shift();
           yield* notify;
-          return item;
+          return Option.fromNullable(item);
         }),
 
       splice: (start, deleteCount = 0, ...items) =>
@@ -200,11 +200,11 @@ export const make = <T>(
         Effect.gen(function* () {
           const arr = yield* SubscriptionRef.get(ref);
           if (index < 0 || index >= arr.length) {
-            return undefined;
+            return Option.none();
           }
           const [removed] = arr.splice(index, 1);
           yield* notify;
-          return removed;
+          return Option.some(removed);
         }),
 
       remove: (item) =>

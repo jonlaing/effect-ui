@@ -1,6 +1,5 @@
 import { Duration, Effect, Fiber, Match, Option, Ref } from "effect";
-import type { Readable } from "@effex/core";
-import { Readable as ReadableNS } from "@effex/core";
+import { Readable } from "@effex/core";
 
 /**
  * Internal state for typeahead functionality.
@@ -9,6 +8,185 @@ interface TypeaheadState {
   readonly buffer: Ref.Ref<string>;
   readonly timerFiber: Ref.Ref<Fiber.RuntimeFiber<void, never> | null>;
 }
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Handle hierarchy navigation (ArrowRight to expand/enter, ArrowLeft to collapse/exit).
+ * Used for TreeView-style navigation patterns.
+ *
+ * @returns true if the event was handled, false otherwise
+ */
+const handleHierarchyNavigation = (
+  e: KeyboardEvent,
+  current: HTMLElement,
+  items: HTMLElement[],
+  hierarchy: HierarchyOptions,
+  onFocus:
+    | ((el: HTMLElement, index: number) => Effect.Effect<void>)
+    | undefined,
+): Effect.Effect<boolean> =>
+  Effect.gen(function* () {
+    const expandKey = "ArrowRight";
+    const collapseKey = "ArrowLeft";
+
+    if (e.key === expandKey) {
+      if (hierarchy.isExpanded(current)) {
+        // Already expanded - move to first child
+        const firstChild = hierarchy.getFirstChild(current);
+        if (Option.isSome(firstChild)) {
+          e.preventDefault();
+          firstChild.value.focus();
+          const childIndex = items.indexOf(firstChild.value);
+          yield* onFocus?.(firstChild.value, childIndex) ?? Effect.void;
+          return true;
+        }
+      } else {
+        // Not expanded - expand it
+        e.preventDefault();
+        yield* hierarchy.onExpand(current);
+        return true;
+      }
+    }
+
+    if (e.key === collapseKey) {
+      if (hierarchy.isExpanded(current)) {
+        // Expanded - collapse it
+        e.preventDefault();
+        yield* hierarchy.onCollapse(current);
+        return true;
+      } else {
+        // Not expanded - move to parent
+        const parent = hierarchy.getParent(current);
+        if (Option.isSome(parent)) {
+          e.preventDefault();
+          parent.value.focus();
+          const parentIndex = items.indexOf(parent.value);
+          yield* onFocus?.(parent.value, parentIndex) ?? Effect.void;
+          return true;
+        }
+      }
+    }
+
+    return false;
+  });
+
+/**
+ * Handle standard arrow key navigation (prev/next/Home/End).
+ */
+const handleStandardNavigation = (
+  e: KeyboardEvent,
+  items: HTMLElement[],
+  index: number,
+  prevKey: string,
+  nextKey: string,
+  loop: boolean,
+  onFocus:
+    | ((el: HTMLElement, index: number) => Effect.Effect<void>)
+    | undefined,
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    e.preventDefault();
+
+    const nextIndex = Match.value(e.key).pipe(
+      Match.when(prevKey, () =>
+        loop
+          ? (index - 1 + items.length) % items.length
+          : Math.max(0, index - 1),
+      ),
+      Match.when(nextKey, () =>
+        loop
+          ? (index + 1) % items.length
+          : Math.min(items.length - 1, index + 1),
+      ),
+      Match.when("Home", () => 0),
+      Match.orElse(() => items.length - 1),
+    );
+
+    const nextItem = items[nextIndex];
+    if (nextItem) {
+      nextItem.focus();
+      yield* onFocus?.(nextItem, nextIndex) ?? Effect.void;
+    }
+  });
+
+/**
+ * Handle typeahead (type-to-search) functionality.
+ * Manages a search buffer that accumulates typed characters
+ * and auto-clears after a timeout.
+ */
+const handleTypeahead = (
+  e: KeyboardEvent,
+  items: HTMLElement[],
+  index: number,
+  typeahead: TypeaheadOptions,
+  state: TypeaheadState,
+  timeout: number,
+  onFocus:
+    | ((el: HTMLElement, index: number) => Effect.Effect<void>)
+    | undefined,
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    e.preventDefault();
+
+    // Cancel existing timer fiber
+    const existingFiber = yield* Ref.get(state.timerFiber);
+    if (existingFiber) {
+      yield* Fiber.interrupt(existingFiber);
+    }
+
+    // Append to buffer
+    yield* Ref.update(state.buffer, (b) => b + e.key.toLowerCase());
+    const currentBuffer = yield* Ref.get(state.buffer);
+
+    // Start new timer fiber to reset buffer
+    const resetFiber = yield* Effect.sleep(Duration.millis(timeout)).pipe(
+      Effect.andThen(Ref.set(state.buffer, "")),
+      Effect.andThen(Ref.set(state.timerFiber, null)),
+      Effect.fork,
+    );
+    yield* Ref.set(state.timerFiber, resetFiber);
+
+    // Search for match starting from current position
+    const searchStart = index === -1 ? 0 : index;
+    for (let i = 0; i < items.length; i++) {
+      const checkIndex = (searchStart + i) % items.length;
+      const item = items[checkIndex];
+      const text = typeahead.getText(item).toLowerCase();
+
+      if (text.startsWith(currentBuffer)) {
+        item.focus();
+        yield* typeahead.onMatch?.(item, checkIndex) ?? Effect.void;
+        yield* onFocus?.(item, checkIndex) ?? Effect.void;
+        return;
+      }
+    }
+
+    // No match found - if multiple characters, try searching with just the new character
+    // This handles the case where user types a new character that doesn't
+    // continue the previous search
+    if (currentBuffer.length > 1) {
+      const singleChar = e.key.toLowerCase();
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const text = typeahead.getText(item).toLowerCase();
+
+        if (text.startsWith(singleChar)) {
+          yield* Ref.set(state.buffer, singleChar);
+          item.focus();
+          yield* typeahead.onMatch?.(item, i) ?? Effect.void;
+          yield* onFocus?.(item, i) ?? Effect.void;
+          return;
+        }
+      }
+    }
+  });
+
+// ============================================================================
+// Types
+// ============================================================================
 
 /**
  * Configuration for typeahead (type-to-search) functionality.
@@ -179,7 +357,8 @@ export const createKeyboardNav = (
       typeahead,
       hierarchy,
     } = options;
-    const orientationReadable = ReadableNS.of(orientation);
+
+    const orientationReadable = Readable.of(orientation);
     const typeaheadTimeout = typeahead?.timeout ?? 500;
 
     // Typeahead state using Effect Refs (persists across handler calls)
@@ -194,21 +373,19 @@ export const createKeyboardNav = (
 
     return (e: KeyboardEvent): Effect.Effect<void> =>
       Effect.gen(function* () {
+        // Determine navigation keys based on orientation
         const orient = yield* orientationReadable.get;
         const isHorizontal = orient === "horizontal";
         const prevKey = isHorizontal ? "ArrowLeft" : "ArrowUp";
         const nextKey = isHorizontal ? "ArrowRight" : "ArrowDown";
-
         const navKeys = [prevKey, nextKey, "Home", "End"];
-        const activateKeys = ["Enter", " "];
 
+        // Find all navigable items and current focus
         const items = Array.from(
           document.querySelectorAll(selector),
         ) as HTMLElement[];
 
-        if (items.length === 0) {
-          return;
-        }
+        if (items.length === 0) return;
 
         const current = items.find(
           (el) =>
@@ -218,97 +395,46 @@ export const createKeyboardNav = (
         const index = current ? items.indexOf(current) : -1;
 
         // Handle Escape
-        if (e.key === "Escape") {
-          if (onEscape) {
-            e.preventDefault();
-            yield* onEscape();
-          }
+        if (e.key === "Escape" && onEscape) {
+          e.preventDefault();
+          yield* onEscape();
           return;
         }
 
         // Handle activation (Enter/Space)
-        if (activateKeys.includes(e.key)) {
-          if (current && onActivate) {
-            e.preventDefault();
-            yield* onActivate(current, index);
-          }
-          return;
-        }
-
-        // Handle hierarchy navigation (TreeView-style)
-        if (hierarchy && current) {
-          // For horizontal orientation: ArrowRight = expand/enter, ArrowLeft = collapse/parent
-          // For vertical orientation: same keys but in vertical context
-          const expandKey = "ArrowRight";
-          const collapseKey = "ArrowLeft";
-
-          if (e.key === expandKey) {
-            if (hierarchy.isExpanded(current)) {
-              // Already expanded - move to first child
-              const firstChild = hierarchy.getFirstChild(current);
-              if (Option.isSome(firstChild)) {
-                e.preventDefault();
-                firstChild.value.focus();
-                const childIndex = items.indexOf(firstChild.value);
-                yield* onFocus?.(firstChild.value, childIndex) ?? Effect.void;
-                return;
-              }
-            } else {
-              // Not expanded - expand it
-              e.preventDefault();
-              yield* hierarchy.onExpand(current);
-              return;
-            }
-          }
-
-          if (e.key === collapseKey) {
-            if (hierarchy.isExpanded(current)) {
-              // Expanded - collapse it
-              e.preventDefault();
-              yield* hierarchy.onCollapse(current);
-              return;
-            } else {
-              // Not expanded - move to parent
-              const parent = hierarchy.getParent(current);
-              if (Option.isSome(parent)) {
-                e.preventDefault();
-                parent.value.focus();
-                const parentIndex = items.indexOf(parent.value);
-                yield* onFocus?.(parent.value, parentIndex) ?? Effect.void;
-                return;
-              }
-            }
-          }
-        }
-
-        // Handle standard navigation
-        if (navKeys.includes(e.key)) {
+        if ((e.key === "Enter" || e.key === " ") && current && onActivate) {
           e.preventDefault();
-
-          const nextIndex = Match.value(e.key).pipe(
-            Match.when(prevKey, () =>
-              loop
-                ? (index - 1 + items.length) % items.length
-                : Math.max(0, index - 1),
-            ),
-            Match.when(nextKey, () =>
-              loop
-                ? (index + 1) % items.length
-                : Math.min(items.length - 1, index + 1),
-            ),
-            Match.when("Home", () => 0),
-            Match.orElse(() => items.length - 1),
-          );
-
-          const nextItem = items[nextIndex];
-          if (nextItem) {
-            nextItem.focus();
-            yield* onFocus?.(nextItem, nextIndex) ?? Effect.void;
-          }
+          yield* onActivate(current, index);
           return;
         }
 
-        // Handle typeahead
+        // Handle hierarchy navigation (TreeView-style expand/collapse)
+        if (hierarchy && current) {
+          const handled = yield* handleHierarchyNavigation(
+            e,
+            current,
+            items,
+            hierarchy,
+            onFocus,
+          );
+          if (handled) return;
+        }
+
+        // Handle standard navigation (arrows, Home, End)
+        if (navKeys.includes(e.key)) {
+          yield* handleStandardNavigation(
+            e,
+            items,
+            index,
+            prevKey,
+            nextKey,
+            loop,
+            onFocus,
+          );
+          return;
+        }
+
+        // Handle typeahead (type-to-search)
         if (
           typeahead &&
           typeaheadState &&
@@ -316,64 +442,15 @@ export const createKeyboardNav = (
           !e.ctrlKey &&
           !e.metaKey
         ) {
-          e.preventDefault();
-
-          // Cancel existing timer fiber
-          const existingFiber = yield* Ref.get(typeaheadState.timerFiber);
-          if (existingFiber) {
-            yield* Fiber.interrupt(existingFiber);
-          }
-
-          // Append to buffer
-          yield* Ref.update(
-            typeaheadState.buffer,
-            (b) => b + e.key.toLowerCase(),
+          yield* handleTypeahead(
+            e,
+            items,
+            index,
+            typeahead,
+            typeaheadState,
+            typeaheadTimeout,
+            onFocus,
           );
-          const currentBuffer = yield* Ref.get(typeaheadState.buffer);
-
-          // Start new timer fiber to reset buffer
-          const resetFiber = yield* Effect.sleep(
-            Duration.millis(typeaheadTimeout),
-          ).pipe(
-            Effect.andThen(Ref.set(typeaheadState.buffer, "")),
-            Effect.andThen(Ref.set(typeaheadState.timerFiber, null)),
-            Effect.fork,
-          );
-          yield* Ref.set(typeaheadState.timerFiber, resetFiber);
-
-          // Search for match
-          const searchStart = index === -1 ? 0 : index;
-          for (let i = 0; i < items.length; i++) {
-            const checkIndex = (searchStart + i) % items.length;
-            const item = items[checkIndex];
-            const text = typeahead.getText(item).toLowerCase();
-
-            if (text.startsWith(currentBuffer)) {
-              item.focus();
-              yield* typeahead.onMatch?.(item, checkIndex) ?? Effect.void;
-              yield* onFocus?.(item, checkIndex) ?? Effect.void;
-              return;
-            }
-          }
-
-          // No match found - if multiple characters, try searching with just the new character
-          // This handles the case where user types a new character that doesn't
-          // continue the previous search
-          if (currentBuffer.length > 1) {
-            const singleChar = e.key.toLowerCase();
-            for (let i = 0; i < items.length; i++) {
-              const item = items[i];
-              const text = typeahead.getText(item).toLowerCase();
-
-              if (text.startsWith(singleChar)) {
-                yield* Ref.set(typeaheadState.buffer, singleChar);
-                item.focus();
-                yield* typeahead.onMatch?.(item, i) ?? Effect.void;
-                yield* onFocus?.(item, i) ?? Effect.void;
-                return;
-              }
-            }
-          }
         }
       });
   });
