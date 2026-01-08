@@ -1,13 +1,13 @@
 import { Effect, Layer, Option, pipe } from "effect";
 import { match, $, Derived } from "@effex/dom";
-import type { Element } from "@effex/dom";
+import { Element } from "@effex/dom";
 import { RouterContext } from "@effex/router";
 import { LoaderContextTag, makeLoaderContext } from "./RouteLoader.js";
 
 /**
  * A component function that returns an Element.
  */
-export type RouteComponent<E = never, R = never> = () => Element<E, R>;
+export type RouteComponent<E = never, R = never> = () => Element.Element<E, R>;
 
 /**
  * Map of route names to their component functions.
@@ -21,14 +21,14 @@ export type ComponentsMap = {
  * Extracts the union of all error types from a components map.
  */
 export type ComponentsError<T extends ComponentsMap> = {
-  [K in keyof T]: T[K] extends () => Element<infer E, any> ? E : never;
+  [K in keyof T]: T[K] extends () => Element.Element<infer E, any> ? E : never;
 }[keyof T];
 
 /**
  * Extracts the union of all requirement types from a components map.
  */
 export type ComponentsRequirements<T extends ComponentsMap> = {
-  [K in keyof T]: T[K] extends () => Element<any, infer R> ? R : never;
+  [K in keyof T]: T[K] extends () => Element.Element<any, infer R> ? R : never;
 }[keyof T];
 
 /**
@@ -89,7 +89,10 @@ export interface RoutesProps<T extends ComponentsMap = ComponentsMap> {
  */
 const RoutesImpl = <T extends ComponentsMap>(
   props: RoutesProps<T>,
-): Element<ComponentsError<T>, ComponentsRequirements<T> | RouterContext> =>
+): Element.Element<
+  ComponentsError<T>,
+  ComponentsRequirements<T> | RouterContext
+> =>
   Effect.gen(function* () {
     const router = yield* RouterContext;
 
@@ -213,7 +216,10 @@ const RoutesImpl = <T extends ComponentsMap>(
       fallback,
       extractPattern: extractRouteName,
     });
-  }) as Element<ComponentsError<T>, ComponentsRequirements<T> | RouterContext>;
+  }) as Element.Element<
+    ComponentsError<T>,
+    ComponentsRequirements<T> | RouterContext
+  >;
 
 /**
  * The Routes component with a _tag for debugging.

@@ -1,6 +1,6 @@
 import type { Deferred, Effect, Scope } from "effect";
 import type { Readable } from "@effex/core";
-import type { Element } from "../Element";
+import { Element } from "../Element";
 import type { ListAnimationOptions } from "../Animation";
 
 /**
@@ -61,7 +61,7 @@ export interface VirtualEachOptions<A, E = never, R = never> {
   readonly render: (
     item: Readable<A>,
     index: Readable<number>,
-  ) => Element<E, R>;
+  ) => Element.Element<E, R>;
 
   /**
    * Fixed height for all items in pixels.

@@ -9,7 +9,8 @@ import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
 import { FocusTrap } from "@effex/dom";
 import { ScrollLock } from "@effex/dom";
-import type { Element } from "@effex/dom";
+import { Element } from "@effex/dom";
+import type { AnimationOptions } from "@effex/dom";
 
 /**
  * Context shared between Dialog parts.
@@ -80,8 +81,10 @@ export interface DialogRootProps {
  */
 const Root = (
   props: DialogRootProps,
-  children: Element<never, DialogCtx> | Element<never, DialogCtx>[],
-): Element =>
+  children:
+    | Element.Element<never, DialogCtx>
+    | Element.Element<never, DialogCtx>[],
+): Element.Element =>
   Effect.gen(function* () {
     // Handle controlled vs uncontrolled state
     const isOpen = yield* Signal.fromNullable(
@@ -167,6 +170,8 @@ const Trigger = component(
 export interface DialogPortalProps {
   /** Target element or selector to render into (default: document.body) */
   readonly target?: HTMLElement | string;
+  /** Animation configuration for enter/exit transitions */
+  readonly animate?: AnimationOptions;
 }
 
 /**
@@ -183,21 +188,26 @@ export interface DialogPortalProps {
  */
 const DialogPortal = (
   props: DialogPortalProps,
-  children: Element<never, DialogCtx> | Element<never, DialogCtx>[],
-): Element<never, DialogCtx> =>
+  children:
+    | Element.Element<never, DialogCtx>
+    | Element.Element<never, DialogCtx>[],
+): Element.Element<never, DialogCtx> =>
   Effect.gen(function* () {
     const ctx = yield* DialogCtx;
 
-    return yield* when(ctx.isOpen, {
-      onTrue: () =>
-        Portal({ target: props.target }, () =>
+    // Portal is always rendered, but the content inside uses `when` for animations.
+    // This ensures animations apply to the actual visible content, not a placeholder.
+    return yield* Portal({ target: props.target }, () =>
+      when(ctx.isOpen, {
+        onTrue: () =>
           $.div(
             { style: { display: "contents" }, "data-dialog-portal": "" },
             provide(DialogCtx, ctx, children),
           ),
-        ),
-      onFalse: () => $.div({ style: { display: "none" } }),
-    });
+        onFalse: () => $.div({ style: { display: "none" } }),
+        animate: props.animate,
+      }),
+    );
   });
 
 /**

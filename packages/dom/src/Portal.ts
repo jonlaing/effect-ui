@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import type { Element } from "./Element";
+import { Element } from "./Element";
 
 /**
  * Options for Portal rendering.
@@ -29,16 +29,16 @@ export interface PortalOptions {
  * ```
  */
 export function Portal<E = never, R = never>(
-  children: () => Element<E, R>,
-): Element<E, R>;
+  children: () => Element.Element<E, R>,
+): Element.Element<E, R>;
 export function Portal<E = never, R = never>(
   options: PortalOptions,
-  children: () => Element<E, R>,
-): Element<E, R>;
+  children: () => Element.Element<E, R>,
+): Element.Element<E, R>;
 export function Portal<E = never, R = never>(
-  optionsOrChildren: PortalOptions | (() => Element<E, R>),
-  maybeChildren?: () => Element<E, R>,
-): Element<E, R> {
+  optionsOrChildren: PortalOptions | (() => Element.Element<E, R>),
+  maybeChildren?: () => Element.Element<E, R>,
+): Element.Element<E, R> {
   const options: PortalOptions =
     typeof optionsOrChildren === "function" ? {} : optionsOrChildren;
   const children =

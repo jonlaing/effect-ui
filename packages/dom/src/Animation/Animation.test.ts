@@ -66,8 +66,8 @@ describe("Animation", () => {
       mockMatchMedia(true);
 
       const element = document.createElement("div");
-      const onBeforeEnter = vi.fn();
-      const onEnter = vi.fn();
+      const onBeforeEnter = vi.fn((el) => el);
+      const onEnter = vi.fn((el) => el);
 
       await Effect.runPromise(
         runEnterAnimation(element, {
@@ -85,22 +85,32 @@ describe("Animation", () => {
       expect(element.classList.contains("visible")).toBe(true);
     });
 
-    it("should call lifecycle hooks", async () => {
+    it("should call lifecycle hooks with Effect-wrapped element", async () => {
       const element = document.createElement("div");
-      const onBeforeEnter = vi.fn();
-      const onEnter = vi.fn();
+      let beforeEnterEl: HTMLElement | null = null;
+      let enterEl: HTMLElement | null = null;
 
       await Effect.runPromise(
         runEnterAnimation(element, {
           enter: "fade-in",
           timeout: 10,
-          onBeforeEnter,
-          onEnter,
+          onBeforeEnter: (el) =>
+            Effect.tap(el, (e) =>
+              Effect.sync(() => {
+                beforeEnterEl = e;
+              }),
+            ),
+          onEnter: (el) =>
+            Effect.tap(el, (e) =>
+              Effect.sync(() => {
+                enterEl = e;
+              }),
+            ),
         }),
       );
 
-      expect(onBeforeEnter).toHaveBeenCalledWith(element);
-      expect(onEnter).toHaveBeenCalledWith(element);
+      expect(beforeEnterEl).toBe(element);
+      expect(enterEl).toBe(element);
     });
 
     it("should handle Effect-returning hooks", async () => {
@@ -111,10 +121,12 @@ describe("Animation", () => {
         runEnterAnimation(element, {
           enter: "fade-in",
           timeout: 10,
-          onEnter: () =>
-            Effect.sync(() => {
-              effectRan = true;
-            }),
+          onEnter: (el) =>
+            Effect.tap(el, () =>
+              Effect.sync(() => {
+                effectRan = true;
+              }),
+            ),
         }),
       );
 
@@ -172,8 +184,8 @@ describe("Animation", () => {
       mockMatchMedia(true);
 
       const element = document.createElement("div");
-      const onBeforeExit = vi.fn();
-      const onExit = vi.fn();
+      const onBeforeExit = vi.fn((el) => el);
+      const onExit = vi.fn((el) => el);
 
       await Effect.runPromise(
         runExitAnimation(element, {
@@ -188,22 +200,32 @@ describe("Animation", () => {
       expect(onExit).toHaveBeenCalled();
     });
 
-    it("should call lifecycle hooks", async () => {
+    it("should call lifecycle hooks with Effect-wrapped element", async () => {
       const element = document.createElement("div");
-      const onBeforeExit = vi.fn();
-      const onExit = vi.fn();
+      let beforeExitEl: HTMLElement | null = null;
+      let exitEl: HTMLElement | null = null;
 
       await Effect.runPromise(
         runExitAnimation(element, {
           exit: "fade-out",
           timeout: 10,
-          onBeforeExit,
-          onExit,
+          onBeforeExit: (el) =>
+            Effect.tap(el, (e) =>
+              Effect.sync(() => {
+                beforeExitEl = e;
+              }),
+            ),
+          onExit: (el) =>
+            Effect.tap(el, (e) =>
+              Effect.sync(() => {
+                exitEl = e;
+              }),
+            ),
         }),
       );
 
-      expect(onBeforeExit).toHaveBeenCalledWith(element);
-      expect(onExit).toHaveBeenCalledWith(element);
+      expect(beforeExitEl).toBe(element);
+      expect(exitEl).toBe(element);
     });
   });
 

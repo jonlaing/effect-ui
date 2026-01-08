@@ -1,5 +1,5 @@
 import { Effect, Layer } from "effect";
-import type { Element } from "@effex/dom";
+import { Element } from "@effex/dom";
 import { RendererContext } from "@effex/dom";
 import { hydrate as domHydrate } from "@effex/dom/hydrate";
 import {
@@ -82,7 +82,7 @@ export interface HydrateOptions {
  * ```
  */
 export const hydrateApp = async (
-  element: Element<never, RendererContext>,
+  element: Element.Element<never, RendererContext>,
   container: HTMLElement,
   options: HydrateOptions = {},
 ): Promise<void> => {

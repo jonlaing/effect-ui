@@ -10,11 +10,27 @@ export type AnimationEndResult =
   | { endedBy: "skip" };
 
 /**
- * Lifecycle hook that can return void or an Effect
+ * Lifecycle hook that receives an Effect-wrapped HTMLElement for piping.
+ * The element is wrapped in Effect.succeed() so Element helpers can be piped.
+ *
+ * @example
+ * ```ts
+ * // Pipe Element helpers
+ * onEnter: (el) => el.pipe(
+ *   Element.setStyles({ animation: "none" }),
+ *   Element.focus,
+ * )
+ *
+ * // Or use Effect.gen for complex logic
+ * onEnter: (el) => Effect.gen(function* () {
+ *   yield* el.pipe(Element.focus);
+ *   yield* doSomethingElse();
+ * })
+ * ```
  */
 export type AnimationHook = (
-  element: HTMLElement,
-) => Effect.Effect<void> | void;
+  element: Effect.Effect<HTMLElement>,
+) => Effect.Effect<unknown>;
 
 /**
  * Options for enter/exit animations on a single element

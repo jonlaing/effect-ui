@@ -8,7 +8,9 @@ import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
 import { onClickOutside, createKeyboardNav } from "@effex/dom";
-import type { Element, Child } from "@effex/dom";
+import { Element } from "@effex/dom";
+import type { Child } from "@effex/dom";
+import type { AnimationOptions } from "@effex/dom";
 
 // ============================================================================
 // Types & Interfaces
@@ -122,8 +124,10 @@ export interface ContextMenuRootProps {
  */
 const Root = (
   props: ContextMenuRootProps,
-  children: Element<never, ContextMenuCtx> | Element<never, ContextMenuCtx>[],
-): Element =>
+  children:
+    | Element.Element<never, ContextMenuCtx>
+    | Element.Element<never, ContextMenuCtx>[],
+): Element.Element =>
   Effect.gen(function* () {
     const isOpen = yield* Signal.fromNullable(props.open, false);
     const position = yield* Signal.make({ x: 0, y: 0 });
@@ -213,6 +217,8 @@ export interface ContextMenuContentProps {
   readonly class?: Readable.Reactive<string>;
   /** Whether keyboard navigation loops (default: true) */
   readonly loop?: boolean;
+  /** Animation configuration for enter/exit transitions */
+  readonly animate?: AnimationOptions;
 }
 
 /**
@@ -237,9 +243,11 @@ const Content = component(
 
       const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
 
-      return yield* when(ctx.isOpen, {
-        onTrue: () =>
-          Portal(() =>
+      // Portal is always rendered, but the content inside uses `when` for animations.
+      // This ensures animations apply to the actual visible content, not a placeholder.
+      return yield* Portal(() =>
+        when(ctx.isOpen, {
+          onTrue: () =>
             Effect.gen(function* () {
               const pos = yield* ctx.position.get;
 
@@ -309,21 +317,30 @@ const Content = component(
                 }),
               );
 
-              // Focus first item on open
-              const firstItem = contentEl.querySelector(
-                "[data-menu-item]:not([data-disabled])",
-              ) as HTMLElement;
-              if (firstItem) {
-                firstItem.focus();
-              } else {
-                contentEl.focus();
-              }
-
               return contentEl;
             }),
-          ),
-        onFalse: () => $.div({ style: { display: "none" } }),
-      });
+          onFalse: () => $.div({ style: { display: "none" } }),
+          animate: props.animate
+            ? {
+                ...props.animate,
+                onEnter: (el) =>
+                  el.pipe(
+                    // Focus first item on open
+                    Element.focusFirst("[data-menu-item]:not([data-disabled])"),
+                    Element.tapEffect(
+                      () => props.animate?.onEnter?.(el) ?? Effect.void,
+                    ),
+                  ),
+              }
+            : {
+                // Focus first item on open
+                onEnter: (el) =>
+                  el.pipe(
+                    Element.focusFirst("[data-menu-item]:not([data-disabled])"),
+                  ),
+              },
+        }),
+      );
     }),
 );
 
@@ -584,7 +601,7 @@ export interface ContextMenuRadioGroupProps {
 const RadioGroup = (
   props: ContextMenuRadioGroupProps,
   children: Child<never, ContextMenuCtx | ContextMenuRadioGroupCtx>[],
-): Element<never, ContextMenuCtx> =>
+): Element.Element<never, ContextMenuCtx> =>
   Effect.gen(function* () {
     const value = yield* Signal.fromNullable(
       props.value,
@@ -708,7 +725,7 @@ export interface ContextMenuSubProps {
 const Sub = (
   props: ContextMenuSubProps,
   children: Child<never, ContextMenuCtx | ContextMenuSubCtx>[],
-): Element<never, ContextMenuCtx> =>
+): Element.Element<never, ContextMenuCtx> =>
   Effect.gen(function* () {
     const isOpen = yield* Signal.fromNullable(
       props.open,
@@ -888,6 +905,8 @@ export interface ContextMenuSubContentProps {
   readonly sideOffset?: Readable.Reactive<number>;
   /** Whether keyboard navigation loops (default: true) */
   readonly loop?: boolean;
+  /** Animation configuration for enter/exit transitions */
+  readonly animate?: AnimationOptions;
 }
 
 /**
@@ -914,9 +933,11 @@ const SubContent = component(
 
       const dataState = subCtx.isOpen.map((open) => (open ? "open" : "closed"));
 
-      return yield* when(subCtx.isOpen, {
-        onTrue: () =>
-          Portal(() =>
+      // Portal is always rendered, but the content inside uses `when` for animations.
+      // This ensures animations apply to the actual visible content, not a placeholder.
+      return yield* Portal(() =>
+        when(subCtx.isOpen, {
+          onTrue: () =>
             Effect.gen(function* () {
               const triggerEl = yield* subCtx.triggerEl.get;
 
@@ -1030,21 +1051,30 @@ const SubContent = component(
                 children ?? [],
               );
 
-              // Focus first item on open
-              const firstItem = contentEl.querySelector(
-                "[data-menu-item]:not([data-disabled])",
-              ) as HTMLElement;
-              if (firstItem) {
-                firstItem.focus();
-              } else {
-                contentEl.focus();
-              }
-
               return contentEl;
             }),
-          ),
-        onFalse: () => $.div({ style: { display: "none" } }),
-      });
+          onFalse: () => $.div({ style: { display: "none" } }),
+          animate: props.animate
+            ? {
+                ...props.animate,
+                onEnter: (el) =>
+                  el.pipe(
+                    // Focus first item on open
+                    Element.focusFirst("[data-menu-item]:not([data-disabled])"),
+                    Element.tapEffect(
+                      () => props.animate?.onEnter?.(el) ?? Effect.void,
+                    ),
+                  ),
+              }
+            : {
+                // Focus first item on open
+                onEnter: (el) =>
+                  el.pipe(
+                    Element.focusFirst("[data-menu-item]:not([data-disabled])"),
+                  ),
+              },
+        }),
+      );
     }),
 );
 

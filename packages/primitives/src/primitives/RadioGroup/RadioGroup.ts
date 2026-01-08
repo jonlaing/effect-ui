@@ -6,7 +6,7 @@ import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { component } from "@effex/dom";
 import { createKeyboardNav } from "@effex/dom";
-import type { Element } from "@effex/dom";
+import { Element } from "@effex/dom";
 
 /**
  * Context shared between RadioGroup parts.
@@ -80,8 +80,10 @@ export interface RadioGroupRootProps {
  */
 const Root = (
   props: RadioGroupRootProps,
-  children: Element<never, RadioGroupCtx> | Element<never, RadioGroupCtx>[],
-): Element =>
+  children:
+    | Element.Element<never, RadioGroupCtx>
+    | Element.Element<never, RadioGroupCtx>[],
+): Element.Element =>
   Effect.gen(function* () {
     const value = yield* Signal.fromNullable(
       props.value,

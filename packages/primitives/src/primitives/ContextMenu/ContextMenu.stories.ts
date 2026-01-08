@@ -410,3 +410,80 @@ export const ImageContextMenu: Story = {
     return container;
   },
 };
+
+export const WithAnimation: Story = {
+  render: () => {
+    const element = Effect.gen(function* () {
+      return yield* ContextMenu.Root({}, [
+        ContextMenu.Trigger(
+          { class: "context-menu-area" },
+          "Right-click for animated menu",
+        ),
+        ContextMenu.Content(
+          {
+            animate: {
+              enter: "context-menu-animate-enter",
+              exit: "context-menu-animate-exit",
+            },
+          },
+          [
+            ContextMenu.Item({ onSelect: () => Effect.log("Edit") }, "Edit"),
+            ContextMenu.Item(
+              { onSelect: () => Effect.log("Duplicate") },
+              "Duplicate",
+            ),
+            ContextMenu.Separator({}),
+            ContextMenu.Item(
+              { onSelect: () => Effect.log("Delete") },
+              "Delete",
+            ),
+          ],
+        ),
+      ]);
+    });
+
+    const container = document.createElement("div");
+    container.className = "menu-story-container";
+
+    renderEffectAsync(element).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
+  },
+};
+
+export const WithScaleAnimation: Story = {
+  render: () => {
+    const element = Effect.gen(function* () {
+      return yield* ContextMenu.Root({}, [
+        ContextMenu.Trigger(
+          { class: "context-menu-area" },
+          "Right-click for scale animation",
+        ),
+        ContextMenu.Content(
+          {
+            animate: {
+              enter: "context-menu-scale-enter",
+              exit: "context-menu-scale-exit",
+            },
+          },
+          [
+            ContextMenu.Item({ onSelect: () => Effect.log("Cut") }, "Cut"),
+            ContextMenu.Item({ onSelect: () => Effect.log("Copy") }, "Copy"),
+            ContextMenu.Item({ onSelect: () => Effect.log("Paste") }, "Paste"),
+          ],
+        ),
+      ]);
+    });
+
+    const container = document.createElement("div");
+    container.className = "menu-story-container";
+
+    renderEffectAsync(element).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
+  },
+};

@@ -276,3 +276,94 @@ export const NoEscapeClose: Story = {
     return container;
   },
 };
+
+export const WithAnimation: Story = {
+  render: () => {
+    const element = Effect.gen(function* () {
+      return yield* AlertDialog.Root({ defaultOpen: false }, [
+        AlertDialog.Trigger(
+          { class: "alertdialog-trigger" },
+          "Open Animated Alert",
+        ),
+        AlertDialog.Portal(
+          {
+            animate: {
+              enter: "alertdialog-animate-enter",
+              exit: "alertdialog-animate-exit",
+            },
+          },
+          [
+            AlertDialog.Overlay({}),
+            AlertDialog.Content({}, [
+              AlertDialog.Title({}, "Animated Alert Dialog"),
+              AlertDialog.Description(
+                {},
+                "This alert dialog uses the animate prop for smooth enter and exit animations.",
+              ),
+              $.div({ class: "alertdialog-buttons" }, [
+                AlertDialog.Cancel({ class: "alertdialog-cancel" }, "Cancel"),
+                AlertDialog.Action({ class: "alertdialog-action" }, "Continue"),
+              ]),
+            ]),
+          ],
+        ),
+      ]);
+    });
+
+    const container = document.createElement("div");
+    container.className = "alertdialog-story-container";
+
+    renderEffectAsync(element).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
+  },
+};
+
+export const WithBounceAnimation: Story = {
+  render: () => {
+    const element = Effect.gen(function* () {
+      return yield* AlertDialog.Root({ defaultOpen: false }, [
+        AlertDialog.Trigger(
+          { class: "alertdialog-trigger alertdialog-trigger--danger" },
+          "Delete Item",
+        ),
+        AlertDialog.Portal(
+          {
+            animate: {
+              enter: "alertdialog-bounce-enter",
+              exit: "alertdialog-bounce-exit",
+            },
+          },
+          [
+            AlertDialog.Overlay({}),
+            AlertDialog.Content({}, [
+              AlertDialog.Title({}, "Delete Item?"),
+              AlertDialog.Description(
+                {},
+                "This action cannot be undone. Are you sure you want to continue?",
+              ),
+              $.div({ class: "alertdialog-buttons" }, [
+                AlertDialog.Cancel({ class: "alertdialog-cancel" }, "Cancel"),
+                AlertDialog.Action(
+                  { class: "alertdialog-action alertdialog-action--danger" },
+                  "Delete",
+                ),
+              ]),
+            ]),
+          ],
+        ),
+      ]);
+    });
+
+    const container = document.createElement("div");
+    container.className = "alertdialog-story-container";
+
+    renderEffectAsync(element).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
+  },
+};

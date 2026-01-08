@@ -1,5 +1,6 @@
 import { Context, Effect } from "effect";
-import type { Element, Child } from "./Element";
+import { Element } from "./Element";
+import type { Child } from "./Element";
 import { isElement, flattenChildren } from "./Element/helpers.js";
 
 /**
@@ -46,7 +47,7 @@ export const provide = <I, S, E = never, R = I>(
     : [children];
   return childArray.map((child) => {
     if (isElement(child)) {
-      return child.pipe(Effect.provideService(tag, value)) as Element<
+      return child.pipe(Effect.provideService(tag, value)) as Element.Element<
         E,
         Exclude<R, I>
       >;

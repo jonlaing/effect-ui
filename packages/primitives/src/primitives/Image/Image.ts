@@ -9,7 +9,8 @@ import {
   Ref,
   Reaction,
 } from "@effex/dom";
-import type { Element, Child } from "@effex/dom";
+import { Element } from "@effex/dom";
+import type { Child } from "@effex/dom";
 
 export type ImageLoadingStatus = "idle" | "loading" | "loaded" | "error";
 
@@ -36,7 +37,7 @@ export interface ImageRootProps {
 const Root = (
   props: ImageRootProps,
   children: Child<never, ImageCtx> | readonly Child<never, ImageCtx>[],
-): Element =>
+): Element.Element =>
   Effect.gen(function* () {
     const status = yield* Signal.make<ImageLoadingStatus>("idle");
 

@@ -1,7 +1,7 @@
 import { Effect, Exit, Scope, Stream } from "effect";
 import { mapReadable, RendererContext } from "@effex/core";
 import type { Readable } from "@effex/core";
-import type { Element } from "../Element";
+import { Element } from "../Element";
 import { Signal } from "@effex/core";
 import { Derived } from "@effex/core";
 import { createItemReadable } from "../Control/updaters";
@@ -102,7 +102,7 @@ const createIndexReadable = (initialIndex: number) => {
 export const virtualEach = <A, E = never, R = never>(
   items: Readable<readonly A[]>,
   options: VirtualEachOptions<A, E, R>,
-): Element<E, R> =>
+): Element.Element<E, R> =>
   Effect.gen(function* () {
     const scope = yield* Effect.scope;
 
@@ -376,4 +376,4 @@ export const virtualEach = <A, E = never, R = never>(
     );
 
     return viewport as HTMLElement;
-  }) as Element<E, R>;
+  }) as Element.Element<E, R>;

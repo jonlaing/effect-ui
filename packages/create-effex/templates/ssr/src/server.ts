@@ -53,7 +53,7 @@ const main = Effect.gen(function* () {
 
   // Create the Effex HTTP app
   const effexApp = EffexServer.makeHttpApp({
-    app: () => App() as Element<never, RendererContext>,
+    app: () => App() as Element.Element<never, RendererContext>,
     router: router as Parameters<typeof EffexServer.makeHttpApp>[0]["router"],
     document: {
       ...baseDocumentConfig,

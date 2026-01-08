@@ -391,3 +391,75 @@ export const NoFiltering: Story = {
     return container;
   },
 };
+
+export const WithAnimation: Story = {
+  render: () => {
+    const element = Effect.gen(function* () {
+      return yield* Combobox.Root({}, [
+        Combobox.Input({ placeholder: "Search fruits..." }),
+        Combobox.Content(
+          {
+            animate: {
+              enter: "combobox-animate-enter",
+              exit: "combobox-animate-exit",
+            },
+          },
+          fruits.map((fruit) =>
+            Combobox.Item({ value: fruit.value }, [
+              Combobox.ItemText({}, fruit.label),
+            ]),
+          ),
+        ),
+      ]);
+    });
+
+    const container = document.createElement("div");
+    container.className = "combobox-story-container";
+    const wrapper = document.createElement("div");
+    wrapper.className = "combobox-wrapper";
+    wrapper.innerHTML = "<label>Animated Combobox</label>";
+    container.appendChild(wrapper);
+
+    renderEffectAsync(element).then((el) => {
+      wrapper.appendChild(el);
+    });
+
+    return container;
+  },
+};
+
+export const WithSlideAnimation: Story = {
+  render: () => {
+    const element = Effect.gen(function* () {
+      return yield* Combobox.Root({}, [
+        Combobox.Input({ placeholder: "Search with slide..." }),
+        Combobox.Content(
+          {
+            animate: {
+              enter: "combobox-slide-enter",
+              exit: "combobox-slide-exit",
+            },
+          },
+          fruits.map((fruit) =>
+            Combobox.Item({ value: fruit.value }, [
+              Combobox.ItemText({}, fruit.label),
+            ]),
+          ),
+        ),
+      ]);
+    });
+
+    const container = document.createElement("div");
+    container.className = "combobox-story-container";
+    const wrapper = document.createElement("div");
+    wrapper.className = "combobox-wrapper";
+    wrapper.innerHTML = "<label>Slide Animation</label>";
+    container.appendChild(wrapper);
+
+    renderEffectAsync(element).then((el) => {
+      wrapper.appendChild(el);
+    });
+
+    return container;
+  },
+};

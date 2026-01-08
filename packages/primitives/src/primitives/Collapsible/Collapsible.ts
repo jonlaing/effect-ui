@@ -5,7 +5,7 @@ import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
-import type { Element } from "@effex/dom";
+import { Element } from "@effex/dom";
 
 /**
  * Context shared between Collapsible parts.
@@ -63,8 +63,10 @@ export interface CollapsibleRootProps {
  */
 const Root = (
   props: CollapsibleRootProps,
-  children: Element<never, CollapsibleCtx> | Element<never, CollapsibleCtx>[],
-): Element =>
+  children:
+    | Element.Element<never, CollapsibleCtx>
+    | Element.Element<never, CollapsibleCtx>[],
+): Element.Element =>
   Effect.gen(function* () {
     // Handle controlled vs uncontrolled state
     const isOpen = yield* Signal.fromNullable(

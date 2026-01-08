@@ -9,8 +9,9 @@ import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
 import { Ref } from "@effex/dom";
 import { onClickOutside } from "@effex/dom";
-import type { Element } from "@effex/dom";
-import { calculatePosition, getTransform } from "../helpers";
+import { Element } from "@effex/dom";
+import type { AnimationOptions } from "@effex/dom";
+import { calculatePosition } from "../helpers";
 
 /**
  * Context shared between Popover parts.
@@ -77,8 +78,10 @@ export interface PopoverRootProps {
  */
 const Root = (
   props: PopoverRootProps,
-  children: Element<never, PopoverCtx> | Element<never, PopoverCtx>[],
-): Element =>
+  children:
+    | Element.Element<never, PopoverCtx>
+    | Element.Element<never, PopoverCtx>[],
+): Element.Element =>
   Effect.gen(function* () {
     const isOpen = yield* Signal.fromNullable(
       props.open,
@@ -94,6 +97,10 @@ const Root = (
         yield* isOpen.set(newValue);
         if (props.onOpenChange) {
           yield* props.onOpenChange(newValue);
+        }
+        if (!newValue) {
+          // Return focus to trigger when closing
+          triggerRef.current?.focus();
         }
       });
 
@@ -215,6 +222,8 @@ export interface PopoverContentProps {
   readonly onEscapeKeyDown?: (event: KeyboardEvent) => Effect.Effect<void>;
   /** Called when clicking outside the popover */
   readonly onClickOutside?: () => Effect.Effect<void>;
+  /** Animation configuration for enter/exit transitions */
+  readonly animate?: AnimationOptions;
 }
 
 /**
@@ -245,54 +254,84 @@ const Content = component(
 
       const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
 
-      return yield* when(ctx.isOpen, {
-        onTrue: () =>
-          Portal(() =>
-            Effect.gen(function* () {
-              // Get anchor element (prefer anchorRef, fallback to triggerRef)
-              const anchorEl = ctx.anchorRef.current ?? ctx.triggerRef.current;
+      // Portal is always rendered, but the content inside uses `when` for animations.
+      // This ensures animations apply to the actual visible content, not a placeholder.
+      //
+      // We use onBeforeEnter to measure and position the content after DOM insertion
+      // but before animation starts. This avoids using CSS transform for positioning,
+      // which would conflict with transform-based animations.
 
+      // Positioning context - set in onTrue, used in positionAndReveal
+      let positioningContext: {
+        side: "top" | "bottom" | "left" | "right";
+        align: "start" | "center" | "end";
+        sideOffset: number;
+        alignOffset: number;
+      } | null = null;
+
+      const positionAndReveal = (element: Effect.Effect<HTMLElement>) =>
+        Effect.gen(function* () {
+          const anchorEl = ctx.anchorRef.current ?? ctx.triggerRef.current;
+          if (anchorEl && positioningContext) {
+            // Measure content dimensions (element is in DOM but hidden)
+            const contentRect = yield* element.pipe(
+              Effect.map((el) => el.getBoundingClientRect()),
+            );
+
+            // Calculate final position using content dimensions
+            const anchorRect = anchorEl.getBoundingClientRect();
+            const { top, left } = calculatePosition(
+              anchorRect,
+              positioningContext.side,
+              positioningContext.align,
+              positioningContext.sideOffset,
+              positioningContext.alignOffset,
+              contentRect.width,
+              contentRect.height,
+            );
+
+            return yield* element.pipe(
+              Element.setStyles({
+                top: `${top}px`,
+                left: `${left}px`,
+              }),
+            );
+          }
+
+          // Clean up
+          positioningContext = null;
+
+          return yield* element.pipe(
+            Element.setStyles({
+              opacity: "",
+              animation: "",
+            }),
+          );
+        });
+
+      const handleKeyDown = (event: KeyboardEvent) =>
+        Effect.gen(function* () {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            event.stopPropagation();
+            yield* props.onEscapeKeyDown?.(event) ?? Effect.void;
+            yield* ctx.close();
+          }
+        });
+
+      return yield* Portal(() =>
+        when(ctx.isOpen, {
+          onTrue: () =>
+            Effect.gen(function* () {
               // Get current positioning values
               const currentSide = yield* side.get;
               const currentAlign = yield* align.get;
               const currentSideOffset = yield* sideOffset.get;
               const currentAlignOffset = yield* alignOffset.get;
 
-              let positionStyle: Record<string, string> = {
-                position: "fixed",
-              };
-
-              if (anchorEl) {
-                const rect = anchorEl.getBoundingClientRect();
-                const { top, left } = calculatePosition(
-                  rect,
-                  currentSide,
-                  currentAlign,
-                  currentSideOffset,
-                  currentAlignOffset,
-                );
-                const transform = getTransform(currentSide, currentAlign);
-
-                positionStyle = {
-                  position: "fixed",
-                  top: `${top}px`,
-                  left: `${left}px`,
-                  transform,
-                };
-              }
-
-              const handleKeyDown = (event: KeyboardEvent) =>
-                Effect.gen(function* () {
-                  if (event.key === "Escape") {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    if (props.onEscapeKeyDown) {
-                      yield* props.onEscapeKeyDown(event);
-                    }
-                    yield* ctx.close();
-                  }
-                });
-
+              // Start hidden (opacity: 0) - will be positioned and revealed after DOM insertion
+              // Using opacity instead of visibility for better animation compatibility
+              // Also suppress any default CSS animations until we're ready
               const contentEl = yield* $.div(
                 {
                   id: ctx.contentId,
@@ -303,7 +342,11 @@ const Content = component(
                   "data-align": currentAlign,
                   "data-popover-content": "",
                   tabIndex: -1,
-                  style: positionStyle,
+                  style: {
+                    position: "fixed",
+                    opacity: "0",
+                    animation: "none",
+                  },
                   onKeyDown: handleKeyDown,
                 },
                 children ?? [],
@@ -312,21 +355,56 @@ const Content = component(
               // Click outside handler
               yield* onClickOutside([ctx.triggerRef, contentEl], () =>
                 Effect.gen(function* () {
-                  if (props.onClickOutside) {
-                    yield* props.onClickOutside();
-                  }
                   yield* ctx.close();
+                  yield* props.onClickOutside?.() ?? Effect.void;
                 }),
               );
 
-              // Focus the content when opened
-              contentEl.focus();
+              // Store positioning context for onBeforeEnter
+              positioningContext = {
+                side: currentSide,
+                align: currentAlign,
+                sideOffset: currentSideOffset,
+                alignOffset: currentAlignOffset,
+              };
 
               return contentEl;
             }),
-          ),
-        onFalse: () => $.div({ style: { display: "none" } }),
-      });
+          onFalse: () => $.div({ style: { display: "none" } }),
+          animate: props.animate
+            ? {
+                ...props.animate,
+                onBeforeEnter: (el) =>
+                  el.pipe(
+                    positionAndReveal,
+                    Element.tapEffect(
+                      () => props.animate?.onBeforeEnter?.(el) ?? Effect.void,
+                    ),
+                  ),
+                onEnter: (el) =>
+                  el.pipe(
+                    // Suppress any default CSS animations after our animation finishes
+                    // to prevent them from restarting when the enter class is removed
+                    Element.setStyles({ animation: "none" }),
+                    Element.focus,
+                    Element.tapEffect(
+                      () => props.animate?.onEnter?.(el) ?? Effect.void,
+                    ),
+                  ),
+                onBeforeExit: (el) =>
+                  el.pipe(
+                    Element.setStyles({ animation: "" }),
+                    Element.tapEffect(
+                      () => props.animate?.onBeforeExit?.(el) ?? Effect.void,
+                    ),
+                  ),
+              }
+            : {
+                // Minimal animation config just to trigger positioning via onBeforeEnter
+                onBeforeEnter: (el) => el.pipe(positionAndReveal),
+              },
+        }),
+      );
     }),
 );
 

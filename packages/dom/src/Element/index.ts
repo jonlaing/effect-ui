@@ -2,7 +2,6 @@ export type {
   BaseAttributes,
   Child,
   ClassValue,
-  Element,
   ElementFactory,
   EventAttributes,
   EventHandler,
@@ -11,6 +10,9 @@ export type {
   SVGBaseAttributes,
   SVGElementFactory,
 } from "./types";
+
+// Re-export the Element namespace (type + value merged)
+export { Element } from "./namespace.js";
 
 export {
   $,

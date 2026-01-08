@@ -1,6 +1,6 @@
 import { Effect, Layer } from "effect";
 import { RendererContext } from "@effex/dom";
-import type { Element } from "@effex/dom";
+import { Element } from "@effex/dom";
 import { renderToString } from "@effex/dom/server";
 import {
   makeServerPlatformContext,
@@ -130,7 +130,7 @@ export interface RenderResult {
  * ```
  */
 export const render = async (
-  element: Element<never, RendererContext>,
+  element: Element.Element<never, RendererContext>,
   options: RenderOptions,
 ): Promise<RenderResult> => {
   const platformContext = makeServerPlatformContext(options.request);

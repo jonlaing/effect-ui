@@ -5,7 +5,7 @@ import { Ref } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { component } from "@effex/dom";
-import type { Element } from "@effex/dom";
+import { Element } from "@effex/dom";
 import type { RefType } from "@effex/dom";
 
 /**
@@ -114,8 +114,10 @@ export interface SplitterRootProps {
  */
 const Root = (
   props: SplitterRootProps,
-  children: Element<never, SplitterCtx> | Element<never, SplitterCtx>[],
-): Element =>
+  children:
+    | Element.Element<never, SplitterCtx>
+    | Element.Element<never, SplitterCtx>[],
+): Element.Element =>
   Effect.gen(function* () {
     const orientation = props.orientation ?? "horizontal";
     const keyboardStep = props.keyboardStep ?? 1;

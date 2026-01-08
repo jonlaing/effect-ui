@@ -6,7 +6,8 @@ import { provide } from "@effex/dom";
 import { when } from "@effex/dom";
 import { component } from "@effex/dom";
 import { createKeyboardNav } from "@effex/dom";
-import type { Element } from "@effex/dom";
+import { Element } from "@effex/dom";
+import type { AnimationOptions } from "@effex/dom";
 
 /**
  * Context shared between Tabs parts.
@@ -72,8 +73,8 @@ export interface TabsRootProps {
  */
 const Root = (
   props: TabsRootProps,
-  children: Element<never, TabsCtx> | Element<never, TabsCtx>[],
-): Element =>
+  children: Element.Element<never, TabsCtx> | Element.Element<never, TabsCtx>[],
+): Element.Element =>
   Effect.gen(function* () {
     const value = yield* Signal.fromNullable(
       props.value,
@@ -227,6 +228,8 @@ export interface TabsContentProps {
   readonly class?: Readable.Reactive<string>;
   /** Force mount even when inactive (default: false) */
   readonly forceMount?: boolean;
+  /** Animation configuration for enter/exit transitions */
+  readonly animate?: AnimationOptions;
 }
 
 /**
@@ -278,6 +281,7 @@ const Content = component("TabsContent", (props: TabsContentProps, children) =>
           children ?? [],
         ),
       onFalse: () => $.div({ style: { display: "none" } }),
+      animate: props.animate,
     });
   }),
 );

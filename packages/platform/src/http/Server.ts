@@ -5,7 +5,7 @@ import * as HttpServerRequest from "@effect/platform/HttpServerRequest";
 import * as HttpServerResponse from "@effect/platform/HttpServerResponse";
 import type * as HttpServerError from "@effect/platform/HttpServerError";
 import { RendererContext } from "@effex/dom";
-import type { Element } from "@effex/dom";
+import { Element } from "@effex/dom";
 import { type SSRRouter, performSSR } from "../rendering/SSR.js";
 import {
   type DocumentOptions,
@@ -36,7 +36,9 @@ export interface EffexAppOptions<R = never> {
    * Function that creates the Effex application element.
    * Receives the request for dynamic rendering.
    */
-  readonly app: (request: Request) => Element<never, RendererContext | R>;
+  readonly app: (
+    request: Request,
+  ) => Element.Element<never, RendererContext | R>;
 
   /**
    * Optional router instance for executing loaders and actions.
@@ -136,7 +138,7 @@ export const makeHttpApp = <R = never>(
     // Perform SSR - cast to handle the generic R constraint
     const result = yield* performSSR(
       webRequest,
-      element as Element<never, RendererContext>,
+      element as Element.Element<never, RendererContext>,
       options.router,
       options.provide,
     );
@@ -240,7 +242,7 @@ export interface RenderRequestOptions<R = never> {
   /**
    * The Effex application element to render.
    */
-  readonly app: Element<never, RendererContext | R>;
+  readonly app: Element.Element<never, RendererContext | R>;
 
   /**
    * Optional router instance for executing loaders and actions.
@@ -298,7 +300,7 @@ export const renderRequest = <R = never>(
 ): Effect.Effect<string, unknown, R> =>
   performSSR(
     request,
-    options.app as Element<never, RendererContext>,
+    options.app as Element.Element<never, RendererContext>,
     options.router,
     options.provide,
   ).pipe(Effect.map((result) => generateDocument(result, options.document)));

@@ -9,8 +9,10 @@ import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
 import { Ref } from "@effex/dom";
 import { onClickOutside, createKeyboardNav } from "@effex/dom";
-import type { Element, Child } from "@effex/dom";
-import { calculatePosition, getTransform } from "../helpers";
+import { Element } from "@effex/dom";
+import type { Child } from "@effex/dom";
+import type { AnimationOptions } from "@effex/dom";
+import { calculatePosition } from "../helpers";
 
 // ============================================================================
 // Types & Interfaces
@@ -128,8 +130,10 @@ export interface DropdownMenuRootProps {
  */
 const Root = (
   props: DropdownMenuRootProps,
-  children: Element<never, DropdownMenuCtx> | Element<never, DropdownMenuCtx>[],
-): Element =>
+  children:
+    | Element.Element<never, DropdownMenuCtx>
+    | Element.Element<never, DropdownMenuCtx>[],
+): Element.Element =>
   Effect.gen(function* () {
     const isOpen = yield* Signal.fromNullable(
       props.open,
@@ -144,6 +148,10 @@ const Root = (
       Effect.gen(function* () {
         yield* isOpen.set(newValue);
         yield* props.onOpenChange?.(newValue) ?? Effect.void;
+        if (!newValue) {
+          // Return focus to trigger when closing
+          triggerRef.current?.focus();
+        }
       });
 
     const ctx: DropdownMenuContext = {
@@ -270,6 +278,8 @@ export interface DropdownMenuContentProps {
   readonly sideOffset?: Readable.Reactive<number>;
   /** Whether keyboard navigation loops (default: true) */
   readonly loop?: boolean;
+  /** Animation configuration for enter/exit transitions */
+  readonly animate?: AnimationOptions;
 }
 
 /**
@@ -298,9 +308,57 @@ const Content = component(
 
       const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
 
-      return yield* when(ctx.isOpen, {
-        onTrue: () =>
-          Portal(() =>
+      // Portal is always rendered, but the content inside uses `when` for animations.
+      // This ensures animations apply to the actual visible content, not a placeholder.
+      //
+      // We use onBeforeEnter to measure and position the content after DOM insertion
+      // but before animation starts. This avoids using CSS transform for positioning,
+      // which would conflict with transform-based animations.
+
+      // Positioning context - set in onTrue, used in positionAndReveal
+      let positioningContext: {
+        triggerEl: HTMLButtonElement | null;
+        side: "top" | "bottom" | "left" | "right";
+        align: "start" | "center" | "end";
+        sideOffset: number;
+      } | null = null;
+
+      // Helper to position and reveal the element
+      const positionAndReveal = (el: HTMLElement) => {
+        if (positioningContext?.triggerEl) {
+          // Measure content dimensions (element is in DOM but hidden)
+          const contentRect = el.getBoundingClientRect();
+
+          // Calculate final position using content dimensions
+          const anchorRect =
+            positioningContext.triggerEl.getBoundingClientRect();
+          const { top, left } = calculatePosition(
+            anchorRect,
+            positioningContext.side,
+            positioningContext.align,
+            positioningContext.sideOffset,
+            0,
+            contentRect.width,
+            contentRect.height,
+          );
+
+          // Apply final position
+          el.style.top = `${top}px`;
+          el.style.left = `${left}px`;
+          el.style.minWidth = `${anchorRect.width}px`;
+        }
+
+        // Clean up
+        positioningContext = null;
+
+        // Reveal: clear opacity and animation suppression to allow CSS/JS animations
+        el.style.opacity = "";
+        el.style.animation = "";
+      };
+
+      return yield* Portal(() =>
+        when(ctx.isOpen, {
+          onTrue: () =>
             Effect.gen(function* () {
               const triggerEl = ctx.triggerRef.current;
 
@@ -308,30 +366,6 @@ const Content = component(
               const currentSide = yield* side.get;
               const currentAlign = yield* align.get;
               const currentSideOffset = yield* sideOffset.get;
-
-              let positionStyle: Record<string, string> = {
-                position: "fixed",
-              };
-
-              if (triggerEl) {
-                const rect = triggerEl.getBoundingClientRect();
-                const { top, left } = calculatePosition(
-                  rect,
-                  currentSide,
-                  currentAlign,
-                  currentSideOffset,
-                  0,
-                );
-                const transform = getTransform(currentSide, currentAlign);
-
-                positionStyle = {
-                  position: "fixed",
-                  top: `${top}px`,
-                  left: `${left}px`,
-                  transform,
-                  minWidth: `${rect.width}px`,
-                };
-              }
 
               const keyboardNav = yield* createKeyboardNav({
                 selector: "[data-menu-item]:not([data-disabled])",
@@ -355,6 +389,9 @@ const Content = component(
                   yield* keyboardNav(event);
                 });
 
+              // Start hidden (opacity: 0) - will be positioned and revealed after DOM insertion
+              // Using opacity instead of visibility for better animation compatibility
+              // Also suppress any default CSS animations until we're ready
               const contentEl = yield* $.div(
                 {
                   id: ctx.contentId,
@@ -366,7 +403,11 @@ const Content = component(
                   "data-align": currentAlign,
                   "data-menu-content": "",
                   tabIndex: -1,
-                  style: positionStyle,
+                  style: {
+                    position: "fixed",
+                    opacity: "0",
+                    animation: "none",
+                  },
                   onKeyDown: handleKeyDown,
                 },
                 children ?? [],
@@ -377,21 +418,58 @@ const Content = component(
                 ctx.close(),
               );
 
-              // Focus first item on open
-              const firstItem = contentEl.querySelector(
-                "[data-menu-item]:not([data-disabled])",
-              ) as HTMLElement;
-              if (firstItem) {
-                firstItem.focus();
-              } else {
-                contentEl.focus();
-              }
+              // Store positioning context for onBeforeEnter
+              positioningContext = {
+                triggerEl,
+                side: currentSide,
+                align: currentAlign,
+                sideOffset: currentSideOffset,
+              };
 
               return contentEl;
             }),
-          ),
-        onFalse: () => $.div({ style: { display: "none" } }),
-      });
+          onFalse: () => $.div({ style: { display: "none" } }),
+          animate: props.animate
+            ? {
+                ...props.animate,
+                onBeforeEnter: (el) =>
+                  el.pipe(
+                    Element.tap(positionAndReveal),
+                    Element.tapEffect(
+                      () => props.animate?.onBeforeEnter?.(el) ?? Effect.void,
+                    ),
+                  ),
+                onEnter: (el) =>
+                  el.pipe(
+                    // Suppress any default CSS animations after our animation finishes
+                    // to prevent them from restarting when the enter class is removed
+                    Element.setStyles({ animation: "none" }),
+                    // Focus first item on open
+                    Element.focusFirst("[data-menu-item]:not([data-disabled])"),
+                    Element.tapEffect(
+                      () => props.animate?.onEnter?.(el) ?? Effect.void,
+                    ),
+                  ),
+                onBeforeExit: (el) =>
+                  el.pipe(
+                    // Re-enable animations so exit animation can run
+                    Element.setStyles({ animation: "" }),
+                    Element.tapEffect(
+                      () => props.animate?.onBeforeExit?.(el) ?? Effect.void,
+                    ),
+                  ),
+              }
+            : {
+                // Minimal animation config just to trigger positioning via onBeforeEnter
+                onBeforeEnter: (el) => el.pipe(Element.tap(positionAndReveal)),
+                // Focus first item on open
+                onEnter: (el) =>
+                  el.pipe(
+                    Element.focusFirst("[data-menu-item]:not([data-disabled])"),
+                  ),
+              },
+        }),
+      );
     }),
 );
 
@@ -649,7 +727,7 @@ export interface DropdownMenuRadioGroupProps {
 const RadioGroup = (
   props: DropdownMenuRadioGroupProps,
   children: Child<never, DropdownMenuCtx | DropdownMenuRadioGroupCtx>[],
-): Element<never, DropdownMenuCtx> =>
+): Element.Element<never, DropdownMenuCtx> =>
   Effect.gen(function* () {
     const value = yield* Signal.fromNullable(
       props.value,
@@ -771,7 +849,7 @@ export interface DropdownMenuSubProps {
 const Sub = (
   props: DropdownMenuSubProps,
   children: Child<never, DropdownMenuCtx | DropdownMenuSubCtx>[],
-): Element<never, DropdownMenuCtx> =>
+): Element.Element<never, DropdownMenuCtx> =>
   Effect.gen(function* () {
     const isOpen = yield* Signal.fromNullable(
       props.open,
@@ -946,6 +1024,8 @@ export interface DropdownMenuSubContentProps {
   readonly sideOffset?: Readable.Reactive<number>;
   /** Whether keyboard navigation loops (default: true) */
   readonly loop?: boolean;
+  /** Animation configuration for enter/exit transitions */
+  readonly animate?: AnimationOptions;
 }
 
 /**
@@ -972,38 +1052,59 @@ const SubContent = component(
 
       const dataState = subCtx.isOpen.map((open) => (open ? "open" : "closed"));
 
-      return yield* when(subCtx.isOpen, {
-        onTrue: () =>
-          Portal(() =>
+      // Portal is always rendered, but the content inside uses `when` for animations.
+      // This ensures animations apply to the actual visible content, not a placeholder.
+      //
+      // We use onBeforeEnter to measure and position the content after DOM insertion
+      // but before animation starts. This avoids using CSS transform for positioning,
+      // which would conflict with transform-based animations.
+
+      // Positioning context - set in onTrue, used in positionAndReveal
+      let positioningContext: {
+        triggerEl: HTMLDivElement | null;
+        sideOffset: number;
+      } | null = null;
+
+      // Helper to position and reveal the element
+      const positionAndReveal = (el: HTMLElement) => {
+        if (positioningContext?.triggerEl) {
+          // Measure content dimensions (element is in DOM but hidden)
+          const contentRect = el.getBoundingClientRect();
+
+          // Calculate final position using content dimensions
+          const anchorRect =
+            positioningContext.triggerEl.getBoundingClientRect();
+          const { top, left } = calculatePosition(
+            anchorRect,
+            "right",
+            "start",
+            positioningContext.sideOffset,
+            0,
+            contentRect.width,
+            contentRect.height,
+          );
+
+          // Apply final position
+          el.style.top = `${top}px`;
+          el.style.left = `${left}px`;
+        }
+
+        // Clean up
+        positioningContext = null;
+
+        // Reveal: clear opacity and animation suppression to allow CSS/JS animations
+        el.style.opacity = "";
+        el.style.animation = "";
+      };
+
+      return yield* Portal(() =>
+        when(subCtx.isOpen, {
+          onTrue: () =>
             Effect.gen(function* () {
               const triggerEl = subCtx.triggerRef.current;
 
               // Get current sideOffset value
               const currentSideOffset = yield* sideOffset.get;
-
-              let positionStyle: Record<string, string> = {
-                position: "fixed",
-              };
-
-              if (triggerEl) {
-                const rect = triggerEl.getBoundingClientRect();
-                // Position to the right of the trigger
-                const { top, left } = calculatePosition(
-                  rect,
-                  "right",
-                  "start",
-                  currentSideOffset,
-                  0,
-                );
-                const transform = getTransform("right", "start");
-
-                positionStyle = {
-                  position: "fixed",
-                  top: `${top}px`,
-                  left: `${left}px`,
-                  transform,
-                };
-              }
 
               const handleMouseEnter = () =>
                 Effect.sync(() => {
@@ -1075,6 +1176,9 @@ const SubContent = component(
                   yield* keyboardNav(event);
                 });
 
+              // Start hidden (opacity: 0) - will be positioned and revealed after DOM insertion
+              // Using opacity instead of visibility for better animation compatibility
+              // Also suppress any default CSS animations until we're ready
               const contentEl = yield* $.div(
                 {
                   id: subCtx.contentId,
@@ -1086,7 +1190,11 @@ const SubContent = component(
                   "data-menu-content": "",
                   "data-menu-subcontent": "",
                   tabIndex: -1,
-                  style: positionStyle,
+                  style: {
+                    position: "fixed",
+                    opacity: "0",
+                    animation: "none",
+                  },
                   onMouseEnter: handleMouseEnter,
                   onMouseLeave: handleMouseLeave,
                   onKeyDown: handleKeyDown,
@@ -1094,21 +1202,56 @@ const SubContent = component(
                 children ?? [],
               );
 
-              // Focus first item on open
-              const firstItem = contentEl.querySelector(
-                "[data-menu-item]:not([data-disabled])",
-              ) as HTMLElement;
-              if (firstItem) {
-                firstItem.focus();
-              } else {
-                contentEl.focus();
-              }
+              // Store positioning context for onBeforeEnter
+              positioningContext = {
+                triggerEl,
+                sideOffset: currentSideOffset,
+              };
 
               return contentEl;
             }),
-          ),
-        onFalse: () => $.div({ style: { display: "none" } }),
-      });
+          onFalse: () => $.div({ style: { display: "none" } }),
+          animate: props.animate
+            ? {
+                ...props.animate,
+                onBeforeEnter: (el) =>
+                  el.pipe(
+                    Element.tap(positionAndReveal),
+                    Element.tapEffect(
+                      () => props.animate?.onBeforeEnter?.(el) ?? Effect.void,
+                    ),
+                  ),
+                onEnter: (el) =>
+                  el.pipe(
+                    // Suppress any default CSS animations after our animation finishes
+                    // to prevent them from restarting when the enter class is removed
+                    Element.setStyles({ animation: "none" }),
+                    // Focus first item on open
+                    Element.focusFirst("[data-menu-item]:not([data-disabled])"),
+                    Element.tapEffect(
+                      () => props.animate?.onEnter?.(el) ?? Effect.void,
+                    ),
+                  ),
+                onBeforeExit: (el) =>
+                  el.pipe(
+                    // Re-enable animations so exit animation can run
+                    Element.setStyles({ animation: "" }),
+                    Element.tapEffect(
+                      () => props.animate?.onBeforeExit?.(el) ?? Effect.void,
+                    ),
+                  ),
+              }
+            : {
+                // Minimal animation config just to trigger positioning via onBeforeEnter
+                onBeforeEnter: (el) => el.pipe(Element.tap(positionAndReveal)),
+                // Focus first item on open
+                onEnter: (el) =>
+                  el.pipe(
+                    Element.focusFirst("[data-menu-item]:not([data-disabled])"),
+                  ),
+              },
+        }),
+      );
     }),
 );
 

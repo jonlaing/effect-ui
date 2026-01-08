@@ -524,3 +524,150 @@ export const MixedItems: Story = {
     return container;
   },
 };
+
+export const WithAnimation: Story = {
+  render: () => {
+    const element = Effect.gen(function* () {
+      return yield* DropdownMenu.Root({}, [
+        DropdownMenu.Trigger({}, "Animated Menu"),
+        DropdownMenu.Content(
+          {
+            animate: {
+              enter: "menu-animate-enter",
+              exit: "menu-animate-exit",
+            },
+          },
+          [
+            DropdownMenu.Item(
+              { onSelect: () => Effect.log("Edit clicked") },
+              "Edit",
+            ),
+            DropdownMenu.Item(
+              { onSelect: () => Effect.log("Duplicate clicked") },
+              "Duplicate",
+            ),
+            DropdownMenu.Separator({}),
+            DropdownMenu.Item(
+              { onSelect: () => Effect.log("Delete clicked") },
+              "Delete",
+            ),
+          ],
+        ),
+      ]);
+    });
+
+    const container = document.createElement("div");
+    container.className = "menu-story-container";
+
+    renderEffectAsync(element).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
+  },
+};
+
+export const WithSlideAnimation: Story = {
+  render: () => {
+    const element = Effect.gen(function* () {
+      return yield* DropdownMenu.Root({}, [
+        DropdownMenu.Trigger({}, "Sliding Menu"),
+        DropdownMenu.Content(
+          {
+            animate: {
+              enter: "menu-slide-enter",
+              exit: "menu-slide-exit",
+            },
+          },
+          [
+            DropdownMenu.Item({ onSelect: () => Effect.log("New") }, "New"),
+            DropdownMenu.Item({ onSelect: () => Effect.log("Open") }, "Open"),
+            DropdownMenu.Item({ onSelect: () => Effect.log("Save") }, "Save"),
+          ],
+        ),
+      ]);
+    });
+
+    const container = document.createElement("div");
+    container.className = "menu-story-container";
+
+    renderEffectAsync(element).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
+  },
+};
+
+export const AnimatedSubmenus: Story = {
+  render: () => {
+    const element = Effect.gen(function* () {
+      return yield* DropdownMenu.Root({}, [
+        DropdownMenu.Trigger({}, "File"),
+        DropdownMenu.Content(
+          {
+            animate: {
+              enter: "menu-animate-enter",
+              exit: "menu-animate-exit",
+            },
+          },
+          [
+            DropdownMenu.Item({ onSelect: () => Effect.log("New") }, "New"),
+            DropdownMenu.Separator({}),
+            DropdownMenu.Sub({}, [
+              DropdownMenu.SubTrigger({}, "Share →"),
+              DropdownMenu.SubContent(
+                {
+                  animate: {
+                    enter: "menu-animate-enter",
+                    exit: "menu-animate-exit",
+                  },
+                },
+                [
+                  DropdownMenu.Item(
+                    { onSelect: () => Effect.log("Email") },
+                    "Email",
+                  ),
+                  DropdownMenu.Item(
+                    { onSelect: () => Effect.log("Slack") },
+                    "Slack",
+                  ),
+                ],
+              ),
+            ]),
+            DropdownMenu.Sub({}, [
+              DropdownMenu.SubTrigger({}, "Export →"),
+              DropdownMenu.SubContent(
+                {
+                  animate: {
+                    enter: "menu-animate-enter",
+                    exit: "menu-animate-exit",
+                  },
+                },
+                [
+                  DropdownMenu.Item(
+                    { onSelect: () => Effect.log("PDF") },
+                    "PDF",
+                  ),
+                  DropdownMenu.Item(
+                    { onSelect: () => Effect.log("PNG") },
+                    "PNG",
+                  ),
+                ],
+              ),
+            ]),
+          ],
+        ),
+      ]);
+    });
+
+    const container = document.createElement("div");
+    container.className = "menu-story-container";
+
+    renderEffectAsync(element).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
+  },
+};

@@ -4,13 +4,13 @@ import {
   SignalRegistry,
   type RendererInterface,
 } from "@effex/core";
-import type { Element } from "./Element";
+import { Element } from "./Element";
 import { DOMRenderer } from "./DOMRenderer";
 
 /**
  * Mount an Element into a DOM container. Automatically cleans up when the scope closes.
  *
- * The element must have no errors and no unsatisfied requirements (Element<never, never>).
+ * The element must have no errors and no unsatisfied requirements (Element.Element<never, never>).
  * If your component can fail, handle all errors before mounting using ErrorBoundary or Effect.catchAll.
  * If your component has context requirements, provide them using Effect.provide before mounting.
  *
@@ -64,7 +64,7 @@ import { DOMRenderer } from "./DOMRenderer";
  * ```
  */
 export const mount = (
-  element: Element<never, RendererContext>,
+  element: Element.Element<never, RendererContext>,
   container: HTMLElement,
 ): Effect.Effect<void, never, Scope.Scope> =>
   Effect.gen(function* () {

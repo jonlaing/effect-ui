@@ -12,16 +12,16 @@ import type { Element as CoreElement } from "@effex/core";
  *
  * @example
  * ```ts
- * const myButton: Element = button({ className: "primary" }, ["Click me"])
+ * const myButton: Element.Element = button({ className: "primary" }, ["Click me"])
  *
  * // Component that can fail
- * const UserProfile: Element<UserNotFoundError> = Effect.gen(function* () {
+ * const UserProfile: Element.Element<UserNotFoundError> = Effect.gen(function* () {
  *   const user = yield* fetchUser(userId)
  *   return yield* div([user.name])
  * })
  *
  * // Component with requirements
- * const NavLink: Element<never, RouterContext> = Effect.gen(function* () {
+ * const NavLink: Element.Element<never, RouterContext> = Effect.gen(function* () {
  *   const router = yield* RouterContext
  *   return yield* button({ onClick: () => router.push("/") }, "Home")
  * })

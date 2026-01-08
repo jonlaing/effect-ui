@@ -11,7 +11,7 @@ import {
   type RendererInterface,
 } from "@effex/core";
 import type { SSRContextService } from "../SSRContext";
-import type { Element } from "../Element";
+import { Element } from "../Element";
 import type { WhenConfig, MatchConfig, EachConfig } from "./types";
 import {
   createDefaultContainer,
@@ -27,7 +27,7 @@ export const ssrWhen = <E1, R1, E2, R2>(
   ctx: SSRContextService,
   condition: Readable<boolean>,
   config: WhenConfig<E1, R1, E2, R2>,
-): Element<E1 | E2, R1 | R2> =>
+): Element.Element<E1 | E2, R1 | R2> =>
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
     const hydrationId = yield* ctx.generateId;
@@ -57,7 +57,7 @@ export const ssrMatch = <A, E, R, E2, R2>(
   ctx: SSRContextService,
   value: Readable<A>,
   config: MatchConfig<A, E, R, E2, R2>,
-): Element<E | E2, R | R2> =>
+): Element.Element<E | E2, R | R2> =>
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
     const hydrationId = yield* ctx.generateId;
@@ -98,7 +98,7 @@ export const ssrEach = <A, E, R>(
   ctx: SSRContextService,
   items: Readable<readonly A[]>,
   config: EachConfig<A, E, R>,
-): Element<E, R> =>
+): Element.Element<E, R> =>
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
     const hydrationId = yield* ctx.generateId;

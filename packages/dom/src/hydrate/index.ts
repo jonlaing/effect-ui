@@ -14,7 +14,7 @@
 
 import { Effect, Layer } from "effect";
 import { RendererContext, SignalRegistry, type Renderer } from "@effex/core";
-import type { Element } from "../Element";
+import { Element } from "../Element";
 import { createHydrationRenderer } from "./HydrationRenderer";
 import { makeHydrationContext } from "../HydrationContext";
 
@@ -52,7 +52,7 @@ export interface HydrateOptions {
  * ```
  */
 export const hydrate = (
-  element: Element<never, RendererContext>,
+  element: Element.Element<never, RendererContext>,
   container: HTMLElement,
   options: HydrateOptions = {},
 ): Promise<void> => {

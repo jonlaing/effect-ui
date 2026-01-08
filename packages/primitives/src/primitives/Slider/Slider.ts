@@ -5,7 +5,7 @@ import { Ref } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { component } from "@effex/dom";
-import type { Element } from "@effex/dom";
+import { Element } from "@effex/dom";
 import {
   type SliderValue,
   isRangeValue,
@@ -124,8 +124,10 @@ export interface SliderRootProps {
  */
 const Root = (
   props: SliderRootProps,
-  children: Element<never, SliderCtx> | Element<never, SliderCtx>[],
-): Element =>
+  children:
+    | Element.Element<never, SliderCtx>
+    | Element.Element<never, SliderCtx>[],
+): Element.Element =>
   Effect.gen(function* () {
     // Defaults
     const min = props.min ?? 0;

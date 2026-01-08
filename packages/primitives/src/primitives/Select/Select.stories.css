@@ -166,3 +166,69 @@
   font-weight: 500;
   color: #374151;
 }
+
+/* ============================================
+   Animation Classes for animate prop demo
+   ============================================ */
+
+/* Scale and fade animation */
+.select-animate-enter {
+  animation: select-scale-in 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.select-animate-exit {
+  animation: select-scale-out 150ms ease-in;
+}
+
+@keyframes select-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes select-scale-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+/* Slide animation */
+.select-slide-enter {
+  animation: select-slide-down-in 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.select-slide-exit {
+  animation: select-slide-down-out 150ms ease-in;
+}
+
+@keyframes select-slide-down-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes select-slide-down-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}

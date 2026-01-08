@@ -26,7 +26,7 @@
 
 import { Effect, Layer } from "effect";
 import { RendererContext, type Renderer } from "@effex/core";
-import type { Element } from "../Element";
+import { Element } from "../Element";
 import { StringRenderer } from "./StringRenderer";
 import { vnodeToString } from "./renderToString";
 import { withSSRContext } from "./SSRContext";
@@ -60,7 +60,7 @@ export interface RenderToStringOptions {
  * ```
  */
 export const renderToString = (
-  element: Element<never, RendererContext>,
+  element: Element.Element<never, RendererContext>,
   _options: RenderToStringOptions = {},
 ) => {
   const StringRendererLayer = Layer.succeed(

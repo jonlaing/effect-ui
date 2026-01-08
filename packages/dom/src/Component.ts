@@ -1,4 +1,4 @@
-import type { Element } from "./Element";
+import { Element } from "./Element";
 import type { Child } from "./Element/types";
 
 /**
@@ -48,27 +48,27 @@ export type Component<
 } & (IsEmptyProps<Props> extends true
   ? {
       // () - no props needed
-      (): Element<E, R>;
+      (): Element.Element<E, R>;
       // (children) - just children
       <CE = never, CR = never>(
         children: Children<CE, CR>,
-      ): Element<E | CE, R | CR>;
+      ): Element.Element<E | CE, R | CR>;
       // (props) - explicit empty props
-      (props: Props): Element<E, R>;
+      (props: Props): Element.Element<E, R>;
       // (props, children)
       <CE = never, CR = never>(
         props: Props,
         children: Children<CE, CR>,
-      ): Element<E | CE, R | CR>;
+      ): Element.Element<E | CE, R | CR>;
     }
   : {
       // (props) - props required
-      (props: Props): Element<E, R>;
+      (props: Props): Element.Element<E, R>;
       // (props, children)
       <CE = never, CR = never>(
         props: Props,
         children: Children<CE, CR>,
-      ): Element<E | CE, R | CR>;
+      ): Element.Element<E | CE, R | CR>;
     });
 
 /**
@@ -130,7 +130,10 @@ export const component = <
   R = never,
 >(
   name: Name,
-  render: (props: Props, children?: Children<never, never>) => Element<E, R>,
+  render: (
+    props: Props,
+    children?: Children<never, never>,
+  ) => Element.Element<E, R>,
 ): Component<Name, Props, E, R> => {
   const fn = (...args: unknown[]) => {
     // No arguments - call with empty props

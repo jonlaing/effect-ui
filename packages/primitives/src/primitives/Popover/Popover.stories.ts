@@ -338,3 +338,83 @@ export const WithOffset: Story = {
     return container;
   },
 };
+
+export const WithAnimation: Story = {
+  render: () => {
+    const element = Effect.gen(function* () {
+      return yield* Popover.Root({ defaultOpen: false }, [
+        Popover.Trigger({}, "Open Animated Popover"),
+        Popover.Content(
+          {
+            side: "bottom",
+            align: "center",
+            sideOffset: 8,
+            animate: {
+              enter: "popover-animate-enter",
+              exit: "popover-animate-exit",
+            },
+          },
+          [
+            $.div({ class: "popover-body" }, [
+              $.h4({ class: "popover-title" }, "Animated Popover"),
+              $.p(
+                { class: "popover-description" },
+                "This popover uses the animate prop for smooth scale and fade transitions.",
+              ),
+            ]),
+            Popover.Close({}, "Close"),
+          ],
+        ),
+      ]);
+    });
+
+    const container = document.createElement("div");
+    container.className = "popover-story-container";
+
+    renderEffectAsync(element).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
+  },
+};
+
+export const WithSlideAnimation: Story = {
+  render: () => {
+    const element = Effect.gen(function* () {
+      return yield* Popover.Root({ defaultOpen: false }, [
+        Popover.Trigger({}, "Open Sliding Popover"),
+        Popover.Content(
+          {
+            side: "bottom",
+            align: "center",
+            sideOffset: 8,
+            animate: {
+              enter: "popover-slide-enter",
+              exit: "popover-slide-exit",
+            },
+          },
+          [
+            $.div({ class: "popover-body" }, [
+              $.h4({ class: "popover-title" }, "Sliding Popover"),
+              $.p(
+                { class: "popover-description" },
+                "This popover slides in from the direction it opens. Try changing the side prop!",
+              ),
+            ]),
+            Popover.Close({}, "Close"),
+          ],
+        ),
+      ]);
+    });
+
+    const container = document.createElement("div");
+    container.className = "popover-story-container";
+
+    renderEffectAsync(element).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
+  },
+};

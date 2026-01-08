@@ -7,7 +7,7 @@
 import { Effect, Scope, Stream } from "effect";
 import type { Readable } from "@effex/core";
 import { RendererContext, type RendererInterface } from "@effex/core";
-import type { Element } from "../Element";
+import { Element } from "../Element";
 import type { WhenConfig, MatchConfig, EachConfig } from "./types";
 import { createDefaultContainer } from "./helpers";
 import {
@@ -24,7 +24,7 @@ import {
 export const clientWhen = <E1, R1, E2, R2>(
   condition: Readable<boolean>,
   config: WhenConfig<E1, R1, E2, R2>,
-): Element<E1 | E2, R1 | R2> =>
+): Element.Element<E1 | E2, R1 | R2> =>
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
     const scope = yield* Effect.scope;
@@ -67,7 +67,7 @@ export const clientWhen = <E1, R1, E2, R2>(
 export const clientMatch = <A, E, R, E2, R2>(
   value: Readable<A>,
   config: MatchConfig<A, E, R, E2, R2>,
-): Element<E | E2, R | R2> =>
+): Element.Element<E | E2, R | R2> =>
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
     const scope = yield* Effect.scope;
@@ -120,7 +120,7 @@ export const clientMatch = <A, E, R, E2, R2>(
 export const clientEach = <A, E, R>(
   items: Readable<readonly A[]>,
   config: EachConfig<A, E, R>,
-): Element<E, R> =>
+): Element.Element<E, R> =>
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
     const scope = yield* Effect.scope;

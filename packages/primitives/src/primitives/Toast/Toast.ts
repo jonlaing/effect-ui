@@ -7,7 +7,7 @@ import { provide } from "@effex/dom";
 import { each } from "@effex/dom";
 import { component } from "@effex/dom";
 import { Portal } from "@effex/dom";
-import type { Element } from "@effex/dom";
+import { Element } from "@effex/dom";
 import {
   type ToastPosition,
   type ToastType,
@@ -125,8 +125,10 @@ export interface ToastProviderProps {
  */
 const Provider = (
   props: ToastProviderProps,
-  children: Element<never, ToastCtx> | readonly Element<never, ToastCtx>[],
-): Element =>
+  children:
+    | Element.Element<never, ToastCtx>
+    | readonly Element.Element<never, ToastCtx>[],
+): Element.Element =>
   Effect.gen(function* () {
     const position = props.position ?? "bottom-right";
     const maxVisible = props.maxVisible ?? 5;
@@ -491,7 +493,7 @@ const Root = component("ToastRoot", (props: ToastRootProps, children) =>
       provide(
         ToastItemCtx,
         itemCtx,
-        normalizeChildren(children as Element<never, never>),
+        normalizeChildren(children as Element.Element<never, never>),
       ),
     );
   }),

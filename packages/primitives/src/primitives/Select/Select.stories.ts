@@ -310,3 +310,74 @@ export const TopPositioned: Story = {
     return container;
   },
 };
+
+export const WithAnimation: Story = {
+  render: () => {
+    const element = Effect.gen(function* () {
+      return yield* Select.Root({ placeholder: "Select a fruit..." }, [
+        Select.Trigger({}, [Select.Value({})]),
+        Select.Content(
+          {
+            animate: {
+              enter: "select-animate-enter",
+              exit: "select-animate-exit",
+            },
+          },
+          [
+            Select.Item({ value: "apple" }, [Select.ItemText({}, "Apple")]),
+            Select.Item({ value: "banana" }, [Select.ItemText({}, "Banana")]),
+            Select.Item({ value: "orange" }, [Select.ItemText({}, "Orange")]),
+            Select.Item({ value: "grape" }, [Select.ItemText({}, "Grape")]),
+          ],
+        ),
+      ]);
+    });
+
+    const container = document.createElement("div");
+    container.className = "select-story-container";
+
+    renderEffectAsync(element).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
+  },
+};
+
+export const WithSlideAnimation: Story = {
+  render: () => {
+    const element = Effect.gen(function* () {
+      return yield* Select.Root({ placeholder: "Select with slide..." }, [
+        Select.Trigger({}, [Select.Value({})]),
+        Select.Content(
+          {
+            animate: {
+              enter: "select-slide-enter",
+              exit: "select-slide-exit",
+            },
+          },
+          [
+            Select.Item({ value: "option1" }, [
+              Select.ItemText({}, "Option 1"),
+            ]),
+            Select.Item({ value: "option2" }, [
+              Select.ItemText({}, "Option 2"),
+            ]),
+            Select.Item({ value: "option3" }, [
+              Select.ItemText({}, "Option 3"),
+            ]),
+          ],
+        ),
+      ]);
+    });
+
+    const container = document.createElement("div");
+    container.className = "select-story-container";
+
+    renderEffectAsync(element).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
+  },
+};

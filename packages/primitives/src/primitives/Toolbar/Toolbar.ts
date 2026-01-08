@@ -4,7 +4,7 @@ import { Readable, Signal } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { component, Derived, createKeyboardNav } from "@effex/dom";
-import type { Element } from "@effex/dom";
+import { Element } from "@effex/dom";
 
 // ============================================================================
 // Types
@@ -171,8 +171,10 @@ const generateId = () => `toolbar-item-${++itemIdCounter}`;
  */
 const Root = (
   props: ToolbarRootProps,
-  children: Element<never, ToolbarCtx> | Element<never, ToolbarCtx>[],
-): Element =>
+  children:
+    | Element.Element<never, ToolbarCtx>
+    | Element.Element<never, ToolbarCtx>[],
+): Element.Element =>
   Effect.gen(function* () {
     const orientation = Readable.of(props.orientation ?? "horizontal");
     const disabled = Readable.of(props.disabled ?? false);
@@ -408,9 +410,9 @@ const ToggleItem = component(
 const ToggleGroup = (
   props: ToolbarToggleGroupProps,
   children:
-    | Element<never, ToolbarCtx | ToolbarToggleGroupCtx>
-    | Element<never, ToolbarCtx | ToolbarToggleGroupCtx>[],
-): Element<never, ToolbarCtx> =>
+    | Element.Element<never, ToolbarCtx | ToolbarToggleGroupCtx>
+    | Element.Element<never, ToolbarCtx | ToolbarToggleGroupCtx>[],
+): Element.Element<never, ToolbarCtx> =>
   Effect.gen(function* () {
     const type = props.type ?? "single";
     const disabled = Readable.of(props.disabled ?? false);

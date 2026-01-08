@@ -217,3 +217,99 @@
   justify-content: center;
   align-items: center;
 }
+
+/* ============================================
+   Animation Classes for animate prop demo
+   ============================================ */
+
+/* Scale and fade animation */
+.popover-animate-enter {
+  animation: popover-scale-in 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.popover-animate-exit {
+  animation: popover-scale-out 150ms ease-in;
+}
+
+@keyframes popover-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes popover-scale-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+/* Slide animation based on side */
+.popover-slide-enter[data-side="bottom"] {
+  animation: popover-slide-down-in 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.popover-slide-exit[data-side="bottom"] {
+  animation: popover-slide-down-out 150ms ease-in;
+}
+
+.popover-slide-enter[data-side="top"] {
+  animation: popover-slide-up-in 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.popover-slide-exit[data-side="top"] {
+  animation: popover-slide-up-out 150ms ease-in;
+}
+
+@keyframes popover-slide-down-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popover-slide-down-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes popover-slide-up-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popover-slide-up-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}

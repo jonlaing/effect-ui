@@ -7,8 +7,9 @@ import { when } from "@effex/dom";
 import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
-import type { Element } from "@effex/dom";
-import { calculatePosition, getTransform } from "../helpers";
+import { Element } from "@effex/dom";
+import type { AnimationOptions } from "@effex/dom";
+import { calculatePosition } from "../helpers";
 
 /**
  * Context shared between Tooltip parts.
@@ -72,8 +73,10 @@ export interface TooltipRootProps {
  */
 const Root = (
   props: TooltipRootProps,
-  children: Element<never, TooltipCtx> | Element<never, TooltipCtx>[],
-): Element =>
+  children:
+    | Element.Element<never, TooltipCtx>
+    | Element.Element<never, TooltipCtx>[],
+): Element.Element =>
   Effect.gen(function* () {
     const isOpen = yield* Signal.fromNullable(
       props.open,
@@ -190,6 +193,8 @@ export interface TooltipContentProps {
   readonly sideOffset?: Readable.Reactive<number>;
   /** Shift along the side axis in pixels (default: 0) */
   readonly alignOffset?: Readable.Reactive<number>;
+  /** Animation configuration for enter/exit transitions */
+  readonly animate?: AnimationOptions;
 }
 
 /**
@@ -215,9 +220,57 @@ const Content = component(
 
       const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
 
-      return yield* when(ctx.isOpen, {
-        onTrue: () =>
-          Portal(() =>
+      // Portal is always rendered, but the content inside uses `when` for animations.
+      // This ensures animations apply to the actual visible content, not a placeholder.
+      //
+      // We use onBeforeEnter to measure and position the content after DOM insertion
+      // but before animation starts. This avoids using CSS transform for positioning,
+      // which would conflict with transform-based animations.
+
+      // Positioning context - set in onTrue, used in positionAndReveal
+      let positioningContext: {
+        triggerEl: HTMLElement | null;
+        side: "top" | "bottom" | "left" | "right";
+        align: "start" | "center" | "end";
+        sideOffset: number;
+        alignOffset: number;
+      } | null = null;
+
+      // Helper to position and reveal the element
+      const positionAndReveal = (el: HTMLElement) => {
+        if (positioningContext?.triggerEl) {
+          // Measure content dimensions (element is in DOM but hidden)
+          const contentRect = el.getBoundingClientRect();
+
+          // Calculate final position using content dimensions
+          const anchorRect =
+            positioningContext.triggerEl.getBoundingClientRect();
+          const { top, left } = calculatePosition(
+            anchorRect,
+            positioningContext.side,
+            positioningContext.align,
+            positioningContext.sideOffset,
+            positioningContext.alignOffset,
+            contentRect.width,
+            contentRect.height,
+          );
+
+          // Apply final position
+          el.style.top = `${top}px`;
+          el.style.left = `${left}px`;
+        }
+
+        // Clean up
+        positioningContext = null;
+
+        // Reveal: clear opacity and animation suppression to allow CSS/JS animations
+        el.style.opacity = "";
+        el.style.animation = "";
+      };
+
+      return yield* Portal(() =>
+        when(ctx.isOpen, {
+          onTrue: () =>
             Effect.gen(function* () {
               const triggerEl = yield* ctx.triggerRef.get;
 
@@ -227,30 +280,10 @@ const Content = component(
               const currentSideOffset = yield* sideOffset.get;
               const currentAlignOffset = yield* alignOffset.get;
 
-              let positionStyle: Record<string, string> = {
-                position: "fixed",
-              };
-
-              if (triggerEl) {
-                const rect = triggerEl.getBoundingClientRect();
-                const { top, left } = calculatePosition(
-                  rect,
-                  currentSide,
-                  currentAlign,
-                  currentSideOffset,
-                  currentAlignOffset,
-                );
-                const transform = getTransform(currentSide, currentAlign);
-
-                positionStyle = {
-                  position: "fixed",
-                  top: `${top}px`,
-                  left: `${left}px`,
-                  transform,
-                };
-              }
-
-              return yield* $.div(
+              // Start hidden (opacity: 0) - will be positioned and revealed after DOM insertion
+              // Using opacity instead of visibility for better animation compatibility
+              // Also suppress any default CSS animations until we're ready
+              const contentEl = yield* $.div(
                 {
                   id: ctx.contentId,
                   class: props.class,
@@ -259,14 +292,61 @@ const Content = component(
                   "data-side": currentSide,
                   "data-align": currentAlign,
                   "data-tooltip-content": "",
-                  style: positionStyle,
+                  style: {
+                    position: "fixed",
+                    opacity: "0",
+                    animation: "none",
+                  },
                 },
                 children ?? [],
               );
+
+              // Store positioning context for onBeforeEnter
+              positioningContext = {
+                triggerEl,
+                side: currentSide,
+                align: currentAlign,
+                sideOffset: currentSideOffset,
+                alignOffset: currentAlignOffset,
+              };
+
+              return contentEl;
             }),
-          ),
-        onFalse: () => $.div({ style: { display: "none" } }),
-      });
+          onFalse: () => $.div({ style: { display: "none" } }),
+          animate: props.animate
+            ? {
+                ...props.animate,
+                onBeforeEnter: (el) =>
+                  el.pipe(
+                    Element.tap(positionAndReveal),
+                    Element.tapEffect(
+                      () => props.animate?.onBeforeEnter?.(el) ?? Effect.void,
+                    ),
+                  ),
+                onEnter: (el) =>
+                  el.pipe(
+                    // Suppress any default CSS animations after our animation finishes
+                    // to prevent them from restarting when the enter class is removed
+                    Element.setStyles({ animation: "none" }),
+                    Element.tapEffect(
+                      () => props.animate?.onEnter?.(el) ?? Effect.void,
+                    ),
+                  ),
+                onBeforeExit: (el) =>
+                  el.pipe(
+                    // Re-enable animations so exit animation can run
+                    Element.setStyles({ animation: "" }),
+                    Element.tapEffect(
+                      () => props.animate?.onBeforeExit?.(el) ?? Effect.void,
+                    ),
+                  ),
+              }
+            : {
+                // Minimal animation config just to trigger positioning via onBeforeEnter
+                onBeforeEnter: (el) => el.pipe(Element.tap(positionAndReveal)),
+              },
+        }),
+      );
     }),
 );
 

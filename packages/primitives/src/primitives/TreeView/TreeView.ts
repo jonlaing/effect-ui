@@ -4,7 +4,8 @@ import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { component } from "@effex/dom";
-import type { Element, SignalSet } from "@effex/dom";
+import { Element } from "@effex/dom";
+import type { SignalSet } from "@effex/dom";
 
 /**
  * Context shared between TreeView parts.
@@ -113,9 +114,9 @@ export interface TreeViewRootProps {
 const Root = (
   props: TreeViewRootProps,
   children:
-    | Element<never, TreeViewCtx | TreeViewLevelCtx>
-    | Element<never, TreeViewCtx | TreeViewLevelCtx>[],
-): Element =>
+    | Element.Element<never, TreeViewCtx | TreeViewLevelCtx>
+    | Element.Element<never, TreeViewCtx | TreeViewLevelCtx>[],
+): Element.Element =>
   Effect.gen(function* () {
     const selectionMode = props.selectionMode ?? "none";
 
@@ -330,9 +331,12 @@ export interface TreeViewItemProps {
 const Item = (
   props: TreeViewItemProps,
   children:
-    | Element<never, TreeViewCtx | TreeViewItemCtx | TreeViewLevelCtx>
-    | Element<never, TreeViewCtx | TreeViewItemCtx | TreeViewLevelCtx>[],
-): Element<never, TreeViewCtx | TreeViewLevelCtx> =>
+    | Element.Element<never, TreeViewCtx | TreeViewItemCtx | TreeViewLevelCtx>
+    | Element.Element<
+        never,
+        TreeViewCtx | TreeViewItemCtx | TreeViewLevelCtx
+      >[],
+): Element.Element<never, TreeViewCtx | TreeViewLevelCtx> =>
   Effect.gen(function* () {
     const treeCtx = yield* TreeViewCtx;
     const levelCtx = yield* TreeViewLevelCtx;

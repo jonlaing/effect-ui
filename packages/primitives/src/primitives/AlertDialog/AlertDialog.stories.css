@@ -211,3 +211,72 @@
   gap: 12px;
   margin-bottom: 16px;
 }
+
+/* ============================================
+   Animation Classes for animate prop demo
+   ============================================ */
+
+/* Slide animation */
+.alertdialog-animate-enter {
+  animation: alertdialog-slide-in 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.alertdialog-animate-exit {
+  animation: alertdialog-slide-out 200ms ease-in;
+}
+
+@keyframes alertdialog-slide-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -40%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes alertdialog-slide-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -60%) scale(0.95);
+  }
+}
+
+/* Bounce animation */
+.alertdialog-bounce-enter {
+  animation: alertdialog-bounce-in 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.alertdialog-bounce-exit {
+  animation: alertdialog-bounce-out 200ms ease-in;
+}
+
+@keyframes alertdialog-bounce-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.7);
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes alertdialog-bounce-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.7);
+  }
+}

@@ -305,3 +305,89 @@ export const FocusTrapDemo: Story = {
     return container;
   },
 };
+
+export const WithAnimation: Story = {
+  render: () => {
+    const element = Effect.gen(function* () {
+      return yield* Dialog.Root({ defaultOpen: false }, [
+        Dialog.Trigger({ class: "dialog-trigger" }, "Open Animated Dialog"),
+        Dialog.Portal(
+          {
+            animate: {
+              enter: "dialog-animate-enter",
+              exit: "dialog-animate-exit",
+            },
+          },
+          [
+            Dialog.Overlay({}),
+            Dialog.Content({}, [
+              Dialog.Title({}, "Animated Dialog"),
+              Dialog.Description(
+                {},
+                "This dialog uses the animate prop for smooth enter and exit animations.",
+              ),
+              $.p(
+                "The dialog slides up and fades in on enter, then slides down and fades out on exit.",
+              ),
+              Dialog.Close({ class: "dialog-cancel" }, "Cancel"),
+              Dialog.Close({ class: "dialog-save" }, "Save"),
+              Dialog.Close({ class: "dialog-close" }, "\u00D7"),
+            ]),
+          ],
+        ),
+      ]);
+    });
+
+    const container = document.createElement("div");
+    container.className = "dialog-story-container";
+
+    renderEffectAsync(element).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
+  },
+};
+
+export const WithBounceAnimation: Story = {
+  render: () => {
+    const element = Effect.gen(function* () {
+      return yield* Dialog.Root({ defaultOpen: false }, [
+        Dialog.Trigger({ class: "dialog-trigger" }, "Open Bouncy Dialog"),
+        Dialog.Portal(
+          {
+            animate: {
+              enter: "dialog-animate-bounce-enter",
+              exit: "dialog-animate-bounce-exit",
+            },
+          },
+          [
+            Dialog.Overlay({}),
+            Dialog.Content({}, [
+              Dialog.Title({}, "Bouncy Dialog"),
+              Dialog.Description(
+                {},
+                "This dialog uses a playful bounce animation.",
+              ),
+              $.p(
+                "Notice how the dialog bounces in with a spring-like effect and scales out when closing.",
+              ),
+              Dialog.Close({ class: "dialog-cancel" }, "Cancel"),
+              Dialog.Close({ class: "dialog-save" }, "Save"),
+              Dialog.Close({ class: "dialog-close" }, "\u00D7"),
+            ]),
+          ],
+        ),
+      ]);
+    });
+
+    const container = document.createElement("div");
+    container.className = "dialog-story-container";
+
+    renderEffectAsync(element).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
+  },
+};

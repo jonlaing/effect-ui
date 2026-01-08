@@ -6,7 +6,8 @@ import { Ref } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { component } from "@effex/dom";
-import type { Element, Child } from "@effex/dom";
+import { Element } from "@effex/dom";
+import type { Child } from "@effex/dom";
 
 // ============================================================================
 // Types
@@ -131,7 +132,7 @@ const Root = (
   children:
     | Child<never, ScrollAreaCtx>
     | readonly Child<never, ScrollAreaCtx>[],
-): Element =>
+): Element.Element =>
   Effect.gen(function* () {
     const type = props.type ?? "hover";
     const scrollHideDelay = props.scrollHideDelay ?? 600;
@@ -422,7 +423,7 @@ const Viewport = component(
 const Scrollbar = (
   props: ScrollAreaScrollbarProps,
   children: Child<never, ScrollAreaCtx | ScrollbarCtx>[],
-): Element<never, ScrollAreaCtx> =>
+): Element.Element<never, ScrollAreaCtx> =>
   Effect.gen(function* () {
     const ctx = yield* ScrollAreaCtx;
     const trackRef = yield* Ref.make<HTMLDivElement>();

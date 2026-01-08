@@ -113,7 +113,8 @@ export const waitForAnimationEvent = (
   });
 
 /**
- * Execute an animation lifecycle hook
+ * Execute an animation lifecycle hook.
+ * Wraps the element in an Effect so hooks can use pipeable helpers.
  */
 export const runHook = (
   hook: AnimationHook | undefined,
@@ -121,11 +122,8 @@ export const runHook = (
 ): Effect.Effect<void> => {
   if (!hook) return Effect.void;
 
-  const result = hook(element);
-  if (Effect.isEffect(result)) {
-    return result as Effect.Effect<void>;
-  }
-  return Effect.void;
+  // Wrap element in Effect so hooks can pipe Element helpers
+  return Effect.asVoid(hook(Effect.succeed(element)));
 };
 
 /**

@@ -123,8 +123,9 @@ export const createWhenUpdater = <E1, R1, E2, R2>(
               Effect.provideService(Scope.Scope, currentElementScope),
             );
 
-        // Run exit animation on previous element
-        if (previousElement && animate) {
+        // Run exit animation only when CLOSING (true → false)
+        // This animates the visible content out before removal
+        if (previousElement && animate && !newValue) {
           yield* runExitAnimation(previousElement, animate);
         }
 
@@ -141,8 +142,9 @@ export const createWhenUpdater = <E1, R1, E2, R2>(
         }
         currentElement = newElement;
 
-        // Run enter animation on new element
-        if (animate) {
+        // Run enter animation only when OPENING (false → true)
+        // This animates the visible content in after insertion
+        if (animate && newValue) {
           yield* runEnterAnimation(newElement, animate);
         }
       }),

@@ -34,7 +34,6 @@ export { DOMRenderer, DOMRendererLive } from "./DOMRenderer";
 
 // Element
 export type {
-  Element,
   Child,
   EventHandler,
   BaseAttributes,
@@ -42,6 +41,7 @@ export type {
   HTMLAttributes,
   ElementFactory,
 } from "./Element";
+export { Element } from "./Element";
 export {
   $,
   div,

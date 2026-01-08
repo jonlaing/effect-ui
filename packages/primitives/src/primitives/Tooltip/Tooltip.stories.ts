@@ -259,3 +259,73 @@ export const FocusTrigger: Story = {
     return container;
   },
 };
+
+export const WithAnimation: Story = {
+  render: () => {
+    const element = Effect.gen(function* () {
+      return yield* Tooltip.Root({ delayDuration: 200 }, [
+        Tooltip.Trigger(
+          {},
+          $.button(
+            { class: "tooltip-demo-button" },
+            "Hover for animated tooltip",
+          ),
+        ),
+        Tooltip.Content(
+          {
+            side: "top",
+            animate: {
+              enter: "tooltip-animate-enter",
+              exit: "tooltip-animate-exit",
+            },
+          },
+          "This tooltip has smooth animations",
+        ),
+      ]);
+    });
+
+    const container = document.createElement("div");
+    container.className = "tooltip-story-container";
+
+    renderEffectAsync(element).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
+  },
+};
+
+export const WithBounceAnimation: Story = {
+  render: () => {
+    const element = Effect.gen(function* () {
+      return yield* Tooltip.Root({ delayDuration: 200 }, [
+        Tooltip.Trigger(
+          {},
+          $.button(
+            { class: "tooltip-demo-button" },
+            "Hover for bouncy tooltip",
+          ),
+        ),
+        Tooltip.Content(
+          {
+            side: "top",
+            animate: {
+              enter: "tooltip-bounce-enter",
+              exit: "tooltip-bounce-exit",
+            },
+          },
+          "Bouncy!",
+        ),
+      ]);
+    });
+
+    const container = document.createElement("div");
+    container.className = "tooltip-story-container";
+
+    renderEffectAsync(element).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
+  },
+};

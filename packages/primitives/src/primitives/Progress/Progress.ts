@@ -4,7 +4,8 @@ import { Derived } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { component } from "@effex/dom";
-import type { Element, Child } from "@effex/dom";
+import { Element } from "@effex/dom";
+import type { Child } from "@effex/dom";
 
 export type ProgressState = "loading" | "complete" | "indeterminate";
 
@@ -36,7 +37,7 @@ export interface ProgressRootProps {
 const Root = (
   props: ProgressRootProps,
   children: Child<never, ProgressCtx> | readonly Child<never, ProgressCtx>[],
-): Element =>
+): Element.Element =>
   Effect.gen(function* () {
     const max = props.max ?? 100;
 

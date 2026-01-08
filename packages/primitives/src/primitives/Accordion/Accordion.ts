@@ -6,7 +6,7 @@ import { provide } from "@effex/dom";
 import { component } from "@effex/dom";
 import { createKeyboardNav } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
-import type { Element } from "@effex/dom";
+import { Element } from "@effex/dom";
 
 /**
  * Context shared between Accordion parts.
@@ -107,8 +107,10 @@ export interface AccordionRootProps {
  */
 const Root = (
   props: AccordionRootProps,
-  children: Element<never, AccordionCtx> | Element<never, AccordionCtx>[],
-): Element =>
+  children:
+    | Element.Element<never, AccordionCtx>
+    | Element.Element<never, AccordionCtx>[],
+): Element.Element =>
   Effect.gen(function* () {
     const type = props.type ?? "single";
     const collapsible = props.collapsible ?? false;
@@ -205,9 +207,9 @@ export interface AccordionItemProps {
 const Item = (
   props: AccordionItemProps,
   children:
-    | Element<never, AccordionCtx | AccordionItemCtx>
-    | Element<never, AccordionCtx | AccordionItemCtx>[],
-): Element<never, AccordionCtx> =>
+    | Element.Element<never, AccordionCtx | AccordionItemCtx>
+    | Element.Element<never, AccordionCtx | AccordionItemCtx>[],
+): Element.Element<never, AccordionCtx> =>
   Effect.gen(function* () {
     const accordionCtx = yield* AccordionCtx;
 

@@ -7,7 +7,8 @@ import { $, ol, li } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
-import type { Element, Child } from "@effex/dom";
+import { Element } from "@effex/dom";
+import type { Child } from "@effex/dom";
 
 // ============================================================================
 // Types
@@ -102,9 +103,9 @@ export interface NavigationMenuRootProps {
 const Root = (
   props: NavigationMenuRootProps,
   children:
-    | Element<never, NavigationMenuCtx>
-    | Element<never, NavigationMenuCtx>[],
-): Element =>
+    | Element.Element<never, NavigationMenuCtx>
+    | Element.Element<never, NavigationMenuCtx>[],
+): Element.Element =>
   Effect.gen(function* () {
     const orientation = Readable.of(props.orientation ?? "horizontal");
     const delayDuration = props.delayDuration ?? 200;
@@ -276,7 +277,7 @@ export interface NavigationMenuItemProps {
 const Item = (
   props: NavigationMenuItemProps,
   children: Child<never, NavigationMenuCtx | NavigationMenuItemCtx>[],
-): Element<never, NavigationMenuCtx> =>
+): Element.Element<never, NavigationMenuCtx> =>
   Effect.gen(function* () {
     const ctx = yield* NavigationMenuCtx;
     const triggerRef = yield* Ref.make<HTMLButtonElement>();

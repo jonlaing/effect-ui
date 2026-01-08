@@ -3,7 +3,7 @@ import { Context, Effect } from "effect";
 import { Signal } from "@effex/core";
 import { component } from "./Component";
 import { div, button, span } from "./Element";
-import type { Element } from "./Element";
+import { Element } from "./Element";
 import { DOMRendererLive } from "./DOMRenderer";
 
 const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
@@ -242,7 +242,7 @@ describe("Component", () => {
     >() {}
 
     // Component that requires TestService
-    const ChildWithService = (): Element<never, TestService> =>
+    const ChildWithService = (): Element.Element<never, TestService> =>
       Effect.gen(function* () {
         const svc = yield* TestService;
         return yield* span(svc.value);

@@ -1,6 +1,6 @@
 import { Effect, Layer, Option } from "effect";
 import type { Duration, Scope } from "effect";
-import type { Element } from "./Element";
+import { Element } from "./Element";
 import {
   suspense as coreSuspense,
   error as coreError,
@@ -26,14 +26,14 @@ export interface SuspenseOptions<E, R1, EF> {
    * Function to render the loading/fallback state.
    * Must have no requirements (will be rendered in detached context if delay > 0).
    */
-  readonly fallback: () => Element<EF, never>;
+  readonly fallback: () => Element.Element<EF, never>;
 
   /**
    * Optional error handler. If provided, errors from render are caught
    * and this function is called to render an error state.
    * Must have no requirements.
    */
-  readonly catch?: (error: E) => Element<never, never>;
+  readonly catch?: (error: E) => Element.Element<never, never>;
 
   /**
    * Delay before showing the fallback.
@@ -91,17 +91,17 @@ export const suspense: {
   // Overload 1: No catch, render cannot fail
   <R1 = never, EF = never>(
     options: SuspenseOptions<never, R1, EF> & { catch?: never },
-  ): Element<EF, R1>;
+  ): Element.Element<EF, R1>;
 
   // Overload 2: With catch, render can fail
   <E, R1 = never, EF = never>(
     options: SuspenseOptions<E, R1, EF> & {
-      catch: (error: E) => Element<never, never>;
+      catch: (error: E) => Element.Element<never, never>;
     },
-  ): Element<EF, R1>;
+  ): Element.Element<EF, R1>;
 } = <E, R1 = never, EF = never>(
   options: SuspenseOptions<E, R1, EF>,
-): Element<EF, R1> =>
+): Element.Element<EF, R1> =>
   Effect.gen(function* () {
     const ssrContext = yield* Effect.serviceOption(SSRContext);
 
@@ -206,7 +206,7 @@ export const suspense: {
     // Cast to any to bypass the strict type checking on overloads
     // The runtime behavior is correct because coreSuspense handles all cases
     return yield* (coreSuspense as any)(options);
-  }) as Element<EF, R1>;
+  }) as Element.Element<EF, R1>;
 
 /**
  * Error boundary that catches errors from a render function and displays a fallback element.
@@ -224,9 +224,9 @@ export const suspense: {
  */
 export const error = <E, R1 = never, E2 = never, R2 = never>(
   tryRender: () => Effect.Effect<HTMLElement, E, Scope.Scope | R1>,
-  catchRender: (error: E) => Element<E2, R2>,
-): Element<E2, R1 | R2> => {
-  return coreError(tryRender, catchRender) as Element<E2, R1 | R2>;
+  catchRender: (error: E) => Element.Element<E2, R2>,
+): Element.Element<E2, R1 | R2> => {
+  return coreError(tryRender, catchRender) as Element.Element<E2, R1 | R2>;
 };
 
 /**

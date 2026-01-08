@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import type { Element } from "@effex/dom";
+import { Element } from "@effex/dom";
 import { DOMRendererLive } from "@effex/dom";
 
 /**
@@ -9,7 +9,9 @@ import { DOMRendererLive } from "@effex/dom";
  * IMPORTANT: Uses Effect.runFork with Effect.never to keep the scope alive,
  * allowing reactive subscriptions (Signals, Reactions, when/each) to work.
  */
-export const renderEffect = <E>(element: Element<E, never>): HTMLElement => {
+export const renderEffect = <E>(
+  element: Element.Element<E, never>,
+): HTMLElement => {
   const container = document.createElement("div");
 
   const program = Effect.gen(function* () {
@@ -33,7 +35,7 @@ export const renderEffect = <E>(element: Element<E, never>): HTMLElement => {
  * allowing reactive subscriptions (Signals, Reactions, when/each) to work.
  */
 export const renderEffectAsync = async <E>(
-  element: Element<E, never>,
+  element: Element.Element<E, never>,
 ): Promise<HTMLElement> => {
   const container = document.createElement("div");
 

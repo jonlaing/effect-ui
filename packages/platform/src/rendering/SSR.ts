@@ -1,6 +1,6 @@
 import { Effect, Layer } from "effect";
 import { RendererContext } from "@effex/dom";
-import type { Element } from "@effex/dom";
+import { Element } from "@effex/dom";
 import { renderToString } from "@effex/dom/server";
 import {
   makeServerPlatformContext,
@@ -74,7 +74,7 @@ export interface SSRResult {
  */
 export const performSSR = <LE = never, LR = never, AE = never, AR = never>(
   request: Request,
-  element: Element<never, RendererContext>,
+  element: Element.Element<never, RendererContext>,
   router: SSRRouter<LE, LR, AE, AR> | undefined,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   providedLayer: Layer.Layer<any, never, never> | undefined,
