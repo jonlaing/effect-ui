@@ -102,10 +102,7 @@ export const Checkbox = component("Checkbox", (props: CheckboxProps) =>
         // Clicking always toggles to checked or unchecked (never to indeterminate)
         const newChecked = current === true ? false : true;
         yield* checked.set(newChecked);
-
-        if (props.onCheckedChange) {
-          yield* props.onCheckedChange(newChecked);
-        }
+        yield* props.onCheckedChange?.(newChecked) ?? Effect.void;
       });
 
     const dataState = checked.map((c) => {

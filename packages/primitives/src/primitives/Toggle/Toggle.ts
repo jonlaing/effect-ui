@@ -86,10 +86,7 @@ export const Toggle = component("Toggle", (props: ToggleProps, children) =>
 
         const newPressed = !(yield* pressed.get);
         yield* pressed.set(newPressed);
-
-        if (props.onPressedChange) {
-          yield* props.onPressedChange(newPressed);
-        }
+        yield* props.onPressedChange?.(newPressed) ?? Effect.void;
       });
 
     const dataState = pressed.map((p) => (p ? "on" : "off"));

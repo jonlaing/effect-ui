@@ -121,7 +121,7 @@ const Root = (
       });
 
     // Radio buttons always select on focus (standard behavior)
-    const handleKeyDown = createKeyboardNav({
+    const handleKeyDown = yield* createKeyboardNav({
       selector: "[data-radio-item]:not([data-disabled])",
       orientation,
       loop,

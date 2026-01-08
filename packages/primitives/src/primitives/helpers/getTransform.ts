@@ -1,3 +1,5 @@
+import { Match } from "effect";
+
 /**
  * Calculate transform value for positioning and alignment.
  * Handles both:
@@ -10,38 +12,29 @@ export function getTransform(
 ): string {
   const isVertical = side === "top" || side === "bottom";
 
-  let translateX = "0";
-  let translateY = "0";
+  // For vertical sides (top/bottom): translateX is based on align
+  // For horizontal sides (left/right): translateX is -100% for left, 0 for right
+  const translateX = isVertical
+    ? Match.value(align).pipe(
+        Match.when("center", () => "-50%"),
+        Match.when("end", () => "-100%"),
+        Match.orElse(() => "0"),
+      )
+    : side === "left"
+      ? "-100%"
+      : "0";
 
-  // Handle side positioning - top/left need to shift by their own dimensions
-  if (side === "top") {
-    translateY = "-100%";
-  } else if (side === "left") {
-    translateX = "-100%";
-  }
-
-  // Handle alignment on the cross axis
-  if (isVertical) {
-    // Horizontal alignment for top/bottom sides
-    switch (align) {
-      case "center":
-        translateX = "-50%";
-        break;
-      case "end":
-        translateX = "-100%";
-        break;
-    }
-  } else {
-    // Vertical alignment for left/right sides
-    switch (align) {
-      case "center":
-        translateY = "-50%";
-        break;
-      case "end":
-        translateY = "-100%";
-        break;
-    }
-  }
+  // For vertical sides (top/bottom): translateY is -100% for top, 0 for bottom
+  // For horizontal sides (left/right): translateY is based on align
+  const translateY = isVertical
+    ? side === "top"
+      ? "-100%"
+      : "0"
+    : Match.value(align).pipe(
+        Match.when("center", () => "-50%"),
+        Match.when("end", () => "-100%"),
+        Match.orElse(() => "0"),
+      );
 
   if (translateX === "0" && translateY === "0") {
     return "none";

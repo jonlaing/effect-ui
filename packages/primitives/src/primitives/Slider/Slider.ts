@@ -184,9 +184,7 @@ const Root = (
     const setValue = (newValue: SliderValue) =>
       Effect.gen(function* () {
         yield* value.set(newValue);
-        if (props.onValueChange) {
-          yield* props.onValueChange(newValue);
-        }
+        yield* props.onValueChange?.(newValue) ?? Effect.void;
       });
 
     // Set specific thumb value

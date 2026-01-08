@@ -151,10 +151,7 @@ const Root = (
         }
 
         yield* value.set(newValue);
-
-        if (props.onValueChange) {
-          yield* props.onValueChange(newValue);
-        }
+        yield* props.onValueChange?.(newValue) ?? Effect.void;
       });
 
     const ctxValue: AccordionContext = {
@@ -267,13 +264,6 @@ export interface AccordionTriggerProps {
  * Accordion.Trigger({ class: "accordion-trigger" }, "Click to expand")
  * ```
  */
-// Shared keyboard navigation handler for accordion triggers
-const accordionKeyboardNav = createKeyboardNav({
-  selector: "[data-accordion-trigger]:not([data-disabled])",
-  orientation: "vertical",
-  loop: true,
-});
-
 const Trigger = component(
   "AccordionTrigger",
   (props: AccordionTriggerProps, children) =>
@@ -282,6 +272,12 @@ const Trigger = component(
       const itemCtx = yield* AccordionItemCtx;
 
       const handleClick = () => accordionCtx.toggle(itemCtx.value);
+
+      const handleKeyDown = yield* createKeyboardNav({
+        selector: "[data-accordion-trigger]:not([data-disabled])",
+        orientation: "vertical",
+        loop: true,
+      });
 
       const dataState = itemCtx.isOpen.map((open) =>
         open ? "open" : "closed",
@@ -303,7 +299,7 @@ const Trigger = component(
           "data-disabled": dataDisabled,
           "data-accordion-trigger": "",
           onClick: handleClick,
-          onKeyDown: accordionKeyboardNav,
+          onKeyDown: handleKeyDown,
         },
         children ?? [],
       );

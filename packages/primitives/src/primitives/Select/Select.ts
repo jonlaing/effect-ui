@@ -145,17 +145,13 @@ const Root = (
     const setOpenState = (newValue: boolean) =>
       Effect.gen(function* () {
         yield* isOpen.set(newValue);
-        if (props.onOpenChange) {
-          yield* props.onOpenChange(newValue);
-        }
+        yield* props.onOpenChange?.(newValue) ?? Effect.void;
       });
 
     const selectValue = (newValue: string) =>
       Effect.gen(function* () {
         yield* value.set(newValue);
-        if (props.onValueChange) {
-          yield* props.onValueChange(newValue);
-        }
+        yield* props.onValueChange?.(newValue) ?? Effect.void;
         yield* setOpenState(false);
       });
 
@@ -382,7 +378,7 @@ const Content = component(
                 };
               }
 
-              const keyboardNav = createKeyboardNav({
+              const keyboardNav = yield* createKeyboardNav({
                 selector: "[data-select-item]:not([data-disabled])",
                 orientation: "vertical",
                 loop: true,

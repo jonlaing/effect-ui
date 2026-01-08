@@ -143,9 +143,7 @@ const Root = (
     const setOpenState = (newValue: boolean) =>
       Effect.gen(function* () {
         yield* isOpen.set(newValue);
-        if (props.onOpenChange) {
-          yield* props.onOpenChange(newValue);
-        }
+        yield* props.onOpenChange?.(newValue) ?? Effect.void;
       });
 
     const ctx: DropdownMenuContext = {
@@ -335,7 +333,7 @@ const Content = component(
                 };
               }
 
-              const keyboardNav = createKeyboardNav({
+              const keyboardNav = yield* createKeyboardNav({
                 selector: "[data-menu-item]:not([data-disabled])",
                 orientation: "vertical",
                 loop,
@@ -432,9 +430,7 @@ const Item = component(
         Effect.gen(function* () {
           if (yield* disabled.get) return;
 
-          if (props.onSelect) {
-            yield* props.onSelect();
-          }
+          yield* props.onSelect?.() ?? Effect.void;
 
           // Close menu and return focus to trigger
           yield* ctx.close();
@@ -599,10 +595,7 @@ const CheckboxItem = component(
           const current = yield* checked.get;
           const newValue = !current;
           yield* checked.set(newValue);
-
-          if (props.onCheckedChange) {
-            yield* props.onCheckedChange(newValue);
-          }
+          yield* props.onCheckedChange?.(newValue) ?? Effect.void;
 
           // Close menu and return focus to trigger
           yield* ctx.close();
@@ -666,9 +659,7 @@ const RadioGroup = (
     const setValue = (newValue: string) =>
       Effect.gen(function* () {
         yield* value.set(newValue);
-        if (props.onValueChange) {
-          yield* props.onValueChange(newValue);
-        }
+        yield* props.onValueChange?.(newValue) ?? Effect.void;
       });
 
     const radioCtx: DropdownMenuRadioGroupContext = {
@@ -817,9 +808,7 @@ const Sub = (
           cancelClose(); // Cancel any pending close when opening
         }
         yield* isOpen.set(newValue);
-        if (props.onOpenChange) {
-          yield* props.onOpenChange(newValue);
-        }
+        yield* props.onOpenChange?.(newValue) ?? Effect.void;
       });
 
     const subCtx: DropdownMenuSubContext = {
@@ -1047,7 +1036,7 @@ const SubContent = component(
                   subCtx.scheduleClose(); // Use shared close timeout
                 });
 
-              const keyboardNav = createKeyboardNav({
+              const keyboardNav = yield* createKeyboardNav({
                 selector: "[data-menu-item]:not([data-disabled])",
                 orientation: "vertical",
                 loop,

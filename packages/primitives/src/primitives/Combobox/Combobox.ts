@@ -254,9 +254,7 @@ const Root = (
         if (!newValue) {
           yield* highlightedValue.set(null);
         }
-        if (props.onOpenChange) {
-          yield* props.onOpenChange(newValue);
-        }
+        yield* props.onOpenChange?.(newValue) ?? Effect.void;
       });
 
     const selectValue = (newValue: string) =>
@@ -267,14 +265,10 @@ const Root = (
         const item = itemMap.get(newValue);
         if (item) {
           yield* inputValue.set(item.textValue);
-          if (props.onInputValueChange) {
-            yield* props.onInputValueChange(item.textValue);
-          }
+          yield* props.onInputValueChange?.(item.textValue) ?? Effect.void;
         }
         yield* setOpenState(false);
-        if (props.onValueChange) {
-          yield* props.onValueChange(newValue);
-        }
+        yield* props.onValueChange?.(newValue) ?? Effect.void;
         // Return focus to input
         const input = inputRef.current;
         input?.focus();

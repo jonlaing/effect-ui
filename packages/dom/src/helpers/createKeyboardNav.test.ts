@@ -32,14 +32,21 @@ describe("createKeyboardNav", () => {
       const items = setupItems(3);
       items[0].focus();
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "horizontal",
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "horizontal",
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", {
+                key: "ArrowRight",
+                bubbles: true,
+              }),
+            );
+          }),
         ),
       );
 
@@ -50,14 +57,18 @@ describe("createKeyboardNav", () => {
       const items = setupItems(3);
       items[1].focus();
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "horizontal",
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "horizontal",
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }),
+            );
+          }),
         ),
       );
 
@@ -68,15 +79,22 @@ describe("createKeyboardNav", () => {
       const items = setupItems(3);
       items[2].focus();
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "horizontal",
-        loop: true,
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "horizontal",
+              loop: true,
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", {
+                key: "ArrowRight",
+                bubbles: true,
+              }),
+            );
+          }),
         ),
       );
 
@@ -87,15 +105,19 @@ describe("createKeyboardNav", () => {
       const items = setupItems(3);
       items[0].focus();
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "horizontal",
-        loop: true,
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "horizontal",
+              loop: true,
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }),
+            );
+          }),
         ),
       );
 
@@ -106,15 +128,22 @@ describe("createKeyboardNav", () => {
       const items = setupItems(3);
       items[2].focus();
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "horizontal",
-        loop: false,
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "horizontal",
+              loop: false,
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", {
+                key: "ArrowRight",
+                bubbles: true,
+              }),
+            );
+          }),
         ),
       );
 
@@ -127,14 +156,18 @@ describe("createKeyboardNav", () => {
       const items = setupItems(3);
       items[0].focus();
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "vertical",
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "vertical",
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }),
+            );
+          }),
         ),
       );
 
@@ -145,14 +178,18 @@ describe("createKeyboardNav", () => {
       const items = setupItems(3);
       items[1].focus();
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "vertical",
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "vertical",
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true }),
+            );
+          }),
         ),
       );
 
@@ -165,14 +202,18 @@ describe("createKeyboardNav", () => {
       const items = setupItems(5);
       items[3].focus();
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "horizontal",
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "Home", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "horizontal",
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", { key: "Home", bubbles: true }),
+            );
+          }),
         ),
       );
 
@@ -183,14 +224,18 @@ describe("createKeyboardNav", () => {
       const items = setupItems(5);
       items[1].focus();
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "horizontal",
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "End", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "horizontal",
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", { key: "End", bubbles: true }),
+            );
+          }),
         ),
       );
 
@@ -206,19 +251,26 @@ describe("createKeyboardNav", () => {
       let focusedElement: HTMLElement | null = null;
       let focusedIndex = -1;
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "horizontal",
-        onFocus: (el, idx) =>
-          Effect.sync(() => {
-            focusedElement = el;
-            focusedIndex = idx;
-          }),
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "horizontal",
+              onFocus: (el, idx) =>
+                Effect.sync(() => {
+                  focusedElement = el;
+                  focusedIndex = idx;
+                }),
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", {
+                key: "ArrowRight",
+                bubbles: true,
+              }),
+            );
+          }),
         ),
       );
 
@@ -235,19 +287,23 @@ describe("createKeyboardNav", () => {
       let activatedElement: HTMLElement | null = null;
       let activatedIndex = -1;
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "horizontal",
-        onActivate: (el, idx) =>
-          Effect.sync(() => {
-            activatedElement = el;
-            activatedIndex = idx;
-          }),
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "horizontal",
+              onActivate: (el, idx) =>
+                Effect.sync(() => {
+                  activatedElement = el;
+                  activatedIndex = idx;
+                }),
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+            );
+          }),
         ),
       );
 
@@ -261,18 +317,22 @@ describe("createKeyboardNav", () => {
 
       let activatedElement: HTMLElement | null = null;
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "horizontal",
-        onActivate: (el) =>
-          Effect.sync(() => {
-            activatedElement = el;
-          }),
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: " ", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "horizontal",
+              onActivate: (el) =>
+                Effect.sync(() => {
+                  activatedElement = el;
+                }),
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", { key: " ", bubbles: true }),
+            );
+          }),
         ),
       );
 
@@ -292,7 +352,7 @@ describe("createKeyboardNav", () => {
               "horizontal",
             );
 
-            const handleKeyDown = createKeyboardNav({
+            const handleKeyDown = yield* createKeyboardNav({
               selector: "[data-nav-item]",
               orientation,
             });
@@ -344,15 +404,22 @@ describe("createKeyboardNav", () => {
 
       item0.focus();
 
-      // Selector excludes disabled items
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]:not([data-disabled])",
-        orientation: "horizontal",
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            // Selector excludes disabled items
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]:not([data-disabled])",
+              orientation: "horizontal",
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", {
+                key: "ArrowRight",
+                bubbles: true,
+              }),
+            );
+          }),
         ),
       );
 
@@ -366,14 +433,18 @@ describe("createKeyboardNav", () => {
       const items = setupItems(3);
       items[1].focus();
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "horizontal",
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "Tab", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "horizontal",
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", { key: "Tab", bubbles: true }),
+            );
+          }),
         ),
       );
 
@@ -388,18 +459,22 @@ describe("createKeyboardNav", () => {
 
       let escapeCalled = false;
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "horizontal",
-        onEscape: () =>
-          Effect.sync(() => {
-            escapeCalled = true;
-          }),
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "horizontal",
+              onEscape: () =>
+                Effect.sync(() => {
+                  escapeCalled = true;
+                }),
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+            );
+          }),
         ),
       );
 
@@ -410,15 +485,19 @@ describe("createKeyboardNav", () => {
       const items = setupItems(3);
       items[1].focus();
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "horizontal",
-      });
-
-      // Should not throw
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "horizontal",
+            });
+
+            // Should not throw
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+            );
+          }),
         ),
       );
 
@@ -457,17 +536,21 @@ describe("createKeyboardNav", () => {
       const items = setupLabeledItems();
       items[0].focus(); // Apple
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "vertical",
-        typeahead: {
-          getText: (el) => el.textContent ?? "",
-        },
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "c", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "vertical",
+              typeahead: {
+                getText: (el) => el.textContent ?? "",
+              },
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", { key: "c", bubbles: true }),
+            );
+          }),
         ),
       );
 
@@ -478,27 +561,30 @@ describe("createKeyboardNav", () => {
       const items = setupLabeledItems();
       items[0].focus();
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "vertical",
-        typeahead: {
-          getText: (el) => el.textContent ?? "",
-        },
-      });
-
-      // Type "bl" to match Blueberry, not Banana
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "b", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "vertical",
+              typeahead: {
+                getText: (el) => el.textContent ?? "",
+              },
+            });
+
+            // Type "bl" to match Blueberry, not Banana
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", { key: "b", bubbles: true }),
+            );
+            expect(document.activeElement).toBe(items[1]); // Banana (first B)
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", { key: "l", bubbles: true }),
+            );
+          }),
         ),
       );
-      expect(document.activeElement).toBe(items[1]); // Banana (first B)
 
-      await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "l", bubbles: true }),
-        ),
-      );
       expect(document.activeElement).toBe(items[2]); // Blueberry
     });
 
@@ -506,32 +592,35 @@ describe("createKeyboardNav", () => {
       const items = setupLabeledItems();
       items[0].focus();
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "vertical",
-        typeahead: {
-          getText: (el) => el.textContent ?? "",
-          timeout: 300,
-        },
-      });
-
-      // Type "b" - matches Banana
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "b", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "vertical",
+              typeahead: {
+                getText: (el) => el.textContent ?? "",
+                timeout: 300,
+              },
+            });
+
+            // Type "b" - matches Banana
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", { key: "b", bubbles: true }),
+            );
+            expect(document.activeElement).toBe(items[1]); // Banana
+
+            // Wait for timeout
+            vi.advanceTimersByTime(400);
+
+            // Type "c" - should match Cherry (not look for "bc")
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", { key: "c", bubbles: true }),
+            );
+          }),
         ),
       );
-      expect(document.activeElement).toBe(items[1]); // Banana
 
-      // Wait for timeout
-      vi.advanceTimersByTime(400);
-
-      // Type "c" - should match Cherry (not look for "bc")
-      await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "c", bubbles: true }),
-        ),
-      );
       expect(document.activeElement).toBe(items[3]); // Cherry
     });
 
@@ -542,22 +631,26 @@ describe("createKeyboardNav", () => {
       let matchedElement: HTMLElement | null = null;
       let matchedIndex = -1;
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "vertical",
-        typeahead: {
-          getText: (el) => el.textContent ?? "",
-          onMatch: (el, idx) =>
-            Effect.sync(() => {
-              matchedElement = el;
-              matchedIndex = idx;
-            }),
-        },
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "d", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "vertical",
+              typeahead: {
+                getText: (el) => el.textContent ?? "",
+                onMatch: (el, idx) =>
+                  Effect.sync(() => {
+                    matchedElement = el;
+                    matchedIndex = idx;
+                  }),
+              },
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", { key: "d", bubbles: true }),
+            );
+          }),
         ),
       );
 
@@ -569,17 +662,21 @@ describe("createKeyboardNav", () => {
       const items = setupLabeledItems();
       items[0].focus();
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "vertical",
-        typeahead: {
-          getText: (el) => el.textContent ?? "",
-        },
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "C", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "vertical",
+              typeahead: {
+                getText: (el) => el.textContent ?? "",
+              },
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", { key: "C", bubbles: true }),
+            );
+          }),
         ),
       );
 
@@ -590,28 +687,31 @@ describe("createKeyboardNav", () => {
       const items = setupLabeledItems();
       items[0].focus();
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "vertical",
-        typeahead: {
-          getText: (el) => el.textContent ?? "",
-        },
-      });
-
-      // Type "a" - matches Apple
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "a", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "vertical",
+              typeahead: {
+                getText: (el) => el.textContent ?? "",
+              },
+            });
+
+            // Type "a" - matches Apple
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", { key: "a", bubbles: true }),
+            );
+            expect(document.activeElement).toBe(items[0]); // Apple
+
+            // Type "d" - "ad" doesn't match anything, so try "d" alone
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", { key: "d", bubbles: true }),
+            );
+          }),
         ),
       );
-      expect(document.activeElement).toBe(items[0]); // Apple
 
-      // Type "d" - "ad" doesn't match anything, so try "d" alone
-      await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "d", bubbles: true }),
-        ),
-      );
       expect(document.activeElement).toBe(items[4]); // Date
     });
 
@@ -619,21 +719,25 @@ describe("createKeyboardNav", () => {
       const items = setupLabeledItems();
       items[0].focus();
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "vertical",
-        typeahead: {
-          getText: (el) => el.textContent ?? "",
-        },
-      });
-
-      // Ctrl+C should not trigger typeahead
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", {
-            key: "c",
-            ctrlKey: true,
-            bubbles: true,
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "vertical",
+              typeahead: {
+                getText: (el) => el.textContent ?? "",
+              },
+            });
+
+            // Ctrl+C should not trigger typeahead
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", {
+                key: "c",
+                ctrlKey: true,
+                bubbles: true,
+              }),
+            );
           }),
         ),
       );
@@ -709,25 +813,32 @@ describe("createKeyboardNav", () => {
 
       let expandCalled = false;
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "vertical",
-        hierarchy: {
-          getParent: () => Option.none(),
-          getFirstChild: () => Option.none(),
-          isExpanded: (el) => expandedState.get(el) ?? false,
-          onExpand: (el) =>
-            Effect.sync(() => {
-              expandCalled = true;
-              expandedState.set(el, true);
-            }),
-          onCollapse: () => Effect.void,
-        },
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "vertical",
+              hierarchy: {
+                getParent: () => Option.none(),
+                getFirstChild: () => Option.none(),
+                isExpanded: (el) => expandedState.get(el) ?? false,
+                onExpand: (el) =>
+                  Effect.sync(() => {
+                    expandCalled = true;
+                    expandedState.set(el, true);
+                  }),
+                onCollapse: () => Effect.void,
+              },
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", {
+                key: "ArrowRight",
+                bubbles: true,
+              }),
+            );
+          }),
         ),
       );
 
@@ -742,36 +853,43 @@ describe("createKeyboardNav", () => {
       expandedState.set(root1, true);
       root1.focus();
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "vertical",
-        hierarchy: {
-          getParent: (el) => {
-            const parentId = el.getAttribute("data-parent");
-            if (parentId) {
-              const parent = document.getElementById(parentId);
-              return parent ? Option.some(parent) : Option.none();
-            }
-            return Option.none();
-          },
-          getFirstChild: (el) => {
-            // Find first child with data-parent matching this element's id
-            const children = document.querySelectorAll(
-              `[data-parent="${el.id}"]`,
-            );
-            return children.length > 0
-              ? Option.some(children[0] as HTMLElement)
-              : Option.none();
-          },
-          isExpanded: (el) => expandedState.get(el) ?? false,
-          onExpand: () => Effect.void,
-          onCollapse: () => Effect.void,
-        },
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "vertical",
+              hierarchy: {
+                getParent: (el) => {
+                  const parentId = el.getAttribute("data-parent");
+                  if (parentId) {
+                    const parent = document.getElementById(parentId);
+                    return parent ? Option.some(parent) : Option.none();
+                  }
+                  return Option.none();
+                },
+                getFirstChild: (el) => {
+                  // Find first child with data-parent matching this element's id
+                  const children = document.querySelectorAll(
+                    `[data-parent="${el.id}"]`,
+                  );
+                  return children.length > 0
+                    ? Option.some(children[0] as HTMLElement)
+                    : Option.none();
+                },
+                isExpanded: (el) => expandedState.get(el) ?? false,
+                onExpand: () => Effect.void,
+                onCollapse: () => Effect.void,
+              },
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", {
+                key: "ArrowRight",
+                bubbles: true,
+              }),
+            );
+          }),
         ),
       );
 
@@ -788,25 +906,29 @@ describe("createKeyboardNav", () => {
 
       let collapseCalled = false;
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "vertical",
-        hierarchy: {
-          getParent: () => Option.none(),
-          getFirstChild: () => Option.none(),
-          isExpanded: (el) => expandedState.get(el) ?? false,
-          onExpand: () => Effect.void,
-          onCollapse: (el) =>
-            Effect.sync(() => {
-              collapseCalled = true;
-              expandedState.set(el, false);
-            }),
-        },
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "vertical",
+              hierarchy: {
+                getParent: () => Option.none(),
+                getFirstChild: () => Option.none(),
+                isExpanded: (el) => expandedState.get(el) ?? false,
+                onExpand: () => Effect.void,
+                onCollapse: (el) =>
+                  Effect.sync(() => {
+                    collapseCalled = true;
+                    expandedState.set(el, false);
+                  }),
+              },
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }),
+            );
+          }),
         ),
       );
 
@@ -821,28 +943,32 @@ describe("createKeyboardNav", () => {
       expandedState.set(child11, false);
       child11.focus();
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "vertical",
-        hierarchy: {
-          getParent: (el) => {
-            const parentId = el.getAttribute("data-parent");
-            if (parentId) {
-              const parent = document.getElementById(parentId);
-              return parent ? Option.some(parent) : Option.none();
-            }
-            return Option.none();
-          },
-          getFirstChild: () => Option.none(),
-          isExpanded: (el) => expandedState.get(el) ?? false,
-          onExpand: () => Effect.void,
-          onCollapse: () => Effect.void,
-        },
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "vertical",
+              hierarchy: {
+                getParent: (el) => {
+                  const parentId = el.getAttribute("data-parent");
+                  if (parentId) {
+                    const parent = document.getElementById(parentId);
+                    return parent ? Option.some(parent) : Option.none();
+                  }
+                  return Option.none();
+                },
+                getFirstChild: () => Option.none(),
+                isExpanded: (el) => expandedState.get(el) ?? false,
+                onExpand: () => Effect.void,
+                onCollapse: () => Effect.void,
+              },
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }),
+            );
+          }),
         ),
       );
 
@@ -859,40 +985,47 @@ describe("createKeyboardNav", () => {
       let focusedElement: HTMLElement | null = null;
       let focusedIndex = -1;
 
-      const handleKeyDown = createKeyboardNav({
-        selector: "[data-nav-item]",
-        orientation: "vertical",
-        onFocus: (el, idx) =>
-          Effect.sync(() => {
-            focusedElement = el;
-            focusedIndex = idx;
-          }),
-        hierarchy: {
-          getParent: (el) => {
-            const parentId = el.getAttribute("data-parent");
-            if (parentId) {
-              const parent = document.getElementById(parentId);
-              return parent ? Option.some(parent) : Option.none();
-            }
-            return Option.none();
-          },
-          getFirstChild: (el) => {
-            const children = document.querySelectorAll(
-              `[data-parent="${el.id}"]`,
-            );
-            return children.length > 0
-              ? Option.some(children[0] as HTMLElement)
-              : Option.none();
-          },
-          isExpanded: (el) => expandedState.get(el) ?? false,
-          onExpand: () => Effect.void,
-          onCollapse: () => Effect.void,
-        },
-      });
-
       await runTest(
-        handleKeyDown(
-          new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
+        Effect.scoped(
+          Effect.gen(function* () {
+            const handleKeyDown = yield* createKeyboardNav({
+              selector: "[data-nav-item]",
+              orientation: "vertical",
+              onFocus: (el, idx) =>
+                Effect.sync(() => {
+                  focusedElement = el;
+                  focusedIndex = idx;
+                }),
+              hierarchy: {
+                getParent: (el) => {
+                  const parentId = el.getAttribute("data-parent");
+                  if (parentId) {
+                    const parent = document.getElementById(parentId);
+                    return parent ? Option.some(parent) : Option.none();
+                  }
+                  return Option.none();
+                },
+                getFirstChild: (el) => {
+                  const children = document.querySelectorAll(
+                    `[data-parent="${el.id}"]`,
+                  );
+                  return children.length > 0
+                    ? Option.some(children[0] as HTMLElement)
+                    : Option.none();
+                },
+                isExpanded: (el) => expandedState.get(el) ?? false,
+                onExpand: () => Effect.void,
+                onCollapse: () => Effect.void,
+              },
+            });
+
+            yield* handleKeyDown(
+              new KeyboardEvent("keydown", {
+                key: "ArrowRight",
+                bubbles: true,
+              }),
+            );
+          }),
         ),
       );
 

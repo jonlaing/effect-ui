@@ -96,10 +96,7 @@ const Root = (
     const setOpenState = (newValue: boolean) =>
       Effect.gen(function* () {
         yield* isOpen.set(newValue);
-
-        if (props.onOpenChange) {
-          yield* props.onOpenChange(newValue);
-        }
+        yield* props.onOpenChange?.(newValue) ?? Effect.void;
       });
 
     const ctx: DialogContext = {
@@ -274,9 +271,7 @@ const Content = component(
           if (event.key === "Escape") {
             event.preventDefault();
             event.stopPropagation();
-            if (props.onEscapeKeyDown) {
-              yield* props.onEscapeKeyDown(event);
-            }
+            yield* props.onEscapeKeyDown?.(event) ?? Effect.void;
             yield* ctx.close();
           }
         });

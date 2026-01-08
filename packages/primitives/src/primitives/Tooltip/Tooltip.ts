@@ -88,9 +88,7 @@ const Root = (
     const setOpenState = (newValue: boolean) =>
       Effect.gen(function* () {
         yield* isOpen.set(newValue);
-        if (props.onOpenChange) {
-          yield* props.onOpenChange(newValue);
-        }
+        yield* props.onOpenChange?.(newValue) ?? Effect.void;
       });
 
     const ctx: TooltipContext = {

@@ -87,9 +87,7 @@ const Root = (
     const setValue = (newValue: string) =>
       Effect.gen(function* () {
         yield* value.set(newValue);
-        if (props.onValueChange) {
-          yield* props.onValueChange(newValue);
-        }
+        yield* props.onValueChange?.(newValue) ?? Effect.void;
       });
 
     const ctx: TabsContext = {
@@ -138,7 +136,7 @@ const List = component("TabsList", (props: TabsListProps, children) =>
         }
       });
 
-    const handleKeyDown = createKeyboardNav({
+    const handleKeyDown = yield* createKeyboardNav({
       selector: "[data-tabs-trigger]:not([data-disabled])",
       orientation: ctx.orientation,
       loop: props.loop ?? true,

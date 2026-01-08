@@ -99,10 +99,7 @@ export const Switch = component("Switch", (props: SwitchProps) =>
 
         const newChecked = !(yield* checked.get);
         yield* checked.set(newChecked);
-
-        if (props.onCheckedChange) {
-          yield* props.onCheckedChange(newChecked);
-        }
+        yield* props.onCheckedChange?.(newChecked) ?? Effect.void;
       });
 
     const dataState = checked.map((c) => (c ? "checked" : "unchecked"));

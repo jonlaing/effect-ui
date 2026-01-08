@@ -188,7 +188,7 @@ const Root = (
       rovingTabIndex: { activeId, items },
     };
 
-    const handleKeyDown = createKeyboardNav({
+    const handleKeyDown = yield* createKeyboardNav({
       selector: "[data-toolbar-item]:not([data-disabled])",
       orientation,
       loop,
@@ -267,9 +267,7 @@ const Button = component(
           if (yield* isDisabled.get) return;
 
           yield* ctx.rovingTabIndex.activeId.set(id);
-          if (props.onPress) {
-            yield* props.onPress();
-          }
+          yield* props.onPress?.() ?? Effect.void;
         });
 
       const handleFocus = () => ctx.rovingTabIndex.activeId.set(id);
@@ -335,9 +333,7 @@ const ToggleItem = component(
 
         return Effect.gen(function* () {
           yield* (pressed as Signal<boolean>).set(newPressed);
-          if (props.onPressedChange) {
-            yield* props.onPressedChange(newPressed);
-          }
+          yield* props.onPressedChange?.(newPressed) ?? Effect.void;
         });
       };
 
@@ -437,10 +433,7 @@ const ToggleGroup = (
           const newValue = current === value ? null : value;
 
           yield* singleValue.set(newValue);
-
-          if (props.onValueChange) {
-            yield* props.onValueChange(newValue);
-          }
+          yield* props.onValueChange?.(newValue) ?? Effect.void;
         } else {
           const current = yield* multipleValue.get;
 
@@ -450,10 +443,8 @@ const ToggleGroup = (
             yield* multipleValue.push(value);
           }
 
-          if (props.onValuesChange) {
-            const updated = yield* multipleValue.get;
-            yield* props.onValuesChange(updated);
-          }
+          const updated = yield* multipleValue.get;
+          yield* props.onValuesChange?.(updated) ?? Effect.void;
         }
       });
 

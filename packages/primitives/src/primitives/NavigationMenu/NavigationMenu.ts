@@ -148,9 +148,7 @@ const Root = (
     const setActiveItem = (id: string | null) =>
       Effect.gen(function* () {
         yield* activeItem.set(id);
-        if (props.onValueChange) {
-          yield* props.onValueChange(id);
-        }
+        yield* props.onValueChange?.(id) ?? Effect.void;
       });
 
     const scheduleOpen = (id: string) => {
@@ -434,9 +432,7 @@ const Content = component(
         Effect.gen(function* () {
           if (event.key === "Escape") {
             event.preventDefault();
-            if (props.onEscapeKeyDown) {
-              yield* props.onEscapeKeyDown(event);
-            }
+            yield* props.onEscapeKeyDown?.(event) ?? Effect.void;
             yield* ctx.setActiveItem(null);
             // Return focus to trigger
             const trigger = ctx.triggerRefs.get(itemCtx.itemId);

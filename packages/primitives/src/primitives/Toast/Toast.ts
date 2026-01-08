@@ -166,9 +166,7 @@ const Provider = (
       Effect.gen(function* () {
         const current = yield* toasts.get;
         for (const toast of current) {
-          if (toast.onDismiss) {
-            yield* toast.onDismiss();
-          }
+          yield* toast.onDismiss?.() ?? Effect.void;
         }
         yield* toasts.set([]);
       });

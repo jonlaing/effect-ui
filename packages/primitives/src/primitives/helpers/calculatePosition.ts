@@ -1,3 +1,5 @@
+import { Match } from "effect";
+
 /**
  * Calculate position for floating content relative to an anchor element.
  */
@@ -8,52 +10,35 @@ export function calculatePosition(
   sideOffset: number,
   alignOffset: number,
 ): { top: number; left: number } {
-  let top = 0;
-  let left = 0;
+  const isVertical = side === "top" || side === "bottom";
 
-  // Calculate main axis position
-  switch (side) {
-    case "top":
-      top = anchorRect.top - sideOffset;
-      break;
-    case "bottom":
-      top = anchorRect.bottom + sideOffset;
-      break;
-    case "left":
-      left = anchorRect.left - sideOffset;
-      break;
-    case "right":
-      left = anchorRect.right + sideOffset;
-      break;
-  }
+  const top = isVertical
+    ? Match.value(side).pipe(
+        Match.when("top", () => anchorRect.top - sideOffset),
+        Match.orElse(() => anchorRect.bottom + sideOffset),
+      )
+    : Match.value(align).pipe(
+        Match.when("start", () => anchorRect.top + alignOffset),
+        Match.when(
+          "center",
+          () => anchorRect.top + anchorRect.height / 2 + alignOffset,
+        ),
+        Match.orElse(() => anchorRect.bottom + alignOffset),
+      );
 
-  // Calculate cross axis alignment
-  if (side === "top" || side === "bottom") {
-    switch (align) {
-      case "start":
-        left = anchorRect.left + alignOffset;
-        break;
-      case "center":
-        left = anchorRect.left + anchorRect.width / 2 + alignOffset;
-        break;
-      case "end":
-        left = anchorRect.right + alignOffset;
-        break;
-    }
-  } else {
-    // left/right sides
-    switch (align) {
-      case "start":
-        top = anchorRect.top + alignOffset;
-        break;
-      case "center":
-        top = anchorRect.top + anchorRect.height / 2 + alignOffset;
-        break;
-      case "end":
-        top = anchorRect.bottom + alignOffset;
-        break;
-    }
-  }
+  const left = isVertical
+    ? Match.value(align).pipe(
+        Match.when("start", () => anchorRect.left + alignOffset),
+        Match.when(
+          "center",
+          () => anchorRect.left + anchorRect.width / 2 + alignOffset,
+        ),
+        Match.orElse(() => anchorRect.right + alignOffset),
+      )
+    : Match.value(side).pipe(
+        Match.when("left", () => anchorRect.left - sideOffset),
+        Match.orElse(() => anchorRect.right + sideOffset),
+      );
 
   return { top, left };
 }

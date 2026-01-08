@@ -85,10 +85,7 @@ const Root = (
         if (isDisabled) return;
 
         yield* isOpen.set(newValue);
-
-        if (props.onOpenChange) {
-          yield* props.onOpenChange(newValue);
-        }
+        yield* props.onOpenChange?.(newValue) ?? Effect.void;
       });
 
     const toggle = () =>
