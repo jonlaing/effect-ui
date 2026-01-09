@@ -94,19 +94,19 @@ export const FocusTrap = {
       };
 
       // Focus handler to prevent focus from escaping
-      // TODO: This handler is not currently attached - bug to fix
-      // const handleFocusIn = (event: FocusEvent) => {
-      //   if (!container.contains(event.target as Node)) {
-      //     event.stopPropagation();
-      //     const focusableElements = getFocusableElements(container);
-      //     if (focusableElements.length > 0) {
-      //       focusableElements[0].focus();
-      //     }
-      //   }
-      // };
+      const handleFocusIn = (event: FocusEvent) => {
+        if (!container.contains(event.target as Node)) {
+          event.stopPropagation();
+          const focusableElements = getFocusableElements(container);
+          if (focusableElements.length > 0) {
+            focusableElements[0].focus();
+          }
+        }
+      };
 
       // Add event listeners
       container.addEventListener("keydown", handleKeyDown);
+      document.addEventListener("focusin", handleFocusIn);
 
       // Focus initial element
       const focusableElements = getFocusableElements(container);
@@ -124,6 +124,7 @@ export const FocusTrap = {
       yield* Effect.addFinalizer(() =>
         Effect.sync(() => {
           container.removeEventListener("keydown", handleKeyDown);
+          document.removeEventListener("focusin", handleFocusIn);
 
           // Restore focus to previously focused element
           if (

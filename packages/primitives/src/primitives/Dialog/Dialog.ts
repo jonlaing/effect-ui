@@ -173,6 +173,7 @@ export interface DialogPortalProps {
   readonly target?: HTMLElement | string;
   /** Animation configuration for enter/exit transitions */
   readonly animate?: AnimationOptions;
+  class: ClassValue;
 }
 
 /**
@@ -202,7 +203,7 @@ const DialogPortal = (
       when(ctx.isOpen, {
         onTrue: () =>
           $.div(
-            { style: { display: "contents" }, "data-dialog-portal": "" },
+            { class: props.class, "data-dialog-portal": "" },
             provide(DialogCtx, ctx, children),
           ),
         onFalse: () => $.div({ style: { display: "none" } }),
