@@ -122,9 +122,10 @@ const Root = (
     const disabled = Readable.of(props.disabled ?? false);
 
     // Create or use controlled sizes signal
-    const sizes: Signal<number[]> = props.sizes
-      ? props.sizes
-      : yield* Signal.make<number[]>(props.defaultSizes ?? [50, 50]);
+    const sizes = yield* Signal.fromNullable(
+      props.sizes,
+      props.defaultSizes ?? [50, 50],
+    );
 
     // Container ref for position calculations
     const containerRef = yield* Element.ref<HTMLDivElement>();

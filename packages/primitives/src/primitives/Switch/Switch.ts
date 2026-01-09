@@ -107,9 +107,6 @@ export const Switch = component("Switch", (props: SwitchProps) =>
     const dataDisabled = disabled.map((d) => (d ? "" : undefined));
     const ariaRequired = required.map((r) => (r ? "true" : undefined));
 
-    // The thumb is a visual element inside the switch
-    const thumb = $.span({ "data-switch-thumb": "" });
-
     return yield* $.button(
       {
         type: "button",
@@ -125,7 +122,7 @@ export const Switch = component("Switch", (props: SwitchProps) =>
         value: props.value ?? "on",
         onClick: handleClick,
       },
-      [thumb],
+      $.span({ "data-switch-thumb": "" }),
     );
   }),
 );

@@ -1,4 +1,4 @@
-import { Context, Effect, Stream } from "effect";
+import { Effect, Layer } from "effect";
 import { Signal } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { Derived } from "@effex/dom";
@@ -9,131 +9,29 @@ import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
 import { onClickOutside } from "@effex/dom";
-import { Element, type ElementRef } from "@effex/dom";
+import { Element } from "@effex/dom";
 import type { AnimationOptions } from "@effex/dom";
-import { calculatePosition } from "../helpers";
+import {
+  type ComboboxContext,
+  type ComboboxItemContext,
+  type ComboboxFilterFn,
+  ComboboxCtx,
+  ComboboxItemCtx,
+  ComboboxContentPositionCtx,
+} from "./types";
+import { positionAndReveal } from "./helpers";
 
 // ============================================================================
-// Types & Interfaces
+// Re-exports
 // ============================================================================
 
-/**
- * Filter function type for filtering items based on input.
- * @param inputValue - The current input value
- * @param itemTextValue - The text value of the item being filtered
- * @returns true if the item should be shown
- */
-export type ComboboxFilterFn = (
-  inputValue: string,
-  itemTextValue: string,
-) => boolean;
+export type { ComboboxFilterFn } from "./types";
 
 /**
  * Default filter function - case-insensitive substring match.
  */
 export const defaultFilterFn: ComboboxFilterFn = (inputValue, itemTextValue) =>
   itemTextValue.toLowerCase().includes(inputValue.toLowerCase());
-
-/**
- * Context shared between Combobox parts.
- */
-export interface ComboboxContext {
-  /** Whether the listbox is currently open */
-  readonly isOpen: Readable.Readable<boolean>;
-  /** Open the listbox */
-  readonly open: () => Effect.Effect<void>;
-  /** Close the listbox */
-  readonly close: () => Effect.Effect<void>;
-
-  /** The current input value (what user types) */
-  readonly inputValue: Signal<string>;
-
-  /** The selected value (committed selection) */
-  readonly value: Readable.Readable<string>;
-  /** Select a value */
-  readonly selectValue: (value: string) => Effect.Effect<void>;
-
-  /** The currently highlighted item value (keyboard navigation) */
-  readonly highlightedValue: Signal<string | null>;
-  /** Highlight a specific value */
-  readonly highlightValue: (value: string | null) => Effect.Effect<void>;
-  /** Highlight the next item */
-  readonly highlightNext: () => Effect.Effect<void>;
-  /** Highlight the previous item */
-  readonly highlightPrev: () => Effect.Effect<void>;
-  /** Highlight the first item */
-  readonly highlightFirst: () => Effect.Effect<void>;
-  /** Highlight the last item */
-  readonly highlightLast: () => Effect.Effect<void>;
-
-  /** Register an item */
-  readonly registerItem: (
-    value: string,
-    textValue: string,
-    disabled: boolean,
-  ) => Effect.Effect<void>;
-  /** Unregister an item */
-  readonly unregisterItem: (value: string) => Effect.Effect<void>;
-  /** Map of registered items */
-  readonly items: Signal<Map<string, { textValue: string; disabled: boolean }>>;
-
-  /** Check if an item should be shown based on filter */
-  readonly shouldShowItem: (value: string) => Readable.Readable<boolean>;
-
-  /** Unique ID for the content element */
-  readonly contentId: string;
-  /** Unique ID for the input element */
-  readonly inputId: string;
-  /** Get the ID for an item by its value */
-  readonly getItemId: (value: string) => string;
-
-  /** Reference to the input element */
-  readonly inputRef: ElementRef<HTMLInputElement>;
-
-  /** Whether async loading is in progress */
-  readonly isLoading: Readable.Readable<boolean>;
-
-  /** Whether the combobox is disabled */
-  readonly disabled: Readable.Readable<boolean>;
-  /** Whether keyboard navigation loops */
-  readonly loop: boolean;
-}
-
-/**
- * Context for Combobox.Item children.
- */
-export interface ComboboxItemContext {
-  /** The item's value */
-  readonly itemValue: string;
-  /** Whether this item is selected */
-  readonly isSelected: Readable.Readable<boolean>;
-  /** Whether this item is highlighted */
-  readonly isHighlighted: Readable.Readable<boolean>;
-  /** Whether this item is disabled */
-  readonly disabled: Readable.Readable<boolean>;
-  /** Set the text value for this item */
-  readonly setTextValue: (text: string) => Effect.Effect<void>;
-}
-
-// ============================================================================
-// Context Tags
-// ============================================================================
-
-/**
- * Effect Context for Combobox state sharing between parts.
- */
-export class ComboboxCtx extends Context.Tag("ComboboxContext")<
-  ComboboxCtx,
-  ComboboxContext
->() {}
-
-/**
- * Effect Context for Combobox.Item state sharing.
- */
-export class ComboboxItemCtx extends Context.Tag("ComboboxItemContext")<
-  ComboboxItemCtx,
-  ComboboxItemContext
->() {}
 
 // ============================================================================
 // Helper Functions
@@ -255,8 +153,6 @@ const Root = (
         yield* isOpen.set(newValue);
         if (!newValue) {
           yield* highlightedValue.set(null);
-          // Return focus to input when closing
-          yield* inputRef.pipe(Element.focus, Effect.ignore);
         }
         yield* props.onOpenChange?.(newValue) ?? Effect.void;
       });
@@ -273,8 +169,6 @@ const Root = (
         }
         yield* setOpenState(false);
         yield* props.onValueChange?.(newValue) ?? Effect.void;
-        // Return focus to input
-        yield* inputRef.pipe(Element.focus, Effect.ignore);
       });
 
     // Navigation functions
@@ -325,32 +219,6 @@ const Root = (
     const filterFn =
       props.filterFn === null ? null : (props.filterFn ?? defaultFilterFn);
 
-    // Create a function that returns a Readable<boolean> for whether an item should show
-    const shouldShowItem = (itemValue: string): Readable.Readable<boolean> => {
-      // If filtering is disabled, always show
-      if (filterFn === null) {
-        return Readable.of(true);
-      }
-
-      // Map inputValue to a boolean indicating if this item should show
-      // Note: This creates a derived readable that updates when inputValue changes
-      return Readable.make(
-        Effect.gen(function* () {
-          const input = yield* inputValue.get;
-          const itemsMap = yield* items.get;
-          const item = itemsMap.get(itemValue);
-          if (!item) return false;
-          // Empty input shows all items
-          if (input === "") return true;
-          return filterFn(input, item.textValue);
-        }),
-        () =>
-          inputValue.changes.pipe(
-            Stream.map(() => true), // Trigger re-evaluation on any change
-          ),
-      );
-    };
-
     const ctx: ComboboxContext = {
       isOpen,
       open: () => setOpenState(true),
@@ -377,7 +245,7 @@ const Root = (
           return newMap;
         }),
       items,
-      shouldShowItem,
+      filterFn,
       contentId,
       inputId,
       getItemId: (itemValue) => `${baseItemId}-${itemValue}`,
@@ -604,6 +472,7 @@ const Content = component(
   (props: ComboboxContentProps, children) =>
     Effect.gen(function* () {
       const ctx = yield* ComboboxCtx;
+      const contentRef = yield* Element.ref<HTMLDivElement>();
 
       // Normalize positioning props
       const side = Readable.of(props.side ?? "bottom");
@@ -611,137 +480,79 @@ const Content = component(
       const sideOffset = Readable.of(props.sideOffset ?? 4);
 
       const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
+      const hasPositioned = yield* Signal.make(false);
 
-      // Portal is always rendered, but the content inside uses `when` for animations.
-      // This ensures animations apply to the actual visible content, not a placeholder.
-      //
-      // We use onBeforeEnter to measure and position the content after DOM insertion
-      // but before animation starts. This avoids using CSS transform for positioning,
-      // which would conflict with transform-based animations.
+      // Positioning context for positionAndReveal helper
+      const positioningContext = Layer.succeed(ComboboxContentPositionCtx, {
+        side,
+        align,
+        sideOffset,
+        hasPositioned,
+        setHasPositioned: (bool: boolean) => hasPositioned.set(bool),
+      });
 
-      // Positioning context - set in onTrue, used in positionAndReveal
-      let positioningContext: {
-        inputEl: HTMLInputElement | null;
-        side: "top" | "bottom";
-        align: "start" | "center" | "end";
-        sideOffset: number;
-      } | null = null;
+      const onBeforeEnter = (el: Effect.Effect<HTMLElement>) =>
+        props.animate
+          ? el.pipe(
+              positionAndReveal,
+              Element.tapEffect(
+                () => props.animate?.onBeforeEnter?.(el) ?? Effect.void,
+              ),
+              Effect.provide(positioningContext),
+              Effect.provideService(ComboboxCtx, ctx),
+            )
+          : el.pipe(
+              positionAndReveal,
+              Effect.provide(positioningContext),
+              Effect.provideService(ComboboxCtx, ctx),
+            );
 
-      // Helper to position and reveal the element
-      const positionAndReveal = (el: HTMLElement) => {
-        if (positioningContext?.inputEl) {
-          // Measure content dimensions (element is in DOM but hidden)
-          const contentRect = el.getBoundingClientRect();
+      const onEnter = (el: Effect.Effect<HTMLElement>) =>
+        el.pipe(
+          Element.setStyles({ animation: "none" }),
+          Element.tapEffect(() => props.animate?.onEnter?.(el) ?? Effect.void),
+        );
 
-          // Calculate final position using content dimensions
-          const anchorRect = positioningContext.inputEl.getBoundingClientRect();
-          const { top, left } = calculatePosition(
-            anchorRect,
-            positioningContext.side,
-            positioningContext.align,
-            positioningContext.sideOffset,
-            0,
-            contentRect.width,
-            contentRect.height,
-          );
+      const onBeforeExit = (el: Effect.Effect<HTMLElement>) =>
+        el.pipe(
+          Element.setStyles({ animation: "" }),
+          Element.tapEffect(
+            () => props.animate?.onBeforeExit?.(el) ?? Effect.void,
+          ),
+        );
 
-          // Apply final position
-          el.style.top = `${top}px`;
-          el.style.left = `${left}px`;
-          el.style.minWidth = `${anchorRect.width}px`;
-        }
-
-        // Clean up
-        positioningContext = null;
-
-        // Reveal: clear opacity and animation suppression to allow CSS/JS animations
-        el.style.opacity = "";
-        el.style.animation = "";
-      };
+      // Click outside handler
+      yield* onClickOutside([ctx.inputRef, contentRef], () => ctx.close());
 
       return yield* Portal(() =>
         when(ctx.isOpen, {
           onTrue: () =>
-            Effect.gen(function* () {
-              // Get input element for positioning (needs sync access for measurement)
-              const inputEl = Element.getUnsafe(ctx.inputRef);
-
-              // Get current positioning values
-              const currentSide = yield* side.get;
-              const currentAlign = yield* align.get;
-              const currentSideOffset = yield* sideOffset.get;
-
-              // Start hidden (opacity: 0) - will be positioned and revealed after DOM insertion
-              // Using opacity instead of visibility for better animation compatibility
-              // Also suppress any default CSS animations until we're ready
-              const contentEl = yield* $.div(
-                {
-                  id: ctx.contentId,
-                  class: props.class,
-                  role: "listbox",
-                  "aria-labelledby": ctx.inputId,
-                  "data-combobox-content": "",
-                  "data-state": dataState,
-                  "data-side": currentSide,
-                  "data-align": currentAlign,
-                  tabIndex: -1,
-                  style: {
-                    position: "fixed",
-                    opacity: "0",
-                    animation: "none",
-                  },
+            $.div(
+              {
+                id: ctx.contentId,
+                ref: contentRef,
+                class: props.class,
+                role: "listbox",
+                "aria-labelledby": ctx.inputId,
+                "data-combobox-content": "",
+                "data-state": dataState,
+                "data-side": side,
+                "data-align": align,
+                tabIndex: -1,
+                style: {
+                  position: "fixed",
+                  opacity: "0",
                 },
-                children ?? [],
-              );
-
-              // Click outside handler
-              yield* onClickOutside([ctx.inputRef, contentEl], () =>
-                ctx.close(),
-              );
-
-              // Store positioning context for onBeforeEnter
-              positioningContext = {
-                inputEl,
-                side: currentSide,
-                align: currentAlign,
-                sideOffset: currentSideOffset,
-              };
-
-              return contentEl;
-            }),
-          onFalse: () => $.div({ style: { display: "none" } }),
-          animate: props.animate
-            ? {
-                ...props.animate,
-                onBeforeEnter: (el) =>
-                  el.pipe(
-                    Element.tap(positionAndReveal),
-                    Element.tapEffect(
-                      () => props.animate?.onBeforeEnter?.(el) ?? Effect.void,
-                    ),
-                  ),
-                onEnter: (el) =>
-                  el.pipe(
-                    // Suppress any default CSS animations after our animation finishes
-                    // to prevent them from restarting when the enter class is removed
-                    Element.setStyles({ animation: "none" }),
-                    Element.tapEffect(
-                      () => props.animate?.onEnter?.(el) ?? Effect.void,
-                    ),
-                  ),
-                onBeforeExit: (el) =>
-                  el.pipe(
-                    // Re-enable animations so exit animation can run
-                    Element.setStyles({ animation: "" }),
-                    Element.tapEffect(
-                      () => props.animate?.onBeforeExit?.(el) ?? Effect.void,
-                    ),
-                  ),
-              }
-            : {
-                // Minimal animation config just to trigger positioning via onBeforeEnter
-                onBeforeEnter: (el) => el.pipe(Element.tap(positionAndReveal)),
               },
+              children ?? [],
+            ),
+          onFalse: () => $.div({ style: { display: "none" } }),
+          animate: {
+            ...(props.animate ?? {}),
+            onBeforeEnter,
+            onEnter,
+            onBeforeExit,
+          },
         }),
       );
     }),
@@ -795,8 +606,16 @@ const Item = (
     // Unregister on unmount
     yield* Effect.addFinalizer(() => ctx.unregisterItem(props.value));
 
-    // Get the shouldShow readable for this item
-    const shouldShow = ctx.shouldShowItem(props.value);
+    // Compute whether this item should show based on filter
+    const shouldShow = ctx.filterFn
+      ? yield* Derived.sync(
+          [ctx.inputValue, textValueSignal] as const,
+          ([input, textValue]) => {
+            if (input === "") return true;
+            return ctx.filterFn!(input, textValue);
+          },
+        )
+      : Readable.of(true);
 
     const isSelected = Readable.map(ctx.value, (v) => v === props.value);
     const isHighlighted = Readable.map(
@@ -992,25 +811,11 @@ const Empty = component(
     Effect.gen(function* () {
       const ctx = yield* ComboboxCtx;
 
-      // Check if items is empty and not loading
-      // We need to derive this from both signals
-      const itemsEmpty = Readable.map(
-        ctx.items,
-        (itemsMap) => itemsMap.size === 0,
+      // Show when items is empty and not loading
+      const shouldShow = yield* Derived.sync(
+        [ctx.items, ctx.isLoading] as const,
+        ([items, loading]) => items.size === 0 && !loading,
       );
-
-      // Combine isEmpty and isLoading into shouldShow
-      // Since we can't combine readables directly, we derive in stages
-      const shouldShow: Readable.Readable<boolean> = {
-        get: Effect.gen(function* () {
-          const empty = yield* itemsEmpty.get;
-          const loading = yield* ctx.isLoading.get;
-          return empty && !loading;
-        }),
-        changes: itemsEmpty.changes,
-        values: itemsEmpty.values,
-        map: (f) => Readable.map(itemsEmpty, (empty) => f(empty)),
-      };
 
       return yield* when(shouldShow, {
         onTrue: () =>

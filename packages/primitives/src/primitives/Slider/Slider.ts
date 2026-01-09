@@ -140,9 +140,7 @@ const Root = (
 
     // Create or use controlled value signal
     const defaultVal = props.defaultValue ?? min;
-    const value: Signal<SliderValue> = props.value
-      ? props.value
-      : yield* Signal.make(defaultVal);
+    const value = yield* Signal.fromNullable(props.value, defaultVal);
 
     // Determine if range mode from initial value (check controlled value first)
     const initialValue = yield* value.get;

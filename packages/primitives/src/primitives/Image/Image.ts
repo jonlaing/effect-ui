@@ -78,7 +78,7 @@ const Img = component("ImageImg", (props: ImageImgProps) =>
     // React to src changes - reset status to loading
     yield* Reaction.make([src], ([currentSrc]) =>
       Effect.gen(function* () {
-        const img = Element.getUnsafe(imgRef);
+        const img = yield* imgRef;
 
         if (currentSrc) {
           yield* ctx.setStatus("loading");
@@ -88,7 +88,7 @@ const Img = component("ImageImg", (props: ImageImgProps) =>
         if (img && img.complete && img.naturalWidth > 0) {
           yield* ctx.setStatus("loaded");
         }
-      }),
+      }).pipe(Effect.ignore),
     );
 
     // One-time setup: attach event listeners once element exists

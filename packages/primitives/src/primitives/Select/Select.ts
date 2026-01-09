@@ -38,6 +38,8 @@ export interface SelectContext {
   readonly valueLabels: Signal<Map<string, string>>;
   /** Reference to the trigger element */
   readonly triggerRef: ElementRef<HTMLButtonElement>;
+  /** Reference to the content element */
+  readonly contentRef: ElementRef<HTMLDivElement>;
   /** Unique ID for the content */
   readonly contentId: string;
   /** Unique ID for the trigger */
@@ -141,6 +143,7 @@ const Root = (
 
     const valueLabels = yield* Signal.make<Map<string, string>>(new Map());
     const triggerRef = yield* Element.ref<HTMLButtonElement>();
+    const contentRef = yield* Element.ref<HTMLDivElement>();
     const contentId = yield* UniqueId.make("select-content");
     const triggerId = yield* UniqueId.make("select-trigger");
 
@@ -186,6 +189,7 @@ const Root = (
       registerItem,
       valueLabels,
       triggerRef,
+      contentRef,
       contentId,
       triggerId,
       disabled,
@@ -351,166 +355,119 @@ const Content = component(
 
       const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
 
-      // Portal is always rendered, but the content inside uses `when` for animations.
-      // This ensures animations apply to the actual visible content, not a placeholder.
-      //
-      // We use onBeforeEnter to measure and position the content after DOM insertion
-      // but before animation starts. This avoids using CSS transform for positioning,
-      // which would conflict with transform-based animations.
+      // Click outside handler
+      yield* onClickOutside([ctx.triggerRef, ctx.contentRef], () =>
+        ctx.close(),
+      );
 
-      // Positioning context - set in onTrue, used in positionAndReveal
-      let positioningContext: {
-        triggerEl: HTMLButtonElement | null;
-        side: "top" | "bottom";
-        align: "start" | "center" | "end";
-        sideOffset: number;
-      } | null = null;
+      // Keyboard navigation - created at component level
+      const keyboardNav = yield* createKeyboardNav({
+        selector: "[data-select-item]:not([data-disabled])",
+        orientation: "vertical",
+        loop: true,
+        onActivate: (el) =>
+          el.pipe(
+            Element.getData("value"),
+            Effect.flatMap(ctx.selectValue),
+            Effect.ignore,
+          ),
+        onEscape: () =>
+          ctx
+            .close()
+            .pipe(
+              Effect.andThen(ctx.triggerRef.pipe(Element.focus, Effect.ignore)),
+            ),
+      });
 
-      // Helper to position and reveal the element
-      const positionAndReveal = (el: HTMLElement) => {
-        if (positioningContext?.triggerEl) {
-          // Measure content dimensions (element is in DOM but hidden)
-          const contentRect = el.getBoundingClientRect();
+      const handleKeyDown = (event: KeyboardEvent) =>
+        Effect.gen(function* () {
+          // Tab closes select without preventing default
+          if (event.key === "Tab") {
+            yield* ctx.close();
+            return;
+          }
+          yield* keyboardNav(event);
+        });
 
-          // Calculate final position using content dimensions
-          const anchorRect =
-            positioningContext.triggerEl.getBoundingClientRect();
-          const { top, left } = calculatePosition(
-            anchorRect,
-            positioningContext.side,
-            positioningContext.align,
-            positioningContext.sideOffset,
-            0,
-            contentRect.width,
-            contentRect.height,
+      // Helper to position the content relative to trigger
+      const setPosition = (el: Effect.Effect<HTMLElement>) =>
+        Effect.gen(function* () {
+          const currentSide = yield* side.get;
+          const currentAlign = yield* align.get;
+          const currentSideOffset = yield* sideOffset.get;
+
+          const positionStyle = yield* ctx.triggerRef.pipe(
+            Element.getBoundingClientRect,
+            Effect.map((anchorRect) => {
+              const { top, left } = calculatePosition(
+                anchorRect,
+                currentSide,
+                currentAlign,
+                currentSideOffset,
+                0,
+                0,
+                0,
+              );
+
+              return {
+                top: `${top}px`,
+                left: `${left}px`,
+                minWidth: `${anchorRect.width}px`,
+                opacity: "",
+                animation: "none",
+              };
+            }),
           );
 
-          // Apply final position
-          el.style.top = `${top}px`;
-          el.style.left = `${left}px`;
-          el.style.minWidth = `${anchorRect.width}px`;
-        }
+          return yield* el.pipe(Element.setStyles(positionStyle));
+        });
 
-        // Clean up
-        positioningContext = null;
-
-        // Reveal: clear opacity and animation suppression to allow CSS/JS animations
-        el.style.opacity = "";
-        el.style.animation = "";
-      };
-
+      // Portal is always rendered, but the content inside uses `when` for animations.
       return yield* Portal(() =>
         when(ctx.isOpen, {
           onTrue: () =>
-            Effect.gen(function* () {
-              // Get trigger element for positioning (needs sync access for measurement)
-              const triggerEl = Element.getUnsafe(ctx.triggerRef);
-
-              // Get current positioning values
-              const currentSide = yield* side.get;
-              const currentAlign = yield* align.get;
-              const currentSideOffset = yield* sideOffset.get;
-
-              const keyboardNav = yield* createKeyboardNav({
-                selector: "[data-select-item]:not([data-disabled])",
-                orientation: "vertical",
-                loop: true,
-                onActivate: (el) =>
-                  Effect.gen(function* () {
-                    const value = el.getAttribute("data-value");
-                    if (value) {
-                      yield* ctx.selectValue(value);
-                    }
-                  }),
-                onEscape: () =>
-                  Effect.gen(function* () {
-                    yield* ctx.close();
-                    yield* ctx.triggerRef.pipe(Element.focus, Effect.ignore);
-                  }),
-              });
-
-              const handleKeyDown = (event: KeyboardEvent) =>
-                Effect.gen(function* () {
-                  // Tab closes select without preventing default
-                  if (event.key === "Tab") {
-                    yield* ctx.close();
-                    return;
-                  }
-                  yield* keyboardNav(event);
-                });
-
-              // Start hidden (opacity: 0) - will be positioned and revealed after DOM insertion
-              // Using opacity instead of visibility for better animation compatibility
-              // Also suppress any default CSS animations until we're ready
-              const contentEl = yield* $.div(
-                {
-                  id: ctx.contentId,
-                  class: props.class,
-                  role: "listbox",
-                  "aria-labelledby": ctx.triggerId,
-                  "data-state": dataState,
-                  "data-side": currentSide,
-                  "data-select-content": "",
-                  tabIndex: -1,
-                  style: {
-                    position: "fixed",
-                    opacity: "0",
-                    animation: "none",
-                  },
-                  onKeyDown: handleKeyDown,
+            $.div(
+              {
+                ref: ctx.contentRef,
+                id: ctx.contentId,
+                class: props.class,
+                role: "listbox",
+                "aria-labelledby": ctx.triggerId,
+                "data-state": dataState,
+                "data-side": side,
+                "data-select-content": "",
+                tabIndex: -1,
+                style: {
+                  position: "fixed",
+                  opacity: 0,
                 },
-                children ?? [],
-              );
-
-              // Click outside handler
-              yield* onClickOutside([ctx.triggerRef, contentEl], () =>
-                ctx.close(),
-              );
-
-              // Store positioning context for onBeforeEnter
-              positioningContext = {
-                triggerEl,
-                side: currentSide,
-                align: currentAlign,
-                sideOffset: currentSideOffset,
-              };
-
-              return contentEl;
-            }),
+                onKeyDown: handleKeyDown,
+              },
+              children ?? [],
+            ),
           onFalse: () => $.div({ style: { display: "none" } }),
           animate: props.animate
             ? {
                 ...props.animate,
-                onBeforeEnter: (el) =>
-                  el.pipe(
-                    Element.tap(positionAndReveal),
-                    Element.tapEffect(
-                      () => props.animate?.onBeforeEnter?.(el) ?? Effect.void,
-                    ),
-                  ),
+                onBeforeEnter: (el) => el.pipe(setPosition, Effect.ignore),
                 onEnter: (el) =>
                   el.pipe(
-                    // Suppress any default CSS animations after our animation finishes
-                    // to prevent them from restarting when the enter class is removed
-                    Element.setStyles({ animation: "none" }),
+                    Element.setStyles({ animation: "" }),
                     Element.focus,
                     Element.tapEffect(
                       () => props.animate?.onEnter?.(el) ?? Effect.void,
                     ),
-                  ),
-                onBeforeExit: (el) =>
-                  el.pipe(
-                    // Re-enable animations so exit animation can run
-                    Element.setStyles({ animation: "" }),
-                    Element.tapEffect(
-                      () => props.animate?.onBeforeExit?.(el) ?? Effect.void,
-                    ),
+                    Effect.ignore,
                   ),
               }
             : {
-                // Minimal animation config just to trigger positioning via onBeforeEnter
-                onBeforeEnter: (el) => el.pipe(Element.tap(positionAndReveal)),
-                onEnter: (el) => el.pipe(Element.focus),
+                onBeforeEnter: (el) => el.pipe(setPosition, Effect.ignore),
+                onEnter: (el) =>
+                  el.pipe(
+                    Element.setStyles({ animation: "" }),
+                    Element.focus,
+                    Effect.ignore,
+                  ),
               },
         }),
       );

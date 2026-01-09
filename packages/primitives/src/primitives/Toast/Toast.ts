@@ -125,8 +125,8 @@ export interface ToastProviderProps {
 const Provider = (
   props: ToastProviderProps,
   children:
-    | Element.Element<never, ToastCtx>
-    | readonly Element.Element<never, ToastCtx>[],
+    | Element.Element<never, ToastCtx | ToastItemCtx>
+    | readonly Element.Element<never, ToastCtx | ToastItemCtx>[],
 ): Element.Element =>
   Effect.gen(function* () {
     const position = props.position ?? "bottom-right";
@@ -136,7 +136,7 @@ const Provider = (
     const swipeDirection = props.swipeDirection ?? getSwipeDirection(position);
 
     // Toast state
-    const toasts = yield* Signal.make<readonly ToastData[]>([]);
+    const toasts = yield* Signal.Array.make<ToastData>([]);
 
     // Add a new toast
     const add = (options: ToastOptions): Effect.Effect<string> =>
@@ -147,7 +147,7 @@ const Provider = (
           id,
           type: options.type ?? "default",
         };
-        yield* toasts.update((current) => [...current, toast]);
+        yield* toasts.push(toast);
         return id;
       });
 
@@ -169,7 +169,7 @@ const Provider = (
         for (const toast of current) {
           yield* toast.onDismiss?.() ?? Effect.void;
         }
-        yield* toasts.set([]);
+        yield* toasts.clear();
       });
 
     const ctx: ToastContext = {
@@ -206,7 +206,8 @@ export interface ToastViewportProps {
 
 /**
  * Toast viewport that renders all visible toasts via Portal.
- * When no children are provided, automatically renders toasts from context.
+ * Children are used as a template that's rendered for each toast with ToastItemCtx.
+ * When no children are provided, uses a default template.
  */
 const Viewport = component(
   "ToastViewport",
@@ -246,7 +247,15 @@ const Viewport = component(
       const exitClass = getExitAnimationClass(ctx.position);
       const providedChildren = normalizeChildren(children);
 
-      // Default toast rendering
+      // Default template when no children provided
+      const defaultTemplate = [
+        Root({}, [Title({}), Description({}), Action({}), Close({})]),
+      ];
+
+      const template =
+        providedChildren.length > 0 ? providedChildren : defaultTemplate;
+
+      // Render toasts using the template
       const toastElements = [
         each(
           ctx.toasts.map((toasts) => toasts.slice(-ctx.maxVisible)),
@@ -255,9 +264,6 @@ const Viewport = component(
             render: (toastReadable: Readable<ToastData>) =>
               Effect.gen(function* () {
                 const toast = yield* toastReadable.get;
-                const actionButton = toast.action
-                  ? [Action({}, toast.action.label)]
-                  : [];
 
                 const itemCtx: ToastItemContext = {
                   toast,
@@ -267,17 +273,8 @@ const Viewport = component(
                 };
 
                 return yield* $.div(
-                  { style: { display: "content" } },
-                  provide(
-                    ToastItemCtx,
-                    itemCtx,
-                    Root({ toast }, [
-                      Title({}, toast.title ?? ""),
-                      Description({}, toast.description ?? ""),
-                      ...actionButton,
-                      Close({}, "\u00d7"),
-                    ]),
-                  ),
+                  { style: { display: "contents" } },
+                  provide(ToastItemCtx, itemCtx, template),
                 );
               }),
             animate: { exit: exitClass },
@@ -297,7 +294,7 @@ const Viewport = component(
             "data-toast-viewport": "",
             "data-position": ctx.position,
           },
-          providedChildren.length > 0 ? providedChildren : toastElements,
+          toastElements,
         ),
       );
     }),
@@ -307,8 +304,6 @@ const Viewport = component(
  * Props for Toast.Root
  */
 export interface ToastRootProps {
-  /** The toast data to render */
-  readonly toast: ToastData;
   /** Additional class names */
   readonly class?: Readable.Reactive<string>;
 }
@@ -319,7 +314,9 @@ export interface ToastRootProps {
 const Root = component("ToastRoot", (props: ToastRootProps, children) =>
   Effect.gen(function* () {
     const ctx = yield* ToastCtx;
-    const toast = props.toast;
+    // Get toast from props or from item context (when used as template)
+    const parentCtx = yield* ToastItemCtx;
+    const toast: ToastData = parentCtx.toast;
     const toastRef = yield* Element.ref<HTMLLIElement>();
 
     // Timer state
@@ -460,14 +457,6 @@ const Root = component("ToastRoot", (props: ToastRootProps, children) =>
         }
       });
 
-    // Build item context
-    const itemCtx: ToastItemContext = {
-      toast,
-      dismiss,
-      pauseTimer,
-      resumeTimer,
-    };
-
     // Determine aria-live based on type
     const ariaLive = toast.type === "error" ? "assertive" : "polite";
 
@@ -489,11 +478,7 @@ const Root = component("ToastRoot", (props: ToastRootProps, children) =>
         onMouseEnter: handleMouseEnter,
         onMouseLeave: handleMouseLeave,
       },
-      provide(
-        ToastItemCtx,
-        itemCtx,
-        normalizeChildren(children as Element.Element<never, never>),
-      ),
+      normalizeChildren(children as Element.Element<never, never>),
     );
   }),
 );
@@ -507,16 +492,18 @@ export interface ToastTitleProps {
 }
 
 /**
- * Toast title text.
+ * Toast title text. Renders from itemCtx.toast.title if no children provided.
  */
 const Title = component("ToastTitle", (props: ToastTitleProps, children) =>
   Effect.gen(function* () {
+    const itemCtx = yield* ToastItemCtx;
+    const content = children ?? itemCtx.toast.title ?? "";
     return yield* $.div(
       {
         class: props.class,
         "data-toast-title": "",
       },
-      children ?? [],
+      content,
     );
   }),
 );
@@ -530,18 +517,20 @@ export interface ToastDescriptionProps {
 }
 
 /**
- * Toast description text.
+ * Toast description text. Renders from itemCtx.toast.description if no children provided.
  */
 const Description = component(
   "ToastDescription",
   (props: ToastDescriptionProps, children) =>
     Effect.gen(function* () {
+      const itemCtx = yield* ToastItemCtx;
+      const content = children ?? itemCtx.toast.description ?? "";
       return yield* $.div(
         {
           class: props.class,
           "data-toast-description": "",
         },
-        children ?? [],
+        content,
       );
     }),
 );
@@ -557,11 +546,18 @@ export interface ToastActionProps {
 }
 
 /**
- * Toast action button.
+ * Toast action button. Renders from itemCtx.toast.action if no children provided.
+ * Renders nothing if no action exists and no children provided.
  */
 const Action = component("ToastAction", (props: ToastActionProps, children) =>
   Effect.gen(function* () {
     const ctx = yield* ToastItemCtx;
+    const content = children ?? ctx.toast.action?.label;
+
+    // If no content (no children and no action), render nothing
+    if (!content) {
+      return yield* $.span({ style: { display: "none" } }, []);
+    }
 
     // Stop propagation to prevent swipe handler from capturing pointer
     const handlePointerDown = (e: PointerEvent) =>
@@ -585,7 +581,7 @@ const Action = component("ToastAction", (props: ToastActionProps, children) =>
         onPointerDown: handlePointerDown,
         onClick: handleClick,
       },
-      children ?? [],
+      content,
     );
   }),
 );
@@ -601,7 +597,7 @@ export interface ToastCloseProps {
 }
 
 /**
- * Toast close/dismiss button.
+ * Toast close/dismiss button. Renders "×" if no children provided.
  */
 const Close = component("ToastClose", (props: ToastCloseProps, children) =>
   Effect.gen(function* () {
@@ -622,7 +618,7 @@ const Close = component("ToastClose", (props: ToastCloseProps, children) =>
         onPointerDown: handlePointerDown,
         onClick: ctx.dismiss,
       },
-      children ?? [],
+      children ?? "\u00d7",
     );
   }),
 );
@@ -641,13 +637,21 @@ const Close = component("ToastClose", (props: ToastCloseProps, children) =>
  * - Configurable max visible toasts
  * - ARIA live regions for accessibility
  * - Action buttons with callbacks
+ * - Template-based rendering - components read from ToastItemCtx when no children provided
  *
  * @example
  * ```ts
- * // Wrap app in Provider
+ * // Wrap app in Provider with custom template
  * Toast.Provider({ position: "bottom-right" }, [
  *   App(),
- *   Toast.Viewport({}),
+ *   Toast.Viewport({},
+ *     Toast.Root({ class: "toast-root" }, [
+ *       Toast.Title({ class: "toast-title" }),
+ *       Toast.Description({ class: "toast-description" }),
+ *       Toast.Action({ class: "toast-action" }),
+ *       Toast.Close({ class: "toast-close" }),
+ *     ])
+ *   ),
  * ])
  *
  * // In a component, add a toast

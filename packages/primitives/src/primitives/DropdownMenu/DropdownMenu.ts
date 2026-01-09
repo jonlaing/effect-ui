@@ -32,10 +32,8 @@ export interface DropdownMenuContext {
   readonly toggle: () => Effect.Effect<void>;
   /** Reference to the trigger element */
   readonly triggerRef: ElementRef<HTMLButtonElement>;
-  /** Unique ID for the content */
-  readonly contentId: string;
-  /** Unique ID for the trigger */
-  readonly triggerId: string;
+  /** Reference to the content element */
+  readonly contentRef: ElementRef<HTMLDivElement>;
 }
 
 /**
@@ -64,10 +62,8 @@ export interface DropdownMenuSubContext {
   readonly scheduleClose: () => void;
   /** Reference to the SubTrigger element */
   readonly triggerRef: ElementRef<HTMLDivElement>;
-  /** Unique ID for the submenu content */
-  readonly contentId: string;
-  /** Unique ID for the SubTrigger */
-  readonly triggerId: string;
+  /** Reference to the submenu content element */
+  readonly contentRef: ElementRef<HTMLDivElement>;
 }
 
 // ============================================================================
@@ -141,8 +137,7 @@ const Root = (
     );
 
     const triggerRef = yield* Element.ref<HTMLButtonElement>();
-    const contentId = yield* UniqueId.make("menu-content");
-    const triggerId = yield* UniqueId.make("menu-trigger");
+    const contentRef = yield* Element.ref<HTMLDivElement>();
 
     const setOpenState = (newValue: boolean) =>
       Effect.gen(function* () {
@@ -164,8 +159,7 @@ const Root = (
           yield* setOpenState(!current);
         }),
       triggerRef,
-      contentId,
-      triggerId,
+      contentRef,
     };
 
     return yield* $.div(
@@ -198,6 +192,8 @@ const Trigger = component(
     Effect.gen(function* () {
       const ctx = yield* DropdownMenuCtx;
 
+      const triggerId = yield* UniqueId.make("menu-trigger");
+
       // Normalize disabled prop
       const disabled = Readable.of(props.disabled ?? false);
 
@@ -219,26 +215,19 @@ const Trigger = component(
               event.preventDefault();
               yield* ctx.open();
               // Focus first item after menu opens
-              setTimeout(() => {
-                const content = document.getElementById(ctx.contentId);
-                const firstItem = content?.querySelector(
-                  "[data-menu-item]:not([data-disabled])",
-                ) as HTMLElement;
-                firstItem?.focus();
-              }, 0);
+              yield* ctx.contentRef.pipe(
+                Element.focusFirst("[data-menu-item]:not([data-disabled])"),
+                Effect.catchAll(() => Effect.void),
+              );
               break;
             case "ArrowUp":
               event.preventDefault();
               yield* ctx.open();
               // Focus last item after menu opens
-              setTimeout(() => {
-                const content = document.getElementById(ctx.contentId);
-                const items = content?.querySelectorAll(
-                  "[data-menu-item]:not([data-disabled])",
-                );
-                const lastItem = items?.[items.length - 1] as HTMLElement;
-                lastItem?.focus();
-              }, 0);
+              yield* ctx.contentRef.pipe(
+                Element.focusLast("[data-menu-item]:not([data-disabled])"),
+                Effect.catchAll(() => Effect.void),
+              );
               break;
           }
         });
@@ -246,12 +235,17 @@ const Trigger = component(
       return yield* $.button(
         {
           ref: ctx.triggerRef,
-          id: ctx.triggerId,
+          id: triggerId,
           class: props.class,
           type: "button",
           "aria-haspopup": "menu",
           "aria-expanded": ariaExpanded,
-          "aria-controls": ctx.contentId,
+          "aria-controls": Effect.runSync(
+            ctx.contentRef.pipe(
+              Element.getId,
+              Effect.catchAll(() => Effect.succeed("")),
+            ),
+          ),
           "data-state": dataState,
           "data-disabled": dataDisabled,
           "data-menu-trigger": "",
@@ -300,6 +294,8 @@ const Content = component(
     Effect.gen(function* () {
       const ctx = yield* DropdownMenuCtx;
 
+      const contentId = yield* UniqueId.make("menu-content");
+
       // Normalize positioning props
       const side = Readable.of(props.side ?? "bottom");
       const align = Readable.of(props.align ?? "start");
@@ -308,164 +304,121 @@ const Content = component(
 
       const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
 
-      // Portal is always rendered, but the content inside uses `when` for animations.
-      // This ensures animations apply to the actual visible content, not a placeholder.
-      //
-      // We use onBeforeEnter to measure and position the content after DOM insertion
-      // but before animation starts. This avoids using CSS transform for positioning,
-      // which would conflict with transform-based animations.
+      // Click outside handler
+      yield* onClickOutside([ctx.triggerRef, ctx.contentRef], () =>
+        ctx.close(),
+      );
 
-      // Positioning context - set in onTrue, used in positionAndReveal
-      let positioningContext: {
-        triggerEl: HTMLButtonElement | null;
-        side: "top" | "bottom" | "left" | "right";
-        align: "start" | "center" | "end";
-        sideOffset: number;
-      } | null = null;
+      // Keyboard navigation - created at component level
+      const keyboardNav = yield* createKeyboardNav({
+        selector: "[data-menu-item]:not([data-disabled])",
+        orientation: "vertical",
+        loop,
+        onActivate: (el) => el.pipe(Element.click, Effect.ignore),
+        onEscape: () =>
+          ctx
+            .close()
+            .pipe(
+              Effect.andThen(ctx.triggerRef.pipe(Element.focus, Effect.ignore)),
+            ),
+      });
 
-      // Helper to position and reveal the element
-      const positionAndReveal = (el: HTMLElement) => {
-        if (positioningContext?.triggerEl) {
-          // Measure content dimensions (element is in DOM but hidden)
-          const contentRect = el.getBoundingClientRect();
+      const handleKeyDown = (event: KeyboardEvent) =>
+        Effect.gen(function* () {
+          // Tab closes menu without preventing default
+          if (event.key === "Tab") {
+            yield* ctx.close();
+            return;
+          }
+          yield* keyboardNav(event);
+        });
 
-          // Calculate final position using content dimensions
-          const anchorRect =
-            positioningContext.triggerEl.getBoundingClientRect();
-          const { top, left } = calculatePosition(
-            anchorRect,
-            positioningContext.side,
-            positioningContext.align,
-            positioningContext.sideOffset,
-            0,
-            contentRect.width,
-            contentRect.height,
+      // Helper to position the content relative to trigger
+      const setPosition = (el: Effect.Effect<HTMLElement>) =>
+        Effect.gen(function* () {
+          const currentSide = yield* side.get;
+          const currentAlign = yield* align.get;
+          const currentSideOffset = yield* sideOffset.get;
+
+          const positionStyle = yield* ctx.triggerRef.pipe(
+            Element.getBoundingClientRect,
+            Effect.map((anchorRect) => {
+              // For menus, we need to measure content for proper positioning
+              // Use the anchorRect dimensions for initial positioning
+              const { top, left } = calculatePosition(
+                anchorRect,
+                currentSide,
+                currentAlign,
+                currentSideOffset,
+                0,
+                0, // Width will be auto
+                0, // Height will be auto
+              );
+
+              return {
+                top: `${top}px`,
+                left: `${left}px`,
+                minWidth: `${anchorRect.width}px`,
+                opacity: "",
+                animation: "none",
+              };
+            }),
           );
 
-          // Apply final position
-          el.style.top = `${top}px`;
-          el.style.left = `${left}px`;
-          el.style.minWidth = `${anchorRect.width}px`;
-        }
+          return yield* el.pipe(Element.setStyles(positionStyle));
+        });
 
-        // Clean up
-        positioningContext = null;
-
-        // Reveal: clear opacity and animation suppression to allow CSS/JS animations
-        el.style.opacity = "";
-        el.style.animation = "";
-      };
-
+      // Portal is always rendered, but the content inside uses `when` for animations.
       return yield* Portal(() =>
         when(ctx.isOpen, {
           onTrue: () =>
-            Effect.gen(function* () {
-              const triggerEl = Element.getUnsafe(ctx.triggerRef);
-
-              // Get current positioning values
-              const currentSide = yield* side.get;
-              const currentAlign = yield* align.get;
-              const currentSideOffset = yield* sideOffset.get;
-
-              const keyboardNav = yield* createKeyboardNav({
-                selector: "[data-menu-item]:not([data-disabled])",
-                orientation: "vertical",
-                loop,
-                onActivate: (el) => Effect.sync(() => el.click()),
-                onEscape: () =>
-                  Effect.gen(function* () {
-                    yield* ctx.close();
-                    yield* ctx.triggerRef.pipe(Element.focus, Effect.ignore);
-                  }),
-              });
-
-              const handleKeyDown = (event: KeyboardEvent) =>
-                Effect.gen(function* () {
-                  // Tab closes menu without preventing default
-                  if (event.key === "Tab") {
-                    yield* ctx.close();
-                    return;
-                  }
-                  yield* keyboardNav(event);
-                });
-
-              // Start hidden (opacity: 0) - will be positioned and revealed after DOM insertion
-              // Using opacity instead of visibility for better animation compatibility
-              // Also suppress any default CSS animations until we're ready
-              const contentEl = yield* $.div(
-                {
-                  id: ctx.contentId,
-                  class: props.class,
-                  role: "menu",
-                  "aria-labelledby": ctx.triggerId,
-                  "data-state": dataState,
-                  "data-side": currentSide,
-                  "data-align": currentAlign,
-                  "data-menu-content": "",
-                  tabIndex: -1,
-                  style: {
-                    position: "fixed",
-                    opacity: "0",
-                    animation: "none",
-                  },
-                  onKeyDown: handleKeyDown,
+            $.div(
+              {
+                ref: ctx.contentRef,
+                id: contentId,
+                class: props.class,
+                role: "menu",
+                "aria-labelledby": Effect.runSync(
+                  ctx.triggerRef.pipe(
+                    Element.getId,
+                    Effect.catchAll(() => Effect.succeed("")),
+                  ),
+                ),
+                "data-state": dataState,
+                "data-side": side,
+                "data-align": align,
+                "data-menu-content": "",
+                tabIndex: -1,
+                style: {
+                  position: "fixed",
+                  opacity: 0,
                 },
-                children ?? [],
-              );
-
-              // Click outside handler
-              yield* onClickOutside([ctx.triggerRef, contentEl], () =>
-                ctx.close(),
-              );
-
-              // Store positioning context for onBeforeEnter
-              positioningContext = {
-                triggerEl,
-                side: currentSide,
-                align: currentAlign,
-                sideOffset: currentSideOffset,
-              };
-
-              return contentEl;
-            }),
+                onKeyDown: handleKeyDown,
+              },
+              children ?? [],
+            ),
           onFalse: () => $.div({ style: { display: "none" } }),
           animate: props.animate
             ? {
                 ...props.animate,
-                onBeforeEnter: (el) =>
-                  el.pipe(
-                    Element.tap(positionAndReveal),
-                    Element.tapEffect(
-                      () => props.animate?.onBeforeEnter?.(el) ?? Effect.void,
-                    ),
-                  ),
+                onBeforeEnter: (el) => el.pipe(setPosition, Effect.ignore),
                 onEnter: (el) =>
                   el.pipe(
-                    // Suppress any default CSS animations after our animation finishes
-                    // to prevent them from restarting when the enter class is removed
-                    Element.setStyles({ animation: "none" }),
-                    // Focus first item on open
+                    Element.setStyles({ animation: "" }),
                     Element.focusFirst("[data-menu-item]:not([data-disabled])"),
                     Element.tapEffect(
                       () => props.animate?.onEnter?.(el) ?? Effect.void,
                     ),
-                  ),
-                onBeforeExit: (el) =>
-                  el.pipe(
-                    // Re-enable animations so exit animation can run
-                    Element.setStyles({ animation: "" }),
-                    Element.tapEffect(
-                      () => props.animate?.onBeforeExit?.(el) ?? Effect.void,
-                    ),
+                    Effect.ignore,
                   ),
               }
             : {
-                // Minimal animation config just to trigger positioning via onBeforeEnter
-                onBeforeEnter: (el) => el.pipe(Element.tap(positionAndReveal)),
-                // Focus first item on open
+                onBeforeEnter: (el) => el.pipe(setPosition, Effect.ignore),
                 onEnter: (el) =>
                   el.pipe(
+                    Element.setStyles({ animation: "" }),
                     Element.focusFirst("[data-menu-item]:not([data-disabled])"),
+                    Effect.ignore,
                   ),
               },
         }),
@@ -857,8 +810,7 @@ const Sub = (
     );
 
     const triggerRef = yield* Element.ref<HTMLDivElement>();
-    const contentId = yield* UniqueId.make("submenu-content");
-    const triggerId = yield* UniqueId.make("submenu-trigger");
+    const contentRef = yield* Element.ref<HTMLDivElement>();
 
     // Shared close timeout - managed at Sub level so both SubTrigger and SubContent can access it
     let closeTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -896,8 +848,7 @@ const Sub = (
       cancelClose,
       scheduleClose,
       triggerRef,
-      contentId,
-      triggerId,
+      contentRef,
     };
 
     return yield* $.div(
@@ -929,6 +880,8 @@ const SubTrigger = component(
   (props: DropdownMenuSubTriggerProps, children) =>
     Effect.gen(function* () {
       const subCtx = yield* DropdownMenuSubCtx;
+
+      const triggerId = yield* UniqueId.make("submenu-trigger");
 
       // Normalize disabled prop
       const disabled = Readable.of(props.disabled ?? false);
@@ -965,13 +918,10 @@ const SubTrigger = component(
             event.stopPropagation();
             yield* subCtx.open();
             // Focus first item in submenu
-            setTimeout(() => {
-              const content = document.getElementById(subCtx.contentId);
-              const firstItem = content?.querySelector(
-                "[data-menu-item]:not([data-disabled])",
-              ) as HTMLElement;
-              firstItem?.focus();
-            }, 0);
+            yield* subCtx.contentRef.pipe(
+              Element.focusFirst("[data-menu-item]:not([data-disabled])"),
+              Effect.catchAll(() => Effect.void),
+            );
           }
         });
 
@@ -991,14 +941,19 @@ const SubTrigger = component(
       return yield* $.div(
         {
           ref: subCtx.triggerRef,
-          id: subCtx.triggerId,
+          id: triggerId,
           class: props.class,
           role: "menuitem",
           "aria-haspopup": "menu",
           "aria-expanded": subCtx.isOpen.map((open) =>
             open ? "true" : "false",
           ),
-          "aria-controls": subCtx.contentId,
+          "aria-controls": Effect.runSync(
+            subCtx.contentRef.pipe(
+              Element.getId,
+              Effect.catchAll(() => Effect.succeed("")),
+            ),
+          ),
           "data-state": dataState,
           "data-disabled": dataDisabled,
           "data-menu-item": "",
@@ -1046,208 +1001,152 @@ const SubContent = component(
       const rootCtx = yield* DropdownMenuCtx;
       const subCtx = yield* DropdownMenuSubCtx;
 
+      const contentId = yield* UniqueId.make("submenu-content");
+
       // Normalize sideOffset prop
       const sideOffset = Readable.of(props.sideOffset ?? 0);
       const loop = props.loop ?? true;
 
       const dataState = subCtx.isOpen.map((open) => (open ? "open" : "closed"));
 
-      // Portal is always rendered, but the content inside uses `when` for animations.
-      // This ensures animations apply to the actual visible content, not a placeholder.
-      //
-      // We use onBeforeEnter to measure and position the content after DOM insertion
-      // but before animation starts. This avoids using CSS transform for positioning,
-      // which would conflict with transform-based animations.
+      // Mouse enter/leave handlers
+      const handleMouseEnter = () =>
+        Effect.sync(() => {
+          subCtx.cancelClose();
+        });
 
-      // Positioning context - set in onTrue, used in positionAndReveal
-      let positioningContext: {
-        triggerEl: HTMLDivElement | null;
-        sideOffset: number;
-      } | null = null;
+      const handleMouseLeave = (event: MouseEvent) =>
+        Effect.sync(() => {
+          const contentEl = document.getElementById(contentId);
+          const relatedTarget = event.relatedTarget;
 
-      // Helper to position and reveal the element
-      const positionAndReveal = (el: HTMLElement) => {
-        if (positioningContext?.triggerEl) {
-          // Measure content dimensions (element is in DOM but hidden)
-          const contentRect = el.getBoundingClientRect();
+          // Don't schedule close if moving to a child element
+          if (
+            contentEl &&
+            relatedTarget instanceof Node &&
+            contentEl.contains(relatedTarget)
+          ) {
+            return;
+          }
 
-          // Calculate final position using content dimensions
-          const anchorRect =
-            positioningContext.triggerEl.getBoundingClientRect();
-          const { top, left } = calculatePosition(
-            anchorRect,
-            "right",
-            "start",
-            positioningContext.sideOffset,
-            0,
-            contentRect.width,
-            contentRect.height,
+          // Don't schedule close if moving to a nested submenu content
+          if (
+            relatedTarget instanceof HTMLElement &&
+            (relatedTarget.hasAttribute("data-menu-subcontent") ||
+              relatedTarget.closest("[data-menu-subcontent]"))
+          ) {
+            return;
+          }
+
+          subCtx.scheduleClose();
+        });
+
+      // Keyboard navigation - created at component level
+      const keyboardNav = yield* createKeyboardNav({
+        selector: "[data-menu-item]:not([data-disabled])",
+        orientation: "vertical",
+        loop,
+        onActivate: (el) =>
+          // Don't activate subtriggers
+          Effect.unlessEffect(
+            el.pipe(Element.click, Effect.ignore),
+            el.pipe(Element.hasAttribute("data-menu-subtrigger")),
+          ),
+        onEscape: () =>
+          subCtx
+            .close()
+            .pipe(
+              Effect.andThen(
+                subCtx.triggerRef.pipe(Element.focus, Effect.ignore),
+              ),
+            ),
+      });
+
+      const handleKeyDown = (event: KeyboardEvent) =>
+        Effect.gen(function* () {
+          // ArrowLeft closes submenu and returns to parent
+          if (event.key === "ArrowLeft") {
+            event.preventDefault();
+            event.stopPropagation();
+            yield* subCtx.close();
+            yield* subCtx.triggerRef.pipe(Element.focus, Effect.ignore);
+            return;
+          }
+
+          // Tab closes entire menu tree
+          if (event.key === "Tab") {
+            yield* subCtx.close();
+            yield* rootCtx.close();
+            return;
+          }
+
+          yield* keyboardNav(event);
+        });
+
+      // Helper to position the content relative to trigger
+      const setPosition = (el: Effect.Effect<HTMLElement>) =>
+        Effect.gen(function* () {
+          const currentSideOffset = yield* sideOffset.get;
+          const positionStyle = yield* subCtx.triggerRef.pipe(
+            Element.getBoundingClientRect,
+            Effect.map((rect) => ({
+              position: "fixed",
+              top: `${rect.top}px`,
+              left: `${rect.right + currentSideOffset}px`,
+            })),
           );
 
-          // Apply final position
-          el.style.top = `${top}px`;
-          el.style.left = `${left}px`;
-        }
+          return yield* el.pipe(Element.setStyles(positionStyle));
+        });
 
-        // Clean up
-        positioningContext = null;
-
-        // Reveal: clear opacity and animation suppression to allow CSS/JS animations
-        el.style.opacity = "";
-        el.style.animation = "";
-      };
-
+      // Portal is always rendered, but the content inside uses `when` for animations.
       return yield* Portal(() =>
         when(subCtx.isOpen, {
           onTrue: () =>
-            Effect.gen(function* () {
-              const triggerEl = Element.getUnsafe(subCtx.triggerRef);
-
-              // Get current sideOffset value
-              const currentSideOffset = yield* sideOffset.get;
-
-              const handleMouseEnter = () =>
-                Effect.sync(() => {
-                  subCtx.cancelClose(); // Cancel shared close timeout
-                });
-
-              const handleMouseLeave = (event: MouseEvent) =>
-                Effect.sync(() => {
-                  const contentEl = document.getElementById(subCtx.contentId);
-                  const relatedTarget = event.relatedTarget;
-
-                  // Don't schedule close if moving to a child element
-                  if (
-                    contentEl &&
-                    relatedTarget instanceof Node &&
-                    contentEl.contains(relatedTarget)
-                  ) {
-                    return;
-                  }
-
-                  // Don't schedule close if moving to a nested submenu content (rendered via Portal)
-                  if (
-                    relatedTarget instanceof HTMLElement &&
-                    (relatedTarget.hasAttribute("data-menu-subcontent") ||
-                      relatedTarget.closest("[data-menu-subcontent]"))
-                  ) {
-                    return;
-                  }
-
-                  subCtx.scheduleClose(); // Use shared close timeout
-                });
-
-              const keyboardNav = yield* createKeyboardNav({
-                selector: "[data-menu-item]:not([data-disabled])",
-                orientation: "vertical",
-                loop,
-                onActivate: (el) =>
-                  Effect.sync(() => {
-                    // Don't activate subtriggers (they open on ArrowRight/Enter via their own handler)
-                    if (!el.hasAttribute("data-menu-subtrigger")) {
-                      el.click();
-                    }
-                  }),
-                onEscape: () =>
-                  Effect.gen(function* () {
-                    yield* subCtx.close();
-                    yield* subCtx.triggerRef.pipe(Element.focus, Effect.ignore);
-                  }),
-              });
-
-              const handleKeyDown = (event: KeyboardEvent) =>
-                Effect.gen(function* () {
-                  // ArrowLeft closes submenu and returns to parent
-                  if (event.key === "ArrowLeft") {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    yield* subCtx.close();
-                    yield* subCtx.triggerRef.pipe(Element.focus, Effect.ignore);
-                    return;
-                  }
-
-                  // Tab closes entire menu tree
-                  if (event.key === "Tab") {
-                    yield* subCtx.close();
-                    yield* rootCtx.close();
-                    return;
-                  }
-
-                  yield* keyboardNav(event);
-                });
-
-              // Start hidden (opacity: 0) - will be positioned and revealed after DOM insertion
-              // Using opacity instead of visibility for better animation compatibility
-              // Also suppress any default CSS animations until we're ready
-              const contentEl = yield* $.div(
-                {
-                  id: subCtx.contentId,
-                  class: props.class,
-                  role: "menu",
-                  "aria-labelledby": subCtx.triggerId,
-                  "data-state": dataState,
-                  "data-side": "right",
-                  "data-menu-content": "",
-                  "data-menu-subcontent": "",
-                  tabIndex: -1,
-                  style: {
-                    position: "fixed",
-                    opacity: "0",
-                    animation: "none",
-                  },
-                  onMouseEnter: handleMouseEnter,
-                  onMouseLeave: handleMouseLeave,
-                  onKeyDown: handleKeyDown,
-                },
-                children ?? [],
-              );
-
-              // Store positioning context for onBeforeEnter
-              positioningContext = {
-                triggerEl,
-                sideOffset: currentSideOffset,
-              };
-
-              return contentEl;
-            }),
+            $.div(
+              {
+                id: contentId,
+                class: props.class,
+                role: "menu",
+                "aria-labelledby": Effect.runSync(
+                  subCtx.triggerRef.pipe(
+                    Element.getId,
+                    Effect.catchAll(() => Effect.succeed("")),
+                  ),
+                ),
+                ref: subCtx.contentRef,
+                "data-state": dataState,
+                "data-side": "right",
+                "data-menu-content": "",
+                "data-menu-subcontent": "",
+                tabIndex: -1,
+                onMouseEnter: handleMouseEnter,
+                onMouseLeave: handleMouseLeave,
+                onKeyDown: handleKeyDown,
+              },
+              children ?? [],
+            ),
           onFalse: () => $.div({ style: { display: "none" } }),
           animate: props.animate
             ? {
                 ...props.animate,
-                onBeforeEnter: (el) =>
-                  el.pipe(
-                    Element.tap(positionAndReveal),
-                    Element.tapEffect(
-                      () => props.animate?.onBeforeEnter?.(el) ?? Effect.void,
-                    ),
-                  ),
+                onBeforeEnter: (el) => el.pipe(setPosition, Effect.ignore),
                 onEnter: (el) =>
                   el.pipe(
-                    // Suppress any default CSS animations after our animation finishes
-                    // to prevent them from restarting when the enter class is removed
-                    Element.setStyles({ animation: "none" }),
-                    // Focus first item on open
                     Element.focusFirst("[data-menu-item]:not([data-disabled])"),
                     Element.tapEffect(
                       () => props.animate?.onEnter?.(el) ?? Effect.void,
                     ),
-                  ),
-                onBeforeExit: (el) =>
-                  el.pipe(
-                    // Re-enable animations so exit animation can run
-                    Element.setStyles({ animation: "" }),
-                    Element.tapEffect(
-                      () => props.animate?.onBeforeExit?.(el) ?? Effect.void,
-                    ),
+                    Effect.ignore,
                   ),
               }
             : {
-                // Minimal animation config just to trigger positioning via onBeforeEnter
-                onBeforeEnter: (el) => el.pipe(Element.tap(positionAndReveal)),
-                // Focus first item on open
+                onBeforeEnter: (el) => el.pipe(setPosition, Effect.ignore),
                 onEnter: (el) =>
                   el.pipe(
+                    setPosition,
                     Element.focusFirst("[data-menu-item]:not([data-disabled])"),
+                    Effect.ignore,
                   ),
               },
         }),

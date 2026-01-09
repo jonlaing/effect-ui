@@ -118,9 +118,6 @@ export const Checkbox = component("Checkbox", (props: CheckboxProps) =>
     const dataDisabled = disabled.map((d) => (d ? "" : undefined));
     const ariaRequired = required.map((r) => (r ? "true" : undefined));
 
-    // The indicator shows the check/indeterminate mark
-    const indicator = $.span({ "data-checkbox-indicator": "" });
-
     return yield* $.button(
       {
         type: "button",
@@ -136,7 +133,7 @@ export const Checkbox = component("Checkbox", (props: CheckboxProps) =>
         value: props.value ?? "on",
         onClick: handleClick,
       },
-      [indicator],
+      $.span({ "data-checkbox-indicator": "" }),
     );
   }),
 );

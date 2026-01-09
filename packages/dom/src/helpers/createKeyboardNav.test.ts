@@ -258,10 +258,12 @@ describe("createKeyboardNav", () => {
               selector: "[data-nav-item]",
               orientation: "horizontal",
               onFocus: (el, idx) =>
-                Effect.sync(() => {
-                  focusedElement = el;
-                  focusedIndex = idx;
-                }),
+                Effect.flatMap(el, (e) =>
+                  Effect.sync(() => {
+                    focusedElement = e;
+                    focusedIndex = idx;
+                  }),
+                ),
             });
 
             yield* handleKeyDown(
@@ -294,10 +296,12 @@ describe("createKeyboardNav", () => {
               selector: "[data-nav-item]",
               orientation: "horizontal",
               onActivate: (el, idx) =>
-                Effect.sync(() => {
-                  activatedElement = el;
-                  activatedIndex = idx;
-                }),
+                Effect.flatMap(el, (e) =>
+                  Effect.sync(() => {
+                    activatedElement = e;
+                    activatedIndex = idx;
+                  }),
+                ),
             });
 
             yield* handleKeyDown(
@@ -324,9 +328,11 @@ describe("createKeyboardNav", () => {
               selector: "[data-nav-item]",
               orientation: "horizontal",
               onActivate: (el) =>
-                Effect.sync(() => {
-                  activatedElement = el;
-                }),
+                Effect.flatMap(el, (e) =>
+                  Effect.sync(() => {
+                    activatedElement = e;
+                  }),
+                ),
             });
 
             yield* handleKeyDown(
@@ -640,10 +646,12 @@ describe("createKeyboardNav", () => {
               typeahead: {
                 getText: (el) => el.textContent ?? "",
                 onMatch: (el, idx) =>
-                  Effect.sync(() => {
-                    matchedElement = el;
-                    matchedIndex = idx;
-                  }),
+                  Effect.flatMap(el, (e) =>
+                    Effect.sync(() => {
+                      matchedElement = e;
+                      matchedIndex = idx;
+                    }),
+                  ),
               },
             });
 
@@ -992,10 +1000,12 @@ describe("createKeyboardNav", () => {
               selector: "[data-nav-item]",
               orientation: "vertical",
               onFocus: (el, idx) =>
-                Effect.sync(() => {
-                  focusedElement = el;
-                  focusedIndex = idx;
-                }),
+                Effect.flatMap(el, (e) =>
+                  Effect.sync(() => {
+                    focusedElement = e;
+                    focusedIndex = idx;
+                  }),
+                ),
               hierarchy: {
                 getParent: (el) => {
                   const parentId = el.getAttribute("data-parent");

@@ -40,8 +40,8 @@ export interface NavigationMenuContext {
   readonly orientation: Readable.Readable<NavigationMenuOrientation>;
   /** Reference to viewport element */
   readonly viewportRef: ElementRef<HTMLDivElement>;
-  /** Map of item IDs to their trigger elements */
-  readonly triggerRefs: Map<string, HTMLButtonElement>;
+  /** Map of item IDs to their trigger refs */
+  readonly triggerRefs: Map<string, ElementRef<HTMLButtonElement>>;
 }
 
 /**
@@ -119,7 +119,7 @@ const Root = (
 
     // Refs and maps
     const viewportRef = yield* Element.ref<HTMLDivElement>();
-    const triggerRefs = new Map<string, HTMLButtonElement>();
+    const triggerRefs = new Map<string, ElementRef<HTMLButtonElement>>();
 
     // Delay state
     const hasInteracted = MutableRef.make(false);
@@ -222,10 +222,16 @@ const List = component(
 
       const handleKeyDown = (event: KeyboardEvent) =>
         Effect.gen(function* () {
-          const triggers = Array.from(ctx.triggerRefs.values());
-          const currentIndex = triggers.findIndex(
-            (el) => el === document.activeElement,
-          );
+          const triggerRefs = Array.from(ctx.triggerRefs.values());
+
+          // Find current index by checking each element
+          let currentIndex = -1;
+          for (let i = 0; i < triggerRefs.length; i++) {
+            if (Element.getUnsafe(triggerRefs[i]) === document.activeElement) {
+              currentIndex = i;
+              break;
+            }
+          }
 
           if (currentIndex === -1) return;
 
@@ -237,13 +243,13 @@ const List = component(
           if (event.key === prevKey) {
             event.preventDefault();
             const prevIndex =
-              currentIndex === 0 ? triggers.length - 1 : currentIndex - 1;
-            triggers[prevIndex]?.focus();
+              currentIndex === 0 ? triggerRefs.length - 1 : currentIndex - 1;
+            yield* triggerRefs[prevIndex].pipe(Element.focus, Effect.ignore);
           } else if (event.key === nextKey) {
             event.preventDefault();
             const nextIndex =
-              currentIndex === triggers.length - 1 ? 0 : currentIndex + 1;
-            triggers[nextIndex]?.focus();
+              currentIndex === triggerRefs.length - 1 ? 0 : currentIndex + 1;
+            yield* triggerRefs[nextIndex].pipe(Element.focus, Effect.ignore);
           }
         });
 
@@ -362,7 +368,17 @@ const Trigger = component(
           }
         });
 
-      const buttonElement = yield* $.button(
+      // Register trigger ref before rendering
+      ctx.triggerRefs.set(itemCtx.itemId, itemCtx.triggerRef);
+
+      // Cleanup on unmount
+      yield* Effect.addFinalizer(() =>
+        Effect.sync(() => {
+          ctx.triggerRefs.delete(itemCtx.itemId);
+        }),
+      );
+
+      return yield* $.button(
         {
           ref: itemCtx.triggerRef,
           class: props.class,
@@ -379,18 +395,6 @@ const Trigger = component(
         },
         children ?? [],
       );
-
-      // Register trigger ref
-      ctx.triggerRefs.set(itemCtx.itemId, buttonElement);
-
-      // Cleanup on unmount
-      yield* Effect.addFinalizer(() =>
-        Effect.sync(() => {
-          ctx.triggerRefs.delete(itemCtx.itemId);
-        }),
-      );
-
-      return buttonElement;
     }),
 );
 
@@ -436,8 +440,10 @@ const Content = component(
             yield* props.onEscapeKeyDown?.(event) ?? Effect.void;
             yield* ctx.setActiveItem(null);
             // Return focus to trigger
-            const trigger = ctx.triggerRefs.get(itemCtx.itemId);
-            trigger?.focus();
+            const triggerRef = ctx.triggerRefs.get(itemCtx.itemId);
+            if (triggerRef) {
+              yield* triggerRef.pipe(Element.focus, Effect.ignore);
+            }
           }
         });
 
@@ -509,14 +515,16 @@ const Indicator = component(
 
       const updateIndicatorPositionEffect = (activeId: string | null) =>
         Effect.gen(function* () {
-          const trigger = ctx.triggerRefs.get(activeId ?? "");
+          const triggerRef = ctx.triggerRefs.get(activeId ?? "");
 
-          if (!trigger) {
+          if (!triggerRef) {
             return yield* Effect.fail("No active trigger found");
           }
 
+          const triggerRect = yield* triggerRef.pipe(
+            Element.getBoundingClientRect,
+          );
           const rootElement = yield* Element.getParent(indicatorRef);
-          const triggerRect = trigger.getBoundingClientRect();
           const rootRect = rootElement.getBoundingClientRect();
 
           return yield* indicatorRef.pipe(

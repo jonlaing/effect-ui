@@ -54,8 +54,16 @@ export const Default: Story = {
         "Show Toast",
       );
 
-      // Create the viewport - it will be populated when toasts are added
-      yield* Toast.Viewport({});
+      // Create the viewport with a custom template
+      yield* Toast.Viewport(
+        { class: "toast-viewport" },
+        Toast.Root({ class: "toast-root" }, [
+          Toast.Title({ class: "toast-title" }),
+          Toast.Description({ class: "toast-description" }),
+          Toast.Action({ class: "toast-action" }),
+          Toast.Close({ class: "toast-close" }),
+        ]),
+      );
 
       const container = document.createElement("div");
       container.className = "toast-story-container";
@@ -164,7 +172,15 @@ export const AllTypes: Story = {
       buttons.appendChild(warningBtn);
       buttons.appendChild(infoBtn);
 
-      yield* Toast.Viewport({});
+      yield* Toast.Viewport(
+        { class: "toast-viewport" },
+        Toast.Root({ class: "toast-root" }, [
+          Toast.Title({ class: "toast-title" }),
+          Toast.Description({ class: "toast-description" }),
+          Toast.Action({ class: "toast-action" }),
+          Toast.Close({ class: "toast-close" }),
+        ]),
+      );
 
       const container = document.createElement("div");
       container.className = "toast-story-container";
@@ -211,7 +227,15 @@ export const WithAction: Story = {
         "Send Message",
       );
 
-      yield* Toast.Viewport({});
+      yield* Toast.Viewport(
+        { class: "toast-viewport" },
+        Toast.Root({ class: "toast-root" }, [
+          Toast.Title({ class: "toast-title" }),
+          Toast.Description({ class: "toast-description" }),
+          Toast.Action({ class: "toast-action" }),
+          Toast.Close({ class: "toast-close" }),
+        ]),
+      );
 
       const container = document.createElement("div");
       container.className = "toast-story-container";
@@ -252,7 +276,15 @@ export const Persistent: Story = {
         "Show Persistent Toast",
       );
 
-      yield* Toast.Viewport({});
+      yield* Toast.Viewport(
+        { class: "toast-viewport" },
+        Toast.Root({ class: "toast-root" }, [
+          Toast.Title({ class: "toast-title" }),
+          Toast.Description({ class: "toast-description" }),
+          Toast.Action({ class: "toast-action" }),
+          Toast.Close({ class: "toast-close" }),
+        ]),
+      );
 
       const container = document.createElement("div");
       container.className = "toast-story-container";
@@ -315,7 +347,15 @@ export const MultipleToasts: Story = {
       buttons.appendChild(addBtn);
       buttons.appendChild(clearBtn);
 
-      yield* Toast.Viewport({});
+      yield* Toast.Viewport(
+        { class: "toast-viewport" },
+        Toast.Root({ class: "toast-root" }, [
+          Toast.Title({ class: "toast-title" }),
+          Toast.Description({ class: "toast-description" }),
+          Toast.Action({ class: "toast-action" }),
+          Toast.Close({ class: "toast-close" }),
+        ]),
+      );
 
       const container = document.createElement("div");
       container.className = "toast-story-container";

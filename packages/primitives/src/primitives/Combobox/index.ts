@@ -1,11 +1,6 @@
 export {
   Combobox,
-  ComboboxCtx,
-  ComboboxItemCtx,
   defaultFilterFn,
-  type ComboboxFilterFn,
-  type ComboboxContext,
-  type ComboboxItemContext,
   type ComboboxRootProps,
   type ComboboxInputProps,
   type ComboboxContentProps,
@@ -16,3 +11,11 @@ export {
   type ComboboxEmptyProps,
   type ComboboxLoadingProps,
 } from "./Combobox.js";
+
+export {
+  ComboboxCtx,
+  ComboboxItemCtx,
+  type ComboboxFilterFn,
+  type ComboboxContext,
+  type ComboboxItemContext,
+} from "./types.js";

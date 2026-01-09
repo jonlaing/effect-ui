@@ -114,13 +114,12 @@ const Root = (
       loop,
     };
 
-    const setValueFromElement = (el: HTMLElement) =>
-      Effect.gen(function* () {
-        const itemValue = el.getAttribute("data-value");
-        if (itemValue) {
-          yield* setValue(itemValue);
-        }
-      });
+    const setValueFromElement = (el: Effect.Effect<HTMLElement>) =>
+      el.pipe(
+        Element.getData("value"),
+        Effect.flatMap(setValue),
+        Effect.ignore,
+      );
 
     // Radio buttons always select on focus (standard behavior)
     const handleKeyDown = yield* createKeyboardNav({

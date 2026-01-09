@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Effect } from "effect";
 import { DOMRendererLive } from "@effex/dom";
-import { Toast, ToastCtx } from "./Toast";
+import { Toast, ToastCtx, ToastItemCtx, type ToastItemContext } from "./Toast";
 
 const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
   Effect.runPromise(
@@ -9,6 +9,19 @@ const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
       Effect.provide(DOMRendererLive),
     ) as Effect.Effect<A, never, never>,
   );
+
+// Mock item context for testing individual components
+const mockItemCtx: ToastItemContext = {
+  toast: {
+    id: "test-toast",
+    title: "Test Title",
+    description: "Test Description",
+    type: "default",
+  },
+  dismiss: () => Effect.void,
+  pauseTimer: () => {},
+  resumeTimer: () => {},
+};
 
 describe("Toast", () => {
   beforeEach(() => {
@@ -194,11 +207,12 @@ describe("Toast", () => {
     it("should render with toast-title data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toast.Provider({}, [Toast.Title({}, "Title Text")]);
+          const el = yield* Toast.Title({}, "Title Text").pipe(
+            Effect.provideService(ToastItemCtx, mockItemCtx),
+          );
 
-          const title = el.querySelector("[data-toast-title]");
-          expect(title).not.toBeNull();
-          expect(title?.textContent).toBe("Title Text");
+          expect(el.dataset.toastTitle).toBe("");
+          expect(el.textContent).toBe("Title Text");
         }),
       );
     });
@@ -206,12 +220,23 @@ describe("Toast", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toast.Provider({}, [
-            Toast.Title({ class: "my-title" }, "Title"),
-          ]);
+          const el = yield* Toast.Title({ class: "my-title" }, "Title").pipe(
+            Effect.provideService(ToastItemCtx, mockItemCtx),
+          );
 
-          const title = el.querySelector("[data-toast-title]");
-          expect(title?.className).toBe("my-title");
+          expect(el.className).toBe("my-title");
+        }),
+      );
+    });
+
+    it("should render title from context when no children provided", async () => {
+      await runTest(
+        Effect.gen(function* () {
+          const el = yield* Toast.Title({}).pipe(
+            Effect.provideService(ToastItemCtx, mockItemCtx),
+          );
+
+          expect(el.textContent).toBe("Test Title");
         }),
       );
     });
@@ -221,13 +246,12 @@ describe("Toast", () => {
     it("should render with toast-description data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toast.Provider({}, [
-            Toast.Description({}, "Description text"),
-          ]);
+          const el = yield* Toast.Description({}, "Description text").pipe(
+            Effect.provideService(ToastItemCtx, mockItemCtx),
+          );
 
-          const desc = el.querySelector("[data-toast-description]");
-          expect(desc).not.toBeNull();
-          expect(desc?.textContent).toBe("Description text");
+          expect(el.dataset.toastDescription).toBe("");
+          expect(el.textContent).toBe("Description text");
         }),
       );
     });
@@ -235,12 +259,24 @@ describe("Toast", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toast.Provider({}, [
-            Toast.Description({ class: "my-desc" }, "Description"),
-          ]);
+          const el = yield* Toast.Description(
+            { class: "my-desc" },
+            "Description",
+          ).pipe(Effect.provideService(ToastItemCtx, mockItemCtx));
 
-          const desc = el.querySelector("[data-toast-description]");
-          expect(desc?.className).toBe("my-desc");
+          expect(el.className).toBe("my-desc");
+        }),
+      );
+    });
+
+    it("should render description from context when no children provided", async () => {
+      await runTest(
+        Effect.gen(function* () {
+          const el = yield* Toast.Description({}).pipe(
+            Effect.provideService(ToastItemCtx, mockItemCtx),
+          );
+
+          expect(el.textContent).toBe("Test Description");
         }),
       );
     });

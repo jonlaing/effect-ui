@@ -232,7 +232,7 @@
 }
 
 .context-menu-animate-exit {
-  animation: context-menu-fade-out 150ms ease-in;
+  animation: context-menu-fade-out 300ms ease-in;
 }
 
 @keyframes context-menu-fade-in {

@@ -1,6 +1,6 @@
 import { Context, Effect, Option } from "effect";
 import type { SignalArray } from "@effex/dom";
-import { Readable, Signal } from "@effex/dom";
+import { Readable, Signal, UniqueId } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { component, Derived, createKeyboardNav } from "@effex/dom";
@@ -155,13 +155,6 @@ export interface ToolbarLinkProps {
 }
 
 // ============================================================================
-// Helpers
-// ============================================================================
-
-let itemIdCounter = 0;
-const generateId = () => `toolbar-item-${++itemIdCounter}`;
-
-// ============================================================================
 // Components
 // ============================================================================
 
@@ -194,7 +187,8 @@ const Root = (
       selector: "[data-toolbar-item]:not([data-disabled])",
       orientation,
       loop,
-      onFocus: (el) => (el.id ? activeId.set(el.id) : Effect.void),
+      onFocus: (el) =>
+        el.pipe(Element.getId, Effect.flatMap(activeId.set), Effect.ignore),
     });
 
     return yield* $.div(
@@ -219,7 +213,7 @@ const Button = component(
   (props: ToolbarButtonProps, children) =>
     Effect.gen(function* () {
       const ctx = yield* ToolbarCtx;
-      const id = props.id ?? generateId();
+      const id = props.id ?? (yield* UniqueId.make("toolbar-button"));
 
       // Register on mount
       yield* ctx.rovingTabIndex.items.push(id);
@@ -236,10 +230,7 @@ const Button = component(
       }
 
       const itemDisabled = Readable.of(props.disabled ?? false);
-      const isDisabled = yield* Derived.sync(
-        [ctx.disabled, itemDisabled],
-        ([ctxDisabled, propDisabled]) => ctxDisabled || propDisabled,
-      );
+      const isDisabled = Derived.some([ctx.disabled, itemDisabled]);
 
       const isActive = ctx.rovingTabIndex.activeId.map(
         (activeId) => activeId === id,
@@ -300,7 +291,7 @@ const ToggleItem = component(
     Effect.gen(function* () {
       const ctx = yield* ToolbarCtx;
       const toggleGroupCtx = yield* Effect.serviceOption(ToolbarToggleGroupCtx);
-      const id = props.id ?? generateId();
+      const id = props.id ?? (yield* UniqueId.make("toolbar-item"));
 
       // Register on mount
       yield* ctx.rovingTabIndex.items.push(id);
@@ -344,11 +335,11 @@ const ToggleItem = component(
         ? toggleGroupCtx.value.disabled
         : Readable.of(false);
 
-      const isDisabled = yield* Derived.sync(
-        [ctx.disabled, itemDisabled, groupDisabled],
-        ([ctxDisabled, propDisabled, grpDisabled]) =>
-          ctxDisabled || propDisabled || grpDisabled,
-      );
+      const isDisabled = Derived.some([
+        ctx.disabled,
+        itemDisabled,
+        groupDisabled,
+      ]);
 
       const isActive = ctx.rovingTabIndex.activeId.map(
         (activeId) => activeId === id,
@@ -507,7 +498,7 @@ const Separator = component(
 const Link = component("ToolbarLink", (props: ToolbarLinkProps, children) =>
   Effect.gen(function* () {
     const ctx = yield* ToolbarCtx;
-    const id = props.id ?? generateId();
+    const id = props.id ?? (yield* UniqueId.make("toolbar-link"));
 
     // Register on mount
     yield* ctx.rovingTabIndex.items.push(id);
@@ -524,10 +515,7 @@ const Link = component("ToolbarLink", (props: ToolbarLinkProps, children) =>
     }
 
     const itemDisabled = Readable.of(props.disabled ?? false);
-    const isDisabled = yield* Derived.sync(
-      [ctx.disabled, itemDisabled],
-      ([ctxDisabled, propDisabled]) => ctxDisabled || propDisabled,
-    );
+    const isDisabled = Derived.some([ctx.disabled, itemDisabled]);
 
     const isActive = ctx.rovingTabIndex.activeId.map(
       (activeId) => activeId === id,

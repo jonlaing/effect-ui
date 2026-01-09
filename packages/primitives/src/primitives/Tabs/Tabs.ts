@@ -129,13 +129,12 @@ const List = component("TabsList", (props: TabsListProps, children) =>
   Effect.gen(function* () {
     const ctx = yield* TabsCtx;
 
-    const setValueFromElement = (el: HTMLElement) =>
-      Effect.gen(function* () {
-        const tabValue = el.getAttribute("data-value");
-        if (tabValue) {
-          yield* ctx.setValue(tabValue);
-        }
-      });
+    const setValueFromElement = (el: Effect.Effect<HTMLElement>) =>
+      el.pipe(
+        Element.getData("value"),
+        Effect.flatMap(ctx.setValue),
+        Effect.ignore,
+      );
 
     const handleKeyDown = yield* createKeyboardNav({
       selector: "[data-tabs-trigger]:not([data-disabled])",

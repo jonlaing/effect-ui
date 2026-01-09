@@ -179,28 +179,24 @@ const Root = (
 
     // Methods
     const scrollTo = (position: { x?: number; y?: number }) =>
-      Effect.sync(() => {
-        const el = Element.getUnsafe(scrollableRef);
-        if (el) {
-          el.scrollTo({
-            left: position.x,
-            top: position.y,
-            behavior: "auto",
-          });
-        }
-      });
+      scrollableRef.pipe(
+        Element.scrollTo({
+          left: position.x,
+          top: position.y,
+          behavior: "auto",
+        }),
+        Effect.ignore,
+      );
 
     const scrollBy = (delta: { x?: number; y?: number }) =>
-      Effect.sync(() => {
-        const el = Element.getUnsafe(scrollableRef);
-        if (el) {
-          el.scrollBy({
-            left: delta.x,
-            top: delta.y,
-            behavior: "auto",
-          });
-        }
-      });
+      scrollableRef.pipe(
+        Element.scrollBy({
+          left: delta.x,
+          top: delta.y,
+          behavior: "auto",
+        }),
+        Effect.ignore,
+      );
 
     const updateScrollPosition = (pos: { x: number; y: number }) => {
       Effect.runSync(scrollPosition.set(pos));
@@ -213,6 +209,16 @@ const Root = (
     const updateViewportSize = (size: { width: number; height: number }) => {
       Effect.runSync(viewportSize.set(size));
     };
+
+    const handleMouseEnter = () =>
+      Effect.sync(() => {
+        setIsHovering(true);
+      });
+
+    const handleMouseLeave = () =>
+      Effect.sync(() => {
+        setIsHovering(false);
+      });
 
     // Cleanup
     yield* Effect.addFinalizer(() =>
@@ -238,16 +244,6 @@ const Root = (
       setIsScrolling,
       setIsHovering,
     };
-
-    const handleMouseEnter = () =>
-      Effect.sync(() => {
-        setIsHovering(true);
-      });
-
-    const handleMouseLeave = () =>
-      Effect.sync(() => {
-        setIsHovering(false);
-      });
 
     return yield* $.div(
       {

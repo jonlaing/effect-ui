@@ -47,13 +47,10 @@ const Root = (
     );
 
     // Calculate percentage
-    const percentage: Readable.Readable<number> = yield* Derived.sync(
-      [value],
-      ([v]) => {
-        if (v === null) return 0;
-        return Math.min(100, Math.max(0, (v / max) * 100));
-      },
-    );
+    const percentage = yield* Derived.sync([value], ([v]) => {
+      if (v === null) return 0;
+      return Math.min(100, Math.max(0, (v / max) * 100));
+    });
 
     // Calculate state
     const state: Readable.Readable<ProgressState> = yield* Derived.sync(

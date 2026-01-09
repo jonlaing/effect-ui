@@ -8,7 +8,7 @@ import {
   AttributeNotFound,
   DataAttributeNotFound,
 } from "./ref.js";
-import { toKebabCase } from "../helpers/index.js";
+import { toKebabCase } from "../helpers/strings.js";
 
 /**
  * Element namespace providing the Element type and pipeable DOM manipulation utilities.
@@ -63,6 +63,10 @@ export const Element = {
   // ===========================================================================
   // Querying & Traversal
   // ===========================================================================
+
+  getId: <A extends HTMLElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+  ): Effect.Effect<string, E, R> => Effect.map(self, (el) => el.id),
 
   /**
    * Get the parent element.
@@ -207,20 +211,41 @@ export const Element = {
       Effect.map(self, (el) => el.matches(selector)),
   ),
 
+  contains: dual<
+    (
+      element?: Node | null,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<boolean, NoSuchElementException | E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      element?: Node | null,
+    ) => Effect.Effect<boolean, NoSuchElementException | E, R>
+  >(
+    2,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      element?: Node | null,
+    ): Effect.Effect<boolean, NoSuchElementException | E, R> =>
+      Effect.flatMap(self, (el) =>
+        Effect.fromNullable(element).pipe(
+          Effect.map((child) => el.contains(child)),
+        ),
+      ),
+  ),
+
   // ===========================================================================
   // Styles
   // ===========================================================================
 
   /**
    * Set multiple CSS styles on an element.
-   * Accepts both camelCase and kebab-case property names.
    * Empty string values remove the property.
    *
    * @example
    * ```ts
    * el.pipe(
-   *   Element.setStyles({ opacity: "1", fontSize: "16px" }),  // camelCase
-   *   Element.setStyles({ opacity: "1", "font-size": "16px" }), // kebab-case
+   *   Element.setStyles({ opacity: "1", animation: "none" }),
    *   Element.setStyles({ animation: "" }), // removes animation
    * )
    * ```
@@ -244,11 +269,10 @@ export const Element = {
       Effect.tap(self, (el) =>
         Effect.sync(() => {
           for (const [property, value] of Object.entries(styles)) {
-            const cssProperty = toKebabCase(property);
             if (value === "") {
-              el.style.removeProperty(cssProperty);
+              el.style.removeProperty(toKebabCase(property));
             } else {
-              el.style.setProperty(cssProperty, value);
+              el.style.setProperty(toKebabCase(property), value);
             }
           }
         }),
@@ -257,12 +281,10 @@ export const Element = {
 
   /**
    * Set a single CSS style property.
-   * Accepts both camelCase and kebab-case property names.
    *
    * @example
    * ```ts
-   * el.pipe(Element.setStyle("backgroundColor", "red"))  // camelCase
-   * el.pipe(Element.setStyle("background-color", "red")) // kebab-case
+   * el.pipe(Element.setStyle("opacity", "1"))
    * ```
    */
   setStyle: dual<
@@ -286,11 +308,11 @@ export const Element = {
     ): Effect.Effect<A, E, R> =>
       Effect.tap(self, (el) =>
         Effect.sync(() => {
-          const cssProperty = toKebabCase(property);
+          const kebabProperty = toKebabCase(property);
           if (value === "") {
-            el.style.removeProperty(cssProperty);
+            el.style.removeProperty(kebabProperty);
           } else {
-            el.style.setProperty(cssProperty, value);
+            el.style.setProperty(kebabProperty, value);
           }
         }),
       ),
@@ -298,12 +320,10 @@ export const Element = {
 
   /**
    * Remove a CSS style property.
-   * Accepts both camelCase and kebab-case property names.
    *
    * @example
    * ```ts
    * el.pipe(Element.removeStyle("animation"))
-   * el.pipe(Element.removeStyle("backgroundColor"))
    * ```
    */
   removeStyle: dual<
@@ -323,7 +343,7 @@ export const Element = {
       property: string,
     ): Effect.Effect<A, E, R> =>
       Effect.tap(self, (el) =>
-        Effect.sync(() => el.style.removeProperty(toKebabCase(property))),
+        Effect.sync(() => el.style.removeProperty(property)),
       ),
   ),
 
@@ -456,6 +476,25 @@ export const Element = {
   // Attributes
   // ===========================================================================
 
+  hasAttribute: dual<
+    (
+      name: string,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<boolean, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      name: string,
+    ) => Effect.Effect<boolean, E, R>
+  >(
+    2,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      name: string,
+    ): Effect.Effect<boolean, E, R> =>
+      Effect.map(self, (el) => el.hasAttribute(name)),
+  ),
+
   /**
    * Set an attribute on the element.
    *
@@ -581,16 +620,11 @@ export const Element = {
 
   /**
    * Get an attribute value from the element.
-   * Fails with `AttributeNotFound` if the attribute doesn't exist.
-   * Use `Effect.option` to get `Option<string>` instead of failing.
+   * Fails with AttributeNotFound if the attribute doesn't exist.
    *
    * @example
    * ```ts
-   * // Fails if not found
    * el.pipe(Element.getAttribute("data-id"))
-   *
-   * // Option semantics
-   * el.pipe(Element.getAttribute("data-id"), Effect.option)
    * ```
    */
   getAttribute: dual<
@@ -598,22 +632,23 @@ export const Element = {
       name: string,
     ) => <A extends HTMLElement, E, R>(
       self: Effect.Effect<A, E, R>,
-    ) => Effect.Effect<string, E | AttributeNotFound, R>,
+    ) => Effect.Effect<string, AttributeNotFound | E, R>,
     <A extends HTMLElement, E, R>(
       self: Effect.Effect<A, E, R>,
       name: string,
-    ) => Effect.Effect<string, E | AttributeNotFound, R>
+    ) => Effect.Effect<string, AttributeNotFound | E, R>
   >(
     2,
     <A extends HTMLElement, E, R>(
       self: Effect.Effect<A, E, R>,
       name: string,
-    ): Effect.Effect<string, E | AttributeNotFound, R> =>
+    ): Effect.Effect<string, AttributeNotFound | E, R> =>
       Effect.flatMap(self, (el) => {
         const value = el.getAttribute(name);
-        return value !== null
-          ? Effect.succeed(value)
-          : Effect.fail(new AttributeNotFound({ attribute: name }));
+        if (value === null) {
+          return Effect.fail(new AttributeNotFound({ attribute: name }));
+        }
+        return Effect.succeed(value);
       }),
   ),
 
@@ -680,16 +715,11 @@ export const Element = {
 
   /**
    * Get a data attribute value.
-   * Fails with `DataAttributeNotFound` if the data attribute doesn't exist.
-   * Use `Effect.option` to get `Option<string>` instead of failing.
+   * Fails with DataAttributeNotFound if the data attribute doesn't exist.
    *
    * @example
    * ```ts
-   * // Fails if not found
    * el.pipe(Element.getData("state"))
-   *
-   * // Option semantics
-   * el.pipe(Element.getData("state"), Effect.option)
    * ```
    */
   getData: dual<
@@ -697,22 +727,23 @@ export const Element = {
       key: string,
     ) => <A extends HTMLElement, E, R>(
       self: Effect.Effect<A, E, R>,
-    ) => Effect.Effect<string, E | DataAttributeNotFound, R>,
+    ) => Effect.Effect<string, DataAttributeNotFound | E, R>,
     <A extends HTMLElement, E, R>(
       self: Effect.Effect<A, E, R>,
       key: string,
-    ) => Effect.Effect<string, E | DataAttributeNotFound, R>
+    ) => Effect.Effect<string, DataAttributeNotFound | E, R>
   >(
     2,
     <A extends HTMLElement, E, R>(
       self: Effect.Effect<A, E, R>,
       key: string,
-    ): Effect.Effect<string, E | DataAttributeNotFound, R> =>
+    ): Effect.Effect<string, DataAttributeNotFound | E, R> =>
       Effect.flatMap(self, (el) => {
         const value = el.dataset[key];
-        return value !== undefined
-          ? Effect.succeed(value)
-          : Effect.fail(new DataAttributeNotFound({ key }));
+        if (value === undefined) {
+          return Effect.fail(new DataAttributeNotFound({ key }));
+        }
+        return Effect.succeed(value);
       }),
   ),
 

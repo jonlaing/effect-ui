@@ -25,7 +25,7 @@ const handleHierarchyNavigation = (
   items: HTMLElement[],
   hierarchy: HierarchyOptions,
   onFocus:
-    | ((el: HTMLElement, index: number) => Effect.Effect<void>)
+    | ((el: Effect.Effect<HTMLElement>, index: number) => Effect.Effect<void>)
     | undefined,
 ): Effect.Effect<boolean> =>
   Effect.gen(function* () {
@@ -40,7 +40,8 @@ const handleHierarchyNavigation = (
           e.preventDefault();
           firstChild.value.focus();
           const childIndex = items.indexOf(firstChild.value);
-          yield* onFocus?.(firstChild.value, childIndex) ?? Effect.void;
+          yield* onFocus?.(Effect.succeed(firstChild.value), childIndex) ??
+            Effect.void;
           return true;
         }
       } else {
@@ -64,7 +65,8 @@ const handleHierarchyNavigation = (
           e.preventDefault();
           parent.value.focus();
           const parentIndex = items.indexOf(parent.value);
-          yield* onFocus?.(parent.value, parentIndex) ?? Effect.void;
+          yield* onFocus?.(Effect.succeed(parent.value), parentIndex) ??
+            Effect.void;
           return true;
         }
       }
@@ -84,7 +86,7 @@ const handleStandardNavigation = (
   nextKey: string,
   loop: boolean,
   onFocus:
-    | ((el: HTMLElement, index: number) => Effect.Effect<void>)
+    | ((el: Effect.Effect<HTMLElement>, index: number) => Effect.Effect<void>)
     | undefined,
 ): Effect.Effect<void> =>
   Effect.gen(function* () {
@@ -108,7 +110,7 @@ const handleStandardNavigation = (
     const nextItem = items[nextIndex];
     if (nextItem) {
       nextItem.focus();
-      yield* onFocus?.(nextItem, nextIndex) ?? Effect.void;
+      yield* onFocus?.(Effect.succeed(nextItem), nextIndex) ?? Effect.void;
     }
   });
 
@@ -125,7 +127,7 @@ const handleTypeahead = (
   state: TypeaheadState,
   timeout: number,
   onFocus:
-    | ((el: HTMLElement, index: number) => Effect.Effect<void>)
+    | ((el: Effect.Effect<HTMLElement>, index: number) => Effect.Effect<void>)
     | undefined,
 ): Effect.Effect<void> =>
   Effect.gen(function* () {
@@ -158,8 +160,9 @@ const handleTypeahead = (
 
       if (text.startsWith(currentBuffer)) {
         item.focus();
-        yield* typeahead.onMatch?.(item, checkIndex) ?? Effect.void;
-        yield* onFocus?.(item, checkIndex) ?? Effect.void;
+        yield* typeahead.onMatch?.(Effect.succeed(item), checkIndex) ??
+          Effect.void;
+        yield* onFocus?.(Effect.succeed(item), checkIndex) ?? Effect.void;
         return;
       }
     }
@@ -176,8 +179,8 @@ const handleTypeahead = (
         if (text.startsWith(singleChar)) {
           yield* Ref.set(state.buffer, singleChar);
           item.focus();
-          yield* typeahead.onMatch?.(item, i) ?? Effect.void;
-          yield* onFocus?.(item, i) ?? Effect.void;
+          yield* typeahead.onMatch?.(Effect.succeed(item), i) ?? Effect.void;
+          yield* onFocus?.(Effect.succeed(item), i) ?? Effect.void;
           return;
         }
       }
@@ -203,8 +206,12 @@ export interface TypeaheadOptions {
   /**
    * Called when typeahead matches an item.
    * The matched item will also receive focus.
+   * Takes Effect<HTMLElement> to enable use with Element combinators.
    */
-  onMatch?: (el: HTMLElement, index: number) => Effect.Effect<void>;
+  onMatch?: (
+    el: Effect.Effect<HTMLElement>,
+    index: number,
+  ) => Effect.Effect<void>;
 
   /**
    * Timeout before resetting the search buffer.
@@ -276,14 +283,22 @@ export interface KeyboardNavOptions {
   /**
    * Called when focus moves to an item.
    * Useful for "automatic" activation where focus also selects.
+   * Takes Effect<HTMLElement> to enable use with Element combinators.
    */
-  onFocus?: (element: HTMLElement, index: number) => Effect.Effect<void>;
+  onFocus?: (
+    element: Effect.Effect<HTMLElement>,
+    index: number,
+  ) => Effect.Effect<void>;
 
   /**
    * Called when Enter or Space is pressed on a focused item.
    * Useful for "manual" activation.
+   * Takes Effect<HTMLElement> to enable use with Element combinators.
    */
-  onActivate?: (element: HTMLElement, index: number) => Effect.Effect<void>;
+  onActivate?: (
+    element: Effect.Effect<HTMLElement>,
+    index: number,
+  ) => Effect.Effect<void>;
 
   /**
    * Called when Escape is pressed.
@@ -404,7 +419,7 @@ export const createKeyboardNav = (
         // Handle activation (Enter/Space)
         if ((e.key === "Enter" || e.key === " ") && current && onActivate) {
           e.preventDefault();
-          yield* onActivate(current, index);
+          yield* onActivate(Effect.succeed(current), index);
           return;
         }
 
