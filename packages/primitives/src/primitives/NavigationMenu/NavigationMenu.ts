@@ -2,13 +2,13 @@ import { Context, Effect, MutableRef } from "effect";
 import { Signal } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { Reaction } from "@effex/dom";
-import { Ref } from "@effex/dom";
 import { $, ol, li } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Element } from "@effex/dom";
 import type { Child } from "@effex/dom";
+import type { ElementRef } from "@effex/dom";
 
 // ============================================================================
 // Types
@@ -39,7 +39,7 @@ export interface NavigationMenuContext {
   /** Menu orientation */
   readonly orientation: Readable.Readable<NavigationMenuOrientation>;
   /** Reference to viewport element */
-  readonly viewportRef: Ref<HTMLDivElement>;
+  readonly viewportRef: ElementRef<HTMLDivElement>;
   /** Map of item IDs to their trigger elements */
   readonly triggerRefs: Map<string, HTMLButtonElement>;
 }
@@ -53,7 +53,7 @@ export interface NavigationMenuItemContext {
   /** Whether this item is currently active */
   readonly isActive: Readable.Readable<boolean>;
   /** Reference to the trigger button */
-  readonly triggerRef: Ref<HTMLButtonElement>;
+  readonly triggerRef: ElementRef<HTMLButtonElement>;
   /** Content ID for ARIA */
   readonly contentId: string;
 }
@@ -118,7 +118,7 @@ const Root = (
     );
 
     // Refs and maps
-    const viewportRef = yield* Ref.make<HTMLDivElement>();
+    const viewportRef = yield* Element.ref<HTMLDivElement>();
     const triggerRefs = new Map<string, HTMLButtonElement>();
 
     // Delay state
@@ -280,7 +280,7 @@ const Item = (
 ): Element.Element<never, NavigationMenuCtx> =>
   Effect.gen(function* () {
     const ctx = yield* NavigationMenuCtx;
-    const triggerRef = yield* Ref.make<HTMLButtonElement>();
+    const triggerRef = yield* Element.ref<HTMLButtonElement>();
     const contentId = yield* UniqueId.make("navigationmenu-content");
 
     const isActive = ctx.activeItem.map((active) => active === props.value);
@@ -505,42 +505,37 @@ const Indicator = component(
   (props: NavigationMenuIndicatorProps) =>
     Effect.gen(function* () {
       const ctx = yield* NavigationMenuCtx;
-      const indicatorRef = yield* Ref.make<HTMLDivElement>();
+      const indicatorRef = yield* Element.ref<HTMLDivElement>();
 
-      // Compute indicator position based on active trigger
-      const updateIndicatorPosition = (activeId: string | null) => {
-        const indicator = indicatorRef.current;
-        if (!indicator) return;
+      const updateIndicatorPositionEffect = (activeId: string | null) =>
+        Effect.gen(function* () {
+          const trigger = ctx.triggerRefs.get(activeId ?? "");
 
-        if (!activeId) {
-          indicator.style.opacity = "0";
-          return;
-        }
+          if (!trigger) {
+            return yield* Effect.fail("No active trigger found");
+          }
 
-        const trigger = ctx.triggerRefs.get(activeId);
-        if (!trigger) {
-          indicator.style.opacity = "0";
-          return;
-        }
+          const rootElement = yield* Element.getParent(indicatorRef);
+          const triggerRect = trigger.getBoundingClientRect();
+          const rootRect = rootElement.getBoundingClientRect();
 
-        // Find the Root element (nav with position: relative) as reference
-        const rootElement = indicator.parentElement;
-        if (!rootElement) {
-          indicator.style.opacity = "0";
-          return;
-        }
-
-        const triggerRect = trigger.getBoundingClientRect();
-        const rootRect = rootElement.getBoundingClientRect();
-
-        indicator.style.opacity = "1";
-        indicator.style.width = `${triggerRect.width}px`;
-        indicator.style.transform = `translateX(${triggerRect.left - rootRect.left}px)`;
-      };
+          return yield* indicatorRef.pipe(
+            Element.setStyles({
+              opacity: "1",
+              width: `${triggerRect.width}px`,
+              transform: `translateX(${triggerRect.left - rootRect.left}px)`,
+            }),
+          );
+        }).pipe(
+          Effect.catchAll(() =>
+            indicatorRef.pipe(Element.setStyles({ opacity: "0" })),
+          ),
+          Effect.ignore,
+        );
 
       // Update position when active item changes
       yield* Reaction.make([ctx.activeItem], ([activeId]) =>
-        Effect.sync(() => updateIndicatorPosition(activeId)),
+        updateIndicatorPositionEffect(activeId),
       );
 
       const hasActiveItem = ctx.activeItem.map((item) => item !== null);

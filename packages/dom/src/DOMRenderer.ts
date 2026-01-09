@@ -4,6 +4,7 @@ import {
   RendererContext,
   type Slot,
 } from "@effex/core";
+import { toKebabCase } from "./helpers/index.js";
 
 /**
  * DOM implementation of the Renderer interface.
@@ -68,12 +69,7 @@ export const DOMRenderer: RendererInterface<Node> = {
 
   setStyleProperty: (node: Node, property: string, value: string) =>
     Effect.sync(() => {
-      // Convert camelCase to kebab-case for CSS (setProperty requires kebab-case)
-      const cssProperty = property.replace(
-        /[A-Z]/g,
-        (m) => `-${m.toLowerCase()}`,
-      );
-      (node as HTMLElement).style.setProperty(cssProperty, value);
+      (node as HTMLElement).style.setProperty(toKebabCase(property), value);
     }),
 
   setTextContent: (node: Node, text: string) =>

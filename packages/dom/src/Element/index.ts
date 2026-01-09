@@ -13,6 +13,13 @@ export type {
 
 // Re-export the Element namespace (type + value merged)
 export { Element } from "./namespace.js";
+export {
+  bindElementToRef,
+  type ElementRef,
+  NoSuchElementException,
+  AttributeNotFound,
+  DataAttributeNotFound,
+} from "./ref.js";
 
 export {
   $,

@@ -1,12 +1,10 @@
 import { Context, Effect, MutableRef } from "effect";
 import { Signal, Derived } from "@effex/dom";
 import { Readable } from "@effex/dom";
-import { Ref } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { component } from "@effex/dom";
-import { Element } from "@effex/dom";
-import type { RefType } from "@effex/dom";
+import { Element, type ElementRef } from "@effex/dom";
 
 /**
  * Context shared between Splitter parts.
@@ -21,7 +19,7 @@ export interface SplitterContext {
   /** Index of handle currently being dragged (null if not dragging) */
   readonly draggingHandle: Signal<number | null>;
   /** Container ref for position calculations */
-  readonly containerRef: RefType<HTMLDivElement>;
+  readonly containerRef: ElementRef<HTMLDivElement>;
   /** Register a panel (returns its index) */
   readonly registerPanel: (minSize: number, maxSize: number) => number;
   /** Register a handle (returns its index) */
@@ -129,7 +127,7 @@ const Root = (
       : yield* Signal.make<number[]>(props.defaultSizes ?? [50, 50]);
 
     // Container ref for position calculations
-    const containerRef = yield* Ref.make<HTMLDivElement>();
+    const containerRef = yield* Element.ref<HTMLDivElement>();
 
     // Dragging state
     const draggingHandle = yield* Signal.make<number | null>(null);
@@ -257,7 +255,7 @@ const Root = (
       clientY: number,
     ): Effect.Effect<void> =>
       Effect.gen(function* () {
-        const container = containerRef.current;
+        const container = Element.getUnsafe(containerRef);
         if (!container) return;
 
         const handleIdx = yield* draggingHandle.get;
@@ -287,7 +285,7 @@ const Root = (
         if (isDisabled) return;
 
         // Calculate the offset between where user clicked and where handle actually is
-        const container = containerRef.current;
+        const container = Element.getUnsafe(containerRef);
         if (container) {
           const rect = container.getBoundingClientRect();
           const currentSizes = yield* sizes.get;

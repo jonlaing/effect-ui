@@ -2,11 +2,10 @@ import { Context, Effect, MutableRef } from "effect";
 import { Signal } from "@effex/dom";
 import { Derived } from "@effex/dom";
 import { Readable } from "@effex/dom";
-import { Ref } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { component } from "@effex/dom";
-import { Element } from "@effex/dom";
+import { Element, type ElementRef, bindElementToRef } from "@effex/dom";
 import type { Child } from "@effex/dom";
 
 // ============================================================================
@@ -28,7 +27,7 @@ export interface ScrollAreaContext {
   /** Content dimensions */
   readonly contentSize: Readable.Readable<{ width: number; height: number }>;
   /** Reference to the scrollable element */
-  readonly scrollableRef: Ref<HTMLElement>;
+  readonly scrollableRef: ElementRef<HTMLElement>;
   /** Scroll to a position */
   readonly scrollTo: (position: {
     x?: number;
@@ -71,7 +70,7 @@ export interface ScrollbarContext {
   /** Whether scrollbar is currently visible based on type */
   readonly isVisible: Readable.Readable<boolean>;
   /** Reference to the scrollbar track */
-  readonly trackRef: Ref<HTMLDivElement>;
+  readonly trackRef: ElementRef<HTMLDivElement>;
 }
 
 // ============================================================================
@@ -145,7 +144,7 @@ const Root = (
     const isHovering = yield* Signal.make(false);
 
     // Ref for scrollable element
-    const scrollableRef = yield* Ref.make<HTMLElement>();
+    const scrollableRef = yield* Element.ref<HTMLElement>();
 
     // Hide timeout ref
     const hideTimeout = MutableRef.make<ReturnType<typeof setTimeout> | null>(
@@ -181,7 +180,7 @@ const Root = (
     // Methods
     const scrollTo = (position: { x?: number; y?: number }) =>
       Effect.sync(() => {
-        const el = scrollableRef.current;
+        const el = Element.getUnsafe(scrollableRef);
         if (el) {
           el.scrollTo({
             left: position.x,
@@ -193,7 +192,7 @@ const Root = (
 
     const scrollBy = (delta: { x?: number; y?: number }) =>
       Effect.sync(() => {
-        const el = scrollableRef.current;
+        const el = Element.getUnsafe(scrollableRef);
         if (el) {
           el.scrollBy({
             left: delta.x,
@@ -276,13 +275,13 @@ const Viewport = component(
   (props: ScrollAreaViewportProps, children) =>
     Effect.gen(function* () {
       const ctx = yield* ScrollAreaCtx;
-      const viewportRef = yield* Ref.make<HTMLDivElement>();
+      const viewportRef = yield* Element.ref<HTMLDivElement>();
 
       // Set up scroll listener and observers after mount
       yield* Effect.sync(() => {
         // Use requestAnimationFrame to ensure DOM is ready
         requestAnimationFrame(() => {
-          const viewport = viewportRef.current;
+          const viewport = Element.getUnsafe(viewportRef);
           if (!viewport) return;
 
           // Check if there's a scrollable child (like virtualEach output)
@@ -308,7 +307,7 @@ const Viewport = component(
           const scrollable = scrollableChild ?? viewport;
 
           // Set the scrollable ref
-          ctx.scrollableRef.set(scrollable);
+          bindElementToRef(ctx.scrollableRef, scrollable);
 
           // If using native scrolling on viewport, make it scrollable
           if (!scrollableChild) {
@@ -426,7 +425,7 @@ const Scrollbar = (
 ): Element.Element<never, ScrollAreaCtx> =>
   Effect.gen(function* () {
     const ctx = yield* ScrollAreaCtx;
-    const trackRef = yield* Ref.make<HTMLDivElement>();
+    const trackRef = yield* Element.ref<HTMLDivElement>();
     const orientation = props.orientation;
 
     // Calculate thumb size (percentage of track)
@@ -511,12 +510,12 @@ const Scrollbar = (
     // Handle click on track to jump scroll
     const handleTrackClick = (event: MouseEvent) =>
       Effect.gen(function* () {
-        const track = trackRef.current;
+        const track = Element.getUnsafe(trackRef);
         if (!track) return;
         if (event.target !== track) return; // Only handle clicks directly on track
 
         const rect = track.getBoundingClientRect();
-        const scrollable = ctx.scrollableRef.current;
+        const scrollable = Element.getUnsafe(ctx.scrollableRef);
         if (!scrollable) return;
 
         if (orientation === "vertical") {
@@ -553,7 +552,7 @@ const Thumb = component("ScrollAreaThumb", (props: ScrollAreaThumbProps) =>
   Effect.gen(function* () {
     const ctx = yield* ScrollAreaCtx;
     const scrollbarCtx = yield* ScrollbarCtx;
-    const thumbRef = yield* Ref.make<HTMLDivElement>();
+    const thumbRef = yield* Element.ref<HTMLDivElement>();
 
     // Drag state
     const isDragging = MutableRef.make(false);
@@ -564,13 +563,13 @@ const Thumb = component("ScrollAreaThumb", (props: ScrollAreaThumbProps) =>
         event.preventDefault();
         event.stopPropagation();
 
-        const thumb = thumbRef.current;
+        const thumb = Element.getUnsafe(thumbRef);
         if (!thumb) return;
 
         MutableRef.set(isDragging, true);
         thumb.setPointerCapture(event.pointerId);
 
-        const scrollable = ctx.scrollableRef.current;
+        const scrollable = Element.getUnsafe(ctx.scrollableRef);
         if (!scrollable) return;
 
         if (scrollbarCtx.orientation === "vertical") {
@@ -590,8 +589,8 @@ const Thumb = component("ScrollAreaThumb", (props: ScrollAreaThumbProps) =>
       Effect.sync(() => {
         if (!MutableRef.get(isDragging)) return;
 
-        const scrollable = ctx.scrollableRef.current;
-        const track = scrollbarCtx.trackRef.current;
+        const scrollable = Element.getUnsafe(ctx.scrollableRef);
+        const track = Element.getUnsafe(scrollbarCtx.trackRef);
         if (!scrollable || !track) return;
 
         const start = MutableRef.get(dragStart);
@@ -617,7 +616,7 @@ const Thumb = component("ScrollAreaThumb", (props: ScrollAreaThumbProps) =>
         if (!MutableRef.get(isDragging)) return;
 
         MutableRef.set(isDragging, false);
-        const thumb = thumbRef.current;
+        const thumb = Element.getUnsafe(thumbRef);
         if (thumb) {
           thumb.releasePointerCapture(event.pointerId);
         }

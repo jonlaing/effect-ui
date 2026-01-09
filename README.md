@@ -157,6 +157,38 @@ $.div({ class: "container" }, [
 
 4. **Consistent syntax**: Components and elements use the same call syntax.
 
+## Element Helpers
+
+The `Element` namespace provides pipeable DOM manipulation helpers for working with element refs and animation hooks:
+
+```ts
+import { Element, $ } from "@effex/dom";
+
+// Create an element ref
+const buttonRef = yield* Element.ref<HTMLButtonElement>();
+
+// Use in animation hooks
+when(isOpen, {
+  onTrue: () => Dropdown(),
+  animate: {
+    onEnter: (el) => el.pipe(
+      Element.setStyles({ "transform-origin": "top" }),
+      Element.focusFirst("[data-item]"),
+    ),
+  },
+});
+
+// Chain operations
+el.pipe(
+  Element.addClass("active"),
+  Element.setStyles({ opacity: "1" }),
+  Element.setAttribute("aria-expanded", "true"),
+  Element.focus,
+)
+```
+
+Helpers are available for styles, classes, attributes, data attributes, focus, scrolling, events, and more. See the [`@effex/dom` README](./packages/dom/README.md#element-helpers) for the full API.
+
 ## Coming from Another Framework?
 
 We have migration guides with concept mapping and side-by-side examples:

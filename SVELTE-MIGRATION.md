@@ -565,3 +565,78 @@ Effex's approach:
 - Works with any CSS framework (Tailwind, etc.)
 - Supports staggered list animations
 - Respects `prefers-reduced-motion` by default
+
+## Imperative DOM Access
+
+In Svelte, you use `bind:this` to get DOM element references:
+
+```svelte
+<!-- Svelte -->
+<script>
+  let inputEl;
+
+  function handleFocus() {
+    inputEl?.focus();
+    inputEl?.scrollIntoView({ behavior: 'smooth' });
+    inputEl?.classList.add('focused');
+  }
+</script>
+
+<input bind:this={inputEl} on:click={handleFocus} />
+```
+
+In Effex, the `Element` namespace provides pipeable helpers for DOM manipulation:
+
+```ts
+// Effex
+const FocusInput = component("FocusInput", () =>
+  Effect.gen(function* () {
+    const inputRef = yield* Element.ref<HTMLInputElement>();
+
+    const handleFocus = () =>
+      inputRef.pipe(
+        Element.focus,
+        Element.scrollIntoView({ behavior: "smooth" }),
+        Element.addClass("focused"),
+        Effect.runPromise,
+      );
+
+    return yield* $.input({ ref: inputRef, onClick: handleFocus });
+  }),
+);
+```
+
+### Common Svelte DOM Patterns
+
+| Svelte Pattern | Effex Equivalent |
+|----------------|------------------|
+| `el?.focus()` | `el.pipe(Element.focus)` |
+| `el?.blur()` | `el.pipe(Element.blur)` |
+| `el?.click()` | `el.pipe(Element.click)` |
+| `el?.scrollIntoView()` | `el.pipe(Element.scrollIntoView())` |
+| `el?.classList.add("x")` | `el.pipe(Element.addClass("x"))` |
+| `el?.classList.remove("x")` | `el.pipe(Element.removeClass("x"))` |
+| `el?.classList.toggle("x")` | `el.pipe(Element.toggleClass("x"))` |
+| `el?.setAttribute("k", "v")` | `el.pipe(Element.setAttribute("k", "v"))` |
+| `el?.dataset.state = "x"` | `el.pipe(Element.setData("state", "x"))` |
+| `el?.style.color = "red"` | `el.pipe(Element.setStyle("color", "red"))` |
+| `el?.querySelector(".x")` | `el.pipe(Element.querySelector(".x"))` |
+
+### Animation Hooks with Element Helpers
+
+Effex's animation system passes elements to lifecycle hooks as `Effect<HTMLElement>`, letting you use Element helpers:
+
+```ts
+when(isModalOpen, {
+  onTrue: () => Modal(),
+  onFalse: () => $.span(),
+  animate: {
+    enter: "fade-in",
+    exit: "fade-out",
+    onEnter: (el) => el.pipe(Element.focusFirst("[data-autofocus]")),
+    onBeforeExit: (el) => el.pipe(Element.blur),
+  },
+});
+```
+
+This is similar to Svelte's `in:`, `out:` transition directive hooks but uses pipeable operations for composability.

@@ -8,9 +8,8 @@ import { when } from "@effex/dom";
 import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
-import { Ref } from "@effex/dom";
 import { onClickOutside } from "@effex/dom";
-import { Element } from "@effex/dom";
+import { Element, type ElementRef } from "@effex/dom";
 import type { AnimationOptions } from "@effex/dom";
 import { calculatePosition } from "../helpers";
 
@@ -89,7 +88,7 @@ export interface ComboboxContext {
   readonly getItemId: (value: string) => string;
 
   /** Reference to the input element */
-  readonly inputRef: Ref<HTMLInputElement>;
+  readonly inputRef: ElementRef<HTMLInputElement>;
 
   /** Whether async loading is in progress */
   readonly isLoading: Readable.Readable<boolean>;
@@ -240,7 +239,7 @@ const Root = (
     const items = yield* Signal.make<
       Map<string, { textValue: string; disabled: boolean }>
     >(new Map());
-    const inputRef = yield* Ref.make<HTMLInputElement>();
+    const inputRef = yield* Element.ref<HTMLInputElement>();
 
     // Generate unique IDs
     const contentId = yield* UniqueId.make("combobox-content");
@@ -257,7 +256,7 @@ const Root = (
         if (!newValue) {
           yield* highlightedValue.set(null);
           // Return focus to input when closing
-          inputRef.current?.focus();
+          yield* inputRef.pipe(Element.focus, Effect.ignore);
         }
         yield* props.onOpenChange?.(newValue) ?? Effect.void;
       });
@@ -275,8 +274,7 @@ const Root = (
         yield* setOpenState(false);
         yield* props.onValueChange?.(newValue) ?? Effect.void;
         // Return focus to input
-        const input = inputRef.current;
-        input?.focus();
+        yield* inputRef.pipe(Element.focus, Effect.ignore);
       });
 
     // Navigation functions
@@ -665,7 +663,8 @@ const Content = component(
         when(ctx.isOpen, {
           onTrue: () =>
             Effect.gen(function* () {
-              const inputEl = ctx.inputRef.current;
+              // Get input element for positioning (needs sync access for measurement)
+              const inputEl = Element.getUnsafe(ctx.inputRef);
 
               // Get current positioning values
               const currentSide = yield* side.get;

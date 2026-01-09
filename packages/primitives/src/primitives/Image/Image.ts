@@ -6,10 +6,9 @@ import {
   $,
   provide,
   component,
-  Ref,
   Reaction,
+  Element,
 } from "@effex/dom";
-import { Element } from "@effex/dom";
 import type { Child } from "@effex/dom";
 
 export type ImageLoadingStatus = "idle" | "loading" | "loaded" | "error";
@@ -71,7 +70,7 @@ export interface ImageImgProps {
 const Img = component("ImageImg", (props: ImageImgProps) =>
   Effect.gen(function* () {
     const ctx = yield* ImageCtx;
-    const imgRef = yield* Ref.make<HTMLImageElement>();
+    const imgRef = yield* Element.ref<HTMLImageElement>();
 
     // Normalize src to Readable
     const src = Readable.of(props.src);
@@ -79,7 +78,7 @@ const Img = component("ImageImg", (props: ImageImgProps) =>
     // React to src changes - reset status to loading
     yield* Reaction.make([src], ([currentSrc]) =>
       Effect.gen(function* () {
-        const img = imgRef.current;
+        const img = Element.getUnsafe(imgRef);
 
         if (currentSrc) {
           yield* ctx.setStatus("loading");
@@ -94,16 +93,19 @@ const Img = component("ImageImg", (props: ImageImgProps) =>
 
     // One-time setup: attach event listeners once element exists
     yield* Reaction.make([], () =>
-      Effect.gen(function* () {
-        const img = yield* imgRef.value;
-
-        img.addEventListener("load", () =>
-          Effect.runSync(ctx.setStatus("loaded")),
-        );
-        img.addEventListener("error", () =>
-          Effect.runSync(ctx.setStatus("error")),
-        );
-      }),
+      imgRef.pipe(
+        Effect.tap((img) =>
+          Effect.sync(() => {
+            img.addEventListener("load", () =>
+              Effect.runSync(ctx.setStatus("loaded")),
+            );
+            img.addEventListener("error", () =>
+              Effect.runSync(ctx.setStatus("error")),
+            );
+          }),
+        ),
+        Effect.ignore,
+      ),
     );
 
     // Hide image until loaded to prevent flash of broken image

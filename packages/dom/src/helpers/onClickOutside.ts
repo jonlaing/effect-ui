@@ -1,25 +1,27 @@
 import { Effect, Scope } from "effect";
+import { type ElementRef, getElementFromRef } from "../Element/ref.js";
 
 /**
- * A ref-like object with a current property.
+ * An element reference - can be:
+ * - ElementRef (Effect-based ref)
+ * - Raw HTMLElement
+ * - null/undefined
  */
-interface RefLike<T> {
-  readonly current: T | null;
-}
+export type ElementRefLike =
+  | ElementRef<HTMLElement>
+  | HTMLElement
+  | null
+  | undefined;
 
 /**
- * An element reference - either a ref-like object or a raw HTMLElement.
+ * Get the element from an ElementRefLike.
  */
-export type ElementRef = RefLike<HTMLElement> | HTMLElement | null | undefined;
-
-/**
- * Get the element from an ElementRef.
- */
-const getElement = (ref: ElementRef): HTMLElement | null => {
+const getElement = (ref: ElementRefLike): HTMLElement | null => {
   if (!ref) return null;
-  // Check if it's a Ref (has .current property) or a raw element
-  if ("current" in ref) return ref.current;
-  return ref;
+  // Check if it's a raw HTMLElement
+  if (ref instanceof HTMLElement) return ref;
+  // It's an ElementRef (Effect-based)
+  return getElementFromRef(ref);
 };
 
 /**
@@ -33,18 +35,18 @@ const getElement = (ref: ElementRef): HTMLElement | null => {
  *
  * @example
  * ```ts
- * // With Refs
- * const triggerRef = yield* Ref.make<HTMLButtonElement>();
- * const contentRef = yield* Ref.make<HTMLDivElement>();
+ * // With ElementRefs (recommended)
+ * const triggerRef = yield* Element.ref<HTMLButtonElement>();
+ * const contentRef = yield* Element.ref<HTMLDivElement>();
  * yield* onClickOutside([triggerRef, contentRef], () => ctx.close());
  *
  * // With raw elements
  * const contentEl = yield* $.div({}, children);
- * yield* onClickOutside([ctx.triggerRef, contentEl], () => ctx.close());
+ * yield* onClickOutside([triggerRef, contentEl], () => ctx.close());
  * ```
  */
 export const onClickOutside = (
-  refs: ElementRef[],
+  refs: ElementRefLike[],
   callback: () => Effect.Effect<void>,
 ): Effect.Effect<void, never, Scope.Scope> =>
   Effect.gen(function* () {

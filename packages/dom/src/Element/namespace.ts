@@ -1,5 +1,14 @@
 import { Effect } from "effect";
+import { dual } from "effect/Function";
 import type { Element as ElementType } from "./types.js";
+import type { NoSuchElementException } from "effect/Cause";
+import {
+  getUnsafe,
+  makeElementRef,
+  AttributeNotFound,
+  DataAttributeNotFound,
+} from "./ref.js";
+import { toKebabCase } from "../helpers/index.js";
 
 /**
  * Element namespace providing the Element type and pipeable DOM manipulation utilities.
@@ -11,11 +20,14 @@ import type { Element as ElementType } from "./types.js";
  * // The Element type
  * const MyComponent: Element.Element<never, SomeContext> = ...
  *
- * // Pipeable DOM manipulation in animation hooks
+ * // Pipeable DOM manipulation in animation hooks (data-last)
  * onEnter: (el) => el.pipe(
  *   Element.setStyles({ animation: "none" }),
  *   Element.focus,
  * )
+ *
+ * // Data-first style
+ * Element.setStyles(el, { animation: "none" })
  * ```
  */
 export declare namespace Element {
@@ -32,38 +44,774 @@ export declare namespace Element {
 /**
  * Element utilities - pipeable DOM manipulation helpers.
  *
+ * All helpers support both data-first and data-last (pipeable) styles:
+ * ```ts
+ * // Data-first
+ * Element.setStyles(el, { opacity: "1" })
+ *
+ * // Data-last (pipeable)
+ * el.pipe(Element.setStyles({ opacity: "1" }))
+ * ```
+ *
  * All helpers use `Effect.tap` internally, preserving the element in the
  * Effect chain for further piping.
  */
 export const Element = {
+  ref: makeElementRef,
+  getUnsafe,
+
+  // ===========================================================================
+  // Querying & Traversal
+  // ===========================================================================
+
+  /**
+   * Get the parent element.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.getParent)
+   * ```
+   */
+  getParent: <A extends HTMLElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+  ): Effect.Effect<HTMLElement, E | NoSuchElementException, R> =>
+    self.pipe(Effect.flatMap((el) => Effect.fromNullable(el.parentElement))),
+
+  /**
+   * Get the bounding client rect of an element.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.getBoundingClientRect)
+   * ```
+   */
+  getBoundingClientRect: <A extends HTMLElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+  ): Effect.Effect<DOMRect, E, R> =>
+    Effect.map(self, (el) => el.getBoundingClientRect()),
+
+  /**
+   * Query for a descendant element matching a selector.
+   * Returns the element or fails with NoSuchElementException.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.querySelector("[data-value]"))
+   * ```
+   */
+  querySelector: dual<
+    (
+      selector: string,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<HTMLElement, E | NoSuchElementException, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      selector: string,
+    ) => Effect.Effect<HTMLElement, E | NoSuchElementException, R>
+  >(
+    2,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      selector: string,
+    ): Effect.Effect<HTMLElement, E | NoSuchElementException, R> =>
+      Effect.flatMap(self, (el) =>
+        Effect.fromNullable(el.querySelector(selector) as HTMLElement | null),
+      ),
+  ),
+
+  /**
+   * Query for all descendant elements matching a selector.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.querySelectorAll("[data-item]"))
+   * ```
+   */
+  querySelectorAll: dual<
+    (
+      selector: string,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<HTMLElement[], E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      selector: string,
+    ) => Effect.Effect<HTMLElement[], E, R>
+  >(
+    2,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      selector: string,
+    ): Effect.Effect<HTMLElement[], E, R> =>
+      Effect.map(
+        self,
+        (el) => Array.from(el.querySelectorAll(selector)) as HTMLElement[],
+      ),
+  ),
+
+  /**
+   * Find the closest ancestor (or self) matching a selector.
+   * Returns the element or fails with NoSuchElementException.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.closest("[data-container]"))
+   * ```
+   */
+  closest: dual<
+    (
+      selector: string,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<HTMLElement, E | NoSuchElementException, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      selector: string,
+    ) => Effect.Effect<HTMLElement, E | NoSuchElementException, R>
+  >(
+    2,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      selector: string,
+    ): Effect.Effect<HTMLElement, E | NoSuchElementException, R> =>
+      Effect.flatMap(self, (el) =>
+        Effect.fromNullable(el.closest(selector) as HTMLElement | null),
+      ),
+  ),
+
+  /**
+   * Check if the element matches a selector.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.matches("[data-active]"))
+   * ```
+   */
+  matches: dual<
+    (
+      selector: string,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<boolean, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      selector: string,
+    ) => Effect.Effect<boolean, E, R>
+  >(
+    2,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      selector: string,
+    ): Effect.Effect<boolean, E, R> =>
+      Effect.map(self, (el) => el.matches(selector)),
+  ),
+
+  // ===========================================================================
+  // Styles
+  // ===========================================================================
+
   /**
    * Set multiple CSS styles on an element.
+   * Accepts both camelCase and kebab-case property names.
    * Empty string values remove the property.
    *
    * @example
    * ```ts
    * el.pipe(
-   *   Element.setStyles({ opacity: "1", animation: "none" }),
+   *   Element.setStyles({ opacity: "1", fontSize: "16px" }),  // camelCase
+   *   Element.setStyles({ opacity: "1", "font-size": "16px" }), // kebab-case
    *   Element.setStyles({ animation: "" }), // removes animation
    * )
    * ```
    */
-  setStyles:
-    (styles: Record<string, string>) =>
+  setStyles: dual<
+    (
+      styles: Record<string, string>,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
     <A extends HTMLElement, E, R>(
       self: Effect.Effect<A, E, R>,
+      styles: Record<string, string>,
+    ) => Effect.Effect<A, E, R>
+  >(
+    2,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      styles: Record<string, string>,
     ): Effect.Effect<A, E, R> =>
       Effect.tap(self, (el) =>
         Effect.sync(() => {
           for (const [property, value] of Object.entries(styles)) {
+            const cssProperty = toKebabCase(property);
             if (value === "") {
-              el.style.removeProperty(property);
+              el.style.removeProperty(cssProperty);
             } else {
-              el.style.setProperty(property, value);
+              el.style.setProperty(cssProperty, value);
             }
           }
         }),
       ),
+  ),
+
+  /**
+   * Set a single CSS style property.
+   * Accepts both camelCase and kebab-case property names.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.setStyle("backgroundColor", "red"))  // camelCase
+   * el.pipe(Element.setStyle("background-color", "red")) // kebab-case
+   * ```
+   */
+  setStyle: dual<
+    (
+      property: string,
+      value: string,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      property: string,
+      value: string,
+    ) => Effect.Effect<A, E, R>
+  >(
+    3,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      property: string,
+      value: string,
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) =>
+        Effect.sync(() => {
+          const cssProperty = toKebabCase(property);
+          if (value === "") {
+            el.style.removeProperty(cssProperty);
+          } else {
+            el.style.setProperty(cssProperty, value);
+          }
+        }),
+      ),
+  ),
+
+  /**
+   * Remove a CSS style property.
+   * Accepts both camelCase and kebab-case property names.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.removeStyle("animation"))
+   * el.pipe(Element.removeStyle("backgroundColor"))
+   * ```
+   */
+  removeStyle: dual<
+    (
+      property: string,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      property: string,
+    ) => Effect.Effect<A, E, R>
+  >(
+    2,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      property: string,
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) =>
+        Effect.sync(() => el.style.removeProperty(toKebabCase(property))),
+      ),
+  ),
+
+  // ===========================================================================
+  // Classes
+  // ===========================================================================
+
+  /**
+   * Add one or more CSS classes.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.addClass("active", "highlighted"))
+   * ```
+   */
+  addClass: dual<
+    (
+      ...classes: string[]
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      ...classes: string[]
+    ) => Effect.Effect<A, E, R>
+  >(
+    (args) => Effect.isEffect(args[0]),
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      ...classes: string[]
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) => Effect.sync(() => el.classList.add(...classes))),
+  ),
+
+  /**
+   * Remove one or more CSS classes.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.removeClass("active", "highlighted"))
+   * ```
+   */
+  removeClass: dual<
+    (
+      ...classes: string[]
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      ...classes: string[]
+    ) => Effect.Effect<A, E, R>
+  >(
+    (args) => Effect.isEffect(args[0]),
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      ...classes: string[]
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) =>
+        Effect.sync(() => el.classList.remove(...classes)),
+      ),
+  ),
+
+  /**
+   * Toggle a CSS class. Optionally force add/remove with second argument.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.toggleClass("active"))
+   * el.pipe(Element.toggleClass("active", true)) // force add
+   * ```
+   */
+  toggleClass: dual<
+    (
+      className: string,
+      force?: boolean,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      className: string,
+      force?: boolean,
+    ) => Effect.Effect<A, E, R>
+  >(
+    (args) => Effect.isEffect(args[0]),
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      className: string,
+      force?: boolean,
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) =>
+        Effect.sync(() => el.classList.toggle(className, force)),
+      ),
+  ),
+
+  /**
+   * Replace one CSS class with another.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.replaceClass("old-class", "new-class"))
+   * ```
+   */
+  replaceClass: dual<
+    (
+      oldClass: string,
+      newClass: string,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      oldClass: string,
+      newClass: string,
+    ) => Effect.Effect<A, E, R>
+  >(
+    3,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      oldClass: string,
+      newClass: string,
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) =>
+        Effect.sync(() => el.classList.replace(oldClass, newClass)),
+      ),
+  ),
+
+  // ===========================================================================
+  // Attributes
+  // ===========================================================================
+
+  /**
+   * Set an attribute on the element.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.setAttribute("aria-expanded", "true"))
+   * ```
+   */
+  setAttribute: dual<
+    (
+      name: string,
+      value: string,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      name: string,
+      value: string,
+    ) => Effect.Effect<A, E, R>
+  >(
+    3,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      name: string,
+      value: string,
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) => Effect.sync(() => el.setAttribute(name, value))),
+  ),
+
+  /**
+   * Set multiple attributes on the element.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.setAttributes({ "aria-expanded": "true", "aria-hidden": "false" }))
+   * ```
+   */
+  setAttributes: dual<
+    (
+      attrs: Record<string, string>,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      attrs: Record<string, string>,
+    ) => Effect.Effect<A, E, R>
+  >(
+    2,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      attrs: Record<string, string>,
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) =>
+        Effect.sync(() => {
+          for (const [name, value] of Object.entries(attrs)) {
+            el.setAttribute(name, value);
+          }
+        }),
+      ),
+  ),
+
+  /**
+   * Remove an attribute from the element.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.removeAttribute("disabled"))
+   * ```
+   */
+  removeAttribute: dual<
+    (
+      name: string,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      name: string,
+    ) => Effect.Effect<A, E, R>
+  >(
+    2,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      name: string,
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) => Effect.sync(() => el.removeAttribute(name))),
+  ),
+
+  /**
+   * Toggle a boolean attribute. Optionally force add/remove with second argument.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.toggleAttribute("disabled"))
+   * el.pipe(Element.toggleAttribute("disabled", false)) // force remove
+   * ```
+   */
+  toggleAttribute: dual<
+    (
+      name: string,
+      force?: boolean,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      name: string,
+      force?: boolean,
+    ) => Effect.Effect<A, E, R>
+  >(
+    (args) => Effect.isEffect(args[0]),
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      name: string,
+      force?: boolean,
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) =>
+        Effect.sync(() => el.toggleAttribute(name, force)),
+      ),
+  ),
+
+  /**
+   * Get an attribute value from the element.
+   * Fails with `AttributeNotFound` if the attribute doesn't exist.
+   * Use `Effect.option` to get `Option<string>` instead of failing.
+   *
+   * @example
+   * ```ts
+   * // Fails if not found
+   * el.pipe(Element.getAttribute("data-id"))
+   *
+   * // Option semantics
+   * el.pipe(Element.getAttribute("data-id"), Effect.option)
+   * ```
+   */
+  getAttribute: dual<
+    (
+      name: string,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<string, E | AttributeNotFound, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      name: string,
+    ) => Effect.Effect<string, E | AttributeNotFound, R>
+  >(
+    2,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      name: string,
+    ): Effect.Effect<string, E | AttributeNotFound, R> =>
+      Effect.flatMap(self, (el) => {
+        const value = el.getAttribute(name);
+        return value !== null
+          ? Effect.succeed(value)
+          : Effect.fail(new AttributeNotFound({ attribute: name }));
+      }),
+  ),
+
+  // ===========================================================================
+  // Data Attributes
+  // ===========================================================================
+
+  /**
+   * Set a data attribute (dataset property).
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.setData("state", "open")) // sets data-state="open"
+   * ```
+   */
+  setData: dual<
+    (
+      key: string,
+      value: string,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      key: string,
+      value: string,
+    ) => Effect.Effect<A, E, R>
+  >(
+    3,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      key: string,
+      value: string,
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) => Effect.sync(() => (el.dataset[key] = value))),
+  ),
+
+  /**
+   * Remove a data attribute.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.removeData("state")) // removes data-state
+   * ```
+   */
+  removeData: dual<
+    (
+      key: string,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      key: string,
+    ) => Effect.Effect<A, E, R>
+  >(
+    2,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      key: string,
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) => Effect.sync(() => delete el.dataset[key])),
+  ),
+
+  /**
+   * Get a data attribute value.
+   * Fails with `DataAttributeNotFound` if the data attribute doesn't exist.
+   * Use `Effect.option` to get `Option<string>` instead of failing.
+   *
+   * @example
+   * ```ts
+   * // Fails if not found
+   * el.pipe(Element.getData("state"))
+   *
+   * // Option semantics
+   * el.pipe(Element.getData("state"), Effect.option)
+   * ```
+   */
+  getData: dual<
+    (
+      key: string,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<string, E | DataAttributeNotFound, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      key: string,
+    ) => Effect.Effect<string, E | DataAttributeNotFound, R>
+  >(
+    2,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      key: string,
+    ): Effect.Effect<string, E | DataAttributeNotFound, R> =>
+      Effect.flatMap(self, (el) => {
+        const value = el.dataset[key];
+        return value !== undefined
+          ? Effect.succeed(value)
+          : Effect.fail(new DataAttributeNotFound({ key }));
+      }),
+  ),
+
+  // ===========================================================================
+  // Content
+  // ===========================================================================
+
+  /**
+   * Set the text content of an element.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.setTextContent("Hello, world!"))
+   * ```
+   */
+  setTextContent: dual<
+    (
+      text: string,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      text: string,
+    ) => Effect.Effect<A, E, R>
+  >(
+    2,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      text: string,
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) => Effect.sync(() => (el.textContent = text))),
+  ),
+
+  /**
+   * Set the innerHTML of an element.
+   * WARNING: Be careful with untrusted content to avoid XSS.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.setInnerHTML("<strong>Bold</strong>"))
+   * ```
+   */
+  setInnerHTML: dual<
+    (
+      html: string,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      html: string,
+    ) => Effect.Effect<A, E, R>
+  >(
+    2,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      html: string,
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) => Effect.sync(() => (el.innerHTML = html))),
+  ),
+
+  // ===========================================================================
+  // Properties
+  // ===========================================================================
+
+  /**
+   * Set a property on the element.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.setProperty("value", "hello"))
+   * ```
+   */
+  setProperty: dual<
+    <K extends keyof HTMLElement>(
+      key: K,
+      value: HTMLElement[K],
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R, K extends keyof A>(
+      self: Effect.Effect<A, E, R>,
+      key: K,
+      value: A[K],
+    ) => Effect.Effect<A, E, R>
+  >(
+    3,
+    <A extends HTMLElement, E, R, K extends keyof A>(
+      self: Effect.Effect<A, E, R>,
+      key: K,
+      value: A[K],
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) => Effect.sync(() => (el[key] = value))),
+  ),
+
+  // ===========================================================================
+  // Focus
+  // ===========================================================================
 
   /**
    * Focus an element.
@@ -79,6 +827,33 @@ export const Element = {
     Effect.tap(self, (el) => Effect.sync(() => el.focus())),
 
   /**
+   * Focus an element with options.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.focusWithOptions({ preventScroll: true }))
+   * ```
+   */
+  focusWithOptions: dual<
+    (
+      options: FocusOptions,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      options: FocusOptions,
+    ) => Effect.Effect<A, E, R>
+  >(
+    2,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      options: FocusOptions,
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) => Effect.sync(() => el.focus(options))),
+  ),
+
+  /**
    * Blur (unfocus) an element.
    *
    * @example
@@ -92,57 +867,6 @@ export const Element = {
     Effect.tap(self, (el) => Effect.sync(() => el.blur())),
 
   /**
-   * Scroll an element into view.
-   *
-   * @example
-   * ```ts
-   * el.pipe(Element.scrollIntoView({ behavior: "smooth", block: "center" }))
-   * ```
-   */
-  scrollIntoView:
-    (options?: ScrollIntoViewOptions) =>
-    <A extends HTMLElement, E, R>(
-      self: Effect.Effect<A, E, R>,
-    ): Effect.Effect<A, E, R> =>
-      Effect.tap(self, (el) => Effect.sync(() => el.scrollIntoView(options))),
-
-  /**
-   * Tap into the element to perform a side effect.
-   * Useful for custom operations that aren't covered by other helpers.
-   *
-   * @example
-   * ```ts
-   * el.pipe(
-   *   Element.tap((el) => console.log("Element:", el)),
-   *   Element.focus,
-   * )
-   * ```
-   */
-  tap:
-    <A extends HTMLElement>(fn: (el: A) => void) =>
-    <E, R>(self: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> =>
-      Effect.tap(self, (el) => Effect.sync(() => fn(el))),
-
-  /**
-   * Tap into the element with an Effect.
-   * Useful for async operations or operations that need Effect context.
-   *
-   * @example
-   * ```ts
-   * el.pipe(
-   *   Element.tapEffect((el) => logToServer(el.id)),
-   *   Element.focus,
-   * )
-   * ```
-   */
-  tapEffect:
-    <A extends HTMLElement, E2, R2>(
-      fn: (el: A) => Effect.Effect<unknown, E2, R2>,
-    ) =>
-    <E, R>(self: Effect.Effect<A, E, R>): Effect.Effect<A, E | E2, R | R2> =>
-      Effect.tap(self, fn),
-
-  /**
    * Query for a descendant element and focus it if found, otherwise focus self.
    * Common pattern for menu/dialog components.
    *
@@ -151,10 +875,21 @@ export const Element = {
    * el.pipe(Element.focusFirst("[data-menu-item]:not([data-disabled])"))
    * ```
    */
-  focusFirst:
-    (selector: string) =>
+  focusFirst: dual<
+    (
+      selector: string,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
     <A extends HTMLElement, E, R>(
       self: Effect.Effect<A, E, R>,
+      selector: string,
+    ) => Effect.Effect<A, E, R>
+  >(
+    2,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      selector: string,
     ): Effect.Effect<A, E, R> =>
       Effect.tap(self, (el) =>
         Effect.sync(() => {
@@ -166,4 +901,286 @@ export const Element = {
           }
         }),
       ),
+  ),
+
+  /**
+   * Focus the last matching descendant, or self if none found.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.focusLast("[data-menu-item]:not([data-disabled])"))
+   * ```
+   */
+  focusLast: dual<
+    (
+      selector: string,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      selector: string,
+    ) => Effect.Effect<A, E, R>
+  >(
+    2,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      selector: string,
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) =>
+        Effect.sync(() => {
+          const items = el.querySelectorAll(selector);
+          const last = items[items.length - 1] as HTMLElement | undefined;
+          if (last) {
+            last.focus();
+          } else {
+            el.focus();
+          }
+        }),
+      ),
+  ),
+
+  // ===========================================================================
+  // Scrolling
+  // ===========================================================================
+
+  /**
+   * Scroll an element into view.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.scrollIntoView({ behavior: "smooth", block: "center" }))
+   * ```
+   */
+  scrollIntoView: dual<
+    (
+      options?: ScrollIntoViewOptions,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      options?: ScrollIntoViewOptions,
+    ) => Effect.Effect<A, E, R>
+  >(
+    (args) => Effect.isEffect(args[0]),
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      options?: ScrollIntoViewOptions,
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) => Effect.sync(() => el.scrollIntoView(options))),
+  ),
+
+  /**
+   * Scroll to a position within the element.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.scrollTo({ top: 0, behavior: "smooth" }))
+   * ```
+   */
+  scrollTo: dual<
+    (
+      options: ScrollToOptions,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      options: ScrollToOptions,
+    ) => Effect.Effect<A, E, R>
+  >(
+    2,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      options: ScrollToOptions,
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) => Effect.sync(() => el.scrollTo(options))),
+  ),
+
+  /**
+   * Scroll by an amount within the element.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.scrollBy({ top: 100, behavior: "smooth" }))
+   * ```
+   */
+  scrollBy: dual<
+    (
+      options: ScrollToOptions,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      options: ScrollToOptions,
+    ) => Effect.Effect<A, E, R>
+  >(
+    2,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      options: ScrollToOptions,
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) => Effect.sync(() => el.scrollBy(options))),
+  ),
+
+  // ===========================================================================
+  // Events
+  // ===========================================================================
+
+  /**
+   * Programmatically click the element.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.click)
+   * ```
+   */
+  click: <A extends HTMLElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+  ): Effect.Effect<A, E, R> =>
+    Effect.tap(self, (el) => Effect.sync(() => el.click())),
+
+  /**
+   * Dispatch a custom event on the element.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.dispatchEvent(new CustomEvent("my-event", { detail: { foo: 1 } })))
+   * ```
+   */
+  dispatchEvent: dual<
+    (
+      event: Event,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      event: Event,
+    ) => Effect.Effect<A, E, R>
+  >(
+    2,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      event: Event,
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) => Effect.sync(() => el.dispatchEvent(event))),
+  ),
+
+  // ===========================================================================
+  // Input-specific
+  // ===========================================================================
+
+  /**
+   * Select all text in an input or textarea.
+   *
+   * @example
+   * ```ts
+   * inputEl.pipe(Element.select)
+   * ```
+   */
+  select: <A extends HTMLInputElement | HTMLTextAreaElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+  ): Effect.Effect<A, E, R> =>
+    Effect.tap(self, (el) => Effect.sync(() => el.select())),
+
+  /**
+   * Set the selection range in an input or textarea.
+   *
+   * @example
+   * ```ts
+   * inputEl.pipe(Element.setSelectionRange(0, 5))
+   * ```
+   */
+  setSelectionRange: dual<
+    (
+      start: number,
+      end: number,
+      direction?: "forward" | "backward" | "none",
+    ) => <A extends HTMLInputElement | HTMLTextAreaElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLInputElement | HTMLTextAreaElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      start: number,
+      end: number,
+      direction?: "forward" | "backward" | "none",
+    ) => Effect.Effect<A, E, R>
+  >(
+    (args) => Effect.isEffect(args[0]),
+    <A extends HTMLInputElement | HTMLTextAreaElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      start: number,
+      end: number,
+      direction?: "forward" | "backward" | "none",
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) =>
+        Effect.sync(() => el.setSelectionRange(start, end, direction)),
+      ),
+  ),
+
+  // ===========================================================================
+  // Custom Taps
+  // ===========================================================================
+
+  /**
+   * Tap into the element to perform a side effect.
+   * Useful for custom operations that aren't covered by other helpers.
+   *
+   * @example
+   * ```ts
+   * el.pipe(
+   *   Element.tap((e) => console.log("Element:", e)),
+   *   Element.focus,
+   * )
+   * ```
+   */
+  tap: dual<
+    <A extends HTMLElement>(
+      fn: (el: A) => void,
+    ) => <E, R>(self: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      fn: (el: A) => void,
+    ) => Effect.Effect<A, E, R>
+  >(
+    2,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      fn: (el: A) => void,
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) => Effect.sync(() => fn(el))),
+  ),
+
+  /**
+   * Tap into the element with an Effect.
+   * Useful for async operations or operations that need Effect context.
+   *
+   * @example
+   * ```ts
+   * el.pipe(
+   *   Element.tapEffect((e) => logToServer(e.id)),
+   *   Element.focus,
+   * )
+   * ```
+   */
+  tapEffect: dual<
+    <A extends HTMLElement, E2, R2>(
+      fn: (el: A) => Effect.Effect<unknown, E2, R2>,
+    ) => <E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E | E2, R | R2>,
+    <A extends HTMLElement, E, R, E2, R2>(
+      self: Effect.Effect<A, E, R>,
+      fn: (el: A) => Effect.Effect<unknown, E2, R2>,
+    ) => Effect.Effect<A, E | E2, R | R2>
+  >(
+    2,
+    <A extends HTMLElement, E, R, E2, R2>(
+      self: Effect.Effect<A, E, R>,
+      fn: (el: A) => Effect.Effect<unknown, E2, R2>,
+    ): Effect.Effect<A, E | E2, R | R2> => Effect.tap(self, fn),
+  ),
 } as const;

@@ -1,7 +1,7 @@
 import type { Effect, Scope } from "effect";
 import type { Readable } from "@effex/core";
-import type { Ref } from "@effex/core";
 import type { Element as CoreElement } from "@effex/core";
+import type { ElementRef } from "./ref.js";
 
 /**
  * A DOM element wrapped in an Effect with scope management.
@@ -174,7 +174,16 @@ export interface BaseAttributes<T extends HTMLElement>
   readonly id?: string;
   /** ARIA role attribute */
   readonly role?: string | Readable<string>;
-  readonly ref?: Ref<T>;
+  /**
+   * Reference to this element. Pass an ElementRef created by Element.ref().
+   *
+   * @example
+   * ```ts
+   * const myRef = yield* Element.ref<HTMLDivElement>();
+   * return yield* $.div({ ref: myRef }, [...]);
+   * ```
+   */
+  readonly ref?: ElementRef<T>;
   /**
    * Set the element's innerHTML directly. Useful for rendering HTML strings
    * from markdown parsers, rich text editors, or sanitized user content.
@@ -346,7 +355,8 @@ export interface SVGBaseAttributes<T extends SVGElement>
   readonly id?: string;
   /** ARIA role attribute */
   readonly role?: string | Readable<string>;
-  readonly ref?: Ref<T>;
+  /** Reference to this element. Pass an ElementRef created by Element.ref(). */
+  readonly ref?: ElementRef<T>;
 }
 
 /**

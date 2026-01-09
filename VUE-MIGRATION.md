@@ -441,3 +441,82 @@ This gives you fine-grained control over when the UI updates, which is particula
 - Objects with irrelevant fields (timestamps, metadata)
 - Expensive computations that shouldn't re-run on semantically equal inputs
 - Normalized data where you want to compare by ID rather than reference
+
+## Imperative DOM Access
+
+In Vue, you use template refs to get DOM element references:
+
+```vue
+<!-- Vue -->
+<script setup>
+import { ref } from 'vue'
+
+const inputRef = ref<HTMLInputElement | null>(null)
+
+const handleFocus = () => {
+  inputRef.value?.focus()
+  inputRef.value?.scrollIntoView({ behavior: 'smooth' })
+  inputRef.value?.classList.add('focused')
+}
+</script>
+
+<template>
+  <input ref="inputRef" @click="handleFocus" />
+</template>
+```
+
+In Effex, the `Element` namespace provides pipeable helpers for DOM manipulation:
+
+```ts
+// Effex
+const FocusInput = component("FocusInput", () =>
+  Effect.gen(function* () {
+    const inputRef = yield* Element.ref<HTMLInputElement>();
+
+    const handleFocus = () =>
+      inputRef.pipe(
+        Element.focus,
+        Element.scrollIntoView({ behavior: "smooth" }),
+        Element.addClass("focused"),
+        Effect.runPromise,
+      );
+
+    return yield* $.input({ ref: inputRef, onClick: handleFocus });
+  }),
+);
+```
+
+### Common Vue DOM Patterns
+
+| Vue Pattern | Effex Equivalent |
+|-------------|------------------|
+| `ref.value?.focus()` | `el.pipe(Element.focus)` |
+| `ref.value?.blur()` | `el.pipe(Element.blur)` |
+| `ref.value?.click()` | `el.pipe(Element.click)` |
+| `ref.value?.scrollIntoView()` | `el.pipe(Element.scrollIntoView())` |
+| `ref.value?.classList.add("x")` | `el.pipe(Element.addClass("x"))` |
+| `ref.value?.classList.remove("x")` | `el.pipe(Element.removeClass("x"))` |
+| `ref.value?.classList.toggle("x")` | `el.pipe(Element.toggleClass("x"))` |
+| `ref.value?.setAttribute("k", "v")` | `el.pipe(Element.setAttribute("k", "v"))` |
+| `ref.value?.dataset.state = "x"` | `el.pipe(Element.setData("state", "x"))` |
+| `ref.value?.style.color = "red"` | `el.pipe(Element.setStyle("color", "red"))` |
+| `ref.value?.querySelector(".x")` | `el.pipe(Element.querySelector(".x"))` |
+
+### Animation Hooks
+
+Effex's animation system passes elements to lifecycle hooks as `Effect<HTMLElement>`, letting you use Element helpers:
+
+```ts
+when(isModalOpen, {
+  onTrue: () => Modal(),
+  onFalse: () => $.span(),
+  animate: {
+    enter: "fade-in",
+    exit: "fade-out",
+    onEnter: (el) => el.pipe(Element.focusFirst("[data-autofocus]")),
+    onBeforeExit: (el) => el.pipe(Element.blur),
+  },
+});
+```
+
+This is similar to Vue's `<Transition>` hooks but with pipeable operations instead of imperative code.

@@ -1,7 +1,6 @@
 import { Context, Effect } from "effect";
 import { Signal } from "@effex/dom";
 import { Readable } from "@effex/dom";
-import { Ref } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { when } from "@effex/dom";
@@ -10,7 +9,7 @@ import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
 import { FocusTrap } from "@effex/dom";
 import { ScrollLock } from "@effex/dom";
-import { Element } from "@effex/dom";
+import { Element, type ElementRef } from "@effex/dom";
 import type { AnimationOptions } from "@effex/dom";
 
 /**
@@ -30,7 +29,7 @@ export interface AlertDialogContext {
   /** Unique ID for the dialog content */
   readonly contentId: string;
   /** Ref to cancel button for initial focus */
-  readonly cancelRef: Ref<HTMLButtonElement>;
+  readonly cancelRef: ElementRef<HTMLButtonElement>;
 }
 
 /**
@@ -73,7 +72,7 @@ const Root = (
     const titleId = yield* UniqueId.make("alertdialog-title");
     const descriptionId = yield* UniqueId.make("alertdialog-description");
     const contentId = yield* UniqueId.make("alertdialog-content");
-    const cancelRef = yield* Ref.make<HTMLButtonElement>();
+    const cancelRef = yield* Element.ref<HTMLButtonElement>();
 
     const setOpenState = (newValue: boolean) =>
       Effect.gen(function* () {
@@ -266,14 +265,10 @@ const Content = component(
       yield* ScrollLock.lock;
 
       // Focus the cancel button if available, otherwise focus content
-      yield* Effect.sync(() => {
-        const cancelButton = ctx.cancelRef.current;
-        if (cancelButton) {
-          cancelButton.focus();
-        } else {
-          contentElement.focus();
-        }
-      });
+      yield* ctx.cancelRef.pipe(
+        Element.focus,
+        Effect.catchAll(() => Effect.sync(() => contentElement.focus())),
+      );
 
       return contentElement;
     }),
@@ -298,8 +293,10 @@ const Cancel = component(
     Effect.gen(function* () {
       const ctx = yield* AlertDialogCtx;
 
-      const buttonElement = yield* $.button(
+      // Pass cancelRef to ref prop - framework will bind the element
+      return yield* $.button(
         {
+          ref: ctx.cancelRef,
           class: props.class,
           type: "button",
           "data-alertdialog-cancel": "",
@@ -307,11 +304,6 @@ const Cancel = component(
         },
         children ?? [],
       );
-
-      // Register this button as the cancel button for initial focus
-      ctx.cancelRef.current = buttonElement;
-
-      return buttonElement;
     }),
 );
 

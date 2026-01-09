@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Effect } from "effect";
-import { Ref } from "@effex/core";
 import { onClickOutside } from "./onClickOutside";
+import { makeElementRef, bindElementToRef } from "../Element/ref";
 
 const runTest = <A>(effect: Effect.Effect<A, never, never>) =>
   Effect.runPromise(effect);
@@ -17,13 +17,13 @@ describe("onClickOutside", () => {
     await runTest(
       Effect.scoped(
         Effect.gen(function* () {
-          const ref = yield* Ref.make<HTMLDivElement>();
+          const ref = yield* makeElementRef<HTMLDivElement>();
 
           // Create and attach element
           const element = document.createElement("div");
           element.id = "inside";
           document.body.appendChild(element);
-          ref.current = element;
+          bindElementToRef(ref, element);
 
           // Create outside element
           const outside = document.createElement("div");
@@ -53,13 +53,13 @@ describe("onClickOutside", () => {
     await runTest(
       Effect.scoped(
         Effect.gen(function* () {
-          const ref = yield* Ref.make<HTMLDivElement>();
+          const ref = yield* makeElementRef<HTMLDivElement>();
 
           // Create and attach element
           const element = document.createElement("div");
           element.id = "inside";
           document.body.appendChild(element);
-          ref.current = element;
+          bindElementToRef(ref, element);
 
           yield* onClickOutside([ref], () =>
             Effect.sync(() => {
@@ -84,14 +84,14 @@ describe("onClickOutside", () => {
     await runTest(
       Effect.scoped(
         Effect.gen(function* () {
-          const ref = yield* Ref.make<HTMLDivElement>();
+          const ref = yield* makeElementRef<HTMLDivElement>();
 
           // Create parent and child
           const parent = document.createElement("div");
           const child = document.createElement("button");
           parent.appendChild(child);
           document.body.appendChild(parent);
-          ref.current = parent;
+          bindElementToRef(ref, parent);
 
           yield* onClickOutside([ref], () =>
             Effect.sync(() => {
@@ -116,8 +116,8 @@ describe("onClickOutside", () => {
     await runTest(
       Effect.scoped(
         Effect.gen(function* () {
-          const ref1 = yield* Ref.make<HTMLDivElement>();
-          const ref2 = yield* Ref.make<HTMLDivElement>();
+          const ref1 = yield* makeElementRef<HTMLDivElement>();
+          const ref2 = yield* makeElementRef<HTMLDivElement>();
 
           // Create both elements
           const element1 = document.createElement("div");
@@ -126,8 +126,8 @@ describe("onClickOutside", () => {
           document.body.appendChild(element1);
           document.body.appendChild(element2);
           document.body.appendChild(outside);
-          ref1.current = element1;
-          ref2.current = element2;
+          bindElementToRef(ref1, element1);
+          bindElementToRef(ref2, element2);
 
           yield* onClickOutside([ref1, ref2], () =>
             Effect.sync(() => {
@@ -195,16 +195,16 @@ describe("onClickOutside", () => {
     );
   });
 
-  it("should work with mixed Refs and raw elements", async () => {
+  it("should work with mixed ElementRefs and raw elements", async () => {
     let callbackCalled = false;
 
     await runTest(
       Effect.scoped(
         Effect.gen(function* () {
-          const ref = yield* Ref.make<HTMLDivElement>();
+          const ref = yield* makeElementRef<HTMLDivElement>();
           const refElement = document.createElement("div");
           document.body.appendChild(refElement);
-          ref.current = refElement;
+          bindElementToRef(ref, refElement);
 
           // Raw element
           const rawElement = document.createElement("div");
@@ -213,7 +213,7 @@ describe("onClickOutside", () => {
           const outside = document.createElement("div");
           document.body.appendChild(outside);
 
-          // Mix Ref and raw element
+          // Mix ElementRef and raw element
           yield* onClickOutside([ref, rawElement], () =>
             Effect.sync(() => {
               callbackCalled = true;
@@ -251,11 +251,11 @@ describe("onClickOutside", () => {
     await runTest(
       Effect.scoped(
         Effect.gen(function* () {
-          const ref = yield* Ref.make<HTMLDivElement>();
+          const ref = yield* makeElementRef<HTMLDivElement>();
 
           const element = document.createElement("div");
           document.body.appendChild(element);
-          ref.current = element;
+          bindElementToRef(ref, element);
 
           yield* onClickOutside([ref], () =>
             Effect.sync(() => {

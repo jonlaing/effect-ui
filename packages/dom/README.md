@@ -456,3 +456,273 @@ runApp(
 
 - `mount(element, container)` - Mount an element
 - `runApp(program, options?)` - Run an application
+
+## Element Helpers
+
+The `Element` namespace provides pipeable DOM manipulation helpers for use with element refs and animation hooks. All helpers support both data-first and data-last (pipeable) styles.
+
+### Creating Element Refs
+
+```ts
+import { Element, $ } from "@effex/dom";
+
+const MyComponent = component("MyComponent", () =>
+  Effect.gen(function* () {
+    const buttonRef = yield* Element.ref<HTMLButtonElement>();
+
+    const handleFocus = () =>
+      buttonRef.pipe(
+        Element.setStyles({ outline: "2px solid blue" }),
+        Element.focus,
+        Effect.runPromise,
+      );
+
+    return yield* $.div([
+      $.button({ ref: buttonRef, onClick: handleFocus }, "Click me"),
+    ]);
+  }),
+);
+```
+
+### Usage with Animation Hooks
+
+Element helpers are particularly useful in animation lifecycle hooks:
+
+```ts
+when(isOpen, {
+  onTrue: () => Dropdown(),
+  onFalse: () => $.span(),
+  animate: {
+    enterFrom: "opacity-0",
+    enterTo: "opacity-100",
+    onBeforeEnter: (el) =>
+      el.pipe(
+        Element.setStyles({ "transform-origin": "top" }),
+        Element.setData("state", "entering"),
+      ),
+    onEnter: (el) =>
+      el.pipe(
+        Element.focusFirst("[data-item]:not([data-disabled])"),
+      ),
+    onExit: (el) =>
+      el.pipe(
+        Element.setData("state", "exiting"),
+      ),
+  },
+});
+```
+
+### API Styles
+
+All helpers support both data-first and data-last (pipeable) styles:
+
+```ts
+// Data-first
+Element.setStyles(el, { opacity: "1" });
+Element.addClass(el, "active");
+
+// Data-last (pipeable)
+el.pipe(Element.setStyles({ opacity: "1" }));
+el.pipe(Element.addClass("active"));
+```
+
+### Querying & Traversal
+
+These return new elements and can fail if not found:
+
+```ts
+// Query descendants
+el.pipe(Element.querySelector("[data-value]"))       // Effect<HTMLElement, NoSuchElementException>
+el.pipe(Element.querySelectorAll("[data-item]"))     // Effect<HTMLElement[]>
+
+// Traversal
+el.pipe(Element.closest("[data-container]"))         // Effect<HTMLElement, NoSuchElementException>
+el.pipe(Element.getParent)                           // Effect<HTMLElement, NoSuchElementException>
+el.pipe(Element.matches("[data-active]"))            // Effect<boolean>
+
+// Get element dimensions
+el.pipe(Element.getBoundingClientRect)               // Effect<DOMRect>
+
+// Recover from failures with Effect.option
+el.pipe(Element.querySelector(".optional"), Effect.option)  // Effect<Option<HTMLElement>>
+```
+
+### Styles
+
+```ts
+// Set multiple styles (both camelCase and kebab-case work)
+el.pipe(Element.setStyles({ opacity: "1", fontSize: "16px" }))
+el.pipe(Element.setStyles({ opacity: "1", "font-size": "16px" }))
+
+// Set single style
+el.pipe(Element.setStyle("backgroundColor", "red"))
+el.pipe(Element.setStyle("background-color", "red"))
+
+// Remove style
+el.pipe(Element.removeStyle("animation"))
+```
+
+### Classes
+
+```ts
+// Add classes
+el.pipe(Element.addClass("active", "highlighted"))
+
+// Remove classes
+el.pipe(Element.removeClass("loading"))
+
+// Toggle class
+el.pipe(Element.toggleClass("expanded"))
+el.pipe(Element.toggleClass("expanded", true))  // force add
+
+// Replace class
+el.pipe(Element.replaceClass("old-class", "new-class"))
+```
+
+### Attributes
+
+```ts
+// Set attributes
+el.pipe(Element.setAttribute("aria-expanded", "true"))
+el.pipe(Element.setAttributes({ role: "menu", "aria-label": "Options" }))
+
+// Remove attribute
+el.pipe(Element.removeAttribute("disabled"))
+
+// Toggle boolean attribute
+el.pipe(Element.toggleAttribute("disabled"))
+el.pipe(Element.toggleAttribute("disabled", false))  // force remove
+
+// Get attribute (fails with AttributeNotFound if missing)
+el.pipe(Element.getAttribute("data-id"))             // Effect<string, AttributeNotFound>
+el.pipe(Element.getAttribute("data-id"), Effect.option)  // Effect<Option<string>>
+```
+
+### Data Attributes
+
+```ts
+// Set data attribute
+el.pipe(Element.setData("state", "open"))  // sets data-state="open"
+
+// Remove data attribute
+el.pipe(Element.removeData("state"))
+
+// Get data attribute (fails with DataAttributeNotFound if missing)
+el.pipe(Element.getData("state"))                    // Effect<string, DataAttributeNotFound>
+el.pipe(Element.getData("state"), Effect.option)     // Effect<Option<string>>
+```
+
+### Content
+
+```ts
+// Set text content
+el.pipe(Element.setTextContent("Hello, world!"))
+
+// Set innerHTML (be careful with untrusted content)
+el.pipe(Element.setInnerHTML("<strong>Bold</strong>"))
+```
+
+### Focus
+
+```ts
+// Basic focus
+el.pipe(Element.focus)
+el.pipe(Element.blur)
+
+// Focus with options
+el.pipe(Element.focusWithOptions({ preventScroll: true }))
+
+// Focus first/last matching descendant
+el.pipe(Element.focusFirst("[data-item]:not([data-disabled])"))
+el.pipe(Element.focusLast("[data-item]"))
+```
+
+### Scrolling
+
+```ts
+// Scroll into view
+el.pipe(Element.scrollIntoView({ behavior: "smooth", block: "center" }))
+
+// Scroll within element
+el.pipe(Element.scrollTo({ top: 0, behavior: "smooth" }))
+el.pipe(Element.scrollBy({ top: 100 }))
+```
+
+### Events
+
+```ts
+// Programmatic click
+el.pipe(Element.click)
+
+// Dispatch custom event
+el.pipe(Element.dispatchEvent(new CustomEvent("my-event", { detail: { foo: 1 } })))
+```
+
+### Input-Specific
+
+```ts
+// Select all text
+inputEl.pipe(Element.select)
+
+// Set selection range
+inputEl.pipe(Element.setSelectionRange(0, 5))
+```
+
+### Custom Operations
+
+For operations not covered by the built-in helpers:
+
+```ts
+// Synchronous side effect
+el.pipe(Element.tap((e) => console.log("Element:", e)))
+
+// Effectful operation
+el.pipe(Element.tapEffect((e) => logToServer(e.id)))
+```
+
+### Chaining Operations
+
+All mutation helpers preserve the element in the chain:
+
+```ts
+el.pipe(
+  Element.addClass("container"),
+  Element.setStyles({ padding: "10px" }),
+  Element.setAttribute("role", "region"),
+  Element.setData("state", "active"),
+  Element.focus,
+)
+```
+
+Query operations return new elements for continued chaining:
+
+```ts
+el.pipe(
+  Element.querySelector(".target"),  // Finds .target child
+  Element.addClass("found"),         // Adds class to .target
+  Element.setStyles({ color: "blue" }),
+)
+```
+
+### Synchronous Access
+
+For imperative code paths where you need synchronous element access:
+
+```ts
+const el = Element.getUnsafe(buttonRef);
+if (el) {
+  el.style.transform = `translateX(${x}px)`;
+}
+```
+
+### Error Types
+
+- `NoSuchElementException` - Element not found (querySelector, closest, getParent)
+- `AttributeNotFound` - Attribute doesn't exist (getAttribute)
+- `DataAttributeNotFound` - Data attribute doesn't exist (getData)
+
+Use `Effect.option` to convert failures to `Option<T>`:
+
+```ts
+// Instead of failing, get Option<string>
+el.pipe(Element.getAttribute("maybe-exists"), Effect.option)

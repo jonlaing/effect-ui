@@ -7,11 +7,11 @@ import { when } from "@effex/dom";
 import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
-import { Ref } from "@effex/dom";
 import { onClickOutside, createKeyboardNav } from "@effex/dom";
 import { Element } from "@effex/dom";
 import type { Child } from "@effex/dom";
 import type { AnimationOptions } from "@effex/dom";
+import type { ElementRef } from "@effex/dom";
 import { calculatePosition } from "../helpers";
 
 // ============================================================================
@@ -31,7 +31,7 @@ export interface DropdownMenuContext {
   /** Toggle the menu open state */
   readonly toggle: () => Effect.Effect<void>;
   /** Reference to the trigger element */
-  readonly triggerRef: Ref<HTMLButtonElement>;
+  readonly triggerRef: ElementRef<HTMLButtonElement>;
   /** Unique ID for the content */
   readonly contentId: string;
   /** Unique ID for the trigger */
@@ -63,7 +63,7 @@ export interface DropdownMenuSubContext {
   /** Schedule a close with delay */
   readonly scheduleClose: () => void;
   /** Reference to the SubTrigger element */
-  readonly triggerRef: Ref<HTMLDivElement>;
+  readonly triggerRef: ElementRef<HTMLDivElement>;
   /** Unique ID for the submenu content */
   readonly contentId: string;
   /** Unique ID for the SubTrigger */
@@ -140,7 +140,7 @@ const Root = (
       props.defaultOpen ?? false,
     );
 
-    const triggerRef = yield* Ref.make<HTMLButtonElement>();
+    const triggerRef = yield* Element.ref<HTMLButtonElement>();
     const contentId = yield* UniqueId.make("menu-content");
     const triggerId = yield* UniqueId.make("menu-trigger");
 
@@ -150,7 +150,7 @@ const Root = (
         yield* props.onOpenChange?.(newValue) ?? Effect.void;
         if (!newValue) {
           // Return focus to trigger when closing
-          triggerRef.current?.focus();
+          yield* triggerRef.pipe(Element.focus, Effect.ignore);
         }
       });
 
@@ -360,7 +360,7 @@ const Content = component(
         when(ctx.isOpen, {
           onTrue: () =>
             Effect.gen(function* () {
-              const triggerEl = ctx.triggerRef.current;
+              const triggerEl = Element.getUnsafe(ctx.triggerRef);
 
               // Get current positioning values
               const currentSide = yield* side.get;
@@ -375,7 +375,7 @@ const Content = component(
                 onEscape: () =>
                   Effect.gen(function* () {
                     yield* ctx.close();
-                    ctx.triggerRef.current?.focus();
+                    yield* ctx.triggerRef.pipe(Element.focus, Effect.ignore);
                   }),
               });
 
@@ -512,7 +512,7 @@ const Item = component(
 
           // Close menu and return focus to trigger
           yield* ctx.close();
-          ctx.triggerRef.current?.focus();
+          yield* ctx.triggerRef.pipe(Element.focus, Effect.ignore);
         });
 
       return yield* $.div(
@@ -677,7 +677,7 @@ const CheckboxItem = component(
 
           // Close menu and return focus to trigger
           yield* ctx.close();
-          ctx.triggerRef.current?.focus();
+          yield* ctx.triggerRef.pipe(Element.focus, Effect.ignore);
         });
 
       return yield* $.div(
@@ -799,7 +799,7 @@ const RadioItem = component(
 
           // Close menu and return focus to trigger
           yield* ctx.close();
-          ctx.triggerRef.current?.focus();
+          yield* ctx.triggerRef.pipe(Element.focus, Effect.ignore);
         });
 
       return yield* $.div(
@@ -856,7 +856,7 @@ const Sub = (
       props.defaultOpen ?? false,
     );
 
-    const triggerRef = yield* Ref.make<HTMLDivElement>();
+    const triggerRef = yield* Element.ref<HTMLDivElement>();
     const contentId = yield* UniqueId.make("submenu-content");
     const triggerId = yield* UniqueId.make("submenu-trigger");
 
@@ -1101,7 +1101,7 @@ const SubContent = component(
         when(subCtx.isOpen, {
           onTrue: () =>
             Effect.gen(function* () {
-              const triggerEl = subCtx.triggerRef.current;
+              const triggerEl = Element.getUnsafe(subCtx.triggerRef);
 
               // Get current sideOffset value
               const currentSideOffset = yield* sideOffset.get;
@@ -1151,7 +1151,7 @@ const SubContent = component(
                 onEscape: () =>
                   Effect.gen(function* () {
                     yield* subCtx.close();
-                    subCtx.triggerRef.current?.focus();
+                    yield* subCtx.triggerRef.pipe(Element.focus, Effect.ignore);
                   }),
               });
 
@@ -1162,7 +1162,7 @@ const SubContent = component(
                     event.preventDefault();
                     event.stopPropagation();
                     yield* subCtx.close();
-                    subCtx.triggerRef.current?.focus();
+                    yield* subCtx.triggerRef.pipe(Element.focus, Effect.ignore);
                     return;
                   }
 

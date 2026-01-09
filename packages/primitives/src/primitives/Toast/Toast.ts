@@ -1,7 +1,6 @@
 import { Context, Effect, MutableRef } from "effect";
 import { Signal } from "@effex/dom";
 import { Readable } from "@effex/dom";
-import { Ref } from "@effex/dom";
 import { $, ol, li, button } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { each } from "@effex/dom";
@@ -214,7 +213,7 @@ const Viewport = component(
   (props: ToastViewportProps, children) =>
     Effect.gen(function* () {
       const ctx = yield* ToastCtx;
-      const viewportRef = yield* Ref.make<HTMLOListElement>();
+      const viewportRef = yield* Element.ref<HTMLOListElement>();
 
       const label = props.label ?? "Notifications";
       const hotkey = props.hotkey ?? ["altKey", "KeyT"];
@@ -231,7 +230,7 @@ const Viewport = component(
 
         if (modifierMatch) {
           e.preventDefault();
-          viewportRef.current?.focus();
+          Effect.runPromise(viewportRef.pipe(Element.focus, Effect.ignore));
         }
       };
 
@@ -321,7 +320,7 @@ const Root = component("ToastRoot", (props: ToastRootProps, children) =>
   Effect.gen(function* () {
     const ctx = yield* ToastCtx;
     const toast = props.toast;
-    const toastRef = yield* Ref.make<HTMLLIElement>();
+    const toastRef = yield* Element.ref<HTMLLIElement>();
 
     // Timer state
     const duration = toast.duration ?? ctx.defaultDuration;
@@ -405,7 +404,7 @@ const Root = component("ToastRoot", (props: ToastRootProps, children) =>
         MutableRef.set(swipeState, { ...state, deltaX, deltaY });
 
         // Apply transform for visual feedback
-        const el = toastRef.current;
+        const el = Element.getUnsafe(toastRef);
         if (el) {
           const transform = getSwipeTransform(
             MutableRef.get(swipeState),
@@ -436,7 +435,7 @@ const Root = component("ToastRoot", (props: ToastRootProps, children) =>
           yield* dismiss();
         } else {
           // Snap back
-          const el = toastRef.current;
+          const el = Element.getUnsafe(toastRef);
           if (el) {
             el.style.transform = "";
             el.style.opacity = "";

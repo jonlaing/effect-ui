@@ -21,22 +21,22 @@ import type {
   SVGAttributes,
   SVGElementFactory,
 } from "./types";
-import type { Ref } from "@effex/core";
+import { bindElementToRef, type ElementRef } from "./ref.js";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 
 const applyRef = <K extends keyof HTMLElementTagNameMap>(
   element: HTMLElementTagNameMap[K],
-  ref: Ref<HTMLElementTagNameMap[K]>,
+  ref: ElementRef<HTMLElementTagNameMap[K]>,
 ): void => {
-  ref.set(element);
+  bindElementToRef(ref, element);
 };
 
 const applyRefSVG = <K extends keyof SVGElementTagNameMap>(
   element: SVGElementTagNameMap[K],
-  ref: Ref<SVGElementTagNameMap[K]>,
+  ref: ElementRef<SVGElementTagNameMap[K]>,
 ): void => {
-  ref.set(element);
+  bindElementToRef(ref, element);
 };
 
 const applyInnerHTML = (
@@ -64,7 +64,7 @@ const applyAttributes = <K extends keyof HTMLElementTagNameMap>(
       if (key === "ref") {
         applyRef(
           element as HTMLElementTagNameMap[K],
-          value as Ref<HTMLElementTagNameMap[K]>,
+          value as ElementRef<HTMLElementTagNameMap[K]>,
         );
       } else if (key === "class") {
         yield* applyClassWithRenderer(renderer, element, value as ClassValue);
@@ -239,7 +239,7 @@ const applyAttributesSVG = <K extends keyof SVGElementTagNameMap>(
       if (key === "ref") {
         applyRefSVG(
           element as SVGElementTagNameMap[K],
-          value as Ref<SVGElementTagNameMap[K]>,
+          value as ElementRef<SVGElementTagNameMap[K]>,
         );
       } else if (key === "class") {
         yield* applyClassWithRenderer(renderer, element, value as ClassValue);

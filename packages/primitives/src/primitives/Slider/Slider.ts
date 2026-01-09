@@ -1,11 +1,10 @@
 import { Context, Effect, MutableRef } from "effect";
 import { Signal } from "@effex/dom";
 import { Readable } from "@effex/dom";
-import { Ref } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { component } from "@effex/dom";
-import { Element } from "@effex/dom";
+import { Element, type ElementRef } from "@effex/dom";
 import {
   type SliderValue,
   isRangeValue,
@@ -46,7 +45,7 @@ export interface SliderContext {
   /** Whether values are inverted */
   readonly inverted: boolean;
   /** Track element ref for position calculations */
-  readonly trackRef: Ref<HTMLDivElement>;
+  readonly trackRef: ElementRef<HTMLDivElement>;
   /** Register a thumb (returns its index) */
   readonly registerThumb: () => number;
   /** Convert pointer position to value */
@@ -150,7 +149,7 @@ const Root = (
     const isRange = Array.isArray(initialValue);
 
     // Track ref for position calculations
-    const trackRef = yield* Ref.make<HTMLDivElement>();
+    const trackRef = yield* Element.ref<HTMLDivElement>();
 
     // Dragging state
     const draggingThumb = yield* Signal.make<number>(-1);
@@ -163,7 +162,7 @@ const Root = (
 
     // Convert pointer position to value
     const pointerToValue = (clientX: number, clientY: number): number => {
-      const track = trackRef.current;
+      const track = Element.getUnsafe(trackRef);
       if (!track) return min;
 
       const rect = track.getBoundingClientRect();
@@ -336,7 +335,9 @@ const Track = component("SliderTrack", (props: SliderTrackProps, children) =>
         yield* ctx.startDrag(thumbIndex);
 
         // Focus the thumb for keyboard accessibility
-        const thumbEl = ctx.trackRef.current?.parentElement?.querySelector(
+        const thumbEl = Element.getUnsafe(
+          ctx.trackRef,
+        )?.parentElement?.querySelector(
           `[data-slider-thumb][data-thumb-index="${thumbIndex}"]`,
         ) as HTMLElement | null;
         thumbEl?.focus();

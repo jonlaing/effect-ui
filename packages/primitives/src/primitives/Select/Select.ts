@@ -8,9 +8,8 @@ import { when } from "@effex/dom";
 import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
-import { Ref } from "@effex/dom";
 import { onClickOutside, createKeyboardNav } from "@effex/dom";
-import { Element } from "@effex/dom";
+import { Element, type ElementRef } from "@effex/dom";
 import type { AnimationOptions } from "@effex/dom";
 import { calculatePosition } from "../helpers";
 
@@ -38,7 +37,7 @@ export interface SelectContext {
   /** Map of value to display text */
   readonly valueLabels: Signal<Map<string, string>>;
   /** Reference to the trigger element */
-  readonly triggerRef: Ref<HTMLButtonElement>;
+  readonly triggerRef: ElementRef<HTMLButtonElement>;
   /** Unique ID for the content */
   readonly contentId: string;
   /** Unique ID for the trigger */
@@ -141,7 +140,7 @@ const Root = (
     );
 
     const valueLabels = yield* Signal.make<Map<string, string>>(new Map());
-    const triggerRef = yield* Ref.make<HTMLButtonElement>();
+    const triggerRef = yield* Element.ref<HTMLButtonElement>();
     const contentId = yield* UniqueId.make("select-content");
     const triggerId = yield* UniqueId.make("select-trigger");
 
@@ -151,7 +150,7 @@ const Root = (
         yield* props.onOpenChange?.(newValue) ?? Effect.void;
         if (!newValue) {
           // Return focus to trigger when closing
-          triggerRef.current?.focus();
+          yield* triggerRef.pipe(Element.focus, Effect.ignore);
         }
       });
 
@@ -404,7 +403,8 @@ const Content = component(
         when(ctx.isOpen, {
           onTrue: () =>
             Effect.gen(function* () {
-              const triggerEl = ctx.triggerRef.current;
+              // Get trigger element for positioning (needs sync access for measurement)
+              const triggerEl = Element.getUnsafe(ctx.triggerRef);
 
               // Get current positioning values
               const currentSide = yield* side.get;
@@ -425,7 +425,7 @@ const Content = component(
                 onEscape: () =>
                   Effect.gen(function* () {
                     yield* ctx.close();
-                    ctx.triggerRef.current?.focus();
+                    yield* ctx.triggerRef.pipe(Element.focus, Effect.ignore);
                   }),
               });
 

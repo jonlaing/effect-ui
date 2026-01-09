@@ -401,3 +401,79 @@ This gives you fine-grained control over when the UI updates, which is particula
 - Objects with irrelevant fields (timestamps, metadata)
 - Expensive computations that shouldn't re-run on semantically equal inputs
 - Normalized data where you want to compare by ID rather than reference
+
+## Imperative DOM Access
+
+In React, you use `useRef` to get DOM element references:
+
+```tsx
+// React
+function FocusInput() {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFocus = () => {
+    inputRef.current?.focus();
+    inputRef.current?.scrollIntoView({ behavior: "smooth" });
+    inputRef.current?.classList.add("focused");
+  };
+
+  return <input ref={inputRef} onClick={handleFocus} />;
+}
+```
+
+In Effex, the `Element` namespace provides pipeable helpers for DOM manipulation:
+
+```ts
+// Effex
+const FocusInput = component("FocusInput", () =>
+  Effect.gen(function* () {
+    const inputRef = yield* Element.ref<HTMLInputElement>();
+
+    const handleFocus = () =>
+      inputRef.pipe(
+        Element.focus,
+        Element.scrollIntoView({ behavior: "smooth" }),
+        Element.addClass("focused"),
+        Effect.runPromise,
+      );
+
+    return yield* $.input({ ref: inputRef, onClick: handleFocus });
+  }),
+);
+```
+
+### Common React DOM Patterns
+
+| React Pattern | Effex Equivalent |
+|---------------|------------------|
+| `ref.current?.focus()` | `el.pipe(Element.focus)` |
+| `ref.current?.blur()` | `el.pipe(Element.blur)` |
+| `ref.current?.click()` | `el.pipe(Element.click)` |
+| `ref.current?.scrollIntoView()` | `el.pipe(Element.scrollIntoView())` |
+| `ref.current?.classList.add("x")` | `el.pipe(Element.addClass("x"))` |
+| `ref.current?.classList.remove("x")` | `el.pipe(Element.removeClass("x"))` |
+| `ref.current?.classList.toggle("x")` | `el.pipe(Element.toggleClass("x"))` |
+| `ref.current?.setAttribute("k", "v")` | `el.pipe(Element.setAttribute("k", "v"))` |
+| `ref.current?.removeAttribute("k")` | `el.pipe(Element.removeAttribute("k"))` |
+| `ref.current?.dataset.state = "x"` | `el.pipe(Element.setData("state", "x"))` |
+| `ref.current?.style.color = "red"` | `el.pipe(Element.setStyle("color", "red"))` |
+| `ref.current?.querySelector(".x")` | `el.pipe(Element.querySelector(".x"))` |
+
+### Animation Hooks
+
+Effex's animation system passes elements to lifecycle hooks as `Effect<HTMLElement>`, letting you use Element helpers:
+
+```ts
+when(isModalOpen, {
+  onTrue: () => Modal(),
+  onFalse: () => $.span(),
+  animate: {
+    enter: "fade-in",
+    exit: "fade-out",
+    onEnter: (el) => el.pipe(Element.focusFirst("[data-autofocus]")),
+    onBeforeExit: (el) => el.pipe(Element.blur),
+  },
+});
+```
+
+This is cleaner than React's approach of managing refs and using `useEffect` for animation callbacks.

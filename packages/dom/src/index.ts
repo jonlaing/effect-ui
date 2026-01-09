@@ -41,7 +41,14 @@ export type {
   HTMLAttributes,
   ElementFactory,
 } from "./Element";
-export { Element } from "./Element";
+export {
+  Element,
+  type ElementRef,
+  NoSuchElementException,
+  AttributeNotFound,
+  DataAttributeNotFound,
+  bindElementToRef,
+} from "./Element";
 export {
   $,
   div,
@@ -160,5 +167,5 @@ export { FocusTrap } from "./FocusTrap";
 export { ScrollLock } from "./ScrollLock";
 
 // DOM Helpers
-export type { KeyboardNavOptions, ElementRef } from "./helpers/index.js";
+export type { KeyboardNavOptions, ElementRefLike } from "./helpers/index.js";
 export { onClickOutside, createKeyboardNav } from "./helpers/index.js";
