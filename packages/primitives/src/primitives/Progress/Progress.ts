@@ -1,4 +1,5 @@
 import { Context, Effect } from "effect";
+import type { ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { Derived } from "@effex/dom";
 import { $ } from "@effex/dom";
@@ -31,7 +32,7 @@ export interface ProgressRootProps {
   /** Custom label for screen readers */
   readonly getValueLabel?: (value: number, max: number) => string;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 const Root = (
@@ -100,7 +101,7 @@ const Root = (
 
 export interface ProgressIndicatorProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 const Indicator = component(

@@ -1,5 +1,6 @@
 import { Context, Effect, Option } from "effect";
 import type { SignalArray } from "@effex/dom";
+import type { ClassValue } from "@effex/dom";
 import { Readable, Signal, UniqueId } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
@@ -84,7 +85,7 @@ export interface ToolbarRootProps {
   /** ID of element that labels the toolbar */
   readonly "aria-labelledby"?: string;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 export interface ToolbarButtonProps {
@@ -95,7 +96,7 @@ export interface ToolbarButtonProps {
   /** Callback when button is pressed */
   readonly onPress?: () => Effect.Effect<void>;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 export interface ToolbarToggleItemProps {
@@ -112,7 +113,7 @@ export interface ToolbarToggleItemProps {
   /** Value for ToggleGroup integration */
   readonly value?: string;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 export interface ToolbarToggleGroupProps {
@@ -135,12 +136,12 @@ export interface ToolbarToggleGroupProps {
   /** Accessible label for the group */
   readonly "aria-label"?: string;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 export interface ToolbarSeparatorProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 export interface ToolbarLinkProps {
@@ -151,7 +152,7 @@ export interface ToolbarLinkProps {
   /** Whether the link is disabled (prevents navigation) */
   readonly disabled?: Readable.Reactive<boolean>;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 // ============================================================================

@@ -1,5 +1,6 @@
 import { Effect, Layer } from "effect";
 import { Signal } from "@effex/dom";
+import type { ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
@@ -100,7 +101,7 @@ const Root = (
  */
 export interface PopoverTriggerProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -143,7 +144,7 @@ const Trigger = component(
  */
 export interface PopoverAnchorProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -180,7 +181,7 @@ const Anchor = component(
  */
 export interface PopoverContentProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Positioning side relative to trigger (default: "bottom") */
   readonly side?: Readable.Reactive<"top" | "bottom" | "left" | "right">;
   /** Alignment along the side axis (default: "center") */
@@ -334,7 +335,7 @@ const Content = component(
  */
 export interface PopoverCloseProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**

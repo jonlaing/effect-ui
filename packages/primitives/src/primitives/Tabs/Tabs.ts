@@ -1,5 +1,6 @@
 import { Context, Effect } from "effect";
 import { Signal } from "@effex/dom";
+import type { ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
@@ -109,7 +110,7 @@ const Root = (
  */
 export interface TabsListProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Whether keyboard navigation loops (default: true) */
   readonly loop?: boolean;
 }
@@ -168,7 +169,7 @@ export interface TabsTriggerProps {
   /** Unique value for this tab */
   readonly value: string;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Whether this tab is disabled */
   readonly disabled?: Readable.Reactive<boolean>;
 }
@@ -224,7 +225,7 @@ export interface TabsContentProps {
   /** Value matching the corresponding Trigger */
   readonly value: string;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Force mount even when inactive (default: false) */
   readonly forceMount?: boolean;
   /** Animation configuration for enter/exit transitions */

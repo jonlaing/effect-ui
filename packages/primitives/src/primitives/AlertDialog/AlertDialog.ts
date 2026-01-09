@@ -1,5 +1,6 @@
 import { Context, Effect } from "effect";
 import { Signal } from "@effex/dom";
+import type { ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
@@ -101,7 +102,7 @@ const Root = (
  */
 export interface AlertDialogTriggerProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -174,7 +175,7 @@ const AlertDialogPortal = (
  */
 export interface AlertDialogOverlayProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -203,7 +204,7 @@ const Overlay = component(
  */
 export interface AlertDialogContentProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Called when Escape key is pressed (before close) */
   readonly onEscapeKeyDown?: (event: KeyboardEvent) => Effect.Effect<void>;
   /** Whether to close on Escape key (default: true) */
@@ -279,7 +280,7 @@ const Content = component(
  */
 export interface AlertDialogCancelProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -312,7 +313,7 @@ const Cancel = component(
  */
 export interface AlertDialogActionProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Called when action button is clicked (before close) */
   readonly onClick?: () => Effect.Effect<void>;
 }
@@ -350,7 +351,7 @@ const Action = component(
  */
 export interface AlertDialogTitleProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -379,7 +380,7 @@ const Title = component(
  */
 export interface AlertDialogDescriptionProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**

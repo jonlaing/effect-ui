@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import { Signal } from "@effex/dom";
+import type { ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { component } from "@effex/dom";
 import { $ } from "@effex/dom";
@@ -55,7 +56,7 @@ export interface SwitchProps {
   /**
    * CSS class name(s) for styling.
    */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**

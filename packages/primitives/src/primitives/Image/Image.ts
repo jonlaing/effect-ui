@@ -1,4 +1,5 @@
 import { Context, Effect } from "effect";
+import type { ClassValue } from "@effex/dom";
 import {
   Signal,
   Readable,
@@ -27,7 +28,7 @@ export class ImageCtx extends Context.Tag("ImageContext")<
 
 export interface ImageRootProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -61,7 +62,7 @@ export interface ImageImgProps {
   /** Alt text for accessibility */
   readonly alt: string;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -130,7 +131,7 @@ const Img = component("ImageImg", (props: ImageImgProps) =>
 
 export interface ImageFallbackProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /**
    * Delay in milliseconds before showing fallback.
    * Useful to avoid flashing fallback for quickly-loading images.

@@ -1,5 +1,6 @@
 import { Context, Effect } from "effect";
 import { Signal } from "@effex/dom";
+import type { ClassValue } from "@effex/dom";
 import { Derived } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
@@ -207,7 +208,7 @@ const Root = (
  */
 export interface SelectTriggerProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -272,7 +273,7 @@ const Trigger = component(
  */
 export interface SelectValueProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Placeholder when no value selected */
   readonly placeholder?: Readable.Reactive<string>;
 }
@@ -320,7 +321,7 @@ const Value = component("SelectValue", (props: SelectValueProps) =>
  */
 export interface SelectContentProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Positioning side relative to trigger (default: "bottom") */
   readonly side?: Readable.Reactive<"top" | "bottom">;
   /** Alignment along the side axis (default: "start") */
@@ -486,7 +487,7 @@ export interface SelectItemProps {
    */
   readonly textValue?: string;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Whether this item is disabled */
   readonly disabled?: Readable.Reactive<boolean>;
 }
@@ -568,7 +569,7 @@ const Item = (
  */
 export interface SelectItemTextProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -607,7 +608,7 @@ const ItemText = component(
  */
 export interface SelectGroupProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -639,7 +640,7 @@ const Group = component("SelectGroup", (props: SelectGroupProps, children) =>
  */
 export interface SelectLabelProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -667,7 +668,7 @@ const Label = component("SelectLabel", (props: SelectLabelProps, children) =>
  */
 export interface SelectSeparatorProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**

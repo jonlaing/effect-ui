@@ -1,5 +1,6 @@
 import { Context, Effect, MutableRef } from "effect";
 import { Signal, Derived } from "@effex/dom";
+import type { ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
@@ -104,7 +105,7 @@ export interface SplitterRootProps {
   /** Accessible label */
   readonly "aria-label"?: string;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -439,7 +440,7 @@ export interface SplitterPanelProps {
   /** Maximum size as percentage (default: 100) */
   readonly maxSize?: number;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -498,7 +499,7 @@ export interface SplitterHandleProps {
   /** Accessible label for this handle */
   readonly "aria-label"?: string;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**

@@ -1,5 +1,6 @@
 import { Context, Effect } from "effect";
 import { Signal } from "@effex/dom";
+import type { ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
@@ -128,7 +129,7 @@ const Root = (
  */
 export interface DialogTriggerProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -215,7 +216,7 @@ const DialogPortal = (
  */
 export interface DialogOverlayProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -248,7 +249,7 @@ const Overlay = component("DialogOverlay", (props: DialogOverlayProps) =>
  */
 export interface DialogContentProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Called when Escape key is pressed (before close) */
   readonly onEscapeKeyDown?: (event: KeyboardEvent) => Effect.Effect<void>;
 }
@@ -322,7 +323,7 @@ const Content = component(
  */
 export interface DialogCloseProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -354,7 +355,7 @@ const Close = component("DialogClose", (props: DialogCloseProps, children) =>
  */
 export interface DialogTitleProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -386,7 +387,7 @@ const Title = component("DialogTitle", (props: DialogTitleProps, children) =>
  */
 export interface DialogDescriptionProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**

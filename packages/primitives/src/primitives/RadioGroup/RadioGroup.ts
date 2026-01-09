@@ -1,5 +1,6 @@
 import { Context, Effect } from "effect";
 import { Signal } from "@effex/dom";
+import type { ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { Derived } from "@effex/dom";
 import { $ } from "@effex/dom";
@@ -57,7 +58,7 @@ export interface RadioGroupRootProps {
   /** Whether keyboard navigation loops (default: true) */
   readonly loop?: boolean;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -158,7 +159,7 @@ export interface RadioGroupItemProps {
   /** Whether this item is disabled */
   readonly disabled?: Readable.Reactive<boolean>;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**

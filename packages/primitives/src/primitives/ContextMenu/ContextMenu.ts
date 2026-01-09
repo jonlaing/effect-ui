@@ -1,5 +1,6 @@
 import { Context, Effect } from "effect";
 import { Signal } from "@effex/dom";
+import type { ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
@@ -157,7 +158,7 @@ const Root = (
  */
 export interface ContextMenuTriggerProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Whether the trigger is disabled */
   readonly disabled?: Readable.Reactive<boolean>;
 }
@@ -207,7 +208,7 @@ const Trigger = component(
  */
 export interface ContextMenuContentProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Whether keyboard navigation loops (default: true) */
   readonly loop?: boolean;
   /** Animation configuration for enter/exit transitions */
@@ -346,7 +347,7 @@ const Content = component(
  */
 export interface ContextMenuItemProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Whether this item is disabled */
   readonly disabled?: Readable.Reactive<boolean>;
   /** Callback when item is selected */
@@ -402,7 +403,7 @@ const Item = component(
  */
 export interface ContextMenuGroupProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -438,7 +439,7 @@ const Group = component(
  */
 export interface ContextMenuLabelProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -469,7 +470,7 @@ const Label = component(
  */
 export interface ContextMenuSeparatorProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -498,7 +499,7 @@ const Separator = component(
  */
 export interface ContextMenuCheckboxItemProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Whether this item is disabled */
   readonly disabled?: Readable.Reactive<boolean>;
   /** Controlled checked state */
@@ -574,7 +575,7 @@ const CheckboxItem = component(
  */
 export interface ContextMenuRadioGroupProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Controlled value */
   readonly value?: Signal<string>;
   /** Default value (uncontrolled) */
@@ -632,7 +633,7 @@ const RadioGroup = (
  */
 export interface ContextMenuRadioItemProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** The value for this radio item */
   readonly value: string;
   /** Whether this item is disabled */
@@ -782,7 +783,7 @@ const Sub = (
  */
 export interface ContextMenuSubTriggerProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Whether this trigger is disabled */
   readonly disabled?: Readable.Reactive<boolean>;
 }
@@ -890,7 +891,7 @@ const SubTrigger = component(
  */
 export interface ContextMenuSubContentProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Gap between trigger and content in pixels (default: 0) */
   readonly sideOffset?: Readable.Reactive<number>;
   /** Whether keyboard navigation loops (default: true) */

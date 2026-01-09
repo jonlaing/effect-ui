@@ -1,5 +1,6 @@
 import { Context, Effect, MutableRef } from "effect";
 import { Signal } from "@effex/dom";
+import type { ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
@@ -115,7 +116,7 @@ export interface SliderRootProps {
   /** ID of labelling element */
   readonly "aria-labelledby"?: string;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -298,7 +299,7 @@ const Root = (
  */
 export interface SliderTrackProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -364,7 +365,7 @@ const Track = component("SliderTrack", (props: SliderTrackProps, children) =>
  */
 export interface SliderRangeProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -406,7 +407,7 @@ const Range = component("SliderRange", (props: SliderRangeProps) =>
  */
 export interface SliderThumbProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** ARIA label for this specific thumb */
   readonly "aria-label"?: string;
   /** ID of element that labels this thumb */

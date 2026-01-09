@@ -1,5 +1,6 @@
 import { Context, Effect, MutableRef } from "effect";
 import { Signal } from "@effex/dom";
+import type { ClassValue } from "@effex/dom";
 import { Derived } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
@@ -97,29 +98,29 @@ export interface ScrollAreaRootProps {
   /** Delay before hiding scrollbars (ms) */
   readonly scrollHideDelay?: number;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 export interface ScrollAreaViewportProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 export interface ScrollAreaScrollbarProps {
   /** Scrollbar orientation */
   readonly orientation: ScrollbarOrientation;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 export interface ScrollAreaThumbProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 export interface ScrollAreaCornerProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 // ============================================================================

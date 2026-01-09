@@ -1,5 +1,6 @@
 import { Context, Effect } from "effect";
 import { Signal } from "@effex/dom";
+import type { ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
@@ -114,7 +115,7 @@ const Root = (
  */
 export interface TooltipTriggerProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Whether the trigger should be a span wrapper (default: true) */
   readonly asChild?: boolean;
 }
@@ -180,7 +181,7 @@ const Trigger = component(
  */
 export interface TooltipContentProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Positioning side relative to trigger (default: "top") */
   readonly side?: Readable.Reactive<"top" | "bottom" | "left" | "right">;
   /** Alignment along the side axis (default: "center") */

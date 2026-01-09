@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+import type { ClassValue } from "@effex/dom";
 import { Readable, $ } from "@effex/dom";
 import { Element } from "@effex/dom";
 
@@ -21,7 +22,7 @@ export interface SeparatorProps {
   /**
    * Additional class names for styling.
    */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**

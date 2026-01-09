@@ -1,5 +1,6 @@
 import { Context, Effect, MutableRef } from "effect";
 import { Signal } from "@effex/dom";
+import type { ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { $, ol, li, button } from "@effex/dom";
 import { provide } from "@effex/dom";
@@ -197,7 +198,7 @@ const Provider = (
  */
 export interface ToastViewportProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Hotkey to focus viewport (default: Alt+T) */
   readonly hotkey?: readonly string[];
   /** ARIA label (default: "Notifications") */
@@ -305,7 +306,7 @@ const Viewport = component(
  */
 export interface ToastRootProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -488,7 +489,7 @@ const Root = component("ToastRoot", (props: ToastRootProps, children) =>
  */
 export interface ToastTitleProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -513,7 +514,7 @@ const Title = component("ToastTitle", (props: ToastTitleProps, children) =>
  */
 export interface ToastDescriptionProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -540,7 +541,7 @@ const Description = component(
  */
 export interface ToastActionProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Alt text for screen readers */
   readonly altText?: string;
 }
@@ -591,7 +592,7 @@ const Action = component("ToastAction", (props: ToastActionProps, children) =>
  */
 export interface ToastCloseProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** ARIA label (default: "Close") */
   readonly "aria-label"?: string;
 }

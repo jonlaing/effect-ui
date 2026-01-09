@@ -1,5 +1,6 @@
 import { Context, Effect } from "effect";
 import { Signal, Derived } from "@effex/dom";
+import type { ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
@@ -105,7 +106,7 @@ export interface TreeViewRootProps {
   /** Accessible label */
   readonly "aria-label"?: string;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -322,7 +323,7 @@ export interface TreeViewItemProps {
   /** Whether this item is disabled */
   readonly disabled?: Readable.Reactive<boolean>;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -409,7 +410,7 @@ const Item = (
  */
 export interface TreeViewItemLabelProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -470,7 +471,7 @@ const ItemLabel = component(
  */
 export interface TreeViewItemContentProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**

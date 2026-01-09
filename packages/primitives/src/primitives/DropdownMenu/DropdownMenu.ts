@@ -1,5 +1,6 @@
 import { Context, Effect } from "effect";
 import { Signal } from "@effex/dom";
+import type { ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
@@ -173,7 +174,7 @@ const Root = (
  */
 export interface DropdownMenuTriggerProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Whether the trigger is disabled */
   readonly disabled?: Readable.Reactive<boolean>;
 }
@@ -263,7 +264,7 @@ const Trigger = component(
  */
 export interface DropdownMenuContentProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Positioning side relative to trigger (default: "bottom") */
   readonly side?: Readable.Reactive<"top" | "bottom" | "left" | "right">;
   /** Alignment along the side axis (default: "start") */
@@ -431,7 +432,7 @@ const Content = component(
  */
 export interface DropdownMenuItemProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Whether this item is disabled */
   readonly disabled?: Readable.Reactive<boolean>;
   /** Callback when item is selected */
@@ -487,7 +488,7 @@ const Item = component(
  */
 export interface DropdownMenuGroupProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -522,7 +523,7 @@ const Group = component(
  */
 export interface DropdownMenuLabelProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -552,7 +553,7 @@ const Label = component(
  */
 export interface DropdownMenuSeparatorProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -580,7 +581,7 @@ const Separator = component(
  */
 export interface DropdownMenuCheckboxItemProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Whether this item is disabled */
   readonly disabled?: Readable.Reactive<boolean>;
   /** Controlled checked state */
@@ -655,7 +656,7 @@ const CheckboxItem = component(
  */
 export interface DropdownMenuRadioGroupProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Controlled value */
   readonly value?: Signal<string>;
   /** Default value (uncontrolled) */
@@ -713,7 +714,7 @@ const RadioGroup = (
  */
 export interface DropdownMenuRadioItemProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** The value for this radio item */
   readonly value: string;
   /** Whether this item is disabled */
@@ -862,7 +863,7 @@ const Sub = (
  */
 export interface DropdownMenuSubTriggerProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Whether this trigger is disabled */
   readonly disabled?: Readable.Reactive<boolean>;
 }
@@ -974,7 +975,7 @@ const SubTrigger = component(
  */
 export interface DropdownMenuSubContentProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Gap between trigger and content in pixels (default: 0) */
   readonly sideOffset?: Readable.Reactive<number>;
   /** Whether keyboard navigation loops (default: true) */

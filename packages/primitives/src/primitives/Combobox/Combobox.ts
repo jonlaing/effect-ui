@@ -1,5 +1,6 @@
 import { Effect, Layer } from "effect";
 import { Signal } from "@effex/dom";
+import type { ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { Derived } from "@effex/dom";
 import { $ } from "@effex/dom";
@@ -266,7 +267,7 @@ const Root = (
  */
 export interface ComboboxInputProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Placeholder text */
   readonly placeholder?: Readable.Reactive<string>;
   /** Whether the input is disabled */
@@ -445,7 +446,7 @@ const Input = component(
  */
 export interface ComboboxContentProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Which side to position on (default: "bottom") */
   readonly side?: Readable.Reactive<"top" | "bottom">;
   /** Alignment relative to input (default: "start") */
@@ -567,7 +568,7 @@ export interface ComboboxItemProps {
   /** Text value for display (auto-detected from ItemText if not provided) */
   readonly textValue?: string;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Whether this item is disabled */
   readonly disabled?: Readable.Reactive<boolean>;
   /** Animation configuration for enter/exit transitions */
@@ -689,7 +690,7 @@ const Item = (
  */
 export interface ComboboxItemTextProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -727,7 +728,7 @@ const ItemText = component(
  */
 export interface ComboboxGroupProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -761,7 +762,7 @@ const Group = component(
  */
 export interface ComboboxLabelProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -791,7 +792,7 @@ const Label = component(
  */
 export interface ComboboxEmptyProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Animation configuration for enter/exit transitions */
   readonly animate?: AnimationOptions;
 }
@@ -837,7 +838,7 @@ const Empty = component(
  */
 export interface ComboboxLoadingProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Animation configuration for enter/exit transitions */
   readonly animate?: AnimationOptions;
 }
