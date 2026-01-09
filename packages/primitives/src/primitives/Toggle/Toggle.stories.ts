@@ -5,8 +5,6 @@ import { $ } from "@effex/dom";
 import { Signal } from "@effex/dom";
 import { renderEffectAsync } from "../../storyHelpers";
 
-import "./Toggle.stories.css";
-
 const meta: Meta = {
   title: "Primitives/Toggle",
   tags: ["autodocs"],
@@ -17,10 +15,13 @@ type Story = StoryObj;
 
 export const Default: Story = {
   render: () => {
-    const element = Toggle({ class: "toggle" }, "Bold");
+    const element = Toggle(
+      { class: "btn btn-sm data-[state=on]:btn-primary" },
+      "Bold",
+    );
 
     const container = document.createElement("div");
-    container.className = "toggle-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -32,10 +33,13 @@ export const Default: Story = {
 
 export const DefaultPressed: Story = {
   render: () => {
-    const element = Toggle({ class: "toggle", defaultPressed: true }, "Italic");
+    const element = Toggle(
+      { class: "btn btn-sm data-[state=on]:btn-primary", defaultPressed: true },
+      "Italic",
+    );
 
     const container = document.createElement("div");
-    container.className = "toggle-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -47,16 +51,23 @@ export const DefaultPressed: Story = {
 
 export const Disabled: Story = {
   render: () => {
-    const element = $.div({ style: { display: "flex", gap: "1rem" } }, [
-      Toggle({ class: "toggle", disabled: true }, "Disabled Off"),
+    const element = $.div({ class: "flex gap-4" }, [
       Toggle(
-        { class: "toggle", disabled: true, defaultPressed: true },
+        { class: "btn btn-sm data-[state=on]:btn-primary", disabled: true },
+        "Disabled Off",
+      ),
+      Toggle(
+        {
+          class: "btn btn-sm data-[state=on]:btn-primary",
+          disabled: true,
+          defaultPressed: true,
+        },
         "Disabled On",
       ),
     ]);
 
     const container = document.createElement("div");
-    container.className = "toggle-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -72,29 +83,36 @@ export const Controlled: Story = {
       const pressed = yield* Signal.make(false);
 
       const status = $.div(
-        { class: "toggle-status" },
+        { class: "badge badge-neutral mt-2" },
         pressed.map((p) => `State: ${p ? "ON" : "OFF"}`),
       );
 
-      const toggle = Toggle({ class: "toggle", pressed }, "Toggle Me");
+      const toggle = Toggle(
+        { class: "btn btn-sm data-[state=on]:btn-primary", pressed },
+        "Toggle Me",
+      );
 
       const externalButton = $.button(
         {
+          class: "btn btn-sm btn-outline mt-2",
           onClick: () =>
             Effect.gen(function* () {
               const current = yield* pressed.get;
               yield* pressed.set(!current);
             }),
-          style: { padding: "0.5rem 1rem", cursor: "pointer" },
         },
         "Toggle from outside",
       );
 
-      return yield* $.div({}, [toggle, status, externalButton]);
+      return yield* $.div({ class: "flex flex-col items-start gap-2" }, [
+        toggle,
+        status,
+        externalButton,
+      ]);
     });
 
     const container = document.createElement("div");
-    container.className = "toggle-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -111,7 +129,7 @@ export const WithCallback: Story = {
 
       const toggle = Toggle(
         {
-          class: "toggle",
+          class: "btn btn-sm data-[state=on]:btn-primary",
           onPressedChange: (pressed) =>
             lastAction.set(
               `Toggled ${pressed ? "ON" : "OFF"} at ${new Date().toLocaleTimeString()}`,
@@ -120,13 +138,19 @@ export const WithCallback: Story = {
         "Click Me",
       );
 
-      const status = $.div({ class: "toggle-status" }, lastAction);
+      const status = $.div(
+        { class: "text-sm text-base-content/70 mt-2" },
+        lastAction,
+      );
 
-      return yield* $.div({}, [toggle, status]);
+      return yield* $.div({ class: "flex flex-col items-start" }, [
+        toggle,
+        status,
+      ]);
     });
 
     const container = document.createElement("div");
-    container.className = "toggle-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -138,15 +162,30 @@ export const WithCallback: Story = {
 
 export const ToggleGroup: Story = {
   render: () => {
-    const element = $.div({ class: "toggle-group" }, [
-      Toggle({ class: "toggle", defaultPressed: true }, "B"),
-      Toggle({ class: "toggle" }, "I"),
-      Toggle({ class: "toggle" }, "U"),
-      Toggle({ class: "toggle" }, "S"),
+    const element = $.div({ class: "join" }, [
+      Toggle(
+        {
+          class: "btn btn-sm join-item data-[state=on]:btn-primary",
+          defaultPressed: true,
+        },
+        "B",
+      ),
+      Toggle(
+        { class: "btn btn-sm join-item data-[state=on]:btn-primary" },
+        "I",
+      ),
+      Toggle(
+        { class: "btn btn-sm join-item data-[state=on]:btn-primary" },
+        "U",
+      ),
+      Toggle(
+        { class: "btn btn-sm join-item data-[state=on]:btn-primary" },
+        "S",
+      ),
     ]);
 
     const container = document.createElement("div");
-    container.className = "toggle-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -158,15 +197,26 @@ export const ToggleGroup: Story = {
 
 export const IconToggle: Story = {
   render: () => {
-    // Using text symbols as icons for simplicity
-    const element = $.div({ style: { display: "flex", gap: "0.5rem" } }, [
-      Toggle({ class: "toggle toggle-icon", defaultPressed: false }, "★"),
-      Toggle({ class: "toggle toggle-icon", defaultPressed: true }, "♥"),
-      Toggle({ class: "toggle toggle-icon" }, "⚑"),
+    const element = $.div({ class: "flex gap-2" }, [
+      Toggle(
+        {
+          class: "btn btn-sm btn-square data-[state=on]:btn-warning",
+          defaultPressed: false,
+        },
+        "★",
+      ),
+      Toggle(
+        {
+          class: "btn btn-sm btn-square data-[state=on]:btn-error",
+          defaultPressed: true,
+        },
+        "♥",
+      ),
+      Toggle({ class: "btn btn-sm btn-square data-[state=on]:btn-info" }, "⚑"),
     ]);
 
     const container = document.createElement("div");
-    container.className = "toggle-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);

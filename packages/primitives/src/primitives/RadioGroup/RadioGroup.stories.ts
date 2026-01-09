@@ -5,8 +5,6 @@ import { $ } from "@effex/dom";
 import { Signal } from "@effex/dom";
 import { renderEffectAsync } from "../../storyHelpers";
 
-import "./RadioGroup.stories.css";
-
 type RadioGroupStoryArgs = {
   defaultValue?: string;
   orientation?: "horizontal" | "vertical";
@@ -51,26 +49,39 @@ const meta: Meta<RadioGroupStoryArgs> = {
           disabled: args.disabled,
           required: args.required,
           name: "spacing",
+          class: "flex flex-col gap-2",
         },
         [
-          $.div({ class: "radio-row" }, [
-            RadioGroup.Item({ value: "default", id: "r1" }),
-            $.label({ for: "r1" }, "Default"),
+          $.label({ class: "label cursor-pointer gap-3 justify-start" }, [
+            RadioGroup.Item({
+              value: "default",
+              id: "r1",
+              class: "radio radio-primary",
+            }),
+            $.span({ class: "label-text" }, "Default"),
           ]),
-          $.div({ class: "radio-row" }, [
-            RadioGroup.Item({ value: "comfortable", id: "r2" }),
-            $.label({ for: "r2" }, "Comfortable"),
+          $.label({ class: "label cursor-pointer gap-3 justify-start" }, [
+            RadioGroup.Item({
+              value: "comfortable",
+              id: "r2",
+              class: "radio radio-primary",
+            }),
+            $.span({ class: "label-text" }, "Comfortable"),
           ]),
-          $.div({ class: "radio-row" }, [
-            RadioGroup.Item({ value: "compact", id: "r3" }),
-            $.label({ for: "r3" }, "Compact"),
+          $.label({ class: "label cursor-pointer gap-3 justify-start" }, [
+            RadioGroup.Item({
+              value: "compact",
+              id: "r3",
+              class: "radio radio-primary",
+            }),
+            $.span({ class: "label-text" }, "Compact"),
           ]),
         ],
       );
     });
 
     const container = document.createElement("div");
-    container.className = "radiogroup-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -86,32 +97,78 @@ type Story = StoryObj<RadioGroupStoryArgs>;
 export const Default: Story = {};
 
 export const Horizontal: Story = {
-  args: {
-    orientation: "horizontal",
+  render: () => {
+    const element = Effect.gen(function* () {
+      return yield* RadioGroup.Root(
+        {
+          defaultValue: "comfortable",
+          orientation: "horizontal",
+          class: "flex gap-4",
+        },
+        [
+          $.label({ class: "label cursor-pointer gap-2" }, [
+            RadioGroup.Item({ value: "default", class: "radio radio-primary" }),
+            $.span({ class: "label-text" }, "Default"),
+          ]),
+          $.label({ class: "label cursor-pointer gap-2" }, [
+            RadioGroup.Item({
+              value: "comfortable",
+              class: "radio radio-primary",
+            }),
+            $.span({ class: "label-text" }, "Comfortable"),
+          ]),
+          $.label({ class: "label cursor-pointer gap-2" }, [
+            RadioGroup.Item({ value: "compact", class: "radio radio-primary" }),
+            $.span({ class: "label-text" }, "Compact"),
+          ]),
+        ],
+      );
+    });
+
+    const container = document.createElement("div");
+    container.className = "p-4";
+
+    renderEffectAsync(element).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
   },
 };
 
 export const WithDisabledItem: Story = {
   render: () => {
     const element = Effect.gen(function* () {
-      return yield* RadioGroup.Root({ defaultValue: "option1" }, [
-        $.div({ class: "radio-row" }, [
-          RadioGroup.Item({ value: "option1", id: "opt1" }),
-          $.label({ for: "opt1" }, "Option 1"),
-        ]),
-        $.div({ class: "radio-row" }, [
-          RadioGroup.Item({ value: "option2", id: "opt2", disabled: true }),
-          $.label({ for: "opt2", "data-disabled": "" }, "Option 2 (Disabled)"),
-        ]),
-        $.div({ class: "radio-row" }, [
-          RadioGroup.Item({ value: "option3", id: "opt3" }),
-          $.label({ for: "opt3" }, "Option 3"),
-        ]),
-      ]);
+      return yield* RadioGroup.Root(
+        { defaultValue: "option1", class: "flex flex-col gap-2" },
+        [
+          $.label({ class: "label cursor-pointer gap-3 justify-start" }, [
+            RadioGroup.Item({ value: "option1", class: "radio radio-primary" }),
+            $.span({ class: "label-text" }, "Option 1"),
+          ]),
+          $.label(
+            {
+              class: "label cursor-not-allowed gap-3 justify-start opacity-50",
+            },
+            [
+              RadioGroup.Item({
+                value: "option2",
+                class: "radio",
+                disabled: true,
+              }),
+              $.span({ class: "label-text" }, "Option 2 (Disabled)"),
+            ],
+          ),
+          $.label({ class: "label cursor-pointer gap-3 justify-start" }, [
+            RadioGroup.Item({ value: "option3", class: "radio radio-primary" }),
+            $.span({ class: "label-text" }, "Option 3"),
+          ]),
+        ],
+      );
     });
 
     const container = document.createElement("div");
-    container.className = "radiogroup-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -133,68 +190,62 @@ export const Controlled: Story = {
     const element = Effect.gen(function* () {
       const selected = yield* Signal.make("option1");
 
-      const statusText = yield* $.p(
-        { style: { fontSize: "14px", color: "#6b7280", marginBottom: "16px" } },
-        selected.map((v) => `Selected: ${v}`),
-      );
-
-      const buttonGroup = yield* $.div(
-        { style: { display: "flex", gap: "8px", marginBottom: "16px" } },
-        [
+      return yield* $.div({ class: "flex flex-col gap-4" }, [
+        $.div(
+          { class: "badge badge-neutral" },
+          selected.map((v) => `Selected: ${v}`),
+        ),
+        $.div({ class: "flex gap-2" }, [
           $.button(
             {
-              class: "radiogroup-form-button",
+              class: "btn btn-xs btn-outline",
               onClick: () => selected.set("option1"),
             },
             "Select Option 1",
           ),
           $.button(
             {
-              class: "radiogroup-form-button",
+              class: "btn btn-xs btn-outline",
               onClick: () => selected.set("option2"),
             },
             "Select Option 2",
           ),
           $.button(
             {
-              class: "radiogroup-form-button",
+              class: "btn btn-xs btn-outline",
               onClick: () => selected.set("option3"),
             },
             "Select Option 3",
           ),
-        ],
-      );
-
-      const radioGroup = yield* RadioGroup.Root(
-        {
-          value: selected,
-          onValueChange: (v) => Effect.log(`Selected: ${v}`),
-        },
-        [
-          $.div({ class: "radio-row" }, [
-            RadioGroup.Item({ value: "option1", id: "c1" }),
-            $.label({ for: "c1" }, "Option 1"),
+        ]),
+        RadioGroup.Root({ value: selected, class: "flex flex-col gap-2" }, [
+          $.label({ class: "label cursor-pointer gap-3 justify-start" }, [
+            RadioGroup.Item({
+              value: "option1",
+              class: "radio radio-secondary",
+            }),
+            $.span({ class: "label-text" }, "Option 1"),
           ]),
-          $.div({ class: "radio-row" }, [
-            RadioGroup.Item({ value: "option2", id: "c2" }),
-            $.label({ for: "c2" }, "Option 2"),
+          $.label({ class: "label cursor-pointer gap-3 justify-start" }, [
+            RadioGroup.Item({
+              value: "option2",
+              class: "radio radio-secondary",
+            }),
+            $.span({ class: "label-text" }, "Option 2"),
           ]),
-          $.div({ class: "radio-row" }, [
-            RadioGroup.Item({ value: "option3", id: "c3" }),
-            $.label({ for: "c3" }, "Option 3"),
+          $.label({ class: "label cursor-pointer gap-3 justify-start" }, [
+            RadioGroup.Item({
+              value: "option3",
+              class: "radio radio-secondary",
+            }),
+            $.span({ class: "label-text" }, "Option 3"),
           ]),
-        ],
-      );
-
-      const wrapper = document.createElement("div");
-      wrapper.appendChild(statusText);
-      wrapper.appendChild(buttonGroup);
-      wrapper.appendChild(radioGroup);
-      return wrapper;
+        ]),
+      ]);
     });
 
     const container = document.createElement("div");
-    container.className = "radiogroup-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -227,36 +278,38 @@ export const CardStyle: Story = {
         },
       ];
 
-      return yield* $.div({ class: "radiogroup-card" }, [
-        RadioGroup.Root(
-          { value: selected },
-          options.map((option) =>
-            $.div(
-              {
-                class: "radio-card",
-                "data-selected": selected.map((v) =>
-                  v === option.value ? "true" : "false",
-                ),
-                onClick: () => selected.set(option.value),
-              },
-              [
+      return yield* RadioGroup.Root(
+        { value: selected, class: "flex flex-col gap-3" },
+        options.map((option) =>
+          $.label(
+            {
+              class: selected.map(
+                (v) =>
+                  `card card-border cursor-pointer transition-all ${v === option.value ? "border-primary bg-primary/10" : "hover:border-base-content/30"}`,
+              ),
+            },
+            [
+              $.div({ class: "card-body p-4 flex-row items-center gap-4" }, [
                 RadioGroup.Item({
                   value: option.value,
-                  id: `card-${option.value}`,
+                  class: "radio radio-primary",
                 }),
-                $.div({ class: "radio-card-content" }, [
-                  $.p({ class: "radio-card-title" }, option.title),
-                  $.p({ class: "radio-card-description" }, option.description),
+                $.div({}, [
+                  $.p({ class: "font-semibold" }, option.title),
+                  $.p(
+                    { class: "text-sm text-base-content/70" },
+                    option.description,
+                  ),
                 ]),
-              ],
-            ),
+              ]),
+            ],
           ),
         ),
-      ]);
+      );
     });
 
     const container = document.createElement("div");
-    container.className = "radiogroup-story-container";
+    container.className = "p-4 max-w-md";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -281,42 +334,50 @@ export const WithForm: Story = {
           }
         });
 
-      return yield* $.div({ class: "radiogroup-form" }, [
-        $.label({ class: "radiogroup-form-label" }, "Select your preference:"),
-        RadioGroup.Root(
-          {
-            value: selected,
-            name: "preference",
-            required: true,
-          },
-          [
-            $.div({ class: "radio-row" }, [
-              RadioGroup.Item({ value: "email", id: "pref-email" }),
-              $.label({ for: "pref-email" }, "Email notifications"),
-            ]),
-            $.div({ class: "radio-row" }, [
-              RadioGroup.Item({ value: "sms", id: "pref-sms" }),
-              $.label({ for: "pref-sms" }, "SMS notifications"),
-            ]),
-            $.div({ class: "radio-row" }, [
-              RadioGroup.Item({ value: "push", id: "pref-push" }),
-              $.label({ for: "pref-push" }, "Push notifications"),
-            ]),
-            $.div({ class: "radio-row" }, [
-              RadioGroup.Item({ value: "none", id: "pref-none" }),
-              $.label({ for: "pref-none" }, "No notifications"),
-            ]),
-          ],
-        ),
-        $.button(
-          { class: "radiogroup-form-button", onClick: handleClick },
-          "Submit",
-        ),
+      return yield* $.div({ class: "card bg-base-200 max-w-sm" }, [
+        $.div({ class: "card-body" }, [
+          $.h3({ class: "card-title text-base" }, "Select your preference:"),
+          RadioGroup.Root(
+            {
+              value: selected,
+              name: "preference",
+              required: true,
+              class: "flex flex-col gap-1 my-4",
+            },
+            [
+              $.label({ class: "label cursor-pointer gap-3 justify-start" }, [
+                RadioGroup.Item({
+                  value: "email",
+                  class: "radio radio-accent",
+                }),
+                $.span({ class: "label-text" }, "Email notifications"),
+              ]),
+              $.label({ class: "label cursor-pointer gap-3 justify-start" }, [
+                RadioGroup.Item({ value: "sms", class: "radio radio-accent" }),
+                $.span({ class: "label-text" }, "SMS notifications"),
+              ]),
+              $.label({ class: "label cursor-pointer gap-3 justify-start" }, [
+                RadioGroup.Item({ value: "push", class: "radio radio-accent" }),
+                $.span({ class: "label-text" }, "Push notifications"),
+              ]),
+              $.label({ class: "label cursor-pointer gap-3 justify-start" }, [
+                RadioGroup.Item({ value: "none", class: "radio radio-accent" }),
+                $.span({ class: "label-text" }, "No notifications"),
+              ]),
+            ],
+          ),
+          $.div({ class: "card-actions justify-end" }, [
+            $.button(
+              { class: "btn btn-primary btn-sm", onClick: handleClick },
+              "Submit",
+            ),
+          ]),
+        ]),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "radiogroup-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -326,40 +387,95 @@ export const WithForm: Story = {
   },
 };
 
-export const NoLoop: Story = {
+export const Sizes: Story = {
   render: () => {
-    const element = Effect.gen(function* () {
-      const info = yield* $.p(
-        { style: { fontSize: "14px", color: "#6b7280", marginBottom: "16px" } },
-        "Keyboard navigation stops at first/last item (no looping).",
-      );
-
-      const radioGroup = yield* RadioGroup.Root(
-        { defaultValue: "middle", loop: false },
-        [
-          $.div({ class: "radio-row" }, [
-            RadioGroup.Item({ value: "first", id: "nl1" }),
-            $.label({ for: "nl1" }, "First (can't go before)"),
-          ]),
-          $.div({ class: "radio-row" }, [
-            RadioGroup.Item({ value: "middle", id: "nl2" }),
-            $.label({ for: "nl2" }, "Middle"),
-          ]),
-          $.div({ class: "radio-row" }, [
-            RadioGroup.Item({ value: "last", id: "nl3" }),
-            $.label({ for: "nl3" }, "Last (can't go after)"),
-          ]),
-        ],
-      );
-
-      const wrapper = document.createElement("div");
-      wrapper.appendChild(info);
-      wrapper.appendChild(radioGroup);
-      return wrapper;
-    });
+    const element = $.div({ class: "flex flex-col gap-4" }, [
+      $.label({ class: "label cursor-pointer gap-3 justify-start" }, [
+        $.input({
+          type: "radio",
+          name: "size",
+          class: "radio radio-xs radio-primary",
+          checked: true,
+        }),
+        $.span({ class: "label-text" }, "Extra small"),
+      ]),
+      $.label({ class: "label cursor-pointer gap-3 justify-start" }, [
+        $.input({
+          type: "radio",
+          name: "size",
+          class: "radio radio-sm radio-primary",
+        }),
+        $.span({ class: "label-text" }, "Small"),
+      ]),
+      $.label({ class: "label cursor-pointer gap-3 justify-start" }, [
+        $.input({
+          type: "radio",
+          name: "size",
+          class: "radio radio-md radio-primary",
+        }),
+        $.span({ class: "label-text" }, "Medium"),
+      ]),
+      $.label({ class: "label cursor-pointer gap-3 justify-start" }, [
+        $.input({
+          type: "radio",
+          name: "size",
+          class: "radio radio-lg radio-primary",
+        }),
+        $.span({ class: "label-text" }, "Large"),
+      ]),
+    ]);
 
     const container = document.createElement("div");
-    container.className = "radiogroup-story-container";
+    container.className = "p-4";
+
+    renderEffectAsync(element).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
+  },
+};
+
+export const Colors: Story = {
+  render: () => {
+    const element = $.div({ class: "flex flex-col gap-2" }, [
+      $.label({ class: "label cursor-pointer gap-3 justify-start" }, [
+        $.input({
+          type: "radio",
+          name: "color",
+          class: "radio radio-primary",
+          checked: true,
+        }),
+        $.span({ class: "label-text" }, "Primary"),
+      ]),
+      $.label({ class: "label cursor-pointer gap-3 justify-start" }, [
+        $.input({
+          type: "radio",
+          name: "color",
+          class: "radio radio-secondary",
+        }),
+        $.span({ class: "label-text" }, "Secondary"),
+      ]),
+      $.label({ class: "label cursor-pointer gap-3 justify-start" }, [
+        $.input({ type: "radio", name: "color", class: "radio radio-accent" }),
+        $.span({ class: "label-text" }, "Accent"),
+      ]),
+      $.label({ class: "label cursor-pointer gap-3 justify-start" }, [
+        $.input({ type: "radio", name: "color", class: "radio radio-success" }),
+        $.span({ class: "label-text" }, "Success"),
+      ]),
+      $.label({ class: "label cursor-pointer gap-3 justify-start" }, [
+        $.input({ type: "radio", name: "color", class: "radio radio-warning" }),
+        $.span({ class: "label-text" }, "Warning"),
+      ]),
+      $.label({ class: "label cursor-pointer gap-3 justify-start" }, [
+        $.input({ type: "radio", name: "color", class: "radio radio-error" }),
+        $.span({ class: "label-text" }, "Error"),
+      ]),
+    ]);
+
+    const container = document.createElement("div");
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);

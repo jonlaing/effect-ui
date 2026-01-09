@@ -4,8 +4,6 @@ import { ScrollArea } from "@effex/primitives";
 import { $ } from "@effex/dom";
 import { renderEffectAsync } from "../../storyHelpers";
 
-import "./ScrollArea.stories.css";
-
 type ScrollAreaStoryArgs = {
   type?: "auto" | "always" | "scroll" | "hover";
   scrollHideDelay?: number;
@@ -47,28 +45,44 @@ const loremParagraphs = [
 export const Default: Story = {
   render: (args) => {
     const element = Effect.gen(function* () {
-      return yield* $.div({ class: "scrollarea-demo" }, [
-        ScrollArea.Root(
-          { type: args.type, scrollHideDelay: args.scrollHideDelay },
-          [
-            ScrollArea.Viewport({}, [
-              $.div(
-                { class: "scrollarea-long-content" },
-                loremParagraphs.map((text, i) =>
-                  $.div({}, [$.h3(`Section ${i + 1}`), $.p(text)]),
+      return yield* $.div(
+        {
+          class: "h-64 w-full max-w-md bg-base-200 rounded-box overflow-hidden",
+        },
+        [
+          ScrollArea.Root(
+            {
+              type: args.type,
+              scrollHideDelay: args.scrollHideDelay,
+              class: "h-full w-full",
+            },
+            [
+              ScrollArea.Viewport({ class: "h-full w-full p-4" }, [
+                $.div(
+                  { class: "space-y-4" },
+                  loremParagraphs.map((text, i) =>
+                    $.div({}, [
+                      $.h3({ class: "font-bold text-lg" }, `Section ${i + 1}`),
+                      $.p({ class: "text-base-content/70" }, text),
+                    ]),
+                  ),
                 ),
+              ]),
+              ScrollArea.Scrollbar(
+                {
+                  orientation: "vertical",
+                  class: "w-2 bg-base-300 rounded-full",
+                },
+                [ScrollArea.Thumb({ class: "bg-primary rounded-full" })],
               ),
-            ]),
-            ScrollArea.Scrollbar({ orientation: "vertical" }, [
-              ScrollArea.Thumb({}),
-            ]),
-          ],
-        ),
-      ]);
+            ],
+          ),
+        ],
+      );
     });
 
     const container = document.createElement("div");
-    container.className = "scrollarea-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -81,25 +95,37 @@ export const Default: Story = {
 export const AlwaysVisible: Story = {
   render: () => {
     const element = Effect.gen(function* () {
-      return yield* $.div({ class: "scrollarea-demo scrollarea-always" }, [
-        ScrollArea.Root({ type: "always" }, [
-          ScrollArea.Viewport({}, [
-            $.div(
-              { class: "scrollarea-long-content" },
-              loremParagraphs.map((text, i) =>
-                $.div({}, [$.h3(`Section ${i + 1}`), $.p(text)]),
+      return yield* $.div(
+        {
+          class: "h-64 w-full max-w-md bg-base-200 rounded-box overflow-hidden",
+        },
+        [
+          ScrollArea.Root({ type: "always", class: "h-full w-full" }, [
+            ScrollArea.Viewport({ class: "h-full w-full p-4" }, [
+              $.div(
+                { class: "space-y-4" },
+                loremParagraphs.map((text, i) =>
+                  $.div({}, [
+                    $.h3({ class: "font-bold text-lg" }, `Section ${i + 1}`),
+                    $.p({ class: "text-base-content/70" }, text),
+                  ]),
+                ),
               ),
+            ]),
+            ScrollArea.Scrollbar(
+              {
+                orientation: "vertical",
+                class: "w-2 bg-base-300 rounded-full",
+              },
+              [ScrollArea.Thumb({ class: "bg-secondary rounded-full" })],
             ),
           ]),
-          ScrollArea.Scrollbar({ orientation: "vertical" }, [
-            ScrollArea.Thumb({}),
-          ]),
-        ]),
-      ]);
+        ],
+      );
     });
 
     const container = document.createElement("div");
-    container.className = "scrollarea-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -131,28 +157,31 @@ export const HorizontalScroll: Story = {
 
     const element = Effect.gen(function* () {
       return yield* $.div(
-        {
-          class: "scrollarea-demo",
-          style: { height: "80px", width: "400px" },
-        },
+        { class: "h-20 w-96 bg-base-200 rounded-box overflow-hidden" },
         [
-          ScrollArea.Root({ type: "hover" }, [
-            ScrollArea.Viewport({}, [
+          ScrollArea.Root({ type: "hover", class: "h-full w-full" }, [
+            ScrollArea.Viewport({ class: "h-full w-full p-4" }, [
               $.div(
-                { class: "scrollarea-tags" },
-                tags.map((tag) => $.span({ class: "scrollarea-tag" }, tag)),
+                { class: "flex gap-2 whitespace-nowrap" },
+                tags.map((tag) =>
+                  $.span({ class: "badge badge-primary" }, tag),
+                ),
               ),
             ]),
-            ScrollArea.Scrollbar({ orientation: "horizontal" }, [
-              ScrollArea.Thumb({}),
-            ]),
+            ScrollArea.Scrollbar(
+              {
+                orientation: "horizontal",
+                class: "h-2 bg-base-300 rounded-full",
+              },
+              [ScrollArea.Thumb({ class: "bg-accent rounded-full" })],
+            ),
           ]),
         ],
       );
     });
 
     const container = document.createElement("div");
-    container.className = "scrollarea-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -167,29 +196,46 @@ export const BothScrollbars: Story = {
     const gridItems = Array.from({ length: 25 }, (_, i) => i + 1);
 
     const element = Effect.gen(function* () {
-      return yield* $.div({ class: "scrollarea-demo scrollarea-demo--large" }, [
-        ScrollArea.Root({ type: "hover" }, [
-          ScrollArea.Viewport({}, [
-            $.div(
-              { class: "scrollarea-grid" },
-              gridItems.map((num) =>
-                $.div({ class: "scrollarea-grid-item" }, String(num)),
+      return yield* $.div(
+        { class: "h-64 w-64 bg-base-200 rounded-box overflow-hidden" },
+        [
+          ScrollArea.Root({ type: "hover", class: "h-full w-full" }, [
+            ScrollArea.Viewport({ class: "h-full w-full p-4" }, [
+              $.div(
+                { class: "grid grid-cols-5 gap-2", style: { width: "400px" } },
+                gridItems.map((num) =>
+                  $.div(
+                    {
+                      class:
+                        "w-16 h-16 bg-primary text-primary-content flex items-center justify-center rounded-btn font-bold",
+                    },
+                    String(num),
+                  ),
+                ),
               ),
+            ]),
+            ScrollArea.Scrollbar(
+              {
+                orientation: "vertical",
+                class: "w-2 bg-base-300 rounded-full",
+              },
+              [ScrollArea.Thumb({ class: "bg-info rounded-full" })],
             ),
+            ScrollArea.Scrollbar(
+              {
+                orientation: "horizontal",
+                class: "h-2 bg-base-300 rounded-full",
+              },
+              [ScrollArea.Thumb({ class: "bg-info rounded-full" })],
+            ),
+            ScrollArea.Corner({ class: "bg-base-300" }),
           ]),
-          ScrollArea.Scrollbar({ orientation: "vertical" }, [
-            ScrollArea.Thumb({}),
-          ]),
-          ScrollArea.Scrollbar({ orientation: "horizontal" }, [
-            ScrollArea.Thumb({}),
-          ]),
-          ScrollArea.Corner({}),
-        ]),
-      ]);
+        ],
+      );
     });
 
     const container = document.createElement("div");
-    container.className = "scrollarea-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -202,37 +248,50 @@ export const BothScrollbars: Story = {
 export const ScrollOnlyType: Story = {
   render: () => {
     const element = Effect.gen(function* () {
-      return yield* $.div({}, [
+      return yield* $.div({ class: "flex flex-col gap-3" }, [
         $.p(
-          {
-            style: {
-              marginBottom: "12px",
-              color: "#64748b",
-              fontSize: "14px",
-            },
-          },
+          { class: "text-sm text-base-content/70" },
           'Scrollbars only appear while scrolling (type="scroll")',
         ),
-        $.div({ class: "scrollarea-demo" }, [
-          ScrollArea.Root({ type: "scroll", scrollHideDelay: 800 }, [
-            ScrollArea.Viewport({}, [
-              $.div(
-                { class: "scrollarea-long-content" },
-                loremParagraphs.map((text, i) =>
-                  $.div({}, [$.h3(`Section ${i + 1}`), $.p(text)]),
+        $.div(
+          {
+            class:
+              "h-64 w-full max-w-md bg-base-200 rounded-box overflow-hidden",
+          },
+          [
+            ScrollArea.Root(
+              { type: "scroll", scrollHideDelay: 800, class: "h-full w-full" },
+              [
+                ScrollArea.Viewport({ class: "h-full w-full p-4" }, [
+                  $.div(
+                    { class: "space-y-4" },
+                    loremParagraphs.map((text, i) =>
+                      $.div({}, [
+                        $.h3(
+                          { class: "font-bold text-lg" },
+                          `Section ${i + 1}`,
+                        ),
+                        $.p({ class: "text-base-content/70" }, text),
+                      ]),
+                    ),
+                  ),
+                ]),
+                ScrollArea.Scrollbar(
+                  {
+                    orientation: "vertical",
+                    class: "w-2 bg-base-300 rounded-full",
+                  },
+                  [ScrollArea.Thumb({ class: "bg-warning rounded-full" })],
                 ),
-              ),
-            ]),
-            ScrollArea.Scrollbar({ orientation: "vertical" }, [
-              ScrollArea.Thumb({}),
-            ]),
-          ]),
-        ]),
+              ],
+            ),
+          ],
+        ),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "scrollarea-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -245,37 +304,44 @@ export const ScrollOnlyType: Story = {
 export const AutoType: Story = {
   render: () => {
     const element = Effect.gen(function* () {
-      return yield* $.div({}, [
+      return yield* $.div({ class: "flex flex-col gap-3" }, [
         $.p(
-          {
-            style: {
-              marginBottom: "12px",
-              color: "#64748b",
-              fontSize: "14px",
-            },
-          },
+          { class: "text-sm text-base-content/70" },
           'Scrollbars visible when content overflows (type="auto")',
         ),
-        $.div({ class: "scrollarea-demo" }, [
-          ScrollArea.Root({ type: "auto" }, [
-            ScrollArea.Viewport({}, [
-              $.div(
-                { class: "scrollarea-long-content" },
-                loremParagraphs.map((text, i) =>
-                  $.div({}, [$.h3(`Section ${i + 1}`), $.p(text)]),
+        $.div(
+          {
+            class:
+              "h-64 w-full max-w-md bg-base-200 rounded-box overflow-hidden",
+          },
+          [
+            ScrollArea.Root({ type: "auto", class: "h-full w-full" }, [
+              ScrollArea.Viewport({ class: "h-full w-full p-4" }, [
+                $.div(
+                  { class: "space-y-4" },
+                  loremParagraphs.map((text, i) =>
+                    $.div({}, [
+                      $.h3({ class: "font-bold text-lg" }, `Section ${i + 1}`),
+                      $.p({ class: "text-base-content/70" }, text),
+                    ]),
+                  ),
                 ),
+              ]),
+              ScrollArea.Scrollbar(
+                {
+                  orientation: "vertical",
+                  class: "w-2 bg-base-300 rounded-full",
+                },
+                [ScrollArea.Thumb({ class: "bg-success rounded-full" })],
               ),
             ]),
-            ScrollArea.Scrollbar({ orientation: "vertical" }, [
-              ScrollArea.Thumb({}),
-            ]),
-          ]),
-        ]),
+          ],
+        ),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "scrollarea-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -288,35 +354,42 @@ export const AutoType: Story = {
 export const NoOverflow: Story = {
   render: () => {
     const element = Effect.gen(function* () {
-      return yield* $.div({}, [
+      return yield* $.div({ class: "flex flex-col gap-3" }, [
         $.p(
-          {
-            style: {
-              marginBottom: "12px",
-              color: "#64748b",
-              fontSize: "14px",
-            },
-          },
+          { class: "text-sm text-base-content/70" },
           "When content doesn't overflow, scrollbars are hidden",
         ),
-        $.div({ class: "scrollarea-demo" }, [
-          ScrollArea.Root({ type: "always" }, [
-            ScrollArea.Viewport({}, [
-              $.div({ class: "scrollarea-content" }, [
-                $.p("This content fits within the viewport."),
-                $.p("No scrolling needed here."),
+        $.div(
+          {
+            class:
+              "h-64 w-full max-w-md bg-base-200 rounded-box overflow-hidden",
+          },
+          [
+            ScrollArea.Root({ type: "always", class: "h-full w-full" }, [
+              ScrollArea.Viewport({ class: "h-full w-full p-4" }, [
+                $.div({ class: "space-y-2" }, [
+                  $.p({}, "This content fits within the viewport."),
+                  $.p(
+                    { class: "text-base-content/70" },
+                    "No scrolling needed here.",
+                  ),
+                ]),
               ]),
+              ScrollArea.Scrollbar(
+                {
+                  orientation: "vertical",
+                  class: "w-2 bg-base-300 rounded-full",
+                },
+                [ScrollArea.Thumb({ class: "bg-error rounded-full" })],
+              ),
             ]),
-            ScrollArea.Scrollbar({ orientation: "vertical" }, [
-              ScrollArea.Thumb({}),
-            ]),
-          ]),
-        ]),
+          ],
+        ),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "scrollarea-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);

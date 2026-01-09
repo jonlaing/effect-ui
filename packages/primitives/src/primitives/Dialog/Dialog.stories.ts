@@ -5,8 +5,6 @@ import { $ } from "@effex/dom";
 import { Signal } from "@effex/dom";
 import { renderEffectAsync } from "../../storyHelpers";
 
-import "./Dialog.stories.css";
-
 type DialogStoryArgs = {
   defaultOpen?: boolean;
   title?: string;
@@ -38,23 +36,33 @@ const meta: Meta<DialogStoryArgs> = {
   render: (args) => {
     const element = Effect.gen(function* () {
       return yield* Dialog.Root({ defaultOpen: args.defaultOpen }, [
-        Dialog.Trigger({ class: "dialog-trigger" }, "Open Dialog"),
-        Dialog.Portal({}, [
-          Dialog.Overlay({}),
-          Dialog.Content({}, [
-            Dialog.Title({}, args.title!),
-            Dialog.Description({}, args.description!),
-            $.p("Dialog content goes here."),
-            Dialog.Close({ class: "dialog-cancel" }, "Cancel"),
-            Dialog.Close({ class: "dialog-save" }, "Save"),
-            Dialog.Close({ class: "dialog-close" }, "\u00D7"),
+        Dialog.Trigger({ class: "btn btn-primary" }, "Open Dialog"),
+        Dialog.Portal({ class: "modal modal-open" }, [
+          Dialog.Overlay({ class: "modal-backdrop bg-black/50" }),
+          Dialog.Content({ class: "modal-box" }, [
+            Dialog.Title({ class: "font-bold text-lg" }, args.title!),
+            Dialog.Description(
+              { class: "py-4 text-base-content/70" },
+              args.description!,
+            ),
+            $.p({ class: "text-sm" }, "Dialog content goes here."),
+            $.div({ class: "modal-action" }, [
+              Dialog.Close({ class: "btn btn-ghost" }, "Cancel"),
+              Dialog.Close({ class: "btn btn-primary" }, "Save"),
+            ]),
+            Dialog.Close(
+              {
+                class: "btn btn-sm btn-circle btn-ghost absolute right-2 top-2",
+              },
+              "\u2715",
+            ),
           ]),
         ]),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "dialog-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -78,52 +86,53 @@ export const DefaultOpen: Story = {
 export const WithForm: Story = {
   render: () => {
     const element = Effect.gen(function* () {
-      const formGroup1 = yield* $.div({ class: "dialog-form-group" }, [
-        $.label({ class: "dialog-label", for: "name" }, "Name"),
-        $.input({
-          id: "name",
-          class: "dialog-input",
-          type: "text",
-          placeholder: "Enter your name",
-        }),
-      ]);
-
-      const formGroup2 = yield* $.div({ class: "dialog-form-group" }, [
-        $.label({ class: "dialog-label", for: "email" }, "Email"),
-        $.input({
-          id: "email",
-          class: "dialog-input",
-          type: "email",
-          placeholder: "Enter your email",
-        }),
-      ]);
-
-      // Create a wrapper for form content that we can insert as raw HTML
-      const formContent = document.createElement("div");
-      formContent.appendChild(formGroup1);
-      formContent.appendChild(formGroup2);
-
       return yield* Dialog.Root({ defaultOpen: false }, [
-        Dialog.Trigger({ class: "dialog-trigger" }, "Edit Profile"),
-        Dialog.Portal({}, [
-          Dialog.Overlay({}),
-          Dialog.Content({}, [
-            Dialog.Title({}, "Edit Profile"),
+        Dialog.Trigger({ class: "btn btn-secondary" }, "Edit Profile"),
+        Dialog.Portal({ class: "modal modal-open" }, [
+          Dialog.Overlay({ class: "modal-backdrop bg-black/50" }),
+          Dialog.Content({ class: "modal-box" }, [
+            Dialog.Title({ class: "font-bold text-lg" }, "Edit Profile"),
             Dialog.Description(
-              {},
+              { class: "text-base-content/70" },
               "Make changes to your profile here. Click save when you're done.",
             ),
-            Effect.succeed(formContent),
-            Dialog.Close({ class: "dialog-cancel" }, "Cancel"),
-            Dialog.Close({ class: "dialog-save" }, "Save Changes"),
-            Dialog.Close({ class: "dialog-close" }, "\u00D7"),
+            $.div({ class: "form-control w-full mt-4" }, [
+              $.label({ class: "label" }, [
+                $.span({ class: "label-text" }, "Name"),
+              ]),
+              $.input({
+                type: "text",
+                class: "input input-bordered w-full",
+                placeholder: "Enter your name",
+              }),
+            ]),
+            $.div({ class: "form-control w-full mt-2" }, [
+              $.label({ class: "label" }, [
+                $.span({ class: "label-text" }, "Email"),
+              ]),
+              $.input({
+                type: "email",
+                class: "input input-bordered w-full",
+                placeholder: "Enter your email",
+              }),
+            ]),
+            $.div({ class: "modal-action" }, [
+              Dialog.Close({ class: "btn btn-ghost" }, "Cancel"),
+              Dialog.Close({ class: "btn btn-primary" }, "Save Changes"),
+            ]),
+            Dialog.Close(
+              {
+                class: "btn btn-sm btn-circle btn-ghost absolute right-2 top-2",
+              },
+              "\u2715",
+            ),
           ]),
         ]),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "dialog-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -138,57 +147,64 @@ export const Controlled: Story = {
     const element = Effect.gen(function* () {
       const isOpen = yield* Signal.make(false);
 
-      const externalOpenButton = yield* $.button(
-        {
-          class: "dialog-trigger",
-          onClick: () => isOpen.set(true),
-        },
-        "Open Externally",
-      );
-
-      const statusText = yield* $.p(
-        isOpen.map((open) => (open ? "Dialog is open" : "Dialog is closed")),
-      );
-
-      const dialog = yield* Dialog.Root(
-        {
-          open: isOpen,
-          onOpenChange: (open) =>
-            Effect.log(`Dialog is now ${open ? "open" : "closed"}`),
-        },
-        [
-          Dialog.Trigger({ class: "dialog-trigger" }, "Open Dialog"),
-          Dialog.Portal({}, [
-            Dialog.Overlay({}),
-            Dialog.Content({}, [
-              Dialog.Title({}, "Controlled Dialog"),
-              Dialog.Description(
-                {},
-                "This dialog's state is controlled externally via a Signal.",
-              ),
-              $.p("You can control this dialog from outside using the Signal."),
-              Dialog.Close({ class: "dialog-cancel" }, "Close"),
-              Dialog.Close({ class: "dialog-close" }, "\u00D7"),
+      return yield* $.div({ class: "flex flex-col gap-4" }, [
+        $.div({ class: "flex gap-2 items-center" }, [
+          $.button(
+            {
+              class: "btn btn-outline btn-sm",
+              onClick: () => isOpen.set(true),
+            },
+            "Open Externally",
+          ),
+          $.div(
+            { class: "badge badge-neutral" },
+            isOpen.map((open) =>
+              open ? "Dialog is open" : "Dialog is closed",
+            ),
+          ),
+        ]),
+        Dialog.Root(
+          {
+            open: isOpen,
+            onOpenChange: (open) =>
+              Effect.log(`Dialog is now ${open ? "open" : "closed"}`),
+          },
+          [
+            Dialog.Trigger({ class: "btn btn-primary" }, "Open Dialog"),
+            Dialog.Portal({ class: "modal modal-open" }, [
+              Dialog.Overlay({ class: "modal-backdrop bg-black/50" }),
+              Dialog.Content({ class: "modal-box" }, [
+                Dialog.Title(
+                  { class: "font-bold text-lg" },
+                  "Controlled Dialog",
+                ),
+                Dialog.Description(
+                  { class: "py-4 text-base-content/70" },
+                  "This dialog's state is controlled externally via a Signal.",
+                ),
+                $.p(
+                  { class: "text-sm" },
+                  "You can control this dialog from outside using the Signal.",
+                ),
+                $.div({ class: "modal-action" }, [
+                  Dialog.Close({ class: "btn btn-ghost" }, "Close"),
+                ]),
+                Dialog.Close(
+                  {
+                    class:
+                      "btn btn-sm btn-circle btn-ghost absolute right-2 top-2",
+                  },
+                  "\u2715",
+                ),
+              ]),
             ]),
-          ]),
-        ],
-      );
-
-      const wrapper = document.createElement("div");
-      wrapper.className = "dialog-story-container";
-
-      const controls = document.createElement("div");
-      controls.className = "dialog-external-controls";
-      controls.appendChild(externalOpenButton);
-
-      wrapper.appendChild(controls);
-      wrapper.appendChild(statusText);
-      wrapper.appendChild(dialog);
-
-      return wrapper;
+          ],
+        ),
+      ]);
     });
 
     const container = document.createElement("div");
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -201,48 +217,55 @@ export const Controlled: Story = {
 export const LongContent: Story = {
   render: () => {
     const element = Effect.gen(function* () {
-      const scrollableContent = yield* $.div(
-        { style: { maxHeight: "300px", overflowY: "auto" } },
-        [
-          $.p(
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-          ),
-          $.p(
-            "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-          ),
-          $.p(
-            "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.",
-          ),
-          $.p(
-            "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.",
-          ),
-          $.p(
-            "Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.",
-          ),
-        ],
-      );
-
       return yield* Dialog.Root({ defaultOpen: false }, [
-        Dialog.Trigger({ class: "dialog-trigger" }, "Open Long Content"),
-        Dialog.Portal({}, [
-          Dialog.Overlay({}),
-          Dialog.Content({}, [
-            Dialog.Title({}, "Terms of Service"),
+        Dialog.Trigger({ class: "btn btn-accent" }, "Open Long Content"),
+        Dialog.Portal({ class: "modal modal-open" }, [
+          Dialog.Overlay({ class: "modal-backdrop bg-black/50" }),
+          Dialog.Content({ class: "modal-box max-h-[80vh]" }, [
+            Dialog.Title({ class: "font-bold text-lg" }, "Terms of Service"),
             Dialog.Description(
-              {},
+              { class: "text-base-content/70" },
               "Please read the following terms carefully.",
             ),
-            Effect.succeed(scrollableContent),
-            Dialog.Close({ class: "dialog-cancel" }, "Decline"),
-            Dialog.Close({ class: "dialog-save" }, "Accept"),
-            Dialog.Close({ class: "dialog-close" }, "\u00D7"),
+            $.div({ class: "max-h-60 overflow-y-auto py-4 text-sm" }, [
+              $.p(
+                { class: "mb-4" },
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+              ),
+              $.p(
+                { class: "mb-4" },
+                "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+              ),
+              $.p(
+                { class: "mb-4" },
+                "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.",
+              ),
+              $.p(
+                { class: "mb-4" },
+                "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.",
+              ),
+              $.p(
+                {},
+                "Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.",
+              ),
+            ]),
+            $.div({ class: "modal-action" }, [
+              Dialog.Close({ class: "btn btn-ghost" }, "Decline"),
+              Dialog.Close({ class: "btn btn-primary" }, "Accept"),
+            ]),
+            Dialog.Close(
+              {
+                class: "btn btn-sm btn-circle btn-ghost absolute right-2 top-2",
+              },
+              "\u2715",
+            ),
           ]),
         ]),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "dialog-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -255,48 +278,55 @@ export const LongContent: Story = {
 export const FocusTrapDemo: Story = {
   render: () => {
     const element = Effect.gen(function* () {
-      const formGroup1 = yield* $.div({ class: "dialog-form-group" }, [
-        $.label({ class: "dialog-label", for: "first" }, "First Input"),
-        $.input({ id: "first", class: "dialog-input", type: "text" }),
-      ]);
-      const formGroup2 = yield* $.div({ class: "dialog-form-group" }, [
-        $.label({ class: "dialog-label", for: "second" }, "Second Input"),
-        $.input({ id: "second", class: "dialog-input", type: "text" }),
-      ]);
-      const formGroup3 = yield* $.div({ class: "dialog-form-group" }, [
-        $.label({ class: "dialog-label", for: "third" }, "Third Input"),
-        $.input({ id: "third", class: "dialog-input", type: "text" }),
-      ]);
-
-      const formContent = document.createElement("div");
-      formContent.appendChild(formGroup1);
-      formContent.appendChild(formGroup2);
-      formContent.appendChild(formGroup3);
-
       return yield* Dialog.Root({ defaultOpen: false }, [
-        Dialog.Trigger({ class: "dialog-trigger" }, "Open Focus Trap Demo"),
-        Dialog.Portal({}, [
-          Dialog.Overlay({}),
-          Dialog.Content({}, [
-            Dialog.Title({}, "Focus Trap Demo"),
+        Dialog.Trigger({ class: "btn btn-info" }, "Open Focus Trap Demo"),
+        Dialog.Portal({ class: "modal modal-open" }, [
+          Dialog.Overlay({ class: "modal-backdrop bg-black/50" }),
+          Dialog.Content({ class: "modal-box" }, [
+            Dialog.Title({ class: "font-bold text-lg" }, "Focus Trap Demo"),
             Dialog.Description(
-              {},
+              { class: "text-base-content/70" },
               "Try pressing Tab - focus stays within the dialog.",
             ),
-            Effect.succeed(formContent),
+            $.div({ class: "form-control w-full mt-4" }, [
+              $.label({ class: "label" }, [
+                $.span({ class: "label-text" }, "First Input"),
+              ]),
+              $.input({ type: "text", class: "input input-bordered w-full" }),
+            ]),
+            $.div({ class: "form-control w-full mt-2" }, [
+              $.label({ class: "label" }, [
+                $.span({ class: "label-text" }, "Second Input"),
+              ]),
+              $.input({ type: "text", class: "input input-bordered w-full" }),
+            ]),
+            $.div({ class: "form-control w-full mt-2" }, [
+              $.label({ class: "label" }, [
+                $.span({ class: "label-text" }, "Third Input"),
+              ]),
+              $.input({ type: "text", class: "input input-bordered w-full" }),
+            ]),
             $.p(
+              { class: "text-sm mt-4 text-base-content/70" },
               "Press Tab to cycle through inputs. Press Escape or click Cancel to close.",
             ),
-            Dialog.Close({ class: "dialog-cancel" }, "Cancel"),
-            Dialog.Close({ class: "dialog-save" }, "Submit"),
-            Dialog.Close({ class: "dialog-close" }, "\u00D7"),
+            $.div({ class: "modal-action" }, [
+              Dialog.Close({ class: "btn btn-ghost" }, "Cancel"),
+              Dialog.Close({ class: "btn btn-primary" }, "Submit"),
+            ]),
+            Dialog.Close(
+              {
+                class: "btn btn-sm btn-circle btn-ghost absolute right-2 top-2",
+              },
+              "\u2715",
+            ),
           ]),
         ]),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "dialog-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -306,40 +336,61 @@ export const FocusTrapDemo: Story = {
   },
 };
 
-export const WithAnimation: Story = {
+export const Sizes: Story = {
   render: () => {
-    const element = Effect.gen(function* () {
-      return yield* Dialog.Root({ defaultOpen: false }, [
-        Dialog.Trigger({ class: "dialog-trigger" }, "Open Animated Dialog"),
-        Dialog.Portal(
-          {
-            animate: {
-              enter: "dialog-animate-enter",
-              exit: "dialog-animate-exit",
-            },
-          },
-          [
-            Dialog.Overlay({}),
-            Dialog.Content({}, [
-              Dialog.Title({}, "Animated Dialog"),
-              Dialog.Description(
-                {},
-                "This dialog uses the animate prop for smooth enter and exit animations.",
-              ),
-              $.p(
-                "The dialog slides up and fades in on enter, then slides down and fades out on exit.",
-              ),
-              Dialog.Close({ class: "dialog-cancel" }, "Cancel"),
-              Dialog.Close({ class: "dialog-save" }, "Save"),
-              Dialog.Close({ class: "dialog-close" }, "\u00D7"),
+    const element = $.div({ class: "flex gap-2 flex-wrap" }, [
+      Effect.gen(function* () {
+        return yield* Dialog.Root({}, [
+          Dialog.Trigger({ class: "btn btn-sm" }, "Small"),
+          Dialog.Portal({ class: "modal modal-open" }, [
+            Dialog.Overlay({ class: "modal-backdrop bg-black/50" }),
+            Dialog.Content({ class: "modal-box w-80 max-w-sm" }, [
+              Dialog.Title({ class: "font-bold text-lg" }, "Small Dialog"),
+              $.p({ class: "py-4" }, "This is a smaller dialog."),
+              $.div({ class: "modal-action" }, [
+                Dialog.Close({ class: "btn btn-sm" }, "Close"),
+              ]),
             ]),
-          ],
-        ),
-      ]);
-    });
+          ]),
+        ]);
+      }),
+      Effect.gen(function* () {
+        return yield* Dialog.Root({}, [
+          Dialog.Trigger({ class: "btn" }, "Medium"),
+          Dialog.Portal({ class: "modal modal-open" }, [
+            Dialog.Overlay({ class: "modal-backdrop bg-black/50" }),
+            Dialog.Content({ class: "modal-box" }, [
+              Dialog.Title({ class: "font-bold text-lg" }, "Medium Dialog"),
+              $.p({ class: "py-4" }, "This is the default medium size dialog."),
+              $.div({ class: "modal-action" }, [
+                Dialog.Close({ class: "btn" }, "Close"),
+              ]),
+            ]),
+          ]),
+        ]);
+      }),
+      Effect.gen(function* () {
+        return yield* Dialog.Root({}, [
+          Dialog.Trigger({ class: "btn btn-lg" }, "Large"),
+          Dialog.Portal({ class: "modal modal-open" }, [
+            Dialog.Overlay({ class: "modal-backdrop bg-black/50" }),
+            Dialog.Content({ class: "modal-box w-11/12 max-w-3xl" }, [
+              Dialog.Title({ class: "font-bold text-lg" }, "Large Dialog"),
+              $.p(
+                { class: "py-4" },
+                "This is a larger dialog for more content.",
+              ),
+              $.div({ class: "modal-action" }, [
+                Dialog.Close({ class: "btn btn-lg" }, "Close"),
+              ]),
+            ]),
+          ]),
+        ]);
+      }),
+    ]);
 
     const container = document.createElement("div");
-    container.className = "dialog-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -349,40 +400,33 @@ export const WithAnimation: Story = {
   },
 };
 
-export const WithBounceAnimation: Story = {
+export const Confirmation: Story = {
   render: () => {
     const element = Effect.gen(function* () {
-      return yield* Dialog.Root({ defaultOpen: false }, [
-        Dialog.Trigger({ class: "dialog-trigger" }, "Open Bouncy Dialog"),
-        Dialog.Portal(
-          {
-            animate: {
-              enter: "dialog-animate-bounce-enter",
-              exit: "dialog-animate-bounce-exit",
-            },
-          },
-          [
-            Dialog.Overlay({}),
-            Dialog.Content({}, [
-              Dialog.Title({}, "Bouncy Dialog"),
-              Dialog.Description(
-                {},
-                "This dialog uses a playful bounce animation.",
-              ),
-              $.p(
-                "Notice how the dialog bounces in with a spring-like effect and scales out when closing.",
-              ),
-              Dialog.Close({ class: "dialog-cancel" }, "Cancel"),
-              Dialog.Close({ class: "dialog-save" }, "Save"),
-              Dialog.Close({ class: "dialog-close" }, "\u00D7"),
+      return yield* Dialog.Root({}, [
+        Dialog.Trigger({ class: "btn btn-error" }, "Delete Item"),
+        Dialog.Portal({ class: "modal modal-open" }, [
+          Dialog.Overlay({ class: "modal-backdrop bg-black/50" }),
+          Dialog.Content({ class: "modal-box" }, [
+            Dialog.Title(
+              { class: "font-bold text-lg text-error" },
+              "Confirm Deletion",
+            ),
+            Dialog.Description(
+              { class: "py-4" },
+              "Are you sure you want to delete this item? This action cannot be undone.",
+            ),
+            $.div({ class: "modal-action" }, [
+              Dialog.Close({ class: "btn btn-ghost" }, "Cancel"),
+              Dialog.Close({ class: "btn btn-error" }, "Delete"),
             ]),
-          ],
-        ),
+          ]),
+        ]),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "dialog-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);

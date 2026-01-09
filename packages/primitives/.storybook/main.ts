@@ -1,6 +1,7 @@
 import type { StorybookConfig } from "@storybook/html-vite";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
+import tailwindcss from "@tailwindcss/vite";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -22,6 +23,8 @@ const config: StorybookConfig = {
       "@effex/dom": resolve(__dirname, "../../dom/src"),
       "@effex/primitives": resolve(__dirname, "../src"),
     };
+    config.plugins = config.plugins || [];
+    config.plugins.push(tailwindcss());
     return config;
   },
 };

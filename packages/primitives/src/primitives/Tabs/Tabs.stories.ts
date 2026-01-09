@@ -5,8 +5,6 @@ import { $ } from "@effex/dom";
 import { Signal } from "@effex/dom";
 import { renderEffectAsync } from "../../storyHelpers";
 
-import "./Tabs.stories.css";
-
 type TabsStoryArgs = {
   defaultValue?: string;
   orientation?: "horizontal" | "vertical";
@@ -46,26 +44,44 @@ const meta: Meta<TabsStoryArgs> = {
           activationMode: args.activationMode,
         },
         [
-          Tabs.List({}, [
-            Tabs.Trigger({ value: "account" }, "Account"),
-            Tabs.Trigger({ value: "password" }, "Password"),
-            Tabs.Trigger({ value: "settings" }, "Settings"),
+          Tabs.List({ class: "tabs tabs-bordered" }, [
+            Tabs.Trigger(
+              { value: "account", class: "tab data-[state=active]:tab-active" },
+              "Account",
+            ),
+            Tabs.Trigger(
+              {
+                value: "password",
+                class: "tab data-[state=active]:tab-active",
+              },
+              "Password",
+            ),
+            Tabs.Trigger(
+              {
+                value: "settings",
+                class: "tab data-[state=active]:tab-active",
+              },
+              "Settings",
+            ),
           ]),
-          Tabs.Content({ value: "account" }, [
-            $.h3("Account Settings"),
+          Tabs.Content({ value: "account", class: "p-4" }, [
+            $.h3({ class: "font-semibold text-lg mb-2" }, "Account Settings"),
             $.p(
+              { class: "text-base-content/70" },
               "Manage your account information and preferences. Update your display name, email address, and profile picture.",
             ),
           ]),
-          Tabs.Content({ value: "password" }, [
-            $.h3("Password"),
+          Tabs.Content({ value: "password", class: "p-4" }, [
+            $.h3({ class: "font-semibold text-lg mb-2" }, "Password"),
             $.p(
+              { class: "text-base-content/70" },
               "Change your password here. After saving, you'll be logged out and need to sign in with your new password.",
             ),
           ]),
-          Tabs.Content({ value: "settings" }, [
-            $.h3("Settings"),
+          Tabs.Content({ value: "settings", class: "p-4" }, [
+            $.h3({ class: "font-semibold text-lg mb-2" }, "Settings"),
             $.p(
+              { class: "text-base-content/70" },
               "Configure your application settings. Adjust notifications, privacy preferences, and more.",
             ),
           ]),
@@ -74,7 +90,7 @@ const meta: Meta<TabsStoryArgs> = {
     });
 
     const container = document.createElement("div");
-    container.className = "tabs-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -89,46 +105,75 @@ type Story = StoryObj<TabsStoryArgs>;
 
 export const Default: Story = {};
 
-export const Vertical: Story = {
-  args: {
-    orientation: "vertical",
-  },
-  render: (args) => {
+export const Lifted: Story = {
+  render: () => {
     const element = Effect.gen(function* () {
-      const root = yield* Tabs.Root(
-        {
-          defaultValue: args.defaultValue,
-          orientation: args.orientation,
-        },
-        [
-          Tabs.List({}, [
-            Tabs.Trigger({ value: "account" }, "Account"),
-            Tabs.Trigger({ value: "password" }, "Password"),
-            Tabs.Trigger({ value: "settings" }, "Settings"),
-          ]),
-          Tabs.Content({ value: "account" }, [
-            $.h3("Account Settings"),
-            $.p("Manage your account information."),
-          ]),
-          Tabs.Content({ value: "password" }, [
-            $.h3("Password"),
-            $.p("Change your password here."),
-          ]),
-          Tabs.Content({ value: "settings" }, [
-            $.h3("Settings"),
-            $.p("Configure your application settings."),
-          ]),
-        ],
-      );
-
-      const wrapper = document.createElement("div");
-      wrapper.className = "tabs-vertical-container";
-      wrapper.appendChild(root);
-      return wrapper;
+      return yield* Tabs.Root({ defaultValue: "tab1" }, [
+        Tabs.List({ class: "tabs tabs-lift" }, [
+          Tabs.Trigger(
+            { value: "tab1", class: "tab data-[state=active]:tab-active" },
+            "Tab 1",
+          ),
+          Tabs.Trigger(
+            { value: "tab2", class: "tab data-[state=active]:tab-active" },
+            "Tab 2",
+          ),
+          Tabs.Trigger(
+            { value: "tab3", class: "tab data-[state=active]:tab-active" },
+            "Tab 3",
+          ),
+        ]),
+        $.div({ class: "bg-base-100 border-base-300 rounded-box p-6 border" }, [
+          Tabs.Content({ value: "tab1" }, [$.p({}, "Content for Tab 1")]),
+          Tabs.Content({ value: "tab2" }, [$.p({}, "Content for Tab 2")]),
+          Tabs.Content({ value: "tab3" }, [$.p({}, "Content for Tab 3")]),
+        ]),
+      ]);
     });
 
     const container = document.createElement("div");
-    container.className = "tabs-story-container";
+    container.className = "p-4";
+
+    renderEffectAsync(element).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
+  },
+};
+
+export const Boxed: Story = {
+  render: () => {
+    const element = Effect.gen(function* () {
+      return yield* Tabs.Root({ defaultValue: "tab1" }, [
+        Tabs.List({ class: "tabs tabs-box" }, [
+          Tabs.Trigger(
+            { value: "tab1", class: "tab data-[state=active]:tab-active" },
+            "Tab 1",
+          ),
+          Tabs.Trigger(
+            { value: "tab2", class: "tab data-[state=active]:tab-active" },
+            "Tab 2",
+          ),
+          Tabs.Trigger(
+            { value: "tab3", class: "tab data-[state=active]:tab-active" },
+            "Tab 3",
+          ),
+        ]),
+        Tabs.Content({ value: "tab1", class: "p-4" }, [
+          $.p({}, "Content for Tab 1"),
+        ]),
+        Tabs.Content({ value: "tab2", class: "p-4" }, [
+          $.p({}, "Content for Tab 2"),
+        ]),
+        Tabs.Content({ value: "tab3", class: "p-4" }, [
+          $.p({}, "Content for Tab 3"),
+        ]),
+      ]);
+    });
+
+    const container = document.createElement("div");
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -141,42 +186,44 @@ export const Vertical: Story = {
 export const ManualActivation: Story = {
   render: () => {
     const element = Effect.gen(function* () {
-      const info = yield* $.p(
-        {
-          style: { fontSize: "14px", color: "#6b7280", marginBottom: "16px" },
-        },
-        "Use arrow keys to navigate, then press Enter or Space to select a tab.",
-      );
-
-      const tabs = yield* Tabs.Root(
-        {
-          defaultValue: "tab1",
-          activationMode: "manual",
-        },
-        [
-          Tabs.List({}, [
-            Tabs.Trigger({ value: "tab1" }, "Tab 1"),
-            Tabs.Trigger({ value: "tab2" }, "Tab 2"),
-            Tabs.Trigger({ value: "tab3" }, "Tab 3"),
+      return yield* $.div({}, [
+        $.p(
+          { class: "text-sm text-base-content/70 mb-4" },
+          "Use arrow keys to navigate, then press Enter or Space to select a tab.",
+        ),
+        Tabs.Root({ defaultValue: "tab1", activationMode: "manual" }, [
+          Tabs.List({ class: "tabs tabs-bordered" }, [
+            Tabs.Trigger(
+              { value: "tab1", class: "tab data-[state=active]:tab-active" },
+              "Tab 1",
+            ),
+            Tabs.Trigger(
+              { value: "tab2", class: "tab data-[state=active]:tab-active" },
+              "Tab 2",
+            ),
+            Tabs.Trigger(
+              { value: "tab3", class: "tab data-[state=active]:tab-active" },
+              "Tab 3",
+            ),
           ]),
-          Tabs.Content({ value: "tab1" }, [
+          Tabs.Content({ value: "tab1", class: "p-4" }, [
             $.p(
+              {},
               "Content for Tab 1. Focus moves with arrows, but you must press Enter/Space to activate.",
             ),
           ]),
-          Tabs.Content({ value: "tab2" }, [$.p("Content for Tab 2.")]),
-          Tabs.Content({ value: "tab3" }, [$.p("Content for Tab 3.")]),
-        ],
-      );
-
-      const wrapper = document.createElement("div");
-      wrapper.appendChild(info);
-      wrapper.appendChild(tabs);
-      return wrapper;
+          Tabs.Content({ value: "tab2", class: "p-4" }, [
+            $.p({}, "Content for Tab 2."),
+          ]),
+          Tabs.Content({ value: "tab3", class: "p-4" }, [
+            $.p({}, "Content for Tab 3."),
+          ]),
+        ]),
+      ]);
     });
 
     const container = document.createElement("div");
-    container.className = "tabs-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -190,25 +237,34 @@ export const WithDisabledTab: Story = {
   render: () => {
     const element = Effect.gen(function* () {
       return yield* Tabs.Root({ defaultValue: "active" }, [
-        Tabs.List({}, [
-          Tabs.Trigger({ value: "active" }, "Active Tab"),
-          Tabs.Trigger({ value: "disabled", disabled: true }, "Disabled Tab"),
-          Tabs.Trigger({ value: "another" }, "Another Tab"),
+        Tabs.List({ class: "tabs tabs-bordered" }, [
+          Tabs.Trigger(
+            { value: "active", class: "tab data-[state=active]:tab-active" },
+            "Active Tab",
+          ),
+          Tabs.Trigger(
+            { value: "disabled", class: "tab tab-disabled", disabled: true },
+            "Disabled Tab",
+          ),
+          Tabs.Trigger(
+            { value: "another", class: "tab data-[state=active]:tab-active" },
+            "Another Tab",
+          ),
         ]),
-        Tabs.Content({ value: "active" }, [
-          $.p("This is the active tab content."),
+        Tabs.Content({ value: "active", class: "p-4" }, [
+          $.p({}, "This is the active tab content."),
         ]),
-        Tabs.Content({ value: "disabled" }, [
-          $.p("You shouldn't be able to see this (disabled tab)."),
+        Tabs.Content({ value: "disabled", class: "p-4" }, [
+          $.p({}, "You shouldn't be able to see this (disabled tab)."),
         ]),
-        Tabs.Content({ value: "another" }, [
-          $.p("This is another tab's content."),
+        Tabs.Content({ value: "another", class: "p-4" }, [
+          $.p({}, "This is another tab's content."),
         ]),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "tabs-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -223,110 +279,67 @@ export const Controlled: Story = {
     const element = Effect.gen(function* () {
       const activeTab = yield* Signal.make("tab1");
 
-      const statusText = yield* $.p(
-        { style: { fontSize: "14px", color: "#6b7280", marginBottom: "16px" } },
-        activeTab.map((tab) => `Current tab: ${tab}`),
-      );
-
-      const buttonGroup = yield* $.div(
-        { style: { display: "flex", gap: "8px", marginBottom: "16px" } },
-        [
+      return yield* $.div({ class: "flex flex-col gap-4" }, [
+        $.div(
+          { class: "badge badge-neutral" },
+          activeTab.map((tab) => `Current tab: ${tab}`),
+        ),
+        $.div({ class: "flex gap-2" }, [
           $.button(
             {
-              class: "tabs-form-button",
+              class: "btn btn-xs btn-outline",
               onClick: () => activeTab.set("tab1"),
             },
             "Go to Tab 1",
           ),
           $.button(
             {
-              class: "tabs-form-button",
+              class: "btn btn-xs btn-outline",
               onClick: () => activeTab.set("tab2"),
             },
             "Go to Tab 2",
           ),
           $.button(
             {
-              class: "tabs-form-button",
+              class: "btn btn-xs btn-outline",
               onClick: () => activeTab.set("tab3"),
             },
             "Go to Tab 3",
           ),
-        ],
-      );
-
-      const tabs = yield* Tabs.Root(
-        {
-          value: activeTab,
-          onValueChange: (value) => Effect.log(`Tab changed to: ${value}`),
-        },
-        [
-          Tabs.List({}, [
-            Tabs.Trigger({ value: "tab1" }, "Tab 1"),
-            Tabs.Trigger({ value: "tab2" }, "Tab 2"),
-            Tabs.Trigger({ value: "tab3" }, "Tab 3"),
+        ]),
+        Tabs.Root({ value: activeTab }, [
+          Tabs.List({ class: "tabs tabs-bordered" }, [
+            Tabs.Trigger(
+              { value: "tab1", class: "tab data-[state=active]:tab-active" },
+              "Tab 1",
+            ),
+            Tabs.Trigger(
+              { value: "tab2", class: "tab data-[state=active]:tab-active" },
+              "Tab 2",
+            ),
+            Tabs.Trigger(
+              { value: "tab3", class: "tab data-[state=active]:tab-active" },
+              "Tab 3",
+            ),
           ]),
-          Tabs.Content({ value: "tab1" }, [
+          Tabs.Content({ value: "tab1", class: "p-4" }, [
             $.p(
+              {},
               "Content for Tab 1. You can control this from the buttons above.",
             ),
           ]),
-          Tabs.Content({ value: "tab2" }, [$.p("Content for Tab 2.")]),
-          Tabs.Content({ value: "tab3" }, [$.p("Content for Tab 3.")]),
-        ],
-      );
-
-      const wrapper = document.createElement("div");
-      wrapper.appendChild(statusText);
-      wrapper.appendChild(buttonGroup);
-      wrapper.appendChild(tabs);
-      return wrapper;
-    });
-
-    const container = document.createElement("div");
-    container.className = "tabs-story-container";
-
-    renderEffectAsync(element).then((el) => {
-      container.appendChild(el);
-    });
-
-    return container;
-  },
-};
-
-export const CardStyle: Story = {
-  render: () => {
-    const element = Effect.gen(function* () {
-      return yield* Tabs.Root({ defaultValue: "overview" }, [
-        Tabs.List({ class: "tabs-card-list" }, [
-          Tabs.Trigger({ value: "overview" }, "Overview"),
-          Tabs.Trigger({ value: "analytics" }, "Analytics"),
-          Tabs.Trigger({ value: "reports" }, "Reports"),
-          Tabs.Trigger({ value: "notifications" }, "Notifications"),
-        ]),
-        Tabs.Content({ value: "overview" }, [
-          $.h3("Overview"),
-          $.p(
-            "Welcome to your dashboard. Here's a quick overview of your account.",
-          ),
-        ]),
-        Tabs.Content({ value: "analytics" }, [
-          $.h3("Analytics"),
-          $.p("View detailed analytics and insights about your usage."),
-        ]),
-        Tabs.Content({ value: "reports" }, [
-          $.h3("Reports"),
-          $.p("Generate and download reports for your data."),
-        ]),
-        Tabs.Content({ value: "notifications" }, [
-          $.h3("Notifications"),
-          $.p("Manage your notification preferences."),
+          Tabs.Content({ value: "tab2", class: "p-4" }, [
+            $.p({}, "Content for Tab 2."),
+          ]),
+          Tabs.Content({ value: "tab3", class: "p-4" }, [
+            $.p({}, "Content for Tab 3."),
+          ]),
         ]),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "tabs-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -339,70 +352,82 @@ export const CardStyle: Story = {
 export const WithForms: Story = {
   render: () => {
     const element = Effect.gen(function* () {
-      return yield* Tabs.Root({ defaultValue: "account" }, [
-        Tabs.List({}, [
-          Tabs.Trigger({ value: "account" }, "Account"),
-          Tabs.Trigger({ value: "password" }, "Password"),
-        ]),
-        Tabs.Content({ value: "account" }, [
-          $.div({ class: "tabs-form-group" }, [
-            $.label({ class: "tabs-form-label", for: "name" }, "Name"),
-            $.input({
-              id: "name",
-              class: "tabs-form-input",
-              type: "text",
-              placeholder: "Enter your name",
-            }),
-          ]),
-          $.div({ class: "tabs-form-group" }, [
-            $.label({ class: "tabs-form-label", for: "email" }, "Email"),
-            $.input({
-              id: "email",
-              class: "tabs-form-input",
-              type: "email",
-              placeholder: "Enter your email",
-            }),
-          ]),
-          $.button({ class: "tabs-form-button" }, "Save Changes"),
-        ]),
-        Tabs.Content({ value: "password" }, [
-          $.div({ class: "tabs-form-group" }, [
-            $.label(
-              { class: "tabs-form-label", for: "current" },
-              "Current Password",
+      return yield* $.div({ class: "card bg-base-200" }, [
+        Tabs.Root({ defaultValue: "account" }, [
+          Tabs.List({ class: "tabs tabs-bordered bg-base-300 rounded-t-box" }, [
+            Tabs.Trigger(
+              { value: "account", class: "tab data-[state=active]:tab-active" },
+              "Account",
             ),
-            $.input({
-              id: "current",
-              class: "tabs-form-input",
-              type: "password",
-            }),
-          ]),
-          $.div({ class: "tabs-form-group" }, [
-            $.label({ class: "tabs-form-label", for: "new" }, "New Password"),
-            $.input({
-              id: "new",
-              class: "tabs-form-input",
-              type: "password",
-            }),
-          ]),
-          $.div({ class: "tabs-form-group" }, [
-            $.label(
-              { class: "tabs-form-label", for: "confirm" },
-              "Confirm Password",
+            Tabs.Trigger(
+              {
+                value: "password",
+                class: "tab data-[state=active]:tab-active",
+              },
+              "Password",
             ),
-            $.input({
-              id: "confirm",
-              class: "tabs-form-input",
-              type: "password",
-            }),
           ]),
-          $.button({ class: "tabs-form-button" }, "Update Password"),
+          $.div({ class: "card-body" }, [
+            Tabs.Content({ value: "account" }, [
+              $.div({ class: "form-control w-full" }, [
+                $.label({ class: "label" }, [
+                  $.span({ class: "label-text" }, "Name"),
+                ]),
+                $.input({
+                  type: "text",
+                  class: "input input-bordered w-full",
+                  placeholder: "Enter your name",
+                }),
+              ]),
+              $.div({ class: "form-control w-full mt-4" }, [
+                $.label({ class: "label" }, [
+                  $.span({ class: "label-text" }, "Email"),
+                ]),
+                $.input({
+                  type: "email",
+                  class: "input input-bordered w-full",
+                  placeholder: "Enter your email",
+                }),
+              ]),
+              $.button({ class: "btn btn-primary mt-6" }, "Save Changes"),
+            ]),
+            Tabs.Content({ value: "password" }, [
+              $.div({ class: "form-control w-full" }, [
+                $.label({ class: "label" }, [
+                  $.span({ class: "label-text" }, "Current Password"),
+                ]),
+                $.input({
+                  type: "password",
+                  class: "input input-bordered w-full",
+                }),
+              ]),
+              $.div({ class: "form-control w-full mt-4" }, [
+                $.label({ class: "label" }, [
+                  $.span({ class: "label-text" }, "New Password"),
+                ]),
+                $.input({
+                  type: "password",
+                  class: "input input-bordered w-full",
+                }),
+              ]),
+              $.div({ class: "form-control w-full mt-4" }, [
+                $.label({ class: "label" }, [
+                  $.span({ class: "label-text" }, "Confirm Password"),
+                ]),
+                $.input({
+                  type: "password",
+                  class: "input input-bordered w-full",
+                }),
+              ]),
+              $.button({ class: "btn btn-primary mt-6" }, "Update Password"),
+            ]),
+          ]),
         ]),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "tabs-story-container";
+    container.className = "p-4 max-w-md";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -412,39 +437,81 @@ export const WithForms: Story = {
   },
 };
 
-export const ForceMount: Story = {
+export const Sizes: Story = {
   render: () => {
-    const element = Effect.gen(function* () {
-      const info = yield* $.p(
-        { style: { fontSize: "14px", color: "#6b7280", marginBottom: "16px" } },
-        "With forceMount, all tab panels are always in the DOM (hidden when inactive). Check the DOM inspector.",
-      );
-
-      const tabs = yield* Tabs.Root({ defaultValue: "tab1" }, [
-        Tabs.List({}, [
-          Tabs.Trigger({ value: "tab1" }, "Tab 1"),
-          Tabs.Trigger({ value: "tab2" }, "Tab 2"),
-          Tabs.Trigger({ value: "tab3" }, "Tab 3"),
-        ]),
-        Tabs.Content({ value: "tab1", forceMount: true }, [
-          $.p("Content 1 - always mounted"),
-        ]),
-        Tabs.Content({ value: "tab2", forceMount: true }, [
-          $.p("Content 2 - always mounted"),
-        ]),
-        Tabs.Content({ value: "tab3", forceMount: true }, [
-          $.p("Content 3 - always mounted"),
-        ]),
-      ]);
-
-      const wrapper = document.createElement("div");
-      wrapper.appendChild(info);
-      wrapper.appendChild(tabs);
-      return wrapper;
-    });
+    const element = $.div({ class: "flex flex-col gap-6" }, [
+      $.div({}, [
+        $.p({ class: "text-sm mb-2 text-base-content/70" }, "Extra Small"),
+        Effect.gen(function* () {
+          return yield* Tabs.Root({ defaultValue: "tab1" }, [
+            Tabs.List({ class: "tabs tabs-bordered tabs-xs" }, [
+              Tabs.Trigger(
+                { value: "tab1", class: "tab data-[state=active]:tab-active" },
+                "Tab 1",
+              ),
+              Tabs.Trigger(
+                { value: "tab2", class: "tab data-[state=active]:tab-active" },
+                "Tab 2",
+              ),
+            ]),
+          ]);
+        }),
+      ]),
+      $.div({}, [
+        $.p({ class: "text-sm mb-2 text-base-content/70" }, "Small"),
+        Effect.gen(function* () {
+          return yield* Tabs.Root({ defaultValue: "tab1" }, [
+            Tabs.List({ class: "tabs tabs-bordered tabs-sm" }, [
+              Tabs.Trigger(
+                { value: "tab1", class: "tab data-[state=active]:tab-active" },
+                "Tab 1",
+              ),
+              Tabs.Trigger(
+                { value: "tab2", class: "tab data-[state=active]:tab-active" },
+                "Tab 2",
+              ),
+            ]),
+          ]);
+        }),
+      ]),
+      $.div({}, [
+        $.p({ class: "text-sm mb-2 text-base-content/70" }, "Medium (default)"),
+        Effect.gen(function* () {
+          return yield* Tabs.Root({ defaultValue: "tab1" }, [
+            Tabs.List({ class: "tabs tabs-bordered" }, [
+              Tabs.Trigger(
+                { value: "tab1", class: "tab data-[state=active]:tab-active" },
+                "Tab 1",
+              ),
+              Tabs.Trigger(
+                { value: "tab2", class: "tab data-[state=active]:tab-active" },
+                "Tab 2",
+              ),
+            ]),
+          ]);
+        }),
+      ]),
+      $.div({}, [
+        $.p({ class: "text-sm mb-2 text-base-content/70" }, "Large"),
+        Effect.gen(function* () {
+          return yield* Tabs.Root({ defaultValue: "tab1" }, [
+            Tabs.List({ class: "tabs tabs-bordered tabs-lg" }, [
+              Tabs.Trigger(
+                { value: "tab1", class: "tab data-[state=active]:tab-active" },
+                "Tab 1",
+              ),
+              Tabs.Trigger(
+                { value: "tab2", class: "tab data-[state=active]:tab-active" },
+                "Tab 2",
+              ),
+            ]),
+          ]);
+        }),
+      ]),
+    ]);
 
     const container = document.createElement("div");
-    container.className = "tabs-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);

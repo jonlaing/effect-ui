@@ -5,8 +5,6 @@ import { Signal } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { renderEffectAsync } from "../../storyHelpers";
 
-import "./Separator.stories.css";
-
 type SeparatorStoryArgs = {
   orientation?: "horizontal" | "vertical";
   decorative?: boolean;
@@ -38,13 +36,13 @@ type Story = StoryObj<SeparatorStoryArgs>;
 export const Horizontal: Story = {
   render: () => {
     const element = Effect.gen(function* () {
-      return yield* $.div({ class: "separator-story-container" }, [
-        $.div({ class: "separator-demo" }, [
-          $.div({ class: "separator-demo-label" }, "Horizontal Separator"),
-          $.div({ class: "separator-content-box" }, [
-            $.p({ class: "separator-text" }, "Content above the separator"),
-            Separator({ class: "separator-horizontal" }),
-            $.p({ class: "separator-text" }, "Content below the separator"),
+      return yield* $.div({ class: "p-4 max-w-md" }, [
+        $.h3({ class: "text-lg font-semibold mb-2" }, "Horizontal Separator"),
+        $.div({ class: "card bg-base-200" }, [
+          $.div({ class: "card-body" }, [
+            $.p({}, "Content above the separator"),
+            Separator({ class: "divider" }),
+            $.p({}, "Content below the separator"),
           ]),
         ]),
       ]);
@@ -62,18 +60,25 @@ export const Horizontal: Story = {
 export const Vertical: Story = {
   render: () => {
     const element = Effect.gen(function* () {
-      return yield* $.div({ class: "separator-story-container" }, [
-        $.div({ class: "separator-demo" }, [
-          $.div({ class: "separator-demo-label" }, "Vertical Separator"),
-          $.div({ class: "separator-inline-content" }, [
-            $.span({}, "Home"),
-            Separator({ orientation: "vertical", class: "separator-vertical" }),
-            $.span({}, "Blog"),
-            Separator({ orientation: "vertical", class: "separator-vertical" }),
-            $.span({}, "Docs"),
-            Separator({ orientation: "vertical", class: "separator-vertical" }),
-            $.span({}, "Source"),
-          ]),
+      return yield* $.div({ class: "p-4" }, [
+        $.h3({ class: "text-lg font-semibold mb-4" }, "Vertical Separator"),
+        $.div({ class: "flex items-center gap-4 text-sm" }, [
+          $.span({}, "Home"),
+          Separator({
+            orientation: "vertical",
+            class: "h-4 w-px bg-base-content/30",
+          }),
+          $.span({}, "Blog"),
+          Separator({
+            orientation: "vertical",
+            class: "h-4 w-px bg-base-content/30",
+          }),
+          $.span({}, "Docs"),
+          Separator({
+            orientation: "vertical",
+            class: "h-4 w-px bg-base-content/30",
+          }),
+          $.span({}, "Source"),
         ]),
       ]);
     });
@@ -90,17 +95,17 @@ export const Vertical: Story = {
 export const Semantic: Story = {
   render: () => {
     const element = Effect.gen(function* () {
-      return yield* $.div({ class: "separator-story-container" }, [
-        $.div({ class: "separator-demo" }, [
-          $.div({ class: "separator-demo-label" }, "Semantic Separator"),
-          $.p(
-            { class: "separator-demo-description" },
-            'This separator has role="separator" and is announced by screen readers',
-          ),
-          $.div({ class: "separator-content-box" }, [
-            $.p({ class: "separator-text" }, "Section One"),
-            Separator({ decorative: false, class: "separator-horizontal" }),
-            $.p({ class: "separator-text" }, "Section Two"),
+      return yield* $.div({ class: "p-4 max-w-md" }, [
+        $.h3({ class: "text-lg font-semibold mb-2" }, "Semantic Separator"),
+        $.p(
+          { class: "text-sm text-base-content/70 mb-4" },
+          'This separator has role="separator" and is announced by screen readers',
+        ),
+        $.div({ class: "card bg-base-200" }, [
+          $.div({ class: "card-body" }, [
+            $.p({}, "Section One"),
+            Separator({ decorative: false, class: "divider" }),
+            $.p({}, "Section Two"),
           ]),
         ]),
       ]);
@@ -118,30 +123,36 @@ export const Semantic: Story = {
 export const StyledVariants: Story = {
   render: () => {
     const element = Effect.gen(function* () {
-      return yield* $.div({ class: "separator-story-container" }, [
-        $.div({ class: "separator-demo" }, [
-          $.div({ class: "separator-demo-label" }, "Styled Variants"),
-          $.div({ class: "separator-variants" }, [
-            $.div({ class: "separator-variant" }, [
-              $.span({ class: "separator-variant-label" }, "Default"),
-              Separator({ class: "separator-horizontal" }),
-            ]),
-            $.div({ class: "separator-variant" }, [
-              $.span({ class: "separator-variant-label" }, "Dashed"),
-              Separator({ class: "separator-dashed" }),
-            ]),
-            $.div({ class: "separator-variant" }, [
-              $.span({ class: "separator-variant-label" }, "Dotted"),
-              Separator({ class: "separator-dotted" }),
-            ]),
-            $.div({ class: "separator-variant" }, [
-              $.span({ class: "separator-variant-label" }, "Gradient"),
-              Separator({ class: "separator-gradient" }),
-            ]),
-            $.div({ class: "separator-variant" }, [
-              $.span({ class: "separator-variant-label" }, "Thick"),
-              Separator({ class: "separator-thick" }),
-            ]),
+      return yield* $.div({ class: "p-4 max-w-md space-y-6" }, [
+        $.h3({ class: "text-lg font-semibold" }, "Styled Variants"),
+        $.div({ class: "space-y-4" }, [
+          $.div({ class: "space-y-2" }, [
+            $.span({ class: "text-sm text-base-content/70" }, "Default"),
+            Separator({ class: "divider" }),
+          ]),
+          $.div({ class: "space-y-2" }, [
+            $.span({ class: "text-sm text-base-content/70" }, "Primary"),
+            Separator({ class: "divider divider-primary" }),
+          ]),
+          $.div({ class: "space-y-2" }, [
+            $.span({ class: "text-sm text-base-content/70" }, "Secondary"),
+            Separator({ class: "divider divider-secondary" }),
+          ]),
+          $.div({ class: "space-y-2" }, [
+            $.span({ class: "text-sm text-base-content/70" }, "Accent"),
+            Separator({ class: "divider divider-accent" }),
+          ]),
+          $.div({ class: "space-y-2" }, [
+            $.span({ class: "text-sm text-base-content/70" }, "Success"),
+            Separator({ class: "divider divider-success" }),
+          ]),
+          $.div({ class: "space-y-2" }, [
+            $.span({ class: "text-sm text-base-content/70" }, "Warning"),
+            Separator({ class: "divider divider-warning" }),
+          ]),
+          $.div({ class: "space-y-2" }, [
+            $.span({ class: "text-sm text-base-content/70" }, "Error"),
+            Separator({ class: "divider divider-error" }),
           ]),
         ]),
       ]);
@@ -159,17 +170,13 @@ export const StyledVariants: Story = {
 export const WithContent: Story = {
   render: () => {
     const element = Effect.gen(function* () {
-      return yield* $.div({ class: "separator-story-container" }, [
-        $.div({ class: "separator-demo" }, [
-          $.div({ class: "separator-demo-label" }, "Separator with Content"),
-          $.div({ class: "separator-content-box" }, [
-            $.p({ class: "separator-text" }, "Content above"),
-            $.div({ class: "separator-with-text" }, [
-              Separator({ class: "separator-flex-line" }),
-              $.span({ class: "separator-label" }, "OR"),
-              Separator({ class: "separator-flex-line" }),
-            ]),
-            $.p({ class: "separator-text" }, "Content below"),
+      return yield* $.div({ class: "p-4 max-w-md" }, [
+        $.h3({ class: "text-lg font-semibold mb-4" }, "Separator with Content"),
+        $.div({ class: "card bg-base-200" }, [
+          $.div({ class: "card-body" }, [
+            $.p({}, "Content above"),
+            $.div({ class: "divider" }, "OR"),
+            $.p({}, "Content below"),
           ]),
         ]),
       ]);
@@ -199,27 +206,29 @@ export const ReactiveOrientation: Story = {
         });
 
       const containerClass = isVertical.map((v) =>
-        v
-          ? "separator-reactive-content separator-reactive-vertical"
-          : "separator-reactive-content separator-reactive-horizontal",
+        v ? "flex items-center gap-4" : "flex flex-col gap-4",
       );
 
-      return yield* $.div({ class: "separator-story-container" }, [
-        $.div({ class: "separator-demo" }, [
-          $.div({ class: "separator-demo-label" }, "Reactive Orientation"),
-          $.p(
-            { class: "separator-demo-description" },
-            "Click the button to toggle orientation",
-          ),
-          $.div({ class: containerClass }, [
-            $.span({}, "Item A"),
-            Separator({ orientation, class: "separator-reactive" }),
-            $.span({}, "Item B"),
-          ]),
-          $.button({ class: "separator-button", onClick: handleToggle }, [
-            "Toggle Orientation",
-          ]),
+      return yield* $.div({ class: "p-4" }, [
+        $.h3({ class: "text-lg font-semibold mb-4" }, "Reactive Orientation"),
+        $.p(
+          { class: "text-sm text-base-content/70 mb-4" },
+          "Click the button to toggle orientation",
+        ),
+        $.div({ class: containerClass }, [
+          $.span({ class: "badge badge-primary" }, "Item A"),
+          Separator({
+            orientation,
+            class: isVertical.map((v) =>
+              v ? "h-8 w-px bg-base-content/30" : "divider",
+            ),
+          }),
+          $.span({ class: "badge badge-secondary" }, "Item B"),
         ]),
+        $.button(
+          { class: "btn btn-outline btn-sm mt-4", onClick: handleToggle },
+          "Toggle Orientation",
+        ),
       ]);
     });
 

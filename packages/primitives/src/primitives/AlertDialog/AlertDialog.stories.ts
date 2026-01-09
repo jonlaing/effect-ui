@@ -5,8 +5,6 @@ import { $ } from "@effex/dom";
 import { Signal } from "@effex/dom";
 import { renderEffectAsync } from "../../storyHelpers";
 
-import "./AlertDialog.stories.css";
-
 type AlertDialogStoryArgs = {
   defaultOpen?: boolean;
   title?: string;
@@ -44,23 +42,32 @@ export const Default: Story = {
   render: (args) => {
     const element = Effect.gen(function* () {
       return yield* AlertDialog.Root({ defaultOpen: args.defaultOpen }, [
-        AlertDialog.Trigger({ class: "alertdialog-trigger" }, "Open Alert"),
+        AlertDialog.Trigger({ class: "btn btn-primary" }, "Open Alert"),
         AlertDialog.Portal({}, [
-          AlertDialog.Overlay({}),
-          AlertDialog.Content({}, [
-            AlertDialog.Title({}, args.title!),
-            AlertDialog.Description({}, args.description!),
-            $.div({ class: "alertdialog-buttons" }, [
-              AlertDialog.Cancel({ class: "alertdialog-cancel" }, "Cancel"),
-              AlertDialog.Action({ class: "alertdialog-action" }, "Continue"),
-            ]),
-          ]),
+          AlertDialog.Overlay({ class: "fixed inset-0 bg-black/50" }),
+          AlertDialog.Content(
+            {
+              class:
+                "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-base-100 rounded-box p-6 w-full max-w-md shadow-2xl",
+            },
+            [
+              AlertDialog.Title({ class: "font-bold text-lg" }, args.title!),
+              AlertDialog.Description(
+                { class: "py-4 text-base-content/70" },
+                args.description!,
+              ),
+              $.div({ class: "flex justify-end gap-2" }, [
+                AlertDialog.Cancel({ class: "btn btn-ghost" }, "Cancel"),
+                AlertDialog.Action({ class: "btn btn-primary" }, "Continue"),
+              ]),
+            ],
+          ),
         ]),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "alertdialog-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -74,38 +81,44 @@ export const DestructiveAction: Story = {
   render: () => {
     const element = Effect.gen(function* () {
       return yield* AlertDialog.Root({ defaultOpen: false }, [
-        AlertDialog.Trigger(
-          { class: "alertdialog-trigger alertdialog-trigger--danger" },
-          "Delete Account",
-        ),
+        AlertDialog.Trigger({ class: "btn btn-error" }, "Delete Account"),
         AlertDialog.Portal({}, [
-          AlertDialog.Overlay({}),
-          AlertDialog.Content({}, [
-            AlertDialog.Title({}, "Delete Account"),
-            AlertDialog.Description(
-              {},
-              "Are you sure you want to delete your account? All of your data will be permanently removed. This action cannot be undone.",
-            ),
-            $.div({ class: "alertdialog-buttons" }, [
-              AlertDialog.Cancel({ class: "alertdialog-cancel" }, "Cancel"),
-              AlertDialog.Action(
-                {
-                  class: "alertdialog-action alertdialog-action--danger",
-                  onClick: () =>
-                    Effect.sync(() => {
-                      console.log("Account deleted!");
-                    }),
-                },
-                "Yes, delete account",
+          AlertDialog.Overlay({ class: "fixed inset-0 bg-black/50" }),
+          AlertDialog.Content(
+            {
+              class:
+                "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-base-100 rounded-box p-6 w-full max-w-md shadow-2xl",
+            },
+            [
+              AlertDialog.Title(
+                { class: "font-bold text-lg text-error" },
+                "Delete Account",
               ),
-            ]),
-          ]),
+              AlertDialog.Description(
+                { class: "py-4 text-base-content/70" },
+                "Are you sure you want to delete your account? All of your data will be permanently removed. This action cannot be undone.",
+              ),
+              $.div({ class: "flex justify-end gap-2" }, [
+                AlertDialog.Cancel({ class: "btn btn-ghost" }, "Cancel"),
+                AlertDialog.Action(
+                  {
+                    class: "btn btn-error",
+                    onClick: () =>
+                      Effect.sync(() => {
+                        console.log("Account deleted!");
+                      }),
+                  },
+                  "Yes, delete account",
+                ),
+              ]),
+            ],
+          ),
         ]),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "alertdialog-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -119,48 +132,54 @@ export const SaveChanges: Story = {
   render: () => {
     const element = Effect.gen(function* () {
       return yield* AlertDialog.Root({ defaultOpen: false }, [
-        AlertDialog.Trigger(
-          { class: "alertdialog-trigger" },
-          "Discard Changes",
-        ),
+        AlertDialog.Trigger({ class: "btn btn-warning" }, "Discard Changes"),
         AlertDialog.Portal({}, [
-          AlertDialog.Overlay({}),
-          AlertDialog.Content({}, [
-            AlertDialog.Title({}, "Unsaved Changes"),
-            AlertDialog.Description(
-              {},
-              "You have unsaved changes. Do you want to save them before leaving?",
-            ),
-            $.div({ class: "alertdialog-buttons alertdialog-buttons--three" }, [
-              AlertDialog.Cancel({ class: "alertdialog-cancel" }, "Cancel"),
-              AlertDialog.Action(
-                {
-                  class: "alertdialog-action alertdialog-action--secondary",
-                  onClick: () =>
-                    Effect.sync(() => {
-                      console.log("Changes discarded");
-                    }),
-                },
-                "Don't Save",
+          AlertDialog.Overlay({ class: "fixed inset-0 bg-black/50" }),
+          AlertDialog.Content(
+            {
+              class:
+                "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-base-100 rounded-box p-6 w-full max-w-md shadow-2xl",
+            },
+            [
+              AlertDialog.Title(
+                { class: "font-bold text-lg" },
+                "Unsaved Changes",
               ),
-              AlertDialog.Action(
-                {
-                  class: "alertdialog-action",
-                  onClick: () =>
-                    Effect.sync(() => {
-                      console.log("Changes saved");
-                    }),
-                },
-                "Save",
+              AlertDialog.Description(
+                { class: "py-4 text-base-content/70" },
+                "You have unsaved changes. Do you want to save them before leaving?",
               ),
-            ]),
-          ]),
+              $.div({ class: "flex justify-end gap-2" }, [
+                AlertDialog.Cancel({ class: "btn btn-ghost" }, "Cancel"),
+                AlertDialog.Action(
+                  {
+                    class: "btn btn-outline",
+                    onClick: () =>
+                      Effect.sync(() => {
+                        console.log("Changes discarded");
+                      }),
+                  },
+                  "Don't Save",
+                ),
+                AlertDialog.Action(
+                  {
+                    class: "btn btn-primary",
+                    onClick: () =>
+                      Effect.sync(() => {
+                        console.log("Changes saved");
+                      }),
+                  },
+                  "Save",
+                ),
+              ]),
+            ],
+          ),
         ]),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "alertdialog-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -175,60 +194,63 @@ export const Controlled: Story = {
     const element = Effect.gen(function* () {
       const isOpen = yield* Signal.make(false);
 
-      const externalOpenButton = yield* $.button(
-        {
-          class: "alertdialog-trigger",
-          onClick: () => isOpen.set(true),
-        },
-        "Open Externally",
-      );
-
-      const statusText = yield* $.p(
-        isOpen.map((open) =>
-          open ? "Alert dialog is open" : "Alert dialog is closed",
-        ),
-      );
-
-      const dialog = yield* AlertDialog.Root(
-        {
-          open: isOpen,
-          onOpenChange: (open) =>
-            Effect.log(`Alert dialog is now ${open ? "open" : "closed"}`),
-        },
-        [
-          AlertDialog.Trigger({ class: "alertdialog-trigger" }, "Open Alert"),
-          AlertDialog.Portal({}, [
-            AlertDialog.Overlay({}),
-            AlertDialog.Content({}, [
-              AlertDialog.Title({}, "Controlled Alert Dialog"),
-              AlertDialog.Description(
-                {},
-                "This alert dialog's state is controlled externally via a Signal.",
+      return yield* $.div({ class: "flex flex-col gap-4 items-start" }, [
+        $.div({ class: "flex gap-2 items-center" }, [
+          $.button(
+            {
+              class: "btn btn-outline btn-sm",
+              onClick: () => isOpen.set(true),
+            },
+            "Open Externally",
+          ),
+          $.div(
+            { class: "badge badge-neutral" },
+            isOpen.map((open) =>
+              open ? "Dialog is open" : "Dialog is closed",
+            ),
+          ),
+        ]),
+        AlertDialog.Root(
+          {
+            open: isOpen,
+            onOpenChange: (open) =>
+              Effect.log(`Alert dialog is now ${open ? "open" : "closed"}`),
+          },
+          [
+            AlertDialog.Trigger({ class: "btn btn-primary" }, "Open Alert"),
+            AlertDialog.Portal({}, [
+              AlertDialog.Overlay({ class: "fixed inset-0 bg-black/50" }),
+              AlertDialog.Content(
+                {
+                  class:
+                    "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-base-100 rounded-box p-6 w-full max-w-md shadow-2xl",
+                },
+                [
+                  AlertDialog.Title(
+                    { class: "font-bold text-lg" },
+                    "Controlled Alert Dialog",
+                  ),
+                  AlertDialog.Description(
+                    { class: "py-4 text-base-content/70" },
+                    "This alert dialog's state is controlled externally via a Signal.",
+                  ),
+                  $.div({ class: "flex justify-end gap-2" }, [
+                    AlertDialog.Cancel({ class: "btn btn-ghost" }, "Cancel"),
+                    AlertDialog.Action(
+                      { class: "btn btn-primary" },
+                      "Continue",
+                    ),
+                  ]),
+                ],
               ),
-              $.div({ class: "alertdialog-buttons" }, [
-                AlertDialog.Cancel({ class: "alertdialog-cancel" }, "Cancel"),
-                AlertDialog.Action({ class: "alertdialog-action" }, "Continue"),
-              ]),
             ]),
-          ]),
-        ],
-      );
-
-      const wrapper = document.createElement("div");
-      wrapper.className = "alertdialog-story-container";
-
-      const controls = document.createElement("div");
-      controls.className = "alertdialog-external-controls";
-      controls.appendChild(externalOpenButton);
-
-      wrapper.appendChild(controls);
-      wrapper.appendChild(statusText);
-      wrapper.appendChild(dialog);
-
-      return wrapper;
+          ],
+        ),
+      ]);
     });
 
     const container = document.createElement("div");
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -242,32 +264,39 @@ export const NoEscapeClose: Story = {
   render: () => {
     const element = Effect.gen(function* () {
       return yield* AlertDialog.Root({ defaultOpen: false }, [
-        AlertDialog.Trigger(
-          { class: "alertdialog-trigger" },
-          "Critical Action",
-        ),
+        AlertDialog.Trigger({ class: "btn btn-accent" }, "Critical Action"),
         AlertDialog.Portal({}, [
-          AlertDialog.Overlay({}),
-          AlertDialog.Content({ closeOnEscape: false }, [
-            AlertDialog.Title({}, "Critical Action Required"),
-            AlertDialog.Description(
-              {},
-              "This dialog cannot be dismissed with Escape. You must explicitly cancel or confirm.",
-            ),
-            $.div({ class: "alertdialog-buttons" }, [
-              AlertDialog.Cancel({ class: "alertdialog-cancel" }, "Cancel"),
-              AlertDialog.Action(
-                { class: "alertdialog-action" },
-                "I Understand",
+          AlertDialog.Overlay({ class: "fixed inset-0 bg-black/50" }),
+          AlertDialog.Content(
+            {
+              closeOnEscape: false,
+              class:
+                "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-base-100 rounded-box p-6 w-full max-w-md shadow-2xl",
+            },
+            [
+              AlertDialog.Title(
+                { class: "font-bold text-lg" },
+                "Critical Action Required",
               ),
-            ]),
-          ]),
+              AlertDialog.Description(
+                { class: "py-4 text-base-content/70" },
+                "This dialog cannot be dismissed with Escape. You must explicitly cancel or confirm.",
+              ),
+              $.div({ class: "flex justify-end gap-2" }, [
+                AlertDialog.Cancel({ class: "btn btn-ghost" }, "Cancel"),
+                AlertDialog.Action(
+                  { class: "btn btn-primary" },
+                  "I Understand",
+                ),
+              ]),
+            ],
+          ),
         ]),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "alertdialog-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -277,88 +306,39 @@ export const NoEscapeClose: Story = {
   },
 };
 
-export const WithAnimation: Story = {
+export const Confirmation: Story = {
   render: () => {
     const element = Effect.gen(function* () {
-      return yield* AlertDialog.Root({ defaultOpen: false }, [
-        AlertDialog.Trigger(
-          { class: "alertdialog-trigger" },
-          "Open Animated Alert",
-        ),
-        AlertDialog.Portal(
-          {
-            animate: {
-              enter: "alertdialog-animate-enter",
-              exit: "alertdialog-animate-exit",
+      return yield* AlertDialog.Root({}, [
+        AlertDialog.Trigger({ class: "btn btn-error" }, "Delete Item"),
+        AlertDialog.Portal({}, [
+          AlertDialog.Overlay({ class: "fixed inset-0 bg-black/50" }),
+          AlertDialog.Content(
+            {
+              class:
+                "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-base-100 rounded-box p-6 w-full max-w-md shadow-2xl",
             },
-          },
-          [
-            AlertDialog.Overlay({}),
-            AlertDialog.Content({}, [
-              AlertDialog.Title({}, "Animated Alert Dialog"),
-              AlertDialog.Description(
-                {},
-                "This alert dialog uses the animate prop for smooth enter and exit animations.",
+            [
+              AlertDialog.Title(
+                { class: "font-bold text-lg text-error" },
+                "Confirm Deletion",
               ),
-              $.div({ class: "alertdialog-buttons" }, [
-                AlertDialog.Cancel({ class: "alertdialog-cancel" }, "Cancel"),
-                AlertDialog.Action({ class: "alertdialog-action" }, "Continue"),
+              AlertDialog.Description(
+                { class: "py-4 text-base-content/70" },
+                "Are you sure you want to delete this item? This action cannot be undone.",
+              ),
+              $.div({ class: "flex justify-end gap-2" }, [
+                AlertDialog.Cancel({ class: "btn btn-ghost" }, "Cancel"),
+                AlertDialog.Action({ class: "btn btn-error" }, "Delete"),
               ]),
-            ]),
-          ],
-        ),
+            ],
+          ),
+        ]),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "alertdialog-story-container";
-
-    renderEffectAsync(element).then((el) => {
-      container.appendChild(el);
-    });
-
-    return container;
-  },
-};
-
-export const WithBounceAnimation: Story = {
-  render: () => {
-    const element = Effect.gen(function* () {
-      return yield* AlertDialog.Root({ defaultOpen: false }, [
-        AlertDialog.Trigger(
-          { class: "alertdialog-trigger alertdialog-trigger--danger" },
-          "Delete Item",
-        ),
-        AlertDialog.Portal(
-          {
-            animate: {
-              enter: "alertdialog-bounce-enter",
-              exit: "alertdialog-bounce-exit",
-            },
-          },
-          [
-            AlertDialog.Overlay({}),
-            AlertDialog.Content({}, [
-              AlertDialog.Title({}, "Delete Item?"),
-              AlertDialog.Description(
-                {},
-                "This action cannot be undone. Are you sure you want to continue?",
-              ),
-              $.div({ class: "alertdialog-buttons" }, [
-                AlertDialog.Cancel({ class: "alertdialog-cancel" }, "Cancel"),
-                AlertDialog.Action(
-                  { class: "alertdialog-action alertdialog-action--danger" },
-                  "Delete",
-                ),
-              ]),
-            ]),
-          ],
-        ),
-      ]);
-    });
-
-    const container = document.createElement("div");
-    container.className = "alertdialog-story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);

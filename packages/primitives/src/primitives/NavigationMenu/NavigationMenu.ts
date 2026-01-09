@@ -7,7 +7,7 @@ import { provide } from "@effex/dom";
 import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Element } from "@effex/dom";
-import type { Child } from "@effex/dom";
+import type { Child, ClassValue } from "@effex/dom";
 import type { ElementRef } from "@effex/dom";
 
 // ============================================================================
@@ -92,7 +92,7 @@ export interface NavigationMenuRootProps {
   /** Reduced delay after first interaction (ms) */
   readonly skipDelayDuration?: number;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** ARIA label for the navigation */
   readonly "aria-label"?: string;
 }
@@ -208,7 +208,7 @@ const Root = (
  */
 export interface NavigationMenuListProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -274,7 +274,7 @@ export interface NavigationMenuItemProps {
   /** Unique value identifying this item */
   readonly value: string;
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -312,7 +312,7 @@ const Item = (
  */
 export interface NavigationMenuTriggerProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -403,7 +403,7 @@ const Trigger = component(
  */
 export interface NavigationMenuContentProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
   /** Called when Escape key is pressed */
   readonly onEscapeKeyDown?: (event: KeyboardEvent) => Effect.Effect<void>;
 }
@@ -467,7 +467,7 @@ const Content = component(
  */
 export interface NavigationMenuViewportProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**
@@ -500,7 +500,7 @@ const Viewport = component(
  */
 export interface NavigationMenuIndicatorProps {
   /** Additional class names */
-  readonly class?: Readable.Reactive<string>;
+  readonly class?: ClassValue;
 }
 
 /**

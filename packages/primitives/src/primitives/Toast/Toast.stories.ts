@@ -1,10 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/html-vite";
 import { Effect } from "effect";
 import { Toast, ToastCtx, type ToastPosition } from "@effex/primitives";
-import { button } from "@effex/dom";
+import { $ } from "@effex/dom";
 import { renderEffectAsync } from "../../storyHelpers";
-
-import "./Toast.stories.css";
 
 type ToastStoryArgs = {
   position?: ToastPosition;
@@ -46,27 +44,26 @@ export const Default: Story = {
           description: "This is a default toast message.",
         });
 
-      const triggerButton = yield* button(
+      const triggerButton = yield* $.button(
         {
-          class: "toast-trigger-button toast-trigger-button--default",
+          class: "btn btn-primary",
           onClick: showToast,
         },
         "Show Toast",
       );
 
-      // Create the viewport with a custom template
       yield* Toast.Viewport(
-        { class: "toast-viewport" },
-        Toast.Root({ class: "toast-root" }, [
-          Toast.Title({ class: "toast-title" }),
-          Toast.Description({ class: "toast-description" }),
-          Toast.Action({ class: "toast-action" }),
-          Toast.Close({ class: "toast-close" }),
+        { class: "toast toast-end" },
+        Toast.Root({ class: "alert shadow-lg" }, [
+          Toast.Title({ class: "font-bold" }),
+          Toast.Description({ class: "text-sm" }),
+          Toast.Action({ class: "btn btn-sm btn-ghost" }),
+          Toast.Close({ class: "btn btn-sm btn-circle btn-ghost" }),
         ]),
       );
 
       const container = document.createElement("div");
-      container.className = "toast-story-container";
+      container.className = "p-4";
       container.appendChild(triggerButton);
 
       return container;
@@ -123,67 +120,26 @@ export const AllTypes: Story = {
           type: "info",
         });
 
-      const buttons = document.createElement("div");
-      buttons.className = "toast-story-buttons";
-
-      const defaultBtn = yield* button(
-        {
-          class: "toast-trigger-button toast-trigger-button--default",
-          onClick: showDefault,
-        },
-        "Default",
-      );
-
-      const successBtn = yield* button(
-        {
-          class: "toast-trigger-button toast-trigger-button--success",
-          onClick: showSuccess,
-        },
-        "Success",
-      );
-
-      const errorBtn = yield* button(
-        {
-          class: "toast-trigger-button toast-trigger-button--error",
-          onClick: showError,
-        },
-        "Error",
-      );
-
-      const warningBtn = yield* button(
-        {
-          class: "toast-trigger-button toast-trigger-button--warning",
-          onClick: showWarning,
-        },
-        "Warning",
-      );
-
-      const infoBtn = yield* button(
-        {
-          class: "toast-trigger-button toast-trigger-button--info",
-          onClick: showInfo,
-        },
-        "Info",
-      );
-
-      buttons.appendChild(defaultBtn);
-      buttons.appendChild(successBtn);
-      buttons.appendChild(errorBtn);
-      buttons.appendChild(warningBtn);
-      buttons.appendChild(infoBtn);
+      const buttons = yield* $.div({ class: "flex flex-wrap gap-2" }, [
+        $.button({ class: "btn btn-neutral", onClick: showDefault }, "Default"),
+        $.button({ class: "btn btn-success", onClick: showSuccess }, "Success"),
+        $.button({ class: "btn btn-error", onClick: showError }, "Error"),
+        $.button({ class: "btn btn-warning", onClick: showWarning }, "Warning"),
+        $.button({ class: "btn btn-info", onClick: showInfo }, "Info"),
+      ]);
 
       yield* Toast.Viewport(
-        { class: "toast-viewport" },
-        Toast.Root({ class: "toast-root" }, [
-          Toast.Title({ class: "toast-title" }),
-          Toast.Description({ class: "toast-description" }),
-          Toast.Action({ class: "toast-action" }),
-          Toast.Close({ class: "toast-close" }),
+        { class: "toast toast-end" },
+        Toast.Root({ class: "alert shadow-lg" }, [
+          Toast.Title({ class: "font-bold" }),
+          Toast.Description({ class: "text-sm" }),
+          Toast.Action({ class: "btn btn-sm btn-ghost" }),
+          Toast.Close({ class: "btn btn-sm btn-circle btn-ghost" }),
         ]),
       );
 
       const container = document.createElement("div");
-      container.className = "toast-story-container";
+      container.className = "p-4";
       container.appendChild(buttons);
 
       return container;
@@ -219,26 +175,26 @@ export const WithAction: Story = {
           },
         });
 
-      const triggerButton = yield* button(
+      const triggerButton = yield* $.button(
         {
-          class: "toast-trigger-button toast-trigger-button--success",
+          class: "btn btn-success",
           onClick: showToast,
         },
         "Send Message",
       );
 
       yield* Toast.Viewport(
-        { class: "toast-viewport" },
-        Toast.Root({ class: "toast-root" }, [
-          Toast.Title({ class: "toast-title" }),
-          Toast.Description({ class: "toast-description" }),
-          Toast.Action({ class: "toast-action" }),
-          Toast.Close({ class: "toast-close" }),
+        { class: "toast toast-end" },
+        Toast.Root({ class: "alert shadow-lg" }, [
+          Toast.Title({ class: "font-bold" }),
+          Toast.Description({ class: "text-sm" }),
+          Toast.Action({ class: "btn btn-sm btn-ghost" }),
+          Toast.Close({ class: "btn btn-sm btn-circle btn-ghost" }),
         ]),
       );
 
       const container = document.createElement("div");
-      container.className = "toast-story-container";
+      container.className = "p-4";
       container.appendChild(triggerButton);
 
       return container;
@@ -265,29 +221,29 @@ export const Persistent: Story = {
           title: "Important Notice",
           description: "This toast won't auto-dismiss. Click X to close.",
           type: "warning",
-          duration: 0, // No auto-dismiss
+          duration: 0,
         });
 
-      const triggerButton = yield* button(
+      const triggerButton = yield* $.button(
         {
-          class: "toast-trigger-button toast-trigger-button--warning",
+          class: "btn btn-warning",
           onClick: showToast,
         },
         "Show Persistent Toast",
       );
 
       yield* Toast.Viewport(
-        { class: "toast-viewport" },
-        Toast.Root({ class: "toast-root" }, [
-          Toast.Title({ class: "toast-title" }),
-          Toast.Description({ class: "toast-description" }),
-          Toast.Action({ class: "toast-action" }),
-          Toast.Close({ class: "toast-close" }),
+        { class: "toast toast-end" },
+        Toast.Root({ class: "alert shadow-lg" }, [
+          Toast.Title({ class: "font-bold" }),
+          Toast.Description({ class: "text-sm" }),
+          Toast.Action({ class: "btn btn-sm btn-ghost" }),
+          Toast.Close({ class: "btn btn-sm btn-circle btn-ghost" }),
         ]),
       );
 
       const container = document.createElement("div");
-      container.className = "toast-story-container";
+      container.className = "p-4";
       container.appendChild(triggerButton);
 
       return container;
@@ -325,40 +281,26 @@ export const MultipleToasts: Story = {
 
       const dismissAll = () => ctx.dismissAll();
 
-      const buttons = document.createElement("div");
-      buttons.className = "toast-story-buttons";
-
-      const addBtn = yield* button(
-        {
-          class: "toast-trigger-button toast-trigger-button--info",
-          onClick: showToast,
-        },
-        "Add Toast",
-      );
-
-      const clearBtn = yield* button(
-        {
-          class: "toast-trigger-button toast-trigger-button--default",
-          onClick: dismissAll,
-        },
-        "Clear All",
-      );
-
-      buttons.appendChild(addBtn);
-      buttons.appendChild(clearBtn);
+      const buttons = yield* $.div({ class: "flex gap-2" }, [
+        $.button({ class: "btn btn-info", onClick: showToast }, "Add Toast"),
+        $.button(
+          { class: "btn btn-neutral", onClick: dismissAll },
+          "Clear All",
+        ),
+      ]);
 
       yield* Toast.Viewport(
-        { class: "toast-viewport" },
-        Toast.Root({ class: "toast-root" }, [
-          Toast.Title({ class: "toast-title" }),
-          Toast.Description({ class: "toast-description" }),
-          Toast.Action({ class: "toast-action" }),
-          Toast.Close({ class: "toast-close" }),
+        { class: "toast toast-end" },
+        Toast.Root({ class: "alert shadow-lg" }, [
+          Toast.Title({ class: "font-bold" }),
+          Toast.Description({ class: "text-sm" }),
+          Toast.Action({ class: "btn btn-sm btn-ghost" }),
+          Toast.Close({ class: "btn btn-sm btn-circle btn-ghost" }),
         ]),
       );
 
       const container = document.createElement("div");
-      container.className = "toast-story-container";
+      container.className = "p-4";
       container.appendChild(buttons);
 
       return container;

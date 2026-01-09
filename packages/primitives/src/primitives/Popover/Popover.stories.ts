@@ -5,8 +5,6 @@ import { $ } from "@effex/dom";
 import { Signal } from "@effex/dom";
 import { renderEffectAsync } from "../../storyHelpers";
 
-import "./Popover.stories.css";
-
 type PopoverStoryArgs = {
   side?: "top" | "bottom" | "left" | "right";
   align?: "start" | "center" | "end";
@@ -40,25 +38,28 @@ const meta: Meta<PopoverStoryArgs> = {
   render: (args) => {
     const element = Effect.gen(function* () {
       return yield* Popover.Root({ defaultOpen: false }, [
-        Popover.Trigger({}, "Open Popover"),
+        Popover.Trigger({ class: "btn btn-primary" }, "Open Popover"),
         Popover.Content(
-          { side: args.side, align: args.align, sideOffset: args.sideOffset },
+          {
+            side: args.side,
+            align: args.align,
+            sideOffset: args.sideOffset,
+            class: "card bg-base-200 shadow-xl p-4 w-72",
+          },
           [
-            $.div({ class: "popover-body" }, [
-              $.h4({ class: "popover-title" }, "Popover Title"),
-              $.p(
-                { class: "popover-description" },
-                "This is a basic popover with some content.",
-              ),
-            ]),
-            Popover.Close({}, "Close"),
+            $.h4({ class: "font-semibold mb-2" }, "Popover Title"),
+            $.p(
+              { class: "text-sm text-base-content/70 mb-4" },
+              "This is a basic popover with some content.",
+            ),
+            Popover.Close({ class: "btn btn-sm btn-ghost" }, "Close"),
           ],
         ),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "popover-story-container";
+    container.className = "p-8 flex justify-center";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -112,38 +113,48 @@ export const WithForm: Story = {
   render: () => {
     const element = Effect.gen(function* () {
       return yield* Popover.Root({ defaultOpen: false }, [
-        Popover.Trigger({}, "Update dimensions"),
-        Popover.Content({ side: "bottom", align: "start", sideOffset: 8 }, [
-          $.h4({ class: "popover-title" }, "Dimensions"),
-          $.p(
-            { class: "popover-description" },
-            "Set the dimensions for the layer.",
-          ),
-          $.div({ class: "popover-form" }, [
-            $.div({ class: "popover-form-row" }, [
-              $.label({ class: "popover-form-label" }, "Width"),
+        Popover.Trigger({ class: "btn btn-secondary" }, "Update dimensions"),
+        Popover.Content(
+          {
+            side: "bottom",
+            align: "start",
+            sideOffset: 8,
+            class: "card bg-base-200 shadow-xl p-4 w-80",
+          },
+          [
+            $.h4({ class: "font-semibold mb-1" }, "Dimensions"),
+            $.p(
+              { class: "text-sm text-base-content/70 mb-4" },
+              "Set the dimensions for the layer.",
+            ),
+            $.div({ class: "form-control w-full mb-2" }, [
+              $.label({ class: "label" }, [
+                $.span({ class: "label-text" }, "Width"),
+              ]),
               $.input({
-                class: "popover-form-input",
+                class: "input input-bordered input-sm w-full",
                 type: "text",
                 placeholder: "100%",
               }),
             ]),
-            $.div({ class: "popover-form-row" }, [
-              $.label({ class: "popover-form-label" }, "Height"),
+            $.div({ class: "form-control w-full mb-4" }, [
+              $.label({ class: "label" }, [
+                $.span({ class: "label-text" }, "Height"),
+              ]),
               $.input({
-                class: "popover-form-input",
+                class: "input input-bordered input-sm w-full",
                 type: "text",
                 placeholder: "25px",
               }),
             ]),
-            $.button({ class: "popover-form-button" }, "Apply"),
-          ]),
-        ]),
+            $.button({ class: "btn btn-primary btn-sm w-full" }, "Apply"),
+          ],
+        ),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "popover-story-container";
+    container.className = "p-8 flex justify-center";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -158,60 +169,56 @@ export const Controlled: Story = {
     const element = Effect.gen(function* () {
       const isOpen = yield* Signal.make(false);
 
-      const statusText = yield* $.p(
-        { style: { fontSize: "14px", color: "#6b7280", marginBottom: "16px" } },
-        isOpen.map((open) => `Popover is ${open ? "open" : "closed"}`),
-      );
-
-      const buttonGroup = yield* $.div(
-        { style: { display: "flex", gap: "8px", marginBottom: "16px" } },
-        [
+      return yield* $.div({ class: "flex flex-col items-center gap-4" }, [
+        $.div(
+          { class: "badge badge-neutral" },
+          isOpen.map((open) => `Popover is ${open ? "open" : "closed"}`),
+        ),
+        $.div({ class: "flex gap-2" }, [
           $.button(
             {
-              class: "popover-form-button",
+              class: "btn btn-sm btn-outline",
               onClick: () => isOpen.set(true),
             },
             "Open",
           ),
           $.button(
             {
-              class: "popover-form-button",
+              class: "btn btn-sm btn-outline",
               onClick: () => isOpen.set(false),
             },
             "Close",
           ),
-        ],
-      );
-
-      const popover = yield* Popover.Root(
-        {
-          open: isOpen,
-          onOpenChange: (open) =>
-            Effect.log(`Popover ${open ? "opened" : "closed"}`),
-        },
-        [
-          Popover.Trigger({}, "Toggle Popover"),
-          Popover.Content({ side: "bottom" }, [
-            $.div({ class: "popover-body" }, [
-              $.p("This popover is controlled externally."),
-              $.p("Use the buttons above to open/close."),
-            ]),
-            Popover.Close({}, "Close"),
-          ]),
-        ],
-      );
-
-      const wrapper = document.createElement("div");
-      wrapper.appendChild(statusText);
-      wrapper.appendChild(buttonGroup);
-      wrapper.appendChild(popover);
-      return wrapper;
+        ]),
+        Popover.Root(
+          {
+            open: isOpen,
+            onOpenChange: (open) =>
+              Effect.log(`Popover ${open ? "opened" : "closed"}`),
+          },
+          [
+            Popover.Trigger({ class: "btn btn-primary" }, "Toggle Popover"),
+            Popover.Content(
+              { side: "bottom", class: "card bg-base-200 shadow-xl p-4 w-64" },
+              [
+                $.p(
+                  { class: "text-sm" },
+                  "This popover is controlled externally.",
+                ),
+                $.p(
+                  { class: "text-sm text-base-content/70 mt-2" },
+                  "Use the buttons above to open/close.",
+                ),
+                Popover.Close({ class: "btn btn-sm btn-ghost mt-3" }, "Close"),
+              ],
+            ),
+          ],
+        ),
+      ]);
     });
 
     const container = document.createElement("div");
-    container.className = "popover-story-container";
-    container.style.flexDirection = "column";
-    container.style.alignItems = "center";
+    container.className = "p-8 flex justify-center";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -225,22 +232,30 @@ export const WithLink: Story = {
   render: () => {
     const element = Effect.gen(function* () {
       return yield* Popover.Root({ defaultOpen: false }, [
-        Popover.Trigger({}, "View details"),
-        Popover.Content({ side: "bottom", align: "start" }, [
-          $.div({ class: "popover-body" }, [
-            $.h4({ class: "popover-title" }, "Quick Info"),
+        Popover.Trigger({ class: "btn btn-accent" }, "View details"),
+        Popover.Content(
+          {
+            side: "bottom",
+            align: "start",
+            class: "card bg-base-200 shadow-xl p-4 w-72",
+          },
+          [
+            $.h4({ class: "font-semibold mb-2" }, "Quick Info"),
             $.p(
-              { class: "popover-description" },
+              { class: "text-sm text-base-content/70 mb-3" },
               "This is a brief description of the item. Click the link below for more details.",
             ),
-            $.a({ class: "popover-link", href: "#more" }, "Learn more"),
-          ]),
-        ]),
+            $.a(
+              { class: "link link-primary text-sm", href: "#more" },
+              "Learn more",
+            ),
+          ],
+        ),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "popover-story-container";
+    container.className = "p-8 flex justify-center";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -271,32 +286,37 @@ export const AllPositions: Story = {
       const items = yield* Effect.all(
         positions.map((pos) =>
           Effect.gen(function* () {
-            const cell = yield* $.div({ class: "popover-position-cell" }, [
+            return yield* $.div({ class: "flex justify-center items-center" }, [
               Popover.Root({ defaultOpen: false }, [
-                Popover.Trigger({}, `${pos.side}/${pos.align}`),
-                Popover.Content({ side: pos.side, align: pos.align }, [
-                  $.div({ style: { fontSize: "13px" } }, [
-                    $.p(
-                      { style: { margin: "0 0 4px 0" } },
-                      `Side: ${pos.side}`,
-                    ),
-                    $.p({ style: { margin: "0" } }, `Align: ${pos.align}`),
-                  ]),
-                ]),
+                Popover.Trigger(
+                  { class: "btn btn-sm btn-outline" },
+                  `${pos.side}/${pos.align}`,
+                ),
+                Popover.Content(
+                  {
+                    side: pos.side,
+                    align: pos.align,
+                    class: "card bg-base-200 shadow-lg p-3",
+                  },
+                  [
+                    $.p({ class: "text-xs" }, `Side: ${pos.side}`),
+                    $.p({ class: "text-xs" }, `Align: ${pos.align}`),
+                  ],
+                ),
               ]),
             ]);
-            return cell;
           }),
         ),
       );
 
       const grid = document.createElement("div");
-      grid.className = "popover-position-grid";
+      grid.className = "grid grid-cols-3 gap-4";
       items.forEach((item) => grid.appendChild(item));
       return grid;
     });
 
     const container = document.createElement("div");
+    container.className = "p-8";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -315,101 +335,27 @@ export const WithOffset: Story = {
   render: (args) => {
     const element = Effect.gen(function* () {
       return yield* Popover.Root({ defaultOpen: false }, [
-        Popover.Trigger({}, "Open (20px offset)"),
-        Popover.Content(
-          { side: args.side, align: args.align, sideOffset: args.sideOffset },
-          [
-            $.div({ class: "popover-body" }, [
-              $.p("This popover has a larger offset from the trigger."),
-            ]),
-            Popover.Close({}, "Close"),
-          ],
-        ),
-      ]);
-    });
-
-    const container = document.createElement("div");
-    container.className = "popover-story-container";
-
-    renderEffectAsync(element).then((el) => {
-      container.appendChild(el);
-    });
-
-    return container;
-  },
-};
-
-export const WithAnimation: Story = {
-  render: () => {
-    const element = Effect.gen(function* () {
-      return yield* Popover.Root({ defaultOpen: false }, [
-        Popover.Trigger({}, "Open Animated Popover"),
+        Popover.Trigger({ class: "btn btn-info" }, "Open (20px offset)"),
         Popover.Content(
           {
-            side: "bottom",
-            align: "center",
-            sideOffset: 8,
-            animate: {
-              enter: "popover-animate-enter",
-              exit: "popover-animate-exit",
-            },
+            side: args.side,
+            align: args.align,
+            sideOffset: args.sideOffset,
+            class: "card bg-base-200 shadow-xl p-4 w-64",
           },
           [
-            $.div({ class: "popover-body" }, [
-              $.h4({ class: "popover-title" }, "Animated Popover"),
-              $.p(
-                { class: "popover-description" },
-                "This popover uses the animate prop for smooth scale and fade transitions.",
-              ),
-            ]),
-            Popover.Close({}, "Close"),
+            $.p(
+              { class: "text-sm" },
+              "This popover has a larger offset from the trigger.",
+            ),
+            Popover.Close({ class: "btn btn-sm btn-ghost mt-3" }, "Close"),
           ],
         ),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "popover-story-container";
-
-    renderEffectAsync(element).then((el) => {
-      container.appendChild(el);
-    });
-
-    return container;
-  },
-};
-
-export const WithSlideAnimation: Story = {
-  render: () => {
-    const element = Effect.gen(function* () {
-      return yield* Popover.Root({ defaultOpen: false }, [
-        Popover.Trigger({}, "Open Sliding Popover"),
-        Popover.Content(
-          {
-            side: "bottom",
-            align: "center",
-            sideOffset: 8,
-            animate: {
-              enter: "popover-slide-enter",
-              exit: "popover-slide-exit",
-            },
-          },
-          [
-            $.div({ class: "popover-body" }, [
-              $.h4({ class: "popover-title" }, "Sliding Popover"),
-              $.p(
-                { class: "popover-description" },
-                "This popover slides in from the direction it opens. Try changing the side prop!",
-              ),
-            ]),
-            Popover.Close({}, "Close"),
-          ],
-        ),
-      ]);
-    });
-
-    const container = document.createElement("div");
-    container.className = "popover-story-container";
+    container.className = "p-8 flex justify-center";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);

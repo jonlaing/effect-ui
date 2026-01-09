@@ -35,6 +35,7 @@ export { DOMRenderer, DOMRendererLive } from "./DOMRenderer";
 // Element
 export type {
   Child,
+  ClassValue,
   EventHandler,
   BaseAttributes,
   EventAttributes,

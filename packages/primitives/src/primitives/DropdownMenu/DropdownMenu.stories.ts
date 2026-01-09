@@ -2,9 +2,8 @@ import type { Meta, StoryObj } from "@storybook/html-vite";
 import { Effect } from "effect";
 import { DropdownMenu } from "@effex/primitives";
 import { Signal } from "@effex/dom";
+import { $ } from "@effex/dom";
 import { renderEffectAsync } from "../../storyHelpers";
-
-import "./DropdownMenu.stories.css";
 
 type DropdownMenuStoryArgs = {
   disabled?: boolean;
@@ -25,31 +24,50 @@ const meta: Meta<DropdownMenuStoryArgs> = {
   render: (args) => {
     const element = Effect.gen(function* () {
       return yield* DropdownMenu.Root({}, [
-        DropdownMenu.Trigger({ disabled: args.disabled }, "Actions"),
-        DropdownMenu.Content({}, [
-          DropdownMenu.Item(
-            { onSelect: () => Effect.log("Edit clicked") },
-            "Edit",
-          ),
-          DropdownMenu.Item(
-            { onSelect: () => Effect.log("Duplicate clicked") },
-            "Duplicate",
-          ),
-          DropdownMenu.Separator({}),
-          DropdownMenu.Item(
-            { onSelect: () => Effect.log("Archive clicked") },
-            "Archive",
-          ),
-          DropdownMenu.Item(
-            { onSelect: () => Effect.log("Delete clicked") },
-            "Delete",
-          ),
-        ]),
+        DropdownMenu.Trigger(
+          { disabled: args.disabled, class: "btn btn-primary" },
+          "Actions",
+        ),
+        DropdownMenu.Content(
+          { class: "menu bg-base-200 rounded-box w-52 p-2 shadow-lg" },
+          [
+            DropdownMenu.Item(
+              {
+                onSelect: () => Effect.log("Edit clicked"),
+                class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+              },
+              "Edit",
+            ),
+            DropdownMenu.Item(
+              {
+                onSelect: () => Effect.log("Duplicate clicked"),
+                class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+              },
+              "Duplicate",
+            ),
+            DropdownMenu.Separator({ class: "divider my-1" }),
+            DropdownMenu.Item(
+              {
+                onSelect: () => Effect.log("Archive clicked"),
+                class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+              },
+              "Archive",
+            ),
+            DropdownMenu.Item(
+              {
+                onSelect: () => Effect.log("Delete clicked"),
+                class:
+                  "rounded-btn hover:bg-base-300 p-2 cursor-pointer text-error",
+              },
+              "Delete",
+            ),
+          ],
+        ),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "menu-story-container";
+    container.className = "p-8 flex justify-center";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -68,26 +86,55 @@ export const WithDisabledItems: Story = {
   render: () => {
     const element = Effect.gen(function* () {
       return yield* DropdownMenu.Root({}, [
-        DropdownMenu.Trigger({}, "File"),
-        DropdownMenu.Content({}, [
-          DropdownMenu.Item({ onSelect: () => Effect.log("New") }, "New"),
-          DropdownMenu.Item({ onSelect: () => Effect.log("Open") }, "Open"),
-          DropdownMenu.Item({ onSelect: () => Effect.log("Save") }, "Save"),
-          DropdownMenu.Separator({}),
-          DropdownMenu.Item(
-            { onSelect: () => Effect.log("Export"), disabled: true },
-            "Export (Pro)",
-          ),
-          DropdownMenu.Item(
-            { onSelect: () => Effect.log("Print"), disabled: true },
-            "Print (Pro)",
-          ),
-        ]),
+        DropdownMenu.Trigger({ class: "btn btn-secondary" }, "File"),
+        DropdownMenu.Content(
+          { class: "menu bg-base-200 rounded-box w-52 p-2 shadow-lg" },
+          [
+            DropdownMenu.Item(
+              {
+                onSelect: () => Effect.log("New"),
+                class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+              },
+              "New",
+            ),
+            DropdownMenu.Item(
+              {
+                onSelect: () => Effect.log("Open"),
+                class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+              },
+              "Open",
+            ),
+            DropdownMenu.Item(
+              {
+                onSelect: () => Effect.log("Save"),
+                class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+              },
+              "Save",
+            ),
+            DropdownMenu.Separator({ class: "divider my-1" }),
+            DropdownMenu.Item(
+              {
+                onSelect: () => Effect.log("Export"),
+                disabled: true,
+                class: "rounded-btn p-2 opacity-50 cursor-not-allowed",
+              },
+              "Export (Pro)",
+            ),
+            DropdownMenu.Item(
+              {
+                onSelect: () => Effect.log("Print"),
+                disabled: true,
+                class: "rounded-btn p-2 opacity-50 cursor-not-allowed",
+              },
+              "Print (Pro)",
+            ),
+          ],
+        ),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "menu-story-container";
+    container.className = "p-8 flex justify-center";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -101,38 +148,59 @@ export const WithGroups: Story = {
   render: () => {
     const element = Effect.gen(function* () {
       return yield* DropdownMenu.Root({}, [
-        DropdownMenu.Trigger({}, "Edit"),
-        DropdownMenu.Content({}, [
-          DropdownMenu.Group({}, [
-            DropdownMenu.Label({}, "Clipboard"),
-            DropdownMenu.Item({ onSelect: () => Effect.log("Cut") }, "Cut"),
-            DropdownMenu.Item({ onSelect: () => Effect.log("Copy") }, "Copy"),
-            DropdownMenu.Item({ onSelect: () => Effect.log("Paste") }, "Paste"),
-          ]),
-          DropdownMenu.Separator({}),
-          DropdownMenu.Group({}, [
-            DropdownMenu.Label({}, "Selection"),
-            DropdownMenu.Item(
-              { onSelect: () => Effect.log("Select All") },
-              "Select All",
-            ),
-            DropdownMenu.Item(
-              { onSelect: () => Effect.log("Deselect") },
-              "Deselect",
-            ),
-          ]),
-          DropdownMenu.Separator({}),
-          DropdownMenu.Group({}, [
-            DropdownMenu.Label({}, "History"),
-            DropdownMenu.Item({ onSelect: () => Effect.log("Undo") }, "Undo"),
-            DropdownMenu.Item({ onSelect: () => Effect.log("Redo") }, "Redo"),
-          ]),
-        ]),
+        DropdownMenu.Trigger({ class: "btn btn-accent" }, "Edit"),
+        DropdownMenu.Content(
+          { class: "menu bg-base-200 rounded-box w-52 p-2 shadow-lg" },
+          [
+            DropdownMenu.Group({}, [
+              DropdownMenu.Label({ class: "menu-title" }, "Clipboard"),
+              DropdownMenu.Item(
+                {
+                  onSelect: () => Effect.log("Cut"),
+                  class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+                },
+                "Cut",
+              ),
+              DropdownMenu.Item(
+                {
+                  onSelect: () => Effect.log("Copy"),
+                  class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+                },
+                "Copy",
+              ),
+              DropdownMenu.Item(
+                {
+                  onSelect: () => Effect.log("Paste"),
+                  class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+                },
+                "Paste",
+              ),
+            ]),
+            DropdownMenu.Separator({ class: "divider my-1" }),
+            DropdownMenu.Group({}, [
+              DropdownMenu.Label({ class: "menu-title" }, "Selection"),
+              DropdownMenu.Item(
+                {
+                  onSelect: () => Effect.log("Select All"),
+                  class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+                },
+                "Select All",
+              ),
+              DropdownMenu.Item(
+                {
+                  onSelect: () => Effect.log("Deselect"),
+                  class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+                },
+                "Deselect",
+              ),
+            ]),
+          ],
+        ),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "menu-story-container";
+    container.className = "p-8 flex justify-center";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -165,24 +233,40 @@ export const AllPositions: Story = {
       const menus = yield* Effect.all(
         positions.map(({ side, align, label }) =>
           DropdownMenu.Root({}, [
-            DropdownMenu.Trigger({}, label),
-            DropdownMenu.Content({ side, align }, [
-              DropdownMenu.Item({}, "Option 1"),
-              DropdownMenu.Item({}, "Option 2"),
-              DropdownMenu.Item({}, "Option 3"),
-            ]),
+            DropdownMenu.Trigger({ class: "btn btn-sm btn-outline" }, label),
+            DropdownMenu.Content(
+              {
+                side,
+                align,
+                class: "menu bg-base-200 rounded-box w-40 p-2 shadow-lg",
+              },
+              [
+                DropdownMenu.Item(
+                  { class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer" },
+                  "Option 1",
+                ),
+                DropdownMenu.Item(
+                  { class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer" },
+                  "Option 2",
+                ),
+                DropdownMenu.Item(
+                  { class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer" },
+                  "Option 3",
+                ),
+              ],
+            ),
           ]),
         ),
       );
 
       const wrapper = document.createElement("div");
-      wrapper.className = "menu-positions-grid";
+      wrapper.className = "grid grid-cols-3 gap-4";
       menus.forEach((menu) => wrapper.appendChild(menu));
       return wrapper;
     });
 
     const container = document.createElement("div");
-    container.className = "menu-story-container";
+    container.className = "p-8";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -197,117 +281,70 @@ export const Controlled: Story = {
     const element = Effect.gen(function* () {
       const isOpen = yield* Signal.make(false);
 
-      const statusText = document.createElement("p");
-      statusText.style.fontSize = "14px";
-      statusText.style.color = "#6b7280";
-      statusText.style.marginBottom = "16px";
-
-      yield* Effect.sync(() => {
-        const updateStatus = () => {
-          Effect.runSync(
-            Effect.gen(function* () {
-              const open = yield* isOpen.get;
-              statusText.textContent = `Menu is: ${open ? "open" : "closed"}`;
-            }),
-          );
-        };
-        updateStatus();
-        setInterval(updateStatus, 100);
-      });
-
-      const openButton = document.createElement("button");
-      openButton.textContent = "Open Menu Externally";
-      openButton.style.marginRight = "8px";
-      openButton.style.padding = "8px 16px";
-      openButton.onclick = () => Effect.runSync(isOpen.set(true));
-
-      const closeButton = document.createElement("button");
-      closeButton.textContent = "Close Menu Externally";
-      closeButton.style.padding = "8px 16px";
-      closeButton.onclick = () => Effect.runSync(isOpen.set(false));
-
-      const menu = yield* DropdownMenu.Root(
-        {
-          open: isOpen,
-          onOpenChange: (open) => Effect.log(`Menu open changed to: ${open}`),
-        },
-        [
-          DropdownMenu.Trigger({}, "Controlled Menu"),
-          DropdownMenu.Content({}, [
-            DropdownMenu.Item(
-              { onSelect: () => Effect.log("Action 1") },
-              "Action 1",
-            ),
-            DropdownMenu.Item(
-              { onSelect: () => Effect.log("Action 2") },
-              "Action 2",
-            ),
-            DropdownMenu.Item(
-              { onSelect: () => Effect.log("Action 3") },
-              "Action 3",
-            ),
-          ]),
-        ],
-      );
-
-      const wrapper = document.createElement("div");
-      wrapper.style.display = "flex";
-      wrapper.style.flexDirection = "column";
-      wrapper.style.alignItems = "center";
-      wrapper.style.gap = "16px";
-      wrapper.appendChild(statusText);
-
-      const buttonRow = document.createElement("div");
-      buttonRow.appendChild(openButton);
-      buttonRow.appendChild(closeButton);
-      wrapper.appendChild(buttonRow);
-
-      wrapper.appendChild(menu);
-      return wrapper;
-    });
-
-    const container = document.createElement("div");
-    container.className = "menu-story-container";
-    container.style.flexDirection = "column";
-
-    renderEffectAsync(element).then((el) => {
-      container.appendChild(el);
-    });
-
-    return container;
-  },
-};
-
-export const DangerousActions: Story = {
-  render: () => {
-    const element = Effect.gen(function* () {
-      return yield* DropdownMenu.Root({}, [
-        DropdownMenu.Trigger({}, "More Actions"),
-        DropdownMenu.Content({}, [
-          DropdownMenu.Item({ onSelect: () => Effect.log("Edit") }, "Edit"),
-          DropdownMenu.Item(
-            { onSelect: () => Effect.log("Duplicate") },
-            "Duplicate",
+      return yield* $.div({ class: "flex flex-col items-center gap-4" }, [
+        $.div(
+          { class: "badge badge-neutral" },
+          isOpen.map((open) => `Menu is: ${open ? "open" : "closed"}`),
+        ),
+        $.div({ class: "flex gap-2" }, [
+          $.button(
+            {
+              class: "btn btn-sm btn-outline",
+              onClick: () => isOpen.set(true),
+            },
+            "Open Menu",
           ),
-          DropdownMenu.Item({ onSelect: () => Effect.log("Share") }, "Share"),
-          DropdownMenu.Separator({}),
-          DropdownMenu.Group({}, [
-            DropdownMenu.Label({}, "Danger Zone"),
-            DropdownMenu.Item(
-              { onSelect: () => Effect.log("Archive") },
-              "Archive",
-            ),
-            DropdownMenu.Item(
-              { onSelect: () => Effect.log("Delete") },
-              "Delete",
-            ),
-          ]),
+          $.button(
+            {
+              class: "btn btn-sm btn-outline",
+              onClick: () => isOpen.set(false),
+            },
+            "Close Menu",
+          ),
         ]),
+        DropdownMenu.Root(
+          {
+            open: isOpen,
+            onOpenChange: (open) => Effect.log(`Menu open changed to: ${open}`),
+          },
+          [
+            DropdownMenu.Trigger(
+              { class: "btn btn-primary" },
+              "Controlled Menu",
+            ),
+            DropdownMenu.Content(
+              { class: "menu bg-base-200 rounded-box w-48 p-2 shadow-lg" },
+              [
+                DropdownMenu.Item(
+                  {
+                    onSelect: () => Effect.log("Action 1"),
+                    class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+                  },
+                  "Action 1",
+                ),
+                DropdownMenu.Item(
+                  {
+                    onSelect: () => Effect.log("Action 2"),
+                    class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+                  },
+                  "Action 2",
+                ),
+                DropdownMenu.Item(
+                  {
+                    onSelect: () => Effect.log("Action 3"),
+                    class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+                  },
+                  "Action 3",
+                ),
+              ],
+            ),
+          ],
+        ),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "menu-story-container";
+    container.className = "p-8 flex justify-center";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -321,62 +358,110 @@ export const WithSubmenus: Story = {
   render: () => {
     const element = Effect.gen(function* () {
       return yield* DropdownMenu.Root({}, [
-        DropdownMenu.Trigger({}, "File"),
-        DropdownMenu.Content({}, [
-          DropdownMenu.Item({ onSelect: () => Effect.log("New") }, "New"),
-          DropdownMenu.Item({ onSelect: () => Effect.log("Open") }, "Open"),
-          DropdownMenu.Separator({}),
-          DropdownMenu.Sub({}, [
-            DropdownMenu.SubTrigger({}, "Share →"),
-            DropdownMenu.SubContent({}, [
-              DropdownMenu.Item(
-                { onSelect: () => Effect.log("Email") },
-                "Email",
+        DropdownMenu.Trigger({ class: "btn btn-info" }, "File"),
+        DropdownMenu.Content(
+          { class: "menu bg-base-200 rounded-box w-48 p-2 shadow-lg" },
+          [
+            DropdownMenu.Item(
+              {
+                onSelect: () => Effect.log("New"),
+                class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+              },
+              "New",
+            ),
+            DropdownMenu.Item(
+              {
+                onSelect: () => Effect.log("Open"),
+                class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+              },
+              "Open",
+            ),
+            DropdownMenu.Separator({ class: "divider my-1" }),
+            DropdownMenu.Sub({}, [
+              DropdownMenu.SubTrigger(
+                {
+                  class:
+                    "rounded-btn hover:bg-base-300 p-2 cursor-pointer flex justify-between",
+                },
+                "Share",
               ),
-              DropdownMenu.Item(
-                { onSelect: () => Effect.log("Slack") },
-                "Slack",
-              ),
-              DropdownMenu.Item(
-                { onSelect: () => Effect.log("Copy Link") },
-                "Copy Link",
+              DropdownMenu.SubContent(
+                { class: "menu bg-base-200 rounded-box w-40 p-2 shadow-lg" },
+                [
+                  DropdownMenu.Item(
+                    {
+                      onSelect: () => Effect.log("Email"),
+                      class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+                    },
+                    "Email",
+                  ),
+                  DropdownMenu.Item(
+                    {
+                      onSelect: () => Effect.log("Slack"),
+                      class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+                    },
+                    "Slack",
+                  ),
+                  DropdownMenu.Item(
+                    {
+                      onSelect: () => Effect.log("Copy Link"),
+                      class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+                    },
+                    "Copy Link",
+                  ),
+                ],
               ),
             ]),
-          ]),
-          DropdownMenu.Sub({}, [
-            DropdownMenu.SubTrigger({}, "Export →"),
-            DropdownMenu.SubContent({}, [
-              DropdownMenu.Item({ onSelect: () => Effect.log("PDF") }, "PDF"),
-              DropdownMenu.Item({ onSelect: () => Effect.log("PNG") }, "PNG"),
-              DropdownMenu.Item({ onSelect: () => Effect.log("SVG") }, "SVG"),
-              DropdownMenu.Separator({}),
-              DropdownMenu.Sub({}, [
-                DropdownMenu.SubTrigger({}, "More Formats →"),
-                DropdownMenu.SubContent({}, [
+            DropdownMenu.Sub({}, [
+              DropdownMenu.SubTrigger(
+                {
+                  class:
+                    "rounded-btn hover:bg-base-300 p-2 cursor-pointer flex justify-between",
+                },
+                "Export",
+              ),
+              DropdownMenu.SubContent(
+                { class: "menu bg-base-200 rounded-box w-40 p-2 shadow-lg" },
+                [
                   DropdownMenu.Item(
-                    { onSelect: () => Effect.log("JPEG") },
-                    "JPEG",
+                    {
+                      onSelect: () => Effect.log("PDF"),
+                      class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+                    },
+                    "PDF",
                   ),
                   DropdownMenu.Item(
-                    { onSelect: () => Effect.log("WebP") },
-                    "WebP",
+                    {
+                      onSelect: () => Effect.log("PNG"),
+                      class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+                    },
+                    "PNG",
                   ),
                   DropdownMenu.Item(
-                    { onSelect: () => Effect.log("TIFF") },
-                    "TIFF",
+                    {
+                      onSelect: () => Effect.log("SVG"),
+                      class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+                    },
+                    "SVG",
                   ),
-                ]),
-              ]),
+                ],
+              ),
             ]),
-          ]),
-          DropdownMenu.Separator({}),
-          DropdownMenu.Item({ onSelect: () => Effect.log("Print") }, "Print"),
-        ]),
+            DropdownMenu.Separator({ class: "divider my-1" }),
+            DropdownMenu.Item(
+              {
+                onSelect: () => Effect.log("Print"),
+                class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+              },
+              "Print",
+            ),
+          ],
+        ),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "menu-story-container";
+    container.className = "p-8 flex justify-center";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -394,38 +479,48 @@ export const WithCheckboxItems: Story = {
       const snapToGrid = yield* Signal.make(true);
 
       return yield* DropdownMenu.Root({}, [
-        DropdownMenu.Trigger({}, "View Options"),
-        DropdownMenu.Content({}, [
-          DropdownMenu.Label({}, "Display"),
-          DropdownMenu.CheckboxItem(
-            {
-              checked: showGrid,
-              onCheckedChange: (checked) => Effect.log(`Show Grid: ${checked}`),
-            },
-            "Show Grid",
-          ),
-          DropdownMenu.CheckboxItem(
-            {
-              checked: showRulers,
-              onCheckedChange: (checked) =>
-                Effect.log(`Show Rulers: ${checked}`),
-            },
-            "Show Rulers",
-          ),
-          DropdownMenu.CheckboxItem(
-            {
-              checked: snapToGrid,
-              onCheckedChange: (checked) =>
-                Effect.log(`Snap to Grid: ${checked}`),
-            },
-            "Snap to Grid",
-          ),
-        ]),
+        DropdownMenu.Trigger({ class: "btn btn-success" }, "View Options"),
+        DropdownMenu.Content(
+          { class: "menu bg-base-200 rounded-box w-52 p-2 shadow-lg" },
+          [
+            DropdownMenu.Label({ class: "menu-title" }, "Display"),
+            DropdownMenu.CheckboxItem(
+              {
+                checked: showGrid,
+                onCheckedChange: (checked) =>
+                  Effect.log(`Show Grid: ${checked}`),
+                class:
+                  "rounded-btn hover:bg-base-300 p-2 cursor-pointer flex items-center gap-2",
+              },
+              "Show Grid",
+            ),
+            DropdownMenu.CheckboxItem(
+              {
+                checked: showRulers,
+                onCheckedChange: (checked) =>
+                  Effect.log(`Show Rulers: ${checked}`),
+                class:
+                  "rounded-btn hover:bg-base-300 p-2 cursor-pointer flex items-center gap-2",
+              },
+              "Show Rulers",
+            ),
+            DropdownMenu.CheckboxItem(
+              {
+                checked: snapToGrid,
+                onCheckedChange: (checked) =>
+                  Effect.log(`Snap to Grid: ${checked}`),
+                class:
+                  "rounded-btn hover:bg-base-300 p-2 cursor-pointer flex items-center gap-2",
+              },
+              "Snap to Grid",
+            ),
+          ],
+        ),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "menu-story-container";
+    container.className = "p-8 flex justify-center";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -441,228 +536,57 @@ export const WithRadioItems: Story = {
       const sortBy = yield* Signal.make("name");
 
       return yield* DropdownMenu.Root({}, [
-        DropdownMenu.Trigger({}, "Sort By"),
-        DropdownMenu.Content({}, [
-          DropdownMenu.RadioGroup(
-            {
-              value: sortBy,
-              onValueChange: (value) => Effect.log(`Sort by: ${value}`),
-            },
-            [
-              DropdownMenu.RadioItem({ value: "name" }, "Name"),
-              DropdownMenu.RadioItem({ value: "date" }, "Date Modified"),
-              DropdownMenu.RadioItem({ value: "size" }, "Size"),
-              DropdownMenu.RadioItem({ value: "type" }, "Type"),
-            ],
-          ),
-        ]),
-      ]);
-    });
-
-    const container = document.createElement("div");
-    container.className = "menu-story-container";
-
-    renderEffectAsync(element).then((el) => {
-      container.appendChild(el);
-    });
-
-    return container;
-  },
-};
-
-export const MixedItems: Story = {
-  render: () => {
-    const element = Effect.gen(function* () {
-      const showHidden = yield* Signal.make(false);
-      const showExtensions = yield* Signal.make(true);
-      const sortBy = yield* Signal.make("name");
-      const viewMode = yield* Signal.make("list");
-
-      return yield* DropdownMenu.Root({}, [
-        DropdownMenu.Trigger({}, "View"),
-        DropdownMenu.Content({}, [
-          DropdownMenu.Group({}, [
-            DropdownMenu.Label({}, "Options"),
-            DropdownMenu.CheckboxItem(
-              { checked: showHidden },
-              "Show Hidden Files",
-            ),
-            DropdownMenu.CheckboxItem(
-              { checked: showExtensions },
-              "Show File Extensions",
-            ),
-          ]),
-          DropdownMenu.Separator({}),
-          DropdownMenu.Group({}, [
-            DropdownMenu.Label({}, "Sort By"),
-            DropdownMenu.RadioGroup({ value: sortBy }, [
-              DropdownMenu.RadioItem({ value: "name" }, "Name"),
-              DropdownMenu.RadioItem({ value: "date" }, "Date"),
-              DropdownMenu.RadioItem({ value: "size" }, "Size"),
-            ]),
-          ]),
-          DropdownMenu.Separator({}),
-          DropdownMenu.Group({}, [
-            DropdownMenu.Label({}, "View As"),
-            DropdownMenu.RadioGroup({ value: viewMode }, [
-              DropdownMenu.RadioItem({ value: "list" }, "List"),
-              DropdownMenu.RadioItem({ value: "grid" }, "Grid"),
-              DropdownMenu.RadioItem({ value: "columns" }, "Columns"),
-            ]),
-          ]),
-        ]),
-      ]);
-    });
-
-    const container = document.createElement("div");
-    container.className = "menu-story-container";
-
-    renderEffectAsync(element).then((el) => {
-      container.appendChild(el);
-    });
-
-    return container;
-  },
-};
-
-export const WithAnimation: Story = {
-  render: () => {
-    const element = Effect.gen(function* () {
-      return yield* DropdownMenu.Root({}, [
-        DropdownMenu.Trigger({}, "Animated Menu"),
+        DropdownMenu.Trigger({ class: "btn btn-warning" }, "Sort By"),
         DropdownMenu.Content(
-          {
-            animate: {
-              enter: "menu-animate-enter",
-              exit: "menu-animate-exit",
-            },
-          },
+          { class: "menu bg-base-200 rounded-box w-48 p-2 shadow-lg" },
           [
-            DropdownMenu.Item(
-              { onSelect: () => Effect.log("Edit clicked") },
-              "Edit",
-            ),
-            DropdownMenu.Item(
-              { onSelect: () => Effect.log("Duplicate clicked") },
-              "Duplicate",
-            ),
-            DropdownMenu.Separator({}),
-            DropdownMenu.Item(
-              { onSelect: () => Effect.log("Delete clicked") },
-              "Delete",
-            ),
-          ],
-        ),
-      ]);
-    });
-
-    const container = document.createElement("div");
-    container.className = "menu-story-container";
-
-    renderEffectAsync(element).then((el) => {
-      container.appendChild(el);
-    });
-
-    return container;
-  },
-};
-
-export const WithSlideAnimation: Story = {
-  render: () => {
-    const element = Effect.gen(function* () {
-      return yield* DropdownMenu.Root({}, [
-        DropdownMenu.Trigger({}, "Sliding Menu"),
-        DropdownMenu.Content(
-          {
-            animate: {
-              enter: "menu-slide-enter",
-              exit: "menu-slide-exit",
-            },
-          },
-          [
-            DropdownMenu.Item({ onSelect: () => Effect.log("New") }, "New"),
-            DropdownMenu.Item({ onSelect: () => Effect.log("Open") }, "Open"),
-            DropdownMenu.Item({ onSelect: () => Effect.log("Save") }, "Save"),
-          ],
-        ),
-      ]);
-    });
-
-    const container = document.createElement("div");
-    container.className = "menu-story-container";
-
-    renderEffectAsync(element).then((el) => {
-      container.appendChild(el);
-    });
-
-    return container;
-  },
-};
-
-export const AnimatedSubmenus: Story = {
-  render: () => {
-    const element = Effect.gen(function* () {
-      return yield* DropdownMenu.Root({}, [
-        DropdownMenu.Trigger({}, "File"),
-        DropdownMenu.Content(
-          {
-            animate: {
-              enter: "menu-animate-enter",
-              exit: "menu-animate-exit",
-            },
-          },
-          [
-            DropdownMenu.Item({ onSelect: () => Effect.log("New") }, "New"),
-            DropdownMenu.Separator({}),
-            DropdownMenu.Sub({}, [
-              DropdownMenu.SubTrigger({}, "Share →"),
-              DropdownMenu.SubContent(
-                {
-                  animate: {
-                    enter: "menu-animate-enter",
-                    exit: "menu-animate-exit",
+            DropdownMenu.RadioGroup(
+              {
+                value: sortBy,
+                onValueChange: (value) => Effect.log(`Sort by: ${value}`),
+              },
+              [
+                DropdownMenu.RadioItem(
+                  {
+                    value: "name",
+                    class:
+                      "rounded-btn hover:bg-base-300 p-2 cursor-pointer flex items-center gap-2",
                   },
-                },
-                [
-                  DropdownMenu.Item(
-                    { onSelect: () => Effect.log("Email") },
-                    "Email",
-                  ),
-                  DropdownMenu.Item(
-                    { onSelect: () => Effect.log("Slack") },
-                    "Slack",
-                  ),
-                ],
-              ),
-            ]),
-            DropdownMenu.Sub({}, [
-              DropdownMenu.SubTrigger({}, "Export →"),
-              DropdownMenu.SubContent(
-                {
-                  animate: {
-                    enter: "menu-animate-enter",
-                    exit: "menu-animate-exit",
+                  "Name",
+                ),
+                DropdownMenu.RadioItem(
+                  {
+                    value: "date",
+                    class:
+                      "rounded-btn hover:bg-base-300 p-2 cursor-pointer flex items-center gap-2",
                   },
-                },
-                [
-                  DropdownMenu.Item(
-                    { onSelect: () => Effect.log("PDF") },
-                    "PDF",
-                  ),
-                  DropdownMenu.Item(
-                    { onSelect: () => Effect.log("PNG") },
-                    "PNG",
-                  ),
-                ],
-              ),
-            ]),
+                  "Date Modified",
+                ),
+                DropdownMenu.RadioItem(
+                  {
+                    value: "size",
+                    class:
+                      "rounded-btn hover:bg-base-300 p-2 cursor-pointer flex items-center gap-2",
+                  },
+                  "Size",
+                ),
+                DropdownMenu.RadioItem(
+                  {
+                    value: "type",
+                    class:
+                      "rounded-btn hover:bg-base-300 p-2 cursor-pointer flex items-center gap-2",
+                  },
+                  "Type",
+                ),
+              ],
+            ),
           ],
         ),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "menu-story-container";
+    container.className = "p-8 flex justify-center";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);

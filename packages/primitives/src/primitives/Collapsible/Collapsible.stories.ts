@@ -5,8 +5,6 @@ import { $ } from "@effex/dom";
 import { Signal } from "@effex/dom";
 import { renderEffectAsync } from "../../storyHelpers";
 
-import "./Collapsible.stories.css";
-
 type CollapsibleStoryArgs = {
   defaultOpen?: boolean;
   disabled?: boolean;
@@ -48,19 +46,19 @@ const meta: Meta<CollapsibleStoryArgs> = {
         disabled: args.disabled,
       },
       [
-        Collapsible.Trigger(
-          { class: "collapsible-trigger" },
-          args.triggerText!,
+        Collapsible.Trigger({ class: "btn btn-primary" }, args.triggerText!),
+        Collapsible.Content(
+          {
+            class:
+              "mt-4 p-4 bg-base-200 rounded-box data-[state=closed]:hidden",
+          },
+          [$.p({ class: "text-base-content" }, args.contentText!)],
         ),
-        Collapsible.Content({ class: "collapsible-content" }, [
-          $.p(args.contentText!),
-        ]),
       ],
     );
 
-    // Create container and render async
     const container = document.createElement("div");
-    container.className = "story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -90,21 +88,27 @@ export const Disabled: Story = {
 
 export const WithAnimation: Story = {
   render: () => {
-    // Animation is now automatic via CSS transitions on data-state changes.
-    // The collapsible-content class styles both open and closed states.
     const element = Collapsible.Root({ defaultOpen: false }, [
       Collapsible.Trigger(
-        { class: "collapsible-trigger" },
+        { class: "btn btn-secondary" },
         "Toggle with Animation",
       ),
-      Collapsible.Content({ class: "collapsible-content" }, [
-        $.p("This content animates in and out."),
-        $.p("The animation uses CSS grid transitions."),
-      ]),
+      Collapsible.Content(
+        {
+          class: "mt-4 p-4 bg-base-200 rounded-box data-[state=closed]:hidden",
+        },
+        [
+          $.p({}, "This content animates in and out."),
+          $.p(
+            { class: "text-base-content/70 mt-2" },
+            "The animation uses CSS grid transitions.",
+          ),
+        ],
+      ),
     ]);
 
     const container = document.createElement("div");
-    container.className = "story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -119,33 +123,43 @@ export const Controlled: Story = {
     const element = Effect.gen(function* () {
       const isOpen = yield* Signal.make(false);
 
-      const toggleButton = $.button(
-        {
-          class: "external-toggle",
-          onClick: () => isOpen.update((v) => !v),
-        },
-        isOpen.map((open) => (open ? "Close Externally" : "Open Externally")),
-      );
-
-      const collapsible = Collapsible.Root({ open: isOpen }, [
-        Collapsible.Trigger(
-          { class: "collapsible-trigger" },
-          "Internal Toggle",
-        ),
-        Collapsible.Content({ class: "collapsible-content" }, [
-          $.p("This collapsible can be controlled from outside!"),
-          $.p("Click either button to toggle."),
+      return yield* $.div({ class: "flex flex-col gap-4" }, [
+        $.div({ class: "flex gap-2 items-center" }, [
+          $.button(
+            {
+              class: "btn btn-outline btn-sm",
+              onClick: () => isOpen.update((v) => !v),
+            },
+            isOpen.map((open) =>
+              open ? "Close Externally" : "Open Externally",
+            ),
+          ),
+          $.div(
+            { class: "badge badge-neutral" },
+            isOpen.map((open) => (open ? "Open" : "Closed")),
+          ),
         ]),
-      ]);
-
-      return yield* $.div({ class: "controlled-demo" }, [
-        toggleButton,
-        collapsible,
+        Collapsible.Root({ open: isOpen }, [
+          Collapsible.Trigger({ class: "btn btn-primary" }, "Internal Toggle"),
+          Collapsible.Content(
+            {
+              class:
+                "mt-4 p-4 bg-base-200 rounded-box data-[state=closed]:hidden",
+            },
+            [
+              $.p({}, "This collapsible can be controlled from outside!"),
+              $.p(
+                { class: "text-base-content/70 mt-2" },
+                "Click either button to toggle.",
+              ),
+            ],
+          ),
+        ]),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -158,19 +172,32 @@ export const Controlled: Story = {
 export const CustomTrigger: Story = {
   render: () => {
     const element = Collapsible.Root({ defaultOpen: false }, [
-      Collapsible.Trigger({ as: "div", class: "custom-trigger" }, [
-        $.span({ class: "trigger-icon" }, "▶"),
-        $.span("Click anywhere on this row"),
-      ]),
-      Collapsible.Content({ class: "collapsible-content" }, [
-        $.p(
-          "Using as='div' allows custom trigger content with keyboard support.",
-        ),
-      ]),
+      Collapsible.Trigger(
+        {
+          as: "div",
+          class:
+            "flex items-center gap-2 p-3 bg-base-200 rounded-box cursor-pointer hover:bg-base-300 transition-colors",
+        },
+        [
+          $.span({ class: "text-lg" }, "▶"),
+          $.span({ class: "font-medium" }, "Click anywhere on this row"),
+        ],
+      ),
+      Collapsible.Content(
+        {
+          class: "mt-2 p-4 bg-base-300 rounded-box data-[state=closed]:hidden",
+        },
+        [
+          $.p(
+            { class: "text-base-content/70" },
+            "Using as='div' allows custom trigger content with keyboard support.",
+          ),
+        ],
+      ),
     ]);
 
     const container = document.createElement("div");
-    container.className = "story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -183,26 +210,37 @@ export const CustomTrigger: Story = {
 export const Nested: Story = {
   render: () => {
     const element = Collapsible.Root({ defaultOpen: true }, [
-      Collapsible.Trigger(
-        { class: "collapsible-trigger" },
-        "Outer Collapsible",
-      ),
-      Collapsible.Content({ class: "collapsible-content" }, [
-        $.p("This is the outer content."),
-        Collapsible.Root({ defaultOpen: false }, [
-          Collapsible.Trigger(
-            { class: "collapsible-trigger nested" },
-            "Inner Collapsible",
-          ),
-          Collapsible.Content({ class: "collapsible-content nested" }, [
-            $.p("This is nested content!"),
+      Collapsible.Trigger({ class: "btn btn-accent" }, "Outer Collapsible"),
+      Collapsible.Content(
+        {
+          class: "mt-4 p-4 bg-base-200 rounded-box data-[state=closed]:hidden",
+        },
+        [
+          $.p({ class: "mb-4" }, "This is the outer content."),
+          Collapsible.Root({ defaultOpen: false }, [
+            Collapsible.Trigger(
+              { class: "btn btn-sm btn-secondary" },
+              "Inner Collapsible",
+            ),
+            Collapsible.Content(
+              {
+                class:
+                  "mt-2 p-3 bg-base-300 rounded-box data-[state=closed]:hidden",
+              },
+              [
+                $.p(
+                  { class: "text-base-content/70" },
+                  "This is nested content!",
+                ),
+              ],
+            ),
           ]),
-        ]),
-      ]),
+        ],
+      ),
     ]);
 
     const container = document.createElement("div");
-    container.className = "story-container";
+    container.className = "p-4";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);

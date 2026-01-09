@@ -4,8 +4,6 @@ import { Tooltip } from "@effex/primitives";
 import { $ } from "@effex/dom";
 import { renderEffectAsync } from "../../storyHelpers";
 
-import "./Tooltip.stories.css";
-
 type TooltipStoryArgs = {
   side?: "top" | "bottom" | "left" | "right";
   align?: "start" | "center" | "end";
@@ -39,19 +37,21 @@ const meta: Meta<TooltipStoryArgs> = {
   render: (args) => {
     const element = Effect.gen(function* () {
       return yield* Tooltip.Root({ delayDuration: args.delayDuration }, [
-        Tooltip.Trigger(
-          {},
-          $.button({ class: "tooltip-demo-button" }, "Hover me"),
-        ),
+        Tooltip.Trigger({}, $.button({ class: "btn btn-primary" }, "Hover me")),
         Tooltip.Content(
-          { side: args.side, align: args.align },
+          {
+            side: args.side,
+            align: args.align,
+            class:
+              "bg-neutral text-neutral-content px-3 py-2 rounded-box text-sm shadow-lg",
+          },
           "This is a helpful tooltip",
         ),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "tooltip-story-container";
+    container.className = "p-8 flex justify-center";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -117,23 +117,52 @@ export const IconButtons: Story = {
   render: () => {
     const element = Effect.gen(function* () {
       const saveTooltip = yield* Tooltip.Root({ delayDuration: 300 }, [
-        Tooltip.Trigger({}, $.button({ class: "tooltip-icon-button" }, "💾")),
-        Tooltip.Content({ side: "top" }, "Save"),
+        Tooltip.Trigger(
+          {},
+          $.button({ class: "btn btn-square btn-ghost" }, "💾"),
+        ),
+        Tooltip.Content(
+          {
+            side: "top",
+            class:
+              "bg-neutral text-neutral-content px-3 py-2 rounded-box text-sm shadow-lg",
+          },
+          "Save",
+        ),
       ]);
 
       const editTooltip = yield* Tooltip.Root({ delayDuration: 300 }, [
-        Tooltip.Trigger({}, $.button({ class: "tooltip-icon-button" }, "✏️")),
-        Tooltip.Content({ side: "top" }, "Edit"),
+        Tooltip.Trigger(
+          {},
+          $.button({ class: "btn btn-square btn-ghost" }, "✏️"),
+        ),
+        Tooltip.Content(
+          {
+            side: "top",
+            class:
+              "bg-neutral text-neutral-content px-3 py-2 rounded-box text-sm shadow-lg",
+          },
+          "Edit",
+        ),
       ]);
 
       const deleteTooltip = yield* Tooltip.Root({ delayDuration: 300 }, [
-        Tooltip.Trigger({}, $.button({ class: "tooltip-icon-button" }, "🗑️")),
-        Tooltip.Content({ side: "top" }, "Delete"),
+        Tooltip.Trigger(
+          {},
+          $.button({ class: "btn btn-square btn-ghost" }, "🗑️"),
+        ),
+        Tooltip.Content(
+          {
+            side: "top",
+            class:
+              "bg-neutral text-neutral-content px-3 py-2 rounded-box text-sm shadow-lg",
+          },
+          "Delete",
+        ),
       ]);
 
       const wrapper = document.createElement("div");
-      wrapper.style.display = "flex";
-      wrapper.style.gap = "8px";
+      wrapper.className = "flex gap-2";
       wrapper.appendChild(saveTooltip);
       wrapper.appendChild(editTooltip);
       wrapper.appendChild(deleteTooltip);
@@ -141,7 +170,7 @@ export const IconButtons: Story = {
     });
 
     const container = document.createElement("div");
-    container.className = "tooltip-story-container";
+    container.className = "p-8 flex justify-center";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -157,17 +186,21 @@ export const LongContent: Story = {
       return yield* Tooltip.Root({ delayDuration: 300 }, [
         Tooltip.Trigger(
           {},
-          $.button({ class: "tooltip-demo-button" }, "Hover for details"),
+          $.button({ class: "btn btn-secondary" }, "Hover for details"),
         ),
         Tooltip.Content(
-          { side: "top" },
+          {
+            side: "top",
+            class:
+              "bg-neutral text-neutral-content px-3 py-2 rounded-box text-sm shadow-lg max-w-xs",
+          },
           "This is a longer tooltip that contains more detailed information about the action or element.",
         ),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "tooltip-story-container";
+    container.className = "p-8 flex justify-center";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -198,33 +231,38 @@ export const AllPositions: Story = {
       const items = yield* Effect.all(
         positions.map((pos) =>
           Effect.gen(function* () {
-            const cell = yield* $.div({ class: "tooltip-position-cell" }, [
+            return yield* $.div({ class: "flex justify-center items-center" }, [
               Tooltip.Root({ delayDuration: 200 }, [
                 Tooltip.Trigger(
                   {},
                   $.button(
-                    { class: "tooltip-demo-button" },
+                    { class: "btn btn-sm btn-outline" },
                     `${pos.side}/${pos.align}`,
                   ),
                 ),
                 Tooltip.Content(
-                  { side: pos.side, align: pos.align },
+                  {
+                    side: pos.side,
+                    align: pos.align,
+                    class:
+                      "bg-neutral text-neutral-content px-3 py-2 rounded-box text-sm shadow-lg",
+                  },
                   `Side: ${pos.side}, Align: ${pos.align}`,
                 ),
               ]),
             ]);
-            return cell;
           }),
         ),
       );
 
       const grid = document.createElement("div");
-      grid.className = "tooltip-position-grid";
+      grid.className = "grid grid-cols-3 gap-4";
       items.forEach((item) => grid.appendChild(item));
       return grid;
     });
 
     const container = document.createElement("div");
+    container.className = "p-8";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -240,17 +278,21 @@ export const FocusTrigger: Story = {
       return yield* Tooltip.Root({ delayDuration: 0 }, [
         Tooltip.Trigger(
           {},
-          $.button({ class: "tooltip-demo-button" }, "Focus me (Tab)"),
+          $.button({ class: "btn btn-accent" }, "Focus me (Tab)"),
         ),
         Tooltip.Content(
-          { side: "top" },
+          {
+            side: "top",
+            class:
+              "bg-neutral text-neutral-content px-3 py-2 rounded-box text-sm shadow-lg",
+          },
           "Tooltips also show on keyboard focus",
         ),
       ]);
     });
 
     const container = document.createElement("div");
-    container.className = "tooltip-story-container";
+    container.className = "p-8 flex justify-center";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
@@ -260,67 +302,116 @@ export const FocusTrigger: Story = {
   },
 };
 
-export const WithAnimation: Story = {
+export const Colors: Story = {
   render: () => {
-    const element = Effect.gen(function* () {
-      return yield* Tooltip.Root({ delayDuration: 200 }, [
-        Tooltip.Trigger(
-          {},
-          $.button(
-            { class: "tooltip-demo-button" },
-            "Hover for animated tooltip",
+    const element = $.div({ class: "flex flex-wrap gap-4 justify-center" }, [
+      Effect.gen(function* () {
+        return yield* Tooltip.Root({ delayDuration: 200 }, [
+          Tooltip.Trigger(
+            {},
+            $.button({ class: "btn btn-primary" }, "Primary"),
           ),
-        ),
-        Tooltip.Content(
-          {
-            side: "top",
-            animate: {
-              enter: "tooltip-animate-enter",
-              exit: "tooltip-animate-exit",
+          Tooltip.Content(
+            {
+              side: "top",
+              class:
+                "bg-primary text-primary-content px-3 py-2 rounded-box text-sm shadow-lg",
             },
-          },
-          "This tooltip has smooth animations",
-        ),
-      ]);
-    });
+            "Primary tooltip",
+          ),
+        ]);
+      }),
+      Effect.gen(function* () {
+        return yield* Tooltip.Root({ delayDuration: 200 }, [
+          Tooltip.Trigger(
+            {},
+            $.button({ class: "btn btn-secondary" }, "Secondary"),
+          ),
+          Tooltip.Content(
+            {
+              side: "top",
+              class:
+                "bg-secondary text-secondary-content px-3 py-2 rounded-box text-sm shadow-lg",
+            },
+            "Secondary tooltip",
+          ),
+        ]);
+      }),
+      Effect.gen(function* () {
+        return yield* Tooltip.Root({ delayDuration: 200 }, [
+          Tooltip.Trigger({}, $.button({ class: "btn btn-accent" }, "Accent")),
+          Tooltip.Content(
+            {
+              side: "top",
+              class:
+                "bg-accent text-accent-content px-3 py-2 rounded-box text-sm shadow-lg",
+            },
+            "Accent tooltip",
+          ),
+        ]);
+      }),
+      Effect.gen(function* () {
+        return yield* Tooltip.Root({ delayDuration: 200 }, [
+          Tooltip.Trigger({}, $.button({ class: "btn btn-info" }, "Info")),
+          Tooltip.Content(
+            {
+              side: "top",
+              class:
+                "bg-info text-info-content px-3 py-2 rounded-box text-sm shadow-lg",
+            },
+            "Info tooltip",
+          ),
+        ]);
+      }),
+      Effect.gen(function* () {
+        return yield* Tooltip.Root({ delayDuration: 200 }, [
+          Tooltip.Trigger(
+            {},
+            $.button({ class: "btn btn-success" }, "Success"),
+          ),
+          Tooltip.Content(
+            {
+              side: "top",
+              class:
+                "bg-success text-success-content px-3 py-2 rounded-box text-sm shadow-lg",
+            },
+            "Success tooltip",
+          ),
+        ]);
+      }),
+      Effect.gen(function* () {
+        return yield* Tooltip.Root({ delayDuration: 200 }, [
+          Tooltip.Trigger(
+            {},
+            $.button({ class: "btn btn-warning" }, "Warning"),
+          ),
+          Tooltip.Content(
+            {
+              side: "top",
+              class:
+                "bg-warning text-warning-content px-3 py-2 rounded-box text-sm shadow-lg",
+            },
+            "Warning tooltip",
+          ),
+        ]);
+      }),
+      Effect.gen(function* () {
+        return yield* Tooltip.Root({ delayDuration: 200 }, [
+          Tooltip.Trigger({}, $.button({ class: "btn btn-error" }, "Error")),
+          Tooltip.Content(
+            {
+              side: "top",
+              class:
+                "bg-error text-error-content px-3 py-2 rounded-box text-sm shadow-lg",
+            },
+            "Error tooltip",
+          ),
+        ]);
+      }),
+    ]);
 
     const container = document.createElement("div");
-    container.className = "tooltip-story-container";
-
-    renderEffectAsync(element).then((el) => {
-      container.appendChild(el);
-    });
-
-    return container;
-  },
-};
-
-export const WithBounceAnimation: Story = {
-  render: () => {
-    const element = Effect.gen(function* () {
-      return yield* Tooltip.Root({ delayDuration: 200 }, [
-        Tooltip.Trigger(
-          {},
-          $.button(
-            { class: "tooltip-demo-button" },
-            "Hover for bouncy tooltip",
-          ),
-        ),
-        Tooltip.Content(
-          {
-            side: "top",
-            animate: {
-              enter: "tooltip-bounce-enter",
-              exit: "tooltip-bounce-exit",
-            },
-          },
-          "Bouncy!",
-        ),
-      ]);
-    });
-
-    const container = document.createElement("div");
-    container.className = "tooltip-story-container";
+    container.className = "p-8";
 
     renderEffectAsync(element).then((el) => {
       container.appendChild(el);
