@@ -44,7 +44,7 @@ const meta: Meta<TabsStoryArgs> = {
           activationMode: args.activationMode,
         },
         [
-          Tabs.List({ class: "tabs tabs-bordered" }, [
+          Tabs.List({ class: "tabs tabs-border" }, [
             Tabs.Trigger(
               { value: "account", class: "tab data-[state=active]:tab-active" },
               "Account",
@@ -192,7 +192,7 @@ export const ManualActivation: Story = {
           "Use arrow keys to navigate, then press Enter or Space to select a tab.",
         ),
         Tabs.Root({ defaultValue: "tab1", activationMode: "manual" }, [
-          Tabs.List({ class: "tabs tabs-bordered" }, [
+          Tabs.List({ class: "tabs tabs-border" }, [
             Tabs.Trigger(
               { value: "tab1", class: "tab data-[state=active]:tab-active" },
               "Tab 1",
@@ -237,7 +237,7 @@ export const WithDisabledTab: Story = {
   render: () => {
     const element = Effect.gen(function* () {
       return yield* Tabs.Root({ defaultValue: "active" }, [
-        Tabs.List({ class: "tabs tabs-bordered" }, [
+        Tabs.List({ class: "tabs tabs-border" }, [
           Tabs.Trigger(
             { value: "active", class: "tab data-[state=active]:tab-active" },
             "Active Tab",
@@ -308,7 +308,7 @@ export const Controlled: Story = {
           ),
         ]),
         Tabs.Root({ value: activeTab }, [
-          Tabs.List({ class: "tabs tabs-bordered" }, [
+          Tabs.List({ class: "tabs tabs-border" }, [
             Tabs.Trigger(
               { value: "tab1", class: "tab data-[state=active]:tab-active" },
               "Tab 1",
@@ -354,7 +354,7 @@ export const WithForms: Story = {
     const element = Effect.gen(function* () {
       return yield* $.div({ class: "card bg-base-200" }, [
         Tabs.Root({ defaultValue: "account" }, [
-          Tabs.List({ class: "tabs tabs-bordered bg-base-300 rounded-t-box" }, [
+          Tabs.List({ class: "tabs tabs-border bg-base-300 rounded-t-box" }, [
             Tabs.Trigger(
               { value: "account", class: "tab data-[state=active]:tab-active" },
               "Account",
@@ -444,7 +444,7 @@ export const Sizes: Story = {
         $.p({ class: "text-sm mb-2 text-base-content/70" }, "Extra Small"),
         Effect.gen(function* () {
           return yield* Tabs.Root({ defaultValue: "tab1" }, [
-            Tabs.List({ class: "tabs tabs-bordered tabs-xs" }, [
+            Tabs.List({ class: "tabs tabs-border tabs-xs" }, [
               Tabs.Trigger(
                 { value: "tab1", class: "tab data-[state=active]:tab-active" },
                 "Tab 1",
@@ -461,7 +461,7 @@ export const Sizes: Story = {
         $.p({ class: "text-sm mb-2 text-base-content/70" }, "Small"),
         Effect.gen(function* () {
           return yield* Tabs.Root({ defaultValue: "tab1" }, [
-            Tabs.List({ class: "tabs tabs-bordered tabs-sm" }, [
+            Tabs.List({ class: "tabs tabs-border tabs-sm" }, [
               Tabs.Trigger(
                 { value: "tab1", class: "tab data-[state=active]:tab-active" },
                 "Tab 1",
@@ -478,7 +478,7 @@ export const Sizes: Story = {
         $.p({ class: "text-sm mb-2 text-base-content/70" }, "Medium (default)"),
         Effect.gen(function* () {
           return yield* Tabs.Root({ defaultValue: "tab1" }, [
-            Tabs.List({ class: "tabs tabs-bordered" }, [
+            Tabs.List({ class: "tabs tabs-border" }, [
               Tabs.Trigger(
                 { value: "tab1", class: "tab data-[state=active]:tab-active" },
                 "Tab 1",
@@ -495,7 +495,7 @@ export const Sizes: Story = {
         $.p({ class: "text-sm mb-2 text-base-content/70" }, "Large"),
         Effect.gen(function* () {
           return yield* Tabs.Root({ defaultValue: "tab1" }, [
-            Tabs.List({ class: "tabs tabs-bordered tabs-lg" }, [
+            Tabs.List({ class: "tabs tabs-border tabs-lg" }, [
               Tabs.Trigger(
                 { value: "tab1", class: "tab data-[state=active]:tab-active" },
                 "Tab 1",

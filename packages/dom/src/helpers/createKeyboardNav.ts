@@ -38,7 +38,7 @@ const handleHierarchyNavigation = (
         const firstChild = hierarchy.getFirstChild(current);
         if (Option.isSome(firstChild)) {
           e.preventDefault();
-          firstChild.value.focus();
+          firstChild.value.focus({ preventScroll: true });
           const childIndex = items.indexOf(firstChild.value);
           yield* onFocus?.(Effect.succeed(firstChild.value), childIndex) ??
             Effect.void;
@@ -63,7 +63,7 @@ const handleHierarchyNavigation = (
         const parent = hierarchy.getParent(current);
         if (Option.isSome(parent)) {
           e.preventDefault();
-          parent.value.focus();
+          parent.value.focus({ preventScroll: true });
           const parentIndex = items.indexOf(parent.value);
           yield* onFocus?.(Effect.succeed(parent.value), parentIndex) ??
             Effect.void;
@@ -109,7 +109,7 @@ const handleStandardNavigation = (
 
     const nextItem = items[nextIndex];
     if (nextItem) {
-      nextItem.focus();
+      nextItem.focus({ preventScroll: true });
       yield* onFocus?.(Effect.succeed(nextItem), nextIndex) ?? Effect.void;
     }
   });
@@ -159,7 +159,7 @@ const handleTypeahead = (
       const text = typeahead.getText(item).toLowerCase();
 
       if (text.startsWith(currentBuffer)) {
-        item.focus();
+        item.focus({ preventScroll: true });
         yield* typeahead.onMatch?.(Effect.succeed(item), checkIndex) ??
           Effect.void;
         yield* onFocus?.(Effect.succeed(item), checkIndex) ?? Effect.void;
@@ -178,7 +178,7 @@ const handleTypeahead = (
 
         if (text.startsWith(singleChar)) {
           yield* Ref.set(state.buffer, singleChar);
-          item.focus();
+          item.focus({ preventScroll: true });
           yield* typeahead.onMatch?.(Effect.succeed(item), i) ?? Effect.void;
           yield* onFocus?.(Effect.succeed(item), i) ?? Effect.void;
           return;

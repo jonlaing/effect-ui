@@ -26,12 +26,14 @@ export const Single: Story = {
         Accordion.Item(
           {
             value: "item-1",
-            class:
+            class: [
               "collapse collapse-arrow join-item border border-base-300 bg-base-100",
+              "data-[state=open]:collapse-open",
+            ],
           },
           [
             Accordion.Trigger(
-              { class: "collapse-title text-lg font-medium" },
+              { class: "collapse-title text-lg font-medium text-left" },
               "Section 1",
             ),
             Accordion.Content({ class: "collapse-content" }, [
@@ -46,12 +48,14 @@ export const Single: Story = {
         Accordion.Item(
           {
             value: "item-2",
-            class:
+            class: [
               "collapse collapse-arrow join-item border border-base-300 bg-base-100",
+              "data-[state=open]:collapse-open",
+            ],
           },
           [
             Accordion.Trigger(
-              { class: "collapse-title text-lg font-medium" },
+              { class: "collapse-title text-lg font-medium text-left" },
               "Section 2",
             ),
             Accordion.Content({ class: "collapse-content" }, [
@@ -66,12 +70,14 @@ export const Single: Story = {
         Accordion.Item(
           {
             value: "item-3",
-            class:
+            class: [
               "collapse collapse-arrow join-item border border-base-300 bg-base-100",
+              "data-[state=open]:collapse-open",
+            ],
           },
           [
             Accordion.Trigger(
-              { class: "collapse-title text-lg font-medium" },
+              { class: "collapse-title text-lg font-medium text-left" },
               "Section 3",
             ),
             Accordion.Content({ class: "collapse-content" }, [
@@ -105,12 +111,14 @@ export const Multiple: Story = {
         Accordion.Item(
           {
             value: "item-1",
-            class:
+            class: [
               "collapse collapse-arrow join-item border border-base-300 bg-base-100",
+              "data-[state=open]:collapse-open",
+            ],
           },
           [
             Accordion.Trigger(
-              { class: "collapse-title text-lg font-medium" },
+              { class: "collapse-title text-lg font-medium text-left" },
               "Section 1",
             ),
             Accordion.Content({ class: "collapse-content" }, [
@@ -121,12 +129,14 @@ export const Multiple: Story = {
         Accordion.Item(
           {
             value: "item-2",
-            class:
+            class: [
               "collapse collapse-arrow join-item border border-base-300 bg-base-100",
+              "data-[state=open]:collapse-open",
+            ],
           },
           [
             Accordion.Trigger(
-              { class: "collapse-title text-lg font-medium" },
+              { class: "collapse-title text-lg font-medium text-left" },
               "Section 2",
             ),
             Accordion.Content({ class: "collapse-content" }, [
@@ -140,12 +150,14 @@ export const Multiple: Story = {
         Accordion.Item(
           {
             value: "item-3",
-            class:
+            class: [
               "collapse collapse-arrow join-item border border-base-300 bg-base-100",
+              "data-[state=open]:collapse-open",
+            ],
           },
           [
             Accordion.Trigger(
-              { class: "collapse-title text-lg font-medium" },
+              { class: "collapse-title text-lg font-medium text-left" },
               "Section 3",
             ),
             Accordion.Content({ class: "collapse-content" }, [
@@ -180,12 +192,14 @@ export const NonCollapsible: Story = {
         Accordion.Item(
           {
             value: "item-1",
-            class:
+            class: [
               "collapse collapse-arrow join-item border border-base-300 bg-base-100",
+              "data-[state=open]:collapse-open",
+            ],
           },
           [
             Accordion.Trigger(
-              { class: "collapse-title text-lg font-medium" },
+              { class: "collapse-title text-lg font-medium text-left" },
               "Section 1",
             ),
             Accordion.Content({ class: "collapse-content" }, [
@@ -200,12 +214,14 @@ export const NonCollapsible: Story = {
         Accordion.Item(
           {
             value: "item-2",
-            class:
+            class: [
               "collapse collapse-arrow join-item border border-base-300 bg-base-100",
+              "data-[state=open]:collapse-open",
+            ],
           },
           [
             Accordion.Trigger(
-              { class: "collapse-title text-lg font-medium" },
+              { class: "collapse-title text-lg font-medium text-left" },
               "Section 2",
             ),
             Accordion.Content({ class: "collapse-content" }, [
@@ -240,12 +256,14 @@ export const WithDisabledItem: Story = {
         Accordion.Item(
           {
             value: "item-1",
-            class:
+            class: [
               "collapse collapse-arrow join-item border border-base-300 bg-base-100",
+              "data-[state=open]:collapse-open",
+            ],
           },
           [
             Accordion.Trigger(
-              { class: "collapse-title text-lg font-medium" },
+              { class: "collapse-title text-lg font-medium text-left" },
               "Enabled Section",
             ),
             Accordion.Content({ class: "collapse-content" }, [
@@ -257,13 +275,16 @@ export const WithDisabledItem: Story = {
           {
             value: "item-2",
             disabled: true,
-            class:
+            class: [
               "collapse collapse-arrow join-item border border-base-300 bg-base-100 opacity-50",
+              "data-[state=open]:collapse-open",
+            ],
           },
           [
             Accordion.Trigger(
               {
-                class: "collapse-title text-lg font-medium cursor-not-allowed",
+                class:
+                  "collapse-title text-lg font-medium text-left cursor-not-allowed",
               },
               "Disabled Section",
             ),
@@ -275,12 +296,14 @@ export const WithDisabledItem: Story = {
         Accordion.Item(
           {
             value: "item-3",
-            class:
+            class: [
               "collapse collapse-arrow join-item border border-base-300 bg-base-100",
+              "data-[state=open]:collapse-open",
+            ],
           },
           [
             Accordion.Trigger(
-              { class: "collapse-title text-lg font-medium" },
+              { class: "collapse-title text-lg font-medium text-left" },
               "Another Enabled",
             ),
             Accordion.Content({ class: "collapse-content" }, [
@@ -339,12 +362,14 @@ export const Controlled: Story = {
             Accordion.Item(
               {
                 value: "item-1",
-                class:
+                class: [
                   "collapse collapse-arrow join-item border border-base-300 bg-base-100",
+                  "data-[state=open]:collapse-open",
+                ],
               },
               [
                 Accordion.Trigger(
-                  { class: "collapse-title text-lg font-medium" },
+                  { class: "collapse-title text-lg font-medium text-left" },
                   "Section 1",
                 ),
                 Accordion.Content({ class: "collapse-content" }, [
@@ -355,12 +380,14 @@ export const Controlled: Story = {
             Accordion.Item(
               {
                 value: "item-2",
-                class:
+                class: [
                   "collapse collapse-arrow join-item border border-base-300 bg-base-100",
+                  "data-[state=open]:collapse-open",
+                ],
               },
               [
                 Accordion.Trigger(
-                  { class: "collapse-title text-lg font-medium" },
+                  { class: "collapse-title text-lg font-medium text-left" },
                   "Section 2",
                 ),
                 Accordion.Content({ class: "collapse-content" }, [
@@ -400,12 +427,14 @@ export const WithPlusIcon: Story = {
         Accordion.Item(
           {
             value: "item-1",
-            class:
+            class: [
               "collapse collapse-plus join-item border border-base-300 bg-base-100",
+              "data-[state=open]:collapse-open",
+            ],
           },
           [
             Accordion.Trigger(
-              { class: "collapse-title text-lg font-medium" },
+              { class: "collapse-title text-lg font-medium text-left" },
               "Plus/Minus Icon",
             ),
             Accordion.Content({ class: "collapse-content" }, [
@@ -419,12 +448,14 @@ export const WithPlusIcon: Story = {
         Accordion.Item(
           {
             value: "item-2",
-            class:
+            class: [
               "collapse collapse-plus join-item border border-base-300 bg-base-100",
+              "data-[state=open]:collapse-open",
+            ],
           },
           [
             Accordion.Trigger(
-              { class: "collapse-title text-lg font-medium" },
+              { class: "collapse-title text-lg font-medium text-left" },
               "Another Section",
             ),
             Accordion.Content({ class: "collapse-content" }, [
@@ -483,12 +514,14 @@ export const FAQ: Story = {
           Accordion.Item(
             {
               value: `item-${index}`,
-              class:
+              class: [
                 "collapse collapse-arrow join-item border border-base-300 bg-base-100",
+                "data-[state=open]:collapse-open",
+              ],
             },
             [
               Accordion.Trigger(
-                { class: "collapse-title font-medium" },
+                { class: "collapse-title font-medium text-left" },
                 faq.question,
               ),
               Accordion.Content({ class: "collapse-content" }, [

@@ -23,7 +23,7 @@ export interface TooltipContext {
   /** Close the tooltip */
   readonly close: () => Effect.Effect<void>;
   /** Reference to the trigger element */
-  readonly triggerRef: ElementRef<HTMLElement>;
+  readonly triggerRef: ElementRef<HTMLDivElement>;
   /** Unique ID for the tooltip content */
   readonly contentId: string;
   /** Delay before opening (ms) */
@@ -84,7 +84,7 @@ const Root = (
       props.defaultOpen ?? false,
     );
 
-    const triggerRef = yield* Element.ref<HTMLElement>();
+    const triggerRef = yield* Element.ref<HTMLDivElement>();
     const contentId = yield* UniqueId.make("tooltip-content");
 
     const delayDuration = props.delayDuration ?? 700;
@@ -104,9 +104,10 @@ const Root = (
       delayDuration,
     };
 
+    const childArray = Array.isArray(children) ? children : [children];
     return yield* $.div(
       { style: { display: "contents" } },
-      provide(TooltipCtx, ctx, children),
+      provide(TooltipCtx, ctx, childArray),
     );
   });
 
@@ -170,6 +171,7 @@ const Trigger = component(
           onMouseLeave: handleMouseLeave,
           onFocus: handleFocus,
           onBlur: handleBlur,
+          style: { display: "inline-block" },
         },
         children ?? [],
       );
@@ -225,8 +227,7 @@ const Content = component(
           const currentSideOffset = yield* sideOffset.get;
           const currentAlignOffset = yield* alignOffset.get;
 
-          // Measure content dimensions (element is in DOM but hidden)
-          const contentRect = yield* Element.getBoundingClientRect(el);
+          const contentRect = yield* el.pipe(Element.getBoundingClientRect);
 
           const positionStyle = yield* ctx.triggerRef.pipe(
             Element.getBoundingClientRect,

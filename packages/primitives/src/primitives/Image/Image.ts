@@ -37,7 +37,7 @@ export interface ImageRootProps {
 const Root = (
   props: ImageRootProps,
   children: Child<never, ImageCtx> | readonly Child<never, ImageCtx>[],
-): Element.Element =>
+) =>
   Effect.gen(function* () {
     const status = yield* Signal.make<ImageLoadingStatus>("idle");
 
@@ -46,13 +46,14 @@ const Root = (
       setStatus: (s) => status.set(s),
     };
 
+    const childArray = Array.isArray(children) ? children : [children];
     return yield* $.span(
       {
         class: props.class,
         "data-image-root": "",
         "data-state": status,
       },
-      provide(ImageCtx, ctx, children),
+      provide(ImageCtx, ctx, childArray),
     );
   });
 

@@ -132,7 +132,7 @@ const Root = (
   children:
     | Child<never, ScrollAreaCtx>
     | readonly Child<never, ScrollAreaCtx>[],
-): Element.Element =>
+) =>
   Effect.gen(function* () {
     const type = props.type ?? "hover";
     const scrollHideDelay = props.scrollHideDelay ?? 600;
@@ -253,13 +253,15 @@ const Root = (
         style: {
           position: "relative",
           overflow: "hidden",
-          width: "100%",
-          height: "100%",
         },
         onMouseEnter: handleMouseEnter,
         onMouseLeave: handleMouseLeave,
       },
-      provide(ScrollAreaCtx, ctx, children),
+      provide(
+        ScrollAreaCtx,
+        ctx,
+        Array.isArray(children) ? children : [children],
+      ),
     );
   });
 
@@ -528,6 +530,22 @@ const Scrollbar = (
 
     const dataState = isVisible.map((v) => (v ? "visible" : "hidden"));
 
+    // Base styles for proper positioning
+    const baseStyle: Record<string, string> =
+      orientation === "vertical"
+        ? {
+            position: "absolute",
+            top: "0",
+            right: "0",
+            bottom: "0",
+          }
+        : {
+            position: "absolute",
+            bottom: "0",
+            left: "0",
+            right: "0",
+          };
+
     return yield* $.div(
       {
         ref: trackRef,
@@ -535,6 +553,7 @@ const Scrollbar = (
         "data-scrollarea-scrollbar": "",
         "data-orientation": orientation,
         "data-state": dataState,
+        style: baseStyle,
         onClick: handleTrackClick,
       },
       provide(ScrollbarCtx, scrollbarCtx, children),

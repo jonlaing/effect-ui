@@ -1,6 +1,6 @@
 import { Context, Effect, MutableRef } from "effect";
 import { Signal } from "@effex/dom";
-import type { ClassValue } from "@effex/dom";
+import type { Child, ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
@@ -15,6 +15,7 @@ import {
   getRangeStyle,
   getThumbStyle,
 } from "./helpers.js";
+import { Array } from "effect";
 
 export type { SliderValue };
 export { isRangeValue };
@@ -122,12 +123,7 @@ export interface SliderRootProps {
 /**
  * Root container for Slider. Manages value state and provides context.
  */
-const Root = (
-  props: SliderRootProps,
-  children:
-    | Element.Element<never, SliderCtx>
-    | Element.Element<never, SliderCtx>[],
-): Element.Element =>
+const Root = component("SliderRoot", (props: SliderRootProps, children) =>
   Effect.gen(function* () {
     // Defaults
     const min = props.min ?? 0;
@@ -277,6 +273,16 @@ const Root = (
         })
       : null;
 
+    const childArary =
+      !children || Array.isArray(children)
+        ? (children as Child<never, never>[])
+        : [children];
+
+    const provided = provide(SliderCtx, ctx, childArary) as Element.Element[];
+    const hiddenPart = hiddenInput ? [hiddenInput] : [];
+
+    const newChildren = [...hiddenPart, ...provided];
+
     return yield* $.div(
       {
         class: props.class,
@@ -287,12 +293,10 @@ const Root = (
         "aria-label": props["aria-label"],
         "aria-labelledby": props["aria-labelledby"],
       },
-      [
-        ...(hiddenInput ? [hiddenInput] : []),
-        ...provide(SliderCtx, ctx, children),
-      ],
+      newChildren,
     );
-  });
+  }),
+);
 
 /**
  * Props for Slider.Track
@@ -339,7 +343,7 @@ const Track = component("SliderTrack", (props: SliderTrackProps, children) =>
         )?.parentElement?.querySelector(
           `[data-slider-thumb][data-thumb-index="${thumbIndex}"]`,
         ) as HTMLElement | null;
-        thumbEl?.focus();
+        thumbEl?.focus({ preventScroll: true });
 
         // Setup document-level tracking
         yield* setupDragTracking(ctx, e.pointerId);
@@ -456,7 +460,7 @@ const Thumb = component("SliderThumb", (props: SliderThumbProps) =>
         yield* setupDragTracking(ctx, e.pointerId);
 
         // Focus the thumb
-        (e.currentTarget as HTMLElement).focus();
+        (e.currentTarget as HTMLElement).focus({ preventScroll: true });
       });
 
     // Keyboard navigation

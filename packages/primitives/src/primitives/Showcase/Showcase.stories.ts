@@ -27,7 +27,6 @@ import { renderEffectAsync } from "../../storyHelpers";
 
 const meta: Meta = {
   title: "Showcase/Dashboard",
-  tags: ["autodocs"],
 };
 
 export default meta;
@@ -103,14 +102,15 @@ export const SettingsDashboard: Story = {
               ),
             ]),
           ]),
-          $.div({ class: "flex-none" }, [
+          $.div({ class: "flex-none relative" }, [
             // User dropdown menu
             DropdownMenu.Root({}, [
               DropdownMenu.Trigger({ class: "btn btn-ghost gap-2" }, [
                 $.div({ class: "avatar placeholder" }, [
                   $.div(
                     {
-                      class: "bg-primary text-primary-content rounded-full w-8",
+                      class:
+                        "bg-primary text-primary-content rounded-full w-8 flex items-center justify-center",
                     },
                     [$.span({ class: "text-xs" }, "JD")],
                   ),
@@ -120,7 +120,7 @@ export const SettingsDashboard: Story = {
               ]),
               DropdownMenu.Content(
                 {
-                  class: "menu bg-base-200 rounded-box shadow-xl w-52 p-2 mt-2",
+                  class: "menu bg-base-300 rounded-box shadow-xl w-52 p-2 mt-2",
                   side: "bottom",
                   align: "end",
                 },
@@ -128,14 +128,14 @@ export const SettingsDashboard: Story = {
                   DropdownMenu.Item(
                     {
                       class:
-                        "rounded-btn hover:bg-base-300 px-3 py-2 cursor-pointer",
+                        "rounded-btn hover:bg-base-400 px-3 py-2 cursor-pointer",
                     },
                     [$.span({}, "☺ Profile")],
                   ),
                   DropdownMenu.Item(
                     {
                       class:
-                        "rounded-btn hover:bg-base-300 px-3 py-2 cursor-pointer",
+                        "rounded-btn hover:bg-base-400 px-3 py-2 cursor-pointer",
                     },
                     [$.span({}, "⚙ Settings")],
                   ),
@@ -369,12 +369,17 @@ export const SettingsDashboard: Story = {
                                 Accordion.Item(
                                   {
                                     value: "faq1",
-                                    class:
+                                    class: [
                                       "collapse collapse-arrow join-item border border-base-300 bg-base-100",
+                                      "data-[state=open]:collapse-open",
+                                    ],
                                   },
                                   [
                                     Accordion.Trigger(
-                                      { class: "collapse-title font-medium" },
+                                      {
+                                        class:
+                                          "collapse-title font-medium text-left",
+                                      },
                                       "How do I reset my password?",
                                     ),
                                     Accordion.Content(
@@ -391,12 +396,17 @@ export const SettingsDashboard: Story = {
                                 Accordion.Item(
                                   {
                                     value: "faq2",
-                                    class:
+                                    class: [
                                       "collapse collapse-arrow join-item border border-base-300 bg-base-100",
+                                      "data-[state=open]:collapse-open",
+                                    ],
                                   },
                                   [
                                     Accordion.Trigger(
-                                      { class: "collapse-title font-medium" },
+                                      {
+                                        class:
+                                          "collapse-title font-medium text-left",
+                                      },
                                       "How do I change my email?",
                                     ),
                                     Accordion.Content(
@@ -413,12 +423,17 @@ export const SettingsDashboard: Story = {
                                 Accordion.Item(
                                   {
                                     value: "faq3",
-                                    class:
+                                    class: [
                                       "collapse collapse-arrow join-item border border-base-300 bg-base-100",
+                                      "data-[state=open]:collapse-open",
+                                    ],
                                   },
                                   [
                                     Accordion.Trigger(
-                                      { class: "collapse-title font-medium" },
+                                      {
+                                        class:
+                                          "collapse-title font-medium text-left",
+                                      },
                                       "How do I delete my account?",
                                     ),
                                     Accordion.Content(
@@ -812,11 +827,15 @@ export const SettingsDashboard: Story = {
       // Footer
       const footer = $.footer({ class: "mt-6 flex justify-end gap-3" }, [
         button(
-          { class: "btn btn-ghost", onClick: showErrorToast },
+          { type: "button", class: "btn btn-ghost", onClick: showErrorToast },
           "Reset to Defaults",
         ),
         button(
-          { class: "btn btn-primary", onClick: showSuccessToast },
+          {
+            type: "button",
+            class: "btn btn-primary",
+            onClick: showSuccessToast,
+          },
           "Save All Changes",
         ),
       ]);
@@ -853,6 +872,19 @@ export const SettingsDashboard: Story = {
 
     renderEffectAsync(wrapped).then((el) => {
       container.appendChild(el);
+    });
+
+    // Add this to track focus changes
+    document.addEventListener("focusin", (e) => {
+      console.log("Focus moved to:", e.target);
+      console.log("Document scrollTop:", document.documentElement.scrollTop);
+    });
+
+    // And modify your scroll listener to capture the stack trace
+    window.addEventListener("scroll", () => {
+      console.log("Scroll happened");
+      console.log("Active element:", document.activeElement);
+      console.trace(); // This will show the call stack
     });
 
     return container;

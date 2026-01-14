@@ -10,6 +10,7 @@ import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
 import { onClickOutside } from "@effex/dom";
 import { Element } from "@effex/dom";
+import { mergeProps } from "@effex/dom";
 import type { AnimationOptions } from "@effex/dom";
 import {
   type PopoverContext,
@@ -67,13 +68,12 @@ const Root = (
 
     const setOpenState = (newValue: boolean) =>
       Effect.gen(function* () {
-        yield* isOpen.set(newValue);
-        yield* props.onOpenChange?.(newValue) ?? Effect.void;
-
-        if (!newValue) {
+        if ((yield* isOpen.get) && !newValue) {
           // Return focus to trigger when closing
           yield* triggerRef.pipe(Element.focus, Effect.ignore);
         }
+        yield* isOpen.set(newValue);
+        yield* props.onOpenChange?.(newValue) ?? Effect.void;
       });
 
     const ctx: PopoverContext = {
@@ -90,9 +90,10 @@ const Root = (
       contentId,
     };
 
+    const childArray = Array.isArray(children) ? children : [children];
     return yield* $.div(
       { style: { display: "contents" } },
-      provide(PopoverCtx, ctx, children),
+      provide(PopoverCtx, ctx, childArray),
     );
   });
 
@@ -102,6 +103,8 @@ const Root = (
 export interface PopoverTriggerProps {
   /** Additional class names */
   readonly class?: ClassValue;
+  /** Render as child element instead of default button */
+  readonly asChild?: boolean;
 }
 
 /**
@@ -122,18 +125,22 @@ const Trigger = component(
       const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
       const ariaExpanded = ctx.isOpen.map((open) => (open ? "true" : "false"));
 
+      const triggerProps = {
+        ref: ctx.triggerRef,
+        "aria-haspopup": "dialog" as const,
+        "aria-expanded": ariaExpanded,
+        "aria-controls": ctx.contentId,
+        "data-state": dataState,
+        "data-popover-trigger": "",
+        onClick: ctx.toggle,
+      };
+
+      if (props.asChild && Effect.isEffect(children)) {
+        return yield* mergeProps(triggerProps, children);
+      }
+
       return yield* $.button(
-        {
-          ref: ctx.triggerRef,
-          class: props.class,
-          type: "button",
-          "aria-haspopup": "dialog",
-          "aria-expanded": ariaExpanded,
-          "aria-controls": ctx.contentId,
-          "data-state": dataState,
-          "data-popover-trigger": "",
-          onClick: ctx.toggle,
-        },
+        { ...triggerProps, type: "button", class: props.class },
         children ?? [],
       );
     }),
@@ -336,6 +343,8 @@ const Content = component(
 export interface PopoverCloseProps {
   /** Additional class names */
   readonly class?: ClassValue;
+  /** Render as child element instead of default button */
+  readonly asChild?: boolean;
 }
 
 /**
@@ -350,13 +359,17 @@ const Close = component("PopoverClose", (props: PopoverCloseProps, children) =>
   Effect.gen(function* () {
     const ctx = yield* PopoverCtx;
 
+    const closeProps = {
+      "data-popover-close": "",
+      onClick: ctx.close,
+    };
+
+    if (props.asChild && Effect.isEffect(children)) {
+      return yield* mergeProps(closeProps, children);
+    }
+
     return yield* $.button(
-      {
-        class: props.class,
-        type: "button",
-        "data-popover-close": "",
-        onClick: ctx.close,
-      },
+      { ...closeProps, type: "button", class: props.class },
       children ?? [],
     );
   }),

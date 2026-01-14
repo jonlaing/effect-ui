@@ -11,6 +11,7 @@ import { Portal } from "@effex/dom";
 import { FocusTrap } from "@effex/dom";
 import { ScrollLock } from "@effex/dom";
 import { Element } from "@effex/dom";
+import { mergeProps } from "@effex/dom";
 import type { AnimationOptions } from "@effex/dom";
 
 /**
@@ -130,6 +131,8 @@ const Root = (
 export interface DialogTriggerProps {
   /** Additional class names */
   readonly class?: ClassValue;
+  /** Render as child element instead of default button */
+  readonly asChild?: boolean;
 }
 
 /**
@@ -150,16 +153,20 @@ const Trigger = component(
       const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
       const ariaExpanded = ctx.isOpen.map((open) => (open ? "true" : "false"));
 
+      const triggerProps = {
+        "aria-haspopup": "dialog" as const,
+        "aria-expanded": ariaExpanded,
+        "aria-controls": ctx.contentId,
+        "data-state": dataState,
+        onClick: ctx.open,
+      };
+
+      if (props.asChild && Effect.isEffect(children)) {
+        return yield* mergeProps(triggerProps, children);
+      }
+
       return yield* $.button(
-        {
-          class: props.class,
-          type: "button",
-          "aria-haspopup": "dialog",
-          "aria-expanded": ariaExpanded,
-          "aria-controls": ctx.contentId,
-          "data-state": dataState,
-          onClick: ctx.open,
-        },
+        { ...triggerProps, type: "button", class: props.class },
         children ?? [],
       );
     }),
@@ -173,7 +180,7 @@ export interface DialogPortalProps {
   readonly target?: HTMLElement | string;
   /** Animation configuration for enter/exit transitions */
   readonly animate?: AnimationOptions;
-  class: ClassValue;
+  class?: ClassValue;
 }
 
 /**
@@ -325,6 +332,8 @@ const Content = component(
 export interface DialogCloseProps {
   /** Additional class names */
   readonly class?: ClassValue;
+  /** Render as child element instead of default button */
+  readonly asChild?: boolean;
 }
 
 /**
@@ -339,13 +348,17 @@ const Close = component("DialogClose", (props: DialogCloseProps, children) =>
   Effect.gen(function* () {
     const ctx = yield* DialogCtx;
 
+    const closeProps = {
+      "data-dialog-close": "",
+      onClick: ctx.close,
+    };
+
+    if (props.asChild && Effect.isEffect(children)) {
+      return yield* mergeProps(closeProps, children);
+    }
+
     return yield* $.button(
-      {
-        class: props.class,
-        type: "button",
-        "data-dialog-close": "",
-        onClick: ctx.close,
-      },
+      { ...closeProps, type: "button", class: props.class },
       children ?? [],
     );
   }),
@@ -357,6 +370,8 @@ const Close = component("DialogClose", (props: DialogCloseProps, children) =>
 export interface DialogTitleProps {
   /** Additional class names */
   readonly class?: ClassValue;
+  /** Render as child element instead of default h2 */
+  readonly asChild?: boolean;
 }
 
 /**
@@ -372,14 +387,16 @@ const Title = component("DialogTitle", (props: DialogTitleProps, children) =>
   Effect.gen(function* () {
     const ctx = yield* DialogCtx;
 
-    return yield* $.h2(
-      {
-        id: ctx.titleId,
-        class: props.class,
-        "data-dialog-title": "",
-      },
-      children ?? [],
-    );
+    const titleProps = {
+      id: ctx.titleId,
+      "data-dialog-title": "",
+    };
+
+    if (props.asChild && Effect.isEffect(children)) {
+      return yield* mergeProps(titleProps, children);
+    }
+
+    return yield* $.h2({ ...titleProps, class: props.class }, children ?? []);
   }),
 );
 
@@ -389,6 +406,8 @@ const Title = component("DialogTitle", (props: DialogTitleProps, children) =>
 export interface DialogDescriptionProps {
   /** Additional class names */
   readonly class?: ClassValue;
+  /** Render as child element instead of default p */
+  readonly asChild?: boolean;
 }
 
 /**
@@ -406,12 +425,17 @@ const Description = component(
     Effect.gen(function* () {
       const ctx = yield* DialogCtx;
 
+      const descriptionProps = {
+        id: ctx.descriptionId,
+        "data-dialog-description": "",
+      };
+
+      if (props.asChild && Effect.isEffect(children)) {
+        return yield* mergeProps(descriptionProps, children);
+      }
+
       return yield* $.p(
-        {
-          id: ctx.descriptionId,
-          class: props.class,
-          "data-dialog-description": "",
-        },
+        { ...descriptionProps, class: props.class },
         children ?? [],
       );
     }),

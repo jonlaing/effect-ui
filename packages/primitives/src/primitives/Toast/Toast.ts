@@ -1,13 +1,14 @@
 import { Context, Effect, MutableRef } from "effect";
 import { Signal } from "@effex/dom";
-import type { ClassValue } from "@effex/dom";
+import type { ClassValue, ListAnimationOptions } from "@effex/dom";
 import { Readable } from "@effex/dom";
-import { $, ol, li, button } from "@effex/dom";
+import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { each } from "@effex/dom";
 import { component } from "@effex/dom";
 import { Portal } from "@effex/dom";
 import { Element } from "@effex/dom";
+import { mergeProps } from "@effex/dom";
 import {
   type ToastPosition,
   type ToastType,
@@ -17,7 +18,6 @@ import {
   type SwipeState,
   getViewportStyle,
   getSwipeDirection,
-  getExitAnimationClass,
   createInitialSwipeState,
   isSwipeComplete,
   getSwipeTransform,
@@ -123,75 +123,74 @@ export interface ToastProviderProps {
  * Toast provider that manages toast state and provides context.
  * Wrap your app with this component.
  */
-const Provider = (
-  props: ToastProviderProps,
-  children:
-    | Element.Element<never, ToastCtx | ToastItemCtx>
-    | readonly Element.Element<never, ToastCtx | ToastItemCtx>[],
-): Element.Element =>
-  Effect.gen(function* () {
-    const position = props.position ?? "bottom-right";
-    const maxVisible = props.maxVisible ?? 5;
-    const defaultDuration = props.defaultDuration ?? 5000;
-    const swipeThreshold = props.swipeThreshold ?? 50;
-    const swipeDirection = props.swipeDirection ?? getSwipeDirection(position);
+const Provider = component(
+  "ToastProvider",
+  (props: ToastProviderProps, children) =>
+    Effect.gen(function* () {
+      const position = props.position ?? "bottom-right";
+      const maxVisible = props.maxVisible ?? 5;
+      const defaultDuration = props.defaultDuration ?? 5000;
+      const swipeThreshold = props.swipeThreshold ?? 50;
+      const swipeDirection =
+        props.swipeDirection ?? getSwipeDirection(position);
 
-    // Toast state
-    const toasts = yield* Signal.Array.make<ToastData>([]);
+      // Toast state
+      const toasts = yield* Signal.Array.make<ToastData>([]);
 
-    // Add a new toast
-    const add = (options: ToastOptions): Effect.Effect<string> =>
-      Effect.gen(function* () {
-        const id = generateToastId();
-        const toast: ToastData = {
-          ...options,
-          id,
-          type: options.type ?? "default",
-        };
-        yield* toasts.push(toast);
-        return id;
-      });
+      // Add a new toast
+      const add = (options: ToastOptions): Effect.Effect<string> =>
+        Effect.gen(function* () {
+          const id = generateToastId();
+          const toast: ToastData = {
+            ...options,
+            id,
+            type: options.type ?? "default",
+          };
+          yield* toasts.push(toast);
+          return id;
+        });
 
-    // Dismiss a toast
-    const dismiss = (id: string): Effect.Effect<void> =>
-      Effect.gen(function* () {
-        const current = yield* toasts.get;
-        const toast = current.find((t) => t.id === id);
-        if (toast?.onDismiss) {
-          yield* toast.onDismiss();
-        }
-        yield* toasts.update((current) => current.filter((t) => t.id !== id));
-      });
+      // Dismiss a toast
+      const dismiss = (id: string): Effect.Effect<void> =>
+        Effect.gen(function* () {
+          const current = yield* toasts.get;
+          const toast = current.find((t) => t.id === id);
+          if (toast?.onDismiss) {
+            yield* toast.onDismiss();
+          }
+          yield* toasts.update((current) => current.filter((t) => t.id !== id));
+        });
 
-    // Dismiss all toasts
-    const dismissAll = (): Effect.Effect<void> =>
-      Effect.gen(function* () {
-        const current = yield* toasts.get;
-        for (const toast of current) {
-          yield* toast.onDismiss?.() ?? Effect.void;
-        }
-        yield* toasts.clear();
-      });
+      // Dismiss all toasts
+      const dismissAll = (): Effect.Effect<void> =>
+        Effect.gen(function* () {
+          const current = yield* toasts.get;
+          for (const toast of current) {
+            yield* toast.onDismiss?.() ?? Effect.void;
+          }
+          yield* toasts.clear();
+        });
 
-    const ctx: ToastContext = {
-      toasts,
-      add,
-      dismiss,
-      dismissAll,
-      position,
-      maxVisible,
-      defaultDuration,
-      swipeThreshold,
-      swipeDirection,
-    };
+      const ctx: ToastContext = {
+        toasts,
+        add,
+        dismiss,
+        dismissAll,
+        position,
+        maxVisible,
+        defaultDuration,
+        swipeThreshold,
+        swipeDirection,
+      };
 
-    const childArray = Array.isArray(children) ? children : [children];
+      const childArray = Array.isArray(children) ? children : [children];
 
-    return yield* $.div(
-      { style: { display: "contents" } },
-      provide(ToastCtx, ctx, childArray),
-    );
-  });
+      return yield* $.div(
+        { style: { display: "contents" } },
+        provide(ToastCtx, ctx, childArray),
+      );
+    }),
+);
 
 /**
  * Props for Toast.Viewport
@@ -199,6 +198,8 @@ const Provider = (
 export interface ToastViewportProps {
   /** Additional class names */
   readonly class?: ClassValue;
+  /** Animation options for toast enter/exit (passed directly to `each`) */
+  readonly animate?: ListAnimationOptions;
   /** Hotkey to focus viewport (default: Alt+T) */
   readonly hotkey?: readonly string[];
   /** ARIA label (default: "Notifications") */
@@ -245,7 +246,6 @@ const Viewport = component(
       );
 
       const viewportStyle = getViewportStyle(ctx.position);
-      const exitClass = getExitAnimationClass(ctx.position);
       const providedChildren = normalizeChildren(children);
 
       // Default template when no children provided
@@ -253,14 +253,26 @@ const Viewport = component(
         Root({}, [Title({}), Description({}), Action({}), Close({})]),
       ];
 
-      const template =
-        providedChildren.length > 0 ? providedChildren : defaultTemplate;
+      const template = (
+        providedChildren.length > 0 ? providedChildren : defaultTemplate
+      ) as Element.Element[];
 
       // Render toasts using the template
       const toastElements = [
         each(
           ctx.toasts.map((toasts) => toasts.slice(-ctx.maxVisible)),
           {
+            container: () =>
+              $.ol({
+                ref: viewportRef,
+                class: props.class,
+                style: viewportStyle,
+                role: "region",
+                "aria-label": label,
+                tabIndex: -1,
+                "data-toast-viewport": "",
+                "data-position": ctx.position,
+              }),
             key: (toast: ToastData) => toast.id,
             render: (toastReadable: Readable<ToastData>) =>
               Effect.gen(function* () {
@@ -273,31 +285,14 @@ const Viewport = component(
                   resumeTimer: () => {},
                 };
 
-                return yield* $.div(
-                  { style: { display: "contents" } },
-                  provide(ToastItemCtx, itemCtx, template),
-                );
+                return yield* $.li(provide(ToastItemCtx, itemCtx, template));
               }),
-            animate: { exit: exitClass },
+            animate: props.animate,
           },
         ),
       ];
 
-      return yield* Portal({}, () =>
-        ol(
-          {
-            ref: viewportRef,
-            class: props.class,
-            style: viewportStyle,
-            role: "region",
-            "aria-label": label,
-            tabIndex: -1,
-            "data-toast-viewport": "",
-            "data-position": ctx.position,
-          },
-          toastElements,
-        ),
-      );
+      return yield* Portal({}, () => $.div(toastElements));
     }),
 );
 
@@ -318,7 +313,7 @@ const Root = component("ToastRoot", (props: ToastRootProps, children) =>
     // Get toast from props or from item context (when used as template)
     const parentCtx = yield* ToastItemCtx;
     const toast: ToastData = parentCtx.toast;
-    const toastRef = yield* Element.ref<HTMLLIElement>();
+    const toastRef = yield* Element.ref<HTMLDivElement>();
 
     // Timer state
     const duration = toast.duration ?? ctx.defaultDuration;
@@ -461,7 +456,7 @@ const Root = component("ToastRoot", (props: ToastRootProps, children) =>
     // Determine aria-live based on type
     const ariaLive = toast.type === "error" ? "assertive" : "polite";
 
-    return yield* li(
+    return yield* $.div(
       {
         ref: toastRef,
         class: props.class,
@@ -574,7 +569,7 @@ const Action = component("ToastAction", (props: ToastActionProps, children) =>
         yield* ctx.dismiss();
       });
 
-    return yield* button(
+    return yield* $.button(
       {
         class: props.class,
         type: "button",
@@ -595,6 +590,8 @@ export interface ToastCloseProps {
   readonly class?: ClassValue;
   /** ARIA label (default: "Close") */
   readonly "aria-label"?: string;
+  /** Render as child element instead of default button */
+  readonly asChild?: boolean;
 }
 
 /**
@@ -610,15 +607,19 @@ const Close = component("ToastClose", (props: ToastCloseProps, children) =>
         e.stopPropagation();
       });
 
-    return yield* button(
-      {
-        class: props.class,
-        type: "button",
-        "aria-label": props["aria-label"] ?? "Close",
-        "data-toast-close": "",
-        onPointerDown: handlePointerDown,
-        onClick: ctx.dismiss,
-      },
+    const closeProps = {
+      "aria-label": props["aria-label"] ?? "Close",
+      "data-toast-close": "",
+      onPointerDown: handlePointerDown,
+      onClick: ctx.dismiss,
+    };
+
+    if (props.asChild && Effect.isEffect(children)) {
+      return yield* mergeProps(closeProps, children);
+    }
+
+    return yield* $.button(
+      { ...closeProps, type: "button", class: props.class },
       children ?? "\u00d7",
     );
   }),

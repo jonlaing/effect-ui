@@ -6,3 +6,4 @@ export {
   type HierarchyOptions,
 } from "./createKeyboardNav.js";
 export { toKebabCase, toCamelCase } from "./strings.js";
+export { mergeProps } from "./mergeProps.js";

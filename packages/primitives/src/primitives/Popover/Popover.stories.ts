@@ -44,14 +44,16 @@ const meta: Meta<PopoverStoryArgs> = {
             side: args.side,
             align: args.align,
             sideOffset: args.sideOffset,
-            class: "card bg-base-200 shadow-xl p-4 w-72",
+            class: "card bg-base-200 shadow-xl w-72",
           },
           [
-            $.h4({ class: "font-semibold mb-2" }, "Popover Title"),
-            $.p(
-              { class: "text-sm text-base-content/70 mb-4" },
-              "This is a basic popover with some content.",
-            ),
+            $.div({ class: "card-body" }, [
+              $.h4({ class: "card-title" }, "Popover Title"),
+              $.p(
+                { class: "text-sm text-base-content/70 mb-4" },
+                "This is a basic popover with some content.",
+              ),
+            ]),
             Popover.Close({ class: "btn btn-sm btn-ghost" }, "Close"),
           ],
         ),

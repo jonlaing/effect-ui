@@ -40,8 +40,12 @@ import { isElement, flattenChildren } from "./Element/helpers.js";
 export const provide = <I, S, E = never, R = I>(
   tag: Context.Tag<I, S>,
   value: S,
-  children: Child<E, R> | readonly Child<E, R>[],
+  children?: Child<E, R> | readonly Child<E, R>[],
 ): Child<E, Exclude<R, I>>[] => {
+  if (!children) {
+    return [];
+  }
+
   const childArray = Array.isArray(children)
     ? flattenChildren(children)
     : [children];

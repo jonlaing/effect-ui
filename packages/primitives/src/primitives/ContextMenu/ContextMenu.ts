@@ -147,9 +147,10 @@ const Root = (
       contentRef,
     };
 
+    const childArray = Array.isArray(children) ? children : [children];
     return yield* $.div(
       { style: { display: "contents" } },
-      provide(ContextMenuCtx, ctx, children),
+      provide(ContextMenuCtx, ctx, childArray),
     );
   });
 

@@ -34,7 +34,7 @@ export const Default: Story = {
         class: "menu bg-base-200 rounded-box w-64 p-2",
       },
       [
-        TreeView.Item({ id: "folder-1", class: "rounded-btn" }, [
+        TreeView.Item({ id: "folder-1", class: "" }, [
           TreeView.ItemLabel(
             {
               class:

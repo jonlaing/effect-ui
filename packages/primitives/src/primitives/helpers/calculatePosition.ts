@@ -18,7 +18,10 @@ export function calculatePosition(
 ): { top: number; left: number } {
   const isVertical = side === "top" || side === "bottom";
   const hasContentDimensions =
-    contentWidth !== undefined && contentHeight !== undefined;
+    contentWidth !== undefined &&
+    contentHeight !== undefined &&
+    contentWidth > 0 &&
+    contentHeight > 0;
 
   let top: number;
   let left: number;

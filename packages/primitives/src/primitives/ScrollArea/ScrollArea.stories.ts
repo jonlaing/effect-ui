@@ -279,7 +279,8 @@ export const ScrollOnlyType: Story = {
                 ScrollArea.Scrollbar(
                   {
                     orientation: "vertical",
-                    class: "w-2 bg-base-300 rounded-full",
+                    class:
+                      "w-2 bg-base-300 rounded-full transition-opacity opacity-0 data-[state=visible]:opacity-100",
                   },
                   [ScrollArea.Thumb({ class: "bg-warning rounded-full" })],
                 ),
@@ -378,7 +379,8 @@ export const NoOverflow: Story = {
               ScrollArea.Scrollbar(
                 {
                   orientation: "vertical",
-                  class: "w-2 bg-base-300 rounded-full",
+                  class:
+                    "w-2 bg-base-300 rounded-full transition-opacity opacity-0 data-[state=visible]:opacity-100",
                 },
                 [ScrollArea.Thumb({ class: "bg-error rounded-full" })],
               ),

@@ -76,7 +76,8 @@ describe("TreeView", () => {
     it("should have correct aria-level for nested items", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* TreeView.Root({}, [
+          // Need to expand parent to render nested items
+          const el = yield* TreeView.Root({ defaultExpanded: ["folder-1"] }, [
             TreeView.Item({ id: "folder-1" }, [
               TreeView.ItemLabel({}, "Folder 1"),
               TreeView.ItemContent({}, [
@@ -137,7 +138,8 @@ describe("TreeView", () => {
     it("should only have aria-expanded when item has children", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* TreeView.Root({}, [
+          // Need to expand parent to render nested items
+          const el = yield* TreeView.Root({ defaultExpanded: ["folder-1"] }, [
             TreeView.Item({ id: "folder-1" }, [
               TreeView.ItemLabel({}, "Folder (has children)"),
               TreeView.ItemContent({}, [
@@ -153,7 +155,7 @@ describe("TreeView", () => {
 
           const items = el.querySelectorAll("[role='treeitem']");
           // Parent item should have aria-expanded
-          expect(items[0]?.getAttribute("aria-expanded")).toBe("false");
+          expect(items[0]?.getAttribute("aria-expanded")).toBe("true");
           // Leaf item should NOT have aria-expanded
           expect(items[1]?.getAttribute("aria-expanded")).toBeNull();
         }),
@@ -162,10 +164,11 @@ describe("TreeView", () => {
   });
 
   describe("ItemContent", () => {
-    it("should have role=group", async () => {
+    it("should have role=group when expanded", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* TreeView.Root({}, [
+          // Group is only rendered when parent is expanded
+          const el = yield* TreeView.Root({ defaultExpanded: ["folder-1"] }, [
             TreeView.Item({ id: "folder-1" }, [
               TreeView.ItemLabel({}, "Folder 1"),
               TreeView.ItemContent({}, [
@@ -177,14 +180,15 @@ describe("TreeView", () => {
           ]);
 
           const group = el.querySelector("[role='group']");
-          expect(group).not.toBeNull();
+          expect(group).toBeTruthy();
         }),
       );
     });
 
-    it("should have data-state=closed when parent is collapsed", async () => {
+    it("should not render group when parent is collapsed", async () => {
       await runTest(
         Effect.gen(function* () {
+          // When collapsed, ItemContent renders a hidden placeholder, not the group
           const el = yield* TreeView.Root({}, [
             TreeView.Item({ id: "folder-1" }, [
               TreeView.ItemLabel({}, "Folder 1"),
@@ -197,7 +201,7 @@ describe("TreeView", () => {
           ]);
 
           const group = el.querySelector("[role='group']");
-          expect(group?.getAttribute("data-state")).toBe("closed");
+          expect(group).toBeNull();
         }),
       );
     });

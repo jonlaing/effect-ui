@@ -23,45 +23,61 @@ const meta: Meta<DropdownMenuStoryArgs> = {
   },
   render: (args) => {
     const element = Effect.gen(function* () {
-      return yield* DropdownMenu.Root({}, [
+      return yield* DropdownMenu.Root({ class: "dropdown" }, [
         DropdownMenu.Trigger(
           { disabled: args.disabled, class: "btn btn-primary" },
           "Actions",
         ),
         DropdownMenu.Content(
-          { class: "menu bg-base-200 rounded-box w-52 p-2 shadow-lg" },
-          [
-            DropdownMenu.Item(
-              {
-                onSelect: () => Effect.log("Edit clicked"),
-                class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
-              },
-              "Edit",
-            ),
-            DropdownMenu.Item(
-              {
-                onSelect: () => Effect.log("Duplicate clicked"),
-                class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
-              },
-              "Duplicate",
-            ),
-            DropdownMenu.Separator({ class: "divider my-1" }),
-            DropdownMenu.Item(
-              {
-                onSelect: () => Effect.log("Archive clicked"),
-                class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
-              },
-              "Archive",
-            ),
-            DropdownMenu.Item(
-              {
-                onSelect: () => Effect.log("Delete clicked"),
-                class:
-                  "rounded-btn hover:bg-base-300 p-2 cursor-pointer text-error",
-              },
-              "Delete",
-            ),
-          ],
+          {
+            asChild: true,
+            animate: {
+              enterTo: "animate-in fade-in",
+              exit: "animate-out fade-out",
+            },
+          },
+          $.ul(
+            {
+              class: "menu bg-base-200 rounded-box shadow-lg dropdown-content",
+            },
+            [
+              $.li(
+                DropdownMenu.Item(
+                  {
+                    onSelect: () => Effect.log("Edit clicked"),
+                  },
+                  "Edit",
+                ),
+              ),
+              $.li(
+                DropdownMenu.Item(
+                  {
+                    onSelect: () => Effect.log("Duplicate clicked"),
+                  },
+                  "Duplicate",
+                ),
+              ),
+              DropdownMenu.Separator({ class: "divider my-1" }),
+              // Example using asChild - renders as an anchor tag
+              $.li(
+                DropdownMenu.Item(
+                  {
+                    asChild: true,
+                    onSelect: () => Effect.log("Documentation clicked"),
+                  },
+                  $.a({ href: "#docs", class: "text-info" }, "Documentation ↗"),
+                ),
+              ),
+              $.li(
+                DropdownMenu.Item(
+                  {
+                    onSelect: () => Effect.log("Delete clicked"),
+                  },
+                  "Delete",
+                ),
+              ),
+            ],
+          ),
         ),
       ]);
     });
@@ -88,47 +104,33 @@ export const WithDisabledItems: Story = {
       return yield* DropdownMenu.Root({}, [
         DropdownMenu.Trigger({ class: "btn btn-secondary" }, "File"),
         DropdownMenu.Content(
-          { class: "menu bg-base-200 rounded-box w-52 p-2 shadow-lg" },
-          [
-            DropdownMenu.Item(
-              {
-                onSelect: () => Effect.log("New"),
-                class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
-              },
-              "New",
+          {},
+          $.ul({ class: "menu bg-base-200 rounded-box w-52 p-2 shadow-lg" }, [
+            $.li(
+              DropdownMenu.Item({ onSelect: () => Effect.log("New") }, "New"),
             ),
-            DropdownMenu.Item(
-              {
-                onSelect: () => Effect.log("Open"),
-                class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
-              },
-              "Open",
+            $.li(
+              DropdownMenu.Item({ onSelect: () => Effect.log("Open") }, "Open"),
             ),
-            DropdownMenu.Item(
-              {
-                onSelect: () => Effect.log("Save"),
-                class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
-              },
-              "Save",
+            $.li(
+              DropdownMenu.Item({ onSelect: () => Effect.log("Save") }, "Save"),
             ),
             DropdownMenu.Separator({ class: "divider my-1" }),
-            DropdownMenu.Item(
-              {
-                onSelect: () => Effect.log("Export"),
-                disabled: true,
-                class: "rounded-btn p-2 opacity-50 cursor-not-allowed",
-              },
-              "Export (Pro)",
+            $.li(
+              { class: "menu-disabled" },
+              DropdownMenu.Item(
+                { onSelect: () => Effect.log("Export"), disabled: true },
+                "Export (Pro)",
+              ),
             ),
-            DropdownMenu.Item(
-              {
-                onSelect: () => Effect.log("Print"),
-                disabled: true,
-                class: "rounded-btn p-2 opacity-50 cursor-not-allowed",
-              },
-              "Print (Pro)",
+            $.li(
+              { class: "menu-disabled" },
+              DropdownMenu.Item(
+                { onSelect: () => Effect.log("Print"), disabled: true },
+                "Print (Pro)",
+              ),
             ),
-          ],
+          ]),
         ),
       ]);
     });
@@ -150,51 +152,43 @@ export const WithGroups: Story = {
       return yield* DropdownMenu.Root({}, [
         DropdownMenu.Trigger({ class: "btn btn-accent" }, "Edit"),
         DropdownMenu.Content(
-          { class: "menu bg-base-200 rounded-box w-52 p-2 shadow-lg" },
-          [
+          {},
+          $.ul({ class: "menu bg-base-200 rounded-box w-52 p-2 shadow-lg" }, [
             DropdownMenu.Group({}, [
               DropdownMenu.Label({ class: "menu-title" }, "Clipboard"),
-              DropdownMenu.Item(
-                {
-                  onSelect: () => Effect.log("Cut"),
-                  class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
-                },
-                "Cut",
+              $.li(
+                DropdownMenu.Item({ onSelect: () => Effect.log("Cut") }, "Cut"),
               ),
-              DropdownMenu.Item(
-                {
-                  onSelect: () => Effect.log("Copy"),
-                  class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
-                },
-                "Copy",
+              $.li(
+                DropdownMenu.Item(
+                  { onSelect: () => Effect.log("Copy") },
+                  "Copy",
+                ),
               ),
-              DropdownMenu.Item(
-                {
-                  onSelect: () => Effect.log("Paste"),
-                  class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
-                },
-                "Paste",
+              $.li(
+                DropdownMenu.Item(
+                  { onSelect: () => Effect.log("Paste") },
+                  "Paste",
+                ),
               ),
             ]),
             DropdownMenu.Separator({ class: "divider my-1" }),
             DropdownMenu.Group({}, [
               DropdownMenu.Label({ class: "menu-title" }, "Selection"),
-              DropdownMenu.Item(
-                {
-                  onSelect: () => Effect.log("Select All"),
-                  class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
-                },
-                "Select All",
+              $.li(
+                DropdownMenu.Item(
+                  { onSelect: () => Effect.log("Select All") },
+                  "Select All",
+                ),
               ),
-              DropdownMenu.Item(
-                {
-                  onSelect: () => Effect.log("Deselect"),
-                  class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
-                },
-                "Deselect",
+              $.li(
+                DropdownMenu.Item(
+                  { onSelect: () => Effect.log("Deselect") },
+                  "Deselect",
+                ),
               ),
             ]),
-          ],
+          ]),
         ),
       ]);
     });
@@ -232,28 +226,18 @@ export const AllPositions: Story = {
     const element = Effect.gen(function* () {
       const menus = yield* Effect.all(
         positions.map(({ side, align, label }) =>
-          DropdownMenu.Root({}, [
+          DropdownMenu.Root({ class: "relative" }, [
             DropdownMenu.Trigger({ class: "btn btn-sm btn-outline" }, label),
             DropdownMenu.Content(
-              {
-                side,
-                align,
-                class: "menu bg-base-200 rounded-box w-40 p-2 shadow-lg",
-              },
-              [
-                DropdownMenu.Item(
-                  { class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer" },
-                  "Option 1",
-                ),
-                DropdownMenu.Item(
-                  { class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer" },
-                  "Option 2",
-                ),
-                DropdownMenu.Item(
-                  { class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer" },
-                  "Option 3",
-                ),
-              ],
+              { side, align },
+              $.ul(
+                { class: "menu bg-base-200 rounded-box w-40 p-2 shadow-lg" },
+                [
+                  $.li(DropdownMenu.Item({}, "Option 1")),
+                  $.li(DropdownMenu.Item({}, "Option 2")),
+                  $.li(DropdownMenu.Item({}, "Option 3")),
+                ],
+              ),
             ),
           ]),
         ),
@@ -313,30 +297,30 @@ export const Controlled: Story = {
               "Controlled Menu",
             ),
             DropdownMenu.Content(
-              { class: "menu bg-base-200 rounded-box w-48 p-2 shadow-lg" },
-              [
-                DropdownMenu.Item(
-                  {
-                    onSelect: () => Effect.log("Action 1"),
-                    class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
-                  },
-                  "Action 1",
-                ),
-                DropdownMenu.Item(
-                  {
-                    onSelect: () => Effect.log("Action 2"),
-                    class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
-                  },
-                  "Action 2",
-                ),
-                DropdownMenu.Item(
-                  {
-                    onSelect: () => Effect.log("Action 3"),
-                    class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
-                  },
-                  "Action 3",
-                ),
-              ],
+              {},
+              $.ul(
+                { class: "menu bg-base-200 rounded-box w-48 p-2 shadow-lg" },
+                [
+                  $.li(
+                    DropdownMenu.Item(
+                      { onSelect: () => Effect.log("Action 1") },
+                      "Action 1",
+                    ),
+                  ),
+                  $.li(
+                    DropdownMenu.Item(
+                      { onSelect: () => Effect.log("Action 2") },
+                      "Action 2",
+                    ),
+                  ),
+                  $.li(
+                    DropdownMenu.Item(
+                      { onSelect: () => Effect.log("Action 3") },
+                      "Action 3",
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -360,102 +344,90 @@ export const WithSubmenus: Story = {
       return yield* DropdownMenu.Root({}, [
         DropdownMenu.Trigger({ class: "btn btn-info" }, "File"),
         DropdownMenu.Content(
-          { class: "menu bg-base-200 rounded-box w-48 p-2 shadow-lg" },
-          [
-            DropdownMenu.Item(
-              {
-                onSelect: () => Effect.log("New"),
-                class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
-              },
-              "New",
+          {},
+          $.ul({ class: "menu bg-base-200 rounded-box w-48 p-2 shadow-lg" }, [
+            $.li(
+              DropdownMenu.Item({ onSelect: () => Effect.log("New") }, "New"),
             ),
-            DropdownMenu.Item(
-              {
-                onSelect: () => Effect.log("Open"),
-                class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
-              },
-              "Open",
+            $.li(
+              DropdownMenu.Item({ onSelect: () => Effect.log("Open") }, "Open"),
             ),
+
             DropdownMenu.Separator({ class: "divider my-1" }),
             DropdownMenu.Sub({}, [
-              DropdownMenu.SubTrigger(
-                {
-                  class:
-                    "rounded-btn hover:bg-base-300 p-2 cursor-pointer flex justify-between",
-                },
-                "Share",
-              ),
-              DropdownMenu.SubContent(
-                { class: "menu bg-base-200 rounded-box w-40 p-2 shadow-lg" },
-                [
-                  DropdownMenu.Item(
+              $.li([
+                DropdownMenu.SubTrigger({}, ["Share ", $.span("›")]),
+                DropdownMenu.SubContent(
+                  {},
+                  $.ul(
                     {
-                      onSelect: () => Effect.log("Email"),
-                      class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+                      class: "menu bg-base-200 rounded-box w-40 p-2 shadow-lg",
                     },
-                    "Email",
+                    [
+                      $.li(
+                        DropdownMenu.Item(
+                          { onSelect: () => Effect.log("Email") },
+                          "Email",
+                        ),
+                      ),
+                      $.li(
+                        DropdownMenu.Item(
+                          { onSelect: () => Effect.log("Slack") },
+                          "Slack",
+                        ),
+                      ),
+                      $.li(
+                        DropdownMenu.Item(
+                          { onSelect: () => Effect.log("Copy Link") },
+                          "Copy Link",
+                        ),
+                      ),
+                    ],
                   ),
-                  DropdownMenu.Item(
-                    {
-                      onSelect: () => Effect.log("Slack"),
-                      class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
-                    },
-                    "Slack",
-                  ),
-                  DropdownMenu.Item(
-                    {
-                      onSelect: () => Effect.log("Copy Link"),
-                      class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
-                    },
-                    "Copy Link",
-                  ),
-                ],
-              ),
+                ),
+              ]),
             ]),
             DropdownMenu.Sub({}, [
-              DropdownMenu.SubTrigger(
-                {
-                  class:
-                    "rounded-btn hover:bg-base-300 p-2 cursor-pointer flex justify-between",
-                },
-                "Export",
-              ),
-              DropdownMenu.SubContent(
-                { class: "menu bg-base-200 rounded-box w-40 p-2 shadow-lg" },
-                [
-                  DropdownMenu.Item(
+              $.li([
+                DropdownMenu.SubTrigger({}, ["Export ", $.span("›")]),
+                DropdownMenu.SubContent(
+                  {},
+                  $.ul(
                     {
-                      onSelect: () => Effect.log("PDF"),
-                      class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
+                      class: "menu bg-base-200 rounded-box w-40 p-2 shadow-lg",
                     },
-                    "PDF",
+                    [
+                      $.li(
+                        DropdownMenu.Item(
+                          { onSelect: () => Effect.log("PDF") },
+                          "PDF",
+                        ),
+                      ),
+                      $.li(
+                        DropdownMenu.Item(
+                          { onSelect: () => Effect.log("PNG") },
+                          "PNG",
+                        ),
+                      ),
+                      $.li(
+                        DropdownMenu.Item(
+                          { onSelect: () => Effect.log("SVG") },
+                          "SVG",
+                        ),
+                      ),
+                    ],
                   ),
-                  DropdownMenu.Item(
-                    {
-                      onSelect: () => Effect.log("PNG"),
-                      class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
-                    },
-                    "PNG",
-                  ),
-                  DropdownMenu.Item(
-                    {
-                      onSelect: () => Effect.log("SVG"),
-                      class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
-                    },
-                    "SVG",
-                  ),
-                ],
-              ),
+                ),
+              ]),
             ]),
             DropdownMenu.Separator({ class: "divider my-1" }),
-            DropdownMenu.Item(
-              {
-                onSelect: () => Effect.log("Print"),
-                class: "rounded-btn hover:bg-base-300 p-2 cursor-pointer",
-              },
-              "Print",
+            $.li(
+              DropdownMenu.Item(
+                { onSelect: () => Effect.log("Print") },
+                "Print",
+              ),
             ),
-          ],
+          ]),
         ),
       ]);
     });
@@ -481,40 +453,40 @@ export const WithCheckboxItems: Story = {
       return yield* DropdownMenu.Root({}, [
         DropdownMenu.Trigger({ class: "btn btn-success" }, "View Options"),
         DropdownMenu.Content(
-          { class: "menu bg-base-200 rounded-box w-52 p-2 shadow-lg" },
-          [
+          {},
+          $.ul({ class: "menu bg-base-200 rounded-box w-52 p-2 shadow-lg" }, [
             DropdownMenu.Label({ class: "menu-title" }, "Display"),
-            DropdownMenu.CheckboxItem(
-              {
-                checked: showGrid,
-                onCheckedChange: (checked) =>
-                  Effect.log(`Show Grid: ${checked}`),
-                class:
-                  "rounded-btn hover:bg-base-300 p-2 cursor-pointer flex items-center gap-2",
-              },
-              "Show Grid",
+            $.li(
+              DropdownMenu.CheckboxItem(
+                {
+                  checked: showGrid,
+                  onCheckedChange: (checked) =>
+                    Effect.log(`Show Grid: ${checked}`),
+                },
+                "Show Grid",
+              ),
             ),
-            DropdownMenu.CheckboxItem(
-              {
-                checked: showRulers,
-                onCheckedChange: (checked) =>
-                  Effect.log(`Show Rulers: ${checked}`),
-                class:
-                  "rounded-btn hover:bg-base-300 p-2 cursor-pointer flex items-center gap-2",
-              },
-              "Show Rulers",
+            $.li(
+              DropdownMenu.CheckboxItem(
+                {
+                  checked: showRulers,
+                  onCheckedChange: (checked) =>
+                    Effect.log(`Show Rulers: ${checked}`),
+                },
+                "Show Rulers",
+              ),
             ),
-            DropdownMenu.CheckboxItem(
-              {
-                checked: snapToGrid,
-                onCheckedChange: (checked) =>
-                  Effect.log(`Snap to Grid: ${checked}`),
-                class:
-                  "rounded-btn hover:bg-base-300 p-2 cursor-pointer flex items-center gap-2",
-              },
-              "Snap to Grid",
+            $.li(
+              DropdownMenu.CheckboxItem(
+                {
+                  checked: snapToGrid,
+                  onCheckedChange: (checked) =>
+                    Effect.log(`Snap to Grid: ${checked}`),
+                },
+                "Snap to Grid",
+              ),
             ),
-          ],
+          ]),
         ),
       ]);
     });
@@ -538,49 +510,23 @@ export const WithRadioItems: Story = {
       return yield* DropdownMenu.Root({}, [
         DropdownMenu.Trigger({ class: "btn btn-warning" }, "Sort By"),
         DropdownMenu.Content(
-          { class: "menu bg-base-200 rounded-box w-48 p-2 shadow-lg" },
-          [
+          {},
+          $.ul({ class: "menu bg-base-200 rounded-box w-48 p-2 shadow-lg" }, [
             DropdownMenu.RadioGroup(
               {
                 value: sortBy,
                 onValueChange: (value) => Effect.log(`Sort by: ${value}`),
               },
               [
-                DropdownMenu.RadioItem(
-                  {
-                    value: "name",
-                    class:
-                      "rounded-btn hover:bg-base-300 p-2 cursor-pointer flex items-center gap-2",
-                  },
-                  "Name",
+                $.li(DropdownMenu.RadioItem({ value: "name" }, "Name")),
+                $.li(
+                  DropdownMenu.RadioItem({ value: "date" }, "Date Modified"),
                 ),
-                DropdownMenu.RadioItem(
-                  {
-                    value: "date",
-                    class:
-                      "rounded-btn hover:bg-base-300 p-2 cursor-pointer flex items-center gap-2",
-                  },
-                  "Date Modified",
-                ),
-                DropdownMenu.RadioItem(
-                  {
-                    value: "size",
-                    class:
-                      "rounded-btn hover:bg-base-300 p-2 cursor-pointer flex items-center gap-2",
-                  },
-                  "Size",
-                ),
-                DropdownMenu.RadioItem(
-                  {
-                    value: "type",
-                    class:
-                      "rounded-btn hover:bg-base-300 p-2 cursor-pointer flex items-center gap-2",
-                  },
-                  "Type",
-                ),
+                $.li(DropdownMenu.RadioItem({ value: "size" }, "Size")),
+                $.li(DropdownMenu.RadioItem({ value: "type" }, "Type")),
               ],
             ),
-          ],
+          ]),
         ),
       ]);
     });

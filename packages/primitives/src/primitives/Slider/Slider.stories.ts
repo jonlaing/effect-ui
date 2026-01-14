@@ -44,13 +44,19 @@ const meta: Meta<SliderStoryArgs> = {
 export default meta;
 type Story = StoryObj<SliderStoryArgs>;
 
+// Base styles for slider parts
+const rootClass = "relative flex items-center w-full h-5";
+const trackClass =
+  "relative w-full h-2 bg-base-300 rounded-full cursor-pointer";
+const rangeClass = "absolute h-full bg-primary rounded-full";
+const thumbClass =
+  "absolute w-5 h-5 bg-primary rounded-full border-2 border-base-100 shadow-md cursor-grab active:cursor-grabbing focus:outline-none focus:ring-2 focus:ring-primary/50 -translate-x-1/2";
+
 export const Default: Story = {
   render: (args) => {
     const element = Effect.gen(function* () {
       return yield* $.div({ class: "flex flex-col gap-2 w-64" }, [
-        $.label({ class: "label" }, [
-          $.span({ class: "label-text" }, "Volume"),
-        ]),
+        $.label({ class: "text-sm font-medium" }, "Volume"),
         Slider.Root(
           {
             defaultValue: 50,
@@ -58,11 +64,13 @@ export const Default: Story = {
             max: args.max,
             step: args.step,
             disabled: args.disabled,
-            class: "range range-primary",
+            class: rootClass,
           },
           [
-            Slider.Track({ class: "hidden" }, [Slider.Range({})]),
-            Slider.Thumb({ "aria-label": "Value", class: "hidden" }),
+            Slider.Track({ class: trackClass }, [
+              Slider.Range({ class: rangeClass }),
+            ]),
+            Slider.Thumb({ "aria-label": "Value", class: thumbClass }),
           ],
         ),
       ]);
@@ -85,10 +93,8 @@ export const WithValue: Story = {
       const value = yield* Signal.make<SliderValue>(50);
 
       return yield* $.div({ class: "flex flex-col gap-2 w-64" }, [
-        $.div({ class: "flex justify-between" }, [
-          $.label({ class: "label" }, [
-            $.span({ class: "label-text" }, "Value with display"),
-          ]),
+        $.div({ class: "flex justify-between items-center" }, [
+          $.label({ class: "text-sm font-medium" }, "Value with display"),
           $.span(
             { class: "badge badge-neutral" },
             value.map((v) => String(v)),
@@ -98,11 +104,13 @@ export const WithValue: Story = {
           {
             value,
             onValueChange: (v) => value.set(v),
-            class: "range range-primary",
+            class: rootClass,
           },
           [
-            Slider.Track({ class: "hidden" }, [Slider.Range({})]),
-            Slider.Thumb({ "aria-label": "Value", class: "hidden" }),
+            Slider.Track({ class: trackClass }, [
+              Slider.Range({ class: rangeClass }),
+            ]),
+            Slider.Thumb({ "aria-label": "Value", class: thumbClass }),
           ],
         ),
       ]);
@@ -129,22 +137,28 @@ export const RangeSlider: Story = {
       });
 
       return yield* $.div({ class: "flex flex-col gap-2 w-64" }, [
-        $.div({ class: "flex justify-between" }, [
-          $.label({ class: "label" }, [
-            $.span({ class: "label-text" }, "Price Range"),
-          ]),
+        $.div({ class: "flex justify-between items-center" }, [
+          $.label({ class: "text-sm font-medium" }, "Price Range"),
           $.span({ class: "badge badge-neutral" }, valueDisplay),
         ]),
         Slider.Root(
           {
             value,
             onValueChange: (v) => value.set(v),
-            class: "range range-secondary",
+            class: rootClass,
           },
           [
-            Slider.Track({ class: "hidden" }, [Slider.Range({})]),
-            Slider.Thumb({ "aria-label": "Minimum", class: "hidden" }),
-            Slider.Thumb({ "aria-label": "Maximum", class: "hidden" }),
+            Slider.Track({ class: trackClass }, [
+              Slider.Range({ class: `${rangeClass} bg-secondary` }),
+            ]),
+            Slider.Thumb({
+              "aria-label": "Minimum",
+              class: thumbClass.replace("bg-primary", "bg-secondary"),
+            }),
+            Slider.Thumb({
+              "aria-label": "Maximum",
+              class: thumbClass.replace("bg-primary", "bg-secondary"),
+            }),
           ],
         ),
       ]);
@@ -166,21 +180,30 @@ export const Vertical: Story = {
     const element = Effect.gen(function* () {
       const value = yield* Signal.make<SliderValue>(75);
 
-      return yield* $.div({ class: "flex flex-col items-center gap-2" }, [
-        $.label({ class: "label" }, [
-          $.span({ class: "label-text" }, "Vertical Slider"),
-        ]),
+      return yield* $.div({ class: "flex flex-col items-center gap-4" }, [
+        $.label({ class: "text-sm font-medium" }, "Vertical Slider"),
         $.div({ class: "h-48 flex items-center" }, [
           Slider.Root(
             {
               value,
               onValueChange: (v) => value.set(v),
               orientation: "vertical",
-              class: "range range-accent range-lg",
+              class: "relative flex justify-center w-5 h-full",
             },
             [
-              Slider.Track({ class: "hidden" }, [Slider.Range({})]),
-              Slider.Thumb({ "aria-label": "Volume", class: "hidden" }),
+              Slider.Track(
+                {
+                  class:
+                    "relative h-full w-2 bg-base-300 rounded-full cursor-pointer",
+                },
+                [Slider.Range({ class: `${rangeClass} bg-accent w-full` })],
+              ),
+              Slider.Thumb({
+                "aria-label": "Volume",
+                class: thumbClass
+                  .replace("bg-primary", "bg-accent")
+                  .replace("-translate-x-1/2", "-translate-y-1/2"),
+              }),
             ],
           ),
         ]),
@@ -208,10 +231,8 @@ export const CustomStep: Story = {
       const value = yield* Signal.make<SliderValue>(50);
 
       return yield* $.div({ class: "flex flex-col gap-2 w-64" }, [
-        $.div({ class: "flex justify-between" }, [
-          $.label({ class: "label" }, [
-            $.span({ class: "label-text" }, "Step: 10"),
-          ]),
+        $.div({ class: "flex justify-between items-center" }, [
+          $.label({ class: "text-sm font-medium" }, "Step: 10"),
           $.span(
             { class: "badge badge-neutral" },
             value.map((v) => `${v}%`),
@@ -224,20 +245,28 @@ export const CustomStep: Story = {
             step: 10,
             min: 0,
             max: 100,
-            class: "range range-primary",
+            class: rootClass,
           },
           [
-            Slider.Track({ class: "hidden" }, [Slider.Range({})]),
-            Slider.Thumb({ "aria-label": "Value", class: "hidden" }),
+            Slider.Track({ class: trackClass }, [
+              Slider.Range({ class: rangeClass }),
+            ]),
+            Slider.Thumb({ "aria-label": "Value", class: thumbClass }),
           ],
         ),
-        $.div({ class: "flex w-full justify-between text-xs px-2" }, [
-          $.span({}, "0"),
-          $.span({}, "25"),
-          $.span({}, "50"),
-          $.span({}, "75"),
-          $.span({}, "100"),
-        ]),
+        $.div(
+          {
+            class:
+              "flex w-full justify-between text-xs text-base-content/70 px-2",
+          },
+          [
+            $.span({}, "0"),
+            $.span({}, "25"),
+            $.span({}, "50"),
+            $.span({}, "75"),
+            $.span({}, "100"),
+          ],
+        ),
       ]);
     });
 
@@ -255,14 +284,27 @@ export const CustomStep: Story = {
 export const Disabled: Story = {
   render: () => {
     const element = Effect.gen(function* () {
-      return yield* $.div({ class: "flex flex-col gap-2 w-64 opacity-50" }, [
-        $.label({ class: "label" }, [
-          $.span({ class: "label-text" }, "Disabled"),
-        ]),
-        Slider.Root({ defaultValue: 50, disabled: true, class: "range" }, [
-          Slider.Track({ class: "hidden" }, [Slider.Range({})]),
-          Slider.Thumb({ "aria-label": "Value", class: "hidden" }),
-        ]),
+      return yield* $.div({ class: "flex flex-col gap-2 w-64" }, [
+        $.label(
+          { class: "text-sm font-medium text-base-content/50" },
+          "Disabled",
+        ),
+        Slider.Root(
+          {
+            defaultValue: 50,
+            disabled: true,
+            class: `${rootClass} opacity-50 cursor-not-allowed`,
+          },
+          [
+            Slider.Track({ class: `${trackClass} cursor-not-allowed` }, [
+              Slider.Range({ class: rangeClass }),
+            ]),
+            Slider.Thumb({
+              "aria-label": "Value",
+              class: `${thumbClass} cursor-not-allowed`,
+            }),
+          ],
+        ),
       ]);
     });
 
@@ -283,10 +325,8 @@ export const Inverted: Story = {
       const value = yield* Signal.make<SliderValue>(25);
 
       return yield* $.div({ class: "flex flex-col gap-2 w-64" }, [
-        $.div({ class: "flex justify-between" }, [
-          $.label({ class: "label" }, [
-            $.span({ class: "label-text" }, "Inverted (right-to-left)"),
-          ]),
+        $.div({ class: "flex justify-between items-center" }, [
+          $.label({ class: "text-sm font-medium" }, "Inverted (right-to-left)"),
           $.span(
             { class: "badge badge-neutral" },
             value.map((v) => String(v)),
@@ -297,11 +337,16 @@ export const Inverted: Story = {
             value,
             onValueChange: (v) => value.set(v),
             inverted: true,
-            class: "range range-warning",
+            class: rootClass,
           },
           [
-            Slider.Track({ class: "hidden" }, [Slider.Range({})]),
-            Slider.Thumb({ "aria-label": "Value", class: "hidden" }),
+            Slider.Track({ class: trackClass }, [
+              Slider.Range({ class: `${rangeClass} bg-warning` }),
+            ]),
+            Slider.Thumb({
+              "aria-label": "Value",
+              class: thumbClass.replace("bg-primary", "bg-warning"),
+            }),
           ],
         ),
       ]);
@@ -328,10 +373,8 @@ export const MinStepsBetweenThumbs: Story = {
       });
 
       return yield* $.div({ class: "flex flex-col gap-2 w-64" }, [
-        $.div({ class: "flex justify-between" }, [
-          $.label({ class: "label" }, [
-            $.span({ class: "label-text text-sm" }, "Min 10 steps between"),
-          ]),
+        $.div({ class: "flex justify-between items-center" }, [
+          $.label({ class: "text-sm font-medium" }, "Min 10 steps between"),
           $.span({ class: "badge badge-neutral" }, valueDisplay),
         ]),
         Slider.Root(
@@ -339,12 +382,20 @@ export const MinStepsBetweenThumbs: Story = {
             value,
             onValueChange: (v) => value.set(v),
             minStepsBetweenThumbs: 10,
-            class: "range range-info",
+            class: rootClass,
           },
           [
-            Slider.Track({ class: "hidden" }, [Slider.Range({})]),
-            Slider.Thumb({ "aria-label": "Minimum", class: "hidden" }),
-            Slider.Thumb({ "aria-label": "Maximum", class: "hidden" }),
+            Slider.Track({ class: trackClass }, [
+              Slider.Range({ class: `${rangeClass} bg-info` }),
+            ]),
+            Slider.Thumb({
+              "aria-label": "Minimum",
+              class: thumbClass.replace("bg-primary", "bg-info"),
+            }),
+            Slider.Thumb({
+              "aria-label": "Maximum",
+              class: thumbClass.replace("bg-primary", "bg-info"),
+            }),
           ],
         ),
       ]);
@@ -363,56 +414,73 @@ export const MinStepsBetweenThumbs: Story = {
 
 export const Sizes: Story = {
   render: () => {
-    const element = $.div({ class: "flex flex-col gap-4 w-64" }, [
-      $.div({ class: "flex flex-col gap-1" }, [
-        $.span({ class: "text-sm text-base-content/70" }, "Extra Small"),
-        Effect.gen(function* () {
-          return yield* Slider.Root(
-            { defaultValue: 50, class: "range range-xs range-primary" },
+    const element = Effect.gen(function* () {
+      return yield* $.div({ class: "flex flex-col gap-6 w-64" }, [
+        $.div({ class: "flex flex-col gap-2" }, [
+          $.span({ class: "text-sm text-base-content/70" }, "Small"),
+          Slider.Root(
+            {
+              defaultValue: 50,
+              class: "relative flex items-center w-full h-4",
+            },
             [
-              Slider.Track({ class: "hidden" }, [Slider.Range({})]),
-              Slider.Thumb({ "aria-label": "Value", class: "hidden" }),
+              Slider.Track(
+                {
+                  class:
+                    "relative w-full h-1 bg-base-300 rounded-full cursor-pointer",
+                },
+                [
+                  Slider.Range({
+                    class: "absolute h-full bg-primary rounded-full",
+                  }),
+                ],
+              ),
+              Slider.Thumb({
+                "aria-label": "Value",
+                class:
+                  "absolute w-3 h-3 bg-primary rounded-full border-2 border-base-100 shadow cursor-grab -translate-x-1/2",
+              }),
             ],
-          );
-        }),
-      ]),
-      $.div({ class: "flex flex-col gap-1" }, [
-        $.span({ class: "text-sm text-base-content/70" }, "Small"),
-        Effect.gen(function* () {
-          return yield* Slider.Root(
-            { defaultValue: 50, class: "range range-sm range-primary" },
+          ),
+        ]),
+        $.div({ class: "flex flex-col gap-2" }, [
+          $.span({ class: "text-sm text-base-content/70" }, "Medium (default)"),
+          Slider.Root({ defaultValue: 50, class: rootClass }, [
+            Slider.Track({ class: trackClass }, [
+              Slider.Range({ class: rangeClass }),
+            ]),
+            Slider.Thumb({ "aria-label": "Value", class: thumbClass }),
+          ]),
+        ]),
+        $.div({ class: "flex flex-col gap-2" }, [
+          $.span({ class: "text-sm text-base-content/70" }, "Large"),
+          Slider.Root(
+            {
+              defaultValue: 50,
+              class: "relative flex items-center w-full h-8",
+            },
             [
-              Slider.Track({ class: "hidden" }, [Slider.Range({})]),
-              Slider.Thumb({ "aria-label": "Value", class: "hidden" }),
+              Slider.Track(
+                {
+                  class:
+                    "relative w-full h-3 bg-base-300 rounded-full cursor-pointer",
+                },
+                [
+                  Slider.Range({
+                    class: "absolute h-full bg-primary rounded-full",
+                  }),
+                ],
+              ),
+              Slider.Thumb({
+                "aria-label": "Value",
+                class:
+                  "absolute w-7 h-7 bg-primary rounded-full border-2 border-base-100 shadow-md cursor-grab -translate-x-1/2",
+              }),
             ],
-          );
-        }),
-      ]),
-      $.div({ class: "flex flex-col gap-1" }, [
-        $.span({ class: "text-sm text-base-content/70" }, "Medium (default)"),
-        Effect.gen(function* () {
-          return yield* Slider.Root(
-            { defaultValue: 50, class: "range range-md range-primary" },
-            [
-              Slider.Track({ class: "hidden" }, [Slider.Range({})]),
-              Slider.Thumb({ "aria-label": "Value", class: "hidden" }),
-            ],
-          );
-        }),
-      ]),
-      $.div({ class: "flex flex-col gap-1" }, [
-        $.span({ class: "text-sm text-base-content/70" }, "Large"),
-        Effect.gen(function* () {
-          return yield* Slider.Root(
-            { defaultValue: 50, class: "range range-lg range-primary" },
-            [
-              Slider.Track({ class: "hidden" }, [Slider.Range({})]),
-              Slider.Thumb({ "aria-label": "Value", class: "hidden" }),
-            ],
-          );
-        }),
-      ]),
-    ]);
+          ),
+        ]),
+      ]);
+    });
 
     const container = document.createElement("div");
     container.className = "p-4";
@@ -427,80 +495,45 @@ export const Sizes: Story = {
 
 export const Colors: Story = {
   render: () => {
-    const element = $.div({ class: "flex flex-col gap-4 w-64" }, [
-      $.div({ class: "flex flex-col gap-1" }, [
-        $.span({ class: "text-sm" }, "Primary"),
-        Effect.gen(function* () {
-          return yield* Slider.Root(
-            { defaultValue: 60, class: "range range-primary" },
-            [
-              Slider.Track({ class: "hidden" }, [Slider.Range({})]),
-              Slider.Thumb({ "aria-label": "Value", class: "hidden" }),
-            ],
-          );
+    const makeSlider = (color: string) =>
+      Slider.Root({ defaultValue: 60, class: rootClass }, [
+        Slider.Track({ class: trackClass }, [
+          Slider.Range({ class: `absolute h-full bg-${color} rounded-full` }),
+        ]),
+        Slider.Thumb({
+          "aria-label": "Value",
+          class: `absolute w-5 h-5 bg-${color} rounded-full border-2 border-base-100 shadow-md cursor-grab -translate-x-1/2`,
         }),
-      ]),
-      $.div({ class: "flex flex-col gap-1" }, [
-        $.span({ class: "text-sm" }, "Secondary"),
-        Effect.gen(function* () {
-          return yield* Slider.Root(
-            { defaultValue: 60, class: "range range-secondary" },
-            [
-              Slider.Track({ class: "hidden" }, [Slider.Range({})]),
-              Slider.Thumb({ "aria-label": "Value", class: "hidden" }),
-            ],
-          );
-        }),
-      ]),
-      $.div({ class: "flex flex-col gap-1" }, [
-        $.span({ class: "text-sm" }, "Accent"),
-        Effect.gen(function* () {
-          return yield* Slider.Root(
-            { defaultValue: 60, class: "range range-accent" },
-            [
-              Slider.Track({ class: "hidden" }, [Slider.Range({})]),
-              Slider.Thumb({ "aria-label": "Value", class: "hidden" }),
-            ],
-          );
-        }),
-      ]),
-      $.div({ class: "flex flex-col gap-1" }, [
-        $.span({ class: "text-sm text-success" }, "Success"),
-        Effect.gen(function* () {
-          return yield* Slider.Root(
-            { defaultValue: 60, class: "range range-success" },
-            [
-              Slider.Track({ class: "hidden" }, [Slider.Range({})]),
-              Slider.Thumb({ "aria-label": "Value", class: "hidden" }),
-            ],
-          );
-        }),
-      ]),
-      $.div({ class: "flex flex-col gap-1" }, [
-        $.span({ class: "text-sm text-warning" }, "Warning"),
-        Effect.gen(function* () {
-          return yield* Slider.Root(
-            { defaultValue: 60, class: "range range-warning" },
-            [
-              Slider.Track({ class: "hidden" }, [Slider.Range({})]),
-              Slider.Thumb({ "aria-label": "Value", class: "hidden" }),
-            ],
-          );
-        }),
-      ]),
-      $.div({ class: "flex flex-col gap-1" }, [
-        $.span({ class: "text-sm text-error" }, "Error"),
-        Effect.gen(function* () {
-          return yield* Slider.Root(
-            { defaultValue: 60, class: "range range-error" },
-            [
-              Slider.Track({ class: "hidden" }, [Slider.Range({})]),
-              Slider.Thumb({ "aria-label": "Value", class: "hidden" }),
-            ],
-          );
-        }),
-      ]),
-    ]);
+      ]);
+
+    const element = Effect.gen(function* () {
+      return yield* $.div({ class: "flex flex-col gap-4 w-64" }, [
+        $.div({ class: "flex flex-col gap-2" }, [
+          $.span({ class: "text-sm" }, "Primary"),
+          makeSlider("primary"),
+        ]),
+        $.div({ class: "flex flex-col gap-2" }, [
+          $.span({ class: "text-sm" }, "Secondary"),
+          makeSlider("secondary"),
+        ]),
+        $.div({ class: "flex flex-col gap-2" }, [
+          $.span({ class: "text-sm" }, "Accent"),
+          makeSlider("accent"),
+        ]),
+        $.div({ class: "flex flex-col gap-2" }, [
+          $.span({ class: "text-sm text-success" }, "Success"),
+          makeSlider("success"),
+        ]),
+        $.div({ class: "flex flex-col gap-2" }, [
+          $.span({ class: "text-sm text-warning" }, "Warning"),
+          makeSlider("warning"),
+        ]),
+        $.div({ class: "flex flex-col gap-2" }, [
+          $.span({ class: "text-sm text-error" }, "Error"),
+          makeSlider("error"),
+        ]),
+      ]);
+    });
 
     const container = document.createElement("div");
     container.className = "p-4";

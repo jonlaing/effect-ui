@@ -4,9 +4,10 @@ import type { ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
+import { when } from "@effex/dom";
 import { component } from "@effex/dom";
 import { Element } from "@effex/dom";
-import type { SignalSet } from "@effex/dom";
+import type { SignalSet, AnimationOptions } from "@effex/dom";
 
 /**
  * Context shared between TreeView parts.
@@ -220,12 +221,12 @@ const Root = (
         switch (e.key) {
           case "ArrowDown": {
             const nextIndex = Math.min(currentIndex + 1, labels.length - 1);
-            labels[nextIndex]?.focus();
+            labels[nextIndex]?.focus({ preventScroll: true });
             break;
           }
           case "ArrowUp": {
             const prevIndex = Math.max(currentIndex - 1, 0);
-            labels[prevIndex]?.focus();
+            labels[prevIndex]?.focus({ preventScroll: true });
             break;
           }
           case "ArrowRight": {
@@ -243,7 +244,7 @@ const Root = (
               // Move to first child
               const nextIndex = currentIndex + 1;
               if (nextIndex < labels.length) {
-                labels[nextIndex]?.focus();
+                labels[nextIndex]?.focus({ preventScroll: true });
               }
             }
             break;
@@ -266,16 +267,16 @@ const Root = (
               const parentLabel = parentItem?.querySelector(
                 "[data-tree-label]",
               ) as HTMLElement;
-              parentLabel?.focus();
+              parentLabel?.focus({ preventScroll: true });
             }
             break;
           }
           case "Home": {
-            labels[0]?.focus();
+            labels[0]?.focus({ preventScroll: true });
             break;
           }
           case "End": {
-            labels[labels.length - 1]?.focus();
+            labels[labels.length - 1]?.focus({ preventScroll: true });
             break;
           }
           case "Enter": {
@@ -309,7 +310,11 @@ const Root = (
       provide(
         TreeViewCtx,
         ctxValue,
-        provide(TreeViewLevelCtx, levelCtx, children),
+        provide(
+          TreeViewLevelCtx,
+          levelCtx,
+          Array.isArray(children) ? children : [children],
+        ),
       ),
     );
   });
@@ -472,6 +477,8 @@ const ItemLabel = component(
 export interface TreeViewItemContentProps {
   /** Additional class names */
   readonly class?: ClassValue;
+  /** Animation configuration for enter/exit transitions */
+  readonly animate?: AnimationOptions;
 }
 
 /**
@@ -497,14 +504,25 @@ const ItemContent = component(
         expanded ? "open" : "closed",
       );
 
-      return yield* $.div(
-        {
-          role: "group",
-          "data-state": dataState,
-          class: props.class,
-        },
-        provide(TreeViewLevelCtx, newLevelCtx, children ?? []),
+      const contentChildren = provide(
+        TreeViewLevelCtx,
+        newLevelCtx,
+        children ?? [],
       );
+
+      return yield* when(itemCtx.isExpanded, {
+        onTrue: () =>
+          $.div(
+            {
+              role: "group",
+              "data-state": dataState,
+              class: props.class,
+            },
+            contentChildren,
+          ),
+        onFalse: () => $.div({ style: { display: "none" } }),
+        animate: props.animate,
+      });
     }),
 );
 

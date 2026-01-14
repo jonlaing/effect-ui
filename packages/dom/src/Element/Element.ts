@@ -1,4 +1,4 @@
-import { Array, Effect, Scope } from "effect";
+import { Array, Context, Effect, Option, Scope } from "effect";
 import type { Readable, RendererInterface } from "@effex/core";
 import { isReadable, RendererContext } from "@effex/core";
 import {
@@ -24,6 +24,15 @@ import type {
 import { bindElementToRef, type ElementRef } from "./ref.js";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+
+/**
+ * Context for merging props into child elements.
+ * Used by primitives with `asChild` to inject their props into user-provided elements.
+ */
+export class MergePropsCtx extends Context.Tag("MergePropsCtx")<
+  MergePropsCtx,
+  Record<string, unknown>
+>() {}
 
 const applyRef = <K extends keyof HTMLElementTagNameMap>(
   element: HTMLElementTagNameMap[K],
@@ -145,8 +154,22 @@ const createElement = <K extends keyof HTMLElementTagNameMap, E, R>(
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
     const element = yield* renderer.createNode(tagName);
-    yield* applyAttributes(renderer, element, attrs);
-    yield* appendChildren(renderer, element, children);
+
+    // Check for injected props from asChild pattern
+    const mergePropsOption = yield* Effect.serviceOption(MergePropsCtx);
+    const finalAttrs = Option.match(mergePropsOption, {
+      onSome: (mergeProps) =>
+        ({ ...mergeProps, ...attrs }) as HTMLAttributes<K>,
+      onNone: () => attrs,
+    });
+
+    yield* applyAttributes(renderer, element, finalAttrs);
+    // Clear MergePropsCtx for children so they don't inherit injected props
+    yield* Effect.provideService(
+      appendChildren(renderer, element, children),
+      MergePropsCtx,
+      {},
+    );
     return element as HTMLElementTagNameMap[K];
   });
 
@@ -221,9 +244,90 @@ export const option = makeElementFactory("option");
 export const table = makeElementFactory("table");
 export const thead = makeElementFactory("thead");
 export const tbody = makeElementFactory("tbody");
+export const tfoot = makeElementFactory("tfoot");
 export const tr = makeElementFactory("tr");
 export const th = makeElementFactory("th");
 export const td = makeElementFactory("td");
+export const caption = makeElementFactory("caption");
+export const colgroup = makeElementFactory("colgroup");
+export const col = makeElementFactory("col");
+
+// Text content
+export const blockquote = makeElementFactory("blockquote");
+export const cite = makeElementFactory("cite");
+export const q = makeElementFactory("q");
+export const pre = makeElementFactory("pre");
+export const code = makeElementFactory("code");
+export const kbd = makeElementFactory("kbd");
+export const samp = makeElementFactory("samp");
+export const address = makeElementFactory("address");
+export const hr = makeElementFactory("hr");
+export const br = makeElementFactory("br");
+export const figure = makeElementFactory("figure");
+export const figcaption = makeElementFactory("figcaption");
+export const dl = makeElementFactory("dl");
+export const dt = makeElementFactory("dt");
+export const dd = makeElementFactory("dd");
+export const abbr = makeElementFactory("abbr");
+export const dfn = makeElementFactory("dfn");
+export const mark = makeElementFactory("mark");
+export const del = makeElementFactory("del");
+export const ins = makeElementFactory("ins");
+export const s = makeElementFactory("s");
+export const u = makeElementFactory("u");
+export const small = makeElementFactory("small");
+export const strong = makeElementFactory("strong");
+export const em = makeElementFactory("em");
+export const b = makeElementFactory("b");
+export const i = makeElementFactory("i");
+export const sub = makeElementFactory("sub");
+export const sup = makeElementFactory("sup");
+export const time = makeElementFactory("time");
+export const data = makeElementFactory("data");
+export const varEl = makeElementFactory("var");
+export const wbr = makeElementFactory("wbr");
+export const bdi = makeElementFactory("bdi");
+export const bdo = makeElementFactory("bdo");
+export const ruby = makeElementFactory("ruby");
+export const rt = makeElementFactory("rt");
+export const rp = makeElementFactory("rp");
+
+// Interactive elements
+export const details = makeElementFactory("details");
+export const summary = makeElementFactory("summary");
+export const dialog = makeElementFactory("dialog");
+export const menu = makeElementFactory("menu");
+
+// Form elements
+export const fieldset = makeElementFactory("fieldset");
+export const legend = makeElementFactory("legend");
+export const datalist = makeElementFactory("datalist");
+export const optgroup = makeElementFactory("optgroup");
+export const output = makeElementFactory("output");
+export const progress = makeElementFactory("progress");
+export const meter = makeElementFactory("meter");
+
+// Media elements
+export const audio = makeElementFactory("audio");
+export const video = makeElementFactory("video");
+export const source = makeElementFactory("source");
+export const track = makeElementFactory("track");
+export const picture = makeElementFactory("picture");
+export const canvas = makeElementFactory("canvas");
+export const iframe = makeElementFactory("iframe");
+export const embed = makeElementFactory("embed");
+export const objectEl = makeElementFactory("object");
+export const map = makeElementFactory("map");
+export const area = makeElementFactory("area");
+
+// Template and slots
+export const template = makeElementFactory("template");
+export const slot = makeElementFactory("slot");
+
+// Scripting (included for completeness)
+export const noscript = makeElementFactory("noscript");
+export const script = makeElementFactory("script");
+export const style = makeElementFactory("style");
 
 // === SVG Elements ===
 
@@ -278,8 +382,21 @@ const createSVGElement = <K extends keyof SVGElementTagNameMap, E, R>(
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
     const element = yield* renderer.createNode(tagName, SVG_NAMESPACE);
-    yield* applyAttributesSVG(renderer, element, attrs);
-    yield* appendChildren(renderer, element, children);
+
+    // Check for injected props from asChild pattern
+    const mergePropsOption = yield* Effect.serviceOption(MergePropsCtx);
+    const finalAttrs = Option.match(mergePropsOption, {
+      onSome: (mergeProps) => ({ ...mergeProps, ...attrs }) as SVGAttributes<K>,
+      onNone: () => attrs,
+    });
+
+    yield* applyAttributesSVG(renderer, element, finalAttrs);
+    // Clear MergePropsCtx for children so they don't inherit injected props
+    yield* Effect.provideService(
+      appendChildren(renderer, element, children),
+      MergePropsCtx,
+      {},
+    );
     return element as SVGElementTagNameMap[K];
   });
 

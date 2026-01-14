@@ -8,6 +8,7 @@ import { component } from "@effex/dom";
 import { createKeyboardNav } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Element } from "@effex/dom";
+import { mergeProps } from "@effex/dom";
 
 /**
  * Context shared between Accordion parts.
@@ -86,6 +87,7 @@ export interface AccordionRootProps {
   readonly onValueChange?: (
     value: string | string[] | null,
   ) => Effect.Effect<void>;
+  class?: ClassValue;
 }
 
 /**
@@ -174,13 +176,15 @@ const Root = (
 
     const dataDisabled = disabled.map((d) => (d ? "" : undefined));
 
+    const childArray = Array.isArray(children) ? children : [children];
     return yield* $.div(
       {
         "data-state": dataState,
         "data-disabled": dataDisabled,
         "data-orientation": "vertical",
+        class: props.class,
       },
-      provide(AccordionCtx, ctxValue, children),
+      provide(AccordionCtx, ctxValue, childArray),
     );
   });
 
@@ -192,6 +196,7 @@ export interface AccordionItemProps {
   readonly value: string;
   /** Whether this item is disabled */
   readonly disabled?: Readable.Reactive<boolean>;
+  class?: ClassValue;
 }
 
 /**
@@ -241,12 +246,14 @@ const Item = (
     const dataState = isOpen.map((open) => (open ? "open" : "closed"));
     const dataDisabled = disabled.map((d) => (d ? "" : undefined));
 
+    const childArray = Array.isArray(children) ? children : [children];
     return yield* $.div(
       {
         "data-state": dataState,
         "data-disabled": dataDisabled,
+        class: props.class,
       },
-      provide(AccordionItemCtx, itemCtx, children),
+      provide(AccordionItemCtx, itemCtx, childArray),
     );
   });
 
@@ -256,6 +263,8 @@ const Item = (
 export interface AccordionTriggerProps {
   /** Additional class names */
   readonly class?: ClassValue;
+  /** Render as child element instead of default button */
+  readonly asChild?: boolean;
 }
 
 /**
@@ -290,19 +299,27 @@ const Trigger = component(
         open ? "true" : "false",
       );
 
+      const triggerProps = {
+        id: itemCtx.triggerId,
+        "aria-expanded": ariaExpanded,
+        "aria-controls": itemCtx.contentId,
+        "data-state": dataState,
+        "data-disabled": dataDisabled,
+        "data-accordion-trigger": "",
+        onClick: handleClick,
+        onKeyDown: handleKeyDown,
+      };
+
+      if (props.asChild && Effect.isEffect(children)) {
+        return yield* mergeProps(triggerProps, children);
+      }
+
       return yield* $.button(
         {
-          id: itemCtx.triggerId,
+          ...triggerProps,
           class: props.class,
           type: "button",
           disabled: itemCtx.disabled,
-          "aria-expanded": ariaExpanded,
-          "aria-controls": itemCtx.contentId,
-          "data-state": dataState,
-          "data-disabled": dataDisabled,
-          "data-accordion-trigger": "",
-          onClick: handleClick,
-          onKeyDown: handleKeyDown,
         },
         children ?? [],
       );

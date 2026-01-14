@@ -7,6 +7,7 @@ import { provide } from "@effex/dom";
 import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Element } from "@effex/dom";
+import { mergeProps } from "@effex/dom";
 
 /**
  * Context shared between Collapsible parts.
@@ -112,12 +113,13 @@ const Root = (
     const dataState = isOpen.map((open) => (open ? "open" : "closed"));
     const dataDisabled = disabled.map((d) => (d ? "" : undefined));
 
+    const childArray = Array.isArray(children) ? children : [children];
     return yield* $.div(
       {
         "data-state": dataState,
         "data-disabled": dataDisabled,
       },
-      provide(CollapsibleCtx, ctxValue, children),
+      provide(CollapsibleCtx, ctxValue, childArray),
     );
   });
 
@@ -129,6 +131,8 @@ export interface CollapsibleTriggerProps {
   readonly as?: "button" | "div";
   /** Additional class names */
   readonly class?: ClassValue;
+  /** Render as child element instead of default button */
+  readonly asChild?: boolean;
 }
 
 /**
@@ -160,18 +164,26 @@ const Trigger = component(
       const dataDisabled = ctx.disabled.map((d) => (d ? "" : undefined));
       const ariaExpanded = ctx.isOpen.map((open) => (open ? "true" : "false"));
 
+      const triggerProps = {
+        "aria-expanded": ariaExpanded,
+        "aria-controls": ctx.contentId,
+        "data-state": dataState,
+        "data-disabled": dataDisabled,
+        onClick: ctx.toggle,
+      };
+
+      if (props.asChild && Effect.isEffect(children)) {
+        return yield* mergeProps(triggerProps, children);
+      }
+
       if (props.as === "div") {
         return yield* $.div(
           {
+            ...triggerProps,
             class: props.class,
             role: "button",
             tabIndex: ctx.disabled.map((d) => (d ? -1 : 0)),
-            "aria-expanded": ariaExpanded,
-            "aria-controls": ctx.contentId,
-            "data-state": dataState,
-            "data-disabled": dataDisabled,
             onKeyDown: handleKeyDown,
-            onClick: ctx.toggle,
           },
           children ?? [],
         );
@@ -180,14 +192,10 @@ const Trigger = component(
       // Default: button
       return yield* $.button(
         {
+          ...triggerProps,
           class: props.class,
           type: "button",
           disabled: ctx.disabled,
-          "aria-expanded": ariaExpanded,
-          "aria-controls": ctx.contentId,
-          "data-state": dataState,
-          "data-disabled": dataDisabled,
-          onClick: ctx.toggle,
         },
         children ?? [],
       );

@@ -202,7 +202,7 @@ const Root = (
         class: props.class,
         onKeyDown: handleKeyDown,
       },
-      provide(ToolbarCtx, ctx, children),
+      provide(ToolbarCtx, ctx, Array.isArray(children) ? children : [children]),
     );
   });
 
@@ -459,13 +459,14 @@ const ToggleGroup = (
       isSelected,
     };
 
+    const childArray = Array.isArray(children) ? children : [children];
     return yield* $.div(
       {
         role: "group",
         "aria-label": props["aria-label"],
         class: props.class,
       },
-      provide(ToolbarToggleGroupCtx, groupCtx, children),
+      provide(ToolbarToggleGroupCtx, groupCtx, childArray),
     );
   });
 

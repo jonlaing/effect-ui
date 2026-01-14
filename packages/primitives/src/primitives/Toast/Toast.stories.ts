@@ -54,12 +54,24 @@ export const Default: Story = {
 
       yield* Toast.Viewport(
         { class: "toast toast-end" },
-        Toast.Root({ class: "alert shadow-lg" }, [
-          Toast.Title({ class: "font-bold" }),
-          Toast.Description({ class: "text-sm" }),
-          Toast.Action({ class: "btn btn-sm btn-ghost" }),
-          Toast.Close({ class: "btn btn-sm btn-circle btn-ghost" }),
-        ]),
+        Toast.Root(
+          {
+            class: [
+              "alert shadow-lg",
+              "data-[type=default]:alert-neutral",
+              "data-[type=success]:alert-success",
+              "data-[type=error]:alert-error",
+              "data-[type=warning]:alert-warning",
+              "data-[type=info]:alert-info",
+            ],
+          },
+          [
+            Toast.Title({ class: "font-bold" }),
+            Toast.Description({ class: "text-sm" }),
+            Toast.Action({ class: "btn btn-sm btn-ghost" }),
+            Toast.Close({ class: "btn btn-sm btn-circle btn-ghost" }),
+          ],
+        ),
       );
 
       const container = document.createElement("div");
@@ -130,12 +142,24 @@ export const AllTypes: Story = {
 
       yield* Toast.Viewport(
         { class: "toast toast-end" },
-        Toast.Root({ class: "alert shadow-lg" }, [
-          Toast.Title({ class: "font-bold" }),
-          Toast.Description({ class: "text-sm" }),
-          Toast.Action({ class: "btn btn-sm btn-ghost" }),
-          Toast.Close({ class: "btn btn-sm btn-circle btn-ghost" }),
-        ]),
+        Toast.Root(
+          {
+            class: [
+              "alert shadow-lg",
+              "data-[type=default]:alert-neutral",
+              "data-[type=success]:alert-success",
+              "data-[type=error]:alert-error",
+              "data-[type=warning]:alert-warning",
+              "data-[type=info]:alert-info",
+            ],
+          },
+          [
+            Toast.Title({ class: "font-bold" }),
+            Toast.Description({ class: "text-sm" }),
+            Toast.Action({ class: "btn btn-sm btn-ghost" }),
+            Toast.Close({ class: "btn btn-sm btn-circle btn-ghost" }),
+          ],
+        ),
       );
 
       const container = document.createElement("div");
@@ -185,12 +209,24 @@ export const WithAction: Story = {
 
       yield* Toast.Viewport(
         { class: "toast toast-end" },
-        Toast.Root({ class: "alert shadow-lg" }, [
-          Toast.Title({ class: "font-bold" }),
-          Toast.Description({ class: "text-sm" }),
-          Toast.Action({ class: "btn btn-sm btn-ghost" }),
-          Toast.Close({ class: "btn btn-sm btn-circle btn-ghost" }),
-        ]),
+        Toast.Root(
+          {
+            class: [
+              "alert shadow-lg",
+              "data-[type=default]:alert-neutral",
+              "data-[type=success]:alert-success",
+              "data-[type=error]:alert-error",
+              "data-[type=warning]:alert-warning",
+              "data-[type=info]:alert-info",
+            ],
+          },
+          [
+            Toast.Title({ class: "font-bold" }),
+            Toast.Description({ class: "text-sm" }),
+            Toast.Action({ class: "btn btn-sm btn-ghost" }),
+            Toast.Close({ class: "btn btn-sm btn-circle btn-ghost" }),
+          ],
+        ),
       );
 
       const container = document.createElement("div");
@@ -234,12 +270,24 @@ export const Persistent: Story = {
 
       yield* Toast.Viewport(
         { class: "toast toast-end" },
-        Toast.Root({ class: "alert shadow-lg" }, [
-          Toast.Title({ class: "font-bold" }),
-          Toast.Description({ class: "text-sm" }),
-          Toast.Action({ class: "btn btn-sm btn-ghost" }),
-          Toast.Close({ class: "btn btn-sm btn-circle btn-ghost" }),
-        ]),
+        Toast.Root(
+          {
+            class: [
+              "alert shadow-lg",
+              "data-[type=default]:alert-neutral",
+              "data-[type=success]:alert-success",
+              "data-[type=error]:alert-error",
+              "data-[type=warning]:alert-warning",
+              "data-[type=info]:alert-info",
+            ],
+          },
+          [
+            Toast.Title({ class: "font-bold" }),
+            Toast.Description({ class: "text-sm" }),
+            Toast.Action({ class: "btn btn-sm btn-ghost" }),
+            Toast.Close({ class: "btn btn-sm btn-circle btn-ghost" }),
+          ],
+        ),
       );
 
       const container = document.createElement("div");
@@ -291,12 +339,24 @@ export const MultipleToasts: Story = {
 
       yield* Toast.Viewport(
         { class: "toast toast-end" },
-        Toast.Root({ class: "alert shadow-lg" }, [
-          Toast.Title({ class: "font-bold" }),
-          Toast.Description({ class: "text-sm" }),
-          Toast.Action({ class: "btn btn-sm btn-ghost" }),
-          Toast.Close({ class: "btn btn-sm btn-circle btn-ghost" }),
-        ]),
+        Toast.Root(
+          {
+            class: [
+              "alert shadow-lg",
+              "data-[type=default]:alert-neutral",
+              "data-[type=success]:alert-success",
+              "data-[type=error]:alert-error",
+              "data-[type=warning]:alert-warning",
+              "data-[type=info]:alert-info",
+            ],
+          },
+          [
+            Toast.Title({ class: "font-bold" }),
+            Toast.Description({ class: "text-sm" }),
+            Toast.Action({ class: "btn btn-sm btn-ghost" }),
+            Toast.Close({ class: "btn btn-sm btn-circle btn-ghost" }),
+          ],
+        ),
       );
 
       const container = document.createElement("div");
@@ -310,6 +370,84 @@ export const MultipleToasts: Story = {
       { position: args.position, maxVisible: 5 },
       app,
     );
+
+    const container = document.createElement("div");
+    renderEffectAsync(wrapped).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
+  },
+};
+
+export const WithAnimations: Story = {
+  render: (args) => {
+    const app = Effect.gen(function* () {
+      const ctx = yield* ToastCtx;
+
+      const showSuccess = () =>
+        ctx.add({
+          title: "Animated Toast",
+          description: "This toast has enter and exit animations.",
+          type: "success",
+        });
+
+      const showInfo = () =>
+        ctx.add({
+          title: "Information",
+          description: "Watch the slide animations!",
+          type: "info",
+        });
+
+      const showWarning = () =>
+        ctx.add({
+          title: "Warning",
+          description: "Careful with this one!",
+          type: "warning",
+        });
+
+      const buttons = yield* $.div({ class: "flex gap-2" }, [
+        $.button({ class: "btn btn-success", onClick: showSuccess }, "Success"),
+        $.button({ class: "btn btn-info", onClick: showInfo }, "Info"),
+        $.button({ class: "btn btn-warning", onClick: showWarning }, "Warning"),
+      ]);
+
+      yield* Toast.Viewport(
+        {
+          class: "toast toast-end",
+          animate: {
+            enterTo: "animate-in slide-in-from-right fade-in",
+            exit: "animate-out slide-out-to-right fade-out",
+          },
+        },
+        Toast.Root(
+          {
+            class: [
+              "alert shadow-lg",
+              "data-[type=default]:alert-neutral",
+              "data-[type=success]:alert-success",
+              "data-[type=error]:alert-error",
+              "data-[type=warning]:alert-warning",
+              "data-[type=info]:alert-info",
+            ],
+          },
+          [
+            Toast.Title({ class: "font-bold" }),
+            Toast.Description({ class: "text-sm" }),
+            Toast.Action({ class: "btn btn-sm btn-ghost" }),
+            Toast.Close({ class: "btn btn-sm btn-circle btn-ghost" }),
+          ],
+        ),
+      );
+
+      const container = document.createElement("div");
+      container.className = "p-4";
+      container.appendChild(buttons);
+
+      return container;
+    });
+
+    const wrapped = Toast.Provider({ position: args.position }, app);
 
     const container = document.createElement("div");
     renderEffectAsync(wrapped).then((el) => {

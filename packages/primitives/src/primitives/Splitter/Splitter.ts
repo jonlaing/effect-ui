@@ -427,7 +427,11 @@ const Root = (
           flexDirection: orientation === "horizontal" ? "row" : "column",
         },
       },
-      provide(SplitterCtx, ctx, children),
+      provide(
+        SplitterCtx,
+        ctx,
+        Array.isArray(children) ? children : [children],
+      ),
     );
   });
 
@@ -487,7 +491,11 @@ const Panel = component(
           class: props.class,
           style: panelStyle,
         },
-        provide(SplitterPanelCtx, panelCtx, children ?? []),
+        provide(
+          SplitterPanelCtx,
+          panelCtx,
+          children ? (Array.isArray(children) ? children : [children]) : [],
+        ),
       );
     }),
 );

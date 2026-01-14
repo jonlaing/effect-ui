@@ -32,6 +32,10 @@ const meta: Meta<ProgressStoryArgs> = {
 export default meta;
 type Story = StoryObj<ProgressStoryArgs>;
 
+// Base styles for the progress track and indicator
+const trackClass = "h-2 w-full bg-base-300 rounded-full overflow-hidden";
+const indicatorBase = "h-full w-full transition-transform duration-200";
+
 export const Default: Story = {
   render: (args) => {
     const element = Effect.gen(function* () {
@@ -44,9 +48,9 @@ export const Default: Story = {
           {
             value: args.value,
             max: args.max,
-            class: "progress progress-primary",
+            class: trackClass,
           },
-          [Progress.Indicator({})],
+          [Progress.Indicator({ class: `${indicatorBase} bg-primary` })],
         ),
       ]);
     });
@@ -66,8 +70,10 @@ export const Indeterminate: Story = {
     const element = Effect.gen(function* () {
       return yield* $.div({ class: "flex flex-col gap-2 w-64" }, [
         $.span({ class: "text-sm" }, "Loading..."),
-        Progress.Root({ value: null, class: "progress" }, [
-          Progress.Indicator({}),
+        Progress.Root({ value: null, class: trackClass }, [
+          Progress.Indicator({
+            class: `${indicatorBase} bg-primary animate-pulse`,
+          }),
         ]),
       ]);
     });
@@ -90,10 +96,9 @@ export const Complete: Story = {
           $.span({ class: "text-success" }, "Complete!"),
           $.span({ class: "text-base-content/70" }, "100%"),
         ]),
-        Progress.Root(
-          { value: 100, max: 100, class: "progress progress-success" },
-          [Progress.Indicator({})],
-        ),
+        Progress.Root({ value: 100, max: 100, class: trackClass }, [
+          Progress.Indicator({ class: `${indicatorBase} bg-success` }),
+        ]),
       ]);
     });
 
@@ -113,38 +118,38 @@ export const Colors: Story = {
       return yield* $.div({ class: "flex flex-col gap-4 w-64" }, [
         $.div({ class: "flex flex-col gap-1" }, [
           $.span({ class: "text-sm" }, "Primary"),
-          Progress.Root({ value: 60, class: "progress progress-primary" }, [
-            Progress.Indicator({}),
+          Progress.Root({ value: 60, class: trackClass }, [
+            Progress.Indicator({ class: `${indicatorBase} bg-primary` }),
           ]),
         ]),
         $.div({ class: "flex flex-col gap-1" }, [
           $.span({ class: "text-sm" }, "Secondary"),
-          Progress.Root({ value: 60, class: "progress progress-secondary" }, [
-            Progress.Indicator({}),
+          Progress.Root({ value: 60, class: trackClass }, [
+            Progress.Indicator({ class: `${indicatorBase} bg-secondary` }),
           ]),
         ]),
         $.div({ class: "flex flex-col gap-1" }, [
           $.span({ class: "text-sm" }, "Accent"),
-          Progress.Root({ value: 60, class: "progress progress-accent" }, [
-            Progress.Indicator({}),
+          Progress.Root({ value: 60, class: trackClass }, [
+            Progress.Indicator({ class: `${indicatorBase} bg-accent` }),
           ]),
         ]),
         $.div({ class: "flex flex-col gap-1" }, [
           $.span({ class: "text-sm text-success" }, "Success"),
-          Progress.Root({ value: 60, class: "progress progress-success" }, [
-            Progress.Indicator({}),
+          Progress.Root({ value: 60, class: trackClass }, [
+            Progress.Indicator({ class: `${indicatorBase} bg-success` }),
           ]),
         ]),
         $.div({ class: "flex flex-col gap-1" }, [
           $.span({ class: "text-sm text-warning" }, "Warning"),
-          Progress.Root({ value: 60, class: "progress progress-warning" }, [
-            Progress.Indicator({}),
+          Progress.Root({ value: 60, class: trackClass }, [
+            Progress.Indicator({ class: `${indicatorBase} bg-warning` }),
           ]),
         ]),
         $.div({ class: "flex flex-col gap-1" }, [
           $.span({ class: "text-sm text-error" }, "Error"),
-          Progress.Root({ value: 60, class: "progress progress-error" }, [
-            Progress.Indicator({}),
+          Progress.Root({ value: 60, class: trackClass }, [
+            Progress.Indicator({ class: `${indicatorBase} bg-error` }),
           ]),
         ]),
       ]);
@@ -172,10 +177,10 @@ export const CustomValueLabel: Story = {
           {
             value: 3,
             max: 5,
-            class: "progress progress-info",
+            class: trackClass,
             getValueLabel: (value, max) => `${value} of ${max} steps completed`,
           },
-          [Progress.Indicator({})],
+          [Progress.Indicator({ class: `${indicatorBase} bg-info` })],
         ),
       ]);
     });
@@ -215,8 +220,61 @@ export const Animated: Story = {
           $.span({}, "Animated Progress"),
           $.span({ class: "text-base-content/70" }, valueText),
         ]),
-        Progress.Root({ value: progress, class: "progress progress-primary" }, [
-          Progress.Indicator({}),
+        Progress.Root({ value: progress, class: trackClass }, [
+          Progress.Indicator({ class: `${indicatorBase} bg-primary` }),
+        ]),
+      ]);
+    });
+
+    const container = document.createElement("div");
+    container.className = "p-4";
+    renderEffectAsync(element).then((el) => {
+      container.appendChild(el);
+    });
+
+    return container;
+  },
+};
+
+export const Sizes: Story = {
+  render: () => {
+    const element = Effect.gen(function* () {
+      return yield* $.div({ class: "flex flex-col gap-4 w-64" }, [
+        $.div({ class: "flex flex-col gap-1" }, [
+          $.span({ class: "text-sm" }, "Extra Small (h-1)"),
+          Progress.Root(
+            {
+              value: 60,
+              class: "h-1 w-full bg-base-300 rounded-full overflow-hidden",
+            },
+            [Progress.Indicator({ class: `${indicatorBase} bg-primary` })],
+          ),
+        ]),
+        $.div({ class: "flex flex-col gap-1" }, [
+          $.span({ class: "text-sm" }, "Small (h-2)"),
+          Progress.Root({ value: 60, class: trackClass }, [
+            Progress.Indicator({ class: `${indicatorBase} bg-primary` }),
+          ]),
+        ]),
+        $.div({ class: "flex flex-col gap-1" }, [
+          $.span({ class: "text-sm" }, "Medium (h-3)"),
+          Progress.Root(
+            {
+              value: 60,
+              class: "h-3 w-full bg-base-300 rounded-full overflow-hidden",
+            },
+            [Progress.Indicator({ class: `${indicatorBase} bg-primary` })],
+          ),
+        ]),
+        $.div({ class: "flex flex-col gap-1" }, [
+          $.span({ class: "text-sm" }, "Large (h-4)"),
+          Progress.Root(
+            {
+              value: 60,
+              class: "h-4 w-full bg-base-300 rounded-full overflow-hidden",
+            },
+            [Progress.Indicator({ class: `${indicatorBase} bg-primary` })],
+          ),
         ]),
       ]);
     });

@@ -5,8 +5,6 @@ import { Derived } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { component } from "@effex/dom";
-import { Element } from "@effex/dom";
-import type { Child } from "@effex/dom";
 
 export type ProgressState = "loading" | "complete" | "indeterminate";
 
@@ -35,10 +33,7 @@ export interface ProgressRootProps {
   readonly class?: ClassValue;
 }
 
-const Root = (
-  props: ProgressRootProps,
-  children: Child<never, ProgressCtx> | readonly Child<never, ProgressCtx>[],
-): Element.Element =>
+const Root = component("ProgressRoot", (props: ProgressRootProps, children) =>
   Effect.gen(function* () {
     const max = props.max ?? 100;
 
@@ -95,9 +90,14 @@ const Root = (
         "data-value": dataValue,
         "data-max": String(max),
       },
-      provide(ProgressCtx, ctx, children),
+      provide(
+        ProgressCtx,
+        ctx,
+        Array.isArray(children) ? children : [children],
+      ),
     );
-  });
+  }),
+);
 
 export interface ProgressIndicatorProps {
   /** Additional class names */

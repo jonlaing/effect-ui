@@ -77,19 +77,19 @@ export const handleMenuArrowNavigation = (
   switch (event.key) {
     case "ArrowDown":
       event.preventDefault();
-      items[nextIndex]?.focus();
+      items[nextIndex]?.focus({ preventScroll: true });
       return true;
     case "ArrowUp":
       event.preventDefault();
-      items[prevIndex]?.focus();
+      items[prevIndex]?.focus({ preventScroll: true });
       return true;
     case "Home":
       event.preventDefault();
-      items[0]?.focus();
+      items[0]?.focus({ preventScroll: true });
       return true;
     case "End":
       event.preventDefault();
-      items[items.length - 1]?.focus();
+      items[items.length - 1]?.focus({ preventScroll: true });
       return true;
     default:
       return false;

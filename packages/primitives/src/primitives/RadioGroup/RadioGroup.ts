@@ -144,7 +144,11 @@ const Root = (
         "data-disabled": dataDisabled,
         onKeyDown: handleKeyDown,
       },
-      provide(RadioGroupCtx, ctx, children),
+      provide(
+        RadioGroupCtx,
+        ctx,
+        Array.isArray(children) ? children : [children],
+      ),
     );
   });
 

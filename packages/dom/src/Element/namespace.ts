@@ -343,7 +343,7 @@ export const Element = {
       property: string,
     ): Effect.Effect<A, E, R> =>
       Effect.tap(self, (el) =>
-        Effect.sync(() => el.style.removeProperty(property)),
+        Effect.sync(() => el.style.removeProperty(toKebabCase(property))),
       ),
   ),
 
@@ -845,7 +845,7 @@ export const Element = {
   // ===========================================================================
 
   /**
-   * Focus an element.
+   * Focus an element without scrolling.
    *
    * @example
    * ```ts
@@ -855,7 +855,9 @@ export const Element = {
   focus: <A extends HTMLElement, E, R>(
     self: Effect.Effect<A, E, R>,
   ): Effect.Effect<A, E, R> =>
-    Effect.tap(self, (el) => Effect.sync(() => el.focus())),
+    Effect.tap(self, (el) =>
+      Effect.sync(() => el.focus({ preventScroll: true })),
+    ),
 
   /**
    * Focus an element with options.
@@ -926,9 +928,9 @@ export const Element = {
         Effect.sync(() => {
           const first = el.querySelector(selector) as HTMLElement | null;
           if (first) {
-            first.focus();
+            first.focus({ preventScroll: true });
           } else {
-            el.focus();
+            el.focus({ preventScroll: true });
           }
         }),
       ),
@@ -963,9 +965,9 @@ export const Element = {
           const items = el.querySelectorAll(selector);
           const last = items[items.length - 1] as HTMLElement | undefined;
           if (last) {
-            last.focus();
+            last.focus({ preventScroll: true });
           } else {
-            el.focus();
+            el.focus({ preventScroll: true });
           }
         }),
       ),

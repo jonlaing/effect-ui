@@ -256,9 +256,10 @@ const Root = (
       loop,
     };
 
+    const childArray = Array.isArray(children) ? children : [children];
     return yield* $.div(
       { style: { display: "contents" } },
-      provide(ComboboxCtx, ctx, children),
+      provide(ComboboxCtx, ctx, childArray),
     );
   });
 
@@ -678,7 +679,11 @@ const Item = (
             onClick: handleClick,
             onMouseEnter: handleMouseEnter,
           },
-          provide(ComboboxItemCtx, itemCtx, children),
+          provide(
+            ComboboxItemCtx,
+            itemCtx,
+            Array.isArray(children) ? children : [children],
+          ),
         ),
       onFalse: () => $.div({ style: { display: "none" } }),
       animate: props.animate,

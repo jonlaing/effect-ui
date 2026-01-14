@@ -82,13 +82,13 @@ export const FocusTrap = {
           // Shift+Tab: if on first element, wrap to last
           if (document.activeElement === firstElement) {
             event.preventDefault();
-            lastElement.focus();
+            lastElement.focus({ preventScroll: true });
           }
         } else {
           // Tab: if on last element, wrap to first
           if (document.activeElement === lastElement) {
             event.preventDefault();
-            firstElement.focus();
+            firstElement.focus({ preventScroll: true });
           }
         }
       };
@@ -99,7 +99,7 @@ export const FocusTrap = {
           event.stopPropagation();
           const focusableElements = getFocusableElements(container);
           if (focusableElements.length > 0) {
-            focusableElements[0].focus();
+            focusableElements[0].focus({ preventScroll: true });
           }
         }
       };
@@ -111,13 +111,13 @@ export const FocusTrap = {
       // Focus initial element
       const focusableElements = getFocusableElements(container);
       if (initialFocus && container.contains(initialFocus)) {
-        initialFocus.focus();
+        initialFocus.focus({ preventScroll: true });
       } else if (focusableElements.length > 0) {
-        focusableElements[0].focus();
+        focusableElements[0].focus({ preventScroll: true });
       } else {
         // If no focusable elements, focus the container itself
         container.setAttribute("tabindex", "-1");
-        container.focus();
+        container.focus({ preventScroll: true });
       }
 
       // Cleanup when scope closes
@@ -132,7 +132,7 @@ export const FocusTrap = {
             previouslyFocused !== document.body &&
             document.body.contains(previouslyFocused)
           ) {
-            previouslyFocused.focus();
+            previouslyFocused.focus({ preventScroll: true });
           }
         }),
       );

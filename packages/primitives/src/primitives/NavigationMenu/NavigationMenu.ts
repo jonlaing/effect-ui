@@ -192,6 +192,7 @@ const Root = (
       triggerRefs,
     };
 
+    const childArray = Array.isArray(children) ? children : [children];
     return yield* $.nav(
       {
         class: props.class,
@@ -199,7 +200,7 @@ const Root = (
         "data-navigationmenu-root": "",
         "data-orientation": orientation,
       },
-      provide(NavigationMenuCtx, ctx, children),
+      provide(NavigationMenuCtx, ctx, childArray),
     );
   });
 
@@ -363,7 +364,7 @@ const Trigger = component(
               const focusable = content.querySelector<HTMLElement>(
                 'a, button, input, [tabindex]:not([tabindex="-1"])',
               );
-              focusable?.focus();
+              focusable?.focus({ preventScroll: true });
             }
           }
         });

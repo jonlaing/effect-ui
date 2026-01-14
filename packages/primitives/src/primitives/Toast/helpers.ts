@@ -126,15 +126,6 @@ export const getSwipeDirection = (position: ToastPosition): SwipeDirection => {
   return "right";
 };
 
-/**
- * Get the exit animation CSS class based on toast position.
- */
-export const getExitAnimationClass = (position: ToastPosition): string => {
-  if (position.includes("left")) return "toast-exit-left";
-  if (position.startsWith("top")) return "toast-exit-top";
-  return "toast-exit";
-};
-
 // ============================================================================
 // Swipe Detection
 // ============================================================================

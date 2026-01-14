@@ -8,6 +8,7 @@ import { when } from "@effex/dom";
 import { component } from "@effex/dom";
 import { createKeyboardNav } from "@effex/dom";
 import { Element } from "@effex/dom";
+import { mergeProps } from "@effex/dom";
 import type { AnimationOptions } from "@effex/dom";
 
 /**
@@ -99,9 +100,10 @@ const Root = (
       activationMode,
     };
 
+    const childArray = Array.isArray(children) ? children : [children];
     return yield* $.div(
       { "data-orientation": orientation },
-      provide(TabsCtx, ctx, children),
+      provide(TabsCtx, ctx, childArray),
     );
   });
 
@@ -172,6 +174,8 @@ export interface TabsTriggerProps {
   readonly class?: ClassValue;
   /** Whether this tab is disabled */
   readonly disabled?: Readable.Reactive<boolean>;
+  /** Render as child element instead of default button */
+  readonly asChild?: boolean;
 }
 
 /**
@@ -197,21 +201,29 @@ const Trigger = component("TabsTrigger", (props: TabsTriggerProps, children) =>
 
     const handleClick = () => ctx.setValue(props.value);
 
+    const triggerProps = {
+      id: `tabs-trigger-${props.value}`,
+      role: "tab" as const,
+      tabIndex,
+      "aria-selected": ariaSelected,
+      "aria-controls": `tabs-content-${props.value}`,
+      "data-state": dataState,
+      "data-value": props.value,
+      "data-disabled": dataDisabled,
+      "data-tabs-trigger": "",
+      onClick: handleClick,
+    };
+
+    if (props.asChild && Effect.isEffect(children)) {
+      return yield* mergeProps(triggerProps, children);
+    }
+
     return yield* $.button(
       {
-        id: `tabs-trigger-${props.value}`,
+        ...triggerProps,
         class: props.class,
         type: "button",
-        role: "tab",
         disabled,
-        tabIndex,
-        "aria-selected": ariaSelected,
-        "aria-controls": `tabs-content-${props.value}`,
-        "data-state": dataState,
-        "data-value": props.value,
-        "data-disabled": dataDisabled,
-        "data-tabs-trigger": "",
-        onClick: handleClick,
       },
       children ?? [],
     );

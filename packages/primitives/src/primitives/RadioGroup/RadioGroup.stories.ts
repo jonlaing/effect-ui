@@ -153,7 +153,7 @@ export const WithDisabledItem: Story = {
             [
               RadioGroup.Item({
                 value: "option2",
-                class: "radio",
+                class: "radio radio-primary",
                 disabled: true,
               }),
               $.span({ class: "label-text" }, "Option 2 (Disabled)"),

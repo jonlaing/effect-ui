@@ -1,6 +1,6 @@
 import { Context, Effect } from "effect";
 import { Signal } from "@effex/dom";
-import type { ClassValue } from "@effex/dom";
+import type { ClassValue, SignalMap } from "@effex/dom";
 import { Derived } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
@@ -11,6 +11,7 @@ import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
 import { onClickOutside, createKeyboardNav } from "@effex/dom";
 import { Element, type ElementRef } from "@effex/dom";
+import { mergeProps } from "@effex/dom";
 import type { AnimationOptions } from "@effex/dom";
 import { calculatePosition } from "../helpers";
 
@@ -36,7 +37,7 @@ export interface SelectContext {
     textValue: string,
   ) => Effect.Effect<void>;
   /** Map of value to display text */
-  readonly valueLabels: Signal<Map<string, string>>;
+  readonly valueLabels: SignalMap<string, string>;
   /** Reference to the trigger element */
   readonly triggerRef: ElementRef<HTMLButtonElement>;
   /** Reference to the content element */
@@ -142,7 +143,7 @@ const Root = (
       props.defaultValue ?? "",
     );
 
-    const valueLabels = yield* Signal.make<Map<string, string>>(new Map());
+    const valueLabels = yield* Signal.Map.make<string, string>([]);
     const triggerRef = yield* Element.ref<HTMLButtonElement>();
     const contentRef = yield* Element.ref<HTMLDivElement>();
     const contentId = yield* UniqueId.make("select-content");
@@ -150,12 +151,12 @@ const Root = (
 
     const setOpenState = (newValue: boolean) =>
       Effect.gen(function* () {
-        yield* isOpen.set(newValue);
-        yield* props.onOpenChange?.(newValue) ?? Effect.void;
-        if (!newValue) {
+        if ((yield* isOpen.get) && !newValue) {
           // Return focus to trigger when closing
           yield* triggerRef.pipe(Element.focus, Effect.ignore);
         }
+        yield* isOpen.set(newValue);
+        yield* props.onOpenChange?.(newValue) ?? Effect.void;
       });
 
     const selectValue = (newValue: string) =>
@@ -167,10 +168,7 @@ const Root = (
 
     const registerItem = (itemValue: string, textValue: string) =>
       Effect.gen(function* () {
-        const currentMap = yield* valueLabels.get;
-        const newMap = new Map(currentMap);
-        newMap.set(itemValue, textValue);
-        yield* valueLabels.set(newMap);
+        yield* valueLabels.set(itemValue, textValue);
       });
 
     const disabled = Readable.of(props.disabled ?? false);
@@ -197,9 +195,10 @@ const Root = (
       placeholder,
     };
 
+    const childArray = Array.isArray(children) ? children : [children];
     return yield* $.div(
       { style: { display: "contents" } },
-      provide(SelectCtx, ctx, children),
+      provide(SelectCtx, ctx, childArray),
     );
   });
 
@@ -209,6 +208,8 @@ const Root = (
 export interface SelectTriggerProps {
   /** Additional class names */
   readonly class?: ClassValue;
+  /** Render as child element instead of default button */
+  readonly asChild?: boolean;
 }
 
 /**
@@ -246,22 +247,30 @@ const Trigger = component(
           }
         });
 
+      const triggerProps = {
+        ref: ctx.triggerRef,
+        id: ctx.triggerId,
+        role: "combobox" as const,
+        "aria-haspopup": "listbox" as const,
+        "aria-expanded": ariaExpanded,
+        "aria-controls": ctx.contentId,
+        "data-state": dataState,
+        "data-disabled": dataDisabled,
+        "data-select-trigger": "",
+        onClick: ctx.toggle,
+        onKeyDown: handleKeyDown,
+      };
+
+      if (props.asChild && Effect.isEffect(children)) {
+        return yield* mergeProps(triggerProps, children);
+      }
+
       return yield* $.button(
         {
-          ref: ctx.triggerRef,
-          id: ctx.triggerId,
+          ...triggerProps,
           class: props.class,
           type: "button",
-          role: "combobox",
-          "aria-haspopup": "listbox",
-          "aria-expanded": ariaExpanded,
-          "aria-controls": ctx.contentId,
-          "data-state": dataState,
-          "data-disabled": dataDisabled,
-          "data-select-trigger": "",
           disabled: ctx.disabled,
-          onClick: ctx.toggle,
-          onKeyDown: handleKeyDown,
         },
         children ?? [],
       );
@@ -297,7 +306,7 @@ const Value = component("SelectValue", (props: SelectValueProps) =>
 
     // Combine value, valueLabels, and placeholder to get display text
     const displayText = yield* Derived.sync(
-      [ctx.value, ctx.valueLabels, placeholderProp] as const,
+      [ctx.value, ctx.valueLabels.readable, placeholderProp] as const,
       ([v, labels, placeholder]) => {
         if (!v) return placeholder;
         return labels.get(v) ?? v;
@@ -391,39 +400,38 @@ const Content = component(
         });
 
       // Helper to position the content relative to trigger
-      const setPosition = (el: Effect.Effect<HTMLElement>) =>
+      const setPosition = <E, R>(el: Effect.Effect<HTMLElement, E, R>) =>
         Effect.gen(function* () {
           const currentSide = yield* side.get;
           const currentAlign = yield* align.get;
           const currentSideOffset = yield* sideOffset.get;
 
-          const positionStyle = yield* ctx.triggerRef.pipe(
+          const contentRect = yield* el.pipe(Element.getBoundingClientRect);
+          const anchorRect = yield* ctx.triggerRef.pipe(
             Element.getBoundingClientRect,
-            Effect.map((anchorRect) => {
-              const { top, left } = calculatePosition(
-                anchorRect,
-                currentSide,
-                currentAlign,
-                currentSideOffset,
-                0,
-                0,
-                0,
-              );
-
-              return {
-                top: `${top}px`,
-                left: `${left}px`,
-                minWidth: `${anchorRect.width}px`,
-                opacity: "",
-                animation: "none",
-              };
-            }),
           );
+
+          const { top, left } = calculatePosition(
+            anchorRect,
+            currentSide,
+            currentAlign,
+            currentSideOffset,
+            0,
+            contentRect.width,
+            contentRect.height,
+          );
+
+          const positionStyle = {
+            top: `${top}px`,
+            left: `${left}px`,
+            minWidth: `${anchorRect.width}px`,
+            opacity: "",
+            animation: "none",
+          };
 
           return yield* el.pipe(Element.setStyles(positionStyle));
         });
 
-      // Portal is always rendered, but the content inside uses `when` for animations.
       return yield* Portal(() =>
         when(ctx.isOpen, {
           onTrue: () =>
@@ -446,11 +454,19 @@ const Content = component(
               },
               children ?? [],
             ),
-          onFalse: () => $.div({ style: { display: "none" } }),
+          // Render children hidden so ItemText can register display values
+          onFalse: () => $.div({ style: { display: "none" } }, children ?? []),
           animate: props.animate
             ? {
                 ...props.animate,
-                onBeforeEnter: (el) => el.pipe(setPosition, Effect.ignore),
+                onBeforeEnter: (el) =>
+                  el.pipe(
+                    setPosition,
+                    Element.tapEffect(
+                      () => props.animate?.onBeforeEnter?.(el) ?? Effect.void,
+                    ),
+                    Effect.ignore,
+                  ),
                 onEnter: (el) =>
                   el.pipe(
                     Element.setStyles({ animation: "" }),
@@ -560,7 +576,11 @@ const Item = (
         tabIndex,
         onClick: handleClick,
       },
-      provide(SelectItemCtx, itemCtx, children),
+      provide(
+        SelectItemCtx,
+        itemCtx,
+        Array.isArray(children) ? children : [children],
+      ),
     );
   });
 
