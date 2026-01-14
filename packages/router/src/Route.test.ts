@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
 import { Effect, Schema } from "effect";
+import { describe, expect, it } from "vitest";
+
 import { Route, routeSpecificity } from "./Route";
 
 describe("Route", () => {

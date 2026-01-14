@@ -1,10 +1,15 @@
-import { describe, it, expect } from "vitest";
 import { Effect, Option, Schema, Stream } from "effect";
-import { Form } from "./PlatformForm";
-import { Reaction } from "@effex/dom";
-import { makeRouterLayer } from "@effex/router";
-import type { BaseRouter, ActionResult } from "@effex/router";
+import { describe, expect, it } from "vitest";
+
 import type { Readable } from "@effex/core";
+import { Reaction } from "@effex/dom";
+import {
+  makeRouterLayer,
+  type ActionResult,
+  type BaseRouter,
+} from "@effex/router";
+
+import { Form } from "./PlatformForm";
 
 // Helper to run scoped effects with proper typing
 // The cast is needed because BaseRouter.submitAction has unknown requirements

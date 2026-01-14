@@ -1,8 +1,9 @@
-import { bench, describe } from "vitest";
-import { Effect } from "effect";
-import { Signal } from "@effex/core/Signal";
 import { each } from "@dom/Control";
 import { $ } from "@dom/Element/Element";
+import { Effect } from "effect";
+import { bench, describe } from "vitest";
+
+import { Signal } from "@effex/core/Signal";
 
 interface Item {
   id: number;

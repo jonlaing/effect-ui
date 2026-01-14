@@ -1,12 +1,13 @@
-import { describe, it, expect } from "vitest";
 import { Effect } from "effect";
+import { describe, expect, it } from "vitest";
+
 import {
-  serialize,
   deserialize,
-  serializeSync,
   deserializeSync,
+  serialize,
   serializeForHtml,
   serializeForHtmlSync,
+  serializeSync,
 } from "./Serialization";
 
 describe("Serialization", () => {

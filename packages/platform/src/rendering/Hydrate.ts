@@ -1,11 +1,12 @@
 import { Effect, Layer } from "effect";
-import { Element } from "@effex/dom";
-import { RendererContext } from "@effex/dom";
+
+import { Element, RendererContext } from "@effex/dom";
 import { hydrate as domHydrate } from "@effex/dom/hydrate";
+
 import {
-  type LoaderData,
   LoaderContextTag,
   makeLoaderContext,
+  type LoaderData,
 } from "../routing/RouteLoader.js";
 import { reviveTypeMarker } from "../Serialization.js";
 

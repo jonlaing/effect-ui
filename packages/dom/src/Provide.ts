@@ -1,7 +1,7 @@
 import { Context, Effect } from "effect";
-import { Element } from "./Element";
-import type { Child } from "./Element";
-import { isElement, flattenChildren } from "./Element/helpers.js";
+
+import { Element, type Child } from "./Element";
+import { flattenChildren, isElement } from "./Element/helpers.js";
 
 /**
  * Provide a context value to children elements.

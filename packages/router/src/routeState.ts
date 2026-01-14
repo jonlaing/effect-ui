@@ -1,9 +1,10 @@
-import { Effect, Option, Scope } from "effect";
-import type { Schema } from "effect";
+import { Effect, Option, Scope, type Schema } from "effect";
+
 import { Derived } from "@effex/core";
-import type { AnyRoute, Route, RouteState } from "./types";
+
 import { RouterInternalsContext } from "./internals";
 import { tryMatchSync } from "./matching";
+import type { AnyRoute, Route, RouteState } from "./types";
 
 /**
  * Create route-specific state (isActive, params) for each route.

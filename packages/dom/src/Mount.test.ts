@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { Effect, Fiber } from "effect";
-import { mount } from "./Mount";
-import { div, span } from "./Element";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
 import { DOMRendererLive } from "./DOMRenderer";
+import { div, span } from "./Element";
+import { mount } from "./Mount";
 
 describe("mount", () => {
   let container: HTMLElement;

@@ -1,8 +1,10 @@
 /**
  * Shared app configuration for both dev (Vite) and production servers.
  */
+
 import { $, Link, Routes } from "@effex/platform";
-import { routes, components } from "./generated/routes.js";
+
+import { components, routes } from "./generated/routes.js";
 
 // Re-export for convenience
 export { routes, components };

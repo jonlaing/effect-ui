@@ -1,7 +1,9 @@
 import type { Deferred, Effect, Scope } from "effect";
+
 import type { Readable } from "@effex/core";
-import { Element } from "../Element";
+
 import type { ListAnimationOptions } from "../Animation";
+import { Element } from "../Element";
 
 /**
  * Visible range of items in the virtual list.

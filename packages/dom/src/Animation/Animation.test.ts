@@ -1,11 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Effect } from "effect";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { runEnterAnimation, runExitAnimation } from "./core";
 import {
-  stagger,
-  staggerFromCenter,
-  staggerEased,
   calculateStaggerDelay,
+  stagger,
+  staggerEased,
+  staggerFromCenter,
 } from "./index";
 
 // Mock window.matchMedia for reduced motion tests

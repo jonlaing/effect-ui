@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { injectRouteDefinePath, generateScaffold } from "./plugin";
+import { describe, expect, it } from "vitest";
+
+import { generateScaffold, injectRouteDefinePath } from "./plugin";
 
 describe("injectRouteDefinePath", () => {
   it("should inject __path into Route.define()", () => {

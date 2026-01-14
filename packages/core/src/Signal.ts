@@ -1,8 +1,7 @@
 import { Context, Effect, Layer, Scope, SubscriptionRef } from "effect";
 
-import type { Readable } from "./Readable.js";
-import { Readable as ReadableNS } from "./Readable.js";
 import { defaultEquals } from "./Derived/helpers.js";
+import { Readable as ReadableNS, type Readable } from "./Readable.js";
 import {
   SignalArray,
   type SignalArray as SignalArrayType,

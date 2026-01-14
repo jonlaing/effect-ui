@@ -5,16 +5,21 @@
  */
 
 import { Effect, Scope, Stream } from "effect";
-import type { Readable } from "@effex/core";
-import { RendererContext, type RendererInterface } from "@effex/core";
-import { Element } from "../Element";
-import type { WhenConfig, MatchConfig, EachConfig } from "./types";
-import { createDefaultContainer } from "./helpers";
+
 import {
-  createWhenUpdater,
-  createMatchUpdater,
+  RendererContext,
+  type Readable,
+  type RendererInterface,
+} from "@effex/core";
+
+import { Element } from "../Element";
+import { createDefaultContainer } from "./helpers";
+import type { EachConfig, MatchConfig, WhenConfig } from "./types";
+import {
   createEachUpdater,
   createItemReadable,
+  createMatchUpdater,
+  createWhenUpdater,
 } from "./updaters";
 
 /**

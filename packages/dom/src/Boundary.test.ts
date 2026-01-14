@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach } from "vitest";
 import { Effect } from "effect";
+import { beforeEach, describe, expect, it } from "vitest";
+
 import { Boundary } from "./Boundary";
-import { div } from "./Element";
 import { DOMRendererLive } from "./DOMRenderer";
+import { div } from "./Element";
 
 const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
   Effect.runPromise(

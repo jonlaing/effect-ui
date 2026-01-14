@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeEach } from "vitest";
 import { Effect, Scope } from "effect";
-import { Signal, DOMRendererLive, RendererContext } from "@effex/dom";
+import { beforeEach, describe, expect, it } from "vitest";
+
+import { DOMRendererLive, RendererContext, Signal } from "@effex/dom";
+
 import { Slider, type SliderValue } from "./Slider";
 
 const runTest = <A>(

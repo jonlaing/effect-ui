@@ -1,6 +1,12 @@
 import { Array, Context, Effect, Option, Scope } from "effect";
-import type { Readable, RendererInterface } from "@effex/core";
-import { isReadable, RendererContext } from "@effex/core";
+
+import {
+  isReadable,
+  RendererContext,
+  type Readable,
+  type RendererInterface,
+} from "@effex/core";
+
 import {
   applyClassWithRenderer,
   applyEventHandlerWithRenderer,
@@ -11,6 +17,7 @@ import {
   isElement,
   subscribeToReadable,
 } from "./helpers";
+import { bindElementToRef, type ElementRef } from "./ref.js";
 import type {
   Child,
   ClassValue,
@@ -21,7 +28,6 @@ import type {
   SVGAttributes,
   SVGElementFactory,
 } from "./types";
-import { bindElementToRef, type ElementRef } from "./ref.js";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 

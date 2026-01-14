@@ -8,16 +8,26 @@
  */
 
 import { Effect, Either, Option } from "effect";
+
 import { Readable } from "@effex/core";
+
 import { Element } from "../Element";
-import { SSRContext } from "../SSRContext";
 import { HydrationContext } from "../HydrationContext";
-
-// SSR implementations
-import { ssrWhen, ssrMatch, ssrEach } from "./ssr";
-
+import { SSRContext } from "../SSRContext";
+// Client implementations (with optional animation support)
+import { clientEach, clientMatch, clientWhen } from "./client";
 // Hydration implementations
-import { hydrationWhen, hydrationMatch, hydrationEach } from "./hydration";
+import { hydrationEach, hydrationMatch, hydrationWhen } from "./hydration";
+// SSR implementations
+import { ssrEach, ssrMatch, ssrWhen } from "./ssr";
+// Types
+import type {
+  EachConfig,
+  MatchConfig,
+  MatchEitherConfig,
+  MatchOptionConfig,
+  WhenConfig,
+} from "./types";
 
 /**
  * Log hydration mismatch warning and fall back to client rendering.
@@ -33,18 +43,6 @@ const warnHydrationMismatch = (error: unknown): void => {
     );
   }
 };
-
-// Client implementations (with optional animation support)
-import { clientWhen, clientMatch, clientEach } from "./client";
-
-// Types
-import type {
-  WhenConfig,
-  MatchConfig,
-  EachConfig,
-  MatchOptionConfig,
-  MatchEitherConfig,
-} from "./types";
 
 // Re-export types
 export {

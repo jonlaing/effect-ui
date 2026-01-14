@@ -4,20 +4,22 @@
  */
 
 import { Effect, Stream } from "effect";
-import type { Readable } from "@effex/core";
+
 import {
   mapReadable,
   RendererContext,
+  type Readable,
   type RendererInterface,
 } from "@effex/core";
-import type { SSRContextService } from "../SSRContext";
+
 import { Element } from "../Element";
-import type { WhenConfig, MatchConfig, EachConfig } from "./types";
+import type { SSRContextService } from "../SSRContext";
 import {
-  createDefaultContainer,
   addHydrationMarkers,
   addItemHydrationKey,
+  createDefaultContainer,
 } from "./helpers";
+import type { EachConfig, MatchConfig, WhenConfig } from "./types";
 
 /**
  * SSR implementation of `when`.

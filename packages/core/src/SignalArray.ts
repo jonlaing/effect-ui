@@ -1,8 +1,7 @@
 import { Effect, Option, Scope, SubscriptionRef } from "effect";
 
+import { Readable as ReadableNS, type Readable } from "./Readable.js";
 import type { Signal } from "./Signal.js";
-import type { Readable } from "./Readable.js";
-import { Readable as ReadableNS } from "./Readable.js";
 
 /**
  * A reactive array that extends Signal with array-specific mutation methods.

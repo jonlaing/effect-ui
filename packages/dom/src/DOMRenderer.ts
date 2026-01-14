@@ -1,9 +1,11 @@
 import { Effect, Layer } from "effect";
+
 import {
-  type RendererInterface,
   RendererContext,
+  type RendererInterface,
   type Slot,
 } from "@effex/core";
+
 import { toKebabCase } from "./helpers/index.js";
 
 /**

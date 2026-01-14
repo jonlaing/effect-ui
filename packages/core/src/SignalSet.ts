@@ -1,7 +1,6 @@
 import { Effect, Scope, SubscriptionRef } from "effect";
 
-import type { Readable } from "./Readable.js";
-import { Readable as ReadableNS } from "./Readable.js";
+import { Readable as ReadableNS, type Readable } from "./Readable.js";
 
 /**
  * A reactive Set with mutation methods that trigger updates.

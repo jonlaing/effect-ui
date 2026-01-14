@@ -1,18 +1,20 @@
-import { describe, it, expect, beforeEach } from "vitest";
 import { Effect } from "effect";
+import { beforeEach, describe, expect, it } from "vitest";
+
 import { isReadable, Signal } from "@effex/core";
+
+import { $ } from "./Element";
 import {
-  isElement,
-  flattenChildren,
-  subscribeToReadable,
   applyClass,
-  applyStyle,
   applyEventHandler,
-  setBooleanOrStringAttribute,
   applyGenericAttribute,
   applyInputValue,
+  applyStyle,
+  flattenChildren,
+  isElement,
+  setBooleanOrStringAttribute,
+  subscribeToReadable,
 } from "./helpers";
-import { $ } from "./Element";
 
 describe("isReadable", () => {
   it("should return true for Signal", async () => {

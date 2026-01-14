@@ -1,8 +1,14 @@
 import { Effect, Schema } from "effect";
-import type { PathSegment, RouteOptions, LoaderFn, ActionFn } from "./types";
-import type { Route as RouteType } from "./types";
-import { RouteMatchError } from "./types";
+
 import { RouterContext } from "./RouterContext";
+import {
+  RouteMatchError,
+  type ActionFn,
+  type LoaderFn,
+  type PathSegment,
+  type RouteOptions,
+  type Route as RouteType,
+} from "./types";
 
 /**
  * Parse a path pattern into segments.

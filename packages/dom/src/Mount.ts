@@ -1,11 +1,13 @@
 import { Effect, Layer, Scope } from "effect";
+
 import {
   RendererContext,
   SignalRegistry,
   type RendererInterface,
 } from "@effex/core";
-import { Element } from "./Element";
+
 import { DOMRenderer } from "./DOMRenderer";
+import { Element } from "./Element";
 
 /**
  * Mount an Element into a DOM container. Automatically cleans up when the scope closes.

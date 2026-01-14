@@ -1,7 +1,9 @@
 import { Effect } from "effect";
-import { ComboboxContentPositionCtx, ComboboxCtx } from "./types";
+
 import { Element } from "@effex/dom";
+
 import { calculatePosition } from "../helpers";
+import { ComboboxContentPositionCtx, ComboboxCtx } from "./types";
 
 export const positionAndReveal = (element: Effect.Effect<HTMLElement>) =>
   Effect.gen(function* () {

@@ -1,14 +1,15 @@
 import { Effect } from "effect";
-import { dual } from "effect/Function";
-import type { Element as ElementType } from "./types.js";
 import type { NoSuchElementException } from "effect/Cause";
+import { dual } from "effect/Function";
+
+import { toKebabCase } from "../helpers/strings.js";
 import {
-  getUnsafe,
-  makeElementRef,
   AttributeNotFound,
   DataAttributeNotFound,
+  getUnsafe,
+  makeElementRef,
 } from "./ref.js";
-import { toKebabCase } from "../helpers/strings.js";
+import type { Element as ElementType } from "./types.js";
 
 /**
  * Element namespace providing the Element type and pipeable DOM manipulation utilities.

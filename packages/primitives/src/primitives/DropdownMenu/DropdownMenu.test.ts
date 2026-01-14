@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeEach } from "vitest";
 import { Effect } from "effect";
-import { Signal, DOMRendererLive } from "@effex/dom";
+import { beforeEach, describe, expect, it } from "vitest";
+
+import { DOMRendererLive, Signal } from "@effex/dom";
+
 import { DropdownMenu } from "./DropdownMenu";
 
 const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>

@@ -1,6 +1,6 @@
 import { Effect, Scope } from "effect";
-import type { Readable } from "./Readable.js";
-import { Readable as ReadableNS } from "./Readable.js";
+
+import { Readable as ReadableNS, type Readable } from "./Readable.js";
 import { make as makeSignal } from "./Signal.js";
 
 /**

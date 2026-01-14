@@ -1,6 +1,7 @@
 import { Array, Context, Effect, Option, Scope, Stream } from "effect";
-import { Readable } from "@effex/core";
-import type { RendererInterface } from "@effex/core";
+
+import { Readable, type RendererInterface } from "@effex/core";
+
 import type {
   Child,
   ClassItem,

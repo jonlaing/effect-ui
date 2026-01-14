@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+
 import type { StaggerFunction } from "./types";
 
 // Re-export types

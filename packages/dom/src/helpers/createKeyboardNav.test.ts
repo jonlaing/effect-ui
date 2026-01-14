@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { Effect, Option } from "effect";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { Signal } from "@effex/core";
+
 import { createKeyboardNav } from "./createKeyboardNav";
 
 const runTest = <A>(effect: Effect.Effect<A, never, never>) =>

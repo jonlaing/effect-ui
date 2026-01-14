@@ -1,6 +1,7 @@
-import { describe, it, expect } from "vitest";
 import { Effect } from "effect";
-import { generateDocument, escapeHtml, type DocumentOptions } from "./Document";
+import { describe, expect, it } from "vitest";
+
+import { escapeHtml, generateDocument, type DocumentOptions } from "./Document";
 import type { SSRResult } from "./SSR";
 
 const createMockSSRResult = (

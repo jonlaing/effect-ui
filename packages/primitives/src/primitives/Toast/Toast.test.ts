@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeEach } from "vitest";
 import { Effect } from "effect";
+import { beforeEach, describe, expect, it } from "vitest";
+
 import { DOMRendererLive } from "@effex/dom";
+
 import { Toast, ToastCtx, ToastItemCtx, type ToastItemContext } from "./Toast";
 
 const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>

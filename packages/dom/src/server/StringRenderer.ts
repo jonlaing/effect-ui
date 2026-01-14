@@ -1,11 +1,13 @@
 import { Effect } from "effect";
+
 import type { Renderer, Slot } from "@effex/core";
+
 import {
+  vComment,
   vElement,
   vText,
-  vComment,
-  type VNode,
   type VElement,
+  type VNode,
   type VText,
 } from "./VNode";
 

@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+
 import type { AnimationEndResult, AnimationHook } from "./types";
 
 const DEFAULT_TIMEOUT = 5000;

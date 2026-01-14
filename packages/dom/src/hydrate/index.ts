@@ -13,10 +13,12 @@
  */
 
 import { Effect, Layer } from "effect";
+
 import { RendererContext, SignalRegistry, type Renderer } from "@effex/core";
+
 import { Element } from "../Element";
-import { createHydrationRenderer } from "./HydrationRenderer";
 import { makeHydrationContext } from "../HydrationContext";
+import { createHydrationRenderer } from "./HydrationRenderer";
 
 export interface HydrateOptions {
   /**

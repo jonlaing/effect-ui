@@ -1,22 +1,24 @@
 import { Effect, Layer, Option, Scope } from "effect";
-import { Signal, Derived } from "@effex/core";
-import type {
-  AnyRoute,
-  Router as RouterType,
-  RouterOptions,
-  LoaderState,
-  ActionState,
-} from "./types";
-import { routeSpecificity } from "./Route";
+
+import { Derived, Signal } from "@effex/core";
+
+import { createActionMethods } from "./action";
+import { setupHistoryListener } from "./history";
 import { isBrowser, RouterInternalsContext } from "./internals";
+import { createLoaderMethods } from "./loader";
 import { tryMatchSync } from "./matching";
 import { createNavigationMethods } from "./navigation";
-import { createRouteStates } from "./routeState";
-import { setupHistoryListener } from "./history";
-import { createLoaderMethods } from "./loader";
-import { createActionMethods } from "./action";
-import { setupPathnameSubscription } from "./subscription";
+import { routeSpecificity } from "./Route";
 import { RouterContext } from "./RouterContext";
+import { createRouteStates } from "./routeState";
+import { setupPathnameSubscription } from "./subscription";
+import type {
+  ActionState,
+  AnyRoute,
+  LoaderState,
+  RouterOptions,
+  Router as RouterType,
+} from "./types";
 
 /**
  * Create a Router from a record of routes.

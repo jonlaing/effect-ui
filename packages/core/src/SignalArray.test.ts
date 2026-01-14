@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
 import { Effect, Fiber, Option, Scope, Stream } from "effect";
+import { describe, expect, it } from "vitest";
+
 import { Signal } from "./Signal";
 
 const runTest = <A>(effect: Effect.Effect<A, never, Scope.Scope>): Promise<A> =>

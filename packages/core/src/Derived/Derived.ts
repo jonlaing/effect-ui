@@ -1,14 +1,18 @@
 import { Effect, Either, Option, Scope, Stream } from "effect";
-import type { Readable } from "../Readable";
-import { make as makeReadable, combine as combineReadable } from "../Readable";
+
+import {
+  combine as combineReadable,
+  make as makeReadable,
+  type Readable,
+} from "../Readable";
 import { make as makeSignal } from "../Signal";
+import { combineReadables, defaultEquals, getCurrentValues } from "./helpers";
 import type {
   AsyncDerived,
   AsyncDerivedOptions,
   DerivedOptions,
   ReadableValues,
 } from "./types";
-import { combineReadables, defaultEquals, getCurrentValues } from "./helpers";
 
 /**
  * Create a synchronous derived value that recomputes when dependencies change.

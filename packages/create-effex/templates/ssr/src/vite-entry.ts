@@ -2,10 +2,13 @@
  * Vite SSR entry point.
  * Loaded via vite.ssrLoadModule during development.
  */
+
 import { Effect, Option } from "effect";
+
 import { Router } from "@effex/platform";
 import { renderRequest, type ActionData } from "@effex/platform/server";
-import { routes, App, baseDocumentConfig } from "./app.js";
+
+import { App, baseDocumentConfig, routes } from "./app.js";
 
 /**
  * Handle an action request.

@@ -25,11 +25,13 @@
  */
 
 import { Effect, Layer } from "effect";
+
 import { RendererContext, type Renderer } from "@effex/core";
+
 import { Element } from "../Element";
-import { StringRenderer } from "./StringRenderer";
 import { vnodeToString } from "./renderToString";
 import { withSSRContext } from "./SSRContext";
+import { StringRenderer } from "./StringRenderer";
 import type { VNode } from "./VNode";
 
 export interface RenderToStringOptions {

@@ -1,12 +1,14 @@
-import * as path from "node:path";
 import * as fs from "node:fs";
+import * as path from "node:path";
+
 import type { Plugin, ViteDevServer } from "vite";
-import type { EffexPluginOptions } from "./types.js";
-import { scanRoutes } from "./scanner.js";
+
 import { generateRoutes } from "./generator.js";
+import { scanRoutes } from "./scanner.js";
+import type { EffexPluginOptions } from "./types.js";
 import {
-  filePathToRoutePath,
   filePathToRouteName,
+  filePathToRoutePath,
   routeNameToComponentImportName,
 } from "./utils/pathConversion.js";
 

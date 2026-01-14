@@ -1,15 +1,17 @@
 import { Effect, Schema, Scope } from "effect";
-import { Signal, Derived, Readable } from "@effex/dom";
+
+import { Derived, Readable, Signal } from "@effex/dom";
+
+import { buildFieldEntries, hasNoErrors, validateForm } from "./helpers";
 import type {
   Field,
   FieldArray,
-  Form as FormType,
   FormFields,
   FormOptions,
+  Form as FormType,
   SubmitHandler,
   ValidationTiming,
 } from "./types";
-import { buildFieldEntries, hasNoErrors, validateForm } from "./helpers";
 
 /**
  * Create a new Form with reactive state management.

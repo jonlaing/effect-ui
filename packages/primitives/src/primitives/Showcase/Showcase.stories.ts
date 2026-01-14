@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/html-vite";
 import { Effect } from "effect";
+
+import { $, Boundary, button, input, label, Signal } from "@effex/dom";
 import {
   Accordion,
   AlertDialog,
@@ -17,12 +19,11 @@ import {
   Tabs,
   Toast,
   ToastCtx,
-  Tooltip,
   Toggle,
+  Tooltip,
   type SliderValue,
 } from "@effex/primitives";
-import { $, Boundary, button, input, label } from "@effex/dom";
-import { Signal } from "@effex/dom";
+
 import { renderEffectAsync } from "../../storyHelpers";
 
 const meta: Meta = {

@@ -1,5 +1,6 @@
-import type { ElementRef, Readable } from "@effex/dom";
 import { Context, type Effect } from "effect";
+
+import type { ElementRef, Readable } from "@effex/dom";
 
 /**
  * Context shared between Popover parts.

@@ -1,5 +1,6 @@
-import { bench, describe } from "vitest";
 import { Effect, ExecutionStrategy, Scope } from "effect";
+import { bench, describe } from "vitest";
+
 import { Signal } from "@effex/core/Signal";
 
 // Profile individual operations to find the bottleneck

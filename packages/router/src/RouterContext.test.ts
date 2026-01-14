@@ -1,9 +1,11 @@
-import { describe, it, expect } from "vitest";
 import { Effect, Option, Stream } from "effect";
-import { Link, RouterContext, makeRouterLayer } from "./RouterContext";
-import type { BaseRouter } from "./types";
+import { describe, expect, it } from "vitest";
+
 import type { Readable } from "@effex/core";
 import { DOMRendererLive } from "@effex/dom";
+
+import { Link, makeRouterLayer, RouterContext } from "./RouterContext";
+import type { BaseRouter } from "./types";
 
 // Create a simple readable for testing
 const makeTestReadable = <A>(value: A): Readable.Readable<A> => {

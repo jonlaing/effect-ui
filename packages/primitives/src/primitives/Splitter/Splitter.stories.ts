@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/html-vite";
 import { Effect } from "effect";
-import { Splitter } from "./Splitter";
-import { $ } from "@effex/dom";
-import { Signal } from "@effex/dom";
+
+import { $, Signal } from "@effex/dom";
+
 import { renderEffectAsync } from "../../storyHelpers";
+import { Splitter } from "./Splitter";
 
 const meta: Meta = {
   title: "Primitives/Splitter",

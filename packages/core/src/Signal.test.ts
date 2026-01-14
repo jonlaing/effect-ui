@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
 import { Effect } from "effect";
+import { describe, expect, it } from "vitest";
+
 import { Signal } from "./Signal";
 
 describe("Signal.fromNullable", () => {

@@ -2,8 +2,8 @@
  * Convert VNode tree to HTML string.
  */
 
-import type { VNode, VElement } from "./VNode";
-import { escapeHtml, escapeAttr } from "./escapeHtml";
+import { escapeAttr, escapeHtml } from "./escapeHtml";
+import type { VElement, VNode } from "./VNode";
 
 /**
  * HTML void elements that don't have closing tags.

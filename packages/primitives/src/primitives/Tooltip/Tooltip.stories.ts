@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/html-vite";
 import { Effect } from "effect";
-import { Tooltip } from "@effex/primitives";
+
 import { $ } from "@effex/dom";
+import { Tooltip } from "@effex/primitives";
+
 import { renderEffectAsync } from "../../storyHelpers";
 
 type TooltipStoryArgs = {

@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Effect } from "effect";
-import { DOMRendererLive } from "@effex/dom";
-import { $ } from "@effex/dom";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { $, DOMRendererLive } from "@effex/dom";
+
 import { ScrollArea } from "./ScrollArea";
 
 // Mock ResizeObserver for jsdom

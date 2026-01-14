@@ -1,7 +1,9 @@
 import { Effect } from "effect";
-import { PopoverContentPositionCtx, PopoverCtx } from "./types";
+
 import { Element } from "@effex/dom";
+
 import { calculatePosition } from "../helpers";
+import { PopoverContentPositionCtx, PopoverCtx } from "./types";
 
 export const positionAndReveal = (element: Effect.Effect<HTMLElement>) =>
   Effect.gen(function* () {

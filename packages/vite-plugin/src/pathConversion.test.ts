@@ -1,10 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
 import {
-  filePathToRoutePath,
-  filePathToRouteName,
-  routeNameToImportName,
-  routeNameToComponentImportName,
   calculateSpecificity,
+  filePathToRouteName,
+  filePathToRoutePath,
+  routeNameToComponentImportName,
+  routeNameToImportName,
 } from "./utils/pathConversion";
 
 describe("filePathToRoutePath", () => {

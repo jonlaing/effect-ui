@@ -1,6 +1,7 @@
-import { describe, it, expect } from "vitest";
 import { Effect, Option } from "effect";
-import { makeActionData, type ActionRouter, type ActionData } from "./Actions";
+import { describe, expect, it } from "vitest";
+
+import { makeActionData, type ActionData, type ActionRouter } from "./Actions";
 
 const createMockActionRouter = (options?: {
   currentRoute?: string | null;

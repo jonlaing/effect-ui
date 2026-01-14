@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach } from "vitest";
 import { Effect } from "effect";
+import { beforeEach, describe, expect, it } from "vitest";
+
+import { bindElementToRef, makeElementRef } from "../Element/ref";
 import { onClickOutside } from "./onClickOutside";
-import { makeElementRef, bindElementToRef } from "../Element/ref";
 
 const runTest = <A>(effect: Effect.Effect<A, never, never>) =>
   Effect.runPromise(effect);

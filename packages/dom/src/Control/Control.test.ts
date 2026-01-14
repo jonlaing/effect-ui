@@ -1,9 +1,11 @@
-import { describe, it, expect, beforeEach } from "vitest";
 import { Effect } from "effect";
+import { beforeEach, describe, expect, it } from "vitest";
+
 import { Signal } from "@effex/core";
-import { when, match, each } from ".";
-import { div, li } from "../Element";
+
+import { each, match, when } from ".";
 import { DOMRendererLive } from "../DOMRenderer";
+import { div, li } from "../Element";
 
 const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
   Effect.runPromise(

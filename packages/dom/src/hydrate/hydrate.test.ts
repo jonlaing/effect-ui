@@ -1,11 +1,13 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { Effect } from "effect";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { Signal } from "@effex/core";
+
+import { Boundary } from "../Boundary";
+import { match, when } from "../Control";
+import { div, span } from "../Element";
 import { renderToString } from "../server";
 import { hydrate } from "./index";
-import { Signal } from "@effex/core";
-import { div, span } from "../Element";
-import { when, match } from "../Control";
-import { Boundary } from "../Boundary";
 
 describe("Hydration", () => {
   let container: HTMLElement;

@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
 import { Effect, Stream } from "effect";
+import { describe, expect, it } from "vitest";
+
 import { Signal } from "../Signal";
 import { Derived } from "./Derived";
 

@@ -1,12 +1,13 @@
 import { Effect, Either, Option } from "effect";
-import type {
-  AnyRoute,
-  LoaderResult,
-  AllLoaderRequirements,
-  AllLoaderErrors,
-} from "./types";
+
 import { RouterInternalsContext } from "./internals";
 import { tryMatchSync } from "./matching";
+import type {
+  AllLoaderErrors,
+  AllLoaderRequirements,
+  AnyRoute,
+  LoaderResult,
+} from "./types";
 
 export interface LoaderMethods<Routes extends Record<string, AnyRoute>> {
   executeLoader: () => Effect.Effect<

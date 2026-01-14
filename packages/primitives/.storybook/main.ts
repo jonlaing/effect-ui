@@ -1,6 +1,7 @@
-import type { StorybookConfig } from "@storybook/html-vite";
-import { resolve, dirname } from "path";
+import { dirname, resolve } from "path";
 import { fileURLToPath } from "url";
+
+import type { StorybookConfig } from "@storybook/html-vite";
 import tailwindcss from "@tailwindcss/vite";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

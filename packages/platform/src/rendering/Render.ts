@@ -1,16 +1,17 @@
 import { Effect, Layer } from "effect";
-import { RendererContext } from "@effex/dom";
-import { Element } from "@effex/dom";
+
+import { Element, RendererContext } from "@effex/dom";
 import { renderToString } from "@effex/dom/server";
+
 import {
   makeServerPlatformContext,
   PlatformContext,
   type PlatformContextType,
 } from "../Platform.js";
 import {
-  type LoaderData,
   LoaderContextTag,
   makeLoaderContext,
+  type LoaderData,
 } from "../routing/RouteLoader.js";
 import { serializeForHtmlSync } from "../Serialization.js";
 

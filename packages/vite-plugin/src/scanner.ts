@@ -1,13 +1,15 @@
 import * as path from "node:path";
+
 import fg from "fast-glob";
-import type { ScannedRoute, EffexPluginOptions } from "./types.js";
+
 import { parseRouteExports } from "./parser.js";
+import type { EffexPluginOptions, ScannedRoute } from "./types.js";
 import {
-  filePathToRoutePath,
-  filePathToRouteName,
-  routeNameToImportName,
-  routeNameToComponentImportName,
   calculateSpecificity,
+  filePathToRouteName,
+  filePathToRoutePath,
+  routeNameToComponentImportName,
+  routeNameToImportName,
 } from "./utils/pathConversion.js";
 
 const DEFAULT_EXTENSIONS = [".tsx", ".ts", ".jsx", ".js"];

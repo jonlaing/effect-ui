@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from "vitest";
 import { Effect, Option } from "effect";
+import { beforeEach, describe, expect, it } from "vitest";
+
 import { Element } from "./namespace";
 import { AttributeNotFound, DataAttributeNotFound } from "./ref";
 

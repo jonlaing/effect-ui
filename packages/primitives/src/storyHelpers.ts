@@ -1,6 +1,6 @@
 import { Effect } from "effect";
-import { Element } from "@effex/dom";
-import { DOMRendererLive } from "@effex/dom";
+
+import { DOMRendererLive, Element } from "@effex/dom";
 
 /**
  * Render an Effex component for Storybook.

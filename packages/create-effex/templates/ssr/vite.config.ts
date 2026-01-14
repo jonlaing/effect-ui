@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+
 import { effexRoutes, effexSSR } from "@effex/vite-plugin";
 
 export default defineConfig({

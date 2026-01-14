@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/html-vite";
 import { Effect } from "effect";
-import { ScrollArea } from "@effex/primitives";
+
 import { $ } from "@effex/dom";
+import { ScrollArea } from "@effex/primitives";
+
 import { renderEffectAsync } from "../../storyHelpers";
 
 type ScrollAreaStoryArgs = {

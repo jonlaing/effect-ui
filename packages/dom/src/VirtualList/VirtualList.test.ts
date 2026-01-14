@@ -1,17 +1,19 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Effect } from "effect";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { Signal } from "@effex/core";
-import { virtualEach, VirtualListRef } from "./index";
-import { div } from "../Element";
+
 import { DOMRendererLive } from "../DOMRenderer";
+import { div } from "../Element";
 import {
-  calculateVisibleRange,
   calculateItemOffset,
-  calculateTotalHeight,
   calculateScrollToPosition,
+  calculateTotalHeight,
+  calculateVisibleRange,
   parseHeight,
   rangesEqual,
 } from "./helpers";
+import { virtualEach, VirtualListRef } from "./index";
 
 const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
   Effect.runPromise(

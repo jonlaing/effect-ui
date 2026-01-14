@@ -1,5 +1,6 @@
-import type { RouteExports } from "./types.js";
 import * as fs from "node:fs";
+
+import type { RouteExports } from "./types.js";
 
 /**
  * Parse a route file to detect which exports it has.

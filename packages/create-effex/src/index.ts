@@ -1,8 +1,9 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import prompts from "prompts";
+
 import pc from "picocolors";
+import prompts from "prompts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

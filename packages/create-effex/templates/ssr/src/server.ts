@@ -1,13 +1,16 @@
-import * as http from "node:http";
 import * as fs from "node:fs";
+import * as http from "node:http";
 import * as path from "node:path";
-import { Effect, Layer } from "effect";
+
 import { HttpServer, HttpServerResponse } from "@effect/platform";
-import * as HttpServerRequest from "@effect/platform/HttpServerRequest";
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node";
-import { Router, Element, RendererContext } from "@effex/platform";
+import * as HttpServerRequest from "@effect/platform/HttpServerRequest";
+import { Effect, Layer } from "effect";
+
+import { Element, RendererContext, Router } from "@effex/platform";
 import { EffexServer } from "@effex/platform/server";
-import { routes, App, baseDocumentConfig } from "./app.js";
+
+import { App, baseDocumentConfig, routes } from "./app.js";
 
 // MIME types for static files
 const MIME_TYPES: Record<string, string> = {

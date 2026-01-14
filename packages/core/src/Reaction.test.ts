@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from "vitest";
 import { Effect, Fiber } from "effect";
-import { Signal } from "./Signal";
+import { describe, expect, it, vi } from "vitest";
+
 import { Reaction } from "./Reaction";
+import { Signal } from "./Signal";
 
 describe("Reaction", () => {
   it("should run effect with initial values", async () => {

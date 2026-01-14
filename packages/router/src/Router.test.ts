@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Effect, Option, Schema } from "effect";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { Route } from "./Route";
 import { Router } from "./Router";
-import type { LoaderResult, ActionResult } from "./types";
+import type { ActionResult, LoaderResult } from "./types";
 
 // Mock window and history for tests
 const mockHistory: string[] = [];

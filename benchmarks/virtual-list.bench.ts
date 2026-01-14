@@ -1,9 +1,10 @@
-import { bench, describe } from "vitest";
-import { Effect } from "effect";
-import { Signal } from "@effex/core/Signal";
-import { virtualEach } from "@dom/VirtualList";
 import { each } from "@dom/Control";
 import { $ } from "@dom/Element/Element";
+import { virtualEach } from "@dom/VirtualList";
+import { Effect } from "effect";
+import { bench, describe } from "vitest";
+
+import { Signal } from "@effex/core/Signal";
 
 interface Item {
   id: string;

@@ -1,6 +1,7 @@
 import { Effect } from "effect";
-import type { NavigateOptions } from "./types";
+
 import { isBrowser, RouterInternalsContext } from "./internals";
+import type { NavigateOptions } from "./types";
 
 export interface NavigationMethods {
   push: (path: string, opts?: NavigateOptions) => Effect.Effect<void>;

@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import type { AnimationHook, AnimationOptions } from "./types";
+
 import {
   addClasses,
   forceReflow,
@@ -8,6 +8,7 @@ import {
   runHook,
   waitForAnimationEvent,
 } from "./helpers";
+import type { AnimationHook, AnimationOptions } from "./types";
 
 const DEFAULT_TIMEOUT = 5000;
 

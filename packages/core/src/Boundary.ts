@@ -1,4 +1,5 @@
 import { Duration, Effect, Either, Fiber, pipe, Scope } from "effect";
+
 import type { Element } from "./Element";
 import { RendererContext, type Renderer, type Slot } from "./Renderer";
 

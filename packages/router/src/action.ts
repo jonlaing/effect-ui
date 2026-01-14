@@ -1,12 +1,13 @@
 import { Effect, Either, Option } from "effect";
-import type {
-  AnyRoute,
-  ActionResult,
-  AllActionRequirements,
-  AllActionErrors,
-} from "./types";
+
 import { isBrowser, RouterInternalsContext } from "./internals";
 import { tryMatchSync } from "./matching";
+import type {
+  ActionResult,
+  AllActionErrors,
+  AllActionRequirements,
+  AnyRoute,
+} from "./types";
 
 export interface ActionMethods<Routes extends Record<string, AnyRoute>> {
   executeAction: (

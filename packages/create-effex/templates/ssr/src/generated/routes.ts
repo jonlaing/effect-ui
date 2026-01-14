@@ -3,9 +3,9 @@
 
 import { Route } from "@effex/platform";
 
+import IndexComponent from "../routes/_index";
 // Component imports (default exports)
 import AboutComponent from "../routes/about";
-import IndexComponent from "../routes/_index";
 
 // Route definitions
 export const routes = {

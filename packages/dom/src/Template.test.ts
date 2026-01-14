@@ -1,6 +1,8 @@
-import { describe, it, expect } from "vitest";
 import { Effect, Fiber, Stream } from "effect";
+import { describe, expect, it } from "vitest";
+
 import { Signal } from "@effex/core";
+
 import { t } from "./Template";
 
 describe("Template (t)", () => {

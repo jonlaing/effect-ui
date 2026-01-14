@@ -1,9 +1,10 @@
 import type { Readable } from "@effex/core";
-import { Element } from "../Element";
+
 import type {
   AnimationOptions,
   ListAnimationOptions,
 } from "../Animation/index.js";
+import { Element } from "../Element";
 
 /**
  * Configuration for the `when` control flow (DOM-specific with animation support).

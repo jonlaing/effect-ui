@@ -1,5 +1,6 @@
-import { bench, describe } from "vitest";
 import { Effect } from "effect";
+import { bench, describe } from "vitest";
+
 import { Signal } from "../src/core/Signal";
 
 describe("Signal", () => {

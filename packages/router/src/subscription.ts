@@ -1,4 +1,5 @@
 import { Effect, Scope, Stream } from "effect";
+
 import { isBrowser, RouterInternalsContext } from "./internals";
 
 /**

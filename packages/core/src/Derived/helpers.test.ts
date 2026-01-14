@@ -1,7 +1,8 @@
-import { describe, it, expect } from "vitest";
 import { Chunk, Effect, Option, Stream } from "effect";
+import { describe, expect, it } from "vitest";
+
 import { Signal } from "../Signal";
-import { defaultEquals, combineReadables, getCurrentValues } from "./helpers";
+import { combineReadables, defaultEquals, getCurrentValues } from "./helpers";
 
 describe("defaultEquals", () => {
   it("should return true for identical primitives", () => {

@@ -1,5 +1,6 @@
 import { Effect, Stream } from "effect";
-import { Readable, mapReadable } from "@effex/core";
+
+import { mapReadable, Readable } from "@effex/core";
 
 /**
  * Tagged template literal for creating reactive strings.

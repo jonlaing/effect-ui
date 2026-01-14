@@ -1,16 +1,17 @@
-import { Effect, Layer, Option } from "effect";
-import type { Duration, Scope } from "effect";
-import { Element } from "./Element";
+import { Effect, Layer, Option, type Duration, type Scope } from "effect";
+
 import {
-  suspense as coreSuspense,
   error as coreError,
+  suspense as coreSuspense,
   RendererContext,
-  type RendererInterface,
   type Renderer,
+  type RendererInterface,
 } from "@effex/core";
-import { SSRContext } from "./SSRContext";
-import { HydrationContext } from "./HydrationContext";
+
 import { DOMRenderer } from "./DOMRenderer";
+import { Element } from "./Element";
+import { HydrationContext } from "./HydrationContext";
+import { SSRContext } from "./SSRContext";
 
 /**
  * Options for the suspense boundary (DOM-specialized version).

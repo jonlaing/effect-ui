@@ -4,19 +4,21 @@
  */
 
 import { Effect, Exit, Scope, Stream } from "effect";
-import type { Readable } from "@effex/core";
+
 import {
   mapReadable,
   RendererContext,
+  type Readable,
   type RendererInterface,
 } from "@effex/core";
-import { DOMRenderer } from "../DOMRenderer";
+
 import {
+  calculateStaggerDelay,
   runEnterAnimation,
   runExitAnimation,
-  calculateStaggerDelay,
 } from "../Animation/index.js";
-import type { WhenConfig, MatchConfig, EachConfig } from "./types";
+import { DOMRenderer } from "../DOMRenderer";
+import type { EachConfig, MatchConfig, WhenConfig } from "./types";
 
 /**
  * Sentinel value to represent "not yet rendered" state.

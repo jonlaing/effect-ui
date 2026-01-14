@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/html-vite";
 import { Effect } from "effect";
-import { ContextMenu } from "@effex/primitives";
+
 import { Signal } from "@effex/dom";
+import { ContextMenu } from "@effex/primitives";
+
 import { renderEffectAsync } from "../../storyHelpers";
 
 type ContextMenuStoryArgs = {

@@ -1,10 +1,12 @@
-import { describe, it, expect } from "vitest";
 import { Effect } from "effect";
-import { renderToString } from "./index";
+import { describe, expect, it } from "vitest";
+
 import { Signal } from "@effex/core";
-import { div, span, ul, li } from "../Element";
-import { when, match, each } from "../Control";
+
 import { Boundary } from "../Boundary";
+import { each, match, when } from "../Control";
+import { div, li, span, ul } from "../Element";
+import { renderToString } from "./index";
 
 describe("SSR", () => {
   describe("renderToString", () => {

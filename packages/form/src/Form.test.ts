@@ -1,6 +1,8 @@
-import { describe, it, expect } from "vitest";
 import { Effect, Schema } from "effect";
+import { describe, expect, it } from "vitest";
+
 import { Reaction } from "@effex/dom";
+
 import { Form } from "./Form";
 
 describe("Form", () => {

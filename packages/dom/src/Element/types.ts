@@ -1,6 +1,7 @@
 import type { Effect, Scope } from "effect";
-import type { Readable } from "@effex/core";
-import type { Element as CoreElement } from "@effex/core";
+
+import type { Element as CoreElement, Readable } from "@effex/core";
+
 import type { ElementRef } from "./ref.js";
 
 /**

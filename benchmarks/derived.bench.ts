@@ -1,7 +1,8 @@
-import { bench, describe } from "vitest";
 import { Effect } from "effect";
-import { Signal } from "../src/core/Signal";
+import { bench, describe } from "vitest";
+
 import { Derived } from "../src/core/Derived/Derived";
+import { Signal } from "../src/core/Signal";
 
 describe("Derived", () => {
   describe("creation", () => {

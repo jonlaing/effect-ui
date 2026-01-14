@@ -3,17 +3,16 @@
 
 import { Route } from "@effex/platform";
 
+import * as IndexRoute from "../routes/_index";
+import IndexComponent from "../routes/_index";
+import * as AboutRoute from "../routes/about";
+import AboutComponent from "../routes/about";
+import * as ContactsRoute from "../routes/contacts";
+import ContactsComponent from "../routes/contacts";
 // Route module imports (named exports)
 import * as UsersIdRoute from "../routes/users.$id";
-import * as AboutRoute from "../routes/about";
-import * as ContactsRoute from "../routes/contacts";
-import * as IndexRoute from "../routes/_index";
-
 // Component imports (default exports)
 import UsersIdComponent from "../routes/users.$id";
-import AboutComponent from "../routes/about";
-import ContactsComponent from "../routes/contacts";
-import IndexComponent from "../routes/_index";
 
 // Route definitions
 export const routes = {

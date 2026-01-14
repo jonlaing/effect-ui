@@ -1,6 +1,8 @@
 import { Effect, Option, Scope } from "effect";
-import { Signal, Derived, defaultEquals, Readable } from "@effex/dom";
-import type { Field as FieldType, FieldArray, ValidationTiming } from "./types";
+
+import { defaultEquals, Derived, Readable, Signal } from "@effex/dom";
+
+import type { FieldArray, Field as FieldType, ValidationTiming } from "./types";
 
 /**
  * Options for creating a Field.

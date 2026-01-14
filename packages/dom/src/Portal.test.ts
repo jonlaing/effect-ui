@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { Effect, Scope, Exit } from "effect";
-import { Portal } from "./Portal";
-import { $ } from "./Element";
+import { Effect, Exit, Scope } from "effect";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { DOMRendererLive } from "./DOMRenderer";
+import { $ } from "./Element";
+import { Portal } from "./Portal";
 
 describe("Portal", () => {
   let portalRoot: HTMLDivElement;

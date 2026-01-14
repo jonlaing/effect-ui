@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
 import { Effect, Fiber } from "effect";
+import { describe, expect, it } from "vitest";
+
 import { Ref } from "./Ref";
 
 describe("Ref", () => {

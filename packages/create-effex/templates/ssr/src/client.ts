@@ -1,7 +1,9 @@
 import { Effect } from "effect";
+
 import { Router, Routes } from "@effex/platform";
 import { hydrateApp } from "@effex/platform/client";
-import { routes, components } from "./generated/routes.js";
+
+import { components, routes } from "./generated/routes.js";
 
 // Hydrate the application
 const hydrate = async () => {

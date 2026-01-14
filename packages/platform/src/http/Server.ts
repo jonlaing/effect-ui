@@ -1,17 +1,18 @@
-import { Effect, Layer } from "effect";
 import * as HttpApp from "@effect/platform/HttpApp";
 import * as HttpRouter from "@effect/platform/HttpRouter";
+import type * as HttpServerError from "@effect/platform/HttpServerError";
 import * as HttpServerRequest from "@effect/platform/HttpServerRequest";
 import * as HttpServerResponse from "@effect/platform/HttpServerResponse";
-import type * as HttpServerError from "@effect/platform/HttpServerError";
-import { RendererContext } from "@effex/dom";
-import { Element } from "@effex/dom";
-import { type SSRRouter, performSSR } from "../rendering/SSR.js";
-import {
-  type DocumentOptions,
-  generateDocument,
-} from "../rendering/Document.js";
+import { Effect, Layer } from "effect";
+
+import { Element, RendererContext } from "@effex/dom";
+
 import { makeActionData } from "../actions/Actions.js";
+import {
+  generateDocument,
+  type DocumentOptions,
+} from "../rendering/Document.js";
+import { performSSR, type SSRRouter } from "../rendering/SSR.js";
 
 // Re-export types for convenience
 export type { SSRRouter } from "../rendering/SSR.js";

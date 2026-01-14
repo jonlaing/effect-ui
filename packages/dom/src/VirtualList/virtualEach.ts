@@ -1,24 +1,29 @@
 import { Effect, Exit, Scope, Stream } from "effect";
-import { mapReadable, RendererContext } from "@effex/core";
-import type { Readable } from "@effex/core";
-import { Element } from "../Element";
-import { Signal } from "@effex/core";
-import { Derived } from "@effex/core";
+
+import {
+  Derived,
+  mapReadable,
+  RendererContext,
+  Signal,
+  type Readable,
+} from "@effex/core";
+
 import { createItemReadable } from "../Control/updaters";
+import { Element } from "../Element";
+import {
+  calculateItemOffset,
+  calculateScrollToPosition,
+  calculateTotalHeight,
+  calculateVisibleRange,
+  parseHeight,
+  rangesEqual,
+} from "./helpers";
 import type {
   VirtualEachOptions,
   VirtualItemEntry,
   VirtualListControl,
   VisibleRange,
 } from "./types";
-import {
-  calculateVisibleRange,
-  calculateItemOffset,
-  calculateTotalHeight,
-  calculateScrollToPosition,
-  parseHeight,
-  rangesEqual,
-} from "./helpers";
 
 /**
  * Create an index readable for tracking item indices.

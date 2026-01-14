@@ -1,5 +1,6 @@
 import { Effect, Scope } from "effect";
-import { type ElementRef, getElementFromRef } from "../Element/ref.js";
+
+import { getElementFromRef, type ElementRef } from "../Element/ref.js";
 
 /**
  * An element reference - can be:
