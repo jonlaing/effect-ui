@@ -1,14 +1,18 @@
 import { Context, Effect } from "effect";
-import { Signal } from "@effex/dom";
-import type { ClassValue } from "@effex/dom";
-import { Readable } from "@effex/dom";
-import { $ } from "@effex/dom";
-import { provide } from "@effex/dom";
-import { when } from "@effex/dom";
-import { createKeyboardNav } from "@effex/dom";
-import { Element } from "@effex/dom";
-import { mergeProps } from "@effex/dom";
-import type { AnimationOptions, Child } from "@effex/dom";
+
+import {
+  $,
+  Component,
+  createKeyboardNav,
+  Element,
+  mergeProps,
+  provide,
+  Readable,
+  Signal,
+  when,
+  type AnimationOptions,
+  type ClassValue,
+} from "@effex/dom";
 
 /**
  * Context shared between Tabs parts.
@@ -72,10 +76,10 @@ export interface TabsRootProps {
  * ])
  * ```
  */
-const Root = (
-  props: TabsRootProps,
-  children: Element.Element<never, TabsCtx> | Element.Element<never, TabsCtx>[],
-): Element.Element =>
+const Root: Component.Branch<TabsRootProps, TabsCtx, never> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const value = yield* Signal.fromNullable(
       props.value,
@@ -127,10 +131,7 @@ export interface TabsListProps {
  * ])
  * ```
  */
-const List = (
-  props: TabsListProps,
-  children?: Child<never, TabsCtx> | readonly Child<never, TabsCtx>[],
-): Element.Element<never, TabsCtx> =>
+const List: Component.Node<TabsListProps, TabsCtx> = (props, children) =>
   Effect.gen(function* () {
     const ctx = yield* TabsCtx;
 
@@ -187,10 +188,7 @@ export interface TabsTriggerProps {
  * Tabs.Trigger({ value: "tab1", class: "tab-trigger" }, "Account")
  * ```
  */
-const Trigger = (
-  props: TabsTriggerProps,
-  children?: Child<never, TabsCtx> | readonly Child<never, TabsCtx>[],
-): Element.Element<never, TabsCtx> =>
+const Trigger: Component.Node<TabsTriggerProps, TabsCtx> = (props, children) =>
   Effect.gen(function* () {
     const ctx = yield* TabsCtx;
 
@@ -258,10 +256,7 @@ export interface TabsContentProps {
  * ])
  * ```
  */
-const Content = (
-  props: TabsContentProps,
-  children?: Child<never, TabsCtx> | readonly Child<never, TabsCtx>[],
-): Element.Element<never, TabsCtx> =>
+const Content: Component.Node<TabsContentProps, TabsCtx> = (props, children) =>
   Effect.gen(function* () {
     const ctx = yield* TabsCtx;
 

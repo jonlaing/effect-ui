@@ -1,10 +1,12 @@
-import { describe, it, expect } from "vitest";
 import { Effect, Option, Stream } from "effect";
+import { describe, expect, it } from "vitest";
+
+import type { Readable } from "@effex/core";
+import { $, DOMRendererLive } from "@effex/dom";
+
 import { matchRoute } from "./matchRoute";
 import { makeRouterLayer } from "./RouterContext";
 import type { BaseRouter } from "./types";
-import type { Readable } from "@effex/core";
-import { DOMRendererLive, $, component } from "@effex/dom";
 
 // Helper to run scoped effects with proper typing
 const runScoped = <A>(effect: Effect.Effect<A, unknown, unknown>): Promise<A> =>
@@ -58,18 +60,10 @@ const createMockRouter = (options?: {
 };
 
 // Sample page components for testing
-const HomePage = component("HomePage", () =>
-  $.div({ id: "home" }, ["Home Page"]),
-);
-const AboutPage = component("AboutPage", () =>
-  $.div({ id: "about" }, ["About Page"]),
-);
-const UserPage = component("UserPage", () =>
-  $.div({ id: "user" }, ["User Page"]),
-);
-const NotFoundPage = component("NotFoundPage", () =>
-  $.div({ id: "not-found" }, ["404 - Not Found"]),
-);
+const HomePage = () => $.div({ id: "home" }, ["Home Page"]);
+const AboutPage = () => $.div({ id: "about" }, ["About Page"]);
+const UserPage = () => $.div({ id: "user" }, ["User Page"]);
+const NotFoundPage = () => $.div({ id: "not-found" }, ["404 - Not Found"]);
 
 describe("matchRoute", () => {
   it("should render the matched route", async () => {

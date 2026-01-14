@@ -1,22 +1,27 @@
 import { Effect, Layer } from "effect";
-import { Signal } from "@effex/dom";
-import type { ClassValue } from "@effex/dom";
-import { Readable } from "@effex/dom";
-import { $ } from "@effex/dom";
-import { provide } from "@effex/dom";
-import { when } from "@effex/dom";
-import { UniqueId } from "@effex/dom";
-import { Portal } from "@effex/dom";
-import { onClickOutside } from "@effex/dom";
-import { Element } from "@effex/dom";
-import { mergeProps } from "@effex/dom";
-import type { AnimationOptions, Child } from "@effex/dom";
+
 import {
-  type PopoverContext,
-  PopoverCtx,
-  PopoverContentPositionCtx,
-} from "./types";
+  $,
+  Component,
+  Element,
+  mergeProps,
+  onClickOutside,
+  Portal,
+  provide,
+  Readable,
+  Signal,
+  UniqueId,
+  when,
+  type AnimationOptions,
+  type ClassValue,
+} from "@effex/dom";
+
 import { positionAndReveal } from "./helpers";
+import {
+  PopoverContentPositionCtx,
+  PopoverCtx,
+  type PopoverContext,
+} from "./types";
 
 // ============================================================================
 // Components
@@ -49,12 +54,10 @@ export interface PopoverRootProps {
  * ])
  * ```
  */
-const Root = (
-  props: PopoverRootProps,
-  children:
-    | Element.Element<never, PopoverCtx>
-    | Element.Element<never, PopoverCtx>[],
-): Element.Element =>
+const Root: Component.Branch<PopoverRootProps, PopoverCtx, never> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const isOpen = yield* Signal.fromNullable(
       props.open,
@@ -115,10 +118,10 @@ export interface PopoverTriggerProps {
  * Popover.Trigger({ class: "btn" }, "Open Popover")
  * ```
  */
-const Trigger = (
-  props: PopoverTriggerProps,
-  children?: Child<never, PopoverCtx> | readonly Child<never, PopoverCtx>[],
-): Element.Element<never, PopoverCtx> =>
+const Trigger: Component.Node<PopoverTriggerProps, PopoverCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* PopoverCtx;
 
@@ -165,10 +168,10 @@ export interface PopoverAnchorProps {
  * ])
  * ```
  */
-const Anchor = (
-  props: PopoverAnchorProps,
-  children?: Child<never, PopoverCtx> | readonly Child<never, PopoverCtx>[],
-): Element.Element<never, PopoverCtx> =>
+const Anchor: Component.Node<PopoverAnchorProps, PopoverCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* PopoverCtx;
 
@@ -218,10 +221,10 @@ export interface PopoverContentProps {
  * ])
  * ```
  */
-const Content = (
-  props: PopoverContentProps,
-  children?: Child<never, PopoverCtx> | readonly Child<never, PopoverCtx>[],
-): Element.Element<never, PopoverCtx> =>
+const Content: Component.Node<PopoverContentProps, PopoverCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* PopoverCtx;
     const contentRef = yield* Element.ref<HTMLDivElement>();
@@ -354,10 +357,10 @@ export interface PopoverCloseProps {
  * Popover.Close({ class: "close-btn" }, "Close")
  * ```
  */
-const Close = (
-  props: PopoverCloseProps,
-  children?: Child<never, PopoverCtx> | readonly Child<never, PopoverCtx>[],
-): Element.Element<never, PopoverCtx> =>
+const Close: Component.Node<PopoverCloseProps, PopoverCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* PopoverCtx;
 

@@ -1,4 +1,4 @@
-import { Element } from "./Element";
+import type { Element } from "./Element";
 import type { Child } from "./Element/types";
 
 /**
@@ -9,180 +9,176 @@ export type Children<E = never, R = never> =
   | readonly Child<E, R>[];
 
 /**
- * Helper type to check if Props is empty (equivalent to {} or object)
- */
-type IsEmptyProps<Props> = keyof Props extends never ? true : false;
-
-/**
- * A named component function that renders props to an Element.
- * Supports multiple call signatures similar to element factories.
- * Props can be omitted when the component has no required props.
+ * Component type helpers for annotating component function signatures.
  *
- * @template Name - The component's tag name for identification
- * @template Props - The props type accepted by the component
- * @template E - The error type that can be produced by the component
- * @template R - The requirements/context type needed by the component
- * @template Provides - Context type that this component provides to children (for Root components)
+ * Uses tree terminology:
+ * - Unit: No props, no children (constant element)
+ * - Leaf: Props, no children (terminal node)
+ * - Node: Props, optional children (generic - could be leaf or branch)
+ * - Branch: Props, required children (internal node)
  *
  * @example
  * ```ts
- * // Component with no props - can omit the argument
- * const Header = component("Header", () => $.h1("Welcome"))
- * Header()  // No props needed
+ * // Unit - no props, no children
+ * const Divider: Component.Unit = () => $.hr();
  *
- * // Props with children as second argument
- * Link({ href: "/" }, "Home")
- * Link({ href: "/about", class: "nav-link" }, ["About Us"])
- * ```
- *
- * Note: Error and requirement types from children are inferred at the call site
- * and combined with the component's own types in the return type.
- * If Provides is specified, that context is subtracted from child requirements
- * (because the component provides it).
- */
-export type Component<
-  Name extends string,
-  Props = object,
-  E = never,
-  R = never,
-  Provides = never,
-> = {
-  /** The component's identifying tag name */
-  readonly _tag: Name;
-} & (IsEmptyProps<Props> extends true
-  ? {
-      // () - no props needed
-      (): Element.Element<E, R>;
-      // (children) - just children
-      <CE = never, CR = never>(
-        children: Children<CE, CR>,
-      ): Element.Element<E | CE, R | Exclude<CR, Provides>>;
-      // (props) - explicit empty props
-      (props: Props): Element.Element<E, R>;
-      // (props, children)
-      <CE = never, CR = never>(
-        props: Props,
-        children: Children<CE, CR>,
-      ): Element.Element<E | CE, R | Exclude<CR, Provides>>;
-    }
-  : {
-      // (props) - props required
-      (props: Props): Element.Element<E, R>;
-      // (props, children)
-      <CE = never, CR = never>(
-        props: Props,
-        children: Children<CE, CR>,
-      ): Element.Element<E | CE, R | Exclude<CR, Provides>>;
-    });
-
-/**
- * Create a named component from a render function.
- * The render function receives props and optional children as separate arguments.
- *
- * @param name - Unique name for the component (useful for debugging)
- * @param render - Function that renders props and children to an Element
- *
- * @example
- * ```ts
- * // Simple component without children
- * interface ButtonProps {
- *   label: string
- *   onClick: () => void
- * }
- *
- * const Button = component("Button", (props: ButtonProps) =>
- *   button({ onClick: props.onClick }, [props.label])
- * )
- *
- * // Usage
- * Button({ label: "Click me", onClick: () => console.log("clicked") })
- * ```
- *
- * @example
- * ```ts
- * // Component with children as second argument
- * interface LinkProps {
- *   href: string
- *   class?: string
- * }
- *
- * const Link = component("Link", (props: LinkProps, children) =>
- *   a({ href: props.href, class: props.class }, children ?? [])
- * )
- *
- * // Usage - children as second argument
- * Link({ href: "/" }, "Home")
- * Link({ href: "/about", class: "nav-link" }, ["About", " Us"])
- * ```
- *
- * @example
- * ```ts
- * // Component with context requirements
- * const NavLink = component("NavLink", (props: { href: string }, children) =>
+ * // Leaf - props, no children
+ * const Img: Component.Leaf<ImageProps, ImageCtx> = (props) =>
  *   Effect.gen(function* () {
- *     const router = yield* RouterContext
- *     return yield* button({ onClick: () => router.push(props.href) }, children ?? [])
- *   })
- * )
- * // Type: Component<"NavLink", { href: string }, never, RouterContext>
- * ```
+ *     const ctx = yield* ImageCtx;
+ *     return yield* $.img({ src: props.src, alt: props.alt });
+ *   });
  *
- * @example
- * ```ts
- * // Root component that provides context to children
- * const Root = component<"TabsRoot", TabsRootProps, never, never, TabsCtx>(
- *   "TabsRoot",
- *   (props, children) => Effect.gen(function* () {
- *     const ctx = // ... create context
- *     return yield* $.div({}, provide(TabsCtx, ctx, children))
- *   })
- * )
- * // Children requiring TabsCtx will have that requirement satisfied
+ * // Node - props, optional children (most flexible)
+ * const Item: Component.Node<ItemProps, MenuCtx> = (props, children) =>
+ *   Effect.gen(function* () {
+ *     const ctx = yield* MenuCtx;
+ *     return yield* $.div({ class: props.class }, children ?? []);
+ *   });
+ *
+ * // Branch - props, required children (provider/container)
+ * const Root: Component.Branch<RootProps, MenuCtx, never> = (props, children) =>
+ *   Effect.gen(function* () {
+ *     const ctx = { ... };
+ *     return yield* $.div({}, provide(MenuCtx, ctx, children));
+ *   });
  * ```
  */
-export const component = <
-  Name extends string,
-  Props = object,
-  E = never,
-  R = never,
-  Provides = never,
->(
-  name: Name,
-  render: (
+// Runtime value to allow namespace member access with verbatimModuleSyntax
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export const Component = {} as const;
+
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export declare namespace Component {
+  /**
+   * Component with no props and no children.
+   * Returns a constant element.
+   *
+   * @template R - Context requirements of the component
+   * @template E - Error type (defaults to never)
+   *
+   * @example
+   * ```ts
+   * const Divider: Component.Unit = () => $.hr({ class: "divider" });
+   * const Spacer: Component.Unit<LayoutCtx> = () =>
+   *   Effect.gen(function* () {
+   *     const ctx = yield* LayoutCtx;
+   *     return yield* $.div({ style: { height: ctx.spacing } });
+   *   });
+   * ```
+   */
+  export type Unit<R = never, E = never> = () => Element.Element<E, R>;
+
+  /**
+   * Component with props but no children.
+   * Terminal node in the component tree.
+   *
+   * @template Props - Props type accepted by the component
+   * @template R - Context requirements of the component
+   * @template E - Error type (defaults to never)
+   *
+   * @example
+   * ```ts
+   * const Img: Component.Leaf<ImageImgProps, ImageCtx> = (props) =>
+   *   Effect.gen(function* () {
+   *     const ctx = yield* ImageCtx;
+   *     return yield* $.img({ src: props.src, alt: props.alt });
+   *   });
+   *
+   * const Indicator: Component.Leaf<IndicatorProps, MenuCtx> = (props) =>
+   *   Effect.gen(function* () {
+   *     return yield* $.div({ class: props.class, "data-indicator": "" });
+   *   });
+   * ```
+   */
+  export type Leaf<Props, R = never, E = never> = (
     props: Props,
-    children?: Children<never, never>,
-  ) => Element.Element<E, R>,
-): Component<Name, Props, E, R, Provides> => {
-  const fn = (...args: unknown[]) => {
-    // No arguments - call with empty props
-    if (args.length === 0) {
-      return render({} as Props, undefined);
-    }
+  ) => Element.Element<E, R>;
 
-    // Single argument - could be props or children
-    if (args.length === 1) {
-      const arg = args[0];
-      // If it's a string, number, array, or Element, treat as children
-      if (
-        typeof arg === "string" ||
-        typeof arg === "number" ||
-        Array.isArray(arg)
-      ) {
-        return render({} as Props, arg as Children<never, never>);
-      }
-      // Otherwise treat as props
-      return render(arg as Props, undefined);
-    }
-
-    // Two arguments - props and children
-    return render(args[0] as Props, args[1] as Children<never, never>);
-  };
-
-  return Object.assign(fn, { _tag: name }) as Component<
-    Name,
+  /**
+   * Component with props and optional children.
+   * The generic case - could act as a leaf or branch depending on usage.
+   * Use this for components that support the asChild pattern or where
+   * children are genuinely optional.
+   *
+   * @template Props - Props type accepted by the component
+   * @template ChildReqs - Context requirements for children (defaults to never)
+   * @template ComponentReqs - Context requirements for the component's return type
+   *                           (defaults to ChildReqs)
+   * @template ChildError - Error type from children (defaults to never)
+   * @template ComponentError - Error type from the component (defaults to ChildError)
+   *
+   * @example
+   * ```ts
+   * // Consumer component with optional children
+   * const Item: Component.Node<ItemProps, MenuCtx> = (props, children) =>
+   *   Effect.gen(function* () {
+   *     const ctx = yield* MenuCtx;
+   *     return yield* $.button({ class: props.class }, children ?? []);
+   *   });
+   *
+   * // Component supporting asChild pattern
+   * const Trigger: Component.Node<TriggerProps, MenuCtx> = (props, children) =>
+   *   Effect.gen(function* () {
+   *     if (props.asChild && children) {
+   *       return yield* mergeProps(triggerProps, children);
+   *     }
+   *     return yield* $.button(triggerProps, children ?? []);
+   *   });
+   * ```
+   */
+  export type Node<
     Props,
-    E,
-    R,
-    Provides
-  >;
-};
+    ChildReqs = never,
+    ComponentReqs = ChildReqs,
+    ChildError = never,
+    ComponentError = ChildError,
+  > = (
+    props: Props,
+    children?: Children<ChildError, ChildReqs>,
+  ) => Element.Element<ComponentError, ComponentReqs>;
+
+  /**
+   * Component with props and required children.
+   * Internal/branch node - must have children to be meaningful.
+   * Use this for provider/container components where children are mandatory.
+   *
+   * @template Props - Props type accepted by the component
+   * @template ChildReqs - Context requirements for children (defaults to never)
+   * @template ComponentReqs - Context requirements for the component's return type
+   *                           (defaults to ChildReqs, use `never` for provider components)
+   * @template ChildError - Error type from children (defaults to never)
+   * @template ComponentError - Error type from the component (defaults to ChildError)
+   *
+   * @example
+   * ```ts
+   * // Provider component - provides context, requires children
+   * const Root: Component.Branch<RootProps, MenuCtx, never> = (props, children) =>
+   *   Effect.gen(function* () {
+   *     const ctx = { ... };
+   *     return yield* $.div({}, provide(MenuCtx, ctx, children));
+   *   });
+   *
+   * // Container that provides additional context
+   * const RadioGroup: Component.Branch<
+   *   RadioGroupProps,
+   *   MenuCtx | RadioGroupCtx,
+   *   MenuCtx
+   * > = (props, children) =>
+   *   Effect.gen(function* () {
+   *     const radioCtx = { ... };
+   *     return yield* $.div({}, provide(RadioGroupCtx, radioCtx, children));
+   *   });
+   * ```
+   */
+  export type Branch<
+    Props,
+    ChildReqs = never,
+    ComponentReqs = ChildReqs,
+    ChildError = never,
+    ComponentError = ChildError,
+  > = (
+    props: Props,
+    children: Children<ChildError, ChildReqs>,
+  ) => Element.Element<ComponentError, ComponentReqs>;
+}

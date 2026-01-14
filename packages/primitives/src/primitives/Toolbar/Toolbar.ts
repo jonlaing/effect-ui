@@ -1,12 +1,18 @@
 import { Context, Effect, Option } from "effect";
-import type { SignalArray } from "@effex/dom";
-import type { ClassValue } from "@effex/dom";
-import { Readable, Signal, UniqueId } from "@effex/dom";
-import { $ } from "@effex/dom";
-import { provide } from "@effex/dom";
-import { Derived, createKeyboardNav } from "@effex/dom";
-import { Element } from "@effex/dom";
-import type { Child } from "@effex/dom";
+
+import {
+  $,
+  Component,
+  createKeyboardNav,
+  Derived,
+  Element,
+  provide,
+  Readable,
+  Signal,
+  UniqueId,
+  type ClassValue,
+  type SignalArray,
+} from "@effex/dom";
 
 // ============================================================================
 // Types
@@ -164,12 +170,10 @@ export interface ToolbarLinkProps {
  * Root container for Toolbar. Manages keyboard navigation and provides
  * context to child components.
  */
-const Root = (
-  props: ToolbarRootProps,
-  children:
-    | Element.Element<never, ToolbarCtx>
-    | Element.Element<never, ToolbarCtx>[],
-): Element.Element =>
+const Root: Component.Branch<ToolbarRootProps, ToolbarCtx, never> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const orientation = Readable.of(props.orientation ?? "horizontal");
     const disabled = Readable.of(props.disabled ?? false);
@@ -210,10 +214,10 @@ const Root = (
 /**
  * A clickable button in the toolbar.
  */
-const Button = (
-  props: ToolbarButtonProps,
-  children?: Child<never, ToolbarCtx> | readonly Child<never, ToolbarCtx>[],
-): Element.Element<never, ToolbarCtx> =>
+const Button: Component.Node<ToolbarButtonProps, ToolbarCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* ToolbarCtx;
     const id = props.id ?? (yield* UniqueId.make("toolbar-button"));
@@ -287,10 +291,10 @@ const Button = (
 /**
  * A toggle button in the toolbar with on/off state.
  */
-const ToggleItem = (
-  props: ToolbarToggleItemProps,
-  children?: Child<never, ToolbarCtx> | readonly Child<never, ToolbarCtx>[],
-): Element.Element<never, ToolbarCtx> =>
+const ToggleItem: Component.Node<ToolbarToggleItemProps, ToolbarCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* ToolbarCtx;
     const toggleGroupCtx = yield* Effect.serviceOption(ToolbarToggleGroupCtx);
@@ -400,12 +404,11 @@ const ToggleItem = (
 /**
  * A group of toggle items where selection is managed together.
  */
-const ToggleGroup = (
-  props: ToolbarToggleGroupProps,
-  children:
-    | Element.Element<never, ToolbarCtx | ToolbarToggleGroupCtx>
-    | Element.Element<never, ToolbarCtx | ToolbarToggleGroupCtx>[],
-): Element.Element<never, ToolbarCtx> =>
+const ToggleGroup: Component.Branch<
+  ToolbarToggleGroupProps,
+  ToolbarCtx | ToolbarToggleGroupCtx,
+  ToolbarCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const type = props.type ?? "single";
     const disabled = Readable.of(props.disabled ?? false);
@@ -474,9 +477,7 @@ const ToggleGroup = (
 /**
  * A visual separator between toolbar items.
  */
-const Separator = (
-  props: ToolbarSeparatorProps,
-): Element.Element<never, ToolbarCtx> =>
+const Separator: Component.Leaf<ToolbarSeparatorProps, ToolbarCtx> = (props) =>
   Effect.gen(function* () {
     const ctx = yield* ToolbarCtx;
 
@@ -497,10 +498,7 @@ const Separator = (
 /**
  * A link that participates in toolbar navigation.
  */
-const Link = (
-  props: ToolbarLinkProps,
-  children?: Child<never, ToolbarCtx> | readonly Child<never, ToolbarCtx>[],
-): Element.Element<never, ToolbarCtx> =>
+const Link: Component.Node<ToolbarLinkProps, ToolbarCtx> = (props, children) =>
   Effect.gen(function* () {
     const ctx = yield* ToolbarCtx;
     const id = props.id ?? (yield* UniqueId.make("toolbar-link"));

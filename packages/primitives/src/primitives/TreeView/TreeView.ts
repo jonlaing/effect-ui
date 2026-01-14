@@ -1,13 +1,17 @@
 import { Context, Effect } from "effect";
-import { Signal, Derived } from "@effex/dom";
-import type { ClassValue } from "@effex/dom";
-import { Readable } from "@effex/dom";
-import { $ } from "@effex/dom";
-import { provide } from "@effex/dom";
-import { when } from "@effex/dom";
-import { Element } from "@effex/dom";
-import type { Child } from "@effex/dom";
-import type { SignalSet, AnimationOptions } from "@effex/dom";
+
+import {
+  $,
+  Component,
+  Derived,
+  provide,
+  Readable,
+  Signal,
+  when,
+  type AnimationOptions,
+  type ClassValue,
+  type SignalSet,
+} from "@effex/dom";
 
 /**
  * Context shared between TreeView parts.
@@ -113,12 +117,11 @@ export interface TreeViewRootProps {
 /**
  * Root container for a TreeView. Manages expanded/selected state for all items.
  */
-const Root = (
-  props: TreeViewRootProps,
-  children:
-    | Element.Element<never, TreeViewCtx | TreeViewLevelCtx>
-    | Element.Element<never, TreeViewCtx | TreeViewLevelCtx>[],
-): Element.Element =>
+const Root: Component.Branch<
+  TreeViewRootProps,
+  TreeViewCtx | TreeViewLevelCtx,
+  never
+> = (props, children) =>
   Effect.gen(function* () {
     const selectionMode = props.selectionMode ?? "none";
 
@@ -334,15 +337,11 @@ export interface TreeViewItemProps {
 /**
  * Individual tree item container. Can contain nested items.
  */
-const Item = (
-  props: TreeViewItemProps,
-  children:
-    | Element.Element<never, TreeViewCtx | TreeViewItemCtx | TreeViewLevelCtx>
-    | Element.Element<
-        never,
-        TreeViewCtx | TreeViewItemCtx | TreeViewLevelCtx
-      >[],
-): Element.Element<never, TreeViewCtx | TreeViewLevelCtx> =>
+const Item: Component.Branch<
+  TreeViewItemProps,
+  TreeViewCtx | TreeViewLevelCtx | TreeViewItemCtx,
+  TreeViewCtx | TreeViewLevelCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const treeCtx = yield* TreeViewCtx;
     const levelCtx = yield* TreeViewLevelCtx;
@@ -421,12 +420,10 @@ export interface TreeViewItemLabelProps {
 /**
  * The clickable/focusable label for a tree item.
  */
-const ItemLabel = (
-  props: TreeViewItemLabelProps,
-  children?:
-    | Child<never, TreeViewCtx | TreeViewItemCtx>
-    | readonly Child<never, TreeViewCtx | TreeViewItemCtx>[],
-): Element.Element<never, TreeViewCtx | TreeViewItemCtx> =>
+const ItemLabel: Component.Node<
+  TreeViewItemLabelProps,
+  TreeViewCtx | TreeViewItemCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const treeCtx = yield* TreeViewCtx;
     const itemCtx = yield* TreeViewItemCtx;
@@ -485,12 +482,10 @@ export interface TreeViewItemContentProps {
 /**
  * Container for nested child items. Sets hasChildren on parent.
  */
-const ItemContent = (
-  props: TreeViewItemContentProps,
-  children?:
-    | Child<never, TreeViewCtx | TreeViewItemCtx | TreeViewLevelCtx>
-    | readonly Child<never, TreeViewCtx | TreeViewItemCtx | TreeViewLevelCtx>[],
-): Element.Element<never, TreeViewCtx | TreeViewItemCtx | TreeViewLevelCtx> =>
+const ItemContent: Component.Node<
+  TreeViewItemContentProps,
+  TreeViewCtx | TreeViewItemCtx | TreeViewLevelCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const itemCtx = yield* TreeViewItemCtx;
     const levelCtx = yield* TreeViewLevelCtx;

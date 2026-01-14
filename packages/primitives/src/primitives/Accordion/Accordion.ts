@@ -1,14 +1,16 @@
 import { Context, Effect } from "effect";
-import { Signal } from "@effex/dom";
-import type { ClassValue } from "@effex/dom";
-import { Readable } from "@effex/dom";
-import { $ } from "@effex/dom";
-import { provide } from "@effex/dom";
-import { createKeyboardNav } from "@effex/dom";
-import { UniqueId } from "@effex/dom";
-import { Element } from "@effex/dom";
-import { mergeProps } from "@effex/dom";
-import type { Child } from "@effex/dom";
+
+import {
+  $,
+  Component,
+  createKeyboardNav,
+  mergeProps,
+  provide,
+  Readable,
+  Signal,
+  UniqueId,
+  type ClassValue,
+} from "@effex/dom";
 
 /**
  * Context shared between Accordion parts.
@@ -108,12 +110,10 @@ export interface AccordionRootProps {
  * ])
  * ```
  */
-const Root = (
-  props: AccordionRootProps,
-  children:
-    | Element.Element<never, AccordionCtx>
-    | Element.Element<never, AccordionCtx>[],
-): Element.Element =>
+const Root: Component.Branch<AccordionRootProps, AccordionCtx, never> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const type = props.type ?? "single";
     const collapsible = props.collapsible ?? false;
@@ -210,12 +210,11 @@ export interface AccordionItemProps {
  * ])
  * ```
  */
-const Item = (
-  props: AccordionItemProps,
-  children:
-    | Element.Element<never, AccordionCtx | AccordionItemCtx>
-    | Element.Element<never, AccordionCtx | AccordionItemCtx>[],
-): Element.Element<never, AccordionCtx> =>
+const Item: Component.Branch<
+  AccordionItemProps,
+  AccordionCtx | AccordionItemCtx,
+  AccordionCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const accordionCtx = yield* AccordionCtx;
 
@@ -276,12 +275,10 @@ export interface AccordionTriggerProps {
  * Accordion.Trigger({ class: "accordion-trigger" }, "Click to expand")
  * ```
  */
-const Trigger = (
-  props: AccordionTriggerProps,
-  children?:
-    | Child<never, AccordionCtx | AccordionItemCtx>
-    | readonly Child<never, AccordionCtx | AccordionItemCtx>[],
-): Element.Element<never, AccordionCtx | AccordionItemCtx> =>
+const Trigger: Component.Node<
+  AccordionTriggerProps,
+  AccordionCtx | AccordionItemCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const accordionCtx = yield* AccordionCtx;
     const itemCtx = yield* AccordionItemCtx;
@@ -345,12 +342,10 @@ export interface AccordionContentProps {
  * ])
  * ```
  */
-const Content = (
-  props: AccordionContentProps,
-  children?:
-    | Child<never, AccordionItemCtx>
-    | readonly Child<never, AccordionItemCtx>[],
-): Element.Element<never, AccordionItemCtx> =>
+const Content: Component.Node<AccordionContentProps, AccordionItemCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const itemCtx = yield* AccordionItemCtx;
 

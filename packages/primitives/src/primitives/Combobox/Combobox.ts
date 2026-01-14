@@ -1,25 +1,30 @@
 import { Effect, Layer } from "effect";
-import { Signal } from "@effex/dom";
-import type { Child, ClassValue } from "@effex/dom";
-import { Readable } from "@effex/dom";
-import { Derived } from "@effex/dom";
-import { $ } from "@effex/dom";
-import { provide } from "@effex/dom";
-import { when } from "@effex/dom";
-import { UniqueId } from "@effex/dom";
-import { Portal } from "@effex/dom";
-import { onClickOutside } from "@effex/dom";
-import { Element } from "@effex/dom";
-import type { AnimationOptions } from "@effex/dom";
+
 import {
-  type ComboboxContext,
-  type ComboboxItemContext,
-  type ComboboxFilterFn,
+  $,
+  Component,
+  Derived,
+  Element,
+  onClickOutside,
+  Portal,
+  provide,
+  Readable,
+  Signal,
+  UniqueId,
+  when,
+  type AnimationOptions,
+  type ClassValue,
+} from "@effex/dom";
+
+import { positionAndReveal } from "./helpers";
+import {
+  ComboboxContentPositionCtx,
   ComboboxCtx,
   ComboboxItemCtx,
-  ComboboxContentPositionCtx,
+  type ComboboxContext,
+  type ComboboxFilterFn,
+  type ComboboxItemContext,
 } from "./types";
-import { positionAndReveal } from "./helpers";
 
 // ============================================================================
 // Re-exports
@@ -112,12 +117,10 @@ export interface ComboboxRootProps {
  * ])
  * ```
  */
-const Root = (
-  props: ComboboxRootProps,
-  children:
-    | Element.Element<never, ComboboxCtx>
-    | Element.Element<never, ComboboxCtx>[],
-): Element.Element =>
+const Root: Component.Branch<ComboboxRootProps, ComboboxCtx, never> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     // State initialization - controlled/uncontrolled pattern
     const isOpen = yield* Signal.fromNullable(
@@ -284,9 +287,7 @@ export interface ComboboxInputProps {
  * Combobox.Input({ placeholder: "Search fruits..." })
  * ```
  */
-const Input = (
-  props: ComboboxInputProps,
-): Element.Element<never, ComboboxCtx> =>
+const Input: Component.Leaf<ComboboxInputProps, ComboboxCtx> = (props) =>
   Effect.gen(function* () {
     const ctx = yield* ComboboxCtx;
 
@@ -467,10 +468,10 @@ export interface ComboboxContentProps {
  * ])
  * ```
  */
-const Content = (
-  props: ComboboxContentProps,
-  children?: Child<never, ComboboxCtx> | readonly Child<never, ComboboxCtx>[],
-): Element.Element<never, ComboboxCtx> =>
+const Content: Component.Node<ComboboxContentProps, ComboboxCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* ComboboxCtx;
     const contentRef = yield* Element.ref<HTMLDivElement>();
@@ -583,12 +584,11 @@ export interface ComboboxItemProps {
  * Combobox.Item({ value: "apple" }, [Combobox.ItemText({}, "Apple")])
  * ```
  */
-const Item = (
-  props: ComboboxItemProps,
-  children:
-    | Element.Element<never, ComboboxCtx | ComboboxItemCtx>
-    | Element.Element<never, ComboboxCtx | ComboboxItemCtx>[],
-): Element.Element<never, ComboboxCtx> =>
+const Item: Component.Branch<
+  ComboboxItemProps,
+  ComboboxItemCtx,
+  ComboboxCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const ctx = yield* ComboboxCtx;
 
@@ -705,12 +705,10 @@ export interface ComboboxItemTextProps {
  * Combobox.ItemText({}, "Apple")
  * ```
  */
-const ItemText = (
-  props: ComboboxItemTextProps,
-  children?:
-    | Child<never, ComboboxItemCtx>
-    | readonly Child<never, ComboboxItemCtx>[],
-): Element.Element<never, ComboboxItemCtx> =>
+const ItemText: Component.Node<ComboboxItemTextProps, ComboboxItemCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const itemCtx = yield* ComboboxItemCtx;
 
@@ -747,10 +745,10 @@ export interface ComboboxGroupProps {
  * ])
  * ```
  */
-const Group = (
-  props: ComboboxGroupProps,
-  children?: Child<never, ComboboxCtx> | readonly Child<never, ComboboxCtx>[],
-): Element.Element<never, ComboboxCtx> =>
+const Group: Component.Node<ComboboxGroupProps, ComboboxCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     return yield* $.div(
       {
@@ -778,10 +776,10 @@ export interface ComboboxLabelProps {
  * Combobox.Label({}, "Fruits")
  * ```
  */
-const Label = (
-  props: ComboboxLabelProps,
-  children?: Child<never, ComboboxCtx> | readonly Child<never, ComboboxCtx>[],
-): Element.Element<never, ComboboxCtx> =>
+const Label: Component.Node<ComboboxLabelProps, ComboboxCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     return yield* $.div(
       {
@@ -811,10 +809,10 @@ export interface ComboboxEmptyProps {
  * Combobox.Empty({}, "No results found")
  * ```
  */
-const Empty = (
-  props: ComboboxEmptyProps,
-  children?: Child<never, ComboboxCtx> | readonly Child<never, ComboboxCtx>[],
-): Element.Element<never, ComboboxCtx> =>
+const Empty: Component.Node<ComboboxEmptyProps, ComboboxCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* ComboboxCtx;
 
@@ -857,10 +855,10 @@ export interface ComboboxLoadingProps {
  * Combobox.Loading({}, "Searching...")
  * ```
  */
-const Loading = (
-  props: ComboboxLoadingProps,
-  children?: Child<never, ComboboxCtx> | readonly Child<never, ComboboxCtx>[],
-): Element.Element<never, ComboboxCtx> =>
+const Loading: Component.Node<ComboboxLoadingProps, ComboboxCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* ComboboxCtx;
 

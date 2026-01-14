@@ -1,14 +1,20 @@
 import { Context, Effect } from "effect";
-import { Signal } from "@effex/dom";
-import type { ClassValue } from "@effex/dom";
-import { Readable } from "@effex/dom";
-import { $ } from "@effex/dom";
-import { provide } from "@effex/dom";
-import { when } from "@effex/dom";
-import { UniqueId } from "@effex/dom";
-import { Portal } from "@effex/dom";
-import { Element } from "@effex/dom";
-import type { AnimationOptions, Child, ElementRef } from "@effex/dom";
+
+import {
+  $,
+  Component,
+  Element,
+  Portal,
+  provide,
+  Readable,
+  Signal,
+  UniqueId,
+  when,
+  type AnimationOptions,
+  type ClassValue,
+  type ElementRef,
+} from "@effex/dom";
+
 import { calculatePosition } from "../helpers";
 
 /**
@@ -71,12 +77,10 @@ export interface TooltipRootProps {
  * ])
  * ```
  */
-const Root = (
-  props: TooltipRootProps,
-  children:
-    | Element.Element<never, TooltipCtx>
-    | Element.Element<never, TooltipCtx>[],
-): Element.Element =>
+const Root: Component.Branch<TooltipRootProps, TooltipCtx, never> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const isOpen = yield* Signal.fromNullable(
       props.open,
@@ -129,10 +133,10 @@ export interface TooltipTriggerProps {
  * Tooltip.Trigger({}, $.button({}, "Hover me"))
  * ```
  */
-const Trigger = (
-  props: TooltipTriggerProps,
-  children?: Child<never, TooltipCtx> | readonly Child<never, TooltipCtx>[],
-): Element.Element<never, TooltipCtx> =>
+const Trigger: Component.Node<TooltipTriggerProps, TooltipCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* TooltipCtx;
 
@@ -204,10 +208,10 @@ export interface TooltipContentProps {
  * Tooltip.Content({ side: "top", align: "center" }, "Tooltip text")
  * ```
  */
-const Content = (
-  props: TooltipContentProps,
-  children?: Child<never, TooltipCtx> | readonly Child<never, TooltipCtx>[],
-): Element.Element<never, TooltipCtx> =>
+const Content: Component.Node<TooltipContentProps, TooltipCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* TooltipCtx;
 

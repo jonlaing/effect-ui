@@ -1,17 +1,22 @@
-import { Context, Effect, Array } from "effect";
-import { Signal } from "@effex/dom";
-import type { ClassValue } from "@effex/dom";
-import { Readable } from "@effex/dom";
-import { $ } from "@effex/dom";
-import { provide } from "@effex/dom";
-import { when } from "@effex/dom";
-import { UniqueId } from "@effex/dom";
-import { Portal } from "@effex/dom";
-import { FocusTrap } from "@effex/dom";
-import { ScrollLock } from "@effex/dom";
-import { Element, type ElementRef } from "@effex/dom";
-import { mergeProps } from "@effex/dom";
-import type { AnimationOptions, Child } from "@effex/dom";
+import { Array, Context, Effect } from "effect";
+
+import {
+  $,
+  Component,
+  Element,
+  FocusTrap,
+  mergeProps,
+  Portal,
+  provide,
+  Readable,
+  ScrollLock,
+  Signal,
+  UniqueId,
+  when,
+  type AnimationOptions,
+  type ClassValue,
+  type ElementRef,
+} from "@effex/dom";
 
 /**
  * Context shared between AlertDialog parts.
@@ -57,12 +62,10 @@ export interface AlertDialogRootProps {
  * Root container for an AlertDialog. Manages open/closed state and provides
  * context to child components.
  */
-const Root = (
-  props: AlertDialogRootProps,
-  children:
-    | Element.Element<never, AlertDialogCtx>
-    | Element.Element<never, AlertDialogCtx>[],
-): Element.Element =>
+const Root: Component.Branch<AlertDialogRootProps, AlertDialogCtx, never> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     // Handle controlled vs uncontrolled state
     const isOpen = yield* Signal.fromNullable(
@@ -111,12 +114,10 @@ export interface AlertDialogTriggerProps {
 /**
  * Button that opens the AlertDialog.
  */
-const Trigger = (
-  props: AlertDialogTriggerProps,
-  children?:
-    | Child<never, AlertDialogCtx>
-    | readonly Child<never, AlertDialogCtx>[],
-): Element.Element<never, AlertDialogCtx> =>
+const Trigger: Component.Node<AlertDialogTriggerProps, AlertDialogCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* AlertDialogCtx;
 
@@ -155,12 +156,10 @@ export interface AlertDialogPortalProps {
  * Renders alert dialog content in a portal outside the normal DOM hierarchy.
  * Only renders when the dialog is open.
  */
-const AlertDialogPortal = (
-  props: AlertDialogPortalProps,
-  children:
-    | Element.Element<never, AlertDialogCtx>
-    | Element.Element<never, AlertDialogCtx>[],
-): Element.Element<never, AlertDialogCtx> =>
+const AlertDialogPortal: Component.Branch<
+  AlertDialogPortalProps,
+  AlertDialogCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const ctx = yield* AlertDialogCtx;
 
@@ -192,9 +191,9 @@ export interface AlertDialogOverlayProps {
  * Backdrop overlay for the AlertDialog.
  * Unlike Dialog, clicking the overlay does NOT close the alert dialog.
  */
-const Overlay = (
-  props: AlertDialogOverlayProps,
-): Element.Element<never, AlertDialogCtx> =>
+const Overlay: Component.Leaf<AlertDialogOverlayProps, AlertDialogCtx> = (
+  props,
+) =>
   Effect.gen(function* () {
     const ctx = yield* AlertDialogCtx;
 
@@ -225,12 +224,10 @@ export interface AlertDialogContentProps {
  * Includes focus trap, scroll lock, and keyboard support.
  * Initial focus goes to the Cancel button.
  */
-const Content = (
-  props: AlertDialogContentProps,
-  children?:
-    | Child<never, AlertDialogCtx>
-    | readonly Child<never, AlertDialogCtx>[],
-): Element.Element<never, AlertDialogCtx> =>
+const Content: Component.Node<AlertDialogContentProps, AlertDialogCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* AlertDialogCtx;
     const previouslyFocused = document.activeElement as HTMLElement | null;
@@ -303,12 +300,10 @@ export interface AlertDialogCancelProps {
  * Closes the dialog without taking action.
  * Receives initial focus when the dialog opens.
  */
-const Cancel = (
-  props: AlertDialogCancelProps,
-  children?:
-    | Child<never, AlertDialogCtx>
-    | readonly Child<never, AlertDialogCtx>[],
-): Element.Element<never, AlertDialogCtx> =>
+const Cancel: Component.Node<AlertDialogCancelProps, AlertDialogCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* AlertDialogCtx;
 
@@ -344,12 +339,10 @@ export interface AlertDialogActionProps {
  * Action button for the AlertDialog.
  * Executes the action and then closes the dialog.
  */
-const Action = (
-  props: AlertDialogActionProps,
-  children?:
-    | Child<never, AlertDialogCtx>
-    | readonly Child<never, AlertDialogCtx>[],
-): Element.Element<never, AlertDialogCtx> =>
+const Action: Component.Node<AlertDialogActionProps, AlertDialogCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* AlertDialogCtx;
 
@@ -388,12 +381,10 @@ export interface AlertDialogTitleProps {
  * Accessible title for the AlertDialog.
  * Connected to the content via aria-labelledby.
  */
-const Title = (
-  props: AlertDialogTitleProps,
-  children?:
-    | Child<never, AlertDialogCtx>
-    | readonly Child<never, AlertDialogCtx>[],
-): Element.Element<never, AlertDialogCtx> =>
+const Title: Component.Node<AlertDialogTitleProps, AlertDialogCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* AlertDialogCtx;
 
@@ -423,12 +414,10 @@ export interface AlertDialogDescriptionProps {
  * Accessible description for the AlertDialog.
  * Connected to the content via aria-describedby.
  */
-const Description = (
-  props: AlertDialogDescriptionProps,
-  children?:
-    | Child<never, AlertDialogCtx>
-    | readonly Child<never, AlertDialogCtx>[],
-): Element.Element<never, AlertDialogCtx> =>
+const Description: Component.Node<
+  AlertDialogDescriptionProps,
+  AlertDialogCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const ctx = yield* AlertDialogCtx;
 

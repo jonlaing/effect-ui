@@ -1,20 +1,25 @@
-import { Context, Effect, MutableRef } from "effect";
-import { Signal } from "@effex/dom";
-import type { Child, ClassValue } from "@effex/dom";
-import { Readable } from "@effex/dom";
-import { $ } from "@effex/dom";
-import { provide } from "@effex/dom";
-import { Element, type ElementRef } from "@effex/dom";
+import { Array, Context, Effect, MutableRef } from "effect";
+
 import {
-  type SliderValue,
-  isRangeValue,
+  $,
+  Component,
+  Element,
+  provide,
+  Readable,
+  Signal,
+  type ClassValue,
+  type ElementRef,
+} from "@effex/dom";
+
+import {
   clampAndSnap,
-  valueToPercent,
   enforceRange,
   getRangeStyle,
   getThumbStyle,
+  isRangeValue,
+  valueToPercent,
+  type SliderValue,
 } from "./helpers.js";
-import { Array } from "effect";
 
 export type { SliderValue };
 export { isRangeValue };
@@ -122,10 +127,10 @@ export interface SliderRootProps {
 /**
  * Root container for Slider. Manages value state and provides context.
  */
-const Root = (
-  props: SliderRootProps,
-  children?: Child<never, SliderCtx> | readonly Child<never, SliderCtx>[],
-): Element.Element =>
+const Root: Component.Branch<SliderRootProps, SliderCtx, never> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     // Defaults
     const min = props.min ?? 0;
@@ -275,12 +280,13 @@ const Root = (
         })
       : null;
 
-    const childArary =
-      !children || Array.isArray(children)
-        ? (children as Child<never, never>[])
-        : [children];
+    const childArray = Array.isArray(children)
+      ? children
+      : children
+        ? [children]
+        : [];
 
-    const provided = provide(SliderCtx, ctx, childArary) as Element.Element[];
+    const provided = provide(SliderCtx, ctx, childArray);
     const hiddenPart = hiddenInput ? [hiddenInput] : [];
 
     const newChildren = [...hiddenPart, ...provided];
@@ -310,10 +316,7 @@ export interface SliderTrackProps {
 /**
  * The track area of the slider. Clickable to jump thumb to position.
  */
-const Track = (
-  props: SliderTrackProps,
-  children?: Child<never, SliderCtx> | readonly Child<never, SliderCtx>[],
-): Element.Element<never, SliderCtx> =>
+const Track: Component.Node<SliderTrackProps, SliderCtx> = (props, children) =>
   Effect.gen(function* () {
     const ctx = yield* SliderCtx;
 
@@ -378,7 +381,7 @@ export interface SliderRangeProps {
 /**
  * Visual fill between min and value (or between thumbs in range mode).
  */
-const Range = (props: SliderRangeProps): Element.Element<never, SliderCtx> =>
+const Range: Component.Leaf<SliderRangeProps, SliderCtx> = (props) =>
   Effect.gen(function* () {
     const ctx = yield* SliderCtx;
 
@@ -425,7 +428,7 @@ export interface SliderThumbProps {
 /**
  * Draggable thumb handle. Has role="slider" with ARIA attributes.
  */
-const Thumb = (props: SliderThumbProps): Element.Element<never, SliderCtx> =>
+const Thumb: Component.Leaf<SliderThumbProps, SliderCtx> = (props) =>
   Effect.gen(function* () {
     const ctx = yield* SliderCtx;
 

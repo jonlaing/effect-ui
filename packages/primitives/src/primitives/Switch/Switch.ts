@@ -1,9 +1,6 @@
 import { Effect } from "effect";
-import { Signal } from "@effex/dom";
-import type { ClassValue } from "@effex/dom";
-import { Readable } from "@effex/dom";
-import { $ } from "@effex/dom";
-import { Element } from "@effex/dom";
+
+import { $, Component, Readable, Signal, type ClassValue } from "@effex/dom";
 
 /**
  * Props for Switch component.
@@ -83,7 +80,7 @@ export interface SwitchProps {
  * Switch({ name: "notifications", value: "enabled" })
  * ```
  */
-export const Switch = (props: SwitchProps): Element.Element =>
+export const Switch: Component.Leaf<SwitchProps> = (props) =>
   Effect.gen(function* () {
     const checked = yield* Signal.fromNullable(
       props.checked,

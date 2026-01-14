@@ -1,11 +1,11 @@
-import { describe, it, expect } from "vitest";
 import { Effect, Option, Stream } from "effect";
+import { describe, expect, it } from "vitest";
+
+import { Signal, type Readable } from "@effex/core";
+import { div, DOMRendererLive } from "@effex/dom";
+import { makeRouterLayer, type BaseRouter } from "@effex/router";
+
 import { Routes } from "./Routes";
-import { makeRouterLayer } from "@effex/router";
-import type { BaseRouter } from "@effex/router";
-import type { Readable } from "@effex/core";
-import { DOMRendererLive, div, component } from "@effex/dom";
-import { Signal } from "@effex/core";
 
 // Helper to run scoped effects with proper typing
 const runScoped = <A>(effect: Effect.Effect<A, unknown, unknown>): Promise<A> =>
@@ -64,18 +64,10 @@ const createMockRouter = (options?: {
 };
 
 // Sample page components for testing
-const HomePage = component("HomePage", () =>
-  div({ id: "home" }, ["Home Page"]),
-);
-const AboutPage = component("AboutPage", () =>
-  div({ id: "about" }, ["About Page"]),
-);
-const UserPage = component("UserPage", () =>
-  div({ id: "user" }, ["User Page"]),
-);
-const NotFoundPage = component("NotFoundPage", () =>
-  div({ id: "not-found" }, ["404 - Not Found"]),
-);
+const HomePage = () => div({ id: "home" }, ["Home Page"]);
+const AboutPage = () => div({ id: "about" }, ["About Page"]);
+const UserPage = () => div({ id: "user" }, ["User Page"]);
+const NotFoundPage = () => div({ id: "not-found" }, ["404 - Not Found"]);
 
 const testComponents = {
   home: HomePage,

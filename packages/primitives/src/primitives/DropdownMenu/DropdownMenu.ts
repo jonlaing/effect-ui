@@ -1,17 +1,23 @@
 import { Context, Effect } from "effect";
-import { Signal } from "@effex/dom";
-import type { ClassValue } from "@effex/dom";
-import { Readable } from "@effex/dom";
-import { $ } from "@effex/dom";
-import { provide } from "@effex/dom";
-import { when } from "@effex/dom";
-import { UniqueId } from "@effex/dom";
-import { Portal } from "@effex/dom";
-import { onClickOutside, createKeyboardNav, mergeProps } from "@effex/dom";
-import { Element } from "@effex/dom";
-import type { Child } from "@effex/dom";
-import type { AnimationOptions } from "@effex/dom";
-import type { ElementRef } from "@effex/dom";
+
+import {
+  $,
+  Component,
+  createKeyboardNav,
+  Element,
+  mergeProps,
+  onClickOutside,
+  Portal,
+  provide,
+  Readable,
+  Signal,
+  UniqueId,
+  when,
+  type AnimationOptions,
+  type ClassValue,
+  type ElementRef,
+} from "@effex/dom";
+
 import { calculatePosition } from "../helpers";
 
 // ============================================================================
@@ -126,12 +132,10 @@ export interface DropdownMenuRootProps {
  * ])
  * ```
  */
-const Root = (
-  props: DropdownMenuRootProps,
-  children:
-    | Element.Element<never, DropdownMenuCtx>
-    | Element.Element<never, DropdownMenuCtx>[],
-): Element.Element =>
+const Root: Component.Branch<DropdownMenuRootProps, DropdownMenuCtx, never> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const isOpen = yield* Signal.fromNullable(
       props.open,
@@ -190,12 +194,10 @@ export interface DropdownMenuTriggerProps {
  * DropdownMenu.Trigger({ class: "menu-trigger" }, "Open Menu")
  * ```
  */
-const Trigger = (
-  props: DropdownMenuTriggerProps,
-  children?:
-    | Child<never, DropdownMenuCtx>
-    | readonly Child<never, DropdownMenuCtx>[],
-): Element.Element<never, DropdownMenuCtx> =>
+const Trigger: Component.Node<DropdownMenuTriggerProps, DropdownMenuCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* DropdownMenuCtx;
 
@@ -304,12 +306,10 @@ export interface DropdownMenuContentProps {
  * ])
  * ```
  */
-const Content = (
-  props: DropdownMenuContentProps,
-  children?:
-    | Child<never, DropdownMenuCtx>
-    | readonly Child<never, DropdownMenuCtx>[],
-): Element.Element<never, DropdownMenuCtx> =>
+const Content: Component.Node<DropdownMenuContentProps, DropdownMenuCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* DropdownMenuCtx;
 
@@ -475,12 +475,10 @@ export interface DropdownMenuItemProps {
  * )
  * ```
  */
-const Item = (
-  props: DropdownMenuItemProps,
-  children?:
-    | Child<never, DropdownMenuCtx>
-    | readonly Child<never, DropdownMenuCtx>[],
-): Element.Element<never, DropdownMenuCtx> =>
+const Item: Component.Node<DropdownMenuItemProps, DropdownMenuCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* DropdownMenuCtx;
 
@@ -545,12 +543,10 @@ export interface DropdownMenuGroupProps {
  * ])
  * ```
  */
-const Group = (
-  props: DropdownMenuGroupProps,
-  children?:
-    | Child<never, DropdownMenuCtx>
-    | readonly Child<never, DropdownMenuCtx>[],
-): Element.Element<never, DropdownMenuCtx> =>
+const Group: Component.Node<DropdownMenuGroupProps, DropdownMenuCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const groupProps = {
       role: "group" as const,
@@ -585,12 +581,10 @@ export interface DropdownMenuLabelProps {
  * DropdownMenu.Label({}, "Section Title")
  * ```
  */
-const Label = (
-  props: DropdownMenuLabelProps,
-  children?:
-    | Child<never, DropdownMenuCtx>
-    | readonly Child<never, DropdownMenuCtx>[],
-): Element.Element<never, DropdownMenuCtx> =>
+const Label: Component.Node<DropdownMenuLabelProps, DropdownMenuCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const labelProps = {
       "data-menu-label": "",
@@ -624,12 +618,10 @@ export interface DropdownMenuSeparatorProps {
  * DropdownMenu.Separator({})
  * ```
  */
-const Separator = (
-  props: DropdownMenuSeparatorProps,
-  children?:
-    | Child<never, DropdownMenuCtx>
-    | readonly Child<never, DropdownMenuCtx>[],
-): Element.Element<never, DropdownMenuCtx> =>
+const Separator: Component.Node<DropdownMenuSeparatorProps, DropdownMenuCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const separatorProps = {
       role: "separator" as const,
@@ -673,12 +665,10 @@ export interface DropdownMenuCheckboxItemProps {
  * DropdownMenu.CheckboxItem({ checked: showGrid }, "Show Grid")
  * ```
  */
-const CheckboxItem = (
-  props: DropdownMenuCheckboxItemProps,
-  children?:
-    | Child<never, DropdownMenuCtx>
-    | readonly Child<never, DropdownMenuCtx>[],
-): Element.Element<never, DropdownMenuCtx> =>
+const CheckboxItem: Component.Node<
+  DropdownMenuCheckboxItemProps,
+  DropdownMenuCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const ctx = yield* DropdownMenuCtx;
 
@@ -760,10 +750,11 @@ export interface DropdownMenuRadioGroupProps {
  * ])
  * ```
  */
-const RadioGroup = (
-  props: DropdownMenuRadioGroupProps,
-  children: Child<never, DropdownMenuCtx | DropdownMenuRadioGroupCtx>[],
-): Element.Element<never, DropdownMenuCtx> =>
+const RadioGroup: Component.Branch<
+  DropdownMenuRadioGroupProps,
+  DropdownMenuCtx | DropdownMenuRadioGroupCtx,
+  DropdownMenuCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const value = yield* Signal.fromNullable(
       props.value,
@@ -813,12 +804,10 @@ export interface DropdownMenuRadioItemProps {
  * DropdownMenu.RadioItem({ value: "option1" }, "Option 1")
  * ```
  */
-const RadioItem = (
-  props: DropdownMenuRadioItemProps,
-  children?:
-    | Child<never, DropdownMenuCtx | DropdownMenuRadioGroupCtx>
-    | readonly Child<never, DropdownMenuCtx | DropdownMenuRadioGroupCtx>[],
-): Element.Element<never, DropdownMenuCtx | DropdownMenuRadioGroupCtx> =>
+const RadioItem: Component.Node<
+  DropdownMenuRadioItemProps,
+  DropdownMenuCtx | DropdownMenuRadioGroupCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const ctx = yield* DropdownMenuCtx;
     const radioCtx = yield* DropdownMenuRadioGroupCtx;
@@ -897,10 +886,11 @@ export interface DropdownMenuSubProps {
  * ])
  * ```
  */
-const Sub = (
-  props: DropdownMenuSubProps,
-  children: Child<never, DropdownMenuCtx | DropdownMenuSubCtx>[],
-): Element.Element<never, DropdownMenuCtx> =>
+const Sub: Component.Branch<
+  DropdownMenuSubProps,
+  DropdownMenuCtx | DropdownMenuSubCtx,
+  DropdownMenuCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const isOpen = yield* Signal.fromNullable(
       props.open,
@@ -975,12 +965,10 @@ export interface DropdownMenuSubTriggerProps {
  * DropdownMenu.SubTrigger({}, "More Options →")
  * ```
  */
-const SubTrigger = (
-  props: DropdownMenuSubTriggerProps,
-  children?:
-    | Child<never, DropdownMenuSubCtx>
-    | readonly Child<never, DropdownMenuSubCtx>[],
-): Element.Element<never, DropdownMenuSubCtx> =>
+const SubTrigger: Component.Node<
+  DropdownMenuSubTriggerProps,
+  DropdownMenuSubCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const subCtx = yield* DropdownMenuSubCtx;
 
@@ -1104,12 +1092,10 @@ export interface DropdownMenuSubContentProps {
  * ])
  * ```
  */
-const SubContent = (
-  props: DropdownMenuSubContentProps,
-  children?:
-    | Child<never, DropdownMenuCtx | DropdownMenuSubCtx>
-    | readonly Child<never, DropdownMenuCtx | DropdownMenuSubCtx>[],
-): Element.Element<never, DropdownMenuCtx | DropdownMenuSubCtx> =>
+const SubContent: Component.Node<
+  DropdownMenuSubContentProps,
+  DropdownMenuCtx | DropdownMenuSubCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const rootCtx = yield* DropdownMenuCtx;
     const subCtx = yield* DropdownMenuSubCtx;

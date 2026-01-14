@@ -1,12 +1,17 @@
 import { Context, Effect, MutableRef } from "effect";
-import { Signal } from "@effex/dom";
-import type { ClassValue } from "@effex/dom";
-import { Derived } from "@effex/dom";
-import { Readable } from "@effex/dom";
-import { $ } from "@effex/dom";
-import { provide } from "@effex/dom";
-import { Element, type ElementRef, bindElementToRef } from "@effex/dom";
-import type { Child } from "@effex/dom";
+
+import {
+  $,
+  bindElementToRef,
+  Component,
+  Derived,
+  Element,
+  provide,
+  Readable,
+  Signal,
+  type ClassValue,
+  type ElementRef,
+} from "@effex/dom";
 
 // ============================================================================
 // Types
@@ -126,11 +131,9 @@ export interface ScrollAreaCornerProps {
 // Root Component
 // ============================================================================
 
-const Root = (
-  props: ScrollAreaRootProps,
-  children:
-    | Child<never, ScrollAreaCtx>
-    | readonly Child<never, ScrollAreaCtx>[],
+const Root: Component.Branch<ScrollAreaRootProps, ScrollAreaCtx, never> = (
+  props,
+  children,
 ) =>
   Effect.gen(function* () {
     const type = props.type ?? "hover";
@@ -268,12 +271,10 @@ const Root = (
 // Viewport Component
 // ============================================================================
 
-const Viewport = (
-  props: ScrollAreaViewportProps,
-  children?:
-    | Child<never, ScrollAreaCtx>
-    | readonly Child<never, ScrollAreaCtx>[],
-): Element.Element<never, ScrollAreaCtx> =>
+const Viewport: Component.Node<ScrollAreaViewportProps, ScrollAreaCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* ScrollAreaCtx;
     const viewportRef = yield* Element.ref<HTMLDivElement>();
@@ -419,10 +420,11 @@ const Viewport = (
 // Scrollbar Component
 // ============================================================================
 
-const Scrollbar = (
-  props: ScrollAreaScrollbarProps,
-  children: Child<never, ScrollAreaCtx | ScrollbarCtx>[],
-): Element.Element<never, ScrollAreaCtx> =>
+const Scrollbar: Component.Branch<
+  ScrollAreaScrollbarProps,
+  ScrollAreaCtx | ScrollbarCtx,
+  ScrollAreaCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const ctx = yield* ScrollAreaCtx;
     const trackRef = yield* Element.ref<HTMLDivElement>();
@@ -565,9 +567,10 @@ const Scrollbar = (
 // Thumb Component
 // ============================================================================
 
-const Thumb = (
-  props: ScrollAreaThumbProps,
-): Element.Element<never, ScrollAreaCtx | ScrollbarCtx> =>
+const Thumb: Component.Leaf<
+  ScrollAreaThumbProps,
+  ScrollAreaCtx | ScrollbarCtx
+> = (props) =>
   Effect.gen(function* () {
     const ctx = yield* ScrollAreaCtx;
     const scrollbarCtx = yield* ScrollbarCtx;
@@ -680,9 +683,7 @@ const Thumb = (
 // Corner Component
 // ============================================================================
 
-const Corner = (
-  props: ScrollAreaCornerProps,
-): Element.Element<never, ScrollAreaCtx> =>
+const Corner: Component.Leaf<ScrollAreaCornerProps, ScrollAreaCtx> = (props) =>
   Effect.gen(function* () {
     return yield* $.div({
       class: props.class,

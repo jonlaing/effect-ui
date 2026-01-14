@@ -1,13 +1,15 @@
 import { Context, Effect } from "effect";
-import { Signal } from "@effex/dom";
-import type { ClassValue } from "@effex/dom";
-import { Readable } from "@effex/dom";
-import { $ } from "@effex/dom";
-import { provide } from "@effex/dom";
-import { UniqueId } from "@effex/dom";
-import { Element } from "@effex/dom";
-import { mergeProps } from "@effex/dom";
-import type { Child } from "@effex/dom";
+
+import {
+  $,
+  Component,
+  mergeProps,
+  provide,
+  Readable,
+  Signal,
+  UniqueId,
+  type ClassValue,
+} from "@effex/dom";
 
 /**
  * Context shared between Collapsible parts.
@@ -63,12 +65,10 @@ export interface CollapsibleRootProps {
  * ])
  * ```
  */
-const Root = (
-  props: CollapsibleRootProps,
-  children:
-    | Element.Element<never, CollapsibleCtx>
-    | Element.Element<never, CollapsibleCtx>[],
-): Element.Element =>
+const Root: Component.Branch<CollapsibleRootProps, CollapsibleCtx, never> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     // Handle controlled vs uncontrolled state
     const isOpen = yield* Signal.fromNullable(
@@ -145,12 +145,10 @@ export interface CollapsibleTriggerProps {
  * Collapsible.Trigger({ as: "div" }, $.span("Custom trigger"))
  * ```
  */
-const Trigger = (
-  props: CollapsibleTriggerProps,
-  children?:
-    | Child<never, CollapsibleCtx>
-    | readonly Child<never, CollapsibleCtx>[],
-): Element.Element<never, CollapsibleCtx> =>
+const Trigger: Component.Node<CollapsibleTriggerProps, CollapsibleCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* CollapsibleCtx;
 
@@ -227,12 +225,10 @@ export interface CollapsibleContentProps {
  * ])
  * ```
  */
-const Content = (
-  props: CollapsibleContentProps,
-  children?:
-    | Child<never, CollapsibleCtx>
-    | readonly Child<never, CollapsibleCtx>[],
-): Element.Element<never, CollapsibleCtx> =>
+const Content: Component.Node<CollapsibleContentProps, CollapsibleCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* CollapsibleCtx;
 

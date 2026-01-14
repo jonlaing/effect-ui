@@ -214,8 +214,7 @@ export {
 } from "./Animation/index.js";
 
 // Components
-export type { Component, Children } from "./Component";
-export { component } from "./Component";
+export { Component, type Children } from "./Component";
 
 // Mounting
 export { mount, runApp } from "./Mount";

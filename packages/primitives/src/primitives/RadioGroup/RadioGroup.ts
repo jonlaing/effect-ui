@@ -1,13 +1,16 @@
 import { Context, Effect } from "effect";
-import { Signal } from "@effex/dom";
-import type { ClassValue } from "@effex/dom";
-import { Readable } from "@effex/dom";
-import { Derived } from "@effex/dom";
-import { $ } from "@effex/dom";
-import { provide } from "@effex/dom";
-import { createKeyboardNav } from "@effex/dom";
-import { Element } from "@effex/dom";
-import type { Child } from "@effex/dom";
+
+import {
+  $,
+  Component,
+  createKeyboardNav,
+  Derived,
+  Element,
+  provide,
+  Readable,
+  Signal,
+  type ClassValue,
+} from "@effex/dom";
 
 /**
  * Context shared between RadioGroup parts.
@@ -79,12 +82,10 @@ export interface RadioGroupRootProps {
  * ])
  * ```
  */
-const Root = (
-  props: RadioGroupRootProps,
-  children:
-    | Element.Element<never, RadioGroupCtx>
-    | Element.Element<never, RadioGroupCtx>[],
-): Element.Element =>
+const Root: Component.Branch<RadioGroupRootProps, RadioGroupCtx, never> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const value = yield* Signal.fromNullable(
       props.value,
@@ -178,12 +179,10 @@ export interface RadioGroupItemProps {
  * ])
  * ```
  */
-const Item = (
-  props: RadioGroupItemProps,
-  children?:
-    | Child<never, RadioGroupCtx>
-    | readonly Child<never, RadioGroupCtx>[],
-): Element.Element<never, RadioGroupCtx> =>
+const Item: Component.Node<RadioGroupItemProps, RadioGroupCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* RadioGroupCtx;
 

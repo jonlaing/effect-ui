@@ -1,15 +1,16 @@
 import { Context, Effect } from "effect";
-import type { ClassValue } from "@effex/dom";
+
 import {
-  Signal,
-  Readable,
-  Derived,
   $,
+  Component,
+  Derived,
+  Element,
   provide,
   Reaction,
-  Element,
+  Readable,
+  Signal,
+  type ClassValue,
 } from "@effex/dom";
-import type { Child } from "@effex/dom";
 
 export type ImageLoadingStatus = "idle" | "loading" | "loaded" | "error";
 
@@ -33,9 +34,9 @@ export interface ImageRootProps {
 /**
  * Container for image components. Provides loading state context to Img and Fallback.
  */
-const Root = (
-  props: ImageRootProps,
-  children: Child<never, ImageCtx> | readonly Child<never, ImageCtx>[],
+const Root: Component.Branch<ImageRootProps, ImageCtx, never> = (
+  props,
+  children,
 ) =>
   Effect.gen(function* () {
     const status = yield* Signal.make<ImageLoadingStatus>("idle");
@@ -68,7 +69,7 @@ export interface ImageImgProps {
 /**
  * The actual image element. Tracks loading state and reports to context.
  */
-const Img = (props: ImageImgProps): Element.Element<never, ImageCtx> =>
+const Img: Component.Leaf<ImageImgProps, ImageCtx> = (props) =>
   Effect.gen(function* () {
     const ctx = yield* ImageCtx;
     const imgRef = yield* Element.ref<HTMLImageElement>();
@@ -142,10 +143,10 @@ export interface ImageFallbackProps {
 /**
  * Fallback content shown while image is loading or if it fails to load.
  */
-const Fallback = (
-  props: ImageFallbackProps,
-  children?: Child<never, ImageCtx> | readonly Child<never, ImageCtx>[],
-): Element.Element<never, ImageCtx> =>
+const Fallback: Component.Node<ImageFallbackProps, ImageCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* ImageCtx;
     const delayMs = props.delayMs ?? 0;

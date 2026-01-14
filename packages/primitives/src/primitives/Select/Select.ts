@@ -1,17 +1,25 @@
 import { Context, Effect } from "effect";
-import { Signal } from "@effex/dom";
-import type { Child, ClassValue, SignalMap } from "@effex/dom";
-import { Derived } from "@effex/dom";
-import { Readable } from "@effex/dom";
-import { $ } from "@effex/dom";
-import { provide } from "@effex/dom";
-import { when } from "@effex/dom";
-import { UniqueId } from "@effex/dom";
-import { Portal } from "@effex/dom";
-import { onClickOutside, createKeyboardNav } from "@effex/dom";
-import { Element, type ElementRef } from "@effex/dom";
-import { mergeProps } from "@effex/dom";
-import type { AnimationOptions } from "@effex/dom";
+
+import {
+  $,
+  Component,
+  createKeyboardNav,
+  Derived,
+  Element,
+  mergeProps,
+  onClickOutside,
+  Portal,
+  provide,
+  Readable,
+  Signal,
+  UniqueId,
+  when,
+  type AnimationOptions,
+  type ClassValue,
+  type ElementRef,
+  type SignalMap,
+} from "@effex/dom";
+
 import { calculatePosition } from "../helpers";
 
 /**
@@ -126,12 +134,10 @@ export interface SelectRootProps {
  * ])
  * ```
  */
-const Root = (
-  props: SelectRootProps,
-  children:
-    | Element.Element<never, SelectCtx>
-    | Element.Element<never, SelectCtx>[],
-): Element.Element =>
+const Root: Component.Branch<SelectRootProps, SelectCtx, never> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const isOpen = yield* Signal.fromNullable(
       props.open,
@@ -221,10 +227,10 @@ export interface SelectTriggerProps {
  * ])
  * ```
  */
-const Trigger = (
-  props: SelectTriggerProps,
-  children?: Child<never, SelectCtx> | readonly Child<never, SelectCtx>[],
-): Element.Element<never, SelectCtx> =>
+const Trigger: Component.Node<SelectTriggerProps, SelectCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* SelectCtx;
 
@@ -297,7 +303,7 @@ export interface SelectValueProps {
  * Select.Value({ placeholder: "Choose..." })
  * ```
  */
-const Value = (props: SelectValueProps): Element.Element<never, SelectCtx> =>
+const Value: Component.Leaf<SelectValueProps, SelectCtx> = (props) =>
   Effect.gen(function* () {
     const ctx = yield* SelectCtx;
 
@@ -353,10 +359,10 @@ export interface SelectContentProps {
  * ])
  * ```
  */
-const Content = (
-  props: SelectContentProps,
-  children?: Child<never, SelectCtx> | readonly Child<never, SelectCtx>[],
-): Element.Element<never, SelectCtx> =>
+const Content: Component.Node<SelectContentProps, SelectCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* SelectCtx;
 
@@ -522,12 +528,10 @@ export interface SelectItemProps {
  * ])
  * ```
  */
-const Item = (
-  props: SelectItemProps,
-  children:
-    | Element.Element<never, SelectCtx | SelectItemCtx>
-    | Element.Element<never, SelectCtx | SelectItemCtx>[],
-): Element.Element<never, SelectCtx> =>
+const Item: Component.Branch<SelectItemProps, SelectItemCtx, SelectCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* SelectCtx;
 
@@ -600,12 +604,10 @@ export interface SelectItemTextProps {
  * Select.ItemText({ class: "item-text" }, "Apple")
  * ```
  */
-const ItemText = (
-  props: SelectItemTextProps,
-  children?:
-    | Child<never, SelectItemCtx>
-    | readonly Child<never, SelectItemCtx>[],
-): Element.Element<never, SelectItemCtx> =>
+const ItemText: Component.Node<SelectItemTextProps, SelectItemCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const itemCtx = yield* SelectItemCtx;
 
@@ -643,10 +645,7 @@ export interface SelectGroupProps {
  * ])
  * ```
  */
-const Group = (
-  props: SelectGroupProps,
-  children?: Child<never, SelectCtx> | readonly Child<never, SelectCtx>[],
-): Element.Element<never, SelectCtx> =>
+const Group: Component.Node<SelectGroupProps, SelectCtx> = (props, children) =>
   Effect.gen(function* () {
     return yield* $.div(
       {
@@ -674,10 +673,7 @@ export interface SelectLabelProps {
  * Select.Label({}, "Category Name")
  * ```
  */
-const Label = (
-  props: SelectLabelProps,
-  children?: Child<never, SelectCtx> | readonly Child<never, SelectCtx>[],
-): Element.Element<never, SelectCtx> =>
+const Label: Component.Node<SelectLabelProps, SelectCtx> = (props, children) =>
   Effect.gen(function* () {
     return yield* $.div(
       {
@@ -704,9 +700,7 @@ export interface SelectSeparatorProps {
  * Select.Separator({})
  * ```
  */
-const Separator = (
-  props: SelectSeparatorProps,
-): Element.Element<never, SelectCtx> =>
+const Separator: Component.Leaf<SelectSeparatorProps, SelectCtx> = (props) =>
   Effect.gen(function* () {
     return yield* $.div({
       class: props.class,

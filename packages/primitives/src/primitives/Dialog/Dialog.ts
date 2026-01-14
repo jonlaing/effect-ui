@@ -1,17 +1,20 @@
 import { Context, Effect } from "effect";
-import { Signal } from "@effex/dom";
-import type { ClassValue } from "@effex/dom";
-import { Readable } from "@effex/dom";
-import { $ } from "@effex/dom";
-import { provide } from "@effex/dom";
-import { when } from "@effex/dom";
-import { UniqueId } from "@effex/dom";
-import { Portal } from "@effex/dom";
-import { FocusTrap } from "@effex/dom";
-import { ScrollLock } from "@effex/dom";
-import { Element } from "@effex/dom";
-import { mergeProps } from "@effex/dom";
-import type { AnimationOptions, Child } from "@effex/dom";
+
+import {
+  $,
+  Component,
+  FocusTrap,
+  mergeProps,
+  Portal,
+  provide,
+  Readable,
+  ScrollLock,
+  Signal,
+  UniqueId,
+  when,
+  type AnimationOptions,
+  type ClassValue,
+} from "@effex/dom";
 
 /**
  * Context shared between Dialog parts.
@@ -80,12 +83,10 @@ export interface DialogRootProps {
  * ])
  * ```
  */
-const Root = (
-  props: DialogRootProps,
-  children:
-    | Element.Element<never, DialogCtx>
-    | Element.Element<never, DialogCtx>[],
-): Element.Element =>
+const Root: Component.Branch<DialogRootProps, DialogCtx, never> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     // Handle controlled vs uncontrolled state
     const isOpen = yield* Signal.fromNullable(
@@ -143,10 +144,10 @@ export interface DialogTriggerProps {
  * Dialog.Trigger({ class: "btn" }, "Open Dialog")
  * ```
  */
-const Trigger = (
-  props: DialogTriggerProps,
-  children?: Child<never, DialogCtx> | readonly Child<never, DialogCtx>[],
-): Element.Element<never, DialogCtx> =>
+const Trigger: Component.Node<DialogTriggerProps, DialogCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* DialogCtx;
 
@@ -194,12 +195,10 @@ export interface DialogPortalProps {
  * ])
  * ```
  */
-const DialogPortal = (
-  props: DialogPortalProps,
-  children:
-    | Element.Element<never, DialogCtx>
-    | Element.Element<never, DialogCtx>[],
-): Element.Element<never, DialogCtx> =>
+const DialogPortal: Component.Branch<DialogPortalProps, DialogCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* DialogCtx;
 
@@ -235,9 +234,7 @@ export interface DialogOverlayProps {
  * Dialog.Overlay({ class: "dialog-overlay" })
  * ```
  */
-const Overlay = (
-  props: DialogOverlayProps,
-): Element.Element<never, DialogCtx> =>
+const Overlay: Component.Leaf<DialogOverlayProps, DialogCtx> = (props) =>
   Effect.gen(function* () {
     const ctx = yield* DialogCtx;
 
@@ -276,10 +273,10 @@ export interface DialogContentProps {
  * ])
  * ```
  */
-const Content = (
-  props: DialogContentProps,
-  children?: Child<never, DialogCtx> | readonly Child<never, DialogCtx>[],
-): Element.Element<never, DialogCtx> =>
+const Content: Component.Node<DialogContentProps, DialogCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* DialogCtx;
     const previouslyFocused = document.activeElement as HTMLElement | null;
@@ -344,10 +341,7 @@ export interface DialogCloseProps {
  * Dialog.Close({ class: "close-btn" }, "Close")
  * ```
  */
-const Close = (
-  props: DialogCloseProps,
-  children?: Child<never, DialogCtx> | readonly Child<never, DialogCtx>[],
-): Element.Element<never, DialogCtx> =>
+const Close: Component.Node<DialogCloseProps, DialogCtx> = (props, children) =>
   Effect.gen(function* () {
     const ctx = yield* DialogCtx;
 
@@ -385,10 +379,7 @@ export interface DialogTitleProps {
  * Dialog.Title({ class: "dialog-title" }, "Edit Profile")
  * ```
  */
-const Title = (
-  props: DialogTitleProps,
-  children?: Child<never, DialogCtx> | readonly Child<never, DialogCtx>[],
-): Element.Element<never, DialogCtx> =>
+const Title: Component.Node<DialogTitleProps, DialogCtx> = (props, children) =>
   Effect.gen(function* () {
     const ctx = yield* DialogCtx;
 
@@ -423,10 +414,10 @@ export interface DialogDescriptionProps {
  * Dialog.Description({}, "Make changes to your profile here.")
  * ```
  */
-const Description = (
-  props: DialogDescriptionProps,
-  children?: Child<never, DialogCtx> | readonly Child<never, DialogCtx>[],
-): Element.Element<never, DialogCtx> =>
+const Description: Component.Node<DialogDescriptionProps, DialogCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* DialogCtx;
 

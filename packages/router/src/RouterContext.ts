@@ -1,8 +1,9 @@
 import { Context, Effect, Layer } from "effect";
-import { a } from "@effex/dom";
-import { component } from "@effex/dom";
-import type { BaseRouter, ActionState } from "./types";
+
 import type { Readable } from "@effex/core";
+import { a, type Component } from "@effex/dom";
+
+import type { ActionState, BaseRouter } from "./types";
 
 /**
  * Context tag for accessing the router within components.
@@ -116,7 +117,10 @@ export interface LinkProps {
  * Link({ href: "/login", replace: true }, "Login")
  * ```
  */
-export const Link = component("Link", (props: LinkProps, children?) =>
+export const Link: Component.Node<LinkProps, RouterContext> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const router = yield* RouterContext;
 
@@ -144,8 +148,7 @@ export const Link = component("Link", (props: LinkProps, children?) =>
       },
       children ?? [],
     );
-  }),
-);
+  });
 
 /**
  * Access the current action state from the router.

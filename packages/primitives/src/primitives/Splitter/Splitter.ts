@@ -1,11 +1,16 @@
 import { Context, Effect, MutableRef } from "effect";
-import { Signal, Derived } from "@effex/dom";
-import type { ClassValue } from "@effex/dom";
-import { Readable } from "@effex/dom";
-import { $ } from "@effex/dom";
-import { provide } from "@effex/dom";
-import { Element, type ElementRef } from "@effex/dom";
-import type { Child } from "@effex/dom";
+
+import {
+  $,
+  Component,
+  Derived,
+  Element,
+  provide,
+  Readable,
+  Signal,
+  type ClassValue,
+  type ElementRef,
+} from "@effex/dom";
 
 /**
  * Context shared between Splitter parts.
@@ -111,12 +116,10 @@ export interface SplitterRootProps {
 /**
  * Root container for a Splitter. Manages panel sizes and drag state.
  */
-const Root = (
-  props: SplitterRootProps,
-  children:
-    | Element.Element<never, SplitterCtx>
-    | Element.Element<never, SplitterCtx>[],
-): Element.Element =>
+const Root: Component.Branch<SplitterRootProps, SplitterCtx, never> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const orientation = props.orientation ?? "horizontal";
     const keyboardStep = props.keyboardStep ?? 1;
@@ -450,12 +453,11 @@ export interface SplitterPanelProps {
 /**
  * Individual panel within a Splitter. Automatically registers with the root.
  */
-const Panel = (
-  props: SplitterPanelProps,
-  children?:
-    | Child<never, SplitterCtx | SplitterPanelCtx>
-    | readonly Child<never, SplitterCtx | SplitterPanelCtx>[],
-): Element.Element<never, SplitterCtx> =>
+const Panel: Component.Branch<
+  SplitterPanelProps,
+  SplitterCtx | SplitterPanelCtx,
+  SplitterCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const ctx = yield* SplitterCtx;
 
@@ -515,9 +517,7 @@ export interface SplitterHandleProps {
 /**
  * Draggable handle between panels. Provides resize functionality.
  */
-const Handle = (
-  props: SplitterHandleProps,
-): Element.Element<never, SplitterCtx> =>
+const Handle: Component.Leaf<SplitterHandleProps, SplitterCtx> = (props) =>
   Effect.gen(function* () {
     const ctx = yield* SplitterCtx;
 

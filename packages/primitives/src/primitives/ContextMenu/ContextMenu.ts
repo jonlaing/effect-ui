@@ -1,16 +1,21 @@
 import { Context, Effect } from "effect";
-import { Signal } from "@effex/dom";
-import type { ClassValue } from "@effex/dom";
-import { Readable } from "@effex/dom";
-import { $ } from "@effex/dom";
-import { provide } from "@effex/dom";
-import { when } from "@effex/dom";
-import { UniqueId } from "@effex/dom";
-import { Portal } from "@effex/dom";
-import { onClickOutside, createKeyboardNav } from "@effex/dom";
-import { Element } from "@effex/dom";
-import type { Child, ElementRef } from "@effex/dom";
-import type { AnimationOptions } from "@effex/dom";
+
+import {
+  $,
+  Component,
+  createKeyboardNav,
+  Element,
+  onClickOutside,
+  Portal,
+  provide,
+  Readable,
+  Signal,
+  UniqueId,
+  when,
+  type AnimationOptions,
+  type ClassValue,
+  type ElementRef,
+} from "@effex/dom";
 
 // ============================================================================
 // Types & Interfaces
@@ -116,12 +121,10 @@ export interface ContextMenuRootProps {
  * ])
  * ```
  */
-const Root = (
-  props: ContextMenuRootProps,
-  children:
-    | Element.Element<never, ContextMenuCtx>
-    | Element.Element<never, ContextMenuCtx>[],
-): Element.Element =>
+const Root: Component.Branch<ContextMenuRootProps, ContextMenuCtx, never> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const isOpen = yield* Signal.fromNullable(props.open, false);
     const position = yield* Signal.make({ x: 0, y: 0 });
@@ -171,12 +174,10 @@ export interface ContextMenuTriggerProps {
  * ContextMenu.Trigger({}, div({ class: "file-item" }, "document.pdf"))
  * ```
  */
-const Trigger = (
-  props: ContextMenuTriggerProps,
-  children?:
-    | Child<never, ContextMenuCtx>
-    | readonly Child<never, ContextMenuCtx>[],
-): Element.Element<never, ContextMenuCtx> =>
+const Trigger: Component.Node<ContextMenuTriggerProps, ContextMenuCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* ContextMenuCtx;
     const triggerId = yield* UniqueId.make("context-menu-trigger");
@@ -229,12 +230,10 @@ export interface ContextMenuContentProps {
  * ])
  * ```
  */
-const Content = (
-  props: ContextMenuContentProps,
-  children?:
-    | Child<never, ContextMenuCtx>
-    | readonly Child<never, ContextMenuCtx>[],
-): Element.Element<never, ContextMenuCtx> =>
+const Content: Component.Node<ContextMenuContentProps, ContextMenuCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* ContextMenuCtx;
 
@@ -364,12 +363,10 @@ export interface ContextMenuItemProps {
  * ContextMenu.Item({ onSelect: () => Effect.log("Clicked!") }, "Copy")
  * ```
  */
-const Item = (
-  props: ContextMenuItemProps,
-  children?:
-    | Child<never, ContextMenuCtx>
-    | readonly Child<never, ContextMenuCtx>[],
-): Element.Element<never, ContextMenuCtx> =>
+const Item: Component.Node<ContextMenuItemProps, ContextMenuCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* ContextMenuCtx;
 
@@ -422,12 +419,10 @@ export interface ContextMenuGroupProps {
  * ])
  * ```
  */
-const Group = (
-  props: ContextMenuGroupProps,
-  children?:
-    | Child<never, ContextMenuCtx>
-    | readonly Child<never, ContextMenuCtx>[],
-): Element.Element<never, ContextMenuCtx> =>
+const Group: Component.Node<ContextMenuGroupProps, ContextMenuCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     return yield* $.div(
       {
@@ -456,12 +451,10 @@ export interface ContextMenuLabelProps {
  * ContextMenu.Label({}, "Section Title")
  * ```
  */
-const Label = (
-  props: ContextMenuLabelProps,
-  children?:
-    | Child<never, ContextMenuCtx>
-    | readonly Child<never, ContextMenuCtx>[],
-): Element.Element<never, ContextMenuCtx> =>
+const Label: Component.Node<ContextMenuLabelProps, ContextMenuCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     return yield* $.div(
       {
@@ -489,9 +482,9 @@ export interface ContextMenuSeparatorProps {
  * ContextMenu.Separator({})
  * ```
  */
-const Separator = (
-  props: ContextMenuSeparatorProps,
-): Element.Element<never, ContextMenuCtx> =>
+const Separator: Component.Leaf<ContextMenuSeparatorProps, ContextMenuCtx> = (
+  props,
+) =>
   Effect.gen(function* () {
     return yield* $.div({
       class: props.class,
@@ -526,12 +519,10 @@ export interface ContextMenuCheckboxItemProps {
  * ContextMenu.CheckboxItem({ checked: showHidden }, "Show Hidden Files")
  * ```
  */
-const CheckboxItem = (
-  props: ContextMenuCheckboxItemProps,
-  children?:
-    | Child<never, ContextMenuCtx>
-    | readonly Child<never, ContextMenuCtx>[],
-): Element.Element<never, ContextMenuCtx> =>
+const CheckboxItem: Component.Node<
+  ContextMenuCheckboxItemProps,
+  ContextMenuCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const ctx = yield* ContextMenuCtx;
 
@@ -605,10 +596,11 @@ export interface ContextMenuRadioGroupProps {
  * ])
  * ```
  */
-const RadioGroup = (
-  props: ContextMenuRadioGroupProps,
-  children: Child<never, ContextMenuCtx | ContextMenuRadioGroupCtx>[],
-): Element.Element<never, ContextMenuCtx> =>
+const RadioGroup: Component.Branch<
+  ContextMenuRadioGroupProps,
+  ContextMenuCtx | ContextMenuRadioGroupCtx,
+  ContextMenuCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const value = yield* Signal.fromNullable(
       props.value,
@@ -657,12 +649,10 @@ export interface ContextMenuRadioItemProps {
  * ContextMenu.RadioItem({ value: "list" }, "List View")
  * ```
  */
-const RadioItem = (
-  props: ContextMenuRadioItemProps,
-  children?:
-    | Child<never, ContextMenuCtx | ContextMenuRadioGroupCtx>
-    | readonly Child<never, ContextMenuCtx | ContextMenuRadioGroupCtx>[],
-): Element.Element<never, ContextMenuCtx | ContextMenuRadioGroupCtx> =>
+const RadioItem: Component.Node<
+  ContextMenuRadioItemProps,
+  ContextMenuCtx | ContextMenuRadioGroupCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const ctx = yield* ContextMenuCtx;
     const radioCtx = yield* ContextMenuRadioGroupCtx;
@@ -731,10 +721,11 @@ export interface ContextMenuSubProps {
  * ])
  * ```
  */
-const Sub = (
-  props: ContextMenuSubProps,
-  children: Child<never, ContextMenuCtx | ContextMenuSubCtx>[],
-): Element.Element<never, ContextMenuCtx> =>
+const Sub: Component.Branch<
+  ContextMenuSubProps,
+  ContextMenuCtx | ContextMenuSubCtx,
+  ContextMenuCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const isOpen = yield* Signal.fromNullable(
       props.open,
@@ -807,12 +798,10 @@ export interface ContextMenuSubTriggerProps {
  * ContextMenu.SubTrigger({}, "More Options →")
  * ```
  */
-const SubTrigger = (
-  props: ContextMenuSubTriggerProps,
-  children?:
-    | Child<never, ContextMenuCtx | ContextMenuSubCtx>
-    | readonly Child<never, ContextMenuCtx | ContextMenuSubCtx>[],
-): Element.Element<never, ContextMenuCtx | ContextMenuSubCtx> =>
+const SubTrigger: Component.Node<
+  ContextMenuSubTriggerProps,
+  ContextMenuCtx | ContextMenuSubCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const subCtx = yield* ContextMenuSubCtx;
 
@@ -922,12 +911,10 @@ export interface ContextMenuSubContentProps {
  * ])
  * ```
  */
-const SubContent = (
-  props: ContextMenuSubContentProps,
-  children?:
-    | Child<never, ContextMenuCtx | ContextMenuSubCtx>
-    | readonly Child<never, ContextMenuCtx | ContextMenuSubCtx>[],
-): Element.Element<never, ContextMenuCtx | ContextMenuSubCtx> =>
+const SubContent: Component.Node<
+  ContextMenuSubContentProps,
+  ContextMenuCtx | ContextMenuSubCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const rootCtx = yield* ContextMenuCtx;
     const subCtx = yield* ContextMenuSubCtx;

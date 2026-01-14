@@ -39,6 +39,7 @@
     "@effect/platform-node": "^0.104.0",
     "@eslint/js": "^9.39.2",
     "@eslint/json": "^0.14.0",
+    "@ianvs/prettier-plugin-sort-imports": "^4.7.0",
     "@storybook/addon-a11y": "^10.1.10",
     "@storybook/addon-docs": "^10.1.10",
     "@storybook/addon-storysource": "^8.6.14",

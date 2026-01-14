@@ -1,10 +1,13 @@
 import { Context, Effect } from "effect";
-import type { ClassValue } from "@effex/dom";
-import { Readable } from "@effex/dom";
-import { Derived } from "@effex/dom";
-import { $ } from "@effex/dom";
-import { provide } from "@effex/dom";
-import { Element } from "@effex/dom";
+
+import {
+  $,
+  Component,
+  Derived,
+  provide,
+  Readable,
+  type ClassValue,
+} from "@effex/dom";
 
 export type ProgressState = "loading" | "complete" | "indeterminate";
 
@@ -33,12 +36,10 @@ export interface ProgressRootProps {
   readonly class?: ClassValue;
 }
 
-const Root = (
-  props: ProgressRootProps,
-  children:
-    | Element.Element<never, ProgressCtx>
-    | Element.Element<never, ProgressCtx>[],
-): Element.Element =>
+const Root: Component.Branch<ProgressRootProps, ProgressCtx, never> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const max = props.max ?? 100;
 
@@ -105,9 +106,9 @@ export interface ProgressIndicatorProps {
   readonly class?: ClassValue;
 }
 
-const Indicator = (
-  props: ProgressIndicatorProps,
-): Element.Element<never, ProgressCtx> =>
+const Indicator: Component.Leaf<ProgressIndicatorProps, ProgressCtx> = (
+  props,
+) =>
   Effect.gen(function* () {
     const ctx = yield* ProgressCtx;
 

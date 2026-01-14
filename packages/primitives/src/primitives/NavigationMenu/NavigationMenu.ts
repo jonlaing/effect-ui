@@ -1,13 +1,19 @@
 import { Context, Effect, MutableRef } from "effect";
-import { Signal } from "@effex/dom";
-import { Readable } from "@effex/dom";
-import { Reaction } from "@effex/dom";
-import { $, ol, li } from "@effex/dom";
-import { provide } from "@effex/dom";
-import { UniqueId } from "@effex/dom";
-import { Element } from "@effex/dom";
-import type { Child, ClassValue } from "@effex/dom";
-import type { ElementRef } from "@effex/dom";
+
+import {
+  $,
+  Component,
+  Element,
+  li,
+  ol,
+  provide,
+  Reaction,
+  Readable,
+  Signal,
+  UniqueId,
+  type ClassValue,
+  type ElementRef,
+} from "@effex/dom";
 
 // ============================================================================
 // Types
@@ -99,12 +105,11 @@ export interface NavigationMenuRootProps {
 /**
  * Root container for NavigationMenu. Manages active state and provides context.
  */
-const Root = (
-  props: NavigationMenuRootProps,
-  children:
-    | Element.Element<never, NavigationMenuCtx>
-    | Element.Element<never, NavigationMenuCtx>[],
-): Element.Element =>
+const Root: Component.Branch<
+  NavigationMenuRootProps,
+  NavigationMenuCtx,
+  never
+> = (props, children) =>
   Effect.gen(function* () {
     const orientation = Readable.of(props.orientation ?? "horizontal");
     const delayDuration = props.delayDuration ?? 200;
@@ -214,12 +219,10 @@ export interface NavigationMenuListProps {
 /**
  * Container for navigation menu items.
  */
-const List = (
-  props: NavigationMenuListProps,
-  children?:
-    | Child<never, NavigationMenuCtx>
-    | readonly Child<never, NavigationMenuCtx>[],
-): Element.Element<never, NavigationMenuCtx> =>
+const List: Component.Node<NavigationMenuListProps, NavigationMenuCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* NavigationMenuCtx;
 
@@ -282,10 +285,11 @@ export interface NavigationMenuItemProps {
 /**
  * Wrapper for a navigation menu item (trigger + content).
  */
-const Item = (
-  props: NavigationMenuItemProps,
-  children: Child<never, NavigationMenuCtx | NavigationMenuItemCtx>[],
-): Element.Element<never, NavigationMenuCtx> =>
+const Item: Component.Branch<
+  NavigationMenuItemProps,
+  NavigationMenuCtx | NavigationMenuItemCtx,
+  NavigationMenuCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const ctx = yield* NavigationMenuCtx;
     const triggerRef = yield* Element.ref<HTMLButtonElement>();
@@ -320,12 +324,10 @@ export interface NavigationMenuTriggerProps {
 /**
  * Button that opens the navigation menu content.
  */
-const Trigger = (
-  props: NavigationMenuTriggerProps,
-  children?:
-    | Child<never, NavigationMenuCtx | NavigationMenuItemCtx>
-    | readonly Child<never, NavigationMenuCtx | NavigationMenuItemCtx>[],
-): Element.Element<never, NavigationMenuCtx | NavigationMenuItemCtx> =>
+const Trigger: Component.Node<
+  NavigationMenuTriggerProps,
+  NavigationMenuCtx | NavigationMenuItemCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const ctx = yield* NavigationMenuCtx;
     const itemCtx = yield* NavigationMenuItemCtx;
@@ -416,12 +418,10 @@ export interface NavigationMenuContentProps {
  * Content panel that appears when the trigger is activated.
  * Renders inside Item but positions itself absolutely to appear below the menu.
  */
-const Content = (
-  props: NavigationMenuContentProps,
-  children?:
-    | Child<never, NavigationMenuCtx | NavigationMenuItemCtx>
-    | readonly Child<never, NavigationMenuCtx | NavigationMenuItemCtx>[],
-): Element.Element<never, NavigationMenuCtx | NavigationMenuItemCtx> =>
+const Content: Component.Node<
+  NavigationMenuContentProps,
+  NavigationMenuCtx | NavigationMenuItemCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const ctx = yield* NavigationMenuCtx;
     const itemCtx = yield* NavigationMenuItemCtx;
@@ -482,9 +482,10 @@ export interface NavigationMenuViewportProps {
  * Note: This component is optional - Content will still work without it,
  * but Viewport provides a consistent positioning anchor.
  */
-const Viewport = (
-  props: NavigationMenuViewportProps,
-): Element.Element<never, NavigationMenuCtx> =>
+const Viewport: Component.Leaf<
+  NavigationMenuViewportProps,
+  NavigationMenuCtx
+> = (props) =>
   Effect.gen(function* () {
     const ctx = yield* NavigationMenuCtx;
 
@@ -511,9 +512,10 @@ export interface NavigationMenuIndicatorProps {
 /**
  * Visual indicator that follows the active trigger.
  */
-const Indicator = (
-  props: NavigationMenuIndicatorProps,
-): Element.Element<never, NavigationMenuCtx> =>
+const Indicator: Component.Leaf<
+  NavigationMenuIndicatorProps,
+  NavigationMenuCtx
+> = (props) =>
   Effect.gen(function* () {
     const ctx = yield* NavigationMenuCtx;
     const indicatorRef = yield* Element.ref<HTMLDivElement>();

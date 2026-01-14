@@ -1,11 +1,12 @@
-import { describe, it, expect } from "vitest";
 import { Effect, Option, Stream } from "effect";
-import { EffexServer, renderRequest } from "./Server";
-import { div, component } from "@effex/dom";
-import { makeRouterLayer } from "@effex/router";
-import type { BaseRouter } from "@effex/router";
+import { describe, expect, it } from "vitest";
+
 import type { Readable } from "@effex/core";
+import { div } from "@effex/dom";
+import { makeRouterLayer, type BaseRouter } from "@effex/router";
+
 import type { SSRRouter } from "../rendering/SSR";
+import { EffexServer, renderRequest } from "./Server";
 
 // Create a simple readable for testing
 const makeTestReadable = <A>(value: A): Readable.Readable<A> => {
@@ -70,11 +71,10 @@ const createMockSSRRouter = (): SSRRouter<never, never, never, never> => ({
 });
 
 // Simple test component
-const TestApp = component("TestApp", () =>
+const TestApp = () =>
   Effect.gen(function* () {
     return yield* div({ id: "app" }, ["Hello, World!"]);
-  }),
-);
+  });
 
 describe("EffexServer", () => {
   describe("makeHttpApp", () => {

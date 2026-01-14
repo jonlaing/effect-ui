@@ -1,7 +1,6 @@
 import { Effect } from "effect";
-import type { ClassValue } from "@effex/dom";
-import { Readable, $ } from "@effex/dom";
-import { Element } from "@effex/dom";
+
+import { $, Component, Readable, type ClassValue } from "@effex/dom";
 
 export type SeparatorOrientation = "horizontal" | "vertical";
 
@@ -59,7 +58,7 @@ export interface SeparatorProps {
  * ])
  * ```
  */
-export const Separator = (props: SeparatorProps = {}): Element.Element =>
+export const Separator: Component.Leaf<SeparatorProps> = (props = {}) =>
   Effect.gen(function* () {
     const orientation = Readable.of(props.orientation ?? "horizontal");
     const decorative = props.decorative ?? true;

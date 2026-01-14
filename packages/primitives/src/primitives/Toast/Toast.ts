@@ -1,27 +1,33 @@
 import { Context, Effect, MutableRef } from "effect";
-import { Signal } from "@effex/dom";
-import type { Child, ClassValue, ListAnimationOptions } from "@effex/dom";
-import { Readable } from "@effex/dom";
-import { $ } from "@effex/dom";
-import { provide } from "@effex/dom";
-import { each } from "@effex/dom";
-import { Portal } from "@effex/dom";
-import { Element } from "@effex/dom";
-import { mergeProps } from "@effex/dom";
+
 import {
-  type ToastPosition,
-  type ToastType,
-  type ToastData,
-  type ToastOptions,
+  $,
+  Component,
+  each,
+  Element,
+  mergeProps,
+  Portal,
+  provide,
+  Readable,
+  Signal,
+  type ClassValue,
+  type ListAnimationOptions,
+} from "@effex/dom";
+
+import {
+  createInitialSwipeState,
+  generateToastId,
+  getSwipeDirection,
+  getSwipeOpacity,
+  getSwipeTransform,
+  getViewportStyle,
+  isSwipeComplete,
   type SwipeDirection,
   type SwipeState,
-  getViewportStyle,
-  getSwipeDirection,
-  createInitialSwipeState,
-  isSwipeComplete,
-  getSwipeTransform,
-  getSwipeOpacity,
-  generateToastId,
+  type ToastData,
+  type ToastOptions,
+  type ToastPosition,
+  type ToastType,
 } from "./helpers.js";
 
 export type {
@@ -122,12 +128,10 @@ export interface ToastProviderProps {
  * Toast provider that manages toast state and provides context.
  * Wrap your app with this component.
  */
-const Provider = (
-  props: ToastProviderProps,
-  children:
-    | Element.Element<never, ToastCtx>
-    | Element.Element<never, ToastCtx>[],
-): Element.Element =>
+const Provider: Component.Branch<ToastProviderProps, ToastCtx, never> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const position = props.position ?? "bottom-right";
     const maxVisible = props.maxVisible ?? 5;
@@ -211,12 +215,11 @@ export interface ToastViewportProps {
  * Children are used as a template that's rendered for each toast with ToastItemCtx.
  * When no children are provided, uses a default template.
  */
-const Viewport = (
-  props: ToastViewportProps,
-  children?:
-    | Child<never, ToastCtx | ToastItemCtx>
-    | readonly Child<never, ToastCtx | ToastItemCtx>[],
-): Element.Element<never, ToastCtx> =>
+const Viewport: Component.Node<
+  ToastViewportProps,
+  ToastCtx | ToastItemCtx,
+  ToastCtx
+> = (props, children) =>
   Effect.gen(function* () {
     const ctx = yield* ToastCtx;
     const viewportRef = yield* Element.ref<HTMLOListElement>();
@@ -309,12 +312,10 @@ export interface ToastRootProps {
 /**
  * Individual toast container with auto-dismiss and swipe support.
  */
-const Root = (
-  props: ToastRootProps,
-  children?:
-    | Child<never, ToastCtx | ToastItemCtx>
-    | readonly Child<never, ToastCtx | ToastItemCtx>[],
-): Element.Element<never, ToastCtx | ToastItemCtx> =>
+const Root: Component.Node<ToastRootProps, ToastCtx | ToastItemCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* ToastCtx;
     // Get toast from props or from item context (when used as template)
@@ -496,10 +497,10 @@ export interface ToastTitleProps {
 /**
  * Toast title text. Renders from itemCtx.toast.title if no children provided.
  */
-const Title = (
-  props: ToastTitleProps,
-  children?: Child<never, ToastItemCtx> | readonly Child<never, ToastItemCtx>[],
-): Element.Element<never, ToastItemCtx> =>
+const Title: Component.Node<ToastTitleProps, ToastItemCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const itemCtx = yield* ToastItemCtx;
     const content = children ?? itemCtx.toast.title ?? "";
@@ -523,10 +524,10 @@ export interface ToastDescriptionProps {
 /**
  * Toast description text. Renders from itemCtx.toast.description if no children provided.
  */
-const Description = (
-  props: ToastDescriptionProps,
-  children?: Child<never, ToastItemCtx> | readonly Child<never, ToastItemCtx>[],
-): Element.Element<never, ToastItemCtx> =>
+const Description: Component.Node<ToastDescriptionProps, ToastItemCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const itemCtx = yield* ToastItemCtx;
     const content = children ?? itemCtx.toast.description ?? "";
@@ -553,10 +554,10 @@ export interface ToastActionProps {
  * Toast action button. Renders from itemCtx.toast.action if no children provided.
  * Renders nothing if no action exists and no children provided.
  */
-const Action = (
-  props: ToastActionProps,
-  children?: Child<never, ToastItemCtx> | readonly Child<never, ToastItemCtx>[],
-): Element.Element<never, ToastItemCtx> =>
+const Action: Component.Node<ToastActionProps, ToastItemCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* ToastItemCtx;
     const content = children ?? ctx.toast.action?.label;
@@ -607,10 +608,10 @@ export interface ToastCloseProps {
 /**
  * Toast close/dismiss button. Renders "×" if no children provided.
  */
-const Close = (
-  props: ToastCloseProps,
-  children?: Child<never, ToastItemCtx> | readonly Child<never, ToastItemCtx>[],
-): Element.Element<never, ToastItemCtx> =>
+const Close: Component.Node<ToastCloseProps, ToastItemCtx> = (
+  props,
+  children,
+) =>
   Effect.gen(function* () {
     const ctx = yield* ToastItemCtx;
 

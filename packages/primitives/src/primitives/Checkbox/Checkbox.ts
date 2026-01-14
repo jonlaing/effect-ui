@@ -1,9 +1,6 @@
 import { Effect } from "effect";
-import { Signal } from "@effex/dom";
-import type { ClassValue } from "@effex/dom";
-import { Readable } from "@effex/dom";
-import { $ } from "@effex/dom";
-import { Element } from "@effex/dom";
+
+import { $, Component, Readable, Signal, type ClassValue } from "@effex/dom";
 
 /**
  * Checkbox state - can be checked, unchecked, or indeterminate.
@@ -84,7 +81,7 @@ export interface CheckboxProps {
  * Checkbox({ name: "terms", required: true })
  * ```
  */
-export const Checkbox = (props: CheckboxProps): Element.Element =>
+export const Checkbox: Component.Leaf<CheckboxProps> = (props) =>
   Effect.gen(function* () {
     const checked = yield* Signal.fromNullable(
       props.checked,
