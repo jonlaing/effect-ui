@@ -1,9 +1,9 @@
-import { bench, describe } from "vitest";
+import { match, when } from "@dom/Control";
+import { $, Component } from "@dom/Element/Element";
 import { Effect } from "effect";
+import { bench, describe } from "vitest";
+
 import { Signal } from "@effex/core/Signal";
-import { $ } from "@dom/Element/Element";
-import { when, match } from "@dom/Control";
-import { component } from "@dom/Component";
 
 describe("DOM updates", () => {
   describe("element creation", () => {
@@ -105,17 +105,16 @@ describe("DOM updates", () => {
   });
 
   describe("component creation", () => {
-    const SimpleComponent = component("Simple", () => $.div("Simple"));
+    const SimpleComponent: Component.Unit = () => $.div("Simple");
 
-    const StatefulComponent = component("Stateful", () =>
+    const StatefulComponent: Component.Unit = () =>
       Effect.gen(function* () {
         const count = yield* Signal.make(0);
         return yield* $.div([
           $.span(count.map(String)),
           $.button({ onClick: () => count.update((n) => n + 1) }, "+"),
         ]);
-      }),
-    );
+      });
 
     bench("create simple component", async () => {
       await Effect.runPromise(Effect.scoped(SimpleComponent()));

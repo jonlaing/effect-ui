@@ -35,13 +35,12 @@ TypeScript tells you at build time which components can fail and forces you to h
 Effex uses signals for reactive state. When a signal updates, only the DOM nodes that actually depend on that signal update. No virtual DOM, no diffing, no wasted work:
 
 ```ts
-const Counter = component("Counter", () =>
+const Counter: Component.Unit = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0);
     console.log("setup"); // Logs once, on mount
     return yield* $.div(count); // count changes update only this text node
-  }),
-);
+  });
 ```
 
 ### Automatic Resource Cleanup
@@ -89,9 +88,9 @@ pnpm add @effex/platform effect
 
 ```ts
 import { Effect } from "effect";
-import { $, Signal, component, mount, runApp } from "@effex/dom";
+import { $, Component, Signal, mount, runApp } from "@effex/dom";
 
-const Counter = component("Counter", () =>
+const Counter: Component.Unit = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0);
 
@@ -100,8 +99,7 @@ const Counter = component("Counter", () =>
       $.span(count),
       $.button({ onClick: () => count.update((n) => n + 1) }, "+"),
     ]);
-  }),
-);
+  });
 
 runApp(
   Effect.gen(function* () {

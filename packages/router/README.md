@@ -12,7 +12,7 @@ pnpm add @effex/router effect
 
 ```ts
 import { Effect, Context } from "effect";
-import { $, component, mount, runApp } from "@effex/dom";
+import { $, Component, mount, runApp } from "@effex/dom";
 import { Route, Router, Link } from "@effex/router";
 
 // Define routes
@@ -41,7 +41,7 @@ When using file-based routing with `@effex/vite-plugin`, use `Route.define` to c
 ```ts
 // src/routes/users.$id.ts
 import { Effect, Schema } from "effect";
-import { $, component } from "@effex/dom";
+import { $, Component } from "@effex/dom";
 import { Route, Link } from "@effex/router";
 
 // Define route with params, loader, and action
@@ -53,7 +53,7 @@ export const route = Route.define({
     }),
 });
 
-const UserPage = component("UserPage", () =>
+const UserPage: Component.Unit = () =>
   Effect.gen(function* () {
     // Type-safe access to params
     const params = yield* route.params();
@@ -69,8 +69,7 @@ const UserPage = component("UserPage", () =>
       $.h1(["User ", params?.id ?? "Unknown"]),
       $.p([user.name]),
     ]);
-  }),
-);
+  });
 
 export default UserPage;
 ```
@@ -110,7 +109,7 @@ const routes = {
 Access params in your components:
 
 ```ts
-const UserPage = component("UserPage", () =>
+const UserPage: Component.Unit<RouterContext> = () =>
   Effect.gen(function* () {
     const router = yield* RouterContext;
     const params = yield* router.routes.user.params.get;
@@ -119,8 +118,7 @@ const UserPage = component("UserPage", () =>
     return yield* $.div([
       $.h1(["User ", params?.id ?? "Unknown"]),
     ]);
-  }),
-);
+  });
 ```
 
 ## Router Layer

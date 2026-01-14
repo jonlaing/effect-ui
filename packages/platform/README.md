@@ -45,7 +45,7 @@ export const route = Route.define({
 });
 
 // Component with type-safe access
-const UserPage = component("UserPage", () =>
+const UserPage: Component.Unit = () =>
   Effect.gen(function* () {
     // Type-safe params
     const params = yield* route.params();
@@ -57,8 +57,7 @@ const UserPage = component("UserPage", () =>
       $.h1([user.name]),
       $.p([user.email]),
     ]);
-  }),
-);
+  });
 
 export default UserPage;
 ```
@@ -132,7 +131,7 @@ Load data on the server before rendering:
 ```ts
 // src/routes/users.$id.ts
 import { Effect, Schema } from "effect";
-import { $, component, Route } from "@effex/platform";
+import { $, Component, Route } from "@effex/platform";
 
 export const route = Route.define({
   params: Schema.Struct({ id: Schema.String }),
@@ -142,7 +141,7 @@ export const route = Route.define({
     }),
 });
 
-const UserPage = component("UserPage", () =>
+const UserPage: Component.Unit = () =>
   Effect.gen(function* () {
     const user = yield* route.loaderData<User>();
 
@@ -150,8 +149,7 @@ const UserPage = component("UserPage", () =>
       $.h1([user.name]),
       $.p([user.email]),
     ]);
-  }),
-);
+  });
 
 export default UserPage;
 ```
@@ -163,7 +161,7 @@ Handle form submissions on the server:
 ```ts
 // src/routes/contact.ts
 import { Effect } from "effect";
-import { $, component, Route, Form, when, RouterContext } from "@effex/platform";
+import { $, Component, Route, Form, when, RouterContext } from "@effex/platform";
 
 export const route = Route.define({
   action: ({ formData }) =>
@@ -177,7 +175,7 @@ export const route = Route.define({
     }),
 });
 
-const ContactForm = component("ContactForm", () =>
+const ContactForm: Component.Unit<RouterContext> = () =>
   Effect.gen(function* () {
     const router = yield* RouterContext;
     const actionState = router.actionState;
@@ -191,8 +189,7 @@ const ContactForm = component("ContactForm", () =>
         onFalse: () => $.span(),
       }),
     ]);
-  }),
-);
+  });
 
 export default ContactForm;
 ```
@@ -253,9 +250,9 @@ const restored = deserializeSync(json);
 Render the current route:
 
 ```ts
-import { Routes } from "@effex/platform";
+import { Routes, Component } from "@effex/platform";
 
-const App = component("App", () =>
+const App: Component.Unit = () =>
   Effect.gen(function* () {
     return yield* $.div([
       Header(),
@@ -265,8 +262,7 @@ const App = component("App", () =>
       }),
       Footer(),
     ]);
-  }),
-);
+  });
 ```
 
 ## Subpath Exports

@@ -17,14 +17,13 @@ pnpm add @effex/dom effect
 For components that just render static or prop-based content, return the element directly:
 
 ```ts
-import { $, component } from "@effex/dom";
+import { $, Component } from "@effex/dom";
 
-const Greeting = component("Greeting", (props: { name: string }) =>
+const Greeting: Component.Leaf<{ name: string }> = (props) =>
   $.div({ class: "greeting" }, [
     $.h1(`Hello, ${props.name}!`),
     $.p("Welcome to Effex"),
-  ]),
-);
+  ]);
 ```
 
 ### Stateful Components
@@ -33,9 +32,9 @@ Use `Effect.gen` when your component needs to create signals, derived values, or
 
 ```ts
 import { Effect } from "effect";
-import { $, Signal, component } from "@effex/dom";
+import { $, Component, Signal } from "@effex/dom";
 
-const Counter = component("Counter", () =>
+const Counter: Component.Unit = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0);
 
@@ -44,8 +43,7 @@ const Counter = component("Counter", () =>
       $.span(count),
       $.button({ onClick: () => count.update((n) => n + 1) }, "+"),
     ]);
-  }),
-);
+  });
 ```
 
 ### Running Your App
@@ -222,7 +220,7 @@ Effex uses Effect's Context system for dependency injection:
 
 ```ts
 import { Context, Effect } from "effect";
-import { $, component, provide } from "@effex/dom";
+import { $, Component, provide } from "@effex/dom";
 
 // Define a context
 interface Theme {
@@ -233,18 +231,17 @@ interface Theme {
 class ThemeContext extends Context.Tag("ThemeContext")<ThemeContext, Theme>() {}
 
 // Consume context
-const ThemedButton = component("ThemedButton", (props: { label: string }) =>
+const ThemedButton: Component.Leaf<{ label: string }, ThemeContext> = (props) =>
   Effect.gen(function* () {
     const theme = yield* ThemeContext;
     return yield* $.button(
       { style: { backgroundColor: theme.primary } },
       props.label,
     );
-  }),
-);
+  });
 
 // Provide context to children
-const App = component("App", () =>
+const App: Component.Unit = () =>
   Effect.gen(function* () {
     const theme: Theme = { primary: "#007bff", secondary: "#6c757d" };
 
@@ -253,8 +250,7 @@ const App = component("App", () =>
         ThemedButton({ label: "Click me" }),
       ]),
     );
-  }),
-);
+  });
 ```
 
 ## Animation
@@ -424,7 +420,10 @@ runApp(
 ### Elements
 
 - `$.<element>(attrs?, children?)` - Create an HTML element
-- `component(name, render)` - Define a component
+- `Component.Unit` - Component with no props
+- `Component.Leaf<Props>` - Component with props, no children
+- `Component.Node<Props>` - Component with props and optional children
+- `Component.Branch<Props>` - Component with props and required children
 
 ### Control Flow
 
@@ -464,9 +463,9 @@ The `Element` namespace provides pipeable DOM manipulation helpers for use with 
 ### Creating Element Refs
 
 ```ts
-import { Element, $ } from "@effex/dom";
+import { Element, $, Component } from "@effex/dom";
 
-const MyComponent = component("MyComponent", () =>
+const MyComponent: Component.Unit = () =>
   Effect.gen(function* () {
     const buttonRef = yield* Element.ref<HTMLButtonElement>();
 
@@ -480,8 +479,7 @@ const MyComponent = component("MyComponent", () =>
     return yield* $.div([
       $.button({ ref: buttonRef, onClick: handleFocus }, "Click me"),
     ]);
-  }),
-);
+  });
 ```
 
 ### Usage with Animation Hooks

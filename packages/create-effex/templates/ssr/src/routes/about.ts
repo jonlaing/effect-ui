@@ -1,9 +1,10 @@
 import { Effect } from "effect";
-import { $, component, Link, Route } from "@effex/platform";
+
+import { $, Component, Link, Route } from "@effex/platform";
 
 export const route = Route.define();
 
-const AboutPage = component("AboutPage", () =>
+const AboutPage: Component.Unit = () =>
   Effect.gen(function* () {
     return yield* $.div({ class: "page" }, [
       $.h1({}, ["About"]),
@@ -18,7 +19,6 @@ const AboutPage = component("AboutPage", () =>
         $.p({}, [Link({ href: "/" }, "Back to Home")]),
       ]),
     ]);
-  }),
-);
+  });
 
 export default AboutPage;

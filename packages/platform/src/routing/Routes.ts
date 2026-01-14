@@ -1,7 +1,8 @@
 import { Effect, Layer, Option, pipe } from "effect";
-import { match, $, Derived } from "@effex/dom";
-import { Element } from "@effex/dom";
+
+import { $, Derived, Element, match } from "@effex/dom";
 import { RouterContext } from "@effex/router";
+
 import { LoaderContextTag, makeLoaderContext } from "./RouteLoader.js";
 
 /**
@@ -64,18 +65,17 @@ export interface RoutesProps<T extends ComponentsMap = ComponentsMap> {
  *
  * @example
  * ```ts
- * import { Routes } from "@effex/platform";
+ * import { Routes, Component } from "@effex/platform";
  * import { routes, components } from "./generated/routes";
  *
- * const App = component("App", () =>
+ * const App: Component.Unit = () =>
  *   Effect.gen(function* () {
  *     return yield* div([
  *       Header(),
  *       Routes({ components }),
  *       Footer(),
  *     ]);
- *   })
- * );
+ *   });
  * ```
  *
  * @example

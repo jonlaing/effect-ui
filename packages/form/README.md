@@ -12,7 +12,7 @@ pnpm add @effex/form effect
 
 ```ts
 import { Effect, Schema } from "effect";
-import { $, component, when } from "@effex/dom";
+import { $, Component, when } from "@effex/dom";
 import { Form } from "@effex/form";
 
 // Define a schema for validation
@@ -27,7 +27,7 @@ const LoginSchema = Schema.Struct({
   ),
 });
 
-const LoginForm = component("LoginForm", () =>
+const LoginForm: Component.Unit = () =>
   Effect.gen(function* () {
     const form = yield* Form.make({
       schema: LoginSchema,
@@ -90,8 +90,7 @@ const LoginForm = component("LoginForm", () =>
         form.isSubmitting.map((s) => (s ? "Submitting..." : "Log In")),
       ),
     ]);
-  }),
-);
+  });
 ```
 
 ## Field State

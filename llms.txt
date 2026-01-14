@@ -49,7 +49,7 @@ $.div({ class: "container" }, [
 
 ### Components
 ```ts
-const Counter = component("Counter", () =>
+const Counter: Component.Unit = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0)
     return yield* $.div([
@@ -58,7 +58,6 @@ const Counter = component("Counter", () =>
       $.button({ onClick: () => count.update(n => n + 1) }, "+"),
     ])
   })
-)
 ```
 
 ### Control Flow
@@ -179,7 +178,7 @@ $.div({
 
 ### Fetching Data
 ```ts
-const UserProfile = component("UserProfile", (props: { userId: string }) =>
+const UserProfile: Component.Leaf<{ userId: string }> = (props) =>
   Boundary.suspense({
     render: () =>
       Effect.gen(function* () {
@@ -192,12 +191,11 @@ const UserProfile = component("UserProfile", (props: { userId: string }) =>
     fallback: () => $.span("Loading..."),
     catch: (error) => $.span(`Error: ${error.message}`),
   })
-)
 ```
 
 ### Form Handling
 ```ts
-const LoginForm = component("LoginForm", () =>
+const LoginForm: Component.Unit = () =>
   Effect.gen(function* () {
     const email = yield* Signal.make("")
     const password = yield* Signal.make("")

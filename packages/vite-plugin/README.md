@@ -112,18 +112,17 @@ Each route file should export a `route` definition and default component:
 // src/routes/about.ts
 import { Effect } from "effect";
 import { Route } from "@effex/router";
-import { $, component } from "@effex/dom";
+import { $, Component } from "@effex/dom";
 
 export const route = Route.define();
 
-const AboutPage = component("AboutPage", () =>
+const AboutPage: Component.Unit = () =>
   Effect.gen(function* () {
     return yield* $.div({ class: "page" }, [
       $.h1(["About Us"]),
       $.p(["Welcome to our site."]),
     ]);
-  }),
-);
+  });
 
 export default AboutPage;
 ```
@@ -135,7 +134,7 @@ Define loaders for server-side data fetching:
 ```ts
 // src/routes/users/$id.ts
 import { Effect, Schema } from "effect";
-import { $, component, Route } from "@effex/platform";
+import { $, Component, Route } from "@effex/platform";
 
 export const route = Route.define({
   params: Schema.Struct({ id: Schema.String }),
@@ -145,7 +144,7 @@ export const route = Route.define({
     }),
 });
 
-const UserPage = component("UserPage", () =>
+const UserPage: Component.Unit = () =>
   Effect.gen(function* () {
     // Type-safe access to params
     const params = yield* route.params();
@@ -157,8 +156,7 @@ const UserPage = component("UserPage", () =>
       $.h1([user.name]),
       $.p([user.email]),
     ]);
-  }),
-);
+  });
 
 export default UserPage;
 ```
@@ -170,7 +168,7 @@ Define actions for form submissions:
 ```ts
 // src/routes/contact.ts
 import { Effect } from "effect";
-import { $, component, Route } from "@effex/platform";
+import { $, Component, Route } from "@effex/platform";
 
 export const route = Route.define({
   action: ({ formData }) =>
@@ -184,15 +182,14 @@ export const route = Route.define({
     }),
 });
 
-const ContactPage = component("ContactPage", () =>
+const ContactPage: Component.Unit = () =>
   Effect.gen(function* () {
     return yield* $.form({ method: "post" }, [
       $.input({ name: "name" }),
       $.textarea({ name: "message" }),
       $.button({ type: "submit" }, ["Send"]),
     ]);
-  }),
-);
+  });
 
 export default ContactPage;
 ```

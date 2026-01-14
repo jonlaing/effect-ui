@@ -43,13 +43,12 @@ function Counter() {
 }
 
 // Effex: Only the text node updates
-const Counter = component("Counter", () =>
+const Counter: Component.Unit = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0)
     console.log("render")  // Logs once, on mount
     return yield* $.div(count)  // count changes update only this text
   })
-)
 ```
 
 ### No Rules of Hooks
@@ -109,12 +108,11 @@ function Parent() {
 }
 
 // Effex: Parent signal doesn't affect unrelated children
-const Parent = component("Parent", () =>
+const Parent: Component.Unit = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0)  // Child doesn't care
     return yield* $.div([Child()])  // Child never "re-renders"
   })
-)
 ```
 
 ### Better Async
@@ -166,15 +164,14 @@ function Counter() {
 }
 
 // Effex
-const Counter = component("Counter", () =>
+const Counter: Component.Unit = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0);
     return yield* $.button(
       { onClick: () => count.update((c) => c + 1) },
       count,
     );
-  }),
-);
+  });
 ```
 
 ### Derived State
@@ -190,14 +187,13 @@ function Cart({ items }) {
 }
 
 // Effex
-const Cart = component("Cart", (props: { items: Readable<Item[]> }) =>
+const Cart: Component.Leaf<{ items: Readable<Item[]> }> = (props) =>
   Effect.gen(function* () {
     const total = yield* Derived.sync([props.items], ([items]) =>
       items.reduce((sum, i) => sum + i.price, 0),
     );
     return yield* $.div(t`Total: $${t}`);
-  }),
-);
+  });
 ```
 
 ### Conditional Rendering
@@ -209,12 +205,11 @@ function Auth({ isLoggedIn }) {
 }
 
 // Effex
-const Auth = component("Auth", (props: { isLoggedIn: Readable<boolean> }) =>
+const Auth: Component.Leaf<{ isLoggedIn: Readable<boolean> }> = (props) =>
   when(props.isLoggedIn, {
     onTrue: () => Dashboard(),
     onFalse: () => Login(),
-  }),
-);
+  });
 ```
 
 ### Lists
@@ -232,13 +227,12 @@ function TodoList({ todos }) {
 }
 
 // Effex
-const TodoList = component("TodoList", (props: { todos: Readable<Todo[]> }) =>
+const TodoList: Component.Leaf<{ todos: Readable<Todo[]> }> = (props) =>
   each(props.todos, {
     container: () => $.ul(),
     key: (todo) => todo.id,
     render: (todo) => $.li(todo.map((t) => t.text)),
-  }),
-);
+  });
 ```
 
 ### Data Fetching
@@ -253,7 +247,7 @@ function UserProfile({ id }) {
 // Wrapped in error boundary + suspense elsewhere...
 
 // Effex - Option 1: Boundary.suspense (one-shot)
-const UserProfile = component("UserProfile", (props: { id: string }) =>
+const UserProfile: Component.Leaf<{ id: string }> = (props) =>
   Boundary.suspense({
     render: () =>
       Effect.gen(function* () {
@@ -262,11 +256,10 @@ const UserProfile = component("UserProfile", (props: { id: string }) =>
       }),
     fallback: () => $.div("Loading..."),
     catch: (e) => $.div(`Error: ${e}`),
-  }),
-);
+  });
 
 // Effex - Option 2: Derived.async (reactive, refetches when deps change)
-const UserProfile = component("UserProfile", (props: { userId: Readable<string> }) =>
+const UserProfile: Component.Leaf<{ userId: Readable<string> }> = (props) =>
   Effect.gen(function* () {
     const userData = yield* Derived.async([props.userId], ([id]) => fetchUser(id));
 
@@ -285,8 +278,7 @@ const UserProfile = component("UserProfile", (props: { userId: Readable<string> 
         onNone: () => $.span(),
       }),
     ]);
-  }),
-);
+  });
 ```
 
 ### Context / Services
@@ -309,12 +301,11 @@ function Page() {
 // Effex
 class ThemeService extends Context.Tag("Theme")<ThemeService, string>() {}
 
-const Page = component("Page", () =>
+const Page: Component.Unit<ThemeService> = () =>
   Effect.gen(function* () {
     const theme = yield* ThemeService;
     return yield* $.div({ class: theme }, "...");
-  }),
-);
+  });
 
 // Provide at mount (like wrapping the root)
 runApp(mount(Page().pipe(Effect.provideService(ThemeService, "dark")), root));
@@ -346,9 +337,8 @@ function DocumentTitle({ title, unreadCount }) {
 }
 
 // Effex
-const DocumentTitle = component(
-  "DocumentTitle",
-  (props: { title: Readable<string>; unreadCount: Readable<number> }) =>
+const DocumentTitle: Component.Leaf<{ title: Readable<string>; unreadCount: Readable<number> }> =
+  (props) =>
     Effect.gen(function* () {
       // Runs whenever title or unreadCount changes
       yield* Reaction.make([props.title, props.unreadCount], ([title, count]) =>
@@ -363,8 +353,7 @@ const DocumentTitle = component(
       );
 
       return yield* $.h1(props.title);
-    }),
-);
+    });
 ```
 
 Key differences:
@@ -425,7 +414,7 @@ In Effex, the `Element` namespace provides pipeable helpers for DOM manipulation
 
 ```ts
 // Effex
-const FocusInput = component("FocusInput", () =>
+const FocusInput: Component.Unit = () =>
   Effect.gen(function* () {
     const inputRef = yield* Element.ref<HTMLInputElement>();
 
@@ -438,8 +427,7 @@ const FocusInput = component("FocusInput", () =>
       );
 
     return yield* $.input({ ref: inputRef, onClick: handleFocus });
-  }),
-);
+  });
 ```
 
 ### Common React DOM Patterns

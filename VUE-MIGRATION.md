@@ -169,7 +169,7 @@ const count = ref(0)
 
 ```ts
 // Effex
-const Counter = component("Counter", () =>
+const Counter: Component.Unit = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0);
     return yield* $.button(
@@ -200,7 +200,7 @@ const total = computed(() =>
 
 ```ts
 // Effex
-const Cart = component("Cart", (props: { items: Readable<Item[]> }) =>
+const Cart: Component.Leaf<{ items: Readable<Item[]> }> = (props) =>
   Effect.gen(function* () {
     const total = yield* Derived.sync([props.items], ([items]) =>
       items.reduce((sum, i) => sum + i.price, 0),
@@ -227,7 +227,7 @@ const isLoggedIn = ref(false)
 
 ```ts
 // Effex
-const Auth = component("Auth", (props: { isLoggedIn: Readable<boolean> }) =>
+const Auth: Component.Leaf<{ isLoggedIn: Readable<boolean> }> = (props) =>
   when(props.isLoggedIn, {
     onTrue: () => Dashboard(),
     onFalse: () => Login(),
@@ -255,7 +255,7 @@ const todos = ref([])
 
 ```ts
 // Effex
-const TodoList = component("TodoList", (props: { todos: Readable<Todo[]> }) =>
+const TodoList: Component.Leaf<{ todos: Readable<Todo[]> }> = (props) =>
   each(props.todos, {
     container: () => $.ul(),
     key: (todo) => todo.id,
@@ -290,9 +290,8 @@ watch(title, (newTitle) => {
 
 ```ts
 // Effex
-const DocumentTitle = component(
-  "DocumentTitle",
-  (props: { title: Readable<string>; unreadCount: Readable<number> }) =>
+const DocumentTitle: Component.Leaf<{ title: Readable<string>; unreadCount: Readable<number> }> =
+  (props) =>
     Effect.gen(function* () {
       // Runs whenever title or unreadCount changes
       yield* Reaction.make([props.title, props.unreadCount], ([title, count]) =>
@@ -307,8 +306,7 @@ const DocumentTitle = component(
       );
 
       return yield* $.h1(props.title);
-    }),
-);
+    });
 ```
 
 ### Provide / Inject (Services)
@@ -336,7 +334,7 @@ const theme = inject('theme')
 // Effex
 class ThemeService extends Context.Tag("Theme")<ThemeService, string>() {}
 
-const Page = component("Page", () =>
+const Page: Component.Unit = () =>
   Effect.gen(function* () {
     const theme = yield* ThemeService;
     return yield* $.div({ class: theme }, "...");
@@ -373,7 +371,7 @@ const text = ref('')
 
 ```ts
 // Effex
-const TextInput = component("TextInput", () =>
+const TextInput: Component.Unit = () =>
   Effect.gen(function* () {
     const text = yield* Signal.make("");
     return yield* $.div([
@@ -400,7 +398,7 @@ const TextInput = component("TextInput", () =>
 
 ```ts
 // Effex
-const Modal = component("Modal", () =>
+const Modal: Component.Unit = () =>
   Portal(
     { target: document.body },
     $.div({ class: "modal" }, "Modal content"),
@@ -469,7 +467,7 @@ In Effex, the `Element` namespace provides pipeable helpers for DOM manipulation
 
 ```ts
 // Effex
-const FocusInput = component("FocusInput", () =>
+const FocusInput: Component.Unit = () =>
   Effect.gen(function* () {
     const inputRef = yield* Element.ref<HTMLInputElement>();
 

@@ -1,14 +1,15 @@
 import { Effect, Schema } from "effect";
+
 import {
   $,
-  component,
-  Link,
-  Form,
+  Component,
   each,
-  RouterContext,
-  when,
-  t,
+  Form,
+  Link,
   Route,
+  RouterContext,
+  t,
+  when,
 } from "@effex/platform";
 
 const ContactSchema = Schema.Struct({
@@ -60,7 +61,7 @@ export const route = Route.define({
 });
 
 // Page component
-const ContactPage = component("ContactPage", () =>
+const ContactPage: Component.Unit<RouterContext> = () =>
   Effect.gen(function* () {
     const router = yield* RouterContext;
     const form = yield* Form.make({
@@ -208,7 +209,6 @@ const ContactPage = component("ContactPage", () =>
 
       $.div({ class: "card" }, $.p({}, Link({ href: "/" }, "Back to Home"))),
     ]);
-  }),
-);
+  });
 
 export default ContactPage;

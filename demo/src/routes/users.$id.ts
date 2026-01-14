@@ -1,5 +1,6 @@
 import { Effect, Schema } from "effect";
-import { $, component, Link, Route } from "@effex/platform";
+
+import { $, Component, Link, Route, RouterContext } from "@effex/platform";
 
 // User type
 interface User {
@@ -48,7 +49,7 @@ export const route = Route.define({
 });
 
 // Page component
-const UserPage = component("UserPage", () =>
+const UserPage: Component.Unit<RouterContext> = () =>
   Effect.gen(function* () {
     const user = yield* route.loaderData() as Effect.Effect<User>;
 
@@ -65,7 +66,6 @@ const UserPage = component("UserPage", () =>
         ]),
       ]),
     ]);
-  }),
-);
+  });
 
 export default UserPage;

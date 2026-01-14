@@ -1,8 +1,8 @@
-import { $, component, Link, Route } from "@effex/platform";
+import { $, Component, Link, Route, RouterContext } from "@effex/platform";
 
 export const route = Route.define();
 
-const AboutPage = component("AboutPage", () =>
+const AboutPage: Component.Unit<RouterContext> = () =>
   $.div({ class: "page" }, [
     $.h1({}, ["About Effex"]),
     $.p({}, [
@@ -13,7 +13,6 @@ const AboutPage = component("AboutPage", () =>
       "and actions for handling form submissions - all with full type safety.",
     ]),
     $.div({ class: "card" }, [$.p({}, [Link({ href: "/" }, "Back to Home")])]),
-  ]),
-);
+  ]);
 
 export default AboutPage;

@@ -23,7 +23,7 @@
  * ```ts
  * // src/routes/users.$id.tsx
  * import { Effect, Schema } from "effect";
- * import { component, div, h1 } from "@effex/dom";
+ * import { Component, div, h1 } from "@effex/dom";
  *
  * export const params = Schema.Struct({ id: Schema.String });
  *
@@ -32,12 +32,11 @@
  *     return yield* UserService.getById(params.id);
  *   });
  *
- * const UserPage = component("UserPage", () =>
+ * const UserPage: Component.Unit = () =>
  *   Effect.gen(function* () {
  *     const user = yield* RouteLoader.loaderData();
  *     return yield* div([h1([user.name])]);
- *   })
- * );
+ *   });
  *
  * export default UserPage;
  * ```

@@ -335,7 +335,7 @@ interface ButtonProps {
 When implementing a component with reactive props, use `Readable.of()` to normalize the prop to a `Readable<T>`:
 
 ```ts
-const Button = component("Button", (props: ButtonProps, children) =>
+const Button: Component.Node<ButtonProps> = (props, children) =>
   Effect.gen(function* () {
     // Normalize props - works whether they're static or reactive
     const disabled = Readable.of(props.disabled ?? false);
@@ -354,8 +354,7 @@ const Button = component("Button", (props: ButtonProps, children) =>
       },
       children ?? [],
     );
-  }),
-);
+  });
 ```
 
 This pattern lets consumers pass either static or reactive values:

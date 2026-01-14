@@ -1,7 +1,8 @@
 import { Effect, Option } from "effect";
-import { match } from "@effex/dom";
-import { Element } from "@effex/dom";
+
 import { Readable } from "@effex/core";
+import { Element, match } from "@effex/dom";
+
 import { RouterContext } from "./RouterContext.js";
 
 /**
@@ -40,7 +41,7 @@ export type RouteCases<E = never, R = never> = {
  * @example
  * ```ts
  * // In a layout component
- * const Layout = component("Layout", () =>
+ * const Layout: Component.Unit = () =>
  *   Effect.gen(function* () {
  *     return yield* $.div({ class: "layout" }, [
  *       Header(),
@@ -53,8 +54,7 @@ export type RouteCases<E = never, R = never> = {
  *       ]),
  *       Footer(),
  *     ]);
- *   })
- * );
+ *   });
  * ```
  */
 export const matchRoute = <E = never, R = never>(

@@ -1,10 +1,12 @@
 import { Effect, Option } from "effect";
-import { component, match, div, runApp, mount } from "@effex/dom";
+
+import { Component, div, match, mount, runApp } from "@effex/dom";
 import { Router, RouterContext } from "@effex/router";
-import { routes, components } from "./generated/routes.js";
+
+import { components, routes } from "./generated/routes.js";
 
 // Simple Routes component for SPA (no loader context needed)
-const Routes = component("Routes", () =>
+const Routes: Component.Unit<RouterContext> = () =>
   Effect.gen(function* () {
     const router = yield* RouterContext;
     const currentRoute = router.currentRoute.map((opt) =>
@@ -22,8 +24,7 @@ const Routes = component("Routes", () =>
       cases,
       fallback: () => div({ class: "page" }, ["Page not found"]),
     });
-  }),
-);
+  });
 
 // Mount the application
 const container = document.getElementById("root");

@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
 import { parseRouteExportsFromContent } from "./parser";
 
 describe("parseRouteExportsFromContent", () => {
@@ -12,7 +13,8 @@ describe("parseRouteExportsFromContent", () => {
         loader: (params) => Effect.succeed({ name: "test" }),
       });
 
-      export default component("UserPage", () => div([]));
+      const UserPage: Component.Unit = () => div([]);
+      export default UserPage;
     `;
 
     const exports = parseRouteExportsFromContent(content);
@@ -23,7 +25,7 @@ describe("parseRouteExportsFromContent", () => {
 
   it("should detect default export", () => {
     const content = `
-      const MyComponent = component("MyComponent", () => div([]));
+      const MyComponent: Component.Unit = () => div([]);
       export default MyComponent;
     `;
 
@@ -35,7 +37,8 @@ describe("parseRouteExportsFromContent", () => {
 
   it("should detect inline default export", () => {
     const content = `
-      export default component("MyComponent", () => div([]));
+      const MyComponent: Component.Unit = () => div([]);
+      export default MyComponent;
     `;
 
     const exports = parseRouteExportsFromContent(content);
@@ -45,7 +48,7 @@ describe("parseRouteExportsFromContent", () => {
 
   it("should detect re-exports with as default", () => {
     const content = `
-      const MyPage = component("MyPage", () => div([]));
+      const MyPage: Component.Unit = () => div([]);
       export { MyPage as default };
     `;
 
@@ -56,9 +59,9 @@ describe("parseRouteExportsFromContent", () => {
 
   it("should handle file with only component (no Route.define)", () => {
     const content = `
-      import { component, div } from "@effex/dom";
+      import { Component, div } from "@effex/dom";
 
-      const AboutPage = component("AboutPage", () => div(["About us"]));
+      const AboutPage: Component.Unit = () => div(["About us"]);
 
       export default AboutPage;
     `;
@@ -85,7 +88,7 @@ describe("parseRouteExportsFromContent", () => {
   it("should handle complete route file with Route.define", () => {
     const content = `
       import { Effect, Schema } from "effect";
-      import { component, div, h1 } from "@effex/dom";
+      import { Component, div, h1 } from "@effex/dom";
       import { Route } from "@effex/router";
 
       export const route = Route.define({
@@ -94,11 +97,10 @@ describe("parseRouteExportsFromContent", () => {
         action: ({ formData }) => Effect.succeed({ success: true }),
       });
 
-      const UserPage = component("UserPage", () =>
+      const UserPage: Component.Unit = () =>
         Effect.gen(function* () {
           return yield* div([h1(["User"])]);
-        })
-      );
+        });
 
       export default UserPage;
     `;

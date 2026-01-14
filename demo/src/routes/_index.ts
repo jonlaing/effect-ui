@@ -1,9 +1,17 @@
 import { Effect } from "effect";
-import { $, component, Link, Signal, Route } from "@effex/platform";
+
+import {
+  $,
+  Component,
+  Link,
+  Route,
+  RouterContext,
+  Signal,
+} from "@effex/platform";
 
 export const route = Route.define();
 
-const HomePage = component("HomePage", () =>
+const HomePage: Component.Unit<RouterContext> = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0);
 
@@ -41,7 +49,6 @@ const HomePage = component("HomePage", () =>
         ]),
       ]),
     ]);
-  }),
-);
+  });
 
 export default HomePage;
