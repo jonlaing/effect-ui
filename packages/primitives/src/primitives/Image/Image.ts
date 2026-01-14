@@ -6,7 +6,6 @@ import {
   Derived,
   $,
   provide,
-  component,
   Reaction,
   Element,
 } from "@effex/dom";
@@ -69,7 +68,7 @@ export interface ImageImgProps {
 /**
  * The actual image element. Tracks loading state and reports to context.
  */
-const Img = component("ImageImg", (props: ImageImgProps) =>
+const Img = (props: ImageImgProps): Element.Element<never, ImageCtx> =>
   Effect.gen(function* () {
     const ctx = yield* ImageCtx;
     const imgRef = yield* Element.ref<HTMLImageElement>();
@@ -127,8 +126,7 @@ const Img = component("ImageImg", (props: ImageImgProps) =>
       style,
       "data-image-img": "",
     });
-  }),
-);
+  });
 
 export interface ImageFallbackProps {
   /** Additional class names */
@@ -144,49 +142,49 @@ export interface ImageFallbackProps {
 /**
  * Fallback content shown while image is loading or if it fails to load.
  */
-const Fallback = component(
-  "ImageFallback",
-  (props: ImageFallbackProps, children) =>
-    Effect.gen(function* () {
-      const ctx = yield* ImageCtx;
-      const delayMs = props.delayMs ?? 0;
+const Fallback = (
+  props: ImageFallbackProps,
+  children?: Child<never, ImageCtx> | readonly Child<never, ImageCtx>[],
+): Element.Element<never, ImageCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* ImageCtx;
+    const delayMs = props.delayMs ?? 0;
 
-      // Track if delay has passed
-      const delayPassed = yield* Signal.make(delayMs === 0);
+    // Track if delay has passed
+    const delayPassed = yield* Signal.make(delayMs === 0);
 
-      // Start delay timer if needed
-      if (delayMs > 0) {
-        yield* Reaction.make([], () =>
-          Effect.gen(function* () {
-            yield* Effect.sleep(`${delayMs} millis`);
-            yield* delayPassed.set(true);
-          }),
-        );
-      }
-
-      // Show fallback if: (idle or loading or error) AND delay has passed
-      // Don't show if image is loaded
-      const shouldShow = yield* Derived.sync(
-        [ctx.status, delayPassed],
-        ([status, delayed]) => {
-          if (status === "loaded") return false;
-          if (!delayed) return false;
-          return true;
-        },
+    // Start delay timer if needed
+    if (delayMs > 0) {
+      yield* Reaction.make([], () =>
+        Effect.gen(function* () {
+          yield* Effect.sleep(`${delayMs} millis`);
+          yield* delayPassed.set(true);
+        }),
       );
+    }
 
-      const dataState = shouldShow.map((show) => (show ? "visible" : "hidden"));
+    // Show fallback if: (idle or loading or error) AND delay has passed
+    // Don't show if image is loaded
+    const shouldShow = yield* Derived.sync(
+      [ctx.status, delayPassed],
+      ([status, delayed]) => {
+        if (status === "loaded") return false;
+        if (!delayed) return false;
+        return true;
+      },
+    );
 
-      return yield* $.span(
-        {
-          class: props.class,
-          "data-image-fallback": "",
-          "data-state": dataState,
-        },
-        children ?? [],
-      );
-    }),
-);
+    const dataState = shouldShow.map((show) => (show ? "visible" : "hidden"));
+
+    return yield* $.span(
+      {
+        class: props.class,
+        "data-image-fallback": "",
+        "data-state": dataState,
+      },
+      children ?? [],
+    );
+  });
 
 /**
  * Headless Image primitive with loading state management and fallback support.

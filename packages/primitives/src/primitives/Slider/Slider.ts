@@ -4,7 +4,6 @@ import type { Child, ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
-import { component } from "@effex/dom";
 import { Element, type ElementRef } from "@effex/dom";
 import {
   type SliderValue,
@@ -123,7 +122,10 @@ export interface SliderRootProps {
 /**
  * Root container for Slider. Manages value state and provides context.
  */
-const Root = component("SliderRoot", (props: SliderRootProps, children) =>
+const Root = (
+  props: SliderRootProps,
+  children?: Child<never, SliderCtx> | readonly Child<never, SliderCtx>[],
+): Element.Element =>
   Effect.gen(function* () {
     // Defaults
     const min = props.min ?? 0;
@@ -295,8 +297,7 @@ const Root = component("SliderRoot", (props: SliderRootProps, children) =>
       },
       newChildren,
     );
-  }),
-);
+  });
 
 /**
  * Props for Slider.Track
@@ -309,7 +310,10 @@ export interface SliderTrackProps {
 /**
  * The track area of the slider. Clickable to jump thumb to position.
  */
-const Track = component("SliderTrack", (props: SliderTrackProps, children) =>
+const Track = (
+  props: SliderTrackProps,
+  children?: Child<never, SliderCtx> | readonly Child<never, SliderCtx>[],
+): Element.Element<never, SliderCtx> =>
   Effect.gen(function* () {
     const ctx = yield* SliderCtx;
 
@@ -361,8 +365,7 @@ const Track = component("SliderTrack", (props: SliderTrackProps, children) =>
       },
       children ?? [],
     );
-  }),
-);
+  });
 
 /**
  * Props for Slider.Range
@@ -375,7 +378,7 @@ export interface SliderRangeProps {
 /**
  * Visual fill between min and value (or between thumbs in range mode).
  */
-const Range = component("SliderRange", (props: SliderRangeProps) =>
+const Range = (props: SliderRangeProps): Element.Element<never, SliderCtx> =>
   Effect.gen(function* () {
     const ctx = yield* SliderCtx;
 
@@ -403,8 +406,7 @@ const Range = component("SliderRange", (props: SliderRangeProps) =>
       style: rangeStyle,
       "data-slider-range": "",
     });
-  }),
-);
+  });
 
 /**
  * Props for Slider.Thumb
@@ -423,7 +425,7 @@ export interface SliderThumbProps {
 /**
  * Draggable thumb handle. Has role="slider" with ARIA attributes.
  */
-const Thumb = component("SliderThumb", (props: SliderThumbProps) =>
+const Thumb = (props: SliderThumbProps): Element.Element<never, SliderCtx> =>
   Effect.gen(function* () {
     const ctx = yield* SliderCtx;
 
@@ -549,8 +551,7 @@ const Thumb = component("SliderThumb", (props: SliderThumbProps) =>
       },
       [],
     );
-  }),
-);
+  });
 
 // ============================================================================
 // Drag Tracking Helper

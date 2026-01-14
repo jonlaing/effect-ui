@@ -1,12 +1,11 @@
 import { Effect, Layer } from "effect";
 import { Signal } from "@effex/dom";
-import type { ClassValue } from "@effex/dom";
+import type { Child, ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { Derived } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { when } from "@effex/dom";
-import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
 import { onClickOutside } from "@effex/dom";
@@ -285,162 +284,161 @@ export interface ComboboxInputProps {
  * Combobox.Input({ placeholder: "Search fruits..." })
  * ```
  */
-const Input = component(
-  "ComboboxInput",
-  (props: ComboboxInputProps, _children) =>
-    Effect.gen(function* () {
-      const ctx = yield* ComboboxCtx;
+const Input = (
+  props: ComboboxInputProps,
+): Element.Element<never, ComboboxCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* ComboboxCtx;
 
-      const openOnFocus = props.openOnFocus ?? true;
-      // Combine context disabled and prop disabled into a single Readable
-      const propDisabled = Readable.of(props.disabled ?? false);
-      const isDisabled = yield* Derived.sync(
-        [ctx.disabled, propDisabled] as const,
-        ([ctxD, propD]) => ctxD || propD,
-      );
+    const openOnFocus = props.openOnFocus ?? true;
+    // Combine context disabled and prop disabled into a single Readable
+    const propDisabled = Readable.of(props.disabled ?? false);
+    const isDisabled = yield* Derived.sync(
+      [ctx.disabled, propDisabled] as const,
+      ([ctxD, propD]) => ctxD || propD,
+    );
 
-      const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
-      const ariaExpanded = ctx.isOpen.map((open) => (open ? "true" : "false"));
+    const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
+    const ariaExpanded = ctx.isOpen.map((open) => (open ? "true" : "false"));
 
-      // Derive aria-activedescendant
-      const ariaActiveDescendant = Readable.map(ctx.highlightedValue, (hv) =>
-        hv ? ctx.getItemId(hv) : undefined,
-      );
+    // Derive aria-activedescendant
+    const ariaActiveDescendant = Readable.map(ctx.highlightedValue, (hv) =>
+      hv ? ctx.getItemId(hv) : undefined,
+    );
 
-      const handleInput = (event: InputEvent) =>
-        Effect.gen(function* () {
-          const target = event.target as HTMLInputElement;
-          yield* ctx.inputValue.set(target.value);
-          // Open on typing
-          yield* ctx.open();
-          // Reset highlight when input changes
-          yield* ctx.highlightValue(null);
-        });
-
-      const handleKeyDown = (event: KeyboardEvent) =>
-        Effect.gen(function* () {
-          if (yield* isDisabled.get) return;
-
-          const isOpenVal = yield* ctx.isOpen.get;
-
-          switch (event.key) {
-            case "ArrowDown":
-              event.preventDefault();
-              if (!isOpenVal) {
-                yield* ctx.open();
-                // Delay to allow items to render
-                setTimeout(() => {
-                  Effect.runSync(ctx.highlightFirst());
-                }, 0);
-              } else {
-                yield* ctx.highlightNext();
-              }
-              break;
-
-            case "ArrowUp":
-              event.preventDefault();
-              if (!isOpenVal) {
-                yield* ctx.open();
-                setTimeout(() => {
-                  Effect.runSync(ctx.highlightLast());
-                }, 0);
-              } else {
-                yield* ctx.highlightPrev();
-              }
-              break;
-
-            case "Home":
-              if (isOpenVal) {
-                event.preventDefault();
-                yield* ctx.highlightFirst();
-              }
-              break;
-
-            case "End":
-              if (isOpenVal) {
-                event.preventDefault();
-                yield* ctx.highlightLast();
-              }
-              break;
-
-            case "Enter":
-              if (isOpenVal) {
-                event.preventDefault();
-                const highlighted = yield* ctx.highlightedValue.get;
-                if (highlighted) {
-                  yield* ctx.selectValue(highlighted);
-                }
-              }
-              break;
-
-            case "Escape":
-              if (isOpenVal) {
-                event.preventDefault();
-                // Restore input to selected value's text
-                const selectedValue = yield* ctx.value.get;
-                const itemsMap = yield* ctx.items.get;
-                const selectedItem = itemsMap.get(selectedValue);
-                yield* ctx.inputValue.set(selectedItem?.textValue ?? "");
-                yield* ctx.close();
-              }
-              break;
-
-            case "Tab":
-              // Just close, let natural tab behavior happen
-              yield* ctx.close();
-              break;
-          }
-        });
-
-      const handleFocus = () =>
-        Effect.gen(function* () {
-          if (openOnFocus && !(yield* isDisabled.get)) {
-            yield* ctx.open();
-          }
-        });
-
-      // Track blur timeout for cleanup
-      let blurTimeout: ReturnType<typeof setTimeout> | null = null;
-
-      const handleBlur = () =>
-        Effect.sync(() => {
-          // Delay to allow click on item to register
-          blurTimeout = setTimeout(() => {
-            Effect.runSync(ctx.close());
-          }, 150);
-        });
-
-      // Cleanup timeout on unmount
-      yield* Effect.addFinalizer(() =>
-        Effect.sync(() => {
-          if (blurTimeout) clearTimeout(blurTimeout);
-        }),
-      );
-
-      return yield* $.input({
-        id: ctx.inputId,
-        ref: ctx.inputRef,
-        type: "text",
-        class: props.class,
-        placeholder: props.placeholder,
-        disabled: isDisabled,
-        role: "combobox",
-        "aria-expanded": ariaExpanded,
-        "aria-controls": ctx.contentId,
-        "aria-autocomplete": "list",
-        "aria-activedescendant": ariaActiveDescendant,
-        "aria-haspopup": "listbox",
-        "data-combobox-input": "",
-        "data-state": dataState,
-        "data-disabled": isDisabled.map((d) => (d ? "" : undefined)),
-        value: ctx.inputValue,
-        onInput: handleInput,
-        onKeyDown: handleKeyDown,
-        onFocus: handleFocus,
-        onBlur: handleBlur,
+    const handleInput = (event: InputEvent) =>
+      Effect.gen(function* () {
+        const target = event.target as HTMLInputElement;
+        yield* ctx.inputValue.set(target.value);
+        // Open on typing
+        yield* ctx.open();
+        // Reset highlight when input changes
+        yield* ctx.highlightValue(null);
       });
-    }),
-);
+
+    const handleKeyDown = (event: KeyboardEvent) =>
+      Effect.gen(function* () {
+        if (yield* isDisabled.get) return;
+
+        const isOpenVal = yield* ctx.isOpen.get;
+
+        switch (event.key) {
+          case "ArrowDown":
+            event.preventDefault();
+            if (!isOpenVal) {
+              yield* ctx.open();
+              // Delay to allow items to render
+              setTimeout(() => {
+                Effect.runSync(ctx.highlightFirst());
+              }, 0);
+            } else {
+              yield* ctx.highlightNext();
+            }
+            break;
+
+          case "ArrowUp":
+            event.preventDefault();
+            if (!isOpenVal) {
+              yield* ctx.open();
+              setTimeout(() => {
+                Effect.runSync(ctx.highlightLast());
+              }, 0);
+            } else {
+              yield* ctx.highlightPrev();
+            }
+            break;
+
+          case "Home":
+            if (isOpenVal) {
+              event.preventDefault();
+              yield* ctx.highlightFirst();
+            }
+            break;
+
+          case "End":
+            if (isOpenVal) {
+              event.preventDefault();
+              yield* ctx.highlightLast();
+            }
+            break;
+
+          case "Enter":
+            if (isOpenVal) {
+              event.preventDefault();
+              const highlighted = yield* ctx.highlightedValue.get;
+              if (highlighted) {
+                yield* ctx.selectValue(highlighted);
+              }
+            }
+            break;
+
+          case "Escape":
+            if (isOpenVal) {
+              event.preventDefault();
+              // Restore input to selected value's text
+              const selectedValue = yield* ctx.value.get;
+              const itemsMap = yield* ctx.items.get;
+              const selectedItem = itemsMap.get(selectedValue);
+              yield* ctx.inputValue.set(selectedItem?.textValue ?? "");
+              yield* ctx.close();
+            }
+            break;
+
+          case "Tab":
+            // Just close, let natural tab behavior happen
+            yield* ctx.close();
+            break;
+        }
+      });
+
+    const handleFocus = () =>
+      Effect.gen(function* () {
+        if (openOnFocus && !(yield* isDisabled.get)) {
+          yield* ctx.open();
+        }
+      });
+
+    // Track blur timeout for cleanup
+    let blurTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const handleBlur = () =>
+      Effect.sync(() => {
+        // Delay to allow click on item to register
+        blurTimeout = setTimeout(() => {
+          Effect.runSync(ctx.close());
+        }, 150);
+      });
+
+    // Cleanup timeout on unmount
+    yield* Effect.addFinalizer(() =>
+      Effect.sync(() => {
+        if (blurTimeout) clearTimeout(blurTimeout);
+      }),
+    );
+
+    return yield* $.input({
+      id: ctx.inputId,
+      ref: ctx.inputRef,
+      type: "text",
+      class: props.class,
+      placeholder: props.placeholder,
+      disabled: isDisabled,
+      role: "combobox",
+      "aria-expanded": ariaExpanded,
+      "aria-controls": ctx.contentId,
+      "aria-autocomplete": "list",
+      "aria-activedescendant": ariaActiveDescendant,
+      "aria-haspopup": "listbox",
+      "data-combobox-input": "",
+      "data-state": dataState,
+      "data-disabled": isDisabled.map((d) => (d ? "" : undefined)),
+      value: ctx.inputValue,
+      onInput: handleInput,
+      onKeyDown: handleKeyDown,
+      onFocus: handleFocus,
+      onBlur: handleBlur,
+    });
+  });
 
 /**
  * Props for Combobox.Content
@@ -469,96 +467,96 @@ export interface ComboboxContentProps {
  * ])
  * ```
  */
-const Content = component(
-  "ComboboxContent",
-  (props: ComboboxContentProps, children) =>
-    Effect.gen(function* () {
-      const ctx = yield* ComboboxCtx;
-      const contentRef = yield* Element.ref<HTMLDivElement>();
+const Content = (
+  props: ComboboxContentProps,
+  children?: Child<never, ComboboxCtx> | readonly Child<never, ComboboxCtx>[],
+): Element.Element<never, ComboboxCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* ComboboxCtx;
+    const contentRef = yield* Element.ref<HTMLDivElement>();
 
-      // Normalize positioning props
-      const side = Readable.of(props.side ?? "bottom");
-      const align = Readable.of(props.align ?? "start");
-      const sideOffset = Readable.of(props.sideOffset ?? 4);
+    // Normalize positioning props
+    const side = Readable.of(props.side ?? "bottom");
+    const align = Readable.of(props.align ?? "start");
+    const sideOffset = Readable.of(props.sideOffset ?? 4);
 
-      const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
-      const hasPositioned = yield* Signal.make(false);
+    const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
+    const hasPositioned = yield* Signal.make(false);
 
-      // Positioning context for positionAndReveal helper
-      const positioningContext = Layer.succeed(ComboboxContentPositionCtx, {
-        side,
-        align,
-        sideOffset,
-        hasPositioned,
-        setHasPositioned: (bool: boolean) => hasPositioned.set(bool),
-      });
+    // Positioning context for positionAndReveal helper
+    const positioningContext = Layer.succeed(ComboboxContentPositionCtx, {
+      side,
+      align,
+      sideOffset,
+      hasPositioned,
+      setHasPositioned: (bool: boolean) => hasPositioned.set(bool),
+    });
 
-      const onBeforeEnter = (el: Effect.Effect<HTMLElement>) =>
-        props.animate
-          ? el.pipe(
-              positionAndReveal,
-              Element.tapEffect(
-                () => props.animate?.onBeforeEnter?.(el) ?? Effect.void,
-              ),
-              Effect.provide(positioningContext),
-              Effect.provideService(ComboboxCtx, ctx),
-            )
-          : el.pipe(
-              positionAndReveal,
-              Effect.provide(positioningContext),
-              Effect.provideService(ComboboxCtx, ctx),
-            );
-
-      const onEnter = (el: Effect.Effect<HTMLElement>) =>
-        el.pipe(
-          Element.setStyles({ animation: "none" }),
-          Element.tapEffect(() => props.animate?.onEnter?.(el) ?? Effect.void),
-        );
-
-      const onBeforeExit = (el: Effect.Effect<HTMLElement>) =>
-        el.pipe(
-          Element.setStyles({ animation: "" }),
-          Element.tapEffect(
-            () => props.animate?.onBeforeExit?.(el) ?? Effect.void,
-          ),
-        );
-
-      // Click outside handler
-      yield* onClickOutside([ctx.inputRef, contentRef], () => ctx.close());
-
-      return yield* Portal(() =>
-        when(ctx.isOpen, {
-          onTrue: () =>
-            $.div(
-              {
-                id: ctx.contentId,
-                ref: contentRef,
-                class: props.class,
-                role: "listbox",
-                "aria-labelledby": ctx.inputId,
-                "data-combobox-content": "",
-                "data-state": dataState,
-                "data-side": side,
-                "data-align": align,
-                tabIndex: -1,
-                style: {
-                  position: "fixed",
-                  opacity: "0",
-                },
-              },
-              children ?? [],
+    const onBeforeEnter = (el: Effect.Effect<HTMLElement>) =>
+      props.animate
+        ? el.pipe(
+            positionAndReveal,
+            Element.tapEffect(
+              () => props.animate?.onBeforeEnter?.(el) ?? Effect.void,
             ),
-          onFalse: () => $.div({ style: { display: "none" } }),
-          animate: {
-            ...(props.animate ?? {}),
-            onBeforeEnter,
-            onEnter,
-            onBeforeExit,
-          },
-        }),
+            Effect.provide(positioningContext),
+            Effect.provideService(ComboboxCtx, ctx),
+          )
+        : el.pipe(
+            positionAndReveal,
+            Effect.provide(positioningContext),
+            Effect.provideService(ComboboxCtx, ctx),
+          );
+
+    const onEnter = (el: Effect.Effect<HTMLElement>) =>
+      el.pipe(
+        Element.setStyles({ animation: "none" }),
+        Element.tapEffect(() => props.animate?.onEnter?.(el) ?? Effect.void),
       );
-    }),
-);
+
+    const onBeforeExit = (el: Effect.Effect<HTMLElement>) =>
+      el.pipe(
+        Element.setStyles({ animation: "" }),
+        Element.tapEffect(
+          () => props.animate?.onBeforeExit?.(el) ?? Effect.void,
+        ),
+      );
+
+    // Click outside handler
+    yield* onClickOutside([ctx.inputRef, contentRef], () => ctx.close());
+
+    return yield* Portal(() =>
+      when(ctx.isOpen, {
+        onTrue: () =>
+          $.div(
+            {
+              id: ctx.contentId,
+              ref: contentRef,
+              class: props.class,
+              role: "listbox",
+              "aria-labelledby": ctx.inputId,
+              "data-combobox-content": "",
+              "data-state": dataState,
+              "data-side": side,
+              "data-align": align,
+              tabIndex: -1,
+              style: {
+                position: "fixed",
+                opacity: "0",
+              },
+            },
+            children ?? [],
+          ),
+        onFalse: () => $.div({ style: { display: "none" } }),
+        animate: {
+          ...(props.animate ?? {}),
+          onBeforeEnter,
+          onEnter,
+          onBeforeExit,
+        },
+      }),
+    );
+  });
 
 /**
  * Props for Combobox.Item
@@ -707,26 +705,28 @@ export interface ComboboxItemTextProps {
  * Combobox.ItemText({}, "Apple")
  * ```
  */
-const ItemText = component(
-  "ComboboxItemText",
-  (props: ComboboxItemTextProps, children) =>
-    Effect.gen(function* () {
-      const itemCtx = yield* ComboboxItemCtx;
+const ItemText = (
+  props: ComboboxItemTextProps,
+  children?:
+    | Child<never, ComboboxItemCtx>
+    | readonly Child<never, ComboboxItemCtx>[],
+): Element.Element<never, ComboboxItemCtx> =>
+  Effect.gen(function* () {
+    const itemCtx = yield* ComboboxItemCtx;
 
-      // Auto-register text value if children is a string
-      if (typeof children === "string") {
-        yield* itemCtx.setTextValue(children);
-      }
+    // Auto-register text value if children is a string
+    if (typeof children === "string") {
+      yield* itemCtx.setTextValue(children);
+    }
 
-      return yield* $.span(
-        {
-          class: props.class,
-          "data-combobox-item-text": "",
-        },
-        children ?? [],
-      );
-    }),
-);
+    return yield* $.span(
+      {
+        class: props.class,
+        "data-combobox-item-text": "",
+      },
+      children ?? [],
+    );
+  });
 
 /**
  * Props for Combobox.Group
@@ -747,20 +747,20 @@ export interface ComboboxGroupProps {
  * ])
  * ```
  */
-const Group = component(
-  "ComboboxGroup",
-  (props: ComboboxGroupProps, children) =>
-    Effect.gen(function* () {
-      return yield* $.div(
-        {
-          class: props.class,
-          role: "group",
-          "data-combobox-group": "",
-        },
-        children ?? [],
-      );
-    }),
-);
+const Group = (
+  props: ComboboxGroupProps,
+  children?: Child<never, ComboboxCtx> | readonly Child<never, ComboboxCtx>[],
+): Element.Element<never, ComboboxCtx> =>
+  Effect.gen(function* () {
+    return yield* $.div(
+      {
+        class: props.class,
+        role: "group",
+        "data-combobox-group": "",
+      },
+      children ?? [],
+    );
+  });
 
 /**
  * Props for Combobox.Label
@@ -778,19 +778,19 @@ export interface ComboboxLabelProps {
  * Combobox.Label({}, "Fruits")
  * ```
  */
-const Label = component(
-  "ComboboxLabel",
-  (props: ComboboxLabelProps, children) =>
-    Effect.gen(function* () {
-      return yield* $.div(
-        {
-          class: props.class,
-          "data-combobox-label": "",
-        },
-        children ?? [],
-      );
-    }),
-);
+const Label = (
+  props: ComboboxLabelProps,
+  children?: Child<never, ComboboxCtx> | readonly Child<never, ComboboxCtx>[],
+): Element.Element<never, ComboboxCtx> =>
+  Effect.gen(function* () {
+    return yield* $.div(
+      {
+        class: props.class,
+        "data-combobox-label": "",
+      },
+      children ?? [],
+    );
+  });
 
 /**
  * Props for Combobox.Empty
@@ -811,32 +811,32 @@ export interface ComboboxEmptyProps {
  * Combobox.Empty({}, "No results found")
  * ```
  */
-const Empty = component(
-  "ComboboxEmpty",
-  (props: ComboboxEmptyProps, children) =>
-    Effect.gen(function* () {
-      const ctx = yield* ComboboxCtx;
+const Empty = (
+  props: ComboboxEmptyProps,
+  children?: Child<never, ComboboxCtx> | readonly Child<never, ComboboxCtx>[],
+): Element.Element<never, ComboboxCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* ComboboxCtx;
 
-      // Show when items is empty and not loading
-      const shouldShow = yield* Derived.sync(
-        [ctx.items, ctx.isLoading] as const,
-        ([items, loading]) => items.size === 0 && !loading,
-      );
+    // Show when items is empty and not loading
+    const shouldShow = yield* Derived.sync(
+      [ctx.items, ctx.isLoading] as const,
+      ([items, loading]) => items.size === 0 && !loading,
+    );
 
-      return yield* when(shouldShow, {
-        onTrue: () =>
-          $.div(
-            {
-              class: props.class,
-              "data-combobox-empty": "",
-            },
-            children ?? [],
-          ),
-        onFalse: () => $.div({ style: { display: "none" } }),
-        animate: props.animate,
-      });
-    }),
-);
+    return yield* when(shouldShow, {
+      onTrue: () =>
+        $.div(
+          {
+            class: props.class,
+            "data-combobox-empty": "",
+          },
+          children ?? [],
+        ),
+      onFalse: () => $.div({ style: { display: "none" } }),
+      animate: props.animate,
+    });
+  });
 
 /**
  * Props for Combobox.Loading
@@ -857,26 +857,26 @@ export interface ComboboxLoadingProps {
  * Combobox.Loading({}, "Searching...")
  * ```
  */
-const Loading = component(
-  "ComboboxLoading",
-  (props: ComboboxLoadingProps, children) =>
-    Effect.gen(function* () {
-      const ctx = yield* ComboboxCtx;
+const Loading = (
+  props: ComboboxLoadingProps,
+  children?: Child<never, ComboboxCtx> | readonly Child<never, ComboboxCtx>[],
+): Element.Element<never, ComboboxCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* ComboboxCtx;
 
-      return yield* when(ctx.isLoading, {
-        onTrue: () =>
-          $.div(
-            {
-              class: props.class,
-              "data-combobox-loading": "",
-            },
-            children ?? [],
-          ),
-        onFalse: () => $.div({ style: { display: "none" } }),
-        animate: props.animate,
-      });
-    }),
-);
+    return yield* when(ctx.isLoading, {
+      onTrue: () =>
+        $.div(
+          {
+            class: props.class,
+            "data-combobox-loading": "",
+          },
+          children ?? [],
+        ),
+      onFalse: () => $.div({ style: { display: "none" } }),
+      animate: props.animate,
+    });
+  });
 
 /**
  * Headless Combobox/Autocomplete primitive for building accessible search inputs.

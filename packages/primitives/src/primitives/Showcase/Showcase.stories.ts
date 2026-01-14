@@ -128,14 +128,14 @@ export const SettingsDashboard: Story = {
                   DropdownMenu.Item(
                     {
                       class:
-                        "rounded-btn hover:bg-base-400 px-3 py-2 cursor-pointer",
+                        "text-left hover:bg-base-400 px-3 py-2 cursor-pointer",
                     },
                     [$.span({}, "☺ Profile")],
                   ),
                   DropdownMenu.Item(
                     {
                       class:
-                        "rounded-btn hover:bg-base-400 px-3 py-2 cursor-pointer",
+                        "text-left hover:bg-base-400 px-3 py-2 cursor-pointer",
                     },
                     [$.span({}, "⚙ Settings")],
                   ),
@@ -143,7 +143,7 @@ export const SettingsDashboard: Story = {
                   DropdownMenu.Item(
                     {
                       class:
-                        "rounded-btn hover:bg-error hover:text-error-content px-3 py-2 cursor-pointer",
+                        "text-left hover:bg-error hover:text-error-content px-3 py-2 cursor-pointer",
                     },
                     [$.span({}, "→ Sign out")],
                   ),
@@ -296,7 +296,6 @@ export const SettingsDashboard: Story = {
                                   Select.Value({
                                     placeholder: "Select language",
                                   }),
-                                  $.span({ class: "text-xs" }, "▼"),
                                 ],
                               ),
                               Select.Content(
@@ -549,10 +548,7 @@ export const SettingsDashboard: Story = {
                             class:
                               "select select-bordered w-full max-w-xs flex justify-between items-center",
                           },
-                          [
-                            Select.Value({ placeholder: "Select size" }),
-                            $.span({ class: "text-xs" }, "▼"),
-                          ],
+                          [Select.Value({ placeholder: "Select size" })],
                         ),
                         Select.Content(
                           {

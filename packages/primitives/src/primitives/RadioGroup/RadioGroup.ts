@@ -5,9 +5,9 @@ import { Readable } from "@effex/dom";
 import { Derived } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
-import { component } from "@effex/dom";
 import { createKeyboardNav } from "@effex/dom";
 import { Element } from "@effex/dom";
+import type { Child } from "@effex/dom";
 
 /**
  * Context shared between RadioGroup parts.
@@ -178,57 +178,59 @@ export interface RadioGroupItemProps {
  * ])
  * ```
  */
-const Item = component(
-  "RadioGroupItem",
-  (props: RadioGroupItemProps, children) =>
-    Effect.gen(function* () {
-      const ctx = yield* RadioGroupCtx;
+const Item = (
+  props: RadioGroupItemProps,
+  children?:
+    | Child<never, RadioGroupCtx>
+    | readonly Child<never, RadioGroupCtx>[],
+): Element.Element<never, RadioGroupCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* RadioGroupCtx;
 
-      // Normalize item's disabled prop and combine with context disabled
-      const itemDisabled = Readable.of(props.disabled ?? false);
-      const isDisabled = yield* Derived.sync(
-        [ctx.disabled, itemDisabled],
-        ([ctxDisabled, propDisabled]) => ctxDisabled || propDisabled,
-      );
+    // Normalize item's disabled prop and combine with context disabled
+    const itemDisabled = Readable.of(props.disabled ?? false);
+    const isDisabled = yield* Derived.sync(
+      [ctx.disabled, itemDisabled],
+      ([ctxDisabled, propDisabled]) => ctxDisabled || propDisabled,
+    );
 
-      const isChecked = ctx.value.map((v) => v === props.value);
-      const dataState = isChecked.map((c) => (c ? "checked" : "unchecked"));
-      const ariaChecked = isChecked.map((c) => (c ? "true" : "false"));
-      const tabIndex = isChecked.map((c) => (c ? 0 : -1));
-      const dataDisabled = isDisabled.map((d) => (d ? "" : undefined));
+    const isChecked = ctx.value.map((v) => v === props.value);
+    const dataState = isChecked.map((c) => (c ? "checked" : "unchecked"));
+    const ariaChecked = isChecked.map((c) => (c ? "true" : "false"));
+    const tabIndex = isChecked.map((c) => (c ? 0 : -1));
+    const dataDisabled = isDisabled.map((d) => (d ? "" : undefined));
 
-      const handleClick = () =>
-        Effect.gen(function* () {
-          if (yield* isDisabled.get) return;
-          yield* ctx.setValue(props.value);
-        });
-
-      // Default indicator (visual dot)
-      const defaultIndicator = $.span({
-        "data-radio-indicator": "",
-        "data-state": dataState,
+    const handleClick = () =>
+      Effect.gen(function* () {
+        if (yield* isDisabled.get) return;
+        yield* ctx.setValue(props.value);
       });
 
-      return yield* $.button(
-        {
-          type: "button",
-          role: "radio",
-          id: props.id,
-          class: props.class,
-          disabled: isDisabled,
-          tabIndex,
-          "aria-checked": ariaChecked,
-          "data-state": dataState,
-          "data-value": props.value,
-          "data-disabled": dataDisabled,
-          "data-radio-item": "",
-          name: ctx.name,
-          onClick: handleClick,
-        },
-        children ?? [defaultIndicator],
-      );
-    }),
-);
+    // Default indicator (visual dot)
+    const defaultIndicator = $.span({
+      "data-radio-indicator": "",
+      "data-state": dataState,
+    });
+
+    return yield* $.button(
+      {
+        type: "button",
+        role: "radio",
+        id: props.id,
+        class: props.class,
+        disabled: isDisabled,
+        tabIndex,
+        "aria-checked": ariaChecked,
+        "data-state": dataState,
+        "data-value": props.value,
+        "data-disabled": dataDisabled,
+        "data-radio-item": "",
+        name: ctx.name,
+        onClick: handleClick,
+      },
+      children ?? [defaultIndicator],
+    );
+  });
 
 /**
  * Headless RadioGroup primitive for building accessible radio button groups.

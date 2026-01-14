@@ -4,7 +4,6 @@ import { Readable } from "@effex/dom";
 import { Reaction } from "@effex/dom";
 import { $, ol, li } from "@effex/dom";
 import { provide } from "@effex/dom";
-import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Element } from "@effex/dom";
 import type { Child, ClassValue } from "@effex/dom";
@@ -215,58 +214,60 @@ export interface NavigationMenuListProps {
 /**
  * Container for navigation menu items.
  */
-const List = component(
-  "NavigationMenuList",
-  (props: NavigationMenuListProps, children) =>
-    Effect.gen(function* () {
-      const ctx = yield* NavigationMenuCtx;
+const List = (
+  props: NavigationMenuListProps,
+  children?:
+    | Child<never, NavigationMenuCtx>
+    | readonly Child<never, NavigationMenuCtx>[],
+): Element.Element<never, NavigationMenuCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* NavigationMenuCtx;
 
-      const handleKeyDown = (event: KeyboardEvent) =>
-        Effect.gen(function* () {
-          const triggerRefs = Array.from(ctx.triggerRefs.values());
+    const handleKeyDown = (event: KeyboardEvent) =>
+      Effect.gen(function* () {
+        const triggerRefs = Array.from(ctx.triggerRefs.values());
 
-          // Find current index by checking each element
-          let currentIndex = -1;
-          for (let i = 0; i < triggerRefs.length; i++) {
-            if (Element.getUnsafe(triggerRefs[i]) === document.activeElement) {
-              currentIndex = i;
-              break;
-            }
+        // Find current index by checking each element
+        let currentIndex = -1;
+        for (let i = 0; i < triggerRefs.length; i++) {
+          if (Element.getUnsafe(triggerRefs[i]) === document.activeElement) {
+            currentIndex = i;
+            break;
           }
+        }
 
-          if (currentIndex === -1) return;
+        if (currentIndex === -1) return;
 
-          const currentOrientation = yield* ctx.orientation.get;
-          const isHorizontal = currentOrientation === "horizontal";
-          const prevKey = isHorizontal ? "ArrowLeft" : "ArrowUp";
-          const nextKey = isHorizontal ? "ArrowRight" : "ArrowDown";
+        const currentOrientation = yield* ctx.orientation.get;
+        const isHorizontal = currentOrientation === "horizontal";
+        const prevKey = isHorizontal ? "ArrowLeft" : "ArrowUp";
+        const nextKey = isHorizontal ? "ArrowRight" : "ArrowDown";
 
-          if (event.key === prevKey) {
-            event.preventDefault();
-            const prevIndex =
-              currentIndex === 0 ? triggerRefs.length - 1 : currentIndex - 1;
-            yield* triggerRefs[prevIndex].pipe(Element.focus, Effect.ignore);
-          } else if (event.key === nextKey) {
-            event.preventDefault();
-            const nextIndex =
-              currentIndex === triggerRefs.length - 1 ? 0 : currentIndex + 1;
-            yield* triggerRefs[nextIndex].pipe(Element.focus, Effect.ignore);
-          }
-        });
+        if (event.key === prevKey) {
+          event.preventDefault();
+          const prevIndex =
+            currentIndex === 0 ? triggerRefs.length - 1 : currentIndex - 1;
+          yield* triggerRefs[prevIndex].pipe(Element.focus, Effect.ignore);
+        } else if (event.key === nextKey) {
+          event.preventDefault();
+          const nextIndex =
+            currentIndex === triggerRefs.length - 1 ? 0 : currentIndex + 1;
+          yield* triggerRefs[nextIndex].pipe(Element.focus, Effect.ignore);
+        }
+      });
 
-      return yield* ol(
-        {
-          class: props.class,
-          role: "menubar",
-          "aria-orientation": ctx.orientation,
-          "data-navigationmenu-list": "",
-          "data-orientation": ctx.orientation,
-          onKeyDown: handleKeyDown,
-        },
-        children ?? [],
-      );
-    }),
-);
+    return yield* ol(
+      {
+        class: props.class,
+        role: "menubar",
+        "aria-orientation": ctx.orientation,
+        "data-navigationmenu-list": "",
+        "data-orientation": ctx.orientation,
+        onKeyDown: handleKeyDown,
+      },
+      children ?? [],
+    );
+  });
 
 /**
  * Props for NavigationMenu.Item
@@ -319,85 +320,87 @@ export interface NavigationMenuTriggerProps {
 /**
  * Button that opens the navigation menu content.
  */
-const Trigger = component(
-  "NavigationMenuTrigger",
-  (props: NavigationMenuTriggerProps, children) =>
-    Effect.gen(function* () {
-      const ctx = yield* NavigationMenuCtx;
-      const itemCtx = yield* NavigationMenuItemCtx;
+const Trigger = (
+  props: NavigationMenuTriggerProps,
+  children?:
+    | Child<never, NavigationMenuCtx | NavigationMenuItemCtx>
+    | readonly Child<never, NavigationMenuCtx | NavigationMenuItemCtx>[],
+): Element.Element<never, NavigationMenuCtx | NavigationMenuItemCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* NavigationMenuCtx;
+    const itemCtx = yield* NavigationMenuItemCtx;
 
-      const dataState = itemCtx.isActive.map((active) =>
-        active ? "open" : "closed",
-      );
-      const ariaExpanded = itemCtx.isActive.map((active) =>
-        active ? "true" : "false",
-      );
+    const dataState = itemCtx.isActive.map((active) =>
+      active ? "open" : "closed",
+    );
+    const ariaExpanded = itemCtx.isActive.map((active) =>
+      active ? "true" : "false",
+    );
 
-      const handleMouseEnter = () =>
-        Effect.sync(() => {
-          ctx.scheduleOpen(itemCtx.itemId);
-        });
+    const handleMouseEnter = () =>
+      Effect.sync(() => {
+        ctx.scheduleOpen(itemCtx.itemId);
+      });
 
-      const handleMouseLeave = () =>
-        Effect.sync(() => {
-          ctx.scheduleClose();
-        });
+    const handleMouseLeave = () =>
+      Effect.sync(() => {
+        ctx.scheduleClose();
+      });
 
-      const handleClick = () => ctx.setActiveItem(itemCtx.itemId);
+    const handleClick = () => ctx.setActiveItem(itemCtx.itemId);
 
-      const handleKeyDown = (event: KeyboardEvent) =>
-        Effect.gen(function* () {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            const current = yield* ctx.activeItem.get;
-            if (current === itemCtx.itemId) {
-              yield* ctx.setActiveItem(null);
-            } else {
-              yield* ctx.setActiveItem(itemCtx.itemId);
-            }
-          } else if (event.key === "ArrowDown") {
-            event.preventDefault();
+    const handleKeyDown = (event: KeyboardEvent) =>
+      Effect.gen(function* () {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          const current = yield* ctx.activeItem.get;
+          if (current === itemCtx.itemId) {
+            yield* ctx.setActiveItem(null);
+          } else {
             yield* ctx.setActiveItem(itemCtx.itemId);
-            // Focus first focusable element in content
-            const content = document.getElementById(itemCtx.contentId);
-            if (content) {
-              const focusable = content.querySelector<HTMLElement>(
-                'a, button, input, [tabindex]:not([tabindex="-1"])',
-              );
-              focusable?.focus({ preventScroll: true });
-            }
           }
-        });
+        } else if (event.key === "ArrowDown") {
+          event.preventDefault();
+          yield* ctx.setActiveItem(itemCtx.itemId);
+          // Focus first focusable element in content
+          const content = document.getElementById(itemCtx.contentId);
+          if (content) {
+            const focusable = content.querySelector<HTMLElement>(
+              'a, button, input, [tabindex]:not([tabindex="-1"])',
+            );
+            focusable?.focus({ preventScroll: true });
+          }
+        }
+      });
 
-      // Register trigger ref before rendering
-      ctx.triggerRefs.set(itemCtx.itemId, itemCtx.triggerRef);
+    // Register trigger ref before rendering
+    ctx.triggerRefs.set(itemCtx.itemId, itemCtx.triggerRef);
 
-      // Cleanup on unmount
-      yield* Effect.addFinalizer(() =>
-        Effect.sync(() => {
-          ctx.triggerRefs.delete(itemCtx.itemId);
-        }),
-      );
+    // Cleanup on unmount
+    yield* Effect.addFinalizer(() =>
+      Effect.sync(() => {
+        ctx.triggerRefs.delete(itemCtx.itemId);
+      }),
+    );
 
-      return yield* $.button(
-        {
-          ref: itemCtx.triggerRef,
-          class: props.class,
-          type: "button",
-          "aria-expanded": ariaExpanded,
-          "aria-controls": itemCtx.contentId,
-          "aria-haspopup": "menu",
-          "data-navigationmenu-trigger": "",
-          "data-state": dataState,
-          onMouseEnter: handleMouseEnter,
-          onMouseLeave: handleMouseLeave,
-          onClick: handleClick,
-          onKeyDown: handleKeyDown,
-        },
-        children ?? [],
-      );
-    }),
-);
+    return yield* $.button(
+      {
+        ref: itemCtx.triggerRef,
+        class: props.class,
+        type: "button",
+        "aria-expanded": ariaExpanded,
+        "aria-controls": itemCtx.contentId,
+        "aria-haspopup": "menu",
+        "data-navigationmenu-trigger": "",
+        "data-state": dataState,
+        onMouseEnter: handleMouseEnter,
+        onMouseLeave: handleMouseLeave,
+        onClick: handleClick,
+        onKeyDown: handleKeyDown,
+      },
+      children ?? [],
+    );
+  });
 
 /**
  * Props for NavigationMenu.Content
@@ -413,55 +416,57 @@ export interface NavigationMenuContentProps {
  * Content panel that appears when the trigger is activated.
  * Renders inside Item but positions itself absolutely to appear below the menu.
  */
-const Content = component(
-  "NavigationMenuContent",
-  (props: NavigationMenuContentProps, children) =>
-    Effect.gen(function* () {
-      const ctx = yield* NavigationMenuCtx;
-      const itemCtx = yield* NavigationMenuItemCtx;
+const Content = (
+  props: NavigationMenuContentProps,
+  children?:
+    | Child<never, NavigationMenuCtx | NavigationMenuItemCtx>
+    | readonly Child<never, NavigationMenuCtx | NavigationMenuItemCtx>[],
+): Element.Element<never, NavigationMenuCtx | NavigationMenuItemCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* NavigationMenuCtx;
+    const itemCtx = yield* NavigationMenuItemCtx;
 
-      const dataState = itemCtx.isActive.map((active) =>
-        active ? "open" : "closed",
-      );
+    const dataState = itemCtx.isActive.map((active) =>
+      active ? "open" : "closed",
+    );
 
-      const handleMouseEnter = () =>
-        Effect.sync(() => {
-          ctx.cancelClose();
-        });
+    const handleMouseEnter = () =>
+      Effect.sync(() => {
+        ctx.cancelClose();
+      });
 
-      const handleMouseLeave = () =>
-        Effect.sync(() => {
-          ctx.scheduleClose();
-        });
+    const handleMouseLeave = () =>
+      Effect.sync(() => {
+        ctx.scheduleClose();
+      });
 
-      const handleKeyDown = (event: KeyboardEvent) =>
-        Effect.gen(function* () {
-          if (event.key === "Escape") {
-            event.preventDefault();
-            yield* props.onEscapeKeyDown?.(event) ?? Effect.void;
-            yield* ctx.setActiveItem(null);
-            // Return focus to trigger
-            const triggerRef = ctx.triggerRefs.get(itemCtx.itemId);
-            if (triggerRef) {
-              yield* triggerRef.pipe(Element.focus, Effect.ignore);
-            }
+    const handleKeyDown = (event: KeyboardEvent) =>
+      Effect.gen(function* () {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          yield* props.onEscapeKeyDown?.(event) ?? Effect.void;
+          yield* ctx.setActiveItem(null);
+          // Return focus to trigger
+          const triggerRef = ctx.triggerRefs.get(itemCtx.itemId);
+          if (triggerRef) {
+            yield* triggerRef.pipe(Element.focus, Effect.ignore);
           }
-        });
+        }
+      });
 
-      return yield* $.div(
-        {
-          id: itemCtx.contentId,
-          class: props.class,
-          "data-navigationmenu-content": "",
-          "data-state": dataState,
-          onMouseEnter: handleMouseEnter,
-          onMouseLeave: handleMouseLeave,
-          onKeyDown: handleKeyDown,
-        },
-        children ?? [],
-      );
-    }),
-);
+    return yield* $.div(
+      {
+        id: itemCtx.contentId,
+        class: props.class,
+        "data-navigationmenu-content": "",
+        "data-state": dataState,
+        onMouseEnter: handleMouseEnter,
+        onMouseLeave: handleMouseLeave,
+        onKeyDown: handleKeyDown,
+      },
+      children ?? [],
+    );
+  });
 
 /**
  * Props for NavigationMenu.Viewport
@@ -477,24 +482,23 @@ export interface NavigationMenuViewportProps {
  * Note: This component is optional - Content will still work without it,
  * but Viewport provides a consistent positioning anchor.
  */
-const Viewport = component(
-  "NavigationMenuViewport",
-  (props: NavigationMenuViewportProps) =>
-    Effect.gen(function* () {
-      const ctx = yield* NavigationMenuCtx;
+const Viewport = (
+  props: NavigationMenuViewportProps,
+): Element.Element<never, NavigationMenuCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* NavigationMenuCtx;
 
-      const dataState = ctx.activeItem.map((item) =>
-        item !== null ? "open" : "closed",
-      );
+    const dataState = ctx.activeItem.map((item) =>
+      item !== null ? "open" : "closed",
+    );
 
-      return yield* $.div({
-        ref: ctx.viewportRef,
-        class: props.class,
-        "data-navigationmenu-viewport": "",
-        "data-state": dataState,
-      });
-    }),
-);
+    return yield* $.div({
+      ref: ctx.viewportRef,
+      class: props.class,
+      "data-navigationmenu-viewport": "",
+      "data-state": dataState,
+    });
+  });
 
 /**
  * Props for NavigationMenu.Indicator
@@ -507,62 +511,61 @@ export interface NavigationMenuIndicatorProps {
 /**
  * Visual indicator that follows the active trigger.
  */
-const Indicator = component(
-  "NavigationMenuIndicator",
-  (props: NavigationMenuIndicatorProps) =>
-    Effect.gen(function* () {
-      const ctx = yield* NavigationMenuCtx;
-      const indicatorRef = yield* Element.ref<HTMLDivElement>();
+const Indicator = (
+  props: NavigationMenuIndicatorProps,
+): Element.Element<never, NavigationMenuCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* NavigationMenuCtx;
+    const indicatorRef = yield* Element.ref<HTMLDivElement>();
 
-      const updateIndicatorPositionEffect = (activeId: string | null) =>
-        Effect.gen(function* () {
-          const triggerRef = ctx.triggerRefs.get(activeId ?? "");
+    const updateIndicatorPositionEffect = (activeId: string | null) =>
+      Effect.gen(function* () {
+        const triggerRef = ctx.triggerRefs.get(activeId ?? "");
 
-          if (!triggerRef) {
-            return yield* Effect.fail("No active trigger found");
-          }
+        if (!triggerRef) {
+          return yield* Effect.fail("No active trigger found");
+        }
 
-          const triggerRect = yield* triggerRef.pipe(
-            Element.getBoundingClientRect,
-          );
-          const rootElement = yield* Element.getParent(indicatorRef);
-          const rootRect = rootElement.getBoundingClientRect();
-
-          return yield* indicatorRef.pipe(
-            Element.setStyles({
-              opacity: "1",
-              width: `${triggerRect.width}px`,
-              transform: `translateX(${triggerRect.left - rootRect.left}px)`,
-            }),
-          );
-        }).pipe(
-          Effect.catchAll(() =>
-            indicatorRef.pipe(Element.setStyles({ opacity: "0" })),
-          ),
-          Effect.ignore,
+        const triggerRect = yield* triggerRef.pipe(
+          Element.getBoundingClientRect,
         );
+        const rootElement = yield* Element.getParent(indicatorRef);
+        const rootRect = rootElement.getBoundingClientRect();
 
-      // Update position when active item changes
-      yield* Reaction.make([ctx.activeItem], ([activeId]) =>
-        updateIndicatorPositionEffect(activeId),
+        return yield* indicatorRef.pipe(
+          Element.setStyles({
+            opacity: "1",
+            width: `${triggerRect.width}px`,
+            transform: `translateX(${triggerRect.left - rootRect.left}px)`,
+          }),
+        );
+      }).pipe(
+        Effect.catchAll(() =>
+          indicatorRef.pipe(Element.setStyles({ opacity: "0" })),
+        ),
+        Effect.ignore,
       );
 
-      const hasActiveItem = ctx.activeItem.map((item) => item !== null);
+    // Update position when active item changes
+    yield* Reaction.make([ctx.activeItem], ([activeId]) =>
+      updateIndicatorPositionEffect(activeId),
+    );
 
-      return yield* $.div({
-        ref: indicatorRef,
-        class: props.class,
-        "data-navigationmenu-indicator": "",
-        "data-state": hasActiveItem.map((active) =>
-          active ? "visible" : "hidden",
-        ),
-        style: {
-          position: "absolute",
-          transition: "transform 0.2s ease, width 0.2s ease, opacity 0.2s ease",
-        },
-      });
-    }),
-);
+    const hasActiveItem = ctx.activeItem.map((item) => item !== null);
+
+    return yield* $.div({
+      ref: indicatorRef,
+      class: props.class,
+      "data-navigationmenu-indicator": "",
+      "data-state": hasActiveItem.map((active) =>
+        active ? "visible" : "hidden",
+      ),
+      style: {
+        position: "absolute",
+        transition: "transform 0.2s ease, width 0.2s ease, opacity 0.2s ease",
+      },
+    });
+  });
 
 // ============================================================================
 // Export

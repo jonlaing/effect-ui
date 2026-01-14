@@ -1,12 +1,11 @@
 import { Context, Effect } from "effect";
 import { Signal } from "@effex/dom";
-import type { ClassValue, SignalMap } from "@effex/dom";
+import type { Child, ClassValue, SignalMap } from "@effex/dom";
 import { Derived } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { when } from "@effex/dom";
-import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
 import { onClickOutside, createKeyboardNav } from "@effex/dom";
@@ -222,60 +221,63 @@ export interface SelectTriggerProps {
  * ])
  * ```
  */
-const Trigger = component(
-  "SelectTrigger",
-  (props: SelectTriggerProps, children) =>
-    Effect.gen(function* () {
-      const ctx = yield* SelectCtx;
+const Trigger = (
+  props: SelectTriggerProps,
+  children?: Child<never, SelectCtx> | readonly Child<never, SelectCtx>[],
+): Element.Element<never, SelectCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* SelectCtx;
 
-      const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
-      const ariaExpanded = ctx.isOpen.map((open) => (open ? "true" : "false"));
-      const dataDisabled = ctx.disabled.map((d) => (d ? "" : undefined));
+    const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
+    const ariaExpanded = ctx.isOpen.map((open) => (open ? "true" : "false"));
+    const dataDisabled = ctx.disabled.map((d) => (d ? "" : undefined));
 
-      const handleKeyDown = (event: KeyboardEvent) =>
-        Effect.gen(function* () {
-          if (yield* ctx.disabled.get) return;
+    const handleKeyDown = (event: KeyboardEvent) =>
+      Effect.gen(function* () {
+        if (yield* ctx.disabled.get) return;
 
-          switch (event.key) {
-            case "Enter":
-            case " ":
-            case "ArrowDown":
-            case "ArrowUp":
-              event.preventDefault();
-              yield* ctx.open();
-              break;
-          }
-        });
+        switch (event.key) {
+          case "Enter":
+          case " ":
+          case "ArrowDown":
+          case "ArrowUp":
+            event.preventDefault();
+            yield* ctx.open();
+            break;
+        }
+      });
 
-      const triggerProps = {
-        ref: ctx.triggerRef,
-        id: ctx.triggerId,
-        role: "combobox" as const,
-        "aria-haspopup": "listbox" as const,
-        "aria-expanded": ariaExpanded,
-        "aria-controls": ctx.contentId,
-        "data-state": dataState,
-        "data-disabled": dataDisabled,
-        "data-select-trigger": "",
-        onClick: ctx.toggle,
-        onKeyDown: handleKeyDown,
-      };
+    const triggerProps = {
+      ref: ctx.triggerRef,
+      id: ctx.triggerId,
+      role: "combobox" as const,
+      "aria-haspopup": "listbox" as const,
+      "aria-expanded": ariaExpanded,
+      "aria-controls": ctx.contentId,
+      "data-state": dataState,
+      "data-disabled": dataDisabled,
+      "data-select-trigger": "",
+      onClick: ctx.toggle,
+      onKeyDown: handleKeyDown,
+    };
 
-      if (props.asChild && Effect.isEffect(children)) {
-        return yield* mergeProps(triggerProps, children);
-      }
-
-      return yield* $.button(
-        {
-          ...triggerProps,
-          class: props.class,
-          type: "button",
-          disabled: ctx.disabled,
-        },
-        children ?? [],
+    if (props.asChild && Effect.isEffect(children)) {
+      return yield* mergeProps(
+        triggerProps,
+        children as Element.Element<never, SelectCtx>,
       );
-    }),
-);
+    }
+
+    return yield* $.button(
+      {
+        ...triggerProps,
+        class: props.class,
+        type: "button",
+        disabled: ctx.disabled,
+      },
+      children ?? [],
+    );
+  });
 
 /**
  * Props for Select.Value
@@ -295,7 +297,7 @@ export interface SelectValueProps {
  * Select.Value({ placeholder: "Choose..." })
  * ```
  */
-const Value = component("SelectValue", (props: SelectValueProps) =>
+const Value = (props: SelectValueProps): Element.Element<never, SelectCtx> =>
   Effect.gen(function* () {
     const ctx = yield* SelectCtx;
 
@@ -322,8 +324,7 @@ const Value = component("SelectValue", (props: SelectValueProps) =>
       },
       displayText,
     );
-  }),
-);
+  });
 
 /**
  * Props for Select.Content
@@ -352,144 +353,142 @@ export interface SelectContentProps {
  * ])
  * ```
  */
-const Content = component(
-  "SelectContent",
-  (props: SelectContentProps, children) =>
-    Effect.gen(function* () {
-      const ctx = yield* SelectCtx;
+const Content = (
+  props: SelectContentProps,
+  children?: Child<never, SelectCtx> | readonly Child<never, SelectCtx>[],
+): Element.Element<never, SelectCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* SelectCtx;
 
-      // Normalize positioning props
-      const side = Readable.of(props.side ?? "bottom");
-      const align = Readable.of(props.align ?? "start");
-      const sideOffset = Readable.of(props.sideOffset ?? 4);
+    // Normalize positioning props
+    const side = Readable.of(props.side ?? "bottom");
+    const align = Readable.of(props.align ?? "start");
+    const sideOffset = Readable.of(props.sideOffset ?? 4);
 
-      const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
+    const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
 
-      // Click outside handler
-      yield* onClickOutside([ctx.triggerRef, ctx.contentRef], () =>
-        ctx.close(),
-      );
+    // Click outside handler
+    yield* onClickOutside([ctx.triggerRef, ctx.contentRef], () => ctx.close());
 
-      // Keyboard navigation - created at component level
-      const keyboardNav = yield* createKeyboardNav({
-        selector: "[data-select-item]:not([data-disabled])",
-        orientation: "vertical",
-        loop: true,
-        onActivate: (el) =>
-          el.pipe(
-            Element.getData("value"),
-            Effect.flatMap(ctx.selectValue),
-            Effect.ignore,
+    // Keyboard navigation - created at component level
+    const keyboardNav = yield* createKeyboardNav({
+      selector: "[data-select-item]:not([data-disabled])",
+      orientation: "vertical",
+      loop: true,
+      onActivate: (el) =>
+        el.pipe(
+          Element.getData("value"),
+          Effect.flatMap(ctx.selectValue),
+          Effect.ignore,
+        ),
+      onEscape: () =>
+        ctx
+          .close()
+          .pipe(
+            Effect.andThen(ctx.triggerRef.pipe(Element.focus, Effect.ignore)),
           ),
-        onEscape: () =>
-          ctx
-            .close()
-            .pipe(
-              Effect.andThen(ctx.triggerRef.pipe(Element.focus, Effect.ignore)),
-            ),
+    });
+
+    const handleKeyDown = (event: KeyboardEvent) =>
+      Effect.gen(function* () {
+        // Tab closes select without preventing default
+        if (event.key === "Tab") {
+          yield* ctx.close();
+          return;
+        }
+        yield* keyboardNav(event);
       });
 
-      const handleKeyDown = (event: KeyboardEvent) =>
-        Effect.gen(function* () {
-          // Tab closes select without preventing default
-          if (event.key === "Tab") {
-            yield* ctx.close();
-            return;
-          }
-          yield* keyboardNav(event);
-        });
+    // Helper to position the content relative to trigger
+    const setPosition = <E, R>(el: Effect.Effect<HTMLElement, E, R>) =>
+      Effect.gen(function* () {
+        const currentSide = yield* side.get;
+        const currentAlign = yield* align.get;
+        const currentSideOffset = yield* sideOffset.get;
 
-      // Helper to position the content relative to trigger
-      const setPosition = <E, R>(el: Effect.Effect<HTMLElement, E, R>) =>
-        Effect.gen(function* () {
-          const currentSide = yield* side.get;
-          const currentAlign = yield* align.get;
-          const currentSideOffset = yield* sideOffset.get;
+        const contentRect = yield* el.pipe(Element.getBoundingClientRect);
+        const anchorRect = yield* ctx.triggerRef.pipe(
+          Element.getBoundingClientRect,
+        );
 
-          const contentRect = yield* el.pipe(Element.getBoundingClientRect);
-          const anchorRect = yield* ctx.triggerRef.pipe(
-            Element.getBoundingClientRect,
-          );
+        const { top, left } = calculatePosition(
+          anchorRect,
+          currentSide,
+          currentAlign,
+          currentSideOffset,
+          0,
+          contentRect.width,
+          contentRect.height,
+        );
 
-          const { top, left } = calculatePosition(
-            anchorRect,
-            currentSide,
-            currentAlign,
-            currentSideOffset,
-            0,
-            contentRect.width,
-            contentRect.height,
-          );
+        const positionStyle = {
+          top: `${top}px`,
+          left: `${left}px`,
+          minWidth: `${anchorRect.width}px`,
+          opacity: "",
+          animation: "none",
+        };
 
-          const positionStyle = {
-            top: `${top}px`,
-            left: `${left}px`,
-            minWidth: `${anchorRect.width}px`,
-            opacity: "",
-            animation: "none",
-          };
+        return yield* el.pipe(Element.setStyles(positionStyle));
+      });
 
-          return yield* el.pipe(Element.setStyles(positionStyle));
-        });
-
-      return yield* Portal(() =>
-        when(ctx.isOpen, {
-          onTrue: () =>
-            $.div(
-              {
-                ref: ctx.contentRef,
-                id: ctx.contentId,
-                class: props.class,
-                role: "listbox",
-                "aria-labelledby": ctx.triggerId,
-                "data-state": dataState,
-                "data-side": side,
-                "data-select-content": "",
-                tabIndex: -1,
-                style: {
-                  position: "fixed",
-                  opacity: 0,
-                },
-                onKeyDown: handleKeyDown,
+    return yield* Portal(() =>
+      when(ctx.isOpen, {
+        onTrue: () =>
+          $.div(
+            {
+              ref: ctx.contentRef,
+              id: ctx.contentId,
+              class: props.class,
+              role: "listbox",
+              "aria-labelledby": ctx.triggerId,
+              "data-state": dataState,
+              "data-side": side,
+              "data-select-content": "",
+              tabIndex: -1,
+              style: {
+                position: "fixed",
+                opacity: 0,
               },
-              children ?? [],
-            ),
-          // Render children hidden so ItemText can register display values
-          onFalse: () => $.div({ style: { display: "none" } }, children ?? []),
-          animate: props.animate
-            ? {
-                ...props.animate,
-                onBeforeEnter: (el) =>
-                  el.pipe(
-                    setPosition,
-                    Element.tapEffect(
-                      () => props.animate?.onBeforeEnter?.(el) ?? Effect.void,
-                    ),
-                    Effect.ignore,
+              onKeyDown: handleKeyDown,
+            },
+            children ?? [],
+          ),
+        // Render children hidden so ItemText can register display values
+        onFalse: () => $.div({ style: { display: "none" } }, children ?? []),
+        animate: props.animate
+          ? {
+              ...props.animate,
+              onBeforeEnter: (el) =>
+                el.pipe(
+                  setPosition,
+                  Element.tapEffect(
+                    () => props.animate?.onBeforeEnter?.(el) ?? Effect.void,
                   ),
-                onEnter: (el) =>
-                  el.pipe(
-                    Element.setStyles({ animation: "" }),
-                    Element.focus,
-                    Element.tapEffect(
-                      () => props.animate?.onEnter?.(el) ?? Effect.void,
-                    ),
-                    Effect.ignore,
+                  Effect.ignore,
+                ),
+              onEnter: (el) =>
+                el.pipe(
+                  Element.setStyles({ animation: "" }),
+                  Element.focus,
+                  Element.tapEffect(
+                    () => props.animate?.onEnter?.(el) ?? Effect.void,
                   ),
-              }
-            : {
-                onBeforeEnter: (el) => el.pipe(setPosition, Effect.ignore),
-                onEnter: (el) =>
-                  el.pipe(
-                    Element.setStyles({ animation: "" }),
-                    Element.focus,
-                    Effect.ignore,
-                  ),
-              },
-        }),
-      );
-    }),
-);
+                  Effect.ignore,
+                ),
+            }
+          : {
+              onBeforeEnter: (el) => el.pipe(setPosition, Effect.ignore),
+              onEnter: (el) =>
+                el.pipe(
+                  Element.setStyles({ animation: "" }),
+                  Element.focus,
+                  Effect.ignore,
+                ),
+            },
+      }),
+    );
+  });
 
 /**
  * Props for Select.Item
@@ -601,27 +600,29 @@ export interface SelectItemTextProps {
  * Select.ItemText({ class: "item-text" }, "Apple")
  * ```
  */
-const ItemText = component(
-  "SelectItemText",
-  (props: SelectItemTextProps, children) =>
-    Effect.gen(function* () {
-      const itemCtx = yield* SelectItemCtx;
+const ItemText = (
+  props: SelectItemTextProps,
+  children?:
+    | Child<never, SelectItemCtx>
+    | readonly Child<never, SelectItemCtx>[],
+): Element.Element<never, SelectItemCtx> =>
+  Effect.gen(function* () {
+    const itemCtx = yield* SelectItemCtx;
 
-      // If children is a simple string, register it as the display text
-      // This allows Select.Value to show the label without needing textValue prop
-      if (typeof children === "string") {
-        yield* itemCtx.setTextValue(children);
-      }
+    // If children is a simple string, register it as the display text
+    // This allows Select.Value to show the label without needing textValue prop
+    if (typeof children === "string") {
+      yield* itemCtx.setTextValue(children);
+    }
 
-      return yield* $.span(
-        {
-          class: props.class,
-          "data-select-item-text": "",
-        },
-        children ?? [],
-      );
-    }),
-);
+    return yield* $.span(
+      {
+        class: props.class,
+        "data-select-item-text": "",
+      },
+      children ?? [],
+    );
+  });
 
 /**
  * Props for Select.Group
@@ -642,7 +643,10 @@ export interface SelectGroupProps {
  * ])
  * ```
  */
-const Group = component("SelectGroup", (props: SelectGroupProps, children) =>
+const Group = (
+  props: SelectGroupProps,
+  children?: Child<never, SelectCtx> | readonly Child<never, SelectCtx>[],
+): Element.Element<never, SelectCtx> =>
   Effect.gen(function* () {
     return yield* $.div(
       {
@@ -652,8 +656,7 @@ const Group = component("SelectGroup", (props: SelectGroupProps, children) =>
       },
       children ?? [],
     );
-  }),
-);
+  });
 
 /**
  * Props for Select.Label
@@ -671,7 +674,10 @@ export interface SelectLabelProps {
  * Select.Label({}, "Category Name")
  * ```
  */
-const Label = component("SelectLabel", (props: SelectLabelProps, children) =>
+const Label = (
+  props: SelectLabelProps,
+  children?: Child<never, SelectCtx> | readonly Child<never, SelectCtx>[],
+): Element.Element<never, SelectCtx> =>
   Effect.gen(function* () {
     return yield* $.div(
       {
@@ -680,8 +686,7 @@ const Label = component("SelectLabel", (props: SelectLabelProps, children) =>
       },
       children ?? [],
     );
-  }),
-);
+  });
 
 /**
  * Props for Select.Separator
@@ -699,15 +704,16 @@ export interface SelectSeparatorProps {
  * Select.Separator({})
  * ```
  */
-const Separator = component("SelectSeparator", (props: SelectSeparatorProps) =>
+const Separator = (
+  props: SelectSeparatorProps,
+): Element.Element<never, SelectCtx> =>
   Effect.gen(function* () {
     return yield* $.div({
       class: props.class,
       role: "separator",
       "data-select-separator": "",
     });
-  }),
-);
+  });
 
 /**
  * Headless Select primitive for building accessible dropdown selects.

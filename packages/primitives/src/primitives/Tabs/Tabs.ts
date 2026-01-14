@@ -5,11 +5,10 @@ import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { when } from "@effex/dom";
-import { component } from "@effex/dom";
 import { createKeyboardNav } from "@effex/dom";
 import { Element } from "@effex/dom";
 import { mergeProps } from "@effex/dom";
-import type { AnimationOptions } from "@effex/dom";
+import type { AnimationOptions, Child } from "@effex/dom";
 
 /**
  * Context shared between Tabs parts.
@@ -128,7 +127,10 @@ export interface TabsListProps {
  * ])
  * ```
  */
-const List = component("TabsList", (props: TabsListProps, children) =>
+const List = (
+  props: TabsListProps,
+  children?: Child<never, TabsCtx> | readonly Child<never, TabsCtx>[],
+): Element.Element<never, TabsCtx> =>
   Effect.gen(function* () {
     const ctx = yield* TabsCtx;
 
@@ -161,8 +163,7 @@ const List = component("TabsList", (props: TabsListProps, children) =>
       },
       children ?? [],
     );
-  }),
-);
+  });
 
 /**
  * Props for Tabs.Trigger
@@ -186,7 +187,10 @@ export interface TabsTriggerProps {
  * Tabs.Trigger({ value: "tab1", class: "tab-trigger" }, "Account")
  * ```
  */
-const Trigger = component("TabsTrigger", (props: TabsTriggerProps, children) =>
+const Trigger = (
+  props: TabsTriggerProps,
+  children?: Child<never, TabsCtx> | readonly Child<never, TabsCtx>[],
+): Element.Element<never, TabsCtx> =>
   Effect.gen(function* () {
     const ctx = yield* TabsCtx;
 
@@ -227,8 +231,7 @@ const Trigger = component("TabsTrigger", (props: TabsTriggerProps, children) =>
       },
       children ?? [],
     );
-  }),
-);
+  });
 
 /**
  * Props for Tabs.Content
@@ -255,7 +258,10 @@ export interface TabsContentProps {
  * ])
  * ```
  */
-const Content = component("TabsContent", (props: TabsContentProps, children) =>
+const Content = (
+  props: TabsContentProps,
+  children?: Child<never, TabsCtx> | readonly Child<never, TabsCtx>[],
+): Element.Element<never, TabsCtx> =>
   Effect.gen(function* () {
     const ctx = yield* TabsCtx;
 
@@ -295,8 +301,7 @@ const Content = component("TabsContent", (props: TabsContentProps, children) =>
       onFalse: () => $.div({ style: { display: "none" } }),
       animate: props.animate,
     });
-  }),
-);
+  });
 
 /**
  * Headless Tabs primitive for building accessible tabbed interfaces.

@@ -4,8 +4,8 @@ import type { ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
-import { component } from "@effex/dom";
 import { Element, type ElementRef } from "@effex/dom";
+import type { Child } from "@effex/dom";
 
 /**
  * Context shared between Splitter parts.
@@ -450,55 +450,57 @@ export interface SplitterPanelProps {
 /**
  * Individual panel within a Splitter. Automatically registers with the root.
  */
-const Panel = component(
-  "SplitterPanel",
-  (props: SplitterPanelProps, children) =>
-    Effect.gen(function* () {
-      const ctx = yield* SplitterCtx;
+const Panel = (
+  props: SplitterPanelProps,
+  children?:
+    | Child<never, SplitterCtx | SplitterPanelCtx>
+    | readonly Child<never, SplitterCtx | SplitterPanelCtx>[],
+): Element.Element<never, SplitterCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* SplitterCtx;
 
-      const minSize = props.minSize ?? 0;
-      const maxSize = props.maxSize ?? 100;
+    const minSize = props.minSize ?? 0;
+    const maxSize = props.maxSize ?? 100;
 
-      // Register this panel and get its index
-      const index = ctx.registerPanel(minSize, maxSize);
-      const id = ctx.generatePanelId();
+    // Register this panel and get its index
+    const index = ctx.registerPanel(minSize, maxSize);
+    const id = ctx.generatePanelId();
 
-      // Get this panel's size from the sizes array
-      const size = ctx.sizes.map((s) => s[index] ?? 0);
+    // Get this panel's size from the sizes array
+    const size = ctx.sizes.map((s) => s[index] ?? 0);
 
-      // Create panel context
-      const panelCtx: SplitterPanelContext = {
-        index,
+    // Create panel context
+    const panelCtx: SplitterPanelContext = {
+      index,
+      id,
+      size,
+      minSize,
+      maxSize,
+    };
+
+    // Style based on orientation and size
+    const panelStyle = size.map((s) => ({
+      flexBasis: `${s}%`,
+      flexGrow: "0",
+      flexShrink: "0",
+      overflow: "auto",
+    }));
+
+    return yield* $.div(
+      {
         id,
-        size,
-        minSize,
-        maxSize,
-      };
-
-      // Style based on orientation and size
-      const panelStyle = size.map((s) => ({
-        flexBasis: `${s}%`,
-        flexGrow: "0",
-        flexShrink: "0",
-        overflow: "auto",
-      }));
-
-      return yield* $.div(
-        {
-          id,
-          "data-splitter-panel": "",
-          "data-panel-index": String(index),
-          class: props.class,
-          style: panelStyle,
-        },
-        provide(
-          SplitterPanelCtx,
-          panelCtx,
-          children ? (Array.isArray(children) ? children : [children]) : [],
-        ),
-      );
-    }),
-);
+        "data-splitter-panel": "",
+        "data-panel-index": String(index),
+        class: props.class,
+        style: panelStyle,
+      },
+      provide(
+        SplitterPanelCtx,
+        panelCtx,
+        children ? (Array.isArray(children) ? children : [children]) : [],
+      ),
+    );
+  });
 
 /**
  * Props for Splitter.Handle
@@ -513,7 +515,9 @@ export interface SplitterHandleProps {
 /**
  * Draggable handle between panels. Provides resize functionality.
  */
-const Handle = component("SplitterHandle", (props: SplitterHandleProps) =>
+const Handle = (
+  props: SplitterHandleProps,
+): Element.Element<never, SplitterCtx> =>
   Effect.gen(function* () {
     const ctx = yield* SplitterCtx;
 
@@ -630,8 +634,7 @@ const Handle = component("SplitterHandle", (props: SplitterHandleProps) =>
       },
       [],
     );
-  }),
-);
+  });
 
 /**
  * Headless Splitter primitive for building resizable panel layouts.

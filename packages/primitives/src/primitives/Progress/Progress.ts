@@ -4,7 +4,7 @@ import { Readable } from "@effex/dom";
 import { Derived } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
-import { component } from "@effex/dom";
+import { Element } from "@effex/dom";
 
 export type ProgressState = "loading" | "complete" | "indeterminate";
 
@@ -33,7 +33,12 @@ export interface ProgressRootProps {
   readonly class?: ClassValue;
 }
 
-const Root = component("ProgressRoot", (props: ProgressRootProps, children) =>
+const Root = (
+  props: ProgressRootProps,
+  children:
+    | Element.Element<never, ProgressCtx>
+    | Element.Element<never, ProgressCtx>[],
+): Element.Element =>
   Effect.gen(function* () {
     const max = props.max ?? 100;
 
@@ -77,6 +82,7 @@ const Root = component("ProgressRoot", (props: ProgressRootProps, children) =>
       percentage,
     };
 
+    const childArray = Array.isArray(children) ? children : [children];
     return yield* $.div(
       {
         class: props.class,
@@ -90,38 +96,32 @@ const Root = component("ProgressRoot", (props: ProgressRootProps, children) =>
         "data-value": dataValue,
         "data-max": String(max),
       },
-      provide(
-        ProgressCtx,
-        ctx,
-        Array.isArray(children) ? children : [children],
-      ),
+      provide(ProgressCtx, ctx, childArray),
     );
-  }),
-);
+  });
 
 export interface ProgressIndicatorProps {
   /** Additional class names */
   readonly class?: ClassValue;
 }
 
-const Indicator = component(
-  "ProgressIndicator",
-  (props: ProgressIndicatorProps) =>
-    Effect.gen(function* () {
-      const ctx = yield* ProgressCtx;
+const Indicator = (
+  props: ProgressIndicatorProps,
+): Element.Element<never, ProgressCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* ProgressCtx;
 
-      // Style for the indicator - uses translateX for the progress effect
-      const indicatorStyle = ctx.percentage.map((pct) => ({
-        transform: `translateX(-${100 - pct}%)`,
-      }));
+    // Style for the indicator - uses translateX for the progress effect
+    const indicatorStyle = ctx.percentage.map((pct) => ({
+      transform: `translateX(-${100 - pct}%)`,
+    }));
 
-      return yield* $.div({
-        class: props.class,
-        "data-progress-indicator": "",
-        style: indicatorStyle,
-      });
-    }),
-);
+    return yield* $.div({
+      class: props.class,
+      "data-progress-indicator": "",
+      style: indicatorStyle,
+    });
+  });
 
 /**
  * Headless Progress primitive for building progress bars.

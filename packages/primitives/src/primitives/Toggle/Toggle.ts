@@ -2,8 +2,9 @@ import { Effect } from "effect";
 import { Signal } from "@effex/dom";
 import type { ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
-import { component } from "@effex/dom";
 import { $ } from "@effex/dom";
+import { Element } from "@effex/dom";
+import type { Child } from "@effex/dom";
 
 /**
  * Props for Toggle.Root component.
@@ -70,7 +71,10 @@ export interface ToggleProps {
  * Toggle({ disabled: true }, "Disabled Toggle")
  * ```
  */
-export const Toggle = component("Toggle", (props: ToggleProps, children) =>
+export const Toggle = (
+  props: ToggleProps,
+  children?: Child<never, never> | readonly Child<never, never>[],
+): Element.Element =>
   Effect.gen(function* () {
     // Handle controlled vs uncontrolled state
     const pressed = yield* Signal.fromNullable(
@@ -107,5 +111,4 @@ export const Toggle = component("Toggle", (props: ToggleProps, children) =>
       },
       children ?? [],
     );
-  }),
-);
+  });

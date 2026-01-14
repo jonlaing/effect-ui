@@ -5,8 +5,8 @@ import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { when } from "@effex/dom";
-import { component } from "@effex/dom";
 import { Element } from "@effex/dom";
+import type { Child } from "@effex/dom";
 import type { SignalSet, AnimationOptions } from "@effex/dom";
 
 /**
@@ -421,55 +421,56 @@ export interface TreeViewItemLabelProps {
 /**
  * The clickable/focusable label for a tree item.
  */
-const ItemLabel = component(
-  "TreeViewItemLabel",
-  (props: TreeViewItemLabelProps, children) =>
-    Effect.gen(function* () {
-      const treeCtx = yield* TreeViewCtx;
-      const itemCtx = yield* TreeViewItemCtx;
+const ItemLabel = (
+  props: TreeViewItemLabelProps,
+  children?:
+    | Child<never, TreeViewCtx | TreeViewItemCtx>
+    | readonly Child<never, TreeViewCtx | TreeViewItemCtx>[],
+): Element.Element<never, TreeViewCtx | TreeViewItemCtx> =>
+  Effect.gen(function* () {
+    const treeCtx = yield* TreeViewCtx;
+    const itemCtx = yield* TreeViewItemCtx;
 
-      const handleClick = () =>
-        Effect.gen(function* () {
-          const isDisabled = yield* itemCtx.disabled.get;
-          if (isDisabled) return;
+    const handleClick = () =>
+      Effect.gen(function* () {
+        const isDisabled = yield* itemCtx.disabled.get;
+        if (isDisabled) return;
 
-          const hasKids = yield* itemCtx.hasChildren.get;
-          if (hasKids) {
-            yield* treeCtx.toggleExpanded(itemCtx.id);
-          }
+        const hasKids = yield* itemCtx.hasChildren.get;
+        if (hasKids) {
+          yield* treeCtx.toggleExpanded(itemCtx.id);
+        }
 
-          if (treeCtx.selectionMode !== "none") {
-            yield* treeCtx.select(itemCtx.id);
-          }
-        });
+        if (treeCtx.selectionMode !== "none") {
+          yield* treeCtx.select(itemCtx.id);
+        }
+      });
 
-      const dataState = itemCtx.isExpanded.map((expanded) =>
-        expanded ? "open" : "closed",
-      );
-      const dataSelected = itemCtx.isSelected.map((selected) =>
-        selected ? "true" : undefined,
-      );
-      const dataDisabled = itemCtx.disabled.map((d) => (d ? "" : undefined));
+    const dataState = itemCtx.isExpanded.map((expanded) =>
+      expanded ? "open" : "closed",
+    );
+    const dataSelected = itemCtx.isSelected.map((selected) =>
+      selected ? "true" : undefined,
+    );
+    const dataDisabled = itemCtx.disabled.map((d) => (d ? "" : undefined));
 
-      // Roving tabindex - first item gets tabIndex 0, others get -1
-      // This is a simplified version; a full implementation would track active item
-      const tabIndex =
-        itemCtx.level === 1 && itemCtx.parentId === null ? 0 : -1;
+    // Roving tabindex - first item gets tabIndex 0, others get -1
+    // This is a simplified version; a full implementation would track active item
+    const tabIndex = itemCtx.level === 1 && itemCtx.parentId === null ? 0 : -1;
 
-      return yield* $.div(
-        {
-          tabIndex,
-          "data-state": dataState,
-          "data-selected": dataSelected,
-          "data-disabled": dataDisabled,
-          "data-tree-label": "",
-          class: props.class,
-          onClick: handleClick,
-        },
-        children ?? [],
-      );
-    }),
-);
+    return yield* $.div(
+      {
+        tabIndex,
+        "data-state": dataState,
+        "data-selected": dataSelected,
+        "data-disabled": dataDisabled,
+        "data-tree-label": "",
+        class: props.class,
+        onClick: handleClick,
+      },
+      children ?? [],
+    );
+  });
 
 /**
  * Props for TreeView.ItemContent
@@ -484,47 +485,49 @@ export interface TreeViewItemContentProps {
 /**
  * Container for nested child items. Sets hasChildren on parent.
  */
-const ItemContent = component(
-  "TreeViewItemContent",
-  (props: TreeViewItemContentProps, children) =>
-    Effect.gen(function* () {
-      const itemCtx = yield* TreeViewItemCtx;
-      const levelCtx = yield* TreeViewLevelCtx;
+const ItemContent = (
+  props: TreeViewItemContentProps,
+  children?:
+    | Child<never, TreeViewCtx | TreeViewItemCtx | TreeViewLevelCtx>
+    | readonly Child<never, TreeViewCtx | TreeViewItemCtx | TreeViewLevelCtx>[],
+): Element.Element<never, TreeViewCtx | TreeViewItemCtx | TreeViewLevelCtx> =>
+  Effect.gen(function* () {
+    const itemCtx = yield* TreeViewItemCtx;
+    const levelCtx = yield* TreeViewLevelCtx;
 
-      // Mark parent as having children
-      yield* itemCtx.hasChildren.set(true);
+    // Mark parent as having children
+    yield* itemCtx.hasChildren.set(true);
 
-      // New level context for nested items
-      const newLevelCtx: TreeViewLevelContext = {
-        level: levelCtx.level + 1,
-        parentId: itemCtx.id,
-      };
+    // New level context for nested items
+    const newLevelCtx: TreeViewLevelContext = {
+      level: levelCtx.level + 1,
+      parentId: itemCtx.id,
+    };
 
-      const dataState = itemCtx.isExpanded.map((expanded) =>
-        expanded ? "open" : "closed",
-      );
+    const dataState = itemCtx.isExpanded.map((expanded) =>
+      expanded ? "open" : "closed",
+    );
 
-      const contentChildren = provide(
-        TreeViewLevelCtx,
-        newLevelCtx,
-        children ?? [],
-      );
+    const contentChildren = provide(
+      TreeViewLevelCtx,
+      newLevelCtx,
+      children ?? [],
+    );
 
-      return yield* when(itemCtx.isExpanded, {
-        onTrue: () =>
-          $.div(
-            {
-              role: "group",
-              "data-state": dataState,
-              class: props.class,
-            },
-            contentChildren,
-          ),
-        onFalse: () => $.div({ style: { display: "none" } }),
-        animate: props.animate,
-      });
-    }),
-);
+    return yield* when(itemCtx.isExpanded, {
+      onTrue: () =>
+        $.div(
+          {
+            role: "group",
+            "data-state": dataState,
+            class: props.class,
+          },
+          contentChildren,
+        ),
+      onFalse: () => $.div({ style: { display: "none" } }),
+      animate: props.animate,
+    });
+  });
 
 /**
  * Headless TreeView primitive for building accessible

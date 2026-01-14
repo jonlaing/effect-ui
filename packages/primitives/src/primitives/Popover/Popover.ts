@@ -5,13 +5,12 @@ import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
 import { when } from "@effex/dom";
-import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Portal } from "@effex/dom";
 import { onClickOutside } from "@effex/dom";
 import { Element } from "@effex/dom";
 import { mergeProps } from "@effex/dom";
-import type { AnimationOptions } from "@effex/dom";
+import type { AnimationOptions, Child } from "@effex/dom";
 import {
   type PopoverContext,
   PopoverCtx,
@@ -116,35 +115,35 @@ export interface PopoverTriggerProps {
  * Popover.Trigger({ class: "btn" }, "Open Popover")
  * ```
  */
-const Trigger = component(
-  "PopoverTrigger",
-  (props: PopoverTriggerProps, children) =>
-    Effect.gen(function* () {
-      const ctx = yield* PopoverCtx;
+const Trigger = (
+  props: PopoverTriggerProps,
+  children?: Child<never, PopoverCtx> | readonly Child<never, PopoverCtx>[],
+): Element.Element<never, PopoverCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* PopoverCtx;
 
-      const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
-      const ariaExpanded = ctx.isOpen.map((open) => (open ? "true" : "false"));
+    const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
+    const ariaExpanded = ctx.isOpen.map((open) => (open ? "true" : "false"));
 
-      const triggerProps = {
-        ref: ctx.triggerRef,
-        "aria-haspopup": "dialog" as const,
-        "aria-expanded": ariaExpanded,
-        "aria-controls": ctx.contentId,
-        "data-state": dataState,
-        "data-popover-trigger": "",
-        onClick: ctx.toggle,
-      };
+    const triggerProps = {
+      ref: ctx.triggerRef,
+      "aria-haspopup": "dialog" as const,
+      "aria-expanded": ariaExpanded,
+      "aria-controls": ctx.contentId,
+      "data-state": dataState,
+      "data-popover-trigger": "",
+      onClick: ctx.toggle,
+    };
 
-      if (props.asChild && Effect.isEffect(children)) {
-        return yield* mergeProps(triggerProps, children);
-      }
+    if (props.asChild && Effect.isEffect(children)) {
+      return yield* mergeProps(triggerProps, children);
+    }
 
-      return yield* $.button(
-        { ...triggerProps, type: "button", class: props.class },
-        children ?? [],
-      );
-    }),
-);
+    return yield* $.button(
+      { ...triggerProps, type: "button", class: props.class },
+      children ?? [],
+    );
+  });
 
 /**
  * Props for Popover.Anchor
@@ -166,22 +165,22 @@ export interface PopoverAnchorProps {
  * ])
  * ```
  */
-const Anchor = component(
-  "PopoverAnchor",
-  (props: PopoverAnchorProps, children) =>
-    Effect.gen(function* () {
-      const ctx = yield* PopoverCtx;
+const Anchor = (
+  props: PopoverAnchorProps,
+  children?: Child<never, PopoverCtx> | readonly Child<never, PopoverCtx>[],
+): Element.Element<never, PopoverCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* PopoverCtx;
 
-      return yield* $.div(
-        {
-          ref: ctx.anchorRef,
-          class: props.class,
-          "data-popover-anchor": "",
-        },
-        children ?? [],
-      );
-    }),
-);
+    return yield* $.div(
+      {
+        ref: ctx.anchorRef,
+        class: props.class,
+        "data-popover-anchor": "",
+      },
+      children ?? [],
+    );
+  });
 
 /**
  * Props for Popover.Content
@@ -219,123 +218,123 @@ export interface PopoverContentProps {
  * ])
  * ```
  */
-const Content = component(
-  "PopoverContent",
-  (props: PopoverContentProps, children) =>
-    Effect.gen(function* () {
-      const ctx = yield* PopoverCtx;
-      const contentRef = yield* Element.ref<HTMLDivElement>();
+const Content = (
+  props: PopoverContentProps,
+  children?: Child<never, PopoverCtx> | readonly Child<never, PopoverCtx>[],
+): Element.Element<never, PopoverCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* PopoverCtx;
+    const contentRef = yield* Element.ref<HTMLDivElement>();
 
-      // Normalize positioning props
-      const side = Readable.of(props.side ?? "bottom");
-      const align = Readable.of(props.align ?? "center");
-      const sideOffset = Readable.of(props.sideOffset ?? 4);
-      const alignOffset = Readable.of(props.alignOffset ?? 0);
+    // Normalize positioning props
+    const side = Readable.of(props.side ?? "bottom");
+    const align = Readable.of(props.align ?? "center");
+    const sideOffset = Readable.of(props.sideOffset ?? 4);
+    const alignOffset = Readable.of(props.alignOffset ?? 0);
 
-      const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
-      const hasPositioned = yield* Signal.make(false);
+    const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
+    const hasPositioned = yield* Signal.make(false);
 
-      // Portal is always rendered, but the content inside uses `when` for animations.
-      // This ensures animations apply to the actual visible content, not a placeholder.
-      //
-      // We use onBeforeEnter to measure and position the content after DOM insertion
-      // but before animation starts. This avoids using CSS transform for positioning,
-      // which would conflict with transform-based animations.
+    // Portal is always rendered, but the content inside uses `when` for animations.
+    // This ensures animations apply to the actual visible content, not a placeholder.
+    //
+    // We use onBeforeEnter to measure and position the content after DOM insertion
+    // but before animation starts. This avoids using CSS transform for positioning,
+    // which would conflict with transform-based animations.
 
-      // Positioning context - set in onTrue, used in positionAndReveal
-      const positioningContext = Layer.succeed(PopoverContentPositionCtx, {
-        side,
-        align,
-        sideOffset,
-        alignOffset,
-        hasPositioned,
-        setHasPositioned: (bool: boolean) => hasPositioned.set(bool),
+    // Positioning context - set in onTrue, used in positionAndReveal
+    const positioningContext = Layer.succeed(PopoverContentPositionCtx, {
+      side,
+      align,
+      sideOffset,
+      alignOffset,
+      hasPositioned,
+      setHasPositioned: (bool: boolean) => hasPositioned.set(bool),
+    });
+
+    const handleKeyDown = (event: KeyboardEvent) =>
+      Effect.gen(function* () {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          event.stopPropagation();
+          yield* props.onEscapeKeyDown?.(event) ?? Effect.void;
+          yield* ctx.close();
+        }
       });
 
-      const handleKeyDown = (event: KeyboardEvent) =>
-        Effect.gen(function* () {
-          if (event.key === "Escape") {
-            event.preventDefault();
-            event.stopPropagation();
-            yield* props.onEscapeKeyDown?.(event) ?? Effect.void;
-            yield* ctx.close();
-          }
-        });
-
-      const onBeforeEnter = (el: Effect.Effect<HTMLElement>) =>
-        props.animate
-          ? el.pipe(
-              positionAndReveal,
-              Element.tapEffect(
-                () => props.animate?.onBeforeEnter?.(el) ?? Effect.void,
-              ),
-              Effect.provide(positioningContext),
-              Effect.provideService(PopoverCtx, ctx),
-            )
-          : el.pipe(
-              positionAndReveal,
-              Effect.provide(positioningContext),
-              Effect.provideService(PopoverCtx, ctx),
-            );
-
-      const onEnter = (el: Effect.Effect<HTMLElement>) =>
-        el.pipe(
-          Element.setStyles({ animation: "none" }),
-          Element.focus,
-          Element.tapEffect(() => props.animate?.onEnter?.(el) ?? Effect.void),
-        );
-
-      const onBeforeExit = (el: Effect.Effect<HTMLElement>) =>
-        el.pipe(
-          Element.setStyles({ animation: "" }),
-          Element.tapEffect(
-            () => props.animate?.onBeforeExit?.(el) ?? Effect.void,
-          ),
-        );
-
-      // Click outside handler
-      yield* onClickOutside([ctx.triggerRef, contentRef], () =>
-        Effect.gen(function* () {
-          yield* ctx.close();
-          yield* props.onClickOutside?.() ?? Effect.void;
-        }),
-      );
-
-      return yield* Portal(() =>
-        when(ctx.isOpen, {
-          onTrue: () =>
-            // Start hidden (opacity: 0) - will be positioned and revealed after DOM insertion
-            // Also suppress any default CSS animations until we're ready
-            $.div(
-              {
-                id: ctx.contentId,
-                ref: contentRef,
-                class: props.class,
-                role: "dialog",
-                "data-state": dataState,
-                "data-side": side,
-                "data-align": align,
-                "data-popover-content": "",
-                tabIndex: -1,
-                style: {
-                  position: "fixed",
-                  opacity: "0",
-                },
-                onKeyDown: handleKeyDown,
-              },
-              children ?? [],
+    const onBeforeEnter = (el: Effect.Effect<HTMLElement>) =>
+      props.animate
+        ? el.pipe(
+            positionAndReveal,
+            Element.tapEffect(
+              () => props.animate?.onBeforeEnter?.(el) ?? Effect.void,
             ),
-          onFalse: () => $.div({ style: { display: "none" } }),
-          animate: {
-            ...(props.animate ?? {}),
-            onBeforeEnter,
-            onEnter,
-            onBeforeExit,
-          },
-        }),
+            Effect.provide(positioningContext),
+            Effect.provideService(PopoverCtx, ctx),
+          )
+        : el.pipe(
+            positionAndReveal,
+            Effect.provide(positioningContext),
+            Effect.provideService(PopoverCtx, ctx),
+          );
+
+    const onEnter = (el: Effect.Effect<HTMLElement>) =>
+      el.pipe(
+        Element.setStyles({ animation: "none" }),
+        Element.focus,
+        Element.tapEffect(() => props.animate?.onEnter?.(el) ?? Effect.void),
       );
-    }),
-);
+
+    const onBeforeExit = (el: Effect.Effect<HTMLElement>) =>
+      el.pipe(
+        Element.setStyles({ animation: "" }),
+        Element.tapEffect(
+          () => props.animate?.onBeforeExit?.(el) ?? Effect.void,
+        ),
+      );
+
+    // Click outside handler
+    yield* onClickOutside([ctx.triggerRef, contentRef], () =>
+      Effect.gen(function* () {
+        yield* ctx.close();
+        yield* props.onClickOutside?.() ?? Effect.void;
+      }),
+    );
+
+    return yield* Portal(() =>
+      when(ctx.isOpen, {
+        onTrue: () =>
+          // Start hidden (opacity: 0) - will be positioned and revealed after DOM insertion
+          // Also suppress any default CSS animations until we're ready
+          $.div(
+            {
+              id: ctx.contentId,
+              ref: contentRef,
+              class: props.class,
+              role: "dialog",
+              "data-state": dataState,
+              "data-side": side,
+              "data-align": align,
+              "data-popover-content": "",
+              tabIndex: -1,
+              style: {
+                position: "fixed",
+                opacity: "0",
+              },
+              onKeyDown: handleKeyDown,
+            },
+            children ?? [],
+          ),
+        onFalse: () => $.div({ style: { display: "none" } }),
+        animate: {
+          ...(props.animate ?? {}),
+          onBeforeEnter,
+          onEnter,
+          onBeforeExit,
+        },
+      }),
+    );
+  });
 
 /**
  * Props for Popover.Close
@@ -355,7 +354,10 @@ export interface PopoverCloseProps {
  * Popover.Close({ class: "close-btn" }, "Close")
  * ```
  */
-const Close = component("PopoverClose", (props: PopoverCloseProps, children) =>
+const Close = (
+  props: PopoverCloseProps,
+  children?: Child<never, PopoverCtx> | readonly Child<never, PopoverCtx>[],
+): Element.Element<never, PopoverCtx> =>
   Effect.gen(function* () {
     const ctx = yield* PopoverCtx;
 
@@ -372,8 +374,7 @@ const Close = component("PopoverClose", (props: PopoverCloseProps, children) =>
       { ...closeProps, type: "button", class: props.class },
       children ?? [],
     );
-  }),
-);
+  });
 
 /**
  * Headless Popover primitive for building accessible floating content.

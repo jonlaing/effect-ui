@@ -4,11 +4,11 @@ import type { ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
-import { component } from "@effex/dom";
 import { createKeyboardNav } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Element } from "@effex/dom";
 import { mergeProps } from "@effex/dom";
+import type { Child } from "@effex/dom";
 
 /**
  * Context shared between Accordion parts.
@@ -276,55 +276,55 @@ export interface AccordionTriggerProps {
  * Accordion.Trigger({ class: "accordion-trigger" }, "Click to expand")
  * ```
  */
-const Trigger = component(
-  "AccordionTrigger",
-  (props: AccordionTriggerProps, children) =>
-    Effect.gen(function* () {
-      const accordionCtx = yield* AccordionCtx;
-      const itemCtx = yield* AccordionItemCtx;
+const Trigger = (
+  props: AccordionTriggerProps,
+  children?:
+    | Child<never, AccordionCtx | AccordionItemCtx>
+    | readonly Child<never, AccordionCtx | AccordionItemCtx>[],
+): Element.Element<never, AccordionCtx | AccordionItemCtx> =>
+  Effect.gen(function* () {
+    const accordionCtx = yield* AccordionCtx;
+    const itemCtx = yield* AccordionItemCtx;
 
-      const handleClick = () => accordionCtx.toggle(itemCtx.value);
+    const handleClick = () => accordionCtx.toggle(itemCtx.value);
 
-      const handleKeyDown = yield* createKeyboardNav({
-        selector: "[data-accordion-trigger]:not([data-disabled])",
-        orientation: "vertical",
-        loop: true,
-      });
+    const handleKeyDown = yield* createKeyboardNav({
+      selector: "[data-accordion-trigger]:not([data-disabled])",
+      orientation: "vertical",
+      loop: true,
+    });
 
-      const dataState = itemCtx.isOpen.map((open) =>
-        open ? "open" : "closed",
-      );
-      const dataDisabled = itemCtx.disabled.map((d) => (d ? "" : undefined));
-      const ariaExpanded = itemCtx.isOpen.map((open) =>
-        open ? "true" : "false",
-      );
+    const dataState = itemCtx.isOpen.map((open) => (open ? "open" : "closed"));
+    const dataDisabled = itemCtx.disabled.map((d) => (d ? "" : undefined));
+    const ariaExpanded = itemCtx.isOpen.map((open) =>
+      open ? "true" : "false",
+    );
 
-      const triggerProps = {
-        id: itemCtx.triggerId,
-        "aria-expanded": ariaExpanded,
-        "aria-controls": itemCtx.contentId,
-        "data-state": dataState,
-        "data-disabled": dataDisabled,
-        "data-accordion-trigger": "",
-        onClick: handleClick,
-        onKeyDown: handleKeyDown,
-      };
+    const triggerProps = {
+      id: itemCtx.triggerId,
+      "aria-expanded": ariaExpanded,
+      "aria-controls": itemCtx.contentId,
+      "data-state": dataState,
+      "data-disabled": dataDisabled,
+      "data-accordion-trigger": "",
+      onClick: handleClick,
+      onKeyDown: handleKeyDown,
+    };
 
-      if (props.asChild && Effect.isEffect(children)) {
-        return yield* mergeProps(triggerProps, children);
-      }
+    if (props.asChild && Effect.isEffect(children)) {
+      return yield* mergeProps(triggerProps, children);
+    }
 
-      return yield* $.button(
-        {
-          ...triggerProps,
-          class: props.class,
-          type: "button",
-          disabled: itemCtx.disabled,
-        },
-        children ?? [],
-      );
-    }),
-);
+    return yield* $.button(
+      {
+        ...triggerProps,
+        class: props.class,
+        type: "button",
+        disabled: itemCtx.disabled,
+      },
+      children ?? [],
+    );
+  });
 
 /**
  * Props for Accordion.Content
@@ -345,30 +345,30 @@ export interface AccordionContentProps {
  * ])
  * ```
  */
-const Content = component(
-  "AccordionContent",
-  (props: AccordionContentProps, children) =>
-    Effect.gen(function* () {
-      const itemCtx = yield* AccordionItemCtx;
+const Content = (
+  props: AccordionContentProps,
+  children?:
+    | Child<never, AccordionItemCtx>
+    | readonly Child<never, AccordionItemCtx>[],
+): Element.Element<never, AccordionItemCtx> =>
+  Effect.gen(function* () {
+    const itemCtx = yield* AccordionItemCtx;
 
-      const dataState = itemCtx.isOpen.map((open) =>
-        open ? "open" : "closed",
-      );
+    const dataState = itemCtx.isOpen.map((open) => (open ? "open" : "closed"));
 
-      // Outer div uses CSS grid for height animation
-      // Inner div wraps children with overflow: hidden for the animation to work
-      return yield* $.div(
-        {
-          id: itemCtx.contentId,
-          class: props.class,
-          role: "region",
-          "aria-labelledby": itemCtx.triggerId,
-          "data-state": dataState,
-        },
-        [$.div({ "data-accordion-inner": "" }, children ?? [])],
-      );
-    }),
-);
+    // Outer div uses CSS grid for height animation
+    // Inner div wraps children with overflow: hidden for the animation to work
+    return yield* $.div(
+      {
+        id: itemCtx.contentId,
+        class: props.class,
+        role: "region",
+        "aria-labelledby": itemCtx.triggerId,
+        "data-state": dataState,
+      },
+      [$.div({ "data-accordion-inner": "" }, children ?? [])],
+    );
+  });
 
 /**
  * Headless Accordion primitive for building accessible

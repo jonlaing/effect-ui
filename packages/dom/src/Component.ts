@@ -22,6 +22,7 @@ type IsEmptyProps<Props> = keyof Props extends never ? true : false;
  * @template Props - The props type accepted by the component
  * @template E - The error type that can be produced by the component
  * @template R - The requirements/context type needed by the component
+ * @template Provides - Context type that this component provides to children (for Root components)
  *
  * @example
  * ```ts
@@ -36,12 +37,15 @@ type IsEmptyProps<Props> = keyof Props extends never ? true : false;
  *
  * Note: Error and requirement types from children are inferred at the call site
  * and combined with the component's own types in the return type.
+ * If Provides is specified, that context is subtracted from child requirements
+ * (because the component provides it).
  */
 export type Component<
   Name extends string,
   Props = object,
   E = never,
   R = never,
+  Provides = never,
 > = {
   /** The component's identifying tag name */
   readonly _tag: Name;
@@ -52,14 +56,14 @@ export type Component<
       // (children) - just children
       <CE = never, CR = never>(
         children: Children<CE, CR>,
-      ): Element.Element<E | CE, R | CR>;
+      ): Element.Element<E | CE, R | Exclude<CR, Provides>>;
       // (props) - explicit empty props
       (props: Props): Element.Element<E, R>;
       // (props, children)
       <CE = never, CR = never>(
         props: Props,
         children: Children<CE, CR>,
-      ): Element.Element<E | CE, R | CR>;
+      ): Element.Element<E | CE, R | Exclude<CR, Provides>>;
     }
   : {
       // (props) - props required
@@ -68,7 +72,7 @@ export type Component<
       <CE = never, CR = never>(
         props: Props,
         children: Children<CE, CR>,
-      ): Element.Element<E | CE, R | CR>;
+      ): Element.Element<E | CE, R | Exclude<CR, Provides>>;
     });
 
 /**
@@ -122,19 +126,33 @@ export type Component<
  * )
  * // Type: Component<"NavLink", { href: string }, never, RouterContext>
  * ```
+ *
+ * @example
+ * ```ts
+ * // Root component that provides context to children
+ * const Root = component<"TabsRoot", TabsRootProps, never, never, TabsCtx>(
+ *   "TabsRoot",
+ *   (props, children) => Effect.gen(function* () {
+ *     const ctx = // ... create context
+ *     return yield* $.div({}, provide(TabsCtx, ctx, children))
+ *   })
+ * )
+ * // Children requiring TabsCtx will have that requirement satisfied
+ * ```
  */
 export const component = <
   Name extends string,
   Props = object,
   E = never,
   R = never,
+  Provides = never,
 >(
   name: Name,
   render: (
     props: Props,
     children?: Children<never, never>,
   ) => Element.Element<E, R>,
-): Component<Name, Props, E, R> => {
+): Component<Name, Props, E, R, Provides> => {
   const fn = (...args: unknown[]) => {
     // No arguments - call with empty props
     if (args.length === 0) {
@@ -160,5 +178,11 @@ export const component = <
     return render(args[0] as Props, args[1] as Children<never, never>);
   };
 
-  return Object.assign(fn, { _tag: name }) as Component<Name, Props, E, R>;
+  return Object.assign(fn, { _tag: name }) as Component<
+    Name,
+    Props,
+    E,
+    R,
+    Provides
+  >;
 };

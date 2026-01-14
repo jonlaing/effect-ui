@@ -4,10 +4,10 @@ import type { ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
-import { component } from "@effex/dom";
 import { UniqueId } from "@effex/dom";
 import { Element } from "@effex/dom";
 import { mergeProps } from "@effex/dom";
+import type { Child } from "@effex/dom";
 
 /**
  * Context shared between Collapsible parts.
@@ -145,62 +145,64 @@ export interface CollapsibleTriggerProps {
  * Collapsible.Trigger({ as: "div" }, $.span("Custom trigger"))
  * ```
  */
-const Trigger = component(
-  "CollapsibleTrigger",
-  (props: CollapsibleTriggerProps, children) =>
-    Effect.gen(function* () {
-      const ctx = yield* CollapsibleCtx;
+const Trigger = (
+  props: CollapsibleTriggerProps,
+  children?:
+    | Child<never, CollapsibleCtx>
+    | readonly Child<never, CollapsibleCtx>[],
+): Element.Element<never, CollapsibleCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* CollapsibleCtx;
 
-      const handleKeyDown = (e: KeyboardEvent) =>
-        Effect.suspend(() => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            return ctx.toggle();
-          }
-          return Effect.void;
-        });
+    const handleKeyDown = (e: KeyboardEvent) =>
+      Effect.suspend(() => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          return ctx.toggle();
+        }
+        return Effect.void;
+      });
 
-      const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
-      const dataDisabled = ctx.disabled.map((d) => (d ? "" : undefined));
-      const ariaExpanded = ctx.isOpen.map((open) => (open ? "true" : "false"));
+    const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
+    const dataDisabled = ctx.disabled.map((d) => (d ? "" : undefined));
+    const ariaExpanded = ctx.isOpen.map((open) => (open ? "true" : "false"));
 
-      const triggerProps = {
-        "aria-expanded": ariaExpanded,
-        "aria-controls": ctx.contentId,
-        "data-state": dataState,
-        "data-disabled": dataDisabled,
-        onClick: ctx.toggle,
-      };
+    const triggerProps = {
+      "aria-expanded": ariaExpanded,
+      "aria-controls": ctx.contentId,
+      "data-state": dataState,
+      "data-disabled": dataDisabled,
+      onClick: ctx.toggle,
+    };
 
-      if (props.asChild && Effect.isEffect(children)) {
-        return yield* mergeProps(triggerProps, children);
-      }
+    if (props.asChild && Effect.isEffect(children)) {
+      return yield* mergeProps(triggerProps, children);
+    }
 
-      if (props.as === "div") {
-        return yield* $.div(
-          {
-            ...triggerProps,
-            class: props.class,
-            role: "button",
-            tabIndex: ctx.disabled.map((d) => (d ? -1 : 0)),
-            onKeyDown: handleKeyDown,
-          },
-          children ?? [],
-        );
-      }
-
-      // Default: button
-      return yield* $.button(
+    if (props.as === "div") {
+      return yield* $.div(
         {
           ...triggerProps,
           class: props.class,
-          type: "button",
-          disabled: ctx.disabled,
+          role: "button",
+          tabIndex: ctx.disabled.map((d) => (d ? -1 : 0)),
+          onKeyDown: handleKeyDown,
         },
         children ?? [],
       );
-    }),
-);
+    }
+
+    // Default: button
+    return yield* $.button(
+      {
+        ...triggerProps,
+        class: props.class,
+        type: "button",
+        disabled: ctx.disabled,
+      },
+      children ?? [],
+    );
+  });
 
 /**
  * Props for Collapsible.Content
@@ -225,27 +227,29 @@ export interface CollapsibleContentProps {
  * ])
  * ```
  */
-const Content = component(
-  "CollapsibleContent",
-  (props: CollapsibleContentProps, children) =>
-    Effect.gen(function* () {
-      const ctx = yield* CollapsibleCtx;
+const Content = (
+  props: CollapsibleContentProps,
+  children?:
+    | Child<never, CollapsibleCtx>
+    | readonly Child<never, CollapsibleCtx>[],
+): Element.Element<never, CollapsibleCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* CollapsibleCtx;
 
-      const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
+    const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
 
-      // Outer div uses CSS grid for height animation
-      // Inner div wraps children with overflow: hidden for the animation to work
-      return yield* $.div(
-        {
-          id: ctx.contentId,
-          class: props.class,
-          role: "region",
-          "data-state": dataState,
-        },
-        [$.div({ "data-collapsible-inner": "" }, children ?? [])],
-      );
-    }),
-);
+    // Outer div uses CSS grid for height animation
+    // Inner div wraps children with overflow: hidden for the animation to work
+    return yield* $.div(
+      {
+        id: ctx.contentId,
+        class: props.class,
+        role: "region",
+        "data-state": dataState,
+      },
+      [$.div({ "data-collapsible-inner": "" }, children ?? [])],
+    );
+  });
 
 /**
  * Headless Collapsible primitive for building accessible

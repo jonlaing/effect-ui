@@ -5,7 +5,6 @@ import { Derived } from "@effex/dom";
 import { Readable } from "@effex/dom";
 import { $ } from "@effex/dom";
 import { provide } from "@effex/dom";
-import { component } from "@effex/dom";
 import { Element, type ElementRef, bindElementToRef } from "@effex/dom";
 import type { Child } from "@effex/dom";
 
@@ -269,150 +268,152 @@ const Root = (
 // Viewport Component
 // ============================================================================
 
-const Viewport = component(
-  "ScrollAreaViewport",
-  (props: ScrollAreaViewportProps, children) =>
-    Effect.gen(function* () {
-      const ctx = yield* ScrollAreaCtx;
-      const viewportRef = yield* Element.ref<HTMLDivElement>();
+const Viewport = (
+  props: ScrollAreaViewportProps,
+  children?:
+    | Child<never, ScrollAreaCtx>
+    | readonly Child<never, ScrollAreaCtx>[],
+): Element.Element<never, ScrollAreaCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* ScrollAreaCtx;
+    const viewportRef = yield* Element.ref<HTMLDivElement>();
 
-      // Set up scroll listener and observers after mount
-      yield* Effect.sync(() => {
-        // Use requestAnimationFrame to ensure DOM is ready
-        requestAnimationFrame(() => {
-          const viewport = Element.getUnsafe(viewportRef);
-          if (!viewport) return;
+    // Set up scroll listener and observers after mount
+    yield* Effect.sync(() => {
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        const viewport = Element.getUnsafe(viewportRef);
+        if (!viewport) return;
 
-          // Check if there's a scrollable child (like virtualEach output)
-          const findScrollableChild = (el: HTMLElement): HTMLElement | null => {
-            // Check direct children first
-            for (const child of Array.from(el.children) as HTMLElement[]) {
-              const style = getComputedStyle(child);
-              if (
-                style.overflow === "auto" ||
-                style.overflow === "scroll" ||
-                style.overflowY === "auto" ||
-                style.overflowY === "scroll" ||
-                style.overflowX === "auto" ||
-                style.overflowX === "scroll"
-              ) {
-                return child;
-              }
+        // Check if there's a scrollable child (like virtualEach output)
+        const findScrollableChild = (el: HTMLElement): HTMLElement | null => {
+          // Check direct children first
+          for (const child of Array.from(el.children) as HTMLElement[]) {
+            const style = getComputedStyle(child);
+            if (
+              style.overflow === "auto" ||
+              style.overflow === "scroll" ||
+              style.overflowY === "auto" ||
+              style.overflowY === "scroll" ||
+              style.overflowX === "auto" ||
+              style.overflowX === "scroll"
+            ) {
+              return child;
             }
-            return null;
-          };
-
-          const scrollableChild = findScrollableChild(viewport);
-          const scrollable = scrollableChild ?? viewport;
-
-          // Set the scrollable ref
-          bindElementToRef(ctx.scrollableRef, scrollable);
-
-          // If using native scrolling on viewport, make it scrollable
-          if (!scrollableChild) {
-            viewport.style.overflow = "scroll";
-            // Hide native scrollbars
-            viewport.style.scrollbarWidth = "none";
-            (viewport.style as unknown as Record<string, string>)[
-              "msOverflowStyle"
-            ] = "none";
-          } else {
-            // Hide scrollbars on the child
-            scrollableChild.style.scrollbarWidth = "none";
-            (scrollableChild.style as unknown as Record<string, string>)[
-              "msOverflowStyle"
-            ] = "none";
           }
+          return null;
+        };
 
-          // Scroll handler
-          let rafId: number | null = null;
-          const handleScroll = () => {
-            if (rafId === null) {
-              rafId = requestAnimationFrame(() => {
-                ctx.updateScrollPosition({
-                  x: scrollable.scrollLeft,
-                  y: scrollable.scrollTop,
-                });
-                ctx.setIsScrolling(true);
-                rafId = null;
+        const scrollableChild = findScrollableChild(viewport);
+        const scrollable = scrollableChild ?? viewport;
 
-                // Schedule hide after scroll stops
-                if (ctx.type === "scroll" || ctx.type === "hover") {
-                  setTimeout(() => {
-                    ctx.setIsScrolling(false);
-                  }, 150);
-                }
+        // Set the scrollable ref
+        bindElementToRef(ctx.scrollableRef, scrollable);
+
+        // If using native scrolling on viewport, make it scrollable
+        if (!scrollableChild) {
+          viewport.style.overflow = "scroll";
+          // Hide native scrollbars
+          viewport.style.scrollbarWidth = "none";
+          (viewport.style as unknown as Record<string, string>)[
+            "msOverflowStyle"
+          ] = "none";
+        } else {
+          // Hide scrollbars on the child
+          scrollableChild.style.scrollbarWidth = "none";
+          (scrollableChild.style as unknown as Record<string, string>)[
+            "msOverflowStyle"
+          ] = "none";
+        }
+
+        // Scroll handler
+        let rafId: number | null = null;
+        const handleScroll = () => {
+          if (rafId === null) {
+            rafId = requestAnimationFrame(() => {
+              ctx.updateScrollPosition({
+                x: scrollable.scrollLeft,
+                y: scrollable.scrollTop,
               });
-            }
-          };
+              ctx.setIsScrolling(true);
+              rafId = null;
 
-          scrollable.addEventListener("scroll", handleScroll, {
-            passive: true,
-          });
-
-          // ResizeObserver for viewport size
-          const viewportObserver = new ResizeObserver((entries) => {
-            for (const entry of entries) {
-              ctx.updateViewportSize({
-                width: entry.contentRect.width,
-                height: entry.contentRect.height,
-              });
-            }
-          });
-          viewportObserver.observe(scrollable);
-
-          // ResizeObserver for content size - observe the scrollable element itself
-          // It will trigger when scrollWidth/scrollHeight change
-          const contentObserver = new ResizeObserver(() => {
-            ctx.updateContentSize({
-              width: scrollable.scrollWidth,
-              height: scrollable.scrollHeight,
+              // Schedule hide after scroll stops
+              if (ctx.type === "scroll" || ctx.type === "hover") {
+                setTimeout(() => {
+                  ctx.setIsScrolling(false);
+                }, 150);
+              }
             });
-          });
-          contentObserver.observe(scrollable);
+          }
+        };
 
-          // Also use MutationObserver to detect when children are added/removed
-          const mutationObserver = new MutationObserver(() => {
-            ctx.updateContentSize({
-              width: scrollable.scrollWidth,
-              height: scrollable.scrollHeight,
-            });
-          });
-          mutationObserver.observe(scrollable, {
-            childList: true,
-            subtree: true,
-          });
-
-          // Initial size update - use setTimeout to ensure content is rendered
-          setTimeout(() => {
-            ctx.updateViewportSize({
-              width: scrollable.clientWidth,
-              height: scrollable.clientHeight,
-            });
-            ctx.updateContentSize({
-              width: scrollable.scrollWidth,
-              height: scrollable.scrollHeight,
-            });
-          }, 0);
+        scrollable.addEventListener("scroll", handleScroll, {
+          passive: true,
         });
-      });
 
-      return yield* $.div(
-        {
-          ref: viewportRef,
-          class: props.class,
-          "data-scrollarea-viewport": "",
-          style: {
-            width: "100%",
-            height: "100%",
-            overflow: "scroll",
-            scrollbarWidth: "none",
-          },
+        // ResizeObserver for viewport size
+        const viewportObserver = new ResizeObserver((entries) => {
+          for (const entry of entries) {
+            ctx.updateViewportSize({
+              width: entry.contentRect.width,
+              height: entry.contentRect.height,
+            });
+          }
+        });
+        viewportObserver.observe(scrollable);
+
+        // ResizeObserver for content size - observe the scrollable element itself
+        // It will trigger when scrollWidth/scrollHeight change
+        const contentObserver = new ResizeObserver(() => {
+          ctx.updateContentSize({
+            width: scrollable.scrollWidth,
+            height: scrollable.scrollHeight,
+          });
+        });
+        contentObserver.observe(scrollable);
+
+        // Also use MutationObserver to detect when children are added/removed
+        const mutationObserver = new MutationObserver(() => {
+          ctx.updateContentSize({
+            width: scrollable.scrollWidth,
+            height: scrollable.scrollHeight,
+          });
+        });
+        mutationObserver.observe(scrollable, {
+          childList: true,
+          subtree: true,
+        });
+
+        // Initial size update - use setTimeout to ensure content is rendered
+        setTimeout(() => {
+          ctx.updateViewportSize({
+            width: scrollable.clientWidth,
+            height: scrollable.clientHeight,
+          });
+          ctx.updateContentSize({
+            width: scrollable.scrollWidth,
+            height: scrollable.scrollHeight,
+          });
+        }, 0);
+      });
+    });
+
+    return yield* $.div(
+      {
+        ref: viewportRef,
+        class: props.class,
+        "data-scrollarea-viewport": "",
+        style: {
+          width: "100%",
+          height: "100%",
+          overflow: "scroll",
+          scrollbarWidth: "none",
         },
-        children ?? [],
-      );
-    }),
-);
+      },
+      children ?? [],
+    );
+  });
 
 // ============================================================================
 // Scrollbar Component
@@ -564,7 +565,9 @@ const Scrollbar = (
 // Thumb Component
 // ============================================================================
 
-const Thumb = component("ScrollAreaThumb", (props: ScrollAreaThumbProps) =>
+const Thumb = (
+  props: ScrollAreaThumbProps,
+): Element.Element<never, ScrollAreaCtx | ScrollbarCtx> =>
   Effect.gen(function* () {
     const ctx = yield* ScrollAreaCtx;
     const scrollbarCtx = yield* ScrollbarCtx;
@@ -671,21 +674,21 @@ const Thumb = component("ScrollAreaThumb", (props: ScrollAreaThumbProps) =>
       onPointerMove: handlePointerMove,
       onPointerUp: handlePointerUp,
     });
-  }),
-);
+  });
 
 // ============================================================================
 // Corner Component
 // ============================================================================
 
-const Corner = component("ScrollAreaCorner", (props: ScrollAreaCornerProps) =>
+const Corner = (
+  props: ScrollAreaCornerProps,
+): Element.Element<never, ScrollAreaCtx> =>
   Effect.gen(function* () {
     return yield* $.div({
       class: props.class,
       "data-scrollarea-corner": "",
     });
-  }),
-);
+  });
 
 // ============================================================================
 // Export

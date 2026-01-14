@@ -2,8 +2,8 @@ import { Effect } from "effect";
 import { Signal } from "@effex/dom";
 import type { ClassValue } from "@effex/dom";
 import { Readable } from "@effex/dom";
-import { component } from "@effex/dom";
 import { $ } from "@effex/dom";
+import { Element } from "@effex/dom";
 
 /**
  * Props for Switch component.
@@ -83,7 +83,7 @@ export interface SwitchProps {
  * Switch({ name: "notifications", value: "enabled" })
  * ```
  */
-export const Switch = component("Switch", (props: SwitchProps) =>
+export const Switch = (props: SwitchProps): Element.Element =>
   Effect.gen(function* () {
     const checked = yield* Signal.fromNullable(
       props.checked,
@@ -125,5 +125,4 @@ export const Switch = component("Switch", (props: SwitchProps) =>
       },
       $.span({ "data-switch-thumb": "" }),
     );
-  }),
-);
+  });
