@@ -1,15 +1,17 @@
-import type { Element } from "./Element";
-import type { Child } from "./Element/types";
+import {
+  Component as CoreComponent,
+  type Children as CoreChildren,
+} from "@effex/core";
 
 /**
- * Valid children types for a component.
+ * Valid children types for a DOM component.
+ * This is the DOM-specific version with HTMLElement as the node type.
  */
-export type Children<E = never, R = never> =
-  | Child<E, R>
-  | readonly Child<E, R>[];
+export type Children<E = never, R = never> = CoreChildren<HTMLElement, E, R>;
 
 /**
- * Component type helpers for annotating component function signatures.
+ * DOM-specific component type helpers.
+ * These are the core Component types with HTMLElement baked in as the node type.
  *
  * Uses tree terminology:
  * - Unit: No props, no children (constant element)
@@ -67,7 +69,11 @@ export declare namespace Component {
    *   });
    * ```
    */
-  export type Unit<R = never, E = never> = () => Element.Element<E, R>;
+  export type Unit<R = never, E = never> = CoreComponent.Unit<
+    HTMLElement,
+    R,
+    E
+  >;
 
   /**
    * Component with props but no children.
@@ -91,9 +97,12 @@ export declare namespace Component {
    *   });
    * ```
    */
-  export type Leaf<Props, R = never, E = never> = (
-    props: Props,
-  ) => Element.Element<E, R>;
+  export type Leaf<Props, R = never, E = never> = CoreComponent.Leaf<
+    HTMLElement,
+    Props,
+    R,
+    E
+  >;
 
   /**
    * Component with props and optional children.
@@ -133,10 +142,14 @@ export declare namespace Component {
     ComponentReqs = ChildReqs,
     ChildError = never,
     ComponentError = ChildError,
-  > = (
-    props: Props,
-    children?: Children<ChildError, ChildReqs>,
-  ) => Element.Element<ComponentError, ComponentReqs>;
+  > = CoreComponent.Node<
+    HTMLElement,
+    Props,
+    ChildReqs,
+    ComponentReqs,
+    ChildError,
+    ComponentError
+  >;
 
   /**
    * Component with props and required children.
@@ -177,8 +190,12 @@ export declare namespace Component {
     ComponentReqs = ChildReqs,
     ChildError = never,
     ComponentError = ChildError,
-  > = (
-    props: Props,
-    children: Children<ChildError, ChildReqs>,
-  ) => Element.Element<ComponentError, ComponentReqs>;
+  > = CoreComponent.Branch<
+    HTMLElement,
+    Props,
+    ChildReqs,
+    ComponentReqs,
+    ChildError,
+    ComponentError
+  >;
 }

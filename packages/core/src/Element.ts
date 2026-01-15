@@ -1,5 +1,6 @@
 import type { Effect, Scope } from "effect";
 
+import type { Readable } from "./Readable";
 import type { RendererContext } from "./Renderer";
 
 /**
@@ -46,4 +47,6 @@ export type Child<N = unknown, E = never, R = never> =
   | string
   | number
   | Element<N, E, R>
+  | Readable<string>
+  | Readable<number>
   | readonly Child<N, E, R>[];

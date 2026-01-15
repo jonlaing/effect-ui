@@ -85,6 +85,100 @@ You can also import elements individually:
 import { div, span, button } from "@effex/dom";
 ```
 
+## Component Types
+
+The `Component` namespace provides type helpers for defining components with proper type inference:
+
+### Component.Unit
+
+Components with no props and no children:
+
+```ts
+const Counter: Component.Unit = () =>
+  Effect.gen(function* () {
+    const count = yield* Signal.make(0);
+    return yield* $.div([
+      $.button({ onClick: () => count.update((n) => n - 1) }, "-"),
+      $.span(count),
+      $.button({ onClick: () => count.update((n) => n + 1) }, "+"),
+    ]);
+  });
+```
+
+### Component.Leaf
+
+Components with props but no children:
+
+```ts
+const Greeting: Component.Leaf<{ name: string }> = (props) =>
+  $.h1(`Hello, ${props.name}!`);
+
+// With context requirements
+const UserBadge: Component.Leaf<{ userId: string }, AuthContext> = (props) =>
+  Effect.gen(function* () {
+    const auth = yield* AuthContext;
+    return yield* $.span(`User: ${props.userId}`);
+  });
+```
+
+### Component.Node
+
+Components with props and optional children:
+
+```ts
+interface CardProps {
+  title: string;
+  class?: string;
+}
+
+const Card: Component.Node<CardProps> = (props, children) =>
+  $.div({ class: props.class ?? "card" }, [
+    $.h2(props.title),
+    ...(children ?? []),
+  ]);
+
+// Usage
+Card({ title: "Hello" }, [$.p("Content here")]);
+Card({ title: "Empty" }); // children optional
+```
+
+### Component.Branch
+
+Components with props and required children (typically context providers):
+
+```ts
+const MenuContext = Context.Tag<MenuContext, MenuState>();
+
+const Menu: Component.Branch<MenuProps, MenuContext> = (props, children) =>
+  Effect.gen(function* () {
+    const state = yield* createMenuState(props);
+    return yield* $.div(
+      { class: "menu", role: "menu" },
+      provide(MenuContext, state, children),
+    );
+  });
+
+// Usage - children required
+Menu({ orientation: "vertical" }, [
+  MenuItem({ value: "cut" }, "Cut"),
+  MenuItem({ value: "copy" }, "Copy"),
+]);
+```
+
+### Type Parameters
+
+All component types follow the pattern `Component.X<Props, ChildReqs, ComponentReqs, E>`:
+
+- **Props** - The props object type (not applicable to `Unit`)
+- **ChildReqs** - Context requirements for children (what this component provides)
+- **ComponentReqs** - Context requirements for the component itself
+- **E** - Error channel type
+
+```ts
+// Component that requires AuthContext and provides ThemeContext to children
+const ThemedAuth: Component.Branch<Props, ThemeContext, AuthContext> = ...
+```
+
 ## Control Flow
 
 ### when

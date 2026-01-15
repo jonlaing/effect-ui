@@ -490,3 +490,27 @@ The result of `Derived.async()`:
 - `transition.is(state)` - `Readable<boolean>` - Check if in a specific state
 - `transition.canTransitionTo(state)` - `Readable<boolean>` - Check if transition is allowed (respects guards)
 - `transition.guard(states, callback, options?)` - Create a callback that only runs in specified states
+
+### Element Types
+
+Generic types for renderer-agnostic element and component definitions. Renderers (like `@effex/dom`) re-export these with their node type fixed.
+
+- `Element<N, E, R>` - An element Effect: `Effect<N, E, Scope | RendererContext | R>`
+- `Child<N, E, R>` - Valid children: string, number, Element, Readable, or arrays
+- `Children<N, E, R>` - Alias for `Child | readonly Child[]`
+
+### Component Types
+
+Generic component type helpers. Renderers re-export with their node type baked in:
+
+- `Component.Unit<N, R, E>` - No props, no children: `() => Element<N, E, R>`
+- `Component.Leaf<N, Props, R, E>` - Props, no children: `(props) => Element<N, E, R>`
+- `Component.Node<N, Props, ChildReqs, ComponentReqs, ...>` - Props, optional children
+- `Component.Branch<N, Props, ChildReqs, ComponentReqs, ...>` - Props, required children
+
+Example usage in a renderer:
+
+```ts
+// @effex/dom re-exports with HTMLElement
+export type Unit<R, E> = CoreComponent.Unit<HTMLElement, R, E>;
+```

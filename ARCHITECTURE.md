@@ -188,16 +188,25 @@ Registers a finalizer to remove the element when scope closes.
 
 ### Component
 
-Simple named wrapper for render functions:
+Components are typed using the `Component` namespace which provides four type helpers:
 
 ```ts
-interface Component<Name, Props, E> {
-  _tag: Name;
-  (props: Props): Element<E>;
-}
+// No props, no children
+type Component.Unit<R = never, E = never> = () => Element<E, R>
+
+// Props, no children
+type Component.Leaf<Props, R = never, E = never> = (props: Props) => Element<E, R>
+
+// Props, optional children
+type Component.Node<Props, ChildReqs = never, R = never, E = never> =
+  (props: Props, children?: Child<E, ChildReqs>[]) => Element<E, R>
+
+// Props, required children (providers)
+type Component.Branch<Props, ChildReqs = never, R = never, E = never> =
+  (props: Props, children: Child<E, ChildReqs>[]) => Element<E, R>
 ```
 
-The `_tag` enables debugging and potential future devtools integration.
+This replaces the old `component()` helper function with explicit type annotations.
 
 ## Scope and Lifecycle
 

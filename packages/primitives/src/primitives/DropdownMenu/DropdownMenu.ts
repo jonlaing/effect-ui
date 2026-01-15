@@ -1248,13 +1248,7 @@ const SubContent: Component.Node<
       when(subCtx.isOpen, {
         onTrue: () =>
           props.asChild && Effect.isEffect(children)
-            ? mergeProps(
-                subContentProps,
-                children as Element.Element<
-                  never,
-                  DropdownMenuCtx | DropdownMenuSubCtx
-                >,
-              )
+            ? mergeProps(subContentProps, children)
             : $.div({ ...subContentProps, class: props.class }, children ?? []),
         onFalse: () => $.div({ style: { display: "none" } }),
         animate: animateConfig,

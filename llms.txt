@@ -136,7 +136,10 @@ runApp(
 - `Derived<A>` - Computed reactive value
 - `Element<E = never>` - Effect<HTMLElement, E, Scope>
 - `Child<E = never>` - Valid children: string, number, Element, Readable, or arrays
-- `Component<Name, Props, E>` - Named component function
+- `Component.Unit<R, E>` - Component with no props
+- `Component.Leaf<Props, R, E>` - Component with props, no children
+- `Component.Node<Props, ChildReqs, R, E>` - Component with optional children
+- `Component.Branch<Props, ChildReqs, R, E>` - Component with required children
 
 ## Element Factories
 
