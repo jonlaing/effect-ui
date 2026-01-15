@@ -343,26 +343,25 @@ interface ButtonProps {
 When implementing a component with reactive props, use `Readable.of()` to normalize the prop to a `Readable<T>`:
 
 ```ts
-const Button: Component.Node<ButtonProps> = (props, children) =>
-  Effect.gen(function* () {
-    // Normalize props - works whether they're static or reactive
-    const disabled = Readable.of(props.disabled ?? false);
-    const className = Readable.of(props.class ?? "");
+const Button = Component.gen(function* (props: ButtonProps, children) {
+  // Normalize props - works whether they're static or reactive
+  const disabled = Readable.of(props.disabled ?? false);
+  const className = Readable.of(props.class ?? "");
 
-    // Use .map() for derived attributes
-    const ariaDisabled = disabled.map((d) => (d ? "true" : undefined));
-    const tabIndex = disabled.map((d) => (d ? -1 : 0));
+  // Use .map() for derived attributes
+  const ariaDisabled = disabled.map((d) => (d ? "true" : undefined));
+  const tabIndex = disabled.map((d) => (d ? -1 : 0));
 
-    return yield* $.button(
-      {
-        class: className,
-        disabled: disabled,
-        "aria-disabled": ariaDisabled,
-        tabIndex: tabIndex,
-      },
-      children ?? [],
-    );
-  });
+  return yield* $.button(
+    {
+      class: className,
+      disabled: disabled,
+      "aria-disabled": ariaDisabled,
+      tabIndex: tabIndex,
+    },
+    children ?? [],
+  );
+});
 ```
 
 This pattern lets consumers pass either static or reactive values:
@@ -507,18 +506,17 @@ Generic types for renderer-agnostic element and component definitions. Renderers
 - `Child<N, E, R>` - Valid children: string, number, Element, Readable, or arrays
 - `Children<N, E, R>` - Alias for `Child | readonly Child[]`
 
-### Component Types
+### Component.gen
 
-Generic component type helpers. Renderers re-export with their node type baked in:
-
-- `Component.Unit<N, R, E>` - No props, no children: `() => Element<N, E, R>`
-- `Component.Leaf<N, Props, R, E>` - Props, no children: `(props) => Element<N, E, R>`
-- `Component.Node<N, Props, ChildReqs, ComponentReqs, ...>` - Props, optional children
-- `Component.Branch<N, Props, ChildReqs, ComponentReqs, ...>` - Props, required children
-
-Example usage in a renderer:
+The primary way to define components. Wraps `Effect.gen` but returns a `Component.Node` type with automatic inference of context requirements and error types from yielded effects.
 
 ```ts
-// @effex/dom re-exports with HTMLElement
-export type Unit<R, E> = CoreComponent.Unit<HTMLElement, R, E>;
+// In @effex/dom - provides Component.gen and Component.Node for HTMLElement
+const MyComponent = Component.gen(function* (props: MyProps, children) {
+  const ctx = yield* MyContext;  // Context requirements inferred
+  return yield* $.div(...);
+});
 ```
+
+- `Component.gen(fn)` - Define a component with automatic type inference
+- `Component.Node<Props, ChildReqs, ComponentReqs, ChildError, ComponentError>` - Type for component functions

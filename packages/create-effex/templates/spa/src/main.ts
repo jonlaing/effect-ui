@@ -6,25 +6,22 @@ import { Router, RouterContext } from "@effex/router";
 import { components, routes } from "./generated/routes.js";
 
 // Simple Routes component for SPA (no loader context needed)
-const Routes: Component.Unit<RouterContext> = () =>
-  Effect.gen(function* () {
-    const router = yield* RouterContext;
-    const currentRoute = router.currentRoute.map((opt) =>
-      Option.isSome(opt) ? opt.value : null,
-    );
+const Routes = Component.gen(function* () {
+  const router = yield* RouterContext;
+  const currentRoute = router.currentRoute.map((opt) =>
+    Option.isSome(opt) ? opt.value : null,
+  );
 
-    const cases = Object.entries(components).map(
-      ([routeName, componentFn]) => ({
-        pattern: routeName,
-        render: componentFn,
-      }),
-    );
+  const cases = Object.entries(components).map(([routeName, componentFn]) => ({
+    pattern: routeName,
+    render: componentFn,
+  }));
 
-    return yield* match(currentRoute, {
-      cases,
-      fallback: () => div({ class: "page" }, ["Page not found"]),
-    });
+  return yield* match(currentRoute, {
+    cases,
+    fallback: () => div({ class: "page" }, ["Page not found"]),
   });
+});
 
 // Mount the application
 const container = document.getElementById("root");
@@ -36,7 +33,7 @@ runApp(
   Effect.gen(function* () {
     const router = yield* Router.make(routes);
 
-    const app = Routes().pipe(Effect.provide(router.layer));
+    const app = Routes.pipe(Effect.provide(router.layer));
 
     yield* mount(app as Parameters<typeof mount>[0], container);
 

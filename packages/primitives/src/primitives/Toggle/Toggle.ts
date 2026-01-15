@@ -67,41 +67,40 @@ export interface ToggleProps {
  * Toggle({ disabled: true }, "Disabled Toggle")
  * ```
  */
-export const Toggle: Component.Node<ToggleProps> = (props, children) =>
-  Effect.gen(function* () {
-    // Handle controlled vs uncontrolled state
-    const pressed = yield* Signal.fromNullable(
-      props.pressed,
-      props.defaultPressed ?? false,
-    );
+export const Toggle = Component.gen(function* (props: ToggleProps, children) {
+  // Handle controlled vs uncontrolled state
+  const pressed = yield* Signal.fromNullable(
+    props.pressed,
+    props.defaultPressed ?? false,
+  );
 
-    // Normalize disabled to Readable
-    const disabled = Readable.of(props.disabled ?? false);
+  // Normalize disabled to Readable
+  const disabled = Readable.of(props.disabled ?? false);
 
-    const handleClick = () =>
-      Effect.gen(function* () {
-        if (yield* disabled.get) return;
+  const handleClick = () =>
+    Effect.gen(function* () {
+      if (yield* disabled.get) return;
 
-        const newPressed = !(yield* pressed.get);
-        yield* pressed.set(newPressed);
-        yield* props.onPressedChange?.(newPressed) ?? Effect.void;
-      });
+      const newPressed = !(yield* pressed.get);
+      yield* pressed.set(newPressed);
+      yield* props.onPressedChange?.(newPressed) ?? Effect.void;
+    });
 
-    const dataState = pressed.map((p) => (p ? "on" : "off"));
-    const ariaPressed = pressed.map((p) => (p ? "true" : "false"));
-    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+  const dataState = pressed.map((p) => (p ? "on" : "off"));
+  const ariaPressed = pressed.map((p) => (p ? "true" : "false"));
+  const dataDisabled = disabled.map((d) => (d ? "" : undefined));
 
-    return yield* $.button(
-      {
-        type: "button",
-        id: props.id,
-        class: props.class,
-        disabled,
-        "aria-pressed": ariaPressed,
-        "data-state": dataState,
-        "data-disabled": dataDisabled,
-        onClick: handleClick,
-      },
-      children ?? [],
-    );
-  });
+  return yield* $.button(
+    {
+      type: "button",
+      id: props.id,
+      class: props.class,
+      disabled,
+      "aria-pressed": ariaPressed,
+      "data-state": dataState,
+      "data-disabled": dataDisabled,
+      onClick: handleClick,
+    },
+    children ?? [],
+  );
+});

@@ -27,70 +27,69 @@ const LoginSchema = Schema.Struct({
   ),
 });
 
-const LoginForm: Component.Unit = () =>
-  Effect.gen(function* () {
-    const form = yield* Form.make({
-      schema: LoginSchema,
-      initial: { email: "", password: "" },
-    });
-
-    const handleSubmit = () =>
-      form.submit((values) =>
-        Effect.gen(function* () {
-          // values is typed as { email: string, password: string }
-          console.log("Submitting:", values);
-          yield* form.reset();
-        }),
-      );
-
-    return yield* $.div({ class: "login-form" }, [
-      $.div([
-        $.label("Email"),
-        $.input({
-          type: "email",
-          value: form.fields.email.value,
-          onInput: (e) =>
-            form.fields.email.value.set((e.target as HTMLInputElement).value),
-          onBlur: () => form.fields.email.touch(),
-        }),
-        when(form.fields.email.errors.map((errs) => errs.length > 0), {
-          onTrue: () =>
-            $.span(
-              { class: "error" },
-              form.fields.email.errors.map((e) => e[0] ?? ""),
-            ),
-          onFalse: () => $.span(),
-        }),
-      ]),
-      $.div([
-        $.label("Password"),
-        $.input({
-          type: "password",
-          value: form.fields.password.value,
-          onInput: (e) =>
-            form.fields.password.value.set(
-              (e.target as HTMLInputElement).value,
-            ),
-          onBlur: () => form.fields.password.touch(),
-        }),
-        when(form.fields.password.errors.map((errs) => errs.length > 0), {
-          onTrue: () =>
-            $.span(
-              { class: "error" },
-              form.fields.password.errors.map((e) => e[0] ?? ""),
-            ),
-          onFalse: () => $.span(),
-        }),
-      ]),
-      $.button(
-        {
-          onClick: () => handleSubmit(),
-          disabled: form.isSubmitting,
-        },
-        form.isSubmitting.map((s) => (s ? "Submitting..." : "Log In")),
-      ),
-    ]);
+const LoginForm = Component.gen(function* () {
+  const form = yield* Form.make({
+    schema: LoginSchema,
+    initial: { email: "", password: "" },
   });
+
+  const handleSubmit = () =>
+    form.submit((values) =>
+      Effect.gen(function* () {
+        // values is typed as { email: string, password: string }
+        console.log("Submitting:", values);
+        yield* form.reset();
+      }),
+    );
+
+  return yield* $.div({ class: "login-form" }, [
+    $.div([
+      $.label("Email"),
+      $.input({
+        type: "email",
+        value: form.fields.email.value,
+        onInput: (e) =>
+          form.fields.email.value.set((e.target as HTMLInputElement).value),
+        onBlur: () => form.fields.email.touch(),
+      }),
+      when(form.fields.email.errors.map((errs) => errs.length > 0), {
+        onTrue: () =>
+          $.span(
+            { class: "error" },
+            form.fields.email.errors.map((e) => e[0] ?? ""),
+          ),
+        onFalse: () => $.span(),
+      }),
+    ]),
+    $.div([
+      $.label("Password"),
+      $.input({
+        type: "password",
+        value: form.fields.password.value,
+        onInput: (e) =>
+          form.fields.password.value.set(
+            (e.target as HTMLInputElement).value,
+          ),
+        onBlur: () => form.fields.password.touch(),
+      }),
+      when(form.fields.password.errors.map((errs) => errs.length > 0), {
+        onTrue: () =>
+          $.span(
+            { class: "error" },
+            form.fields.password.errors.map((e) => e[0] ?? ""),
+          ),
+        onFalse: () => $.span(),
+      }),
+    ]),
+    $.button(
+      {
+        onClick: () => handleSubmit(),
+        disabled: form.isSubmitting,
+      },
+      form.isSubmitting.map((s) => (s ? "Submitting..." : "Log In")),
+    ),
+  ]);
+});
 ```
 
 ## Field State

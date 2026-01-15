@@ -41,20 +41,19 @@ export type RouteCases<E = never, R = never> = {
  * @example
  * ```ts
  * // In a layout component
- * const Layout: Component.Unit = () =>
- *   Effect.gen(function* () {
- *     return yield* $.div({ class: "layout" }, [
- *       Header(),
- *       $.main([
- *         matchRoute({
- *           home: () => HomePage(),
- *           about: () => AboutPage(),
- *           _: () => NotFoundPage(),
- *         }),
- *       ]),
- *       Footer(),
- *     ]);
- *   });
+ * const Layout = Component.gen(function* () {
+ *   return yield* $.div({ class: "layout" }, [
+ *     Header(),
+ *     $.main([
+ *       matchRoute({
+ *         home: () => HomePage(),
+ *         about: () => AboutPage(),
+ *         _: () => NotFoundPage(),
+ *       }),
+ *     ]),
+ *     Footer(),
+ *   ]);
+ * });
  * ```
  */
 export const matchRoute = <E = never, R = never>(

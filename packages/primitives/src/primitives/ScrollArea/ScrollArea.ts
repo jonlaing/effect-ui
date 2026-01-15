@@ -131,565 +131,548 @@ export interface ScrollAreaCornerProps {
 // Root Component
 // ============================================================================
 
-const Root: Component.Branch<ScrollAreaRootProps, ScrollAreaCtx, never> = (
-  props,
-  children,
-) =>
-  Effect.gen(function* () {
-    const type = props.type ?? "hover";
-    const scrollHideDelay = props.scrollHideDelay ?? 600;
+const Root = Component.gen(function* (props: ScrollAreaRootProps, children) {
+  const type = props.type ?? "hover";
+  const scrollHideDelay = props.scrollHideDelay ?? 600;
 
-    // State signals
-    const scrollPosition = yield* Signal.make({ x: 0, y: 0 });
-    const viewportSize = yield* Signal.make({ width: 0, height: 0 });
-    const contentSize = yield* Signal.make({ width: 0, height: 0 });
-    const isScrolling = yield* Signal.make(false);
-    const isHovering = yield* Signal.make(false);
+  // State signals
+  const scrollPosition = yield* Signal.make({ x: 0, y: 0 });
+  const viewportSize = yield* Signal.make({ width: 0, height: 0 });
+  const contentSize = yield* Signal.make({ width: 0, height: 0 });
+  const isScrolling = yield* Signal.make(false);
+  const isHovering = yield* Signal.make(false);
 
-    // Ref for scrollable element
-    const scrollableRef = yield* Element.ref<HTMLElement>();
+  // Ref for scrollable element
+  const scrollableRef = yield* Element.ref<HTMLElement>();
 
-    // Hide timeout ref
-    const hideTimeout = MutableRef.make<ReturnType<typeof setTimeout> | null>(
-      null,
-    );
+  // Hide timeout ref
+  const hideTimeout = MutableRef.make<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
-    const clearHideTimeout = () => {
-      const timeout = MutableRef.get(hideTimeout);
-      if (timeout) {
-        clearTimeout(timeout);
-        MutableRef.set(hideTimeout, null);
-      }
-    };
+  const clearHideTimeout = () => {
+    const timeout = MutableRef.get(hideTimeout);
+    if (timeout) {
+      clearTimeout(timeout);
+      MutableRef.set(hideTimeout, null);
+    }
+  };
 
-    const setIsScrolling = (value: boolean) => {
-      Effect.runSync(isScrolling.set(value));
-      if (value) {
-        clearHideTimeout();
-      } else if (type === "scroll" || type === "hover") {
-        // Schedule hide
-        clearHideTimeout();
-        const timeout = setTimeout(() => {
-          Effect.runSync(isScrolling.set(false));
-        }, scrollHideDelay);
-        MutableRef.set(hideTimeout, timeout);
-      }
-    };
+  const setIsScrolling = (value: boolean) => {
+    Effect.runSync(isScrolling.set(value));
+    if (value) {
+      clearHideTimeout();
+    } else if (type === "scroll" || type === "hover") {
+      // Schedule hide
+      clearHideTimeout();
+      const timeout = setTimeout(() => {
+        Effect.runSync(isScrolling.set(false));
+      }, scrollHideDelay);
+      MutableRef.set(hideTimeout, timeout);
+    }
+  };
 
-    const setIsHovering = (value: boolean) => {
-      Effect.runSync(isHovering.set(value));
-    };
+  const setIsHovering = (value: boolean) => {
+    Effect.runSync(isHovering.set(value));
+  };
 
-    // Methods
-    const scrollTo = (position: { x?: number; y?: number }) =>
-      scrollableRef.pipe(
-        Element.scrollTo({
-          left: position.x,
-          top: position.y,
-          behavior: "auto",
-        }),
-        Effect.ignore,
-      );
-
-    const scrollBy = (delta: { x?: number; y?: number }) =>
-      scrollableRef.pipe(
-        Element.scrollBy({
-          left: delta.x,
-          top: delta.y,
-          behavior: "auto",
-        }),
-        Effect.ignore,
-      );
-
-    const updateScrollPosition = (pos: { x: number; y: number }) => {
-      Effect.runSync(scrollPosition.set(pos));
-    };
-
-    const updateContentSize = (size: { width: number; height: number }) => {
-      Effect.runSync(contentSize.set(size));
-    };
-
-    const updateViewportSize = (size: { width: number; height: number }) => {
-      Effect.runSync(viewportSize.set(size));
-    };
-
-    const handleMouseEnter = () =>
-      Effect.sync(() => {
-        setIsHovering(true);
-      });
-
-    const handleMouseLeave = () =>
-      Effect.sync(() => {
-        setIsHovering(false);
-      });
-
-    // Cleanup
-    yield* Effect.addFinalizer(() =>
-      Effect.sync(() => {
-        clearHideTimeout();
+  // Methods
+  const scrollTo = (position: { x?: number; y?: number }) =>
+    scrollableRef.pipe(
+      Element.scrollTo({
+        left: position.x,
+        top: position.y,
+        behavior: "auto",
       }),
+      Effect.ignore,
     );
 
-    const ctx: ScrollAreaContext = {
-      scrollPosition,
-      viewportSize,
-      contentSize,
-      scrollableRef,
-      scrollTo,
-      scrollBy,
-      updateScrollPosition,
-      updateContentSize,
-      updateViewportSize,
-      type,
-      scrollHideDelay,
-      isScrolling,
-      isHovering,
-      setIsScrolling,
-      setIsHovering,
-    };
+  const scrollBy = (delta: { x?: number; y?: number }) =>
+    scrollableRef.pipe(
+      Element.scrollBy({
+        left: delta.x,
+        top: delta.y,
+        behavior: "auto",
+      }),
+      Effect.ignore,
+    );
 
-    return yield* $.div(
-      {
-        class: props.class,
-        "data-scrollarea-root": "",
-        style: {
-          position: "relative",
-          overflow: "hidden",
-        },
-        onMouseEnter: handleMouseEnter,
-        onMouseLeave: handleMouseLeave,
+  const updateScrollPosition = (pos: { x: number; y: number }) => {
+    Effect.runSync(scrollPosition.set(pos));
+  };
+
+  const updateContentSize = (size: { width: number; height: number }) => {
+    Effect.runSync(contentSize.set(size));
+  };
+
+  const updateViewportSize = (size: { width: number; height: number }) => {
+    Effect.runSync(viewportSize.set(size));
+  };
+
+  const handleMouseEnter = () =>
+    Effect.sync(() => {
+      setIsHovering(true);
+    });
+
+  const handleMouseLeave = () =>
+    Effect.sync(() => {
+      setIsHovering(false);
+    });
+
+  // Cleanup
+  yield* Effect.addFinalizer(() =>
+    Effect.sync(() => {
+      clearHideTimeout();
+    }),
+  );
+
+  const ctx: ScrollAreaContext = {
+    scrollPosition,
+    viewportSize,
+    contentSize,
+    scrollableRef,
+    scrollTo,
+    scrollBy,
+    updateScrollPosition,
+    updateContentSize,
+    updateViewportSize,
+    type,
+    scrollHideDelay,
+    isScrolling,
+    isHovering,
+    setIsScrolling,
+    setIsHovering,
+  };
+
+  return yield* $.div(
+    {
+      class: props.class,
+      "data-scrollarea-root": "",
+      style: {
+        position: "relative",
+        overflow: "hidden",
       },
-      provide(
-        ScrollAreaCtx,
-        ctx,
-        Array.isArray(children) ? children : [children],
-      ),
-    );
-  });
+      onMouseEnter: handleMouseEnter,
+      onMouseLeave: handleMouseLeave,
+    },
+    provide(
+      ScrollAreaCtx,
+      ctx,
+      Array.isArray(children) ? children : [children],
+    ),
+  );
+});
 
 // ============================================================================
 // Viewport Component
 // ============================================================================
 
-const Viewport: Component.Node<ScrollAreaViewportProps, ScrollAreaCtx> = (
-  props,
+const Viewport = Component.gen(function* (
+  props: ScrollAreaViewportProps,
   children,
-) =>
-  Effect.gen(function* () {
-    const ctx = yield* ScrollAreaCtx;
-    const viewportRef = yield* Element.ref<HTMLDivElement>();
+) {
+  const ctx = yield* ScrollAreaCtx;
+  const viewportRef = yield* Element.ref<HTMLDivElement>();
 
-    // Set up scroll listener and observers after mount
-    yield* Effect.sync(() => {
-      // Use requestAnimationFrame to ensure DOM is ready
-      requestAnimationFrame(() => {
-        const viewport = Element.getUnsafe(viewportRef);
-        if (!viewport) return;
+  // Set up scroll listener and observers after mount
+  yield* Effect.sync(() => {
+    // Use requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(() => {
+      const viewport = Element.getUnsafe(viewportRef);
+      if (!viewport) return;
 
-        // Check if there's a scrollable child (like virtualEach output)
-        const findScrollableChild = (el: HTMLElement): HTMLElement | null => {
-          // Check direct children first
-          for (const child of Array.from(el.children) as HTMLElement[]) {
-            const style = getComputedStyle(child);
-            if (
-              style.overflow === "auto" ||
-              style.overflow === "scroll" ||
-              style.overflowY === "auto" ||
-              style.overflowY === "scroll" ||
-              style.overflowX === "auto" ||
-              style.overflowX === "scroll"
-            ) {
-              return child;
-            }
+      // Check if there's a scrollable child (like virtualEach output)
+      const findScrollableChild = (el: HTMLElement): HTMLElement | null => {
+        // Check direct children first
+        for (const child of Array.from(el.children) as HTMLElement[]) {
+          const style = getComputedStyle(child);
+          if (
+            style.overflow === "auto" ||
+            style.overflow === "scroll" ||
+            style.overflowY === "auto" ||
+            style.overflowY === "scroll" ||
+            style.overflowX === "auto" ||
+            style.overflowX === "scroll"
+          ) {
+            return child;
           }
-          return null;
-        };
-
-        const scrollableChild = findScrollableChild(viewport);
-        const scrollable = scrollableChild ?? viewport;
-
-        // Set the scrollable ref
-        bindElementToRef(ctx.scrollableRef, scrollable);
-
-        // If using native scrolling on viewport, make it scrollable
-        if (!scrollableChild) {
-          viewport.style.overflow = "scroll";
-          // Hide native scrollbars
-          viewport.style.scrollbarWidth = "none";
-          (viewport.style as unknown as Record<string, string>)[
-            "msOverflowStyle"
-          ] = "none";
-        } else {
-          // Hide scrollbars on the child
-          scrollableChild.style.scrollbarWidth = "none";
-          (scrollableChild.style as unknown as Record<string, string>)[
-            "msOverflowStyle"
-          ] = "none";
         }
+        return null;
+      };
 
-        // Scroll handler
-        let rafId: number | null = null;
-        const handleScroll = () => {
-          if (rafId === null) {
-            rafId = requestAnimationFrame(() => {
-              ctx.updateScrollPosition({
-                x: scrollable.scrollLeft,
-                y: scrollable.scrollTop,
-              });
-              ctx.setIsScrolling(true);
-              rafId = null;
+      const scrollableChild = findScrollableChild(viewport);
+      const scrollable = scrollableChild ?? viewport;
 
-              // Schedule hide after scroll stops
-              if (ctx.type === "scroll" || ctx.type === "hover") {
-                setTimeout(() => {
-                  ctx.setIsScrolling(false);
-                }, 150);
-              }
+      // Set the scrollable ref
+      bindElementToRef(ctx.scrollableRef, scrollable);
+
+      // If using native scrolling on viewport, make it scrollable
+      if (!scrollableChild) {
+        viewport.style.overflow = "scroll";
+        // Hide native scrollbars
+        viewport.style.scrollbarWidth = "none";
+        (viewport.style as unknown as Record<string, string>)[
+          "msOverflowStyle"
+        ] = "none";
+      } else {
+        // Hide scrollbars on the child
+        scrollableChild.style.scrollbarWidth = "none";
+        (scrollableChild.style as unknown as Record<string, string>)[
+          "msOverflowStyle"
+        ] = "none";
+      }
+
+      // Scroll handler
+      let rafId: number | null = null;
+      const handleScroll = () => {
+        if (rafId === null) {
+          rafId = requestAnimationFrame(() => {
+            ctx.updateScrollPosition({
+              x: scrollable.scrollLeft,
+              y: scrollable.scrollTop,
             });
-          }
-        };
+            ctx.setIsScrolling(true);
+            rafId = null;
 
-        scrollable.addEventListener("scroll", handleScroll, {
-          passive: true,
-        });
-
-        // ResizeObserver for viewport size
-        const viewportObserver = new ResizeObserver((entries) => {
-          for (const entry of entries) {
-            ctx.updateViewportSize({
-              width: entry.contentRect.width,
-              height: entry.contentRect.height,
-            });
-          }
-        });
-        viewportObserver.observe(scrollable);
-
-        // ResizeObserver for content size - observe the scrollable element itself
-        // It will trigger when scrollWidth/scrollHeight change
-        const contentObserver = new ResizeObserver(() => {
-          ctx.updateContentSize({
-            width: scrollable.scrollWidth,
-            height: scrollable.scrollHeight,
+            // Schedule hide after scroll stops
+            if (ctx.type === "scroll" || ctx.type === "hover") {
+              setTimeout(() => {
+                ctx.setIsScrolling(false);
+              }, 150);
+            }
           });
-        });
-        contentObserver.observe(scrollable);
+        }
+      };
 
-        // Also use MutationObserver to detect when children are added/removed
-        const mutationObserver = new MutationObserver(() => {
-          ctx.updateContentSize({
-            width: scrollable.scrollWidth,
-            height: scrollable.scrollHeight,
-          });
-        });
-        mutationObserver.observe(scrollable, {
-          childList: true,
-          subtree: true,
-        });
-
-        // Initial size update - use setTimeout to ensure content is rendered
-        setTimeout(() => {
-          ctx.updateViewportSize({
-            width: scrollable.clientWidth,
-            height: scrollable.clientHeight,
-          });
-          ctx.updateContentSize({
-            width: scrollable.scrollWidth,
-            height: scrollable.scrollHeight,
-          });
-        }, 0);
+      scrollable.addEventListener("scroll", handleScroll, {
+        passive: true,
       });
-    });
 
-    return yield* $.div(
-      {
-        ref: viewportRef,
-        class: props.class,
-        "data-scrollarea-viewport": "",
-        style: {
-          width: "100%",
-          height: "100%",
-          overflow: "scroll",
-          scrollbarWidth: "none",
-        },
-      },
-      children ?? [],
-    );
+      // ResizeObserver for viewport size
+      const viewportObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          ctx.updateViewportSize({
+            width: entry.contentRect.width,
+            height: entry.contentRect.height,
+          });
+        }
+      });
+      viewportObserver.observe(scrollable);
+
+      // ResizeObserver for content size - observe the scrollable element itself
+      // It will trigger when scrollWidth/scrollHeight change
+      const contentObserver = new ResizeObserver(() => {
+        ctx.updateContentSize({
+          width: scrollable.scrollWidth,
+          height: scrollable.scrollHeight,
+        });
+      });
+      contentObserver.observe(scrollable);
+
+      // Also use MutationObserver to detect when children are added/removed
+      const mutationObserver = new MutationObserver(() => {
+        ctx.updateContentSize({
+          width: scrollable.scrollWidth,
+          height: scrollable.scrollHeight,
+        });
+      });
+      mutationObserver.observe(scrollable, {
+        childList: true,
+        subtree: true,
+      });
+
+      // Initial size update - use setTimeout to ensure content is rendered
+      setTimeout(() => {
+        ctx.updateViewportSize({
+          width: scrollable.clientWidth,
+          height: scrollable.clientHeight,
+        });
+        ctx.updateContentSize({
+          width: scrollable.scrollWidth,
+          height: scrollable.scrollHeight,
+        });
+      }, 0);
+    });
   });
+
+  return yield* $.div(
+    {
+      ref: viewportRef,
+      class: props.class,
+      "data-scrollarea-viewport": "",
+      style: {
+        width: "100%",
+        height: "100%",
+        overflow: "scroll",
+        scrollbarWidth: "none",
+      },
+    },
+    children ?? [],
+  );
+});
 
 // ============================================================================
 // Scrollbar Component
 // ============================================================================
 
-const Scrollbar: Component.Branch<
-  ScrollAreaScrollbarProps,
-  ScrollAreaCtx | ScrollbarCtx,
-  ScrollAreaCtx
-> = (props, children) =>
-  Effect.gen(function* () {
-    const ctx = yield* ScrollAreaCtx;
-    const trackRef = yield* Element.ref<HTMLDivElement>();
-    const orientation = props.orientation;
+const Scrollbar = Component.gen(function* (
+  props: ScrollAreaScrollbarProps,
+  children,
+) {
+  const ctx = yield* ScrollAreaCtx;
+  const trackRef = yield* Element.ref<HTMLDivElement>();
+  const orientation = props.orientation;
 
-    // Calculate thumb size (percentage of track)
-    const thumbSize: Readable.Readable<number> = yield* Derived.sync(
-      [ctx.viewportSize, ctx.contentSize],
-      ([viewport, content]) => {
-        if (orientation === "vertical") {
-          if (content.height <= 0) return 100;
-          const size = (viewport.height / content.height) * 100;
-          return Math.max(10, Math.min(100, size)); // Min 10%, max 100%
-        } else {
-          if (content.width <= 0) return 100;
-          const size = (viewport.width / content.width) * 100;
-          return Math.max(10, Math.min(100, size));
+  // Calculate thumb size (percentage of track)
+  const thumbSize: Readable.Readable<number> = yield* Derived.sync(
+    [ctx.viewportSize, ctx.contentSize],
+    ([viewport, content]) => {
+      if (orientation === "vertical") {
+        if (content.height <= 0) return 100;
+        const size = (viewport.height / content.height) * 100;
+        return Math.max(10, Math.min(100, size)); // Min 10%, max 100%
+      } else {
+        if (content.width <= 0) return 100;
+        const size = (viewport.width / content.width) * 100;
+        return Math.max(10, Math.min(100, size));
+      }
+    },
+  );
+
+  // Calculate thumb position (percentage of track, 0 to 100-thumbSize)
+  const thumbPosition: Readable.Readable<number> = yield* Derived.sync(
+    [ctx.scrollPosition, ctx.viewportSize, ctx.contentSize, thumbSize] as const,
+    ([scroll, viewport, content, size]) => {
+      if (orientation === "vertical") {
+        const maxScroll = content.height - viewport.height;
+        if (maxScroll <= 0) return 0;
+        const scrollPercent = scroll.y / maxScroll;
+        // Thumb position ranges from 0% to (100 - thumbSize)%
+        return scrollPercent * (100 - size);
+      } else {
+        const maxScroll = content.width - viewport.width;
+        if (maxScroll <= 0) return 0;
+        const scrollPercent = scroll.x / maxScroll;
+        return scrollPercent * (100 - size);
+      }
+    },
+  );
+
+  // Check if content overflows
+  const hasOverflow: Readable.Readable<boolean> = yield* Derived.sync(
+    [ctx.viewportSize, ctx.contentSize],
+    ([viewport, content]) => {
+      if (orientation === "vertical") {
+        return content.height > viewport.height;
+      } else {
+        return content.width > viewport.width;
+      }
+    },
+  );
+
+  // Visibility based on type
+  const isVisible: Readable.Readable<boolean> = yield* Derived.sync(
+    [hasOverflow, ctx.isScrolling, ctx.isHovering],
+    ([overflow, scrolling, hovering]) => {
+      if (!overflow) return false;
+      switch (ctx.type) {
+        case "always":
+          return true;
+        case "auto":
+          return true;
+        case "scroll":
+          return scrolling;
+        case "hover":
+          return scrolling || hovering;
+      }
+    },
+  );
+
+  const scrollbarCtx: ScrollbarContext = {
+    orientation,
+    thumbSize,
+    thumbPosition,
+    hasOverflow,
+    isVisible,
+    trackRef,
+  };
+
+  // Handle click on track to jump scroll
+  const handleTrackClick = (event: MouseEvent) =>
+    Effect.gen(function* () {
+      const track = Element.getUnsafe(trackRef);
+      if (!track) return;
+      if (event.target !== track) return; // Only handle clicks directly on track
+
+      const rect = track.getBoundingClientRect();
+      const scrollable = Element.getUnsafe(ctx.scrollableRef);
+      if (!scrollable) return;
+
+      if (orientation === "vertical") {
+        const clickPercent = (event.clientY - rect.top) / rect.height;
+        const maxScroll = scrollable.scrollHeight - scrollable.clientHeight;
+        yield* ctx.scrollTo({ y: clickPercent * maxScroll });
+      } else {
+        const clickPercent = (event.clientX - rect.left) / rect.width;
+        const maxScroll = scrollable.scrollWidth - scrollable.clientWidth;
+        yield* ctx.scrollTo({ x: clickPercent * maxScroll });
+      }
+    });
+
+  const dataState = isVisible.map((v) => (v ? "visible" : "hidden"));
+
+  // Base styles for proper positioning
+  const baseStyle: Record<string, string> =
+    orientation === "vertical"
+      ? {
+          position: "absolute",
+          top: "0",
+          right: "0",
+          bottom: "0",
         }
-      },
-    );
+      : {
+          position: "absolute",
+          bottom: "0",
+          left: "0",
+          right: "0",
+        };
 
-    // Calculate thumb position (percentage of track, 0 to 100-thumbSize)
-    const thumbPosition: Readable.Readable<number> = yield* Derived.sync(
-      [
-        ctx.scrollPosition,
-        ctx.viewportSize,
-        ctx.contentSize,
-        thumbSize,
-      ] as const,
-      ([scroll, viewport, content, size]) => {
-        if (orientation === "vertical") {
-          const maxScroll = content.height - viewport.height;
-          if (maxScroll <= 0) return 0;
-          const scrollPercent = scroll.y / maxScroll;
-          // Thumb position ranges from 0% to (100 - thumbSize)%
-          return scrollPercent * (100 - size);
-        } else {
-          const maxScroll = content.width - viewport.width;
-          if (maxScroll <= 0) return 0;
-          const scrollPercent = scroll.x / maxScroll;
-          return scrollPercent * (100 - size);
-        }
-      },
-    );
-
-    // Check if content overflows
-    const hasOverflow: Readable.Readable<boolean> = yield* Derived.sync(
-      [ctx.viewportSize, ctx.contentSize],
-      ([viewport, content]) => {
-        if (orientation === "vertical") {
-          return content.height > viewport.height;
-        } else {
-          return content.width > viewport.width;
-        }
-      },
-    );
-
-    // Visibility based on type
-    const isVisible: Readable.Readable<boolean> = yield* Derived.sync(
-      [hasOverflow, ctx.isScrolling, ctx.isHovering],
-      ([overflow, scrolling, hovering]) => {
-        if (!overflow) return false;
-        switch (ctx.type) {
-          case "always":
-            return true;
-          case "auto":
-            return true;
-          case "scroll":
-            return scrolling;
-          case "hover":
-            return scrolling || hovering;
-        }
-      },
-    );
-
-    const scrollbarCtx: ScrollbarContext = {
-      orientation,
-      thumbSize,
-      thumbPosition,
-      hasOverflow,
-      isVisible,
-      trackRef,
-    };
-
-    // Handle click on track to jump scroll
-    const handleTrackClick = (event: MouseEvent) =>
-      Effect.gen(function* () {
-        const track = Element.getUnsafe(trackRef);
-        if (!track) return;
-        if (event.target !== track) return; // Only handle clicks directly on track
-
-        const rect = track.getBoundingClientRect();
-        const scrollable = Element.getUnsafe(ctx.scrollableRef);
-        if (!scrollable) return;
-
-        if (orientation === "vertical") {
-          const clickPercent = (event.clientY - rect.top) / rect.height;
-          const maxScroll = scrollable.scrollHeight - scrollable.clientHeight;
-          yield* ctx.scrollTo({ y: clickPercent * maxScroll });
-        } else {
-          const clickPercent = (event.clientX - rect.left) / rect.width;
-          const maxScroll = scrollable.scrollWidth - scrollable.clientWidth;
-          yield* ctx.scrollTo({ x: clickPercent * maxScroll });
-        }
-      });
-
-    const dataState = isVisible.map((v) => (v ? "visible" : "hidden"));
-
-    // Base styles for proper positioning
-    const baseStyle: Record<string, string> =
-      orientation === "vertical"
-        ? {
-            position: "absolute",
-            top: "0",
-            right: "0",
-            bottom: "0",
-          }
-        : {
-            position: "absolute",
-            bottom: "0",
-            left: "0",
-            right: "0",
-          };
-
-    return yield* $.div(
-      {
-        ref: trackRef,
-        class: props.class,
-        "data-scrollarea-scrollbar": "",
-        "data-orientation": orientation,
-        "data-state": dataState,
-        style: baseStyle,
-        onClick: handleTrackClick,
-      },
-      provide(ScrollbarCtx, scrollbarCtx, children),
-    );
-  });
+  return yield* $.div(
+    {
+      ref: trackRef,
+      class: props.class,
+      "data-scrollarea-scrollbar": "",
+      "data-orientation": orientation,
+      "data-state": dataState,
+      style: baseStyle,
+      onClick: handleTrackClick,
+    },
+    provide(ScrollbarCtx, scrollbarCtx, children),
+  );
+});
 
 // ============================================================================
 // Thumb Component
 // ============================================================================
 
-const Thumb: Component.Leaf<
-  ScrollAreaThumbProps,
-  ScrollAreaCtx | ScrollbarCtx
-> = (props) =>
-  Effect.gen(function* () {
-    const ctx = yield* ScrollAreaCtx;
-    const scrollbarCtx = yield* ScrollbarCtx;
-    const thumbRef = yield* Element.ref<HTMLDivElement>();
+const Thumb = Component.gen(function* (props: ScrollAreaThumbProps) {
+  const ctx = yield* ScrollAreaCtx;
+  const scrollbarCtx = yield* ScrollbarCtx;
+  const thumbRef = yield* Element.ref<HTMLDivElement>();
 
-    // Drag state
-    const isDragging = MutableRef.make(false);
-    const dragStart = MutableRef.make({ position: 0, scrollPosition: 0 });
+  // Drag state
+  const isDragging = MutableRef.make(false);
+  const dragStart = MutableRef.make({ position: 0, scrollPosition: 0 });
 
-    const handlePointerDown = (event: PointerEvent) =>
-      Effect.sync(() => {
-        event.preventDefault();
-        event.stopPropagation();
+  const handlePointerDown = (event: PointerEvent) =>
+    Effect.sync(() => {
+      event.preventDefault();
+      event.stopPropagation();
 
-        const thumb = Element.getUnsafe(thumbRef);
-        if (!thumb) return;
+      const thumb = Element.getUnsafe(thumbRef);
+      if (!thumb) return;
 
-        MutableRef.set(isDragging, true);
-        thumb.setPointerCapture(event.pointerId);
+      MutableRef.set(isDragging, true);
+      thumb.setPointerCapture(event.pointerId);
 
-        const scrollable = Element.getUnsafe(ctx.scrollableRef);
-        if (!scrollable) return;
+      const scrollable = Element.getUnsafe(ctx.scrollableRef);
+      if (!scrollable) return;
 
-        if (scrollbarCtx.orientation === "vertical") {
-          MutableRef.set(dragStart, {
-            position: event.clientY,
-            scrollPosition: scrollable.scrollTop,
-          });
-        } else {
-          MutableRef.set(dragStart, {
-            position: event.clientX,
-            scrollPosition: scrollable.scrollLeft,
-          });
-        }
-      });
-
-    const handlePointerMove = (event: PointerEvent) =>
-      Effect.sync(() => {
-        if (!MutableRef.get(isDragging)) return;
-
-        const scrollable = Element.getUnsafe(ctx.scrollableRef);
-        const track = Element.getUnsafe(scrollbarCtx.trackRef);
-        if (!scrollable || !track) return;
-
-        const start = MutableRef.get(dragStart);
-        const trackRect = track.getBoundingClientRect();
-
-        if (scrollbarCtx.orientation === "vertical") {
-          const delta = event.clientY - start.position;
-          const trackHeight = trackRect.height;
-          const maxScroll = scrollable.scrollHeight - scrollable.clientHeight;
-          const scrollDelta = (delta / trackHeight) * maxScroll;
-          scrollable.scrollTop = start.scrollPosition + scrollDelta;
-        } else {
-          const delta = event.clientX - start.position;
-          const trackWidth = trackRect.width;
-          const maxScroll = scrollable.scrollWidth - scrollable.clientWidth;
-          const scrollDelta = (delta / trackWidth) * maxScroll;
-          scrollable.scrollLeft = start.scrollPosition + scrollDelta;
-        }
-      });
-
-    const handlePointerUp = (event: PointerEvent) =>
-      Effect.sync(() => {
-        if (!MutableRef.get(isDragging)) return;
-
-        MutableRef.set(isDragging, false);
-        const thumb = Element.getUnsafe(thumbRef);
-        if (thumb) {
-          thumb.releasePointerCapture(event.pointerId);
-        }
-      });
-
-    const thumbStyle = yield* Derived.sync(
-      [scrollbarCtx.thumbSize, scrollbarCtx.thumbPosition],
-      ([size, position]): Record<string, string> => {
-        if (scrollbarCtx.orientation === "vertical") {
-          return {
-            position: "absolute",
-            left: "0",
-            right: "0",
-            height: `${size}%`,
-            top: `${position}%`,
-          };
-        } else {
-          return {
-            position: "absolute",
-            top: "0",
-            bottom: "0",
-            width: `${size}%`,
-            left: `${position}%`,
-          };
-        }
-      },
-    );
-
-    return yield* $.div({
-      ref: thumbRef,
-      class: props.class,
-      "data-scrollarea-thumb": "",
-      "data-orientation": scrollbarCtx.orientation,
-      style: thumbStyle,
-      onPointerDown: handlePointerDown,
-      onPointerMove: handlePointerMove,
-      onPointerUp: handlePointerUp,
+      if (scrollbarCtx.orientation === "vertical") {
+        MutableRef.set(dragStart, {
+          position: event.clientY,
+          scrollPosition: scrollable.scrollTop,
+        });
+      } else {
+        MutableRef.set(dragStart, {
+          position: event.clientX,
+          scrollPosition: scrollable.scrollLeft,
+        });
+      }
     });
+
+  const handlePointerMove = (event: PointerEvent) =>
+    Effect.sync(() => {
+      if (!MutableRef.get(isDragging)) return;
+
+      const scrollable = Element.getUnsafe(ctx.scrollableRef);
+      const track = Element.getUnsafe(scrollbarCtx.trackRef);
+      if (!scrollable || !track) return;
+
+      const start = MutableRef.get(dragStart);
+      const trackRect = track.getBoundingClientRect();
+
+      if (scrollbarCtx.orientation === "vertical") {
+        const delta = event.clientY - start.position;
+        const trackHeight = trackRect.height;
+        const maxScroll = scrollable.scrollHeight - scrollable.clientHeight;
+        const scrollDelta = (delta / trackHeight) * maxScroll;
+        scrollable.scrollTop = start.scrollPosition + scrollDelta;
+      } else {
+        const delta = event.clientX - start.position;
+        const trackWidth = trackRect.width;
+        const maxScroll = scrollable.scrollWidth - scrollable.clientWidth;
+        const scrollDelta = (delta / trackWidth) * maxScroll;
+        scrollable.scrollLeft = start.scrollPosition + scrollDelta;
+      }
+    });
+
+  const handlePointerUp = (event: PointerEvent) =>
+    Effect.sync(() => {
+      if (!MutableRef.get(isDragging)) return;
+
+      MutableRef.set(isDragging, false);
+      const thumb = Element.getUnsafe(thumbRef);
+      if (thumb) {
+        thumb.releasePointerCapture(event.pointerId);
+      }
+    });
+
+  const thumbStyle = yield* Derived.sync(
+    [scrollbarCtx.thumbSize, scrollbarCtx.thumbPosition],
+    ([size, position]): Record<string, string> => {
+      if (scrollbarCtx.orientation === "vertical") {
+        return {
+          position: "absolute",
+          left: "0",
+          right: "0",
+          height: `${size}%`,
+          top: `${position}%`,
+        };
+      } else {
+        return {
+          position: "absolute",
+          top: "0",
+          bottom: "0",
+          width: `${size}%`,
+          left: `${position}%`,
+        };
+      }
+    },
+  );
+
+  return yield* $.div({
+    ref: thumbRef,
+    class: props.class,
+    "data-scrollarea-thumb": "",
+    "data-orientation": scrollbarCtx.orientation,
+    style: thumbStyle,
+    onPointerDown: handlePointerDown,
+    onPointerMove: handlePointerMove,
+    onPointerUp: handlePointerUp,
   });
+});
 
 // ============================================================================
 // Corner Component
 // ============================================================================
 
-const Corner: Component.Leaf<ScrollAreaCornerProps, ScrollAreaCtx> = (props) =>
-  Effect.gen(function* () {
-    return yield* $.div({
-      class: props.class,
-      "data-scrollarea-corner": "",
-    });
+const Corner = Component.gen(function* (props: ScrollAreaCornerProps) {
+  return yield* $.div({
+    class: props.class,
+    "data-scrollarea-corner": "",
   });
+});
 
 // ============================================================================
 // Export

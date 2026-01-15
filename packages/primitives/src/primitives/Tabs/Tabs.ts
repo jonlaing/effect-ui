@@ -76,39 +76,35 @@ export interface TabsRootProps {
  * ])
  * ```
  */
-const Root: Component.Branch<TabsRootProps, TabsCtx, never> = (
-  props,
-  children,
-) =>
-  Effect.gen(function* () {
-    const value = yield* Signal.fromNullable(
-      props.value,
-      props.defaultValue ?? "",
-    );
+const Root = Component.gen(function* (props: TabsRootProps, children) {
+  const value = yield* Signal.fromNullable(
+    props.value,
+    props.defaultValue ?? "",
+  );
 
-    // Normalize props to Readables
-    const orientation = Readable.of(props.orientation ?? "horizontal");
-    const activationMode = props.activationMode ?? "automatic";
+  // Normalize props to Readables
+  const orientation = Readable.of(props.orientation ?? "horizontal");
+  const activationMode = props.activationMode ?? "automatic";
 
-    const setValue = (newValue: string) =>
-      Effect.gen(function* () {
-        yield* value.set(newValue);
-        yield* props.onValueChange?.(newValue) ?? Effect.void;
-      });
+  const setValue = (newValue: string) =>
+    Effect.gen(function* () {
+      yield* value.set(newValue);
+      yield* props.onValueChange?.(newValue) ?? Effect.void;
+    });
 
-    const ctx: TabsContext = {
-      value,
-      setValue,
-      orientation,
-      activationMode,
-    };
+  const ctx: TabsContext = {
+    value,
+    setValue,
+    orientation,
+    activationMode,
+  };
 
-    const childArray = Array.isArray(children) ? children : [children];
-    return yield* $.div(
-      { "data-orientation": orientation },
-      provide(TabsCtx, ctx, childArray),
-    );
-  });
+  const childArray = Array.isArray(children) ? children : [children];
+  return yield* $.div(
+    { "data-orientation": orientation },
+    provide(TabsCtx, ctx, childArray),
+  );
+});
 
 /**
  * Props for Tabs.List
@@ -131,40 +127,39 @@ export interface TabsListProps {
  * ])
  * ```
  */
-const List: Component.Node<TabsListProps, TabsCtx> = (props, children) =>
-  Effect.gen(function* () {
-    const ctx = yield* TabsCtx;
+const List = Component.gen(function* (props: TabsListProps, children) {
+  const ctx = yield* TabsCtx;
 
-    const setValueFromElement = (el: Effect.Effect<HTMLElement>) =>
-      el.pipe(
-        Element.getData("value"),
-        Effect.flatMap(ctx.setValue),
-        Effect.ignore,
-      );
-
-    const handleKeyDown = yield* createKeyboardNav({
-      selector: "[data-tabs-trigger]:not([data-disabled])",
-      orientation: ctx.orientation,
-      loop: props.loop ?? true,
-      // In automatic mode, selecting happens on focus
-      onFocus:
-        ctx.activationMode === "automatic" ? setValueFromElement : undefined,
-      // In manual mode, selecting happens on Enter/Space
-      onActivate:
-        ctx.activationMode === "manual" ? setValueFromElement : undefined,
-    });
-
-    return yield* $.div(
-      {
-        class: props.class,
-        role: "tablist",
-        "aria-orientation": ctx.orientation,
-        "data-orientation": ctx.orientation,
-        onKeyDown: handleKeyDown,
-      },
-      children ?? [],
+  const setValueFromElement = (el: Effect.Effect<HTMLElement>) =>
+    el.pipe(
+      Element.getData("value"),
+      Effect.flatMap(ctx.setValue),
+      Effect.ignore,
     );
+
+  const handleKeyDown = yield* createKeyboardNav({
+    selector: "[data-tabs-trigger]:not([data-disabled])",
+    orientation: ctx.orientation,
+    loop: props.loop ?? true,
+    // In automatic mode, selecting happens on focus
+    onFocus:
+      ctx.activationMode === "automatic" ? setValueFromElement : undefined,
+    // In manual mode, selecting happens on Enter/Space
+    onActivate:
+      ctx.activationMode === "manual" ? setValueFromElement : undefined,
   });
+
+  return yield* $.div(
+    {
+      class: props.class,
+      role: "tablist",
+      "aria-orientation": ctx.orientation,
+      "data-orientation": ctx.orientation,
+      onKeyDown: handleKeyDown,
+    },
+    children ?? [],
+  );
+});
 
 /**
  * Props for Tabs.Trigger
@@ -188,48 +183,47 @@ export interface TabsTriggerProps {
  * Tabs.Trigger({ value: "tab1", class: "tab-trigger" }, "Account")
  * ```
  */
-const Trigger: Component.Node<TabsTriggerProps, TabsCtx> = (props, children) =>
-  Effect.gen(function* () {
-    const ctx = yield* TabsCtx;
+const Trigger = Component.gen(function* (props: TabsTriggerProps, children) {
+  const ctx = yield* TabsCtx;
 
-    // Normalize disabled prop
-    const disabled = Readable.of(props.disabled ?? false);
+  // Normalize disabled prop
+  const disabled = Readable.of(props.disabled ?? false);
 
-    const isSelected = ctx.value.map((v) => v === props.value);
-    const dataState = isSelected.map((s) => (s ? "active" : "inactive"));
-    const ariaSelected = isSelected.map((s) => (s ? "true" : "false"));
-    const tabIndex = isSelected.map((s) => (s ? 0 : -1));
-    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+  const isSelected = ctx.value.map((v) => v === props.value);
+  const dataState = isSelected.map((s) => (s ? "active" : "inactive"));
+  const ariaSelected = isSelected.map((s) => (s ? "true" : "false"));
+  const tabIndex = isSelected.map((s) => (s ? 0 : -1));
+  const dataDisabled = disabled.map((d) => (d ? "" : undefined));
 
-    const handleClick = () => ctx.setValue(props.value);
+  const handleClick = () => ctx.setValue(props.value);
 
-    const triggerProps = {
-      id: `tabs-trigger-${props.value}`,
-      role: "tab" as const,
-      tabIndex,
-      "aria-selected": ariaSelected,
-      "aria-controls": `tabs-content-${props.value}`,
-      "data-state": dataState,
-      "data-value": props.value,
-      "data-disabled": dataDisabled,
-      "data-tabs-trigger": "",
-      onClick: handleClick,
-    };
+  const triggerProps = {
+    id: `tabs-trigger-${props.value}`,
+    role: "tab" as const,
+    tabIndex,
+    "aria-selected": ariaSelected,
+    "aria-controls": `tabs-content-${props.value}`,
+    "data-state": dataState,
+    "data-value": props.value,
+    "data-disabled": dataDisabled,
+    "data-tabs-trigger": "",
+    onClick: handleClick,
+  };
 
-    if (props.asChild && Effect.isEffect(children)) {
-      return yield* mergeProps(triggerProps, children);
-    }
+  if (props.asChild && Effect.isEffect(children)) {
+    return yield* mergeProps(triggerProps, children);
+  }
 
-    return yield* $.button(
-      {
-        ...triggerProps,
-        class: props.class,
-        type: "button",
-        disabled,
-      },
-      children ?? [],
-    );
-  });
+  return yield* $.button(
+    {
+      ...triggerProps,
+      class: props.class,
+      type: "button",
+      disabled,
+    },
+    children ?? [],
+  );
+});
 
 /**
  * Props for Tabs.Content
@@ -256,47 +250,46 @@ export interface TabsContentProps {
  * ])
  * ```
  */
-const Content: Component.Node<TabsContentProps, TabsCtx> = (props, children) =>
-  Effect.gen(function* () {
-    const ctx = yield* TabsCtx;
+const Content = Component.gen(function* (props: TabsContentProps, children) {
+  const ctx = yield* TabsCtx;
 
-    const isSelected = ctx.value.map((v) => v === props.value);
-    const dataState = isSelected.map((s) => (s ? "active" : "inactive"));
+  const isSelected = ctx.value.map((v) => v === props.value);
+  const dataState = isSelected.map((s) => (s ? "active" : "inactive"));
 
-    if (props.forceMount) {
-      // Always render, use hidden attribute
-      return yield* $.div(
+  if (props.forceMount) {
+    // Always render, use hidden attribute
+    return yield* $.div(
+      {
+        id: `tabs-content-${props.value}`,
+        class: props.class,
+        role: "tabpanel",
+        tabIndex: 0,
+        "aria-labelledby": `tabs-trigger-${props.value}`,
+        "data-state": dataState,
+        hidden: isSelected.map((s) => !s),
+      },
+      children ?? [],
+    );
+  }
+
+  // Conditional render using when
+  return yield* when(isSelected, {
+    onTrue: () =>
+      $.div(
         {
           id: `tabs-content-${props.value}`,
           class: props.class,
           role: "tabpanel",
           tabIndex: 0,
           "aria-labelledby": `tabs-trigger-${props.value}`,
-          "data-state": dataState,
-          hidden: isSelected.map((s) => !s),
+          "data-state": "active",
         },
         children ?? [],
-      );
-    }
-
-    // Conditional render using when
-    return yield* when(isSelected, {
-      onTrue: () =>
-        $.div(
-          {
-            id: `tabs-content-${props.value}`,
-            class: props.class,
-            role: "tabpanel",
-            tabIndex: 0,
-            "aria-labelledby": `tabs-trigger-${props.value}`,
-            "data-state": "active",
-          },
-          children ?? [],
-        ),
-      onFalse: () => $.div({ style: { display: "none" } }),
-      animate: props.animate,
-    });
+      ),
+    onFalse: () => $.div({ style: { display: "none" } }),
+    animate: props.animate,
   });
+});
 
 /**
  * Headless Tabs primitive for building accessible tabbed interfaces.

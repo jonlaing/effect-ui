@@ -62,44 +62,44 @@ export interface AlertDialogRootProps {
  * Root container for an AlertDialog. Manages open/closed state and provides
  * context to child components.
  */
-const Root: Component.Branch<AlertDialogRootProps, AlertDialogCtx, never> = (
-  props,
-  children,
-) =>
-  Effect.gen(function* () {
-    // Handle controlled vs uncontrolled state
-    const isOpen = yield* Signal.fromNullable(
-      props.open,
-      props.defaultOpen ?? false,
-    );
+const Root = Component.gen(function* (props: AlertDialogRootProps, children) {
+  // Handle controlled vs uncontrolled state
+  const isOpen = yield* Signal.fromNullable(
+    props.open,
+    props.defaultOpen ?? false,
+  );
 
-    const titleId = yield* UniqueId.make("alertdialog-title");
-    const descriptionId = yield* UniqueId.make("alertdialog-description");
-    const contentId = yield* UniqueId.make("alertdialog-content");
-    const cancelRef = yield* Element.ref<HTMLButtonElement>();
+  const titleId = yield* UniqueId.make("alertdialog-title");
+  const descriptionId = yield* UniqueId.make("alertdialog-description");
+  const contentId = yield* UniqueId.make("alertdialog-content");
+  const cancelRef = yield* Element.ref<HTMLButtonElement>();
 
-    const setOpenState = (newValue: boolean) =>
-      Effect.gen(function* () {
-        yield* isOpen.set(newValue);
-        yield* props.onOpenChange?.(newValue) ?? Effect.void;
-      });
+  const setOpenState = (newValue: boolean) =>
+    Effect.gen(function* () {
+      yield* isOpen.set(newValue);
+      yield* props.onOpenChange?.(newValue) ?? Effect.void;
+    });
 
-    const ctx: AlertDialogContext = {
-      isOpen,
-      open: () => setOpenState(true),
-      close: () => setOpenState(false),
-      titleId,
-      descriptionId,
-      contentId,
-      cancelRef,
-    };
+  const ctx: AlertDialogContext = {
+    isOpen,
+    open: () => setOpenState(true),
+    close: () => setOpenState(false),
+    titleId,
+    descriptionId,
+    contentId,
+    cancelRef,
+  };
 
-    const childArray = Array.isArray(children) ? children : [children];
-    return yield* $.div(
-      { style: { display: "contents" } },
-      provide(AlertDialogCtx, ctx, childArray),
-    );
-  });
+  const childArray = Array.isArray(children)
+    ? children
+    : children
+      ? [children]
+      : [];
+  return yield* $.div(
+    { style: { display: "contents" } },
+    provide(AlertDialogCtx, ctx, childArray),
+  );
+});
 
 /**
  * Props for AlertDialog.Trigger
@@ -114,33 +114,32 @@ export interface AlertDialogTriggerProps {
 /**
  * Button that opens the AlertDialog.
  */
-const Trigger: Component.Node<AlertDialogTriggerProps, AlertDialogCtx> = (
-  props,
+const Trigger = Component.gen(function* (
+  props: AlertDialogTriggerProps,
   children,
-) =>
-  Effect.gen(function* () {
-    const ctx = yield* AlertDialogCtx;
+) {
+  const ctx = yield* AlertDialogCtx;
 
-    const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
-    const ariaExpanded = ctx.isOpen.map((open) => (open ? "true" : "false"));
+  const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
+  const ariaExpanded = ctx.isOpen.map((open) => (open ? "true" : "false"));
 
-    const triggerProps = {
-      "aria-haspopup": "alertdialog" as const,
-      "aria-expanded": ariaExpanded,
-      "aria-controls": ctx.contentId,
-      "data-state": dataState,
-      onClick: ctx.open,
-    };
+  const triggerProps = {
+    "aria-haspopup": "alertdialog" as const,
+    "aria-expanded": ariaExpanded,
+    "aria-controls": ctx.contentId,
+    "data-state": dataState,
+    onClick: ctx.open,
+  };
 
-    if (props.asChild && Effect.isEffect(children)) {
-      return yield* mergeProps(triggerProps, children);
-    }
+  if (props.asChild && Effect.isEffect(children)) {
+    return yield* mergeProps(triggerProps, children);
+  }
 
-    return yield* $.button(
-      { ...triggerProps, type: "button", class: props.class },
-      children ?? [],
-    );
-  });
+  return yield* $.button(
+    { ...triggerProps, type: "button", class: props.class },
+    children ?? [],
+  );
+});
 
 /**
  * Props for AlertDialog.Portal
@@ -156,28 +155,31 @@ export interface AlertDialogPortalProps {
  * Renders alert dialog content in a portal outside the normal DOM hierarchy.
  * Only renders when the dialog is open.
  */
-const AlertDialogPortal: Component.Branch<
-  AlertDialogPortalProps,
-  AlertDialogCtx
-> = (props, children) =>
-  Effect.gen(function* () {
-    const ctx = yield* AlertDialogCtx;
+const AlertDialogPortal = Component.gen(function* (
+  props: AlertDialogPortalProps,
+  children,
+) {
+  const ctx = yield* AlertDialogCtx;
 
-    // Portal is always rendered, but the content inside uses `when` for animations.
-    // This ensures animations apply to the actual visible content, not a placeholder.
-    const childArray = Array.isArray(children) ? children : [children];
-    return yield* Portal({ target: props.target }, () =>
-      when(ctx.isOpen, {
-        onTrue: () =>
-          $.div(
-            { style: { display: "contents" }, "data-alertdialog-portal": "" },
-            provide(AlertDialogCtx, ctx, childArray),
-          ),
-        onFalse: () => $.div({ style: { display: "none" } }),
-        animate: props.animate,
-      }),
-    );
-  });
+  // Portal is always rendered, but the content inside uses `when` for animations.
+  // This ensures animations apply to the actual visible content, not a placeholder.
+  const childArray = Array.isArray(children)
+    ? children
+    : children
+      ? [children]
+      : [];
+  return yield* Portal({ target: props.target }, () =>
+    when(ctx.isOpen, {
+      onTrue: () =>
+        $.div(
+          { style: { display: "contents" }, "data-alertdialog-portal": "" },
+          provide(AlertDialogCtx, ctx, childArray),
+        ),
+      onFalse: () => $.div({ style: { display: "none" } }),
+      animate: props.animate,
+    }),
+  );
+});
 
 /**
  * Props for AlertDialog.Overlay
@@ -191,21 +193,18 @@ export interface AlertDialogOverlayProps {
  * Backdrop overlay for the AlertDialog.
  * Unlike Dialog, clicking the overlay does NOT close the alert dialog.
  */
-const Overlay: Component.Leaf<AlertDialogOverlayProps, AlertDialogCtx> = (
-  props,
-) =>
-  Effect.gen(function* () {
-    const ctx = yield* AlertDialogCtx;
+const Overlay = Component.gen(function* (props: AlertDialogOverlayProps) {
+  const ctx = yield* AlertDialogCtx;
 
-    const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
+  const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
 
-    return yield* $.div({
-      class: props.class,
-      "data-state": dataState,
-      "data-alertdialog-overlay": "",
-      "aria-hidden": "true",
-    });
+  return yield* $.div({
+    class: props.class,
+    "data-state": dataState,
+    "data-alertdialog-overlay": "",
+    "aria-hidden": "true",
   });
+});
 
 /**
  * Props for AlertDialog.Content
@@ -224,66 +223,65 @@ export interface AlertDialogContentProps {
  * Includes focus trap, scroll lock, and keyboard support.
  * Initial focus goes to the Cancel button.
  */
-const Content: Component.Node<AlertDialogContentProps, AlertDialogCtx> = (
-  props,
+const Content = Component.gen(function* (
+  props: AlertDialogContentProps,
   children,
-) =>
-  Effect.gen(function* () {
-    const ctx = yield* AlertDialogCtx;
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    const closeOnEscape = props.closeOnEscape ?? true;
+) {
+  const ctx = yield* AlertDialogCtx;
+  const previouslyFocused = document.activeElement as HTMLElement | null;
+  const closeOnEscape = props.closeOnEscape ?? true;
 
-    const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
+  const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
 
-    const handleKeyDown = (event: KeyboardEvent) =>
-      Effect.gen(function* () {
-        if (event.key === "Escape") {
-          event.preventDefault();
-          event.stopPropagation();
-          yield* props.onEscapeKeyDown?.(event) ?? Effect.void;
-          if (closeOnEscape) {
-            yield* ctx.close();
-          }
+  const handleKeyDown = (event: KeyboardEvent) =>
+    Effect.gen(function* () {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        yield* props.onEscapeKeyDown?.(event) ?? Effect.void;
+        if (closeOnEscape) {
+          yield* ctx.close();
         }
-      });
-
-    const handleClick = (event: MouseEvent) =>
-      Effect.sync(() => event.stopPropagation());
-
-    const contentElement = yield* $.div(
-      {
-        id: ctx.contentId,
-        class: props.class,
-        role: "alertdialog",
-        "aria-modal": "true",
-        "aria-labelledby": ctx.titleId,
-        "aria-describedby": ctx.descriptionId,
-        "data-state": dataState,
-        "data-alertdialog-content": "",
-        tabIndex: -1,
-        onKeyDown: handleKeyDown,
-        onClick: handleClick,
-      },
-      children ?? [],
-    );
-
-    // Setup focus trap and scroll lock
-    yield* FocusTrap.make({
-      container: contentElement,
-      returnFocus: previouslyFocused,
+      }
     });
-    yield* ScrollLock.lock;
 
-    // Focus the cancel button if available, otherwise focus content
-    yield* ctx.cancelRef.pipe(
-      Element.focus,
-      Effect.catchAll(() =>
-        Effect.sync(() => contentElement.focus({ preventScroll: true })),
-      ),
-    );
+  const handleClick = (event: MouseEvent) =>
+    Effect.sync(() => event.stopPropagation());
 
-    return contentElement;
+  const contentElement = yield* $.div(
+    {
+      id: ctx.contentId,
+      class: props.class,
+      role: "alertdialog",
+      "aria-modal": "true",
+      "aria-labelledby": ctx.titleId,
+      "aria-describedby": ctx.descriptionId,
+      "data-state": dataState,
+      "data-alertdialog-content": "",
+      tabIndex: -1,
+      onKeyDown: handleKeyDown,
+      onClick: handleClick,
+    },
+    children ?? [],
+  );
+
+  // Setup focus trap and scroll lock
+  yield* FocusTrap.make({
+    container: contentElement,
+    returnFocus: previouslyFocused,
   });
+  yield* ScrollLock.lock;
+
+  // Focus the cancel button if available, otherwise focus content
+  yield* ctx.cancelRef.pipe(
+    Element.focus,
+    Effect.catchAll(() =>
+      Effect.sync(() => contentElement.focus({ preventScroll: true })),
+    ),
+  );
+
+  return contentElement;
+});
 
 /**
  * Props for AlertDialog.Cancel
@@ -300,28 +298,27 @@ export interface AlertDialogCancelProps {
  * Closes the dialog without taking action.
  * Receives initial focus when the dialog opens.
  */
-const Cancel: Component.Node<AlertDialogCancelProps, AlertDialogCtx> = (
-  props,
+const Cancel = Component.gen(function* (
+  props: AlertDialogCancelProps,
   children,
-) =>
-  Effect.gen(function* () {
-    const ctx = yield* AlertDialogCtx;
+) {
+  const ctx = yield* AlertDialogCtx;
 
-    const cancelProps = {
-      ref: ctx.cancelRef,
-      "data-alertdialog-cancel": "",
-      onClick: ctx.close,
-    };
+  const cancelProps = {
+    ref: ctx.cancelRef,
+    "data-alertdialog-cancel": "",
+    onClick: ctx.close,
+  };
 
-    if (props.asChild && Effect.isEffect(children)) {
-      return yield* mergeProps(cancelProps, children);
-    }
+  if (props.asChild && Effect.isEffect(children)) {
+    return yield* mergeProps(cancelProps, children);
+  }
 
-    return yield* $.button(
-      { ...cancelProps, type: "button", class: props.class },
-      children ?? [],
-    );
-  });
+  return yield* $.button(
+    { ...cancelProps, type: "button", class: props.class },
+    children ?? [],
+  );
+});
 
 /**
  * Props for AlertDialog.Action
@@ -339,33 +336,32 @@ export interface AlertDialogActionProps {
  * Action button for the AlertDialog.
  * Executes the action and then closes the dialog.
  */
-const Action: Component.Node<AlertDialogActionProps, AlertDialogCtx> = (
-  props,
+const Action = Component.gen(function* (
+  props: AlertDialogActionProps,
   children,
-) =>
-  Effect.gen(function* () {
-    const ctx = yield* AlertDialogCtx;
+) {
+  const ctx = yield* AlertDialogCtx;
 
-    const handleClick = () =>
-      Effect.gen(function* () {
-        yield* props.onClick?.() ?? Effect.void;
-        yield* ctx.close();
-      });
+  const handleClick = () =>
+    Effect.gen(function* () {
+      yield* props.onClick?.() ?? Effect.void;
+      yield* ctx.close();
+    });
 
-    const actionProps = {
-      "data-alertdialog-action": "",
-      onClick: handleClick,
-    };
+  const actionProps = {
+    "data-alertdialog-action": "",
+    onClick: handleClick,
+  };
 
-    if (props.asChild && Effect.isEffect(children)) {
-      return yield* mergeProps(actionProps, children);
-    }
+  if (props.asChild && Effect.isEffect(children)) {
+    return yield* mergeProps(actionProps, children);
+  }
 
-    return yield* $.button(
-      { ...actionProps, type: "button", class: props.class },
-      children ?? [],
-    );
-  });
+  return yield* $.button(
+    { ...actionProps, type: "button", class: props.class },
+    children ?? [],
+  );
+});
 
 /**
  * Props for AlertDialog.Title
@@ -381,24 +377,20 @@ export interface AlertDialogTitleProps {
  * Accessible title for the AlertDialog.
  * Connected to the content via aria-labelledby.
  */
-const Title: Component.Node<AlertDialogTitleProps, AlertDialogCtx> = (
-  props,
-  children,
-) =>
-  Effect.gen(function* () {
-    const ctx = yield* AlertDialogCtx;
+const Title = Component.gen(function* (props: AlertDialogTitleProps, children) {
+  const ctx = yield* AlertDialogCtx;
 
-    const titleProps = {
-      id: ctx.titleId,
-      "data-alertdialog-title": "",
-    };
+  const titleProps = {
+    id: ctx.titleId,
+    "data-alertdialog-title": "",
+  };
 
-    if (props.asChild && Effect.isEffect(children)) {
-      return yield* mergeProps(titleProps, children);
-    }
+  if (props.asChild && Effect.isEffect(children)) {
+    return yield* mergeProps(titleProps, children);
+  }
 
-    return yield* $.h2({ ...titleProps, class: props.class }, children ?? []);
-  });
+  return yield* $.h2({ ...titleProps, class: props.class }, children ?? []);
+});
 
 /**
  * Props for AlertDialog.Description
@@ -414,27 +406,26 @@ export interface AlertDialogDescriptionProps {
  * Accessible description for the AlertDialog.
  * Connected to the content via aria-describedby.
  */
-const Description: Component.Node<
-  AlertDialogDescriptionProps,
-  AlertDialogCtx
-> = (props, children) =>
-  Effect.gen(function* () {
-    const ctx = yield* AlertDialogCtx;
+const Description = Component.gen(function* (
+  props: AlertDialogDescriptionProps,
+  children,
+) {
+  const ctx = yield* AlertDialogCtx;
 
-    const descriptionProps = {
-      id: ctx.descriptionId,
-      "data-alertdialog-description": "",
-    };
+  const descriptionProps = {
+    id: ctx.descriptionId,
+    "data-alertdialog-description": "",
+  };
 
-    if (props.asChild && Effect.isEffect(children)) {
-      return yield* mergeProps(descriptionProps, children);
-    }
+  if (props.asChild && Effect.isEffect(children)) {
+    return yield* mergeProps(descriptionProps, children);
+  }
 
-    return yield* $.p(
-      { ...descriptionProps, class: props.class },
-      children ?? [],
-    );
-  });
+  return yield* $.p(
+    { ...descriptionProps, class: props.class },
+    children ?? [],
+  );
+});
 
 /**
  * Headless AlertDialog primitive for building accessible confirmation dialogs.

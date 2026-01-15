@@ -82,76 +82,68 @@ export interface RadioGroupRootProps {
  * ])
  * ```
  */
-const Root: Component.Branch<RadioGroupRootProps, RadioGroupCtx, never> = (
-  props,
-  children,
-) =>
-  Effect.gen(function* () {
-    const value = yield* Signal.fromNullable(
-      props.value,
-      props.defaultValue ?? "",
-    );
+const Root = Component.gen(function* (props: RadioGroupRootProps, children) {
+  const value = yield* Signal.fromNullable(
+    props.value,
+    props.defaultValue ?? "",
+  );
 
-    // Normalize props to Readables
-    const orientation = Readable.of(props.orientation ?? "vertical");
-    const loop = props.loop ?? true;
-    const disabled = Readable.of(props.disabled ?? false);
-    const required = Readable.of(props.required ?? false);
+  // Normalize props to Readables
+  const orientation = Readable.of(props.orientation ?? "vertical");
+  const loop = props.loop ?? true;
+  const disabled = Readable.of(props.disabled ?? false);
+  const required = Readable.of(props.required ?? false);
 
-    const setValue = (newValue: string) =>
-      Effect.gen(function* () {
-        yield* value.set(newValue);
-        if (props.onValueChange) {
-          yield* props.onValueChange(newValue);
-        }
-      });
-
-    const ctx: RadioGroupContext = {
-      value,
-      setValue,
-      name: props.name,
-      disabled,
-      required,
-      orientation,
-      loop,
-    };
-
-    const setValueFromElement = (el: Effect.Effect<HTMLElement>) =>
-      el.pipe(
-        Element.getData("value"),
-        Effect.flatMap(setValue),
-        Effect.ignore,
-      );
-
-    // Radio buttons always select on focus (standard behavior)
-    const handleKeyDown = yield* createKeyboardNav({
-      selector: "[data-radio-item]:not([data-disabled])",
-      orientation,
-      loop,
-      onFocus: setValueFromElement,
-      onActivate: setValueFromElement, // Space also selects
+  const setValue = (newValue: string) =>
+    Effect.gen(function* () {
+      yield* value.set(newValue);
+      if (props.onValueChange) {
+        yield* props.onValueChange(newValue);
+      }
     });
 
-    const ariaRequired = required.map((r) => (r ? "true" : undefined));
-    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+  const ctx: RadioGroupContext = {
+    value,
+    setValue,
+    name: props.name,
+    disabled,
+    required,
+    orientation,
+    loop,
+  };
 
-    return yield* $.div(
-      {
-        class: props.class,
-        role: "radiogroup",
-        "aria-required": ariaRequired,
-        "aria-orientation": orientation,
-        "data-orientation": orientation,
-        "data-disabled": dataDisabled,
-        onKeyDown: handleKeyDown,
-      },
-      provide(
-        RadioGroupCtx,
-        ctx,
-        Array.isArray(children) ? children : [children],
-      ),
-    );
+  const setValueFromElement = (el: Effect.Effect<HTMLElement>) =>
+    el.pipe(Element.getData("value"), Effect.flatMap(setValue), Effect.ignore);
+
+  // Radio buttons always select on focus (standard behavior)
+  const handleKeyDown = yield* createKeyboardNav({
+    selector: "[data-radio-item]:not([data-disabled])",
+    orientation,
+    loop,
+    onFocus: setValueFromElement,
+    onActivate: setValueFromElement, // Space also selects
   });
+
+  const ariaRequired = required.map((r) => (r ? "true" : undefined));
+  const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+
+  return yield* $.div(
+    {
+      class: props.class,
+      role: "radiogroup",
+      "aria-required": ariaRequired,
+      "aria-orientation": orientation,
+      "data-orientation": orientation,
+      "data-disabled": dataDisabled,
+      onKeyDown: handleKeyDown,
+    },
+    provide(
+      RadioGroupCtx,
+      ctx,
+      Array.isArray(children) ? children : [children],
+    ),
+  );
+});
 
 /**
  * Props for RadioGroup.Item
@@ -179,57 +171,53 @@ export interface RadioGroupItemProps {
  * ])
  * ```
  */
-const Item: Component.Node<RadioGroupItemProps, RadioGroupCtx> = (
-  props,
-  children,
-) =>
-  Effect.gen(function* () {
-    const ctx = yield* RadioGroupCtx;
+const Item = Component.gen(function* (props: RadioGroupItemProps, children) {
+  const ctx = yield* RadioGroupCtx;
 
-    // Normalize item's disabled prop and combine with context disabled
-    const itemDisabled = Readable.of(props.disabled ?? false);
-    const isDisabled = yield* Derived.sync(
-      [ctx.disabled, itemDisabled],
-      ([ctxDisabled, propDisabled]) => ctxDisabled || propDisabled,
-    );
+  // Normalize item's disabled prop and combine with context disabled
+  const itemDisabled = Readable.of(props.disabled ?? false);
+  const isDisabled = yield* Derived.sync(
+    [ctx.disabled, itemDisabled],
+    ([ctxDisabled, propDisabled]) => ctxDisabled || propDisabled,
+  );
 
-    const isChecked = ctx.value.map((v) => v === props.value);
-    const dataState = isChecked.map((c) => (c ? "checked" : "unchecked"));
-    const ariaChecked = isChecked.map((c) => (c ? "true" : "false"));
-    const tabIndex = isChecked.map((c) => (c ? 0 : -1));
-    const dataDisabled = isDisabled.map((d) => (d ? "" : undefined));
+  const isChecked = ctx.value.map((v) => v === props.value);
+  const dataState = isChecked.map((c) => (c ? "checked" : "unchecked"));
+  const ariaChecked = isChecked.map((c) => (c ? "true" : "false"));
+  const tabIndex = isChecked.map((c) => (c ? 0 : -1));
+  const dataDisabled = isDisabled.map((d) => (d ? "" : undefined));
 
-    const handleClick = () =>
-      Effect.gen(function* () {
-        if (yield* isDisabled.get) return;
-        yield* ctx.setValue(props.value);
-      });
-
-    // Default indicator (visual dot)
-    const defaultIndicator = $.span({
-      "data-radio-indicator": "",
-      "data-state": dataState,
+  const handleClick = () =>
+    Effect.gen(function* () {
+      if (yield* isDisabled.get) return;
+      yield* ctx.setValue(props.value);
     });
 
-    return yield* $.button(
-      {
-        type: "button",
-        role: "radio",
-        id: props.id,
-        class: props.class,
-        disabled: isDisabled,
-        tabIndex,
-        "aria-checked": ariaChecked,
-        "data-state": dataState,
-        "data-value": props.value,
-        "data-disabled": dataDisabled,
-        "data-radio-item": "",
-        name: ctx.name,
-        onClick: handleClick,
-      },
-      children ?? [defaultIndicator],
-    );
+  // Default indicator (visual dot)
+  const defaultIndicator = $.span({
+    "data-radio-indicator": "",
+    "data-state": dataState,
   });
+
+  return yield* $.button(
+    {
+      type: "button",
+      role: "radio",
+      id: props.id,
+      class: props.class,
+      disabled: isDisabled,
+      tabIndex,
+      "aria-checked": ariaChecked,
+      "data-state": dataState,
+      "data-value": props.value,
+      "data-disabled": dataDisabled,
+      "data-radio-item": "",
+      name: ctx.name,
+      onClick: handleClick,
+    },
+    children ?? [defaultIndicator],
+  );
+});
 
 /**
  * Headless RadioGroup primitive for building accessible radio button groups.

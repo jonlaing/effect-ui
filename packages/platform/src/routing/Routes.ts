@@ -68,14 +68,13 @@ export interface RoutesProps<T extends ComponentsMap = ComponentsMap> {
  * import { Routes, Component } from "@effex/platform";
  * import { routes, components } from "./generated/routes";
  *
- * const App: Component.Unit = () =>
- *   Effect.gen(function* () {
- *     return yield* div([
- *       Header(),
- *       Routes({ components }),
- *       Footer(),
- *     ]);
- *   });
+ * const App = Component.gen(function* () {
+ *   return yield* div([
+ *     Header(),
+ *     Routes({ components }),
+ *     Footer(),
+ *   ]);
+ * });
  * ```
  *
  * @example

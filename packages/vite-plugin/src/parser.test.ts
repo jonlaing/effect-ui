@@ -13,7 +13,9 @@ describe("parseRouteExportsFromContent", () => {
         loader: (params) => Effect.succeed({ name: "test" }),
       });
 
-      const UserPage: Component.Unit = () => div([]);
+      const UserPage = Component.gen(function* () {
+        return yield* div([]);
+      });
       export default UserPage;
     `;
 
@@ -25,7 +27,9 @@ describe("parseRouteExportsFromContent", () => {
 
   it("should detect default export", () => {
     const content = `
-      const MyComponent: Component.Unit = () => div([]);
+      const MyComponent = Component.gen(function* () {
+        return yield* div([]);
+      });
       export default MyComponent;
     `;
 
@@ -37,7 +41,9 @@ describe("parseRouteExportsFromContent", () => {
 
   it("should detect inline default export", () => {
     const content = `
-      const MyComponent: Component.Unit = () => div([]);
+      const MyComponent = Component.gen(function* () {
+        return yield* div([]);
+      });
       export default MyComponent;
     `;
 
@@ -48,7 +54,9 @@ describe("parseRouteExportsFromContent", () => {
 
   it("should detect re-exports with as default", () => {
     const content = `
-      const MyPage: Component.Unit = () => div([]);
+      const MyPage = Component.gen(function* () {
+        return yield* div([]);
+      });
       export { MyPage as default };
     `;
 
@@ -61,7 +69,9 @@ describe("parseRouteExportsFromContent", () => {
     const content = `
       import { Component, div } from "@effex/dom";
 
-      const AboutPage: Component.Unit = () => div(["About us"]);
+      const AboutPage = Component.gen(function* () {
+        return yield* div(["About us"]);
+      });
 
       export default AboutPage;
     `;
@@ -97,10 +107,9 @@ describe("parseRouteExportsFromContent", () => {
         action: ({ formData }) => Effect.succeed({ success: true }),
       });
 
-      const UserPage: Component.Unit = () =>
-        Effect.gen(function* () {
-          return yield* div([h1(["User"])]);
-        });
+      const UserPage = Component.gen(function* () {
+        return yield* div([h1(["User"])]);
+      });
 
       export default UserPage;
     `;

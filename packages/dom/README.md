@@ -14,36 +14,35 @@ pnpm add @effex/dom effect
 
 ### Simple Components
 
-For components that just render static or prop-based content, return the element directly:
+Use `Component.gen` for all components. For simple components that just render static or prop-based content:
 
 ```ts
 import { $, Component } from "@effex/dom";
 
-const Greeting: Component.Leaf<{ name: string }> = (props) =>
-  $.div({ class: "greeting" }, [
+const Greeting = Component.gen(function* (props: { name: string }) {
+  return yield* $.div({ class: "greeting" }, [
     $.h1(`Hello, ${props.name}!`),
     $.p("Welcome to Effex"),
   ]);
+});
 ```
 
 ### Stateful Components
 
-Use `Effect.gen` when your component needs to create signals, derived values, or access context:
+Components that need to create signals, derived values, or access context use the same pattern:
 
 ```ts
-import { Effect } from "effect";
 import { $, Component, Signal } from "@effex/dom";
 
-const Counter: Component.Unit = () =>
-  Effect.gen(function* () {
-    const count = yield* Signal.make(0);
+const Counter = Component.gen(function* () {
+  const count = yield* Signal.make(0);
 
-    return yield* $.div([
-      $.button({ onClick: () => count.update((n) => n - 1) }, "-"),
-      $.span(count),
-      $.button({ onClick: () => count.update((n) => n + 1) }, "+"),
-    ]);
-  });
+  return yield* $.div([
+    $.button({ onClick: () => count.update((n) => n - 1) }, "-"),
+    $.span(count),
+    $.button({ onClick: () => count.update((n) => n + 1) }, "+"),
+  ]);
+});
 ```
 
 ### Running Your App
@@ -85,45 +84,42 @@ You can also import elements individually:
 import { div, span, button } from "@effex/dom";
 ```
 
-## Component Types
+## Component.gen
 
-The `Component` namespace provides type helpers for defining components with proper type inference:
+Use `Component.gen` to define all components. It wraps `Effect.gen` but returns a `Component.Node` type with proper type inference:
 
-### Component.Unit
-
-Components with no props and no children:
+### Components Without Props
 
 ```ts
-const Counter: Component.Unit = () =>
-  Effect.gen(function* () {
-    const count = yield* Signal.make(0);
-    return yield* $.div([
-      $.button({ onClick: () => count.update((n) => n - 1) }, "-"),
-      $.span(count),
-      $.button({ onClick: () => count.update((n) => n + 1) }, "+"),
-    ]);
-  });
+const Counter = Component.gen(function* () {
+  const count = yield* Signal.make(0);
+  return yield* $.div([
+    $.button({ onClick: () => count.update((n) => n - 1) }, "-"),
+    $.span(count),
+    $.button({ onClick: () => count.update((n) => n + 1) }, "+"),
+  ]);
+});
 ```
 
-### Component.Leaf
-
-Components with props but no children:
+### Components With Props
 
 ```ts
-const Greeting: Component.Leaf<{ name: string }> = (props) =>
-  $.h1(`Hello, ${props.name}!`);
+interface GreetingProps {
+  name: string;
+}
 
-// With context requirements
-const UserBadge: Component.Leaf<{ userId: string }, AuthContext> = (props) =>
-  Effect.gen(function* () {
-    const auth = yield* AuthContext;
-    return yield* $.span(`User: ${props.userId}`);
-  });
+const Greeting = Component.gen(function* (props: GreetingProps) {
+  return yield* $.h1(`Hello, ${props.name}!`);
+});
+
+// With context requirements - automatically inferred
+const UserBadge = Component.gen(function* (props: { userId: string }) {
+  const auth = yield* AuthContext;
+  return yield* $.span(`User: ${props.userId}`);
+});
 ```
 
-### Component.Node
-
-Components with props and optional children:
+### Components With Children
 
 ```ts
 interface CardProps {
@@ -131,52 +127,42 @@ interface CardProps {
   class?: string;
 }
 
-const Card: Component.Node<CardProps> = (props, children) =>
-  $.div({ class: props.class ?? "card" }, [
+const Card = Component.gen(function* (props: CardProps, children) {
+  return yield* $.div({ class: props.class ?? "card" }, [
     $.h2(props.title),
     ...(children ?? []),
   ]);
+});
 
 // Usage
 Card({ title: "Hello" }, [$.p("Content here")]);
 Card({ title: "Empty" }); // children optional
 ```
 
-### Component.Branch
+### Context Providers
 
-Components with props and required children (typically context providers):
+Components that provide context to children:
 
 ```ts
 const MenuContext = Context.Tag<MenuContext, MenuState>();
 
-const Menu: Component.Branch<MenuProps, MenuContext> = (props, children) =>
-  Effect.gen(function* () {
-    const state = yield* createMenuState(props);
-    return yield* $.div(
-      { class: "menu", role: "menu" },
-      provide(MenuContext, state, children),
-    );
-  });
+interface MenuProps {
+  orientation: "horizontal" | "vertical";
+}
 
-// Usage - children required
+const Menu = Component.gen(function* (props: MenuProps, children) {
+  const state = yield* createMenuState(props);
+  return yield* $.div(
+    { class: "menu", role: "menu" },
+    provide(MenuContext, state, children ?? []),
+  );
+});
+
+// Usage
 Menu({ orientation: "vertical" }, [
   MenuItem({ value: "cut" }, "Cut"),
   MenuItem({ value: "copy" }, "Copy"),
 ]);
-```
-
-### Type Parameters
-
-All component types follow the pattern `Component.X<Props, ChildReqs, ComponentReqs, E>`:
-
-- **Props** - The props object type (not applicable to `Unit`)
-- **ChildReqs** - Context requirements for children (what this component provides)
-- **ComponentReqs** - Context requirements for the component itself
-- **E** - Error channel type
-
-```ts
-// Component that requires AuthContext and provides ThemeContext to children
-const ThemedAuth: Component.Branch<Props, ThemeContext, AuthContext> = ...
 ```
 
 ## Control Flow
@@ -325,26 +311,24 @@ interface Theme {
 class ThemeContext extends Context.Tag("ThemeContext")<ThemeContext, Theme>() {}
 
 // Consume context
-const ThemedButton: Component.Leaf<{ label: string }, ThemeContext> = (props) =>
-  Effect.gen(function* () {
-    const theme = yield* ThemeContext;
-    return yield* $.button(
-      { style: { backgroundColor: theme.primary } },
-      props.label,
-    );
-  });
+const ThemedButton = Component.gen(function* (props: { label: string }) {
+  const theme = yield* ThemeContext;
+  return yield* $.button(
+    { style: { backgroundColor: theme.primary } },
+    props.label,
+  );
+});
 
 // Provide context to children
-const App: Component.Unit = () =>
-  Effect.gen(function* () {
-    const theme: Theme = { primary: "#007bff", secondary: "#6c757d" };
+const App = Component.gen(function* () {
+  const theme: Theme = { primary: "#007bff", secondary: "#6c757d" };
 
-    return yield* $.div(
-      provide(ThemeContext, theme, [
-        ThemedButton({ label: "Click me" }),
-      ]),
-    );
-  });
+  return yield* $.div(
+    provide(ThemeContext, theme, [
+      ThemedButton({ label: "Click me" }),
+    ]),
+  );
+});
 ```
 
 ## Animation
@@ -514,10 +498,8 @@ runApp(
 ### Elements
 
 - `$.<element>(attrs?, children?)` - Create an HTML element
-- `Component.Unit` - Component with no props
-- `Component.Leaf<Props>` - Component with props, no children
-- `Component.Node<Props>` - Component with props and optional children
-- `Component.Branch<Props>` - Component with props and required children
+- `Component.gen(fn)` - Define a component with automatic type inference
+- `Component.Node<Props>` - Type for component functions (used for explicit typing if needed)
 
 ### Control Flow
 
@@ -559,21 +541,20 @@ The `Element` namespace provides pipeable DOM manipulation helpers for use with 
 ```ts
 import { Element, $, Component } from "@effex/dom";
 
-const MyComponent: Component.Unit = () =>
-  Effect.gen(function* () {
-    const buttonRef = yield* Element.ref<HTMLButtonElement>();
+const MyComponent = Component.gen(function* () {
+  const buttonRef = yield* Element.ref<HTMLButtonElement>();
 
-    const handleFocus = () =>
-      buttonRef.pipe(
-        Element.setStyles({ outline: "2px solid blue" }),
-        Element.focus,
-        Effect.runPromise,
-      );
+  const handleFocus = () =>
+    buttonRef.pipe(
+      Element.setStyles({ outline: "2px solid blue" }),
+      Element.focus,
+      Effect.runPromise,
+    );
 
-    return yield* $.div([
-      $.button({ ref: buttonRef, onClick: handleFocus }, "Click me"),
-    ]);
-  });
+  return yield* $.div([
+    $.button({ ref: buttonRef, onClick: handleFocus }, "Click me"),
+  ]);
+});
 ```
 
 ### Usage with Animation Hooks

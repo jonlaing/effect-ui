@@ -170,402 +170,380 @@ export interface ToolbarLinkProps {
  * Root container for Toolbar. Manages keyboard navigation and provides
  * context to child components.
  */
-const Root: Component.Branch<ToolbarRootProps, ToolbarCtx, never> = (
-  props,
-  children,
-) =>
-  Effect.gen(function* () {
-    const orientation = Readable.of(props.orientation ?? "horizontal");
-    const disabled = Readable.of(props.disabled ?? false);
-    const loop = props.loop ?? true;
+const Root = Component.gen(function* (props: ToolbarRootProps, children) {
+  const orientation = Readable.of(props.orientation ?? "horizontal");
+  const disabled = Readable.of(props.disabled ?? false);
+  const loop = props.loop ?? true;
 
-    const activeId = yield* Signal.make<string | null>(null);
-    const items = yield* Signal.Array.make<string>([]);
+  const activeId = yield* Signal.make<string | null>(null);
+  const items = yield* Signal.Array.make<string>([]);
 
-    const ctx: ToolbarContext = {
-      orientation,
-      disabled,
-      loop,
-      rovingTabIndex: { activeId, items },
-    };
+  const ctx: ToolbarContext = {
+    orientation,
+    disabled,
+    loop,
+    rovingTabIndex: { activeId, items },
+  };
 
-    const handleKeyDown = yield* createKeyboardNav({
-      selector: "[data-toolbar-item]:not([data-disabled])",
-      orientation,
-      loop,
-      onFocus: (el) =>
-        el.pipe(Element.getId, Effect.flatMap(activeId.set), Effect.ignore),
-    });
-
-    return yield* $.div(
-      {
-        role: "toolbar",
-        "aria-orientation": orientation,
-        "aria-label": props["aria-label"],
-        "aria-labelledby": props["aria-labelledby"],
-        "data-orientation": orientation,
-        class: props.class,
-        onKeyDown: handleKeyDown,
-      },
-      provide(ToolbarCtx, ctx, Array.isArray(children) ? children : [children]),
-    );
+  const handleKeyDown = yield* createKeyboardNav({
+    selector: "[data-toolbar-item]:not([data-disabled])",
+    orientation,
+    loop,
+    onFocus: (el) =>
+      el.pipe(Element.getId, Effect.flatMap(activeId.set), Effect.ignore),
   });
+
+  return yield* $.div(
+    {
+      role: "toolbar",
+      "aria-orientation": orientation,
+      "aria-label": props["aria-label"],
+      "aria-labelledby": props["aria-labelledby"],
+      "data-orientation": orientation,
+      class: props.class,
+      onKeyDown: handleKeyDown,
+    },
+    provide(ToolbarCtx, ctx, Array.isArray(children) ? children : [children]),
+  );
+});
 
 /**
  * A clickable button in the toolbar.
  */
-const Button: Component.Node<ToolbarButtonProps, ToolbarCtx> = (
-  props,
-  children,
-) =>
-  Effect.gen(function* () {
-    const ctx = yield* ToolbarCtx;
-    const id = props.id ?? (yield* UniqueId.make("toolbar-button"));
+const Button = Component.gen(function* (props: ToolbarButtonProps, children) {
+  const ctx = yield* ToolbarCtx;
+  const id = props.id ?? (yield* UniqueId.make("toolbar-button"));
 
-    // Register on mount
-    yield* ctx.rovingTabIndex.items.push(id);
+  // Register on mount
+  yield* ctx.rovingTabIndex.items.push(id);
 
-    // Unregister on unmount
-    yield* Effect.addFinalizer(() =>
-      ctx.rovingTabIndex.items.remove(id).pipe(Effect.orDie),
-    );
+  // Unregister on unmount
+  yield* Effect.addFinalizer(() =>
+    ctx.rovingTabIndex.items.remove(id).pipe(Effect.orDie),
+  );
 
-    // Set as active if first item
-    const currentItems = yield* ctx.rovingTabIndex.items.get;
-    if (currentItems.length === 1) {
+  // Set as active if first item
+  const currentItems = yield* ctx.rovingTabIndex.items.get;
+  if (currentItems.length === 1) {
+    yield* ctx.rovingTabIndex.activeId.set(id);
+  }
+
+  const itemDisabled = Readable.of(props.disabled ?? false);
+  const isDisabled = Derived.some([ctx.disabled, itemDisabled]);
+
+  const isActive = ctx.rovingTabIndex.activeId.map(
+    (activeId) => activeId === id,
+  );
+
+  // Compute tabIndex: active item gets 0, or first item if nothing is active
+  const isFirstItem = ctx.rovingTabIndex.items.map(
+    (items) => items.length > 0 && items[0] === id,
+  );
+  const noActiveItem = ctx.rovingTabIndex.activeId.map(
+    (activeId) => activeId === null,
+  );
+
+  const tabIndex = yield* Derived.sync(
+    [isActive, isFirstItem, noActiveItem] as const,
+    ([active, isFirst, noActive]) => {
+      if (active) return 0;
+      if (isFirst && noActive) return 0;
+      return -1;
+    },
+  );
+
+  const dataDisabled = isDisabled.map((d) => (d ? "" : undefined));
+
+  const handleClick = () =>
+    Effect.gen(function* () {
+      if (yield* isDisabled.get) return;
+
       yield* ctx.rovingTabIndex.activeId.set(id);
-    }
+      yield* props.onPress?.() ?? Effect.void;
+    });
 
-    const itemDisabled = Readable.of(props.disabled ?? false);
-    const isDisabled = Derived.some([ctx.disabled, itemDisabled]);
+  const handleFocus = () => ctx.rovingTabIndex.activeId.set(id);
 
-    const isActive = ctx.rovingTabIndex.activeId.map(
-      (activeId) => activeId === id,
-    );
-
-    // Compute tabIndex: active item gets 0, or first item if nothing is active
-    const isFirstItem = ctx.rovingTabIndex.items.map(
-      (items) => items.length > 0 && items[0] === id,
-    );
-    const noActiveItem = ctx.rovingTabIndex.activeId.map(
-      (activeId) => activeId === null,
-    );
-
-    const tabIndex = yield* Derived.sync(
-      [isActive, isFirstItem, noActiveItem] as const,
-      ([active, isFirst, noActive]) => {
-        if (active) return 0;
-        if (isFirst && noActive) return 0;
-        return -1;
-      },
-    );
-
-    const dataDisabled = isDisabled.map((d) => (d ? "" : undefined));
-
-    const handleClick = () =>
-      Effect.gen(function* () {
-        if (yield* isDisabled.get) return;
-
-        yield* ctx.rovingTabIndex.activeId.set(id);
-        yield* props.onPress?.() ?? Effect.void;
-      });
-
-    const handleFocus = () => ctx.rovingTabIndex.activeId.set(id);
-
-    return yield* $.button(
-      {
-        id,
-        type: "button",
-        class: props.class,
-        disabled: isDisabled,
-        tabIndex,
-        "data-toolbar-item": "",
-        "data-disabled": dataDisabled,
-        onClick: handleClick,
-        onFocus: handleFocus,
-      },
-      children ?? [],
-    );
-  });
+  return yield* $.button(
+    {
+      id,
+      type: "button",
+      class: props.class,
+      disabled: isDisabled,
+      tabIndex,
+      "data-toolbar-item": "",
+      "data-disabled": dataDisabled,
+      onClick: handleClick,
+      onFocus: handleFocus,
+    },
+    children ?? [],
+  );
+});
 
 /**
  * A toggle button in the toolbar with on/off state.
  */
-const ToggleItem: Component.Node<ToolbarToggleItemProps, ToolbarCtx> = (
-  props,
+const ToggleItem = Component.gen(function* (
+  props: ToolbarToggleItemProps,
   children,
-) =>
-  Effect.gen(function* () {
-    const ctx = yield* ToolbarCtx;
-    const toggleGroupCtx = yield* Effect.serviceOption(ToolbarToggleGroupCtx);
-    const id = props.id ?? (yield* UniqueId.make("toolbar-item"));
+) {
+  const ctx = yield* ToolbarCtx;
+  const toggleGroupCtx = yield* Effect.serviceOption(ToolbarToggleGroupCtx);
+  const id = props.id ?? (yield* UniqueId.make("toolbar-item"));
 
-    // Register on mount
-    yield* ctx.rovingTabIndex.items.push(id);
+  // Register on mount
+  yield* ctx.rovingTabIndex.items.push(id);
 
-    // Unregister on unmount
-    yield* Effect.addFinalizer(() =>
-      ctx.rovingTabIndex.items.remove(id).pipe(Effect.orDie),
-    );
+  // Unregister on unmount
+  yield* Effect.addFinalizer(() =>
+    ctx.rovingTabIndex.items.remove(id).pipe(Effect.orDie),
+  );
 
-    // Set as active if first item
-    const currentItems = yield* ctx.rovingTabIndex.items.get;
-    if (currentItems.length === 1) {
-      yield* ctx.rovingTabIndex.activeId.set(id);
+  // Set as active if first item
+  const currentItems = yield* ctx.rovingTabIndex.items.get;
+  if (currentItems.length === 1) {
+    yield* ctx.rovingTabIndex.activeId.set(id);
+  }
+
+  // Determine if we're in a ToggleGroup or standalone
+  const inToggleGroup =
+    Option.isSome(toggleGroupCtx) && props.value !== undefined;
+
+  // Pressed state - either from ToggleGroup, controlled, or internal
+  const pressed = inToggleGroup
+    ? toggleGroupCtx.value.isSelected(props.value)
+    : yield* Signal.fromNullable(props.pressed, props.defaultPressed ?? false);
+
+  const setPressed = (newPressed: boolean): Effect.Effect<void> => {
+    if (inToggleGroup) {
+      return toggleGroupCtx.value.toggle(props.value!);
     }
 
-    // Determine if we're in a ToggleGroup or standalone
-    const inToggleGroup =
-      Option.isSome(toggleGroupCtx) && props.value !== undefined;
+    return Effect.gen(function* () {
+      yield* (pressed as Signal<boolean>).set(newPressed);
+      yield* props.onPressedChange?.(newPressed) ?? Effect.void;
+    });
+  };
 
-    // Pressed state - either from ToggleGroup, controlled, or internal
-    const pressed = inToggleGroup
-      ? toggleGroupCtx.value.isSelected(props.value)
-      : yield* Signal.fromNullable(
-          props.pressed,
-          props.defaultPressed ?? false,
-        );
+  const itemDisabled = Readable.of(props.disabled ?? false);
+  const groupDisabled = inToggleGroup
+    ? toggleGroupCtx.value.disabled
+    : Readable.of(false);
 
-    const setPressed = (newPressed: boolean): Effect.Effect<void> => {
-      if (inToggleGroup) {
-        return toggleGroupCtx.value.toggle(props.value!);
-      }
+  const isDisabled = Derived.some([ctx.disabled, itemDisabled, groupDisabled]);
 
-      return Effect.gen(function* () {
-        yield* (pressed as Signal<boolean>).set(newPressed);
-        yield* props.onPressedChange?.(newPressed) ?? Effect.void;
-      });
-    };
+  const isActive = ctx.rovingTabIndex.activeId.map(
+    (activeId) => activeId === id,
+  );
 
-    const itemDisabled = Readable.of(props.disabled ?? false);
-    const groupDisabled = inToggleGroup
-      ? toggleGroupCtx.value.disabled
-      : Readable.of(false);
+  // Compute tabIndex: active item gets 0, or first item if nothing is active
+  const isFirstItem = ctx.rovingTabIndex.items.map(
+    (items) => items.length > 0 && items[0] === id,
+  );
+  const noActiveItem = ctx.rovingTabIndex.activeId.map(
+    (activeId) => activeId === null,
+  );
 
-    const isDisabled = Derived.some([
-      ctx.disabled,
-      itemDisabled,
-      groupDisabled,
-    ]);
+  const tabIndex = yield* Derived.sync(
+    [isActive, isFirstItem, noActiveItem] as const,
+    ([active, isFirst, noActive]) => (active || (isFirst && noActive) ? 0 : -1),
+  );
 
-    const isActive = ctx.rovingTabIndex.activeId.map(
-      (activeId) => activeId === id,
-    );
+  const dataState = pressed.map((p) => (p ? "on" : "off"));
+  const ariaPressed = pressed.map((p) => (p ? "true" : "false"));
+  const dataDisabled = isDisabled.map((d) => (d ? "" : undefined));
 
-    // Compute tabIndex: active item gets 0, or first item if nothing is active
-    const isFirstItem = ctx.rovingTabIndex.items.map(
-      (items) => items.length > 0 && items[0] === id,
-    );
-    const noActiveItem = ctx.rovingTabIndex.activeId.map(
-      (activeId) => activeId === null,
-    );
+  const handleClick = () =>
+    Effect.gen(function* () {
+      if (yield* isDisabled.get) return;
 
-    const tabIndex = yield* Derived.sync(
-      [isActive, isFirstItem, noActiveItem] as const,
-      ([active, isFirst, noActive]) =>
-        active || (isFirst && noActive) ? 0 : -1,
-    );
+      yield* ctx.rovingTabIndex.activeId.set(id);
 
-    const dataState = pressed.map((p) => (p ? "on" : "off"));
-    const ariaPressed = pressed.map((p) => (p ? "true" : "false"));
-    const dataDisabled = isDisabled.map((d) => (d ? "" : undefined));
+      const currentPressed = yield* pressed.get;
+      yield* setPressed(!currentPressed);
+    });
 
-    const handleClick = () =>
-      Effect.gen(function* () {
-        if (yield* isDisabled.get) return;
+  const handleFocus = () => ctx.rovingTabIndex.activeId.set(id);
 
-        yield* ctx.rovingTabIndex.activeId.set(id);
-
-        const currentPressed = yield* pressed.get;
-        yield* setPressed(!currentPressed);
-      });
-
-    const handleFocus = () => ctx.rovingTabIndex.activeId.set(id);
-
-    return yield* $.button(
-      {
-        id,
-        type: "button",
-        class: props.class,
-        disabled: isDisabled,
-        tabIndex,
-        "aria-pressed": ariaPressed,
-        "data-toolbar-item": "",
-        "data-state": dataState,
-        "data-disabled": dataDisabled,
-        "data-value": props.value,
-        onClick: handleClick,
-        onFocus: handleFocus,
-      },
-      children ?? [],
-    );
-  });
+  return yield* $.button(
+    {
+      id,
+      type: "button",
+      class: props.class,
+      disabled: isDisabled,
+      tabIndex,
+      "aria-pressed": ariaPressed,
+      "data-toolbar-item": "",
+      "data-state": dataState,
+      "data-disabled": dataDisabled,
+      "data-value": props.value,
+      onClick: handleClick,
+      onFocus: handleFocus,
+    },
+    children ?? [],
+  );
+});
 
 /**
  * A group of toggle items where selection is managed together.
  */
-const ToggleGroup: Component.Branch<
-  ToolbarToggleGroupProps,
-  ToolbarCtx | ToolbarToggleGroupCtx,
-  ToolbarCtx
-> = (props, children) =>
-  Effect.gen(function* () {
-    const type = props.type ?? "single";
-    const disabled = Readable.of(props.disabled ?? false);
+const ToggleGroup = Component.gen(function* (
+  props: ToolbarToggleGroupProps,
+  children,
+) {
+  const type = props.type ?? "single";
+  const disabled = Readable.of(props.disabled ?? false);
 
-    // Single mode state
-    const singleValue = yield* Signal.fromNullable(
-      props.value,
-      props.defaultValue ?? null,
-    );
+  // Single mode state
+  const singleValue = yield* Signal.fromNullable(
+    props.value,
+    props.defaultValue ?? null,
+  );
 
-    // Multiple mode state
-    const multipleValue: SignalArray<string> = props.values
-      ? props.values
-      : yield* Signal.Array.make(props.defaultValues ?? []);
+  // Multiple mode state
+  const multipleValue: SignalArray<string> = props.values
+    ? props.values
+    : yield* Signal.Array.make(props.defaultValues ?? []);
 
-    const toggle = (value: string) =>
-      Effect.gen(function* () {
-        if (type === "single") {
-          const current = yield* singleValue.get;
-          const newValue = current === value ? null : value;
-
-          yield* singleValue.set(newValue);
-          yield* props.onValueChange?.(newValue) ?? Effect.void;
-        } else {
-          const current = yield* multipleValue.get;
-
-          if (current.includes(value)) {
-            yield* multipleValue.remove(value);
-          } else {
-            yield* multipleValue.push(value);
-          }
-
-          const updated = yield* multipleValue.get;
-          yield* props.onValuesChange?.(updated) ?? Effect.void;
-        }
-      });
-
-    const isSelected = (value: string): Readable.Readable<boolean> => {
+  const toggle = (value: string) =>
+    Effect.gen(function* () {
       if (type === "single") {
-        return singleValue.map((v) => v === value);
+        const current = yield* singleValue.get;
+        const newValue = current === value ? null : value;
+
+        yield* singleValue.set(newValue);
+        yield* props.onValueChange?.(newValue) ?? Effect.void;
       } else {
-        return multipleValue.map((values) => values.includes(value));
+        const current = yield* multipleValue.get;
+
+        if (current.includes(value)) {
+          yield* multipleValue.remove(value);
+        } else {
+          yield* multipleValue.push(value);
+        }
+
+        const updated = yield* multipleValue.get;
+        yield* props.onValuesChange?.(updated) ?? Effect.void;
       }
-    };
+    });
 
-    const groupCtx: ToolbarToggleGroupContext = {
-      type,
-      singleValue,
-      multipleValue,
-      disabled,
-      toggle,
-      isSelected,
-    };
+  const isSelected = (value: string): Readable.Readable<boolean> => {
+    if (type === "single") {
+      return singleValue.map((v) => v === value);
+    } else {
+      return multipleValue.map((values) => values.includes(value));
+    }
+  };
 
-    const childArray = Array.isArray(children) ? children : [children];
-    return yield* $.div(
-      {
-        role: "group",
-        "aria-label": props["aria-label"],
-        class: props.class,
-      },
-      provide(ToolbarToggleGroupCtx, groupCtx, childArray),
-    );
-  });
+  const groupCtx: ToolbarToggleGroupContext = {
+    type,
+    singleValue,
+    multipleValue,
+    disabled,
+    toggle,
+    isSelected,
+  };
+
+  const childArray = Array.isArray(children) ? children : [children];
+  return yield* $.div(
+    {
+      role: "group",
+      "aria-label": props["aria-label"],
+      class: props.class,
+    },
+    provide(ToolbarToggleGroupCtx, groupCtx, childArray),
+  );
+});
 
 /**
  * A visual separator between toolbar items.
  */
-const Separator: Component.Leaf<ToolbarSeparatorProps, ToolbarCtx> = (props) =>
-  Effect.gen(function* () {
-    const ctx = yield* ToolbarCtx;
+const Separator = Component.gen(function* (props: ToolbarSeparatorProps) {
+  const ctx = yield* ToolbarCtx;
 
-    // Separator orientation is opposite to toolbar orientation
-    const separatorOrientation = ctx.orientation.map((o) =>
-      o === "horizontal" ? "vertical" : "horizontal",
-    );
+  // Separator orientation is opposite to toolbar orientation
+  const separatorOrientation = ctx.orientation.map((o) =>
+    o === "horizontal" ? "vertical" : "horizontal",
+  );
 
-    return yield* $.div({
-      role: "separator",
-      "aria-orientation": separatorOrientation,
-      "data-orientation": separatorOrientation,
-      "data-toolbar-separator": "",
-      class: props.class,
-    });
+  return yield* $.div({
+    role: "separator",
+    "aria-orientation": separatorOrientation,
+    "data-orientation": separatorOrientation,
+    "data-toolbar-separator": "",
+    class: props.class,
   });
+});
 
 /**
  * A link that participates in toolbar navigation.
  */
-const Link: Component.Node<ToolbarLinkProps, ToolbarCtx> = (props, children) =>
-  Effect.gen(function* () {
-    const ctx = yield* ToolbarCtx;
-    const id = props.id ?? (yield* UniqueId.make("toolbar-link"));
+const Link = Component.gen(function* (props: ToolbarLinkProps, children) {
+  const ctx = yield* ToolbarCtx;
+  const id = props.id ?? (yield* UniqueId.make("toolbar-link"));
 
-    // Register on mount
-    yield* ctx.rovingTabIndex.items.push(id);
+  // Register on mount
+  yield* ctx.rovingTabIndex.items.push(id);
 
-    // Unregister on unmount
-    yield* Effect.addFinalizer(() =>
-      ctx.rovingTabIndex.items.remove(id).pipe(Effect.orDie),
-    );
+  // Unregister on unmount
+  yield* Effect.addFinalizer(() =>
+    ctx.rovingTabIndex.items.remove(id).pipe(Effect.orDie),
+  );
 
-    // Set as active if first item
-    const currentItems = yield* ctx.rovingTabIndex.items.get;
-    if (currentItems.length === 1) {
+  // Set as active if first item
+  const currentItems = yield* ctx.rovingTabIndex.items.get;
+  if (currentItems.length === 1) {
+    yield* ctx.rovingTabIndex.activeId.set(id);
+  }
+
+  const itemDisabled = Readable.of(props.disabled ?? false);
+  const isDisabled = Derived.some([ctx.disabled, itemDisabled]);
+
+  const isActive = ctx.rovingTabIndex.activeId.map(
+    (activeId) => activeId === id,
+  );
+
+  // Compute tabIndex: active item gets 0, or first item if nothing is active
+  const isFirstItem = ctx.rovingTabIndex.items.map(
+    (items) => items.length > 0 && items[0] === id,
+  );
+  const noActiveItem = ctx.rovingTabIndex.activeId.map(
+    (activeId) => activeId === null,
+  );
+
+  const tabIndex = yield* Derived.sync(
+    [isActive, isFirstItem, noActiveItem] as const,
+    ([active, isFirst, noActive]) => (active || (isFirst && noActive) ? 0 : -1),
+  );
+
+  const dataDisabled = isDisabled.map((d) => (d ? "" : undefined));
+
+  const handleClick = (e: MouseEvent) =>
+    Effect.gen(function* () {
+      if (yield* isDisabled.get) {
+        e.preventDefault();
+        return;
+      }
       yield* ctx.rovingTabIndex.activeId.set(id);
-    }
+    });
 
-    const itemDisabled = Readable.of(props.disabled ?? false);
-    const isDisabled = Derived.some([ctx.disabled, itemDisabled]);
+  const handleFocus = () => ctx.rovingTabIndex.activeId.set(id);
 
-    const isActive = ctx.rovingTabIndex.activeId.map(
-      (activeId) => activeId === id,
-    );
-
-    // Compute tabIndex: active item gets 0, or first item if nothing is active
-    const isFirstItem = ctx.rovingTabIndex.items.map(
-      (items) => items.length > 0 && items[0] === id,
-    );
-    const noActiveItem = ctx.rovingTabIndex.activeId.map(
-      (activeId) => activeId === null,
-    );
-
-    const tabIndex = yield* Derived.sync(
-      [isActive, isFirstItem, noActiveItem] as const,
-      ([active, isFirst, noActive]) =>
-        active || (isFirst && noActive) ? 0 : -1,
-    );
-
-    const dataDisabled = isDisabled.map((d) => (d ? "" : undefined));
-
-    const handleClick = (e: MouseEvent) =>
-      Effect.gen(function* () {
-        if (yield* isDisabled.get) {
-          e.preventDefault();
-          return;
-        }
-        yield* ctx.rovingTabIndex.activeId.set(id);
-      });
-
-    const handleFocus = () => ctx.rovingTabIndex.activeId.set(id);
-
-    return yield* $.a(
-      {
-        id,
-        href: props.href,
-        class: props.class,
-        tabIndex,
-        "aria-disabled": isDisabled.map((d) => (d ? "true" : undefined)),
-        "data-toolbar-item": "",
-        "data-disabled": dataDisabled,
-        onClick: handleClick,
-        onFocus: handleFocus,
-      },
-      children ?? [],
-    );
-  });
+  return yield* $.a(
+    {
+      id,
+      href: props.href,
+      class: props.class,
+      tabIndex,
+      "aria-disabled": isDisabled.map((d) => (d ? "true" : undefined)),
+      "data-toolbar-item": "",
+      "data-disabled": dataDisabled,
+      onClick: handleClick,
+      onFocus: handleFocus,
+    },
+    children ?? [],
+  );
+});
 
 /**
  * Headless Toolbar primitive for building accessible toolbars.

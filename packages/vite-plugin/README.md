@@ -116,13 +116,12 @@ import { $, Component } from "@effex/dom";
 
 export const route = Route.define();
 
-const AboutPage: Component.Unit = () =>
-  Effect.gen(function* () {
-    return yield* $.div({ class: "page" }, [
-      $.h1(["About Us"]),
-      $.p(["Welcome to our site."]),
-    ]);
-  });
+const AboutPage = Component.gen(function* () {
+  return yield* $.div({ class: "page" }, [
+    $.h1(["About Us"]),
+    $.p(["Welcome to our site."]),
+  ]);
+});
 
 export default AboutPage;
 ```
@@ -144,19 +143,18 @@ export const route = Route.define({
     }),
 });
 
-const UserPage: Component.Unit = () =>
-  Effect.gen(function* () {
-    // Type-safe access to params
-    const params = yield* route.params();
+const UserPage = Component.gen(function* () {
+  // Type-safe access to params
+  const params = yield* route.params();
 
-    // Type-safe access to loader data
-    const user = yield* route.loaderData<User>();
+  // Type-safe access to loader data
+  const user = yield* route.loaderData<User>();
 
-    return yield* $.div([
-      $.h1([user.name]),
-      $.p([user.email]),
-    ]);
-  });
+  return yield* $.div([
+    $.h1([user.name]),
+    $.p([user.email]),
+  ]);
+});
 
 export default UserPage;
 ```
@@ -182,14 +180,13 @@ export const route = Route.define({
     }),
 });
 
-const ContactPage: Component.Unit = () =>
-  Effect.gen(function* () {
-    return yield* $.form({ method: "post" }, [
-      $.input({ name: "name" }),
-      $.textarea({ name: "message" }),
-      $.button({ type: "submit" }, ["Send"]),
-    ]);
-  });
+const ContactPage = Component.gen(function* () {
+  return yield* $.form({ method: "post" }, [
+    $.input({ name: "name" }),
+    $.textarea({ name: "message" }),
+    $.button({ type: "submit" }, ["Send"]),
+  ]);
+});
 
 export default ContactPage;
 ```

@@ -83,47 +83,43 @@ export interface DialogRootProps {
  * ])
  * ```
  */
-const Root: Component.Branch<DialogRootProps, DialogCtx, never> = (
-  props,
-  children,
-) =>
-  Effect.gen(function* () {
-    // Handle controlled vs uncontrolled state
-    const isOpen = yield* Signal.fromNullable(
-      props.open,
-      props.defaultOpen ?? false,
-    );
+const Root = Component.gen(function* (props: DialogRootProps, children) {
+  // Handle controlled vs uncontrolled state
+  const isOpen = yield* Signal.fromNullable(
+    props.open,
+    props.defaultOpen ?? false,
+  );
 
-    const titleId = yield* UniqueId.make("dialog-title");
-    const descriptionId = yield* UniqueId.make("dialog-description");
-    const contentId = yield* UniqueId.make("dialog-content");
+  const titleId = yield* UniqueId.make("dialog-title");
+  const descriptionId = yield* UniqueId.make("dialog-description");
+  const contentId = yield* UniqueId.make("dialog-content");
 
-    const setOpenState = (newValue: boolean) =>
+  const setOpenState = (newValue: boolean) =>
+    Effect.gen(function* () {
+      yield* isOpen.set(newValue);
+      yield* props.onOpenChange?.(newValue) ?? Effect.void;
+    });
+
+  const ctx: DialogContext = {
+    isOpen,
+    open: () => setOpenState(true),
+    close: () => setOpenState(false),
+    toggle: () =>
       Effect.gen(function* () {
-        yield* isOpen.set(newValue);
-        yield* props.onOpenChange?.(newValue) ?? Effect.void;
-      });
+        const current = yield* isOpen.get;
+        yield* setOpenState(!current);
+      }),
+    titleId,
+    descriptionId,
+    contentId,
+  };
 
-    const ctx: DialogContext = {
-      isOpen,
-      open: () => setOpenState(true),
-      close: () => setOpenState(false),
-      toggle: () =>
-        Effect.gen(function* () {
-          const current = yield* isOpen.get;
-          yield* setOpenState(!current);
-        }),
-      titleId,
-      descriptionId,
-      contentId,
-    };
-
-    // Use a Fragment (display: contents div) so the dialog doesn't affect layout
-    return yield* $.div(
-      { style: { display: "contents" } },
-      provide(DialogCtx, ctx, children),
-    );
-  });
+  // Use a Fragment (display: contents div) so the dialog doesn't affect layout
+  return yield* $.div(
+    { style: { display: "contents" } },
+    provide(DialogCtx, ctx, children),
+  );
+});
 
 /**
  * Props for Dialog.Trigger
@@ -144,33 +140,29 @@ export interface DialogTriggerProps {
  * Dialog.Trigger({ class: "btn" }, "Open Dialog")
  * ```
  */
-const Trigger: Component.Node<DialogTriggerProps, DialogCtx> = (
-  props,
-  children,
-) =>
-  Effect.gen(function* () {
-    const ctx = yield* DialogCtx;
+const Trigger = Component.gen(function* (props: DialogTriggerProps, children) {
+  const ctx = yield* DialogCtx;
 
-    const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
-    const ariaExpanded = ctx.isOpen.map((open) => (open ? "true" : "false"));
+  const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
+  const ariaExpanded = ctx.isOpen.map((open) => (open ? "true" : "false"));
 
-    const triggerProps = {
-      "aria-haspopup": "dialog" as const,
-      "aria-expanded": ariaExpanded,
-      "aria-controls": ctx.contentId,
-      "data-state": dataState,
-      onClick: ctx.open,
-    };
+  const triggerProps = {
+    "aria-haspopup": "dialog" as const,
+    "aria-expanded": ariaExpanded,
+    "aria-controls": ctx.contentId,
+    "data-state": dataState,
+    onClick: ctx.open,
+  };
 
-    if (props.asChild && Effect.isEffect(children)) {
-      return yield* mergeProps(triggerProps, children);
-    }
+  if (props.asChild && Effect.isEffect(children)) {
+    return yield* mergeProps(triggerProps, children);
+  }
 
-    return yield* $.button(
-      { ...triggerProps, type: "button", class: props.class },
-      children ?? [],
-    );
-  });
+  return yield* $.button(
+    { ...triggerProps, type: "button", class: props.class },
+    children ?? [],
+  );
+});
 
 /**
  * Props for Dialog.Portal
@@ -195,27 +187,26 @@ export interface DialogPortalProps {
  * ])
  * ```
  */
-const DialogPortal: Component.Branch<DialogPortalProps, DialogCtx> = (
-  props,
+const DialogPortal = Component.gen(function* (
+  props: DialogPortalProps,
   children,
-) =>
-  Effect.gen(function* () {
-    const ctx = yield* DialogCtx;
+) {
+  const ctx = yield* DialogCtx;
 
-    // Portal is always rendered, but the content inside uses `when` for animations.
-    // This ensures animations apply to the actual visible content, not a placeholder.
-    return yield* Portal({ target: props.target }, () =>
-      when(ctx.isOpen, {
-        onTrue: () =>
-          $.div(
-            { class: props.class, "data-dialog-portal": "" },
-            provide(DialogCtx, ctx, children),
-          ),
-        onFalse: () => $.div({ style: { display: "none" } }),
-        animate: props.animate,
-      }),
-    );
-  });
+  // Portal is always rendered, but the content inside uses `when` for animations.
+  // This ensures animations apply to the actual visible content, not a placeholder.
+  return yield* Portal({ target: props.target }, () =>
+    when(ctx.isOpen, {
+      onTrue: () =>
+        $.div(
+          { class: props.class, "data-dialog-portal": "" },
+          provide(DialogCtx, ctx, children),
+        ),
+      onFalse: () => $.div({ style: { display: "none" } }),
+      animate: props.animate,
+    }),
+  );
+});
 
 /**
  * Props for Dialog.Overlay
@@ -234,20 +225,19 @@ export interface DialogOverlayProps {
  * Dialog.Overlay({ class: "dialog-overlay" })
  * ```
  */
-const Overlay: Component.Leaf<DialogOverlayProps, DialogCtx> = (props) =>
-  Effect.gen(function* () {
-    const ctx = yield* DialogCtx;
+const Overlay = Component.gen(function* (props: DialogOverlayProps) {
+  const ctx = yield* DialogCtx;
 
-    const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
+  const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
 
-    return yield* $.div({
-      class: props.class,
-      "data-state": dataState,
-      "data-dialog-overlay": "",
-      "aria-hidden": "true",
-      onClick: ctx.close,
-    });
+  return yield* $.div({
+    class: props.class,
+    "data-state": dataState,
+    "data-dialog-overlay": "",
+    "aria-hidden": "true",
+    onClick: ctx.close,
   });
+});
 
 /**
  * Props for Dialog.Content
@@ -273,55 +263,51 @@ export interface DialogContentProps {
  * ])
  * ```
  */
-const Content: Component.Node<DialogContentProps, DialogCtx> = (
-  props,
-  children,
-) =>
-  Effect.gen(function* () {
-    const ctx = yield* DialogCtx;
-    const previouslyFocused = document.activeElement as HTMLElement | null;
+const Content = Component.gen(function* (props: DialogContentProps, children) {
+  const ctx = yield* DialogCtx;
+  const previouslyFocused = document.activeElement as HTMLElement | null;
 
-    const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
+  const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
 
-    const handleKeyDown = (event: KeyboardEvent) =>
-      Effect.gen(function* () {
-        if (event.key === "Escape") {
-          event.preventDefault();
-          event.stopPropagation();
-          yield* props.onEscapeKeyDown?.(event) ?? Effect.void;
-          yield* ctx.close();
-        }
-      });
-
-    const handleClick = (event: MouseEvent) =>
-      Effect.sync(() => event.stopPropagation());
-
-    const contentElement = yield* $.div(
-      {
-        id: ctx.contentId,
-        class: props.class,
-        role: "dialog",
-        "aria-modal": "true",
-        "aria-labelledby": ctx.titleId,
-        "aria-describedby": ctx.descriptionId,
-        "data-state": dataState,
-        "data-dialog-content": "",
-        tabIndex: -1,
-        onKeyDown: handleKeyDown,
-        onClick: handleClick,
-      },
-      children ?? [],
-    );
-
-    // Setup focus trap and scroll lock
-    yield* FocusTrap.make({
-      container: contentElement,
-      returnFocus: previouslyFocused,
+  const handleKeyDown = (event: KeyboardEvent) =>
+    Effect.gen(function* () {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        yield* props.onEscapeKeyDown?.(event) ?? Effect.void;
+        yield* ctx.close();
+      }
     });
-    yield* ScrollLock.lock;
 
-    return contentElement;
+  const handleClick = (event: MouseEvent) =>
+    Effect.sync(() => event.stopPropagation());
+
+  const contentElement = yield* $.div(
+    {
+      id: ctx.contentId,
+      class: props.class,
+      role: "dialog",
+      "aria-modal": "true",
+      "aria-labelledby": ctx.titleId,
+      "aria-describedby": ctx.descriptionId,
+      "data-state": dataState,
+      "data-dialog-content": "",
+      tabIndex: -1,
+      onKeyDown: handleKeyDown,
+      onClick: handleClick,
+    },
+    children ?? [],
+  );
+
+  // Setup focus trap and scroll lock
+  yield* FocusTrap.make({
+    container: contentElement,
+    returnFocus: previouslyFocused,
   });
+  yield* ScrollLock.lock;
+
+  return contentElement;
+});
 
 /**
  * Props for Dialog.Close
@@ -341,24 +327,23 @@ export interface DialogCloseProps {
  * Dialog.Close({ class: "close-btn" }, "Close")
  * ```
  */
-const Close: Component.Node<DialogCloseProps, DialogCtx> = (props, children) =>
-  Effect.gen(function* () {
-    const ctx = yield* DialogCtx;
+const Close = Component.gen(function* (props: DialogCloseProps, children) {
+  const ctx = yield* DialogCtx;
 
-    const closeProps = {
-      "data-dialog-close": "",
-      onClick: ctx.close,
-    };
+  const closeProps = {
+    "data-dialog-close": "",
+    onClick: ctx.close,
+  };
 
-    if (props.asChild && Effect.isEffect(children)) {
-      return yield* mergeProps(closeProps, children);
-    }
+  if (props.asChild && Effect.isEffect(children)) {
+    return yield* mergeProps(closeProps, children);
+  }
 
-    return yield* $.button(
-      { ...closeProps, type: "button", class: props.class },
-      children ?? [],
-    );
-  });
+  return yield* $.button(
+    { ...closeProps, type: "button", class: props.class },
+    children ?? [],
+  );
+});
 
 /**
  * Props for Dialog.Title
@@ -379,21 +364,20 @@ export interface DialogTitleProps {
  * Dialog.Title({ class: "dialog-title" }, "Edit Profile")
  * ```
  */
-const Title: Component.Node<DialogTitleProps, DialogCtx> = (props, children) =>
-  Effect.gen(function* () {
-    const ctx = yield* DialogCtx;
+const Title = Component.gen(function* (props: DialogTitleProps, children) {
+  const ctx = yield* DialogCtx;
 
-    const titleProps = {
-      id: ctx.titleId,
-      "data-dialog-title": "",
-    };
+  const titleProps = {
+    id: ctx.titleId,
+    "data-dialog-title": "",
+  };
 
-    if (props.asChild && Effect.isEffect(children)) {
-      return yield* mergeProps(titleProps, children);
-    }
+  if (props.asChild && Effect.isEffect(children)) {
+    return yield* mergeProps(titleProps, children);
+  }
 
-    return yield* $.h2({ ...titleProps, class: props.class }, children ?? []);
-  });
+  return yield* $.h2({ ...titleProps, class: props.class }, children ?? []);
+});
 
 /**
  * Props for Dialog.Description
@@ -414,27 +398,26 @@ export interface DialogDescriptionProps {
  * Dialog.Description({}, "Make changes to your profile here.")
  * ```
  */
-const Description: Component.Node<DialogDescriptionProps, DialogCtx> = (
-  props,
+const Description = Component.gen(function* (
+  props: DialogDescriptionProps,
   children,
-) =>
-  Effect.gen(function* () {
-    const ctx = yield* DialogCtx;
+) {
+  const ctx = yield* DialogCtx;
 
-    const descriptionProps = {
-      id: ctx.descriptionId,
-      "data-dialog-description": "",
-    };
+  const descriptionProps = {
+    id: ctx.descriptionId,
+    "data-dialog-description": "",
+  };
 
-    if (props.asChild && Effect.isEffect(children)) {
-      return yield* mergeProps(descriptionProps, children);
-    }
+  if (props.asChild && Effect.isEffect(children)) {
+    return yield* mergeProps(descriptionProps, children);
+  }
 
-    return yield* $.p(
-      { ...descriptionProps, class: props.class },
-      children ?? [],
-    );
-  });
+  return yield* $.p(
+    { ...descriptionProps, class: props.class },
+    children ?? [],
+  );
+});
 
 /**
  * Headless Dialog primitive for building accessible modal dialogs.

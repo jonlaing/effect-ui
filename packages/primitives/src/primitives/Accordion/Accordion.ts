@@ -110,83 +110,79 @@ export interface AccordionRootProps {
  * ])
  * ```
  */
-const Root: Component.Branch<AccordionRootProps, AccordionCtx, never> = (
-  props,
-  children,
-) =>
-  Effect.gen(function* () {
-    const type = props.type ?? "single";
-    const collapsible = props.collapsible ?? false;
+const Root = Component.gen(function* (props: AccordionRootProps, children) {
+  const type = props.type ?? "single";
+  const collapsible = props.collapsible ?? false;
 
-    // Handle controlled vs uncontrolled state
-    // For single: string | null, for multiple: string[]
-    const value = yield* Signal.fromNullable(
-      props.value as Signal<string | string[] | null> | undefined,
-      props.defaultValue ?? (type === "multiple" ? [] : null),
-    );
+  // Handle controlled vs uncontrolled state
+  // For single: string | null, for multiple: string[]
+  const value = yield* Signal.fromNullable(
+    props.value as Signal<string | string[] | null> | undefined,
+    props.defaultValue ?? (type === "multiple" ? [] : null),
+  );
 
-    const disabled: Readable.Readable<boolean> = Readable.of(
-      props.disabled ?? false,
-    );
+  const disabled: Readable.Readable<boolean> = Readable.of(
+    props.disabled ?? false,
+  );
 
-    const toggle = (itemValue: string) =>
-      Effect.gen(function* () {
-        const isDisabled = yield* disabled.get;
-        if (isDisabled) return;
+  const toggle = (itemValue: string) =>
+    Effect.gen(function* () {
+      const isDisabled = yield* disabled.get;
+      if (isDisabled) return;
 
-        const current = yield* value.get;
+      const current = yield* value.get;
 
-        let newValue: string | string[] | null;
+      let newValue: string | string[] | null;
 
-        if (type === "single") {
-          // Single mode: toggle between this item and null (if collapsible)
-          if (current === itemValue) {
-            newValue = collapsible ? null : itemValue;
-          } else {
-            newValue = itemValue;
-          }
-        } else {
-          // Multiple mode: toggle item in array
-          const currentArray = (current as string[] | null) ?? [];
-          if (currentArray.includes(itemValue)) {
-            newValue = currentArray.filter((v) => v !== itemValue);
-          } else {
-            newValue = [...currentArray, itemValue];
-          }
-        }
-
-        yield* value.set(newValue);
-        yield* props.onValueChange?.(newValue) ?? Effect.void;
-      });
-
-    const ctxValue: AccordionContext = {
-      value,
-      toggle,
-      disabled,
-      type,
-      collapsible,
-    };
-
-    const dataState = value.map((v) => {
       if (type === "single") {
-        return v ? "has-value" : "empty";
+        // Single mode: toggle between this item and null (if collapsible)
+        if (current === itemValue) {
+          newValue = collapsible ? null : itemValue;
+        } else {
+          newValue = itemValue;
+        }
+      } else {
+        // Multiple mode: toggle item in array
+        const currentArray = (current as string[] | null) ?? [];
+        if (currentArray.includes(itemValue)) {
+          newValue = currentArray.filter((v) => v !== itemValue);
+        } else {
+          newValue = [...currentArray, itemValue];
+        }
       }
-      return (v as string[]).length > 0 ? "has-value" : "empty";
+
+      yield* value.set(newValue);
+      yield* props.onValueChange?.(newValue) ?? Effect.void;
     });
 
-    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+  const ctxValue: AccordionContext = {
+    value,
+    toggle,
+    disabled,
+    type,
+    collapsible,
+  };
 
-    const childArray = Array.isArray(children) ? children : [children];
-    return yield* $.div(
-      {
-        "data-state": dataState,
-        "data-disabled": dataDisabled,
-        "data-orientation": "vertical",
-        class: props.class,
-      },
-      provide(AccordionCtx, ctxValue, childArray),
-    );
+  const dataState = value.map((v) => {
+    if (type === "single") {
+      return v ? "has-value" : "empty";
+    }
+    return (v as string[]).length > 0 ? "has-value" : "empty";
   });
+
+  const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+
+  const childArray = Array.isArray(children) ? children : [children];
+  return yield* $.div(
+    {
+      "data-state": dataState,
+      "data-disabled": dataDisabled,
+      "data-orientation": "vertical",
+      class: props.class,
+    },
+    provide(AccordionCtx, ctxValue, childArray),
+  );
+});
 
 /**
  * Props for Accordion.Item
@@ -210,51 +206,46 @@ export interface AccordionItemProps {
  * ])
  * ```
  */
-const Item: Component.Branch<
-  AccordionItemProps,
-  AccordionCtx | AccordionItemCtx,
-  AccordionCtx
-> = (props, children) =>
-  Effect.gen(function* () {
-    const accordionCtx = yield* AccordionCtx;
+const Item = Component.gen(function* (props: AccordionItemProps, children) {
+  const accordionCtx = yield* AccordionCtx;
 
-    const triggerId = yield* UniqueId.make("accordion-trigger");
-    const contentId = yield* UniqueId.make("accordion-content");
+  const triggerId = yield* UniqueId.make("accordion-trigger");
+  const contentId = yield* UniqueId.make("accordion-content");
 
-    // Derive whether this item is open from accordion value
-    const isOpen = accordionCtx.value.map((v) => {
-      if (accordionCtx.type === "single") {
-        return v === props.value;
-      }
-      return ((v as string[] | null) ?? []).includes(props.value);
-    });
-
-    // Item can be disabled by itself or by parent
-    const disabled = accordionCtx.disabled.map(
-      (parentDisabled) => parentDisabled || props.disabled === true,
-    );
-
-    const itemCtx: AccordionItemContext = {
-      value: props.value,
-      isOpen,
-      disabled,
-      triggerId,
-      contentId,
-    };
-
-    const dataState = isOpen.map((open) => (open ? "open" : "closed"));
-    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
-
-    const childArray = Array.isArray(children) ? children : [children];
-    return yield* $.div(
-      {
-        "data-state": dataState,
-        "data-disabled": dataDisabled,
-        class: props.class,
-      },
-      provide(AccordionItemCtx, itemCtx, childArray),
-    );
+  // Derive whether this item is open from accordion value
+  const isOpen = accordionCtx.value.map((v) => {
+    if (accordionCtx.type === "single") {
+      return v === props.value;
+    }
+    return ((v as string[] | null) ?? []).includes(props.value);
   });
+
+  // Item can be disabled by itself or by parent
+  const disabled = accordionCtx.disabled.map(
+    (parentDisabled) => parentDisabled || props.disabled === true,
+  );
+
+  const itemCtx: AccordionItemContext = {
+    value: props.value,
+    isOpen,
+    disabled,
+    triggerId,
+    contentId,
+  };
+
+  const dataState = isOpen.map((open) => (open ? "open" : "closed"));
+  const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+
+  const childArray = Array.isArray(children) ? children : [children];
+  return yield* $.div(
+    {
+      "data-state": dataState,
+      "data-disabled": dataDisabled,
+      class: props.class,
+    },
+    provide(AccordionItemCtx, itemCtx, childArray),
+  );
+});
 
 /**
  * Props for Accordion.Trigger
@@ -275,53 +266,50 @@ export interface AccordionTriggerProps {
  * Accordion.Trigger({ class: "accordion-trigger" }, "Click to expand")
  * ```
  */
-const Trigger: Component.Node<
-  AccordionTriggerProps,
-  AccordionCtx | AccordionItemCtx
-> = (props, children) =>
-  Effect.gen(function* () {
-    const accordionCtx = yield* AccordionCtx;
-    const itemCtx = yield* AccordionItemCtx;
+const Trigger = Component.gen(function* (
+  props: AccordionTriggerProps,
+  children,
+) {
+  const accordionCtx = yield* AccordionCtx;
+  const itemCtx = yield* AccordionItemCtx;
 
-    const handleClick = () => accordionCtx.toggle(itemCtx.value);
+  const handleClick = () => accordionCtx.toggle(itemCtx.value);
 
-    const handleKeyDown = yield* createKeyboardNav({
-      selector: "[data-accordion-trigger]:not([data-disabled])",
-      orientation: "vertical",
-      loop: true,
-    });
-
-    const dataState = itemCtx.isOpen.map((open) => (open ? "open" : "closed"));
-    const dataDisabled = itemCtx.disabled.map((d) => (d ? "" : undefined));
-    const ariaExpanded = itemCtx.isOpen.map((open) =>
-      open ? "true" : "false",
-    );
-
-    const triggerProps = {
-      id: itemCtx.triggerId,
-      "aria-expanded": ariaExpanded,
-      "aria-controls": itemCtx.contentId,
-      "data-state": dataState,
-      "data-disabled": dataDisabled,
-      "data-accordion-trigger": "",
-      onClick: handleClick,
-      onKeyDown: handleKeyDown,
-    };
-
-    if (props.asChild && Effect.isEffect(children)) {
-      return yield* mergeProps(triggerProps, children);
-    }
-
-    return yield* $.button(
-      {
-        ...triggerProps,
-        class: props.class,
-        type: "button",
-        disabled: itemCtx.disabled,
-      },
-      children ?? [],
-    );
+  const handleKeyDown = yield* createKeyboardNav({
+    selector: "[data-accordion-trigger]:not([data-disabled])",
+    orientation: "vertical",
+    loop: true,
   });
+
+  const dataState = itemCtx.isOpen.map((open) => (open ? "open" : "closed"));
+  const dataDisabled = itemCtx.disabled.map((d) => (d ? "" : undefined));
+  const ariaExpanded = itemCtx.isOpen.map((open) => (open ? "true" : "false"));
+
+  const triggerProps = {
+    id: itemCtx.triggerId,
+    "aria-expanded": ariaExpanded,
+    "aria-controls": itemCtx.contentId,
+    "data-state": dataState,
+    "data-disabled": dataDisabled,
+    "data-accordion-trigger": "",
+    onClick: handleClick,
+    onKeyDown: handleKeyDown,
+  };
+
+  if (props.asChild && Effect.isEffect(children)) {
+    return yield* mergeProps(triggerProps, children);
+  }
+
+  return yield* $.button(
+    {
+      ...triggerProps,
+      class: props.class,
+      type: "button",
+      disabled: itemCtx.disabled,
+    },
+    children ?? [],
+  );
+});
 
 /**
  * Props for Accordion.Content
@@ -342,28 +330,27 @@ export interface AccordionContentProps {
  * ])
  * ```
  */
-const Content: Component.Node<AccordionContentProps, AccordionItemCtx> = (
-  props,
+const Content = Component.gen(function* (
+  props: AccordionContentProps,
   children,
-) =>
-  Effect.gen(function* () {
-    const itemCtx = yield* AccordionItemCtx;
+) {
+  const itemCtx = yield* AccordionItemCtx;
 
-    const dataState = itemCtx.isOpen.map((open) => (open ? "open" : "closed"));
+  const dataState = itemCtx.isOpen.map((open) => (open ? "open" : "closed"));
 
-    // Outer div uses CSS grid for height animation
-    // Inner div wraps children with overflow: hidden for the animation to work
-    return yield* $.div(
-      {
-        id: itemCtx.contentId,
-        class: props.class,
-        role: "region",
-        "aria-labelledby": itemCtx.triggerId,
-        "data-state": dataState,
-      },
-      [$.div({ "data-accordion-inner": "" }, children ?? [])],
-    );
-  });
+  // Outer div uses CSS grid for height animation
+  // Inner div wraps children with overflow: hidden for the animation to work
+  return yield* $.div(
+    {
+      id: itemCtx.contentId,
+      class: props.class,
+      role: "region",
+      "aria-labelledby": itemCtx.triggerId,
+      "data-state": dataState,
+    },
+    [$.div({ "data-accordion-inner": "" }, children ?? [])],
+  );
+});
 
 /**
  * Headless Accordion primitive for building accessible

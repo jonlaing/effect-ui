@@ -45,19 +45,18 @@ export const route = Route.define({
 });
 
 // Component with type-safe access
-const UserPage: Component.Unit = () =>
-  Effect.gen(function* () {
-    // Type-safe params
-    const params = yield* route.params();
+const UserPage = Component.gen(function* () {
+  // Type-safe params
+  const params = yield* route.params();
 
-    // Type-safe loader data
-    const user = yield* route.loaderData<User>();
+  // Type-safe loader data
+  const user = yield* route.loaderData<User>();
 
-    return yield* $.div([
-      $.h1([user.name]),
-      $.p([user.email]),
-    ]);
-  });
+  return yield* $.div([
+    $.h1([user.name]),
+    $.p([user.email]),
+  ]);
+});
 
 export default UserPage;
 ```
@@ -141,15 +140,14 @@ export const route = Route.define({
     }),
 });
 
-const UserPage: Component.Unit = () =>
-  Effect.gen(function* () {
-    const user = yield* route.loaderData<User>();
+const UserPage = Component.gen(function* () {
+  const user = yield* route.loaderData<User>();
 
-    return yield* $.div([
-      $.h1([user.name]),
-      $.p([user.email]),
-    ]);
-  });
+  return yield* $.div([
+    $.h1([user.name]),
+    $.p([user.email]),
+  ]);
+});
 
 export default UserPage;
 ```
@@ -175,16 +173,15 @@ export const route = Route.define({
     }),
 });
 
-const ContactForm: Component.Unit<RouterContext> = () =>
-  Effect.gen(function* () {
-    const router = yield* RouterContext;
-    const actionState = router.actionState;
+const ContactForm = Component.gen(function* () {
+  const router = yield* RouterContext;
+  const actionState = router.actionState;
 
-    return yield* $.form({ method: "post" }, [
-      $.input({ name: "name", placeholder: "Name" }),
-      $.textarea({ name: "message", placeholder: "Message" }),
-      $.button({ type: "submit" }, ["Send"]),
-      when(actionState.map((s) => s.data?.success), {
+  return yield* $.form({ method: "post" }, [
+    $.input({ name: "name", placeholder: "Name" }),
+    $.textarea({ name: "message", placeholder: "Message" }),
+    $.button({ type: "submit" }, ["Send"]),
+    when(actionState.map((s) => s.data?.success), {
         onTrue: () => $.p({ class: "success" }, ["Message sent!"]),
         onFalse: () => $.span(),
       }),
@@ -252,17 +249,16 @@ Render the current route:
 ```ts
 import { Routes, Component } from "@effex/platform";
 
-const App: Component.Unit = () =>
-  Effect.gen(function* () {
-    return yield* $.div([
-      Header(),
-      Routes({
-        components,
-        fallback: () => NotFoundPage(),
-      }),
-      Footer(),
-    ]);
-  });
+const App = Component.gen(function* () {
+  return yield* $.div([
+    Header(),
+    Routes({
+      components,
+      fallback: () => NotFoundPage(),
+    }),
+    Footer(),
+  ]);
+});
 ```
 
 ## Subpath Exports
