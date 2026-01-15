@@ -235,7 +235,7 @@ const Root: Component.Branch<
           case "ArrowRight": {
             if (!itemId) return;
 
-            const isCurrentlyExpanded = yield* expanded.has(itemId);
+            const isCurrentlyExpanded = yield* expanded.hasEffect(itemId);
             const hasChildItems = currentItem.querySelector("[role='group']");
 
             if (hasChildItems && !isCurrentlyExpanded) {
@@ -255,7 +255,7 @@ const Root: Component.Branch<
           case "ArrowLeft": {
             if (!itemId) return;
 
-            const isCurrentlyExpanded = yield* expanded.has(itemId);
+            const isCurrentlyExpanded = yield* expanded.hasEffect(itemId);
             if (isCurrentlyExpanded) {
               // Collapse the node
               yield* toggleExpanded(itemId);

@@ -175,9 +175,14 @@ yield* users.set("u1", { name: "Alice", role: "admin" });
 yield* users.delete("u1");
 yield* users.clear();
 
-// Reads
-const user = yield* users.get("u1");
-const exists = yield* users.has("u1");
+// Reactive reads (for UI binding)
+users.get("u1")              // Readable<Option<User>>
+users.getOrElse("u1", guest) // Readable<User>
+users.has("u1")              // Readable<boolean>
+
+// One-time reads (for imperative code)
+const user = yield* users.getEffect("u1");  // Effect<Option<User>>
+const exists = yield* users.hasEffect("u1"); // Effect<boolean>
 
 // Replace or transform entire map
 yield* users.replace(new Map([["u2", bob]]));
@@ -206,8 +211,11 @@ yield* tags.delete("draft");
 yield* tags.toggle("featured");  // Add if missing, remove if present
 yield* tags.clear();
 
-// Reads
-const hasTag = yield* tags.has("important");
+// Reactive reads (for UI binding)
+tags.has("important")  // Readable<boolean>
+
+// One-time reads (for imperative code)
+const hasTag = yield* tags.hasEffect("important");
 
 // Replace or transform
 yield* tags.replace(["new", "tags"]);

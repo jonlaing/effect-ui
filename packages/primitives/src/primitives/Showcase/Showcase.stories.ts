@@ -49,6 +49,11 @@ export const SettingsDashboard: Story = {
       const uploadProgress = yield* Signal.make(45);
       const selectedTheme = yield* Signal.make("system");
       const fontSize = yield* Signal.make("medium");
+      const privacySettings = yield* Signal.Map.make<string, boolean>([
+        ["analytics", true],
+        ["shareData", false],
+        ["onlineStatus", true],
+      ]);
 
       // Toast helpers
       const showSuccessToast = () =>
@@ -599,26 +604,44 @@ export const SettingsDashboard: Story = {
                     $.h2({ class: "card-title" }, "Privacy Controls"),
                     Separator({ class: "divider" }),
 
-                    // Checkboxes
+                    // Checkboxes with Signal.Map
                     $.div({ class: "space-y-4" }, [
                       $.div({ class: "flex items-center gap-3" }, [
                         Checkbox({
-                          defaultChecked: true,
+                          checked: privacySettings.getOrElse(
+                            "analytics",
+                            false,
+                          ),
                           class: "checkbox checkbox-primary",
+                          onCheckedChange: (checked) =>
+                            privacySettings.set("analytics", checked === true),
                         }),
                         label({}, "Allow analytics cookies"),
                       ]),
                       $.div({ class: "flex items-center gap-3" }, [
                         Checkbox({
-                          defaultChecked: false,
+                          checked: privacySettings.getOrElse(
+                            "shareData",
+                            false,
+                          ),
                           class: "checkbox checkbox-primary",
+                          onCheckedChange: (checked) =>
+                            privacySettings.set("shareData", checked === true),
                         }),
                         label({}, "Share usage data with partners"),
                       ]),
                       $.div({ class: "flex items-center gap-3" }, [
                         Checkbox({
-                          defaultChecked: true,
+                          checked: privacySettings.getOrElse(
+                            "onlineStatus",
+                            false,
+                          ),
                           class: "checkbox checkbox-primary",
+                          onCheckedChange: (checked) =>
+                            privacySettings.set(
+                              "onlineStatus",
+                              checked === true,
+                            ),
                         }),
                         label({}, "Show online status"),
                       ]),

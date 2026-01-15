@@ -96,6 +96,56 @@ export const Element = {
     Effect.map(self, (el) => el.getBoundingClientRect()),
 
   /**
+   * Get the offset height of an element (includes padding and border, excludes margin).
+   * This value is affected by CSS constraints like max-height.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.getOffsetHeight)
+   * ```
+   */
+  getOffsetHeight: <A extends HTMLElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+  ): Effect.Effect<number, E, R> => Effect.map(self, (el) => el.offsetHeight),
+
+  /**
+   * Get the scroll height of an element (full content height, ignoring overflow).
+   * Use this to get the natural height of content regardless of CSS constraints.
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.getScrollHeight)
+   * ```
+   */
+  getScrollHeight: <A extends HTMLElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+  ): Effect.Effect<number, E, R> => Effect.map(self, (el) => el.scrollHeight),
+
+  /**
+   * Get the offset width of an element (includes padding and border, excludes margin).
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.getOffsetWidth)
+   * ```
+   */
+  getOffsetWidth: <A extends HTMLElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+  ): Effect.Effect<number, E, R> => Effect.map(self, (el) => el.offsetWidth),
+
+  /**
+   * Get the scroll width of an element (full content width, ignoring overflow).
+   *
+   * @example
+   * ```ts
+   * el.pipe(Element.getScrollWidth)
+   * ```
+   */
+  getScrollWidth: <A extends HTMLElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+  ): Effect.Effect<number, E, R> => Effect.map(self, (el) => el.scrollWidth),
+
+  /**
    * Query for a descendant element matching a selector.
    * Returns the element or fails with NoSuchElementException.
    *

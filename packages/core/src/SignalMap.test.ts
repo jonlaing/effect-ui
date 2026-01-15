@@ -26,8 +26,8 @@ describe("Signal.Map", () => {
             ["b", 2],
           ]);
           const map = yield* Signal.Map.make(initial);
-          const a = yield* map.get("a");
-          const b = yield* map.get("b");
+          const a = yield* map.get("a").get;
+          const b = yield* map.get("b").get;
           expect(Option.getOrThrow(a)).toBe(1);
           expect(Option.getOrThrow(b)).toBe(2);
         }),
@@ -40,7 +40,7 @@ describe("Signal.Map", () => {
             ["x", 10],
             ["y", 20],
           ]);
-          const x = yield* map.get("x");
+          const x = yield* map.get("x").get;
           expect(Option.getOrThrow(x)).toBe(10);
         }),
       ));
@@ -52,7 +52,7 @@ describe("Signal.Map", () => {
         Effect.gen(function* () {
           const map = yield* Signal.Map.make<string, number>();
           yield* map.set("key", 42);
-          const value = yield* map.get("key");
+          const value = yield* map.get("key").get;
           expect(Option.getOrThrow(value)).toBe(42);
         }),
       ));
@@ -79,11 +79,86 @@ describe("Signal.Map", () => {
   });
 
   describe("get", () => {
+    it("should return Readable with Some for existing key", () =>
+      runTest(
+        Effect.gen(function* () {
+          const map = yield* Signal.Map.make<string, number>([["a", 1]]);
+          const value = yield* map.get("a").get;
+          expect(Option.isSome(value)).toBe(true);
+          expect(Option.getOrThrow(value)).toBe(1);
+        }),
+      ));
+
+    it("should return Readable with None for missing key", () =>
+      runTest(
+        Effect.gen(function* () {
+          const map = yield* Signal.Map.make<string, number>();
+          const value = yield* map.get("missing").get;
+          expect(Option.isNone(value)).toBe(true);
+        }),
+      ));
+
+    it("should be reactive to changes", () =>
+      runTest(
+        Effect.gen(function* () {
+          const map = yield* Signal.Map.make<string, number>();
+          const readable = map.get("a");
+
+          // Initially None
+          const before = yield* readable.get;
+          expect(Option.isNone(before)).toBe(true);
+
+          // After set, becomes Some
+          yield* map.set("a", 42);
+          const after = yield* readable.get;
+          expect(Option.getOrThrow(after)).toBe(42);
+        }),
+      ));
+  });
+
+  describe("getOrElse", () => {
+    it("should return value for existing key", () =>
+      runTest(
+        Effect.gen(function* () {
+          const map = yield* Signal.Map.make<string, number>([["a", 1]]);
+          const value = yield* map.getOrElse("a", 0).get;
+          expect(value).toBe(1);
+        }),
+      ));
+
+    it("should return fallback for missing key", () =>
+      runTest(
+        Effect.gen(function* () {
+          const map = yield* Signal.Map.make<string, number>();
+          const value = yield* map.getOrElse("missing", 99).get;
+          expect(value).toBe(99);
+        }),
+      ));
+
+    it("should be reactive to changes", () =>
+      runTest(
+        Effect.gen(function* () {
+          const map = yield* Signal.Map.make<string, number>();
+          const readable = map.getOrElse("a", 0);
+
+          // Initially fallback
+          const before = yield* readable.get;
+          expect(before).toBe(0);
+
+          // After set, becomes value
+          yield* map.set("a", 42);
+          const after = yield* readable.get;
+          expect(after).toBe(42);
+        }),
+      ));
+  });
+
+  describe("getEffect", () => {
     it("should return Some for existing key", () =>
       runTest(
         Effect.gen(function* () {
           const map = yield* Signal.Map.make<string, number>([["a", 1]]);
-          const value = yield* map.get("a");
+          const value = yield* map.getEffect("a");
           expect(Option.isSome(value)).toBe(true);
           expect(Option.getOrThrow(value)).toBe(1);
         }),
@@ -93,18 +168,60 @@ describe("Signal.Map", () => {
       runTest(
         Effect.gen(function* () {
           const map = yield* Signal.Map.make<string, number>();
-          const value = yield* map.get("missing");
+          const value = yield* map.getEffect("missing");
           expect(Option.isNone(value)).toBe(true);
         }),
       ));
   });
 
   describe("has", () => {
+    it("should return Readable with true for existing key", () =>
+      runTest(
+        Effect.gen(function* () {
+          const map = yield* Signal.Map.make<string, number>([["a", 1]]);
+          const exists = yield* map.has("a").get;
+          expect(exists).toBe(true);
+        }),
+      ));
+
+    it("should return Readable with false for missing key", () =>
+      runTest(
+        Effect.gen(function* () {
+          const map = yield* Signal.Map.make<string, number>();
+          const exists = yield* map.has("missing").get;
+          expect(exists).toBe(false);
+        }),
+      ));
+
+    it("should be reactive to changes", () =>
+      runTest(
+        Effect.gen(function* () {
+          const map = yield* Signal.Map.make<string, number>();
+          const hasA = map.has("a");
+
+          // Initially false
+          const before = yield* hasA.get;
+          expect(before).toBe(false);
+
+          // After set, becomes true
+          yield* map.set("a", 42);
+          const after = yield* hasA.get;
+          expect(after).toBe(true);
+
+          // After delete, becomes false again
+          yield* map.delete("a");
+          const afterDelete = yield* hasA.get;
+          expect(afterDelete).toBe(false);
+        }),
+      ));
+  });
+
+  describe("hasEffect", () => {
     it("should return true for existing key", () =>
       runTest(
         Effect.gen(function* () {
           const map = yield* Signal.Map.make<string, number>([["a", 1]]);
-          const exists = yield* map.has("a");
+          const exists = yield* map.hasEffect("a");
           expect(exists).toBe(true);
         }),
       ));
@@ -113,7 +230,7 @@ describe("Signal.Map", () => {
       runTest(
         Effect.gen(function* () {
           const map = yield* Signal.Map.make<string, number>();
-          const exists = yield* map.has("missing");
+          const exists = yield* map.hasEffect("missing");
           expect(exists).toBe(false);
         }),
       ));
@@ -127,7 +244,7 @@ describe("Signal.Map", () => {
           const deleted = yield* map.delete("a");
           expect(deleted).toBe(true);
 
-          const exists = yield* map.has("a");
+          const exists = yield* map.has("a").get;
           expect(exists).toBe(false);
         }),
       ));
@@ -164,8 +281,8 @@ describe("Signal.Map", () => {
           const map = yield* Signal.Map.make<string, number>([["a", 1]]);
           yield* map.replace(new Map([["x", 100]]));
 
-          const a = yield* map.get("a");
-          const x = yield* map.get("x");
+          const a = yield* map.get("a").get;
+          const x = yield* map.get("x").get;
           expect(Option.isNone(a)).toBe(true);
           expect(Option.getOrThrow(x)).toBe(100);
         }),
@@ -182,8 +299,8 @@ describe("Signal.Map", () => {
           ]);
           yield* map.update((m) => new Map([...m].filter(([_, v]) => v > 1)));
 
-          const a = yield* map.has("a");
-          const b = yield* map.has("b");
+          const a = yield* map.has("a").get;
+          const b = yield* map.has("b").get;
           expect(a).toBe(false);
           expect(b).toBe(true);
         }),

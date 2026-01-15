@@ -17,10 +17,13 @@ import { Readable as ReadableNS, type Readable } from "./Readable.js";
  * yield* tags.delete("draft");
  * yield* tags.toggle("featured");  // add if missing, remove if present
  *
- * // Reads
- * const hasTag = yield* tags.has("important");
+ * // Reactive reads (for UI binding)
+ * tags.has("important")  // Readable<boolean>
  *
- * // Derived readables for UI binding
+ * // One-time reads (for imperative code)
+ * const hasTag = yield* tags.hasEffect("important");
+ *
+ * // Derived readables
  * tags.size    // Readable<number>
  * tags.values  // Readable<readonly T[]>
  * ```
@@ -32,9 +35,16 @@ export interface SignalSet<T> {
   readonly add: (value: T) => Effect.Effect<void>;
 
   /**
-   * Check if a value exists.
+   * Check if a value exists (reactive).
+   * Use this for reactive UI bindings.
    */
-  readonly has: (value: T) => Effect.Effect<boolean>;
+  readonly has: (value: T) => Readable<boolean>;
+
+  /**
+   * Check if a value exists as an Effect.
+   * Use this for one-time checks in imperative code.
+   */
+  readonly hasEffect: (value: T) => Effect.Effect<boolean>;
 
   /**
    * Delete a value. Returns true if the value existed.
@@ -117,7 +127,9 @@ export const make = <T>(
           }
         }),
 
-      has: (value) =>
+      has: (value) => readable.map((set) => set.has(value)),
+
+      hasEffect: (value) =>
         Effect.gen(function* () {
           const set = yield* SubscriptionRef.get(ref);
           return set.has(value);

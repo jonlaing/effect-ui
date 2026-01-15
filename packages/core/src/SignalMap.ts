@@ -17,11 +17,15 @@ import { Readable as ReadableNS, type Readable } from "./Readable.js";
  * yield* users.set("u1", { name: "Alice" });
  * yield* users.delete("u1");
  *
- * // Reads
- * const user = yield* users.get("u1");
+ * // Reactive reads (for UI binding)
+ * users.get("u1")              // Readable<Option<User>>
+ * users.getOrElse("u1", guest) // Readable<User>
+ *
+ * // One-time reads
+ * const user = yield* users.getEffect("u1");  // Effect<Option<User>>
  * const exists = yield* users.has("u1");
  *
- * // Derived readables for UI binding
+ * // Derived readables
  * users.size      // Readable<number>
  * users.entries   // Readable<readonly [K, V][]>
  * ```
@@ -33,14 +37,34 @@ export interface SignalMap<K, V> {
   readonly set: (key: K, value: V) => Effect.Effect<void>;
 
   /**
-   * Get the value for a key, returning Option.none() if not found.
+   * Get a reactive value for a key, returning Option.none() if not found.
+   * Use this for reactive UI bindings.
    */
-  readonly get: (key: K) => Effect.Effect<Option.Option<V>>;
+  readonly get: (key: K) => Readable<Option.Option<V>>;
 
   /**
-   * Check if a key exists.
+   * Get a reactive value for a key with a fallback if not found.
+   * Use this for reactive UI bindings when you have a default value.
    */
-  readonly has: (key: K) => Effect.Effect<boolean>;
+  readonly getOrElse: (key: K, fallback: V) => Readable<V>;
+
+  /**
+   * Get the value for a key as an Effect, returning Option.none() if not found.
+   * Use this for one-time reads in imperative code.
+   */
+  readonly getEffect: (key: K) => Effect.Effect<Option.Option<V>>;
+
+  /**
+   * Check if a key exists (reactive).
+   * Use this for reactive UI bindings.
+   */
+  readonly has: (key: K) => Readable<boolean>;
+
+  /**
+   * Check if a key exists as an Effect.
+   * Use this for one-time checks in imperative code.
+   */
+  readonly hasEffect: (key: K) => Effect.Effect<boolean>;
 
   /**
    * Delete a key. Returns true if the key existed.
@@ -130,13 +154,20 @@ export const make = <K, V>(
           yield* notify;
         }),
 
-      get: (key) =>
+      get: (key) => readable.map((map) => Option.fromNullable(map.get(key))),
+
+      getOrElse: (key, fallback) =>
+        readable.map((map) => map.get(key) ?? fallback),
+
+      getEffect: (key) =>
         Effect.gen(function* () {
           const map = yield* SubscriptionRef.get(ref);
           return Option.fromNullable(map.get(key));
         }),
 
-      has: (key) =>
+      has: (key) => readable.map((map) => map.has(key)),
+
+      hasEffect: (key) =>
         Effect.gen(function* () {
           const map = yield* SubscriptionRef.get(ref);
           return map.has(key);

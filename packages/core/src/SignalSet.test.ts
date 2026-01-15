@@ -32,7 +32,7 @@ describe("Signal.Set", () => {
       runTest(
         Effect.gen(function* () {
           const set = yield* Signal.Set.make(["x", "y", "z"]);
-          const hasX = yield* set.has("x");
+          const hasX = yield* set.has("x").get;
           expect(hasX).toBe(true);
         }),
       ));
@@ -44,7 +44,7 @@ describe("Signal.Set", () => {
         Effect.gen(function* () {
           const set = yield* Signal.Set.make<string>();
           yield* set.add("item");
-          const exists = yield* set.has("item");
+          const exists = yield* set.has("item").get;
           expect(exists).toBe(true);
         }),
       ));
@@ -71,11 +71,53 @@ describe("Signal.Set", () => {
   });
 
   describe("has", () => {
+    it("should return Readable with true for existing value", () =>
+      runTest(
+        Effect.gen(function* () {
+          const set = yield* Signal.Set.make(["a", "b"]);
+          const exists = yield* set.has("a").get;
+          expect(exists).toBe(true);
+        }),
+      ));
+
+    it("should return Readable with false for missing value", () =>
+      runTest(
+        Effect.gen(function* () {
+          const set = yield* Signal.Set.make<string>();
+          const exists = yield* set.has("missing").get;
+          expect(exists).toBe(false);
+        }),
+      ));
+
+    it("should be reactive to changes", () =>
+      runTest(
+        Effect.gen(function* () {
+          const set = yield* Signal.Set.make<string>();
+          const hasA = set.has("a");
+
+          // Initially false
+          const before = yield* hasA.get;
+          expect(before).toBe(false);
+
+          // After add, becomes true
+          yield* set.add("a");
+          const after = yield* hasA.get;
+          expect(after).toBe(true);
+
+          // After delete, becomes false again
+          yield* set.delete("a");
+          const afterDelete = yield* hasA.get;
+          expect(afterDelete).toBe(false);
+        }),
+      ));
+  });
+
+  describe("hasEffect", () => {
     it("should return true for existing value", () =>
       runTest(
         Effect.gen(function* () {
           const set = yield* Signal.Set.make(["a", "b"]);
-          const exists = yield* set.has("a");
+          const exists = yield* set.hasEffect("a");
           expect(exists).toBe(true);
         }),
       ));
@@ -84,7 +126,7 @@ describe("Signal.Set", () => {
       runTest(
         Effect.gen(function* () {
           const set = yield* Signal.Set.make<string>();
-          const exists = yield* set.has("missing");
+          const exists = yield* set.hasEffect("missing");
           expect(exists).toBe(false);
         }),
       ));
@@ -98,7 +140,7 @@ describe("Signal.Set", () => {
           const deleted = yield* set.delete("a");
           expect(deleted).toBe(true);
 
-          const exists = yield* set.has("a");
+          const exists = yield* set.has("a").get;
           expect(exists).toBe(false);
         }),
       ));
@@ -121,7 +163,7 @@ describe("Signal.Set", () => {
           const result = yield* set.toggle("item");
           expect(result).toBe(true);
 
-          const exists = yield* set.has("item");
+          const exists = yield* set.has("item").get;
           expect(exists).toBe(true);
         }),
       ));
@@ -133,7 +175,7 @@ describe("Signal.Set", () => {
           const result = yield* set.toggle("item");
           expect(result).toBe(false);
 
-          const exists = yield* set.has("item");
+          const exists = yield* set.has("item").get;
           expect(exists).toBe(false);
         }),
       ));
@@ -174,8 +216,8 @@ describe("Signal.Set", () => {
           const set = yield* Signal.Set.make(["a", "b"]);
           yield* set.replace(new Set(["x", "y", "z"]));
 
-          const hasA = yield* set.has("a");
-          const hasX = yield* set.has("x");
+          const hasA = yield* set.has("a").get;
+          const hasX = yield* set.has("x").get;
           expect(hasA).toBe(false);
           expect(hasX).toBe(true);
         }),

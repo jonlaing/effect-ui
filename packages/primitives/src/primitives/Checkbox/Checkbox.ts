@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { $, Component, Readable, Signal, type ClassValue } from "@effex/dom";
+import { $, Component, Readable, type ClassValue } from "@effex/dom";
 
 /**
  * Checkbox state - can be checked, unchecked, or indeterminate.
@@ -17,9 +17,9 @@ export interface CheckboxProps {
   readonly id?: string;
 
   /**
-   * The controlled checked state. Pass a Signal for controlled mode.
+   * The controlled checked state.
    */
-  readonly checked?: Signal<CheckedState>;
+  readonly checked?: Readable.Reactive<CheckedState>;
 
   /**
    * The default checked state for uncontrolled mode.
@@ -83,10 +83,7 @@ export interface CheckboxProps {
  */
 export const Checkbox: Component.Leaf<CheckboxProps> = (props) =>
   Effect.gen(function* () {
-    const checked = yield* Signal.fromNullable(
-      props.checked,
-      props.defaultChecked ?? false,
-    );
+    const checked = Readable.of(props.checked ?? false);
 
     // Normalize props to Readables
     const disabled = Readable.of(props.disabled ?? false);
@@ -99,7 +96,6 @@ export const Checkbox: Component.Leaf<CheckboxProps> = (props) =>
         const current = yield* checked.get;
         // Clicking always toggles to checked or unchecked (never to indeterminate)
         const newChecked = current === true ? false : true;
-        yield* checked.set(newChecked);
         yield* props.onCheckedChange?.(newChecked) ?? Effect.void;
       });
 

@@ -1,4 +1,6 @@
-import { Data, Effect } from "effect";
+import { Data, Effect, Stream } from "effect";
+
+import { mapReadable, type Readable } from "@effex/core";
 
 /**
  * Error thrown when attempting to access an element ref that has no element bound.
@@ -49,12 +51,27 @@ export class DataAttributeNotFound extends Data.TaggedError(
  *
  * // Pass to element
  * return yield* $.button({ ref: buttonRef, onClick: handleClick }, "Click");
+ *
+ * // React to element being connected to the DOM
+ * yield* Reaction.make(buttonRef.isConnected, (connected) => {
+ *   if (connected) {
+ *     const el = Element.getUnsafe(buttonRef);
+ *     // Measure or manipulate element after it's in the DOM
+ *   }
+ *   return Effect.void;
+ * });
  * ```
  */
 export type ElementRef<T extends Element = HTMLElement> = Effect.Effect<
   T,
   NoSuchElementException
->;
+> & {
+  /**
+   * A Readable that tracks whether the element is connected to the DOM.
+   * Use with Reaction to run effects when the element mounts/unmounts.
+   */
+  readonly isConnected: Readable<boolean>;
+};
 
 /**
  * Internal WeakMap that binds ref Effects to their DOM elements.
@@ -155,10 +172,69 @@ export const makeElementRef = <
       );
     });
 
-    // Mark this Effect as an ElementRef so we can identify it later
-    (refEffect as unknown as Record<symbol, boolean>)[elementRefSymbol] = true;
+    // Track connection state with RAF-based polling
+    let lastConnected = false;
+    const subscribers = new Set<(connected: boolean) => void>();
+    let pollingActive = false;
 
-    return refEffect as ElementRef<T>;
+    const startPolling = () => {
+      if (pollingActive) return;
+      pollingActive = true;
+
+      const poll = () => {
+        const element = elementRefMap.get(refEffect);
+        const connected = element?.isConnected ?? false;
+
+        if (connected !== lastConnected) {
+          lastConnected = connected;
+          for (const sub of subscribers) {
+            sub(connected);
+          }
+        }
+
+        // Continue polling only while there are subscribers
+        if (subscribers.size > 0) {
+          requestAnimationFrame(poll);
+        } else {
+          pollingActive = false;
+        }
+      };
+
+      requestAnimationFrame(poll);
+    };
+
+    // Create the isConnected Readable
+    const isConnected: Readable<boolean> = {
+      get: Effect.sync(() => {
+        const element = elementRefMap.get(refEffect);
+        return element?.isConnected ?? false;
+      }),
+      get changes(): Stream.Stream<boolean> {
+        return Stream.async<boolean>((emit) => {
+          const handler = (connected: boolean) => emit.single(connected);
+          subscribers.add(handler);
+          startPolling();
+          return Effect.sync(() => {
+            subscribers.delete(handler);
+          });
+        });
+      },
+      get values(): Stream.Stream<boolean> {
+        return Stream.concat(Stream.fromEffect(this.get), this.changes);
+      },
+      map<B>(f: (a: boolean) => B): Readable<B> {
+        return mapReadable(this, f);
+      },
+    };
+
+    // Attach isConnected and mark as ElementRef
+    const ref = refEffect as ElementRef<T>;
+    (ref as unknown as Record<string | symbol, unknown>)[elementRefSymbol] =
+      true;
+    (ref as unknown as Record<string | symbol, unknown>).isConnected =
+      isConnected;
+
+    return ref;
   });
 
 /**
