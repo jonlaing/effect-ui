@@ -51,6 +51,85 @@ describe("Signal.fromNullable", () => {
   });
 });
 
+describe("Signal.fromReactive", () => {
+  it("should return existing Signal when provided", async () => {
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const existing = yield* Signal.make(42);
+          const signal = yield* Signal.fromReactive(existing, 0);
+          return signal === existing;
+        }),
+      ),
+    );
+    expect(result).toBe(true);
+  });
+
+  it("should create Signal from Readable with its current value", async () => {
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const readable = yield* Signal.make(42);
+          // Cast to remove set method to simulate a pure Readable
+          const readableOnly = {
+            get: readable.get,
+            changes: readable.changes,
+            values: readable.values,
+            map: readable.map,
+          };
+          const signal = yield* Signal.fromReactive(readableOnly, 0);
+          return yield* signal.get;
+        }),
+      ),
+    );
+    expect(result).toBe(42);
+  });
+
+  it("should create Signal from plain value", async () => {
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const signal = yield* Signal.fromReactive(42, 0);
+          return yield* signal.get;
+        }),
+      ),
+    );
+    expect(result).toBe(42);
+  });
+
+  it("should use default when value is undefined", async () => {
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const signal = yield* Signal.fromReactive(undefined, 99);
+          return yield* signal.get;
+        }),
+      ),
+    );
+    expect(result).toBe(99);
+  });
+
+  it("should create writable Signal from Readable", async () => {
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const readable = yield* Signal.make(10);
+          const readableOnly = {
+            get: readable.get,
+            changes: readable.changes,
+            values: readable.values,
+            map: readable.map,
+          };
+          const signal = yield* Signal.fromReactive(readableOnly, 0);
+          yield* signal.set(20);
+          return yield* signal.get;
+        }),
+      ),
+    );
+    expect(result).toBe(20);
+  });
+});
+
 describe("Signal", () => {
   it("should create a signal with initial value", async () => {
     const result = await Effect.runPromise(

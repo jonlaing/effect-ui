@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { $, Component, Readable, type ClassValue } from "@effex/dom";
+import { $, Component, Readable, Signal, type ClassValue } from "@effex/dom";
 
 /**
  * Checkbox state - can be checked, unchecked, or indeterminate.
@@ -82,7 +82,10 @@ export interface CheckboxProps {
  * ```
  */
 export const Checkbox = Component.gen(function* (props: CheckboxProps) {
-  const checked = Readable.of(props.checked ?? false);
+  const checked = yield* Signal.fromReactive(
+    props.checked,
+    props.defaultChecked ?? false,
+  );
 
   // Normalize props to Readables
   const disabled = Readable.of(props.disabled ?? false);
@@ -96,6 +99,7 @@ export const Checkbox = Component.gen(function* (props: CheckboxProps) {
       // Clicking always toggles to checked or unchecked (never to indeterminate)
       const newChecked = current === true ? false : true;
       yield* props.onCheckedChange?.(newChecked) ?? Effect.void;
+      yield* checked.set(newChecked);
     });
 
   const dataState = checked.map((c) => {

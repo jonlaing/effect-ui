@@ -123,6 +123,75 @@ export const fromNullable = <A>(
     : make(defaultValue, options);
 
 /**
+ * Create a Signal from a reactive value (Signal, Readable, or plain value).
+ *
+ * - If input is already a Signal, returns it as-is
+ * - If input is a Readable, creates a new Signal initialized with the Readable's current value
+ * - If input is a plain value, creates a new Signal with that value
+ *
+ * This is useful for controlled/uncontrolled component patterns where a prop
+ * can be either a Signal (controlled), a Readable, or a plain value (uncontrolled).
+ *
+ * @param value - A Signal, Readable, or plain value
+ * @param defaultValue - Default value to use if the input value is undefined
+ * @param options - Optional configuration for the new Signal
+ *
+ * @example
+ * ```ts
+ * // In a component that accepts flexible input:
+ * interface CheckboxProps {
+ *   checked?: Signal<boolean> | Readable<boolean> | boolean;
+ *   defaultChecked?: boolean;
+ * }
+ *
+ * const Checkbox = (props: CheckboxProps) =>
+ *   Effect.gen(function* () {
+ *     // Works with Signal (controlled), Readable, or boolean (uncontrolled)
+ *     const checked = yield* Signal.fromReactive(
+ *       props.checked,
+ *       props.defaultChecked ?? false
+ *     );
+ *   });
+ * ```
+ */
+export const fromReactive = <A>(
+  value: Signal<A> | Readable<A> | A | undefined,
+  defaultValue: A,
+  options?: SignalOptions<A>,
+): Effect.Effect<Signal<A>, never, Scope.Scope> =>
+  Effect.gen(function* () {
+    // Handle undefined - use default value
+    if (value === undefined) {
+      return yield* make(defaultValue, options);
+    }
+
+    // Check if it's a Signal (has both get and set)
+    if (
+      typeof value === "object" &&
+      value !== null &&
+      "get" in value &&
+      "set" in value
+    ) {
+      return value as Signal<A>;
+    }
+
+    // Check if it's a Readable (has get but not set)
+    if (
+      typeof value === "object" &&
+      value !== null &&
+      "get" in value &&
+      !("set" in value)
+    ) {
+      const readable = value as Readable<A>;
+      const currentValue = yield* readable.get;
+      return yield* make(currentValue ?? defaultValue, options);
+    }
+
+    // Otherwise, it's a plain value
+    return yield* make(value as A, options);
+  });
+
+/**
  * Context service for creating and managing Signals within a scope.
  */
 export class SignalRegistry extends Context.Tag("effex/SignalRegistry")<
@@ -146,6 +215,7 @@ export class SignalRegistry extends Context.Tag("effex/SignalRegistry")<
 export const Signal = {
   make,
   fromNullable,
+  fromReactive,
   SignalRegistry,
   /**
    * Create a reactive array with in-place mutation methods.
