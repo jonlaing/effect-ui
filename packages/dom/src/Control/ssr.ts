@@ -113,7 +113,8 @@ export const ssrEach = <A, E, R>(
     yield* addHydrationMarkers(renderer, container, "each", hydrationId);
 
     // Render each item with a static readable (no updates during SSR)
-    for (const item of initialItems) {
+    for (let i = 0; i < initialItems.length; i++) {
+      const item = initialItems[i];
       const key = config.key(item);
       const staticReadable: Readable<A> = {
         get: Effect.succeed(item),
@@ -121,8 +122,15 @@ export const ssrEach = <A, E, R>(
         values: Stream.make(item),
         map: <B>(f: (a: A) => B): Readable<B> => mapReadable(staticReadable, f),
       };
+      const staticIndexReadable: Readable<number> = {
+        get: Effect.succeed(i),
+        changes: Stream.empty,
+        values: Stream.make(i),
+        map: <B>(f: (a: number) => B): Readable<B> =>
+          mapReadable(staticIndexReadable, f),
+      };
 
-      const element = yield* config.render(staticReadable);
+      const element = yield* config.render(staticReadable, staticIndexReadable);
       yield* addItemHydrationKey(renderer, element, key);
       yield* renderer.appendChild(container, element);
     }

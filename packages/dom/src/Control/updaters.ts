@@ -69,6 +69,51 @@ export const createItemReadable = <A>(initialValue: A) => {
 };
 
 /**
+ * Create an updatable readable for list item indices.
+ */
+export const createIndexReadable = (initialIndex: number) => {
+  let currentIndex = initialIndex;
+  const subscribers = new Set<(value: number) => void>();
+
+  let cachedChanges: Stream.Stream<number> | null = null;
+  const getChanges = (): Stream.Stream<number> => {
+    if (!cachedChanges) {
+      cachedChanges = Stream.async<number>((emit) => {
+        const handler = (value: number) => emit.single(value);
+        subscribers.add(handler);
+        return Effect.sync(() => {
+          subscribers.delete(handler);
+        });
+      });
+    }
+    return cachedChanges;
+  };
+
+  const readable: Readable<number> & { _update: (value: number) => void } = {
+    get: Effect.sync(() => currentIndex),
+    get changes(): Stream.Stream<number> {
+      return getChanges();
+    },
+    get values(): Stream.Stream<number> {
+      return Stream.concat(Stream.make(currentIndex), this.changes);
+    },
+    map<B>(f: (a: number) => B): Readable<B> {
+      return mapReadable(this as Readable<number>, f);
+    },
+    _update: (value: number) => {
+      if (value !== currentIndex) {
+        currentIndex = value;
+        for (const handler of subscribers) {
+          handler(value);
+        }
+      }
+    },
+  };
+
+  return readable;
+};
+
+/**
  * Provide DOMRenderer for creating new content.
  */
 const withDOMRenderer = <A, E, R>(
@@ -260,6 +305,7 @@ export const createEachUpdater = <A, E, R>(
       element: HTMLElement;
       scope: Scope.CloseableScope;
       readable: Readable<A> & { _update: (value: A) => void };
+      indexReadable: Readable<number> & { _update: (value: number) => void };
     }
   >();
   const animate = config.animate;
@@ -271,8 +317,9 @@ export const createEachUpdater = <A, E, R>(
       element: HTMLElement,
       scope: Scope.CloseableScope,
       readable: Readable<A> & { _update: (value: A) => void },
+      indexReadable: Readable<number> & { _update: (value: number) => void },
     ) => {
-      itemMap.set(key, { element, scope, readable });
+      itemMap.set(key, { element, scope, readable, indexReadable });
     },
 
     /** Handle list update */
@@ -331,9 +378,10 @@ export const createEachUpdater = <A, E, R>(
           if (!existing) {
             const itemScope = yield* Scope.make();
             const itemReadable = createItemReadable(item);
+            const indexReadable = createIndexReadable(i);
 
             const element = yield* withDOMRenderer(
-              config.render(itemReadable),
+              config.render(itemReadable, indexReadable),
             ).pipe(Effect.provideService(Scope.Scope, itemScope));
 
             const currentChildren = Array.from(container.children);
@@ -344,6 +392,7 @@ export const createEachUpdater = <A, E, R>(
               element,
               scope: itemScope,
               readable: itemReadable,
+              indexReadable,
             });
 
             if (animate) {
@@ -353,6 +402,7 @@ export const createEachUpdater = <A, E, R>(
           }
 
           existing.readable._update(item);
+          existing.indexReadable._update(i);
 
           const currentChildren = Array.from(container.children);
           const currentPosition = currentChildren.indexOf(existing.element);

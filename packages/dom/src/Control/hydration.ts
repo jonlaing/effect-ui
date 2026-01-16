@@ -18,6 +18,7 @@ import { HydrationMismatchError } from "./errors";
 import type { EachConfig, MatchConfig, WhenConfig } from "./types";
 import {
   createEachUpdater,
+  createIndexReadable,
   createItemReadable,
   createMatchUpdater,
   createWhenUpdater,
@@ -192,7 +193,8 @@ export const hydrationEach = <A, E, R>(
     const updater = createEachUpdater(container, config);
 
     // Hydrate each existing item and attach handlers
-    for (const item of initialItems) {
+    for (let i = 0; i < initialItems.length; i++) {
+      const item = initialItems[i];
       const key = config.key(item);
 
       const existingElement = container.querySelector(
@@ -203,17 +205,24 @@ export const hydrationEach = <A, E, R>(
 
       const itemScope = yield* Scope.make();
       const itemReadable = createItemReadable(item);
+      const indexReadable = createIndexReadable(i);
       const scopedRenderer = createHydrationRenderer(existingElement);
 
       yield* Effect.provideService(
         config
-          .render(itemReadable)
+          .render(itemReadable, indexReadable)
           .pipe(Effect.provideService(Scope.Scope, itemScope)),
         RendererContext,
         scopedRenderer as RendererInterface<unknown>,
       );
 
-      updater.addHydratedItem(key, existingElement, itemScope, itemReadable);
+      updater.addHydratedItem(
+        key,
+        existingElement,
+        itemScope,
+        itemReadable,
+        indexReadable,
+      );
     }
 
     // Subscribe to changes using shared updater

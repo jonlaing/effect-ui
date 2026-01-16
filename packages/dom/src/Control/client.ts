@@ -17,6 +17,7 @@ import { createDefaultContainer } from "./helpers";
 import type { EachConfig, MatchConfig, WhenConfig } from "./types";
 import {
   createEachUpdater,
+  createIndexReadable,
   createItemReadable,
   createMatchUpdater,
   createWhenUpdater,
@@ -138,17 +139,25 @@ export const clientEach = <A, E, R>(
     const updater = createEachUpdater(container, config);
 
     // Create and append initial items
-    for (const item of initialItems) {
+    for (let i = 0; i < initialItems.length; i++) {
+      const item = initialItems[i];
       const key = config.key(item);
       const itemScope = yield* Scope.make();
       const itemReadable = createItemReadable(item);
+      const indexReadable = createIndexReadable(i);
 
       const element = yield* config
-        .render(itemReadable)
+        .render(itemReadable, indexReadable)
         .pipe(Effect.provideService(Scope.Scope, itemScope));
 
       yield* renderer.appendChild(container, element);
-      updater.addHydratedItem(key, element, itemScope, itemReadable);
+      updater.addHydratedItem(
+        key,
+        element,
+        itemScope,
+        itemReadable,
+        indexReadable,
+      );
     }
 
     // Subscribe to changes using shared updater

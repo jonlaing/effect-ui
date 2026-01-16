@@ -120,8 +120,15 @@ export interface EachConfig<A, E = never, R = never> {
   readonly container?: () => Element.Element<never, never>;
   /** Function to extract a unique key from each item */
   readonly key: (item: A) => string;
-  /** Function to render each item (receives a Readable for the item) */
-  readonly render: (item: Readable<A>) => Element.Element<E, R>;
+  /**
+   * Function to render each item.
+   * @param item - Readable for the item data (updates when item changes)
+   * @param index - Readable for the item's position (updates when items reorder)
+   */
+  readonly render: (
+    item: Readable<A>,
+    index: Readable<number>,
+  ) => Element.Element<E, R>;
   /** Optional animation configuration */
   readonly animate?: ListAnimationOptions;
 }

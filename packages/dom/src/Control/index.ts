@@ -187,7 +187,7 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
  * each(todos, {
  *   container: () => $.ul({ class: "todo-list" }),
  *   key: (todo) => todo.id,
- *   render: (todo) => $.li(todo.map(t => t.text))
+ *   render: (todo, index) => $.li(todo.map(t => t.text))
  * })
  * ```
  *

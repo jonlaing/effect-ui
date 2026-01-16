@@ -177,7 +177,7 @@ describe("Control", () => {
 
           const el = yield* each(items, {
             key: (item) => item.id,
-            render: (item) => li(item.map((i) => i.name)),
+            render: (item, _index) => li(item.map((i) => i.name)),
           });
 
           expect(el.children.length).toBe(3);
@@ -195,7 +195,7 @@ describe("Control", () => {
 
           const el = yield* each(items, {
             key: (item) => item.id,
-            render: (item) => li(item.map((i) => i.name)),
+            render: (item, _index) => li(item.map((i) => i.name)),
           });
 
           expect(el.children.length).toBe(1);
@@ -219,7 +219,7 @@ describe("Control", () => {
 
           const el = yield* each(items, {
             key: (item) => item.id,
-            render: (item) => li(item.map((i) => i.name)),
+            render: (item, _index) => li(item.map((i) => i.name)),
           });
 
           expect(el.children.length).toBe(2);
@@ -240,7 +240,7 @@ describe("Control", () => {
 
           const el = yield* each(items, {
             key: (item) => item.id,
-            render: (item) => li(item.map((i) => i.name)),
+            render: (item, _index) => li(item.map((i) => i.name)),
           });
 
           expect(el.children[0].textContent).toBe("Alice");
@@ -266,7 +266,7 @@ describe("Control", () => {
 
           const el = yield* each(items, {
             key: (item) => item.id,
-            render: (item) => li(item.map((i) => i.name)),
+            render: (item, _index) => li(item.map((i) => i.name)),
           });
 
           expect(el.children[0].textContent).toBe("Alice");
@@ -292,7 +292,7 @@ describe("Control", () => {
 
           const el = yield* each(items, {
             key: (item) => item.id,
-            render: (item) => li(item.map((i) => i.name)),
+            render: (item, _index) => li(item.map((i) => i.name)),
           });
 
           expect(el.children.length).toBe(0);
