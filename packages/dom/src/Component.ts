@@ -52,14 +52,18 @@ type InferRequirements<Eff> = [Eff] extends [never]
 const gen: <
   Props,
   Eff extends YieldWrap<Effect.Effect<any, any, any>>,
+  CEff extends YieldWrap<Effect.Effect<any, any, any>>,
   A extends HTMLElement = HTMLElement,
 >(
-  body: (props: Props, children?: Children) => Generator<Eff, A, never>,
+  body: (
+    props: Props,
+    children?: Children<InferError<CEff>, InferRequirements<CEff>>,
+  ) => Generator<Eff, A, never>,
 ) => Component.Node<
   Props,
-  never,
+  InferRequirements<CEff>,
   InferRequirements<Eff>,
-  never,
+  InferError<CEff>,
   InferError<Eff>
 > = (body) => (props, children) => Effect.gen(() => body(props, children));
 

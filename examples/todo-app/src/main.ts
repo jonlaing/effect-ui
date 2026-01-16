@@ -45,6 +45,7 @@ const TodoItem = Component.gen(function* (props: TodoItemProps) {
     c ? "line-through text-base-content/50" : "",
   );
 
+  // set the max-height for smooth removal animation
   yield* Reaction.make([itemRef.isConnected], ([isConnected]) =>
     Effect.gen(function* () {
       if (isConnected) {
@@ -105,6 +106,7 @@ interface AddTodoFormProps {
 
 const AddTodoForm = Component.gen(function* (props: AddTodoFormProps) {
   const inputValue = yield* Signal.make("");
+  const inputRef = yield* Element.ref<HTMLInputElement>();
 
   const handleSubmit = Effect.gen(function* () {
     const text = yield* inputValue.get;
@@ -112,6 +114,20 @@ const AddTodoForm = Component.gen(function* (props: AddTodoFormProps) {
     if (trimmed) {
       yield* props.onAdd(trimmed);
       yield* inputValue.set("");
+      yield* inputRef.pipe(
+        Element.animate(
+          [
+            { transform: "scale(1)" },
+            { transform: "scale(1.05)" },
+            { transform: "scale(1)" },
+          ],
+          {
+            duration: 150,
+            easing: "ease-in-out",
+          },
+        ),
+        Effect.ignore,
+      );
     }
   });
 
@@ -125,6 +141,7 @@ const AddTodoForm = Component.gen(function* (props: AddTodoFormProps) {
     },
     [
       $.input({
+        ref: inputRef,
         type: "text",
         class: "input input-bordered flex-1",
         placeholder: "What needs to be done?",
@@ -155,20 +172,65 @@ const Stats = Component.gen(function* (props: StatsProps) {
   const completed = props.todos.map((t) => t.filter((x) => x.completed).length);
   const remaining = Readable.combine([total, completed]).map(([t, c]) => t - c);
 
-  return yield* $.div({ class: "stats stats-horizontal bg-base-200 w-full" }, [
-    $.div({ class: "stat" }, [
-      $.div({ class: "stat-title" }, "Total"),
-      $.div({ class: "stat-value text-primary" }, total.map(String)),
-    ]),
-    $.div({ class: "stat" }, [
-      $.div({ class: "stat-title" }, "Completed"),
-      $.div({ class: "stat-value text-success" }, completed.map(String)),
-    ]),
-    $.div({ class: "stat" }, [
-      $.div({ class: "stat-title" }, "Remaining"),
-      $.div({ class: "stat-value text-warning" }, remaining.map(String)),
-    ]),
-  ]);
+  // making arrays so that I can animate old vs new values
+  const totalArr = yield* Signal.Array.make<number>([yield* total.get]);
+  const completedArr = yield* Signal.Array.make<number>([yield* completed.get]);
+  const remainingArr = yield* Signal.Array.make<number>([yield* remaining.get]);
+
+  yield* Reaction.make([total, completed, remaining], ([t, c, r]) =>
+    Effect.gen(function* () {
+      yield* totalArr.push(t);
+      yield* completedArr.push(c);
+      yield* remainingArr.push(r);
+
+      // Keep only the latest value
+      yield* totalArr.removeAt(0);
+      yield* completedArr.removeAt(0);
+      yield* remainingArr.removeAt(0);
+    }),
+  );
+
+  return yield* $.div(
+    { class: "stats stats-horizontal bg-base-200 w-full overflow-hidden" },
+    [
+      $.div({ class: "stat" }, [
+        $.div({ class: "stat-title" }, "Total"),
+        each(totalArr, {
+          key: (tot) => String(tot),
+          render: (tot, _index) =>
+            $.div({ class: "stat-value text-primary" }, tot.map(String)),
+          animate: {
+            enter: "animate-in slide-in-from-top fade-in",
+            exit: "animate-out slide-out-to-bottom fade-out",
+          },
+        }),
+      ]),
+      $.div({ class: "stat" }, [
+        $.div({ class: "stat-title" }, "Completed"),
+        each(completedArr, {
+          key: (c) => String(c),
+          render: (c, _index) =>
+            $.div({ class: "stat-value text-success" }, c.map(String)),
+          animate: {
+            enter: "animate-in slide-in-from-top fade-in",
+            exit: "animate-out slide-out-to-bottom fade-out",
+          },
+        }),
+      ]),
+      $.div({ class: "stat" }, [
+        $.div({ class: "stat-title" }, "Remaining"),
+        each(remainingArr, {
+          key: (r) => String(r),
+          render: (r, _index) =>
+            $.div({ class: "stat-value text-warning" }, r.map(String)),
+          animate: {
+            enter: "animate-in slide-in-from-top fade-in",
+            exit: "animate-out slide-out-to-bottom fade-out",
+          },
+        }),
+      ]),
+    ],
+  );
 });
 
 // =============================================================================
@@ -272,17 +334,16 @@ const App = Component.gen(function* () {
           each(todos, {
             container: () => $.ul({ class: "flex flex-col gap-2" }),
             key: (todo) => todo.id,
-            render: (todo) =>
+            render: (todo, _index) =>
               TodoItem({
                 todo,
                 onToggle: toggleTodo,
                 onDelete: deleteTodo,
               }),
             animate: {
-              enter:
-                "animate-in fade-in slide-in-from-top-2 zoom-in-95 animate-uncollapse",
+              enter: "animate-in fade-in slide-in-from-top zoom-in-95 expand",
               exit: "animate-out fade-out zoom-out-95",
-              exitTo: "animate-collapse",
+              exitTo: "animate-out collapse",
             },
           }),
 
@@ -326,10 +387,18 @@ runApp(
         App({}),
         Toast.Viewport(
           {
-            class: "fixed bottom-4 right-4 flex flex-col gap-2 z-50 w-80",
+            class:
+              "fixed bottom-4 right-4 flex flex-col justify-baseline gap-2 z-50 w-80",
             animate: {
-              enter: "animate-in fade-in slide-in-from-right-4",
-              exit: "animate-out fade-out slide-out-to-right-4",
+              enter: "animate-in fade-in slide-in-from-right",
+              onBeforeExit: (el) =>
+                el.pipe(
+                  Element.getScrollHeight,
+                  Effect.flatMap((height) =>
+                    Element.setStyle(el, "max-height", `${height}px`),
+                  ),
+                ),
+              exit: "animate-out fade-out slide-out-to-right collapse",
             },
           },
           Toast.Root(

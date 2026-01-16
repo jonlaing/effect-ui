@@ -54,6 +54,7 @@
         var(--tw-enter-scale, 1),
         var(--tw-enter-scale, 1)
       );
+    max-height: var(--tw-enter-max-height, none);
   }
 }
 
@@ -70,6 +71,7 @@
         var(--tw-exit-scale, 1),
         var(--tw-exit-scale, 1)
       );
+    max-height: var(--tw-exit-max-height, none);
   }
 }
 
@@ -80,6 +82,7 @@
   --tw-enter-scale: initial;
   --tw-enter-translate-x: initial;
   --tw-enter-translate-y: initial;
+  --tw-enter-max-height: initial;
 }
 
 .animate-out {
@@ -88,6 +91,7 @@
   --tw-exit-scale: initial;
   --tw-exit-translate-x: initial;
   --tw-exit-translate-y: initial;
+  --tw-exit-max-height: initial;
 }
 
 /* Fade modifiers */
@@ -174,33 +178,10 @@
   --tw-exit-translate-y: -0.5rem;
 }
 
-/* Height collapse animation for todo removal */
-@keyframes collapse {
-  to {
-    max-height: 0;
-    opacity: 0;
-    margin-bottom: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-    overflow: hidden;
-  }
+.collapse {
+  --tw-exit-max-height: 0;
 }
 
-.animate-collapse {
-  animation: collapse 200ms ease-in forwards;
-}
-
-@keyframes uncollapse {
-  from {
-    max-height: 0;
-    opacity: 0;
-    margin-bottom: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-    overflow: hidden;
-  }
-}
-
-.animate-uncollapse {
-  animation: uncollapse 200ms ease-in forwards;
+.expand {
+  --tw-enter-max-height: 0;
 }

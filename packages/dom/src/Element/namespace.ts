@@ -1110,6 +1110,55 @@ export const Element = {
   ),
 
   // ===========================================================================
+  // Animation
+  // ===========================================================================
+
+  /**
+   * Animate an element using the Web Animations API.
+   * The Effect resolves when the animation finishes, preserving the element for chaining.
+   *
+   * @example
+   * ```ts
+   * // Simple pulse animation
+   * buttonRef.pipe(
+   *   Element.animate(
+   *     [{ transform: "scale(1)" }, { transform: "scale(1.1)" }, { transform: "scale(1)" }],
+   *     { duration: 200 }
+   *   ),
+   * )
+   *
+   * // Chain actions after animation completes
+   * el.pipe(
+   *   Element.animate([{ opacity: "0" }, { opacity: "1" }], 300),
+   *   Element.focus,
+   * )
+   * ```
+   */
+  animate: dual<
+    (
+      keyframes: Keyframe[] | PropertyIndexedKeyframes,
+      options?: number | KeyframeAnimationOptions,
+    ) => <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+    ) => Effect.Effect<A, E, R>,
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      keyframes: Keyframe[] | PropertyIndexedKeyframes,
+      options?: number | KeyframeAnimationOptions,
+    ) => Effect.Effect<A, E, R>
+  >(
+    (args) => Effect.isEffect(args[0]),
+    <A extends HTMLElement, E, R>(
+      self: Effect.Effect<A, E, R>,
+      keyframes: Keyframe[] | PropertyIndexedKeyframes,
+      options?: number | KeyframeAnimationOptions,
+    ): Effect.Effect<A, E, R> =>
+      Effect.tap(self, (el) =>
+        Effect.promise(() => el.animate(keyframes, options).finished),
+      ),
+  ),
+
+  // ===========================================================================
   // Events
   // ===========================================================================
 
