@@ -1,9 +1,21 @@
 import { Effect, Layer, Option, pipe } from "effect";
 
 import { $, Derived, Element, match } from "@effex/dom";
-import { RouterContext } from "@effex/router";
+import {
+  makeOutletLayer,
+  RouterContext,
+  type LayoutComponentsMap,
+} from "@effex/router";
 
 import { LoaderContextTag, makeLoaderContext } from "./RouteLoader.js";
+
+/**
+ * Maps route names to their layout chains.
+ * Re-exported from router for convenience.
+ */
+export type RouteLayoutsMap = {
+  readonly [K: string]: readonly string[];
+};
 
 /**
  * A component function that returns an Element.
@@ -35,7 +47,10 @@ export type ComponentsRequirements<T extends ComponentsMap> = {
 /**
  * Props for the Routes component.
  */
-export interface RoutesProps<T extends ComponentsMap = ComponentsMap> {
+export interface RoutesProps<
+  T extends ComponentsMap = ComponentsMap,
+  L extends LayoutComponentsMap = LayoutComponentsMap,
+> {
   /**
    * Map of route names to component functions.
    * Pass the `components` export from your generated routes file.
@@ -50,14 +65,28 @@ export interface RoutesProps<T extends ComponentsMap = ComponentsMap> {
     ComponentsError<T>,
     ComponentsRequirements<T>
   >;
+
+  /**
+   * Map of layout names to layout component functions.
+   * Pass the `layoutComponents` export from your generated routes file.
+   * Layouts use the Outlet component to render their children.
+   */
+  readonly layoutComponents?: L;
+
+  /**
+   * Map of route names to their layout chains.
+   * Pass the `routeLayouts` export from your generated routes file.
+   * Each entry is an array of layout names, ordered from outermost to innermost.
+   */
+  readonly routeLayouts?: RouteLayoutsMap;
 }
 
 /**
- * Renders the component for the currently active route.
+ * Renders the component for the currently active route, wrapped in any applicable layouts.
  *
  * This component reads the current route from RouterContext and renders
- * the corresponding component from the components map. It automatically
- * re-renders when the route changes.
+ * the corresponding component from the components map. When layouts are configured,
+ * the route component is wrapped in its layout hierarchy automatically.
  *
  * The return type preserves error and requirement types from all route
  * components, allowing TypeScript to track which errors need handling
@@ -65,15 +94,29 @@ export interface RoutesProps<T extends ComponentsMap = ComponentsMap> {
  *
  * @example
  * ```ts
- * import { Routes, Component } from "@effex/platform";
- * import { routes, components } from "./generated/routes";
+ * // Without layouts (simple case)
+ * import { Routes } from "@effex/platform";
+ * import { components } from "./generated/routes";
  *
  * const App = Component.gen(function* () {
  *   return yield* div([
- *     Header(),
  *     Routes({ components }),
- *     Footer(),
  *   ]);
+ * });
+ * ```
+ *
+ * @example
+ * ```ts
+ * // With layouts
+ * import { Routes } from "@effex/platform";
+ * import { components, layoutComponents, routeLayouts } from "./generated/routes";
+ *
+ * const App = Component.gen(function* () {
+ *   return yield* Routes({
+ *     components,
+ *     layoutComponents,
+ *     routeLayouts,
+ *   });
  * });
  * ```
  *
@@ -86,8 +129,11 @@ export interface RoutesProps<T extends ComponentsMap = ComponentsMap> {
  * })
  * ```
  */
-const RoutesImpl = <T extends ComponentsMap>(
-  props: RoutesProps<T>,
+const RoutesImpl = <
+  T extends ComponentsMap,
+  L extends LayoutComponentsMap = LayoutComponentsMap,
+>(
+  props: RoutesProps<T, L>,
 ): Element.Element<
   ComponentsError<T>,
   ComponentsRequirements<T> | RouterContext
@@ -194,15 +240,78 @@ const RoutesImpl = <T extends ComponentsMap>(
           return yield* Effect.provide(componentFn(), loaderLayer);
         });
 
-    // Build match cases from components map, wrapping each with LoaderContext
+    /**
+     * Wrap a route component with its layout hierarchy.
+     * Builds the nested structure from innermost (route) to outermost (root layout).
+     */
+    const wrapWithLayouts = (
+      routeName: string,
+      routeComponentFn: RouteComponent<any, any>,
+    ): RouteComponent<any, any> => {
+      // If no layouts configured, return the route component directly
+      if (!props.layoutComponents || !props.routeLayouts) {
+        return routeComponentFn;
+      }
+
+      const layoutNames = props.routeLayouts[routeName];
+
+      // If route has no layouts, return the route component directly
+      if (!layoutNames || layoutNames.length === 0) {
+        return routeComponentFn;
+      }
+
+      // Build from innermost to outermost
+      // Start with the route component as the innermost content
+      // Then wrap each layout around it, from innermost layout to outermost
+      // e.g., layouts = ["root_layout", "users_layout"]
+      // Result: RootLayout -> UsersLayout -> RouteComponent
+
+      // Reverse so we build from innermost (last layout) to outermost (first layout)
+      const reversedLayouts = [...layoutNames].reverse();
+
+      let currentContent: RouteComponent<any, any> = routeComponentFn;
+
+      for (const layoutName of reversedLayouts) {
+        const layoutComponent = props.layoutComponents[layoutName];
+        if (!layoutComponent) {
+          // Layout not found - skip it (shouldn't happen with proper generation)
+          continue;
+        }
+
+        // Capture current content in closure
+        const innerContent = currentContent;
+
+        // Create a new component that wraps the layout with OutletContext
+        currentContent = () =>
+          Effect.gen(function* () {
+            const outletLayer = makeOutletLayer(innerContent, routeName);
+            return yield* Effect.provide(layoutComponent(), outletLayer);
+          }) as Element.Element<any, any>;
+      }
+
+      return currentContent;
+    };
+
+    // Build match cases from components map
+    // Each route component is wrapped with:
+    // 1. LoaderContext (for accessing loader data)
+    // 2. Layout hierarchy (if layouts are configured)
     const cases = Object.entries(props.components).map(
-      ([routeName, componentFn]) => ({
-        pattern: routeName,
-        render: wrapWithLoaderContext(routeName, componentFn),
-      }),
+      ([routeName, componentFn]) => {
+        // First wrap with loader context
+        const withLoaderContext = wrapWithLoaderContext(routeName, componentFn);
+        // Then wrap with layouts
+        const withLayouts = wrapWithLayouts(routeName, withLoaderContext);
+
+        return {
+          pattern: routeName,
+          render: withLayouts,
+        };
+      },
     );
 
     // Default fallback renders empty div with display:contents
+    // Note: Fallback is NOT wrapped with layouts - it renders standalone
     const fallback =
       props.fallback ?? (() => $.div({ style: { display: "contents" } }, []));
 

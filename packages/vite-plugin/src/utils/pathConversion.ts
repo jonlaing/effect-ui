@@ -134,6 +134,74 @@ export const routeNameToComponentImportName = (routeName: string): string => {
 };
 
 /**
+ * Convert a layout file path to a layout name.
+ *
+ * @param filePath - File path relative to routes directory (e.g., "users._layout.tsx")
+ * @returns Layout name (e.g., "users_layout", or "root_layout" for root layout)
+ */
+export const filePathToLayoutName = (filePath: string): string => {
+  // Remove extension
+  let name = filePath.replace(/\.(tsx?|jsx?)$/, "");
+
+  // Root layout
+  if (name === "_layout") {
+    return "root_layout";
+  }
+
+  // Replace dots with underscores
+  name = name.replace(/\./g, "_");
+
+  return name;
+};
+
+/**
+ * Convert a layout file path to the path prefix it applies to.
+ *
+ * @param filePath - File path relative to routes directory (e.g., "users._layout.tsx")
+ * @returns Path prefix (e.g., "/users", or "/" for root layout)
+ */
+export const filePathToLayoutPathPrefix = (filePath: string): string => {
+  // Remove extension
+  let path = filePath.replace(/\.(tsx?|jsx?)$/, "");
+
+  // Root layout applies to everything
+  if (path === "_layout") {
+    return "/";
+  }
+
+  // Remove the _layout suffix to get the path prefix
+  path = path.replace(/\._layout$/, "");
+
+  // Convert remaining segments to URL path
+  const segments = path.split(".");
+  const pathParts: string[] = [];
+
+  for (const segment of segments) {
+    // Skip pathless segments (prefixed with _)
+    if (segment.startsWith("_")) {
+      continue;
+    }
+
+    // Handle escape sequences [xyz] -> xyz
+    if (segment.startsWith("[") && segment.endsWith("]")) {
+      pathParts.push(segment.slice(1, -1));
+      continue;
+    }
+
+    // Dynamic parameter
+    if (segment.startsWith("$")) {
+      pathParts.push(":" + segment.slice(1));
+      continue;
+    }
+
+    // Static segment
+    pathParts.push(segment);
+  }
+
+  return "/" + pathParts.join("/");
+};
+
+/**
  * Calculate route specificity for sorting.
  * Higher specificity = more specific route = should be matched first.
  *

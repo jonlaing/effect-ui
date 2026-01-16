@@ -96,4 +96,8 @@ export {
   type ComponentsMap,
   type ComponentsError,
   type ComponentsRequirements,
+  type RouteLayoutsMap,
 } from "./routing/Routes.js";
+
+// Note: Outlet, OutletContext, makeOutletLayer, and LayoutComponentsMap
+// are re-exported from @effex/router via "export * from '@effex/router'" above

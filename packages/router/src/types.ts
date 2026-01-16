@@ -148,6 +148,49 @@ export interface RouteState<P = unknown> {
 }
 
 /**
+ * State for an individual layout within the router.
+ */
+export interface LayoutState {
+  /** Whether this layout is currently active (wrapping the current route) */
+  readonly isActive: Readable.Readable<boolean>;
+}
+
+/**
+ * A layout definition. Layouts can have loaders but not actions.
+ * Layouts use the same Route type but typically don't have path params.
+ */
+export type AnyLayout = Route<
+  string,
+  Schema.Schema.AnyNoContext,
+  unknown,
+  unknown,
+  unknown,
+  never, // No action return type
+  never, // No action error
+  never // No action requirements
+>;
+
+/**
+ * Configuration for layouts in the router.
+ * Maps layout names to their Route definitions.
+ */
+export type LayoutsRecord = Record<string, AnyLayout>;
+
+/**
+ * Maps route names to the layout names that wrap them.
+ * Layout names are ordered from outermost to innermost.
+ *
+ * @example
+ * ```ts
+ * const routeLayouts = {
+ *   index: ["root_layout"],
+ *   users_$id: ["root_layout", "users_layout"],
+ * } satisfies RouteLayoutsRecord;
+ * ```
+ */
+export type RouteLayoutsRecord = Record<string, readonly string[]>;
+
+/**
  * Navigation options.
  */
 export interface NavigateOptions {
@@ -381,6 +424,18 @@ export interface Router<Routes extends Record<string, AnyRoute>> {
   /** The original route definitions (for accessing loaders) */
   readonly definitions: Routes;
   /**
+   * Currently active layout names, ordered from outermost to innermost.
+   * Empty array if no layouts are configured or current route has no layouts.
+   */
+  readonly activeLayouts: Readable.Readable<readonly string[]>;
+  /**
+   * Layout-specific state for each defined layout.
+   * Only present if layouts were configured.
+   */
+  readonly layouts: {
+    readonly [K: string]: LayoutState;
+  };
+  /**
    * Reactive loader state for the current route.
    * Updates automatically when navigation triggers a loader.
    */
@@ -478,11 +533,24 @@ export interface Router<Routes extends Record<string, AnyRoute>> {
 /**
  * Options for creating a Router.
  */
-export interface RouterOptions {
+export interface RouterOptions<
+  Layouts extends LayoutsRecord = LayoutsRecord,
+  RL extends RouteLayoutsRecord = RouteLayoutsRecord,
+> {
   /** Initial path to start at (defaults to window.location.pathname) */
   readonly initialPath?: string;
   /** Initial search string to start at (defaults to window.location.search) */
   readonly initialSearch?: string;
+  /**
+   * Layout definitions. Maps layout names to Route definitions.
+   * Layouts can have loaders but not actions.
+   */
+  readonly layouts?: Layouts;
+  /**
+   * Maps route names to their layout chains.
+   * Each entry is an array of layout names, ordered from outermost to innermost.
+   */
+  readonly routeLayouts?: RL;
 }
 
 /**
@@ -496,6 +564,12 @@ export interface BaseRouter {
   readonly searchParams: Readable.Readable<URLSearchParams>;
   /** The currently matched route name, or Option.none() if no match */
   readonly currentRoute: Readable.Readable<Option.Option<string>>;
+  /** Currently active layout names, ordered from outermost to innermost */
+  readonly activeLayouts: Readable.Readable<readonly string[]>;
+  /** Layout-specific state for each defined layout */
+  readonly layouts: {
+    readonly [K: string]: LayoutState;
+  };
   /** Reactive loader state for the current route */
   readonly loaderState: Readable.Readable<LoaderState>;
   /** Reactive action state for form submissions */

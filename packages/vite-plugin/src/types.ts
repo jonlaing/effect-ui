@@ -28,6 +28,38 @@ export interface ScannedRoute {
   readonly isIndex: boolean;
   /** Detected exports from the file */
   readonly exports: RouteExports;
+  /** Layout names that wrap this route (ordered from outermost to innermost) */
+  readonly layouts: readonly string[];
+}
+
+/**
+ * A scanned layout with its metadata.
+ */
+export interface ScannedLayout {
+  /** File path relative to routes directory (e.g., "users._layout.tsx") */
+  readonly filePath: string;
+  /** Layout name (e.g., "root_layout", "users_layout") */
+  readonly layoutName: string;
+  /** Import name for the layout module (e.g., "UsersLayoutRoute") */
+  readonly importName: string;
+  /** Import name for the default export (e.g., "UsersLayoutComponent") */
+  readonly componentImportName: string;
+  /** Path prefix this layout applies to (e.g., "/users") */
+  readonly pathPrefix: string;
+  /** Parent layout name, if nested (e.g., "root_layout") */
+  readonly parentLayout: string | null;
+  /** Detected exports from the file */
+  readonly exports: RouteExports;
+}
+
+/**
+ * Result of scanning routes directory.
+ */
+export interface ScanResult {
+  /** Scanned routes (excludes layouts) */
+  readonly routes: readonly ScannedRoute[];
+  /** Scanned layouts */
+  readonly layouts: readonly ScannedLayout[];
 }
 
 /**

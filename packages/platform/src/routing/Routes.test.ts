@@ -2,8 +2,8 @@ import { Effect, Option, Stream } from "effect";
 import { describe, expect, it } from "vitest";
 
 import { Signal, type Readable } from "@effex/core";
-import { div, DOMRendererLive } from "@effex/dom";
-import { makeRouterLayer, type BaseRouter } from "@effex/router";
+import { div, DOMRendererLive, span } from "@effex/dom";
+import { makeRouterLayer, Outlet, type BaseRouter } from "@effex/router";
 
 import { Routes } from "./Routes";
 
@@ -27,8 +27,9 @@ const makeTestReadable = <A>(value: A): Readable.Readable<A> => {
 // Note: We use `unknown` cast here because BaseRouter.layer is self-referential
 const createMockRouter = (options?: {
   currentRoute?: string | null;
+  activeLayouts?: readonly string[];
 }): BaseRouter => {
-  const { currentRoute = "home" } = options ?? {};
+  const { currentRoute = "home", activeLayouts = [] } = options ?? {};
 
   // Create partial router first (all properties except layer)
   const partialRouter = {
@@ -37,6 +38,8 @@ const createMockRouter = (options?: {
     currentRoute: makeTestReadable(
       currentRoute === null ? Option.none() : Option.some(currentRoute),
     ),
+    activeLayouts: makeTestReadable(activeLayouts),
+    layouts: {},
     loaderState: makeTestReadable({
       routeName: currentRoute,
       params: {},
@@ -206,6 +209,8 @@ describe("Routes", () => {
         pathname: makeTestReadable("/"),
         searchParams: makeTestReadable(new URLSearchParams()),
         currentRoute: currentRouteSignal,
+        activeLayouts: makeTestReadable([] as readonly string[]),
+        layouts: {},
         loaderState: loaderStateSignal,
         actionState: makeTestReadable({
           isSubmitting: false,
@@ -253,6 +258,125 @@ describe("Routes", () => {
           expect(el.querySelector("#about")).not.toBeNull();
         }),
       );
+    });
+  });
+
+  describe("layouts", () => {
+    // Layout components that use Outlet to render children
+    const RootLayout = () =>
+      div({ id: "root-layout" }, [
+        div({ id: "root-header" }, ["Header"]),
+        div({ id: "root-content" }, [Outlet()]),
+        div({ id: "root-footer" }, ["Footer"]),
+      ]);
+
+    const UsersLayout = () =>
+      div({ id: "users-layout" }, [
+        span({ id: "users-sidebar" }, ["Users Sidebar"]),
+        div({ id: "users-content" }, [Outlet()]),
+      ]);
+
+    // Test layout components map
+    const layoutComponents = {
+      root_layout: RootLayout,
+      users_layout: UsersLayout,
+    };
+
+    // Test route layouts map
+    const routeLayouts = {
+      home: ["root_layout"] as const,
+      about: ["root_layout"] as const,
+      users_$id: ["root_layout", "users_layout"] as const,
+    };
+
+    it("should wrap route component with single layout", async () => {
+      const router = createMockRouter({ currentRoute: "home" });
+      const routerLayer = makeRouterLayer(router);
+
+      const element = await runScoped(
+        Routes({
+          components: testComponents,
+          layoutComponents,
+          routeLayouts,
+        }).pipe(Effect.provide(routerLayer), Effect.provide(DOMRendererLive)),
+      );
+
+      // Should have root layout structure
+      expect(element.querySelector("#root-layout")).not.toBeNull();
+      expect(element.querySelector("#root-header")).not.toBeNull();
+      expect(element.querySelector("#root-footer")).not.toBeNull();
+
+      // Route content should be inside root-content (via Outlet)
+      const rootContent = element.querySelector("#root-content");
+      expect(rootContent).not.toBeNull();
+      expect(rootContent?.querySelector("#home")).not.toBeNull();
+    });
+
+    it("should wrap route component with nested layouts", async () => {
+      const router = createMockRouter({ currentRoute: "users_$id" });
+      const routerLayer = makeRouterLayer(router);
+
+      const element = await runScoped(
+        Routes({
+          components: testComponents,
+          layoutComponents,
+          routeLayouts,
+        }).pipe(Effect.provide(routerLayer), Effect.provide(DOMRendererLive)),
+      );
+
+      // Should have root layout as outermost
+      const rootLayout = element.querySelector("#root-layout");
+      expect(rootLayout).not.toBeNull();
+
+      // Users layout should be inside root layout's content area
+      const rootContent = element.querySelector("#root-content");
+      expect(rootContent).not.toBeNull();
+      const usersLayout = rootContent?.querySelector("#users-layout");
+      expect(usersLayout).not.toBeNull();
+
+      // Route content should be inside users layout's content area
+      const usersContent = element.querySelector("#users-content");
+      expect(usersContent).not.toBeNull();
+      expect(usersContent?.querySelector("#user")).not.toBeNull();
+    });
+
+    it("should render route without layouts if no layout mapping exists", async () => {
+      // Create a route without any layout mapping
+      const routeLayoutsPartial = {
+        home: ["root_layout"] as const,
+        // about has no layout mapping
+      };
+
+      const router = createMockRouter({ currentRoute: "about" });
+      const routerLayer = makeRouterLayer(router);
+
+      const element = await runScoped(
+        Routes({
+          components: testComponents,
+          layoutComponents,
+          routeLayouts: routeLayoutsPartial,
+        }).pipe(Effect.provide(routerLayer), Effect.provide(DOMRendererLive)),
+      );
+
+      // Should render about page without any layout wrapper
+      expect(element.querySelector("#root-layout")).toBeNull();
+      expect(element.querySelector("#about")).not.toBeNull();
+    });
+
+    it("should work without layout props (backward compatibility)", async () => {
+      const router = createMockRouter({ currentRoute: "home" });
+      const routerLayer = makeRouterLayer(router);
+
+      const element = await runScoped(
+        Routes({
+          components: testComponents,
+          // No layoutComponents or routeLayouts provided
+        }).pipe(Effect.provide(routerLayer), Effect.provide(DOMRendererLive)),
+      );
+
+      // Should render route directly without layouts
+      expect(element.querySelector("#root-layout")).toBeNull();
+      expect(element.querySelector("#home")).not.toBeNull();
     });
   });
 });

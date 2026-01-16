@@ -15,7 +15,10 @@ import { setupPathnameSubscription } from "./subscription";
 import type {
   ActionState,
   AnyRoute,
+  LayoutsRecord,
+  LayoutState,
   LoaderState,
+  RouteLayoutsRecord,
   RouterOptions,
   Router as RouterType,
 } from "./types";
@@ -49,9 +52,13 @@ import type {
  * const userParams = yield* router.routes.user.params.get
  * ```
  */
-export const make = <Routes extends Record<string, AnyRoute>>(
+export const make = <
+  Routes extends Record<string, AnyRoute>,
+  Layouts extends LayoutsRecord = LayoutsRecord,
+  RL extends RouteLayoutsRecord = RouteLayoutsRecord,
+>(
   routes: Routes,
-  options?: RouterOptions,
+  options?: RouterOptions<Layouts, RL>,
 ): Effect.Effect<RouterType<Routes>, never, Scope.Scope> =>
   Effect.gen(function* () {
     // Get initial path and search from options or window.location
@@ -59,6 +66,11 @@ export const make = <Routes extends Record<string, AnyRoute>>(
       options?.initialPath ?? (isBrowser() ? window.location.pathname : "/");
     const initialSearch =
       options?.initialSearch ?? (isBrowser() ? window.location.search : "");
+
+    // Get layouts configuration
+    const layoutDefinitions = options?.layouts ?? ({} as Layouts);
+    const routeLayouts = options?.routeLayouts ?? ({} as RL);
+    const layoutNames = Object.keys(layoutDefinitions);
 
     // Create signals for pathname and search params
     const pathnameSignal = yield* Signal.make(initialPath);
@@ -85,6 +97,27 @@ export const make = <Routes extends Record<string, AnyRoute>>(
         return Option.none();
       },
     );
+
+    // Create a derived for active layouts based on current route
+    const activeLayouts = yield* Derived.sync(
+      [currentRoute],
+      ([routeOpt]): readonly string[] => {
+        if (Option.isNone(routeOpt)) {
+          return [];
+        }
+        const routeName = routeOpt.value;
+        return routeLayouts[routeName] ?? [];
+      },
+    );
+
+    // Create layout state for each layout
+    const layoutStates: Record<string, LayoutState> = {};
+    for (const layoutName of layoutNames) {
+      const isActive = yield* Derived.sync([activeLayouts], ([layouts]) =>
+        layouts.includes(layoutName),
+      );
+      layoutStates[layoutName] = { isActive };
+    }
 
     // Create loader and action state signals
     const initialLoaderState: LoaderState = {
@@ -148,6 +181,8 @@ export const make = <Routes extends Record<string, AnyRoute>>(
       currentRoute,
       routes: routeStates,
       definitions: routes,
+      activeLayouts,
+      layouts: layoutStates,
       loaderState: loaderStateSignal,
       actionState: actionStateSignal,
       push,

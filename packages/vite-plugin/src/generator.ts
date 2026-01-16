@@ -1,6 +1,6 @@
 import * as path from "node:path";
 
-import type { ScannedRoute } from "./types.js";
+import type { ScanResult } from "./types.js";
 
 /**
  * Options for code generation.
@@ -13,16 +13,17 @@ export interface GeneratorOptions {
 }
 
 /**
- * Generate the routes file content from scanned routes.
+ * Generate the routes file content from scanned routes and layouts.
  *
- * @param routes - Array of scanned routes
+ * @param scanResult - Scanned routes and layouts
  * @param options - Generator options
  * @returns Generated TypeScript code
  */
 export const generateRoutes = (
-  routes: ScannedRoute[],
+  scanResult: ScanResult,
   options: GeneratorOptions,
 ): string => {
+  const { routes, layouts } = scanResult;
   const { routesDir, outputPath } = options;
 
   // Calculate relative path from output to routes
@@ -37,7 +38,28 @@ export const generateRoutes = (
     "",
   ];
 
-  // Generate imports
+  // Generate layout imports
+  if (layouts.length > 0) {
+    lines.push("// Layout module imports (named exports)");
+    for (const layout of layouts) {
+      const importPath = path
+        .join(relativeRoutesDir, layout.filePath)
+        .replace(/\.(tsx?|jsx?)$/, "");
+      lines.push(`import * as ${layout.importName} from "${importPath}";`);
+    }
+
+    lines.push("");
+    lines.push("// Layout component imports (default exports)");
+    for (const layout of layouts) {
+      const importPath = path
+        .join(relativeRoutesDir, layout.filePath)
+        .replace(/\.(tsx?|jsx?)$/, "");
+      lines.push(`import ${layout.componentImportName} from "${importPath}";`);
+    }
+    lines.push("");
+  }
+
+  // Generate route imports
   if (routes.length > 0) {
     lines.push("// Route module imports (named exports)");
     for (const route of routes) {
@@ -55,6 +77,39 @@ export const generateRoutes = (
         .replace(/\.(tsx?|jsx?)$/, "");
       lines.push(`import ${route.componentImportName} from "${importPath}";`);
     }
+  }
+
+  // Generate layouts object
+  if (layouts.length > 0) {
+    lines.push("");
+    lines.push("// Layout definitions");
+    lines.push("export const layouts = {");
+
+    for (const layout of layouts) {
+      if (layout.exports.hasRoute) {
+        // Layout has a Route.define - use its config
+        const layoutOptions: string[] = [];
+        layoutOptions.push(
+          `    params: ${layout.importName}.route._config.paramsSchema`,
+        );
+        layoutOptions.push(
+          `    loader: ${layout.importName}.route._config.loader`,
+        );
+
+        lines.push(
+          `  ${layout.layoutName}: Route.make(${layout.importName}.route._path, {`,
+        );
+        lines.push(layoutOptions.join(",\n") + ",");
+        lines.push("  }),");
+      } else {
+        // No Route.define - create a basic layout route
+        lines.push(
+          `  ${layout.layoutName}: Route.make("${layout.pathPrefix}"),`,
+        );
+      }
+    }
+
+    lines.push("} as const;");
   }
 
   lines.push("");
@@ -86,6 +141,19 @@ export const generateRoutes = (
   lines.push("} as const;");
   lines.push("");
 
+  // Generate layout components map
+  if (layouts.length > 0) {
+    lines.push("// Layout component map for rendering");
+    lines.push("export const layoutComponents = {");
+
+    for (const layout of layouts) {
+      lines.push(`  ${layout.layoutName}: ${layout.componentImportName},`);
+    }
+
+    lines.push("} as const;");
+    lines.push("");
+  }
+
   // Generate components map
   lines.push("// Component map for rendering routes");
   lines.push("export const components = {");
@@ -97,10 +165,50 @@ export const generateRoutes = (
   lines.push("} as const;");
   lines.push("");
 
+  // Generate layout hierarchy - maps route names to their layout chain
+  if (layouts.length > 0) {
+    lines.push("// Layout hierarchy for each route");
+    lines.push("export const routeLayouts = {");
+
+    for (const route of routes) {
+      if (route.layouts.length > 0) {
+        lines.push(
+          `  ${route.routeName}: [${route.layouts.map((l) => `"${l}"`).join(", ")}] as const,`,
+        );
+      } else {
+        lines.push(`  ${route.routeName}: [] as const,`);
+      }
+    }
+
+    lines.push("} as const;");
+    lines.push("");
+
+    // Generate layout parent relationships
+    lines.push("// Layout parent relationships");
+    lines.push("export const layoutParents = {");
+
+    for (const layout of layouts) {
+      if (layout.parentLayout) {
+        lines.push(
+          `  ${layout.layoutName}: "${layout.parentLayout}" as const,`,
+        );
+      } else {
+        lines.push(`  ${layout.layoutName}: null,`);
+      }
+    }
+
+    lines.push("} as const;");
+    lines.push("");
+  }
+
   // Generate type exports
   lines.push("// Type inference helpers");
   lines.push("export type Routes = typeof routes;");
   lines.push("export type RouteNames = keyof Routes;");
+  if (layouts.length > 0) {
+    lines.push("export type Layouts = typeof layouts;");
+    lines.push("export type LayoutNames = keyof Layouts;");
+  }
   lines.push(
     'export type AppRouter = import("@effex/platform").RouterInfer<Routes>;',
   );

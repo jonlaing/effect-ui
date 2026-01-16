@@ -393,12 +393,19 @@ runApp(
               enter: "animate-in fade-in slide-in-from-right",
               onBeforeExit: (el) =>
                 el.pipe(
+                  Element.animate(
+                    [
+                      { translate: "0", opacity: 1 },
+                      { translate: "100%", opacity: 0 },
+                    ],
+                    { duration: 250, easing: "ease-in" },
+                  ),
                   Element.getScrollHeight,
                   Effect.flatMap((height) =>
                     Element.setStyle(el, "max-height", `${height}px`),
                   ),
                 ),
-              exit: "animate-out fade-out slide-out-to-right collapse",
+              exit: "animate-out translate-x-100 collapse",
             },
           },
           Toast.Root(

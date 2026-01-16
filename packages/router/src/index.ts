@@ -28,6 +28,17 @@ export {
 // matchRoute
 export { matchRoute, type RouteCases } from "./matchRoute";
 
+// Outlet for layouts
+export {
+  Outlet,
+  OutletContext,
+  makeOutletLayer,
+  type LayoutComponent,
+  type LayoutComponentsMap,
+  type LayoutComponentsError,
+  type LayoutComponentsRequirements,
+} from "./Outlet";
+
 // Types
 export type {
   PathSegment,
@@ -36,6 +47,10 @@ export type {
   RouteMatchError as RouteMatchErrorType,
   MatchedRoute,
   RouteState,
+  LayoutState,
+  LayoutsRecord,
+  RouteLayoutsRecord,
+  AnyLayout,
   NavigateOptions,
   Router as RouterType,
   RouterOptions,

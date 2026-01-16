@@ -1,1294 +1,156 @@
 # Effex - TODO List
 
-## High Priority
+## Completed
 
-- [x] **Unit Tests for Everything** - Comprehensive test coverage
-  - [x] Signal.ts
-  - [x] Derived/Derived.ts
-  - [x] Derived/helpers.ts
-  - [x] Readable.ts
-  - [x] Reaction.ts
-  - [x] Element/Element.ts
-  - [x] Element/helpers.ts
-  - [x] Control.ts (when, match, each, ErrorBoundary, Suspense)
-  - [x] Component.ts
-  - [x] Mount.ts
-  - [x] Ref.ts
-  - [x] Template.ts
-  - [x] Form.ts
-  - [x] Field.ts
-  - [x] form/helpers.ts
+### Core Features
+- **Unit Tests** - Comprehensive coverage for Signal, Derived, Readable, Reaction, Element, Control, Component, Mount, Ref, Template, Form, Field
+- **SVG Elements** - Full SVG element factories (`$.svg`, `$.path`, `$.rect`, `$.circle`, etc.)
+- **Storybook** - Set up with HTML framework, Vite, path aliases, render helpers, storysource addon
+- **Animation Primitives** - CSS-first enter/exit, stagger utilities, lifecycle hooks, reduced motion support
+- **Form Handling** - Schema-based validation, field-level state, async validators, FieldArray
+- **Router V1** - Flat routes, path params with Schema validation, History API, Link component
+- **Virtualized Lists** - `virtualEach` with fixed/variable height, overscan, scroll control
+- **Streaming Data** - `Readable.fromStream`, `Stream.scan` for accumulating, `innerHTML` for dynamic HTML
+- **Reactive Collections** - `Signal.Array`, `Signal.Map`, `Signal.Set` with in-place mutations
+- **Portal** - Render children into different DOM nodes
+- **Migration Guides** - React, Vue, Svelte migration documentation
 
-## Medium Priority
+### @effex/platform V1
+- Re-exports all packages, PlatformContext, cookies, request/response headers
+- RouteLoader utilities (params, loaderData, parentData, formData, redirect)
+- Custom JSON serialization (Date, Map, Set, BigInt, RegExp, URL, etc.)
+- SSR with `render()`, `renderToDocument()`, hydration with `hydrateApp()`
+- Actions with typed errors and requirements
+- File-based routing via Vite plugin (`effexRoutes`, `effexSSR`)
 
-- [x] **SVG element support** - Add SVG element factories (`$.svg`, `$.path`, `$.rect`, `$.circle`, `$.line`, `$.g`, `$.text`, etc.)
-  - SVG elements require `document.createElementNS` with SVG namespace
-  - Different type maps (`SVGElementTagNameMap` vs `HTMLElementTagNameMap`)
-  - Enables building charts, icons, and graphics with fine-grained reactivity
+### SSR & Hydration
+- Basic SSR (`renderToString`), hydration (`hydrate`)
+- Hydration markers on control flow (`data-effex-*` attributes)
+- Suspense SSR (renders fallback, client re-triggers async)
+- Data serialization for hydration (avoids double-fetching)
+- Router SSR support
 
-- [x] **Storybook Support** - Visual component development and documentation
-  - [x] Set up Storybook with HTML framework and Vite
-  - [x] Configure path aliases (@core, @dom)
-  - [x] Create render helpers for Effect UI components
-  - [x] Create Collapsible stories (Default, Animated, Controlled, Nested, etc.)
-  - [x] Added storysource addon for viewing Effect-UI code in stories
-  - [x] Create stories for other built-in components as they're developed
-  - [ ] Custom Storybook addon to show clean Effex code snippets (instead of full story source)
+### Headless Primitives
+Dialog, DropdownMenu, Select, Combobox, Popover, Tooltip, Tabs, Accordion, Toggle, Switch, RadioGroup, Checkbox, Slider, Toast, AlertDialog, ContextMenu, NavigationMenu, Collapsible, ScrollArea, Progress, Image, Separator, Toolbar, TreeView, Splitter
 
-- [x] **Clean up unused imports** - Fixed build warnings (ParseResult type-only import)
+### Refactoring
+- `createKeyboardNav` helper adopted in: Tabs, RadioGroup, Toolbar, Accordion, DropdownMenu, ContextMenu, Select
 
-- [x] **Rename to Effex** - Renamed from effect-ui to @effex/* namespace
+---
 
-- [ ] **Improve error messages** - Better developer experience when things go wrong
+## TODO
 
-- [ ] **Performance testing** - Benchmark reactive updates, large lists, etc.
-  - [x] Vitest benchmarks in `benchmarks/` directory (internal regression testing)
-  - [ ] js-framework-benchmark integration (public comparison numbers)
+### High Priority
 
-- [x] **Virtualized list rendering** - Only render visible items for large lists
-  - [x] `virtualEach` component with scroll-based visibility detection
-  - [x] Fixed-height item support with `itemHeight` option
-  - [x] Variable-height support with `estimatedHeight` option (framework ready)
-  - [x] Buffer zone via `overscan` option (default: 3 items)
-  - [x] Scroll control methods via optional `VirtualListRef`
-  - Note: Current `each` handles 100-500 items well; use `virtualEach` for 1000+ items
+- [ ] **Layouts & Outlet** (Router Phase 3)
+  - `__layout.ts` file convention
+  - `Outlet` component for nested rendering
+  - Layout data loaders
+  - Parallel route segments
 
-## Future Considerations
+- [ ] **Static Site Generation (SSG)**
+  - `Route.define({ static: true })` - Mark route as static
+  - `staticPaths()` - Enumerate params for dynamic static routes
+  - `revalidate: number` - ISR support
+  - Build command renders static routes to disk
 
-- [ ] **SSR & Multi-Target Rendering** - Server-side rendering and beyond (see Design Decisions)
-  - [x] Basic SSR implementation (`@effex/dom/server` with `renderToString`)
-  - [x] Basic hydration (`@effex/dom/hydrate` with `hydrate`)
-  - [x] Hydration markers on control flow (`data-effex-*` attributes)
-  - [x] Suspense SSR (renders fallback with `data-effex-suspense-state`)
-  - [x] **Suspense hydration** - Client re-triggers async content after hydration
-    - SSR renders fallback with `data-effex-suspense-state="loading"`
-    - Hydration finds container via HydrationContext, runs async render
-    - Uses DOMRenderer for async content (since it doesn't exist in SSR HTML)
-    - Replaces fallback when async completes, updates state to "loaded"
-  - [x] **Data serialization for hydration** - Avoid double-fetching on client
-    - Implemented in `@effex/platform` via `Serialization.ts`
-    - Supports Date, Map, Set, BigInt, RegExp, URL, undefined, NaN, Infinity
-    - Server serializes loader data with `serialize()`, embedded via `renderToDocument()`
-    - Client deserializes via `hydrateApp()` which reads `window.__EFFEX_LOADER_DATA__`
-  - [x] **Router SSR refinement** - Router works cleanly for SSR
-    - Added `initialSearch` option to `RouterOptions`
-    - Router imports core types from `@effex/core` (framework-agnostic)
-    - Skips `popstate` listeners when `window` is undefined
-    - Navigation methods are no-ops in SSR mode (no errors thrown)
-  - [ ] **Streaming SSR** - `renderToStream` for progressive HTML delivery
-    - Suspense boundaries could flush placeholders early, stream resolved content later
-    - Would require chunked transfer encoding support
-  - [ ] **Partial/Islands hydration** - Only hydrate interactive parts
-    - Static content could skip hydration entirely
-    - Would need way to mark components as static vs interactive
+- [ ] **Documentation Site**
+  - Built with Effex (dogfooding)
+  - Requires: Layouts, SSG, Markdown rendering
+  - Location: `apps/docs/` or `sites/docs/`
 
-- [x] **@effex/platform** - Meta-framework package (the "Next.js" for Effex) - **V1 COMPLETE**
+### Medium Priority
 
-  **Implemented (V1):**
-  - [x] Re-exports `@effex/core`, `@effex/dom`, `@effex/router`, `@effex/form`, `@effex/primitives`
-  - [x] `PlatformContext` - Environment detection (`server` | `client`), request/response headers
-  - [x] `Platform.cookies` - Universal cookie access (server parses headers, client uses `document.cookie`)
-  - [x] `Platform.isServer` / `Platform.isClient` - Environment checks
-  - [x] `Platform.request` - Access current request (server only)
-  - [x] `Platform.setHeader` - Set response headers (server only)
-  - [x] `RouteLoader` utilities - Remix-style data loading
-    - `params()` - Get reactive route params
-    - `loaderData<T>()` - Get cached loader data
-    - `parentData<T>()` - Access parent route's data
-    - `formData()` / `request()` - Action context accessors
-    - `redirect(url, status?)` - Trigger redirect via typed error
-  - [x] `Serialization` - Custom JSON for types JSON doesn't support
-    - Date, Map, Set, BigInt, RegExp, URL, undefined, NaN, Infinity
-    - HTML-safe output (escapes `<`, `>`, `&` for script embedding)
-  - [x] `render()` - Server-side render function
-    - Creates platform context from request
-    - Returns HTML string, loader data, headers
-  - [x] `renderToDocument()` - Generate complete HTML document
-    - Configurable title, styles, scripts, head content
-    - Embeds serialized loader data as `window.__EFFEX_LOADER_DATA__`
-  - [x] `hydrateApp()` - Client hydration
-    - Reads and deserializes `window.__EFFEX_LOADER_DATA__`
-    - Attaches event handlers and reactive subscriptions
-    - Cleans up window data after hydration
-  - [x] `isHydrating()` - Check if currently hydrating
-  - [x] Comprehensive test suite (107 tests)
+- [ ] **`@effex/markdown` package**
+  - `parseMarkdown(string)` → AST + frontmatter
+  - `Markdown.fromAST(ast)` → Element
+  - Shiki integration for code highlighting
+  - Options: Runtime parsing, build-time transform, or hybrid
 
-  **Still TODO (V2+):**
-  - [x] Actions (mutations) - Form submissions with typed responses
-    - ActionFn type with typed errors and requirements
-    - executeAction/submitAction on Router with reactive actionState
-    - SSR action execution via makeActionData
-    - PlatformForm component for form submissions
-  - [x] File-based routing (Vite plugin) - `src/routes/` convention
-    - effexRoutes plugin scans routes directory
-    - Parser detects loader, action, params exports
-    - Code generation for routes and components
-    - effexSSR plugin for dev server with HMR
-  - [ ] Build orchestration - SSR build, client build, asset manifest
-  - [ ] Platform adapters (Vercel, Cloudflare, Node)
-  - [ ] CLI (`create-effex-app`, `effex dev`, `effex build`)
-  - [ ] `Link` component with `prefetch` prop ("hover" | "viewport")
-  - [ ] Streaming SSR (`renderToStream`)
+- [ ] **Improve error messages** - Better DX when things go wrong
 
-  **Key Decisions:**
-  - Custom JSON serialization (Effect Schema integration planned for future)
-  - Remix-style route-level loaders/actions
-  - Defer streaming SSR to v2
-  - Separate service layers for server/client environments
-  - No middleware needed - Effect composition handles cross-cutting concerns
-  - Loaders are just Effects - fully testable in isolation
-  - Type-safe requirements - loader/action dependencies propagate through router types
-    - `AllLoaderRequirements<Routes>` / `AllActionRequirements<Routes>` utility types
-    - TypeScript errors if required services aren't provided
+- [ ] **Performance testing**
+  - [x] Vitest benchmarks (internal regression testing)
+  - [ ] js-framework-benchmark integration (public comparison)
 
-  **Route File Convention:**
-  ```typescript
-  // src/routes/users/$id.ts
-  import { Effect } from "effect";
-  import { component, Route, $ } from "@effex/platform";
+- [ ] **Streaming SSR** - `renderToStream` for progressive HTML delivery
 
-  // Loader runs on server (SSR) and client (navigation)
-  export const loader = Effect.gen(function* () {
-    const { id } = yield* Route.params<{ id: string }>();
-    const userService = yield* UserService;
-    return { user: yield* userService.getById(id) };
-  });
+- [ ] **Partial/Islands hydration** - Only hydrate interactive parts
 
-  // Action handles form submissions (Remix-style)
-  export const action = Effect.gen(function* () {
-    const formData = yield* Route.formData();
-    const userService = yield* UserService;
-    yield* userService.update(formData);
-    return yield* Route.redirect("/users");
-  });
+### Future / Nice-to-Have
 
-  // Component receives loader data automatically
-  export default component("UserProfile", () => 
-      Effect.gen(function* () {
-        const { user } = yield* Route.loaderData<typeof loader>();
-        return yield* $.div([$.h1(user.name), $.p(user.email)]);
-      })
-  );
-  ```
+- [ ] **DevTools** (`@effex/devtools`)
+  - Signal Inspector (view/edit values, highlight updates)
+  - Update Highlighting (flash DOM on changes)
+  - Component Tree with error types
+  - Subscription counts, Scope tree visualization
+  - Dependency graph, Timeline/time travel
 
-  **Server/Client Service Layers:**
-  ```typescript
-  // server.ts - Direct DB access
-  const ServerServices = Layer.mergeAll(
-    DatabaseServiceLive,
-    UserServiceServer,
-    SessionServiceLive,
-  );
+- [ ] **Platform V2+**
+  - Build orchestration (SSR build, client build, asset manifest)
+  - Platform adapters (Vercel, Cloudflare, Node)
+  - CLI (`create-effex-app`, `effex dev`, `effex build`)
+  - `Link` with `prefetch` prop
+  - Streaming SSR
 
-  // client.ts - API calls
-  const ClientServices = Layer.mergeAll(
-    ApiClientLive,
-    UserServiceClient,
-    SessionServiceClient,
-  );
-  ```
+- [ ] **Router V2**
+  - Nested routes with accumulated params
+  - Hash routing, route guards, query param schemas
+  - Route prefetching, View Transitions API
 
-  **Platform APIs:**
-  ```typescript
-  // In loaders/actions
-  const cookies = yield* Platform.cookies;
-  yield* cookies.get("session");
-  yield* cookies.set("token", value, { httpOnly: true });
+- [ ] **Demo: Effex IDE** - VSCode-like clone showcasing primitives
+  - File explorer (TreeView), editor tabs, resizable panels (Splitter)
+  - Command palette (Combobox), CodeMirror integration
+  - Self-documenting: displays its own source code
 
-  // Parent route data (replaces middleware)
-  const { user } = yield* Route.parentData<typeof parentLoader>();
+- [ ] **Demo: Effex PM** - Jira-lite project management
+  - Dashboard, Issues Table, Kanban Board, Issue Detail
+  - AI Assistant with streaming, auth flow, real-time updates
 
-  // Redirect
-  yield* Route.redirect("/login");
-  ```
+- [ ] **Table helpers** - TanStack Table-inspired utilities
 
-  **Link Prefetching:**
-  ```typescript
-  Link({ to: "/users", prefetch: "hover" }, "Users")    // prefetch on hover
-  Link({ to: "/dashboard", prefetch: "viewport" }, ...) // prefetch when visible
-  Link({ to: "/settings" }, "Settings")                 // no prefetch
-  ```
+- [ ] **Carousel primitive** - Rotating panels, autoplay, swipe gestures
 
-  **Testing Loaders:**
-  ```typescript
-  import { loader } from "./routes/users/$id";
+- [ ] **Architecture documentation** - Internals for contributors
 
-  test("loader returns user", async () => {
-    const result = await Effect.runPromise(
-      loader.pipe(
-        Effect.provideService(RouteContext, { params: { id: "123" } }),
-        Effect.provideService(UserService, mockUserService),
-      )
-    );
-    expect(result.user.id).toBe("123");
-  });
-  ```
+- [ ] **Remaining keyboard nav refactors**: Combobox, NavigationMenu, TreeView
 
-  **Adapter Interface:**
-  ```typescript
-  interface PlatformAdapter {
-    name: string;
-    buildStart?: () => Effect<void>;
-    buildEnd?: (manifest: BuildManifest) => Effect<void>;
-    dev?: { port?: number; hmr?: boolean };
-  }
-  ```
-
-  **Implementation Phases:**
-  1. Core loader/action system with data serialization
-  2. Vite plugin with HMR and file-based routing
-  3. Node adapter (baseline)
-  4. Vercel adapter
-  5. CLI tooling
-  6. Cloudflare/other adapters
-
-- [ ] **DevTools** - In-app panel for debugging reactive state (`@effex/devtools`)
-  - Ship as separate package, add to devDependencies so it doesn't go to production
-  - Mount a floating panel in development mode
-  - **Priority 1: Signal Inspector**
-    - View all Signals, Derived values, Signal.Array/Map/Set and their current values
-    - Edit values directly (like React DevTools)
-    - Expand collections to see contents
-    - Highlight when values update (flash briefly)
-    - Group by component or service
-  - **Priority 2: Update Highlighting**
-    - Flash DOM elements when they update (like React's "Highlight updates")
-    - Helps visualize what's re-rendering and why
-  - **Priority 3: Component Tree**
-    - Show component hierarchy similar to React DevTools
-    - Display which Signals each component owns/subscribes to
-    - Show error types `[E: ApiError]` on components that can fail
-    - Show Boundary.suspense loading states
-    - Show where errors are caught
-  - **Priority 4: Subscription Count**
-    - Badge showing how many things subscribe to each signal
-    - Helps identify over-subscribed signals or potential memory leaks
-  - **Priority 5: Scope Tree**
-    - Visualize Effect scope hierarchy
-    - Show resources attached to each scope (Signals, Fibers)
-    - Show running fibers and their status
-    - Display pending finalizers
-  - **Nice-to-have: Dependency Graph**
-    - Visualize which Signals feed which Derived values
-    - Identify complex dependency chains, diamond dependencies
-    - Find orphaned signals (created but never read)
-  - **Nice-to-have: Timeline / Time Travel**
-    - Record state changes over time
-    - Step back/forward through state history
-    - Show what triggered each update
-  - **Implementation Notes**
-    - Framework needs to expose hooks when Signals are created/updated
-    - May need `window.__EFFEX_DEVTOOLS__` bridge
-    - No VDOM means tracking subscription notifications and DOM mutations directly
-    - Effect.gen tracing needed to track which Effects created which Signals
-    - Scope boundaries are invisible - DevTools makes lifecycle visible
-
-- [x] **Animation primitives** - Built-in support for transitions and animations (see Design Decisions below)
-  - [x] CSS-first enter/exit animations
-  - [x] Animation options for `when`, `match`, `each`
-  - [x] Stagger utilities (stagger, staggerFromCenter, staggerEased)
-  - [x] Timing utilities (delay, sequence, parallel)
-  - [x] Lifecycle hooks (onBeforeEnter, onEnter, onBeforeExit, onExit)
-  - [x] Reduced motion support (respects prefers-reduced-motion)
-
-- [x] **Form handling utilities** - Validation, form state management (see Design Decisions below)
-  - [x] Schema-based validation with Effect Schema
-  - [x] Field-level state (value, errors, touched, dirty)
-  - [x] Validation timing (hybrid, blur, change, submit)
-  - [x] Form-level state (isValid, isSubmitting, errors)
-  - [x] Async validators support
-  - [x] Array/dynamic fields (FieldArray)
-  - [x] README documentation
-
-- [x] **Router V1** - Basic routing system implemented (see Design Decisions below)
-  - [x] Flat routes with path params
-  - [x] Effect Schema validation for params
-  - [x] History API navigation
-  - [x] Route-specific readables (isActive, params)
-  - [x] RouterContext and typed router layers
-  - [x] Link component
-  - [ ] V2: Nested routes, hash routing, route guards, query param schemas
-  - [x] V3: File-based routing (Vite plugin) - implemented in `@effex/vite-plugin`
-    - effexRoutes plugin with route scanning and code generation
-    - effexSSR plugin for dev server with HMR
-    - See detailed plan below for reference
-
-- [ ] **Documentation site** - Full documentation with examples (TypeDoc is set up)
-
-- [ ] **Architecture/internals documentation** - For contributors and those who want to understand how Effex works under the hood
-  - [ ] Reactivity system: How Streams power the reactive graph (Readable, Signal, Derived)
-  - [ ] How `combineReadables` merges dependency changes and ensures consistency
-  - [ ] DOM subscription lifecycle: `subscribeToReadable`, scopes, and automatic cleanup
-  - [ ] Element creation and attribute binding
-  - [ ] Control flow internals (`when`, `match`, `each`)
-  - [ ] How headless primitives use Context for part communication
-
-- [x] **Rename project directory** - Rename /Users/jon/projects/effect-ui to /Users/jon/projects/effex
-
-- [ ] **Demo: Effex IDE** - VSCode-like IDE clone that showcases Effex features while displaying its own source code
-  - **Concept:** A self-documenting demo that demonstrates Effex capabilities by being a functional code editor showing its own implementation
-  - **Core Layout:**
-    - File explorer (TreeView primitive) - shows the demo's own source files
-    - Editor tabs with syntax highlighting
-    - Resizable panels (Splitter primitive) - sidebar, editor, terminal
-    - Command palette (Combobox primitive with Cmd+K)
-    - Status bar with reactive state indicators
-  - **Key Features to Showcase:**
-    - **Splitter** - Resizable panels for sidebar/editor/terminal layout
-    - **TreeView** - File explorer with expand/collapse
-    - **Tabs** - Editor tabs with close buttons, reordering
-    - **Combobox** - Command palette, file search (Cmd+P)
-    - **ContextMenu** - Right-click menus in explorer and editor
-    - **Toast** - Notifications for actions (save, errors)
-    - **Tooltip** - Hover info on toolbar buttons
-    - **ScrollArea** - Custom scrollbars in editor and file tree
-    - **Signal/Derived** - Live reactive state (unsaved indicators, line counts)
-    - **Keyboard navigation** - Full keyboard support throughout
-    - **Transition** - State machines for:
-      - Terminal panel: `idle → running → completed/error/cancelled` with guard preventing concurrent commands
-      - File save state (per tab): `clean → dirty → saving → clean/error` with visual indicators (dot for dirty, spinner for saving)
-  - **Bonus Features:**
-    - "View Source" button that highlights the component code for whatever you're interacting with
-    - Split view showing live component and its source side-by-side
-    - Terminal panel with mock output
-    - Minimap (simplified)
-    - Breadcrumb navigation
-  - **Why this demo:**
-    - Immediately familiar UX (everyone knows VSCode)
-    - Shows complex nested primitives working together
-    - Self-documenting - the demo IS the documentation
-    - Impressive "wow factor" for potential adopters
-  - **Third-party integration pattern:**
-    - Use CodeMirror for the actual editor (not a custom implementation)
-    - Demonstrates that Effex integrates with the broader JS ecosystem
-    - Pattern: wrap imperative libraries with Ref + Reaction for two-way sync
-    - Same approach works for charts (ECharts), maps (Mapbox), rich text (Tiptap), etc.
-    ```typescript
-    // General pattern for wrapping imperative libraries:
-    const ref = yield* Ref.make<HTMLElement>();
-    let instance: LibraryInstance | null = null;
-
-    // Initialize when DOM ready
-    yield* ref.value.pipe(Effect.tap((el) => {
-      instance = new Library(el, { initialValue: Effect.runSync(signal.get) });
-      instance.on("change", (v) => Effect.runSync(signal.set(v)));
-    }));
-
-    // Sync signal → library
-    yield* Reaction.make(signal, (v) => instance?.setValue(v));
-
-    // Cleanup
-    yield* Effect.addFinalizer(() => Effect.sync(() => instance?.destroy()));
-    ```
-  - **Future consideration: `wrapLibrary` utility** - The above pattern could potentially be abstracted into a reusable utility:
-    ```typescript
-    // Potential API (not yet implemented)
-    const { element, signal } = yield* wrapLibrary({
-      create: (el, initial) => new CodeMirror(el, { value: initial }),
-      getValue: (instance) => instance.getValue(),
-      setValue: (instance, value) => instance.setValue(value),
-      onChange: (instance, callback) => instance.on("change", () => callback(instance.getValue())),
-      destroy: (instance) => instance.destroy(),
-    });
-    ```
-    This would handle: ref setup, library initialization, two-way sync, cleanup. Worth exploring after more real-world usage of the manual pattern.
-
-- [ ] **Demo: Effex PM** - Jira-lite project management tool showcasing all Effex features
-  - **Backend:** Effect HTTP server with in-memory state (no RDS - it's just a demo)
-  - **Core Pages:**
-    - **Dashboard** - Project list, recent activity, quick actions. Shows SSR, reactive lists
-    - **Issues Table** - Sortable, filterable, searchable, paginated. Demonstrates Table helpers, virtualEach for large lists
-    - **Kanban Board** - Drag-and-drop columns. Shows animations (stagger, reorder), Signal.Array
-    - **Issue Detail** - Rich form with validation, comments, history. Demonstrates forms, nested data, real-time updates
-    - **AI Assistant** - Streaming chat interface with mock LLM. Shows `Readable.fromStream`, `innerHTML` for markdown
-    - **Settings** - Theme toggle, notification preferences. Shows Signal persistence patterns
-  - **Additional Features:**
-    - Auth flow (login/register) with route guards
-    - Real-time notifications (toast system, live updates)
-    - Command palette (Cmd+K) using Combobox primitive
-    - Optimistic updates (create issue, then sync)
-    - Error boundaries at route level
-    - Keyboard navigation throughout
-    - Responsive layout with mobile support
-  - **Route Structure:**
-    - `/` - Dashboard
-    - `/login`, `/register` - Auth pages
-    - `/projects/:id` - Project overview (redirects to board or table based on preference)
-    - `/projects/:id/board` - Kanban view
-    - `/projects/:id/table` - Table view
-    - `/projects/:id/issues/:issueId` - Issue detail (could be modal or page)
-    - `/projects/:id/settings` - Project settings
-    - `/ai` - AI assistant panel (global, persists across routes)
-  - **Tech Stack:**
-    - `@effex/dom` + `@effex/router` + `@effex/form` + `@effex/primitives`
-    - Effect HTTP server for backend
-    - Tailwind CSS for styling
-    - Mock LLM that echoes/transforms input with delays
-
-- [x] **Migration guides** - Help developers coming from other frameworks
-  - [x] React migration guide (REACT-MIGRATION.md)
-  - [x] Vue migration guide (VUE-MIGRATION.md)
-  - [x] Svelte migration guide (SVELTE-MIGRATION.md)
-  - [ ] Add "State Management Patterns" section to React migration guide - Show how Effect's existing primitives (Signals, Derived, Context, Streams) replace Redux/useReducer/XState. Most apps don't need dedicated state management libraries.
-
-- [ ] **Table helpers** - TanStack Table-inspired utilities for building data tables with sorting, filtering, pagination, etc.
-
-- [ ] **Chart integration guide** - Document pattern for integrating charting libraries (ECharts, Chart.js, etc.) using refs + Reaction for reactive updates. Don't build our own chart library - wrap existing mature solutions.
-
-- [x] **Streaming async data** - Support for streaming data (e.g., AI chatbot responses)
-  - [x] `Readable.fromStream` creates reactive values from Effect Streams
-  - [x] `Stream.scan` for accumulating chunks (e.g., chat responses)
-  - [x] `innerHTML` prop for rendering dynamic HTML (markdown, rich text)
-  - [ ] Documentation/example showing chatbot streaming pattern
-
-- [x] **Map and Set as reactive state** - Better ergonomics for using Map and Set as state. React makes this painful because of reference equality checks. Implemented `Signal.Array`, `Signal.Map`, and `Signal.Set` with in-place mutations that trigger reactive updates.
-
-- [x] **Portal** - Render children into a different DOM node (like React Portal)
-  - [x] `Portal(children)` or `Portal({ target }, children)` - defaults to `document.body`
-  - [x] Supports element reference or CSS selector as target
-  - [x] Cleans up on unmount via scope finalizer
-  - [ ] Consider: `PortalTarget` component for named portals
-
-- [ ] **Headless Component Library** - Radix Primitives-style unstyled components with full accessibility
-  - No styling opinions, just behavior and a11y
-  - WAI-ARIA compliant out of the box
-  - Keyboard navigation built-in
-  - Focus management
-  - Components to include:
-    - [x] Dialog / Modal
-    - [x] Dropdown Menu
-    - [x] Select
-    - [x] Combobox / Autocomplete
-    - [x] Popover
-    - [x] Tooltip
-    - [x] Tabs
-    - [x] Accordion
-    - [x] Toggle
-    - [x] Switch
-    - [x] Radio Group
-    - [x] Checkbox
-    - [x] Slider
-    - [x] Toast / Notifications
-    - [x] Alert Dialog
-    - [x] Context Menu
-    - [x] Navigation Menu
-    - [x] Collapsible
-    - [x] Scroll Area
-    - [x] Progress
-    - [x] Image
-    - [x] Separator
-    - [x] Toolbar (grouped controls container)
-    - [x] Tree View (hierarchical expandable list)
-    - [x] Splitter (resizable panel divider)
-    - [ ] Carousel (rotating panels, autoplay, swipe gestures)
-  - Design principles:
-    - Composable parts (e.g., `Dialog.Root`, `Dialog.Trigger`, `Dialog.Content`)
-    - Render props or slot pattern for full control
-    - Works with any CSS framework (Tailwind, CSS modules, etc.)
-    - Animation integration via existing animation primitives
-    - Typed with full inference
+---
 
 ## Design Decisions
 
-### JSX (Decided Against)
-
-**Decision:** No JSX support. Use function-based DSL only.
-
-**Reasons:**
-
-1. **Error type preservation**: `Element<E>` carries error types through the component tree. TypeScript's `JSX.Element` is not generic, so JSX would erase error information to `Element<unknown>`.
-
-2. **No build complexity**: Function calls work with any TypeScript setup. JSX would require custom jsx-runtime configuration, tsconfig changes, and bundler setup.
-
-3. **Consistent syntax**: With JSX, we'd need mixed syntax anyway - `<div>` for intrinsics but `{Component({})}` for components that can fail. Function calls are uniform.
-
-4. **Explicit Effects**: Elements are Effects that must be yielded. The function syntax makes this clear; JSX would hide it.
-
-The function-based DSL is clean and idiomatic:
-
-```ts
-div({ className: "card" }, [
-  h1(title),
-  p(description),
-  Button({ onClick: handleClick }, "Submit"),
-]);
-```
+### No JSX
+Function-based DSL preserves error types (`Element<E>`), requires no build config, and makes Effects explicit.
 
 ### Router
-
-**Approach:** TanStack Router-style with Effect Schema integration
-
-#### V3: File-Based Routing (Future)
-
-**Goal:** Make Effex the Effect.ts answer to Next.js with convention-over-configuration routing.
-
-**Vite Plugin (`@effex/vite-plugin`):**
-
-The plugin scans `src/routes/` and generates a type-safe route tree:
-
-```
-src/routes/
-  __root.ts           → Root layout, global service providers, error boundaries
-  index.ts            → /
-  about.ts            → /about
-  users/
-    index.ts          → /users
-    $id.ts            → /users/:id (param segment)
-    $id.settings.ts   → /users/:id/settings (nested under param)
-  blog/
-    [...slug].ts      → /blog/* (catch-all)
-  (marketing)/        → Route group (no URL segment)
-    pricing.ts        → /pricing
-    contact.ts        → /contact
-```
-
-**Route File Format:**
-
-```typescript
-// src/routes/users/$id.ts
-import { Effect, Schema } from "effect";
-import { Route } from "@effex/router";
-import { div, h1, p } from "@effex/dom";
-import { UserService } from "../../services/User";
-
-// Optional: Override inferred params with explicit schema
-export const params = Schema.Struct({
-  id: Schema.NumberFromString,
-});
-
-// Data loader - Effect that runs on server (SSR) and client (navigation)
-// Has access to services, can fail with typed errors
-export const loader = Effect.gen(function* () {
-  const { id } = yield* Route.params<typeof params>();
-  const userService = yield* UserService;
-  return yield* userService.getById(id);
-});
-
-// Optional: Suspense fallback for this route
-export const loading = () => div({ class: "skeleton" }, "Loading user...");
-
-// Optional: Error boundary for this route
-export const error = (err: unknown) => div({ class: "error" }, `Failed: ${err}`);
-
-// The page component - default export
-export default Effect.gen(function* () {
-  const user = yield* Route.loaderData<typeof loader>();
-
-  return yield* div({ class: "user-page" }, [
-    h1(user.name),
-    p(user.email),
-  ]);
-});
-```
-
-**Generated Route Tree:**
-
-```typescript
-// src/routeTree.gen.ts (auto-generated, do not edit)
-import { Schema } from "effect";
-
-export const routeTree = {
-  "/": {
-    component: () => import("./routes/index"),
-  },
-  "/about": {
-    component: () => import("./routes/about"),
-  },
-  "/users": {
-    component: () => import("./routes/users/index"),
-  },
-  "/users/:id": {
-    params: Schema.Struct({ id: Schema.NumberFromString }),
-    component: () => import("./routes/users/$id"),
-  },
-  "/users/:id/settings": {
-    params: Schema.Struct({ id: Schema.NumberFromString }),
-    component: () => import("./routes/users/$id.settings"),
-  },
-} as const;
-
-export type AppRoutes = typeof routeTree;
-export type RoutePath = keyof AppRoutes;
-```
-
-**Type-Safe Link Component:**
-
-```typescript
-// Generated or augmented
-import { Link } from "@effex/router";
-
-// Full type safety - only valid routes, required params
-Link({ to: "/users/:id", params: { id: 123 } }, "View User")
-Link({ to: "/about" }, "About") // No params needed
-Link({ to: "/invalid" }) // TS Error: not a valid route
-```
-
-**Effect-Specific Advantages:**
-
-| Feature | Next.js | Effex |
-|---------|---------|-------|
-| Params validation | Runtime, manual | Schema at compile + runtime |
-| Data loading | `async function`, `fetch` | `Effect` with services, retry, timeout |
-| Error handling | Error boundaries (React) | Typed error channel, catch at any level |
-| Auth/guards | Middleware (string matching) | Effect that fails with `Unauthorized` error |
-| Dependencies | React Context, prop drilling | Effect Services (injected, testable) |
-| Loading states | `loading.tsx` (file-based) | `loading` export or Suspense |
-
-**Route Guards via Error Channel:**
-
-```typescript
-// src/routes/admin/$path.ts
-import { Effect } from "effect";
-import { Route, Unauthorized } from "@effex/router";
-import { AuthService } from "../../services/Auth";
-
-export const loader = Effect.gen(function* () {
-  const auth = yield* AuthService;
-  const user = yield* auth.getCurrentUser();
-
-  if (!user.isAdmin) {
-    return yield* Effect.fail(new Unauthorized({ redirect: "/login" }));
-  }
-
-  return { user };
-});
-```
-
-**Layouts (`__layout.ts`):**
-
-```typescript
-// src/routes/users/__layout.ts
-import { Effect } from "effect";
-import { Route } from "@effex/router";
-import { div, nav } from "@effex/dom";
-
-export default Effect.gen(function* () {
-  const outlet = yield* Route.outlet(); // Child route renders here
-
-  return yield* div({ class: "users-layout" }, [
-    nav([
-      Link({ to: "/users" }, "All Users"),
-      Link({ to: "/users/new" }, "New User"),
-    ]),
-    outlet,
-  ]);
-});
-```
-
-**Implementation Phases:**
-
-1. **Phase 1: Vite Plugin MVP** ✅ COMPLETE
-   - [x] Route directory scanning with fast-glob
-   - [x] Generate routes file on startup and file changes
-   - [x] Dynamic imports for code splitting
-   - [x] HMR support for route file changes (effexSSR plugin)
-   - [x] Basic path-to-pattern conversion (`$id` → `:id`, `[...slug]` → `*`)
-
-2. **Phase 2: Loaders & SSR Data** ✅ COMPLETE
-   - [x] `loader` export convention
-   - [x] `Route.loaderData()` hook to access loaded data
-   - [x] Server-side execution during SSR
-   - [x] Data serialization into HTML (`__EFFEX_LOADER_DATA__`)
-   - [x] Client-side cache to avoid refetch on hydration
-   - [x] Actions with typed errors and requirements
-
-3. **Phase 3: Layouts & Nesting** (TODO)
-   - [ ] `__layout.ts` file convention
-   - [ ] `Route.outlet()` for nested rendering
-   - [ ] Layout data loaders
-   - [ ] Parallel route segments (like Next.js `@folder`)
-
-4. **Phase 4: Polish & DX** (TODO)
-   - [ ] Route prefetching on hover/visibility
-   - [ ] Transitions between routes (View Transitions API?)
-   - [ ] Dev overlay showing current route, params, loader data
-   - [ ] Error overlay for loader failures
-   - [ ] `effex generate route users/$id` CLI command
-
-**Open Questions:**
-
-- Should `__root.ts` provide the base HTML shell, or is that separate?
-- How to handle API routes (`/api/*`)? Separate convention or same system?
-- Integration with Effect's `Layer` - should routes define their service requirements?
-- How to handle `notFound` - special file or catch-all pattern?
-
-**File naming conventions (TanStack-inspired):**
-
-| Pattern | Example | URL |
-|---------|---------|-----|
-| `index.ts` | `routes/index.ts` | `/` |
-| `name.ts` | `routes/about.ts` | `/about` |
-| `$param.ts` | `routes/$id.ts` | `/:id` |
-| `$param.name.ts` | `routes/$id.settings.ts` | `/:id/settings` |
-| `[...slug].ts` | `routes/[...slug].ts` | `/*` |
-| `(group)/` | `routes/(admin)/` | No URL segment |
-| `__layout.ts` | `routes/__layout.ts` | Wraps siblings |
-| `__root.ts` | `routes/__root.ts` | App root |
-
-Routes are defined declaratively with typed params:
-
-```ts
-const UserRoute = Route.make("/users/:id", {
-  params: Schema.Struct({ id: Schema.String }),
-});
-
-const PostRoute = Route.make("/posts/:postId/comments/:commentId?", {
-  params: Schema.Struct({
-    postId: Schema.String,
-    commentId: Schema.optional(Schema.String),
-  }),
-});
-
-const router = yield* Router.make({
-  home: HomeRoute,
-  user: UserRoute,
-  post: PostRoute,
-});
-```
-
-#### V1 Scope (MVP)
-
-**Included:**
-
-- Flat routes (no nesting)
-- History API only
-- Path params with Effect Schema validation
-- Query params as simple `Readable<URLSearchParams>` on router
-- Most-specific-wins route matching (static segments before dynamic)
-- Optional catch-all/fallback route
-- Route-specific readables: `router.routes.user.params`, `router.routes.user.isActive`
-- Navigation as Effects: `router.push(...)`, `router.replace(...)`, `router.back()`
-
-**Deferred to V2:**
-
-- Nested routes with accumulated params
-- Hash-based routing (`/#/path`)
-- Route guards via Effect error channel
-- Query params with Schema validation (currently just `URLSearchParams`)
-- Code splitting / lazy route loading
-
-#### Full Feature Set (Future)
-
-**Key features:**
-
-- Type-safe params per route (inferred from Schema)
-- Effect Schema for runtime validation
-- Support both History API and hash-based routing
-- Nested routes with accumulated params:
-  ```ts
-  const UserRoute = Route.make("/users/:id", {
-    params: Schema.Struct({ id: Schema.String }),
-    children: {
-      profile: Route.make("/profile"),
-      settings: Route.make("/settings"),
-      posts: Route.make("/posts/:postId", {
-        params: Schema.Struct({ postId: Schema.String }),
-      }),
-    },
-  });
-  // /users/:id/posts/:postId -> { id: string, postId: string }
-  ```
-- Route-specific readables: `router.routes.user.params`, `router.routes.user.isActive`
-- Navigation as Effects: `router.push(...)`, `router.replace(...)`, `router.back()`
-- Route guards via Effect error channel for auth checks, etc.
-
-**Why this approach:**
-
-- Fits naturally with Effect-UI's reactive primitives (routes as Readables)
-- Full type safety without manual type annotations
-- Familiar to TanStack Router users
-- Routes as values enables composition and code splitting
+TanStack Router-style with Effect Schema. File-based routing via Vite plugin. Routes as Effects with typed loaders/actions.
 
 ### Forms
-
-**Approach:** Effect Schema integration, headless, TanStack Form-style API
-
-```ts
-const form = yield* Form.make({
-  schema: Schema.Struct({
-    email: Schema.String.pipe(Schema.nonEmpty(), Schema.pattern(emailRegex)),
-    password: Schema.String.pipe(Schema.minLength(8)),
-    rememberMe: Schema.Boolean,
-  }),
-  initial: { email: "", password: "", rememberMe: false },
-});
-```
-
-**Field access - each field is a Signal with metadata:**
-
-```ts
-form.fields.email.value; // Signal<string>
-form.fields.email.errors; // Readable<string[]>
-form.fields.email.touched; // Readable<boolean>
-form.fields.email.dirty; // Readable<boolean>
-```
-
-**Form-level state:**
-
-```ts
-form.isValid; // Readable<boolean>
-form.isSubmitting; // Readable<boolean>
-form.errors; // Readable<Record<string, string[]>>
-```
-
-**Actions:**
-
-```ts
-form.submit(onSubmit)        // Effect that validates then calls handler
-form.reset()                 // Reset to initial values
-form.setErrors(...)          // Set server-side errors
-```
-
-**Validation timing options:**
-
-- `"hybrid"` (default) - blur for first validation, then change after
-- `"blur"` - validate when field loses focus
-- `"change"` - validate on every keystroke
-- `"submit"` - only validate when submitting
-
-**Async validation:**
-
-```ts
-Form.make({
-  schema: ...,
-  validators: {
-    username: (value) =>
-      Effect.gen(function* () {
-        const available = yield* api.checkUsername(value)
-        return available ? [] : ["Username already taken"]
-      }).pipe(Effect.debounce(300)),
-  },
-})
-```
-
-**Array/dynamic fields:**
-
-```ts
-form.fields.phoneNumbers.append("");
-form.fields.phoneNumbers.remove(index);
-form.fields.phoneNumbers.move(fromIndex, toIndex);
-form.fields.phoneNumbers.items; // Readable<FieldArray<string>>
-```
-
-**Key decisions:**
-
-- Headless - no UI opinions, just state management
-- Effect Schema only (no adapters for Zod, etc.) - users of Effect-UI are already in Effect ecosystem
-- Field-level subscriptions - only re-render what changed
-- Provide primitives + common helpers, let users handle styling
+Effect Schema integration, headless, field-level subscriptions. Validation timing: hybrid/blur/change/submit.
 
 ### Animation
+CSS-first with event-based timing. Enter/exit lifecycle for `when`/`match`/`each`. Stagger utilities, respects `prefers-reduced-motion`.
 
-**Approach:** CSS-first with event-based timing, extensible for advanced libraries
+### SSR
+Abstract rendering through Layers. Hydration via data attributes for O(1) lookup. Control flow wrappers use `display: contents`.
 
-**Core (built-in):**
+### Class Arrays
+`class` accepts strings, arrays, or Readables for Tailwind-friendly ergonomics.
 
-- CSS-first transitions - provide class names, library manages lifecycle
-- Event-based exit timing - listens for `animationend`/`transitionend` with timeout fallback
-- Enter/exit lifecycle for `when()`, `match()`, and `each()`
-- Stagger utilities for list animations
-- Respects `prefers-reduced-motion` by default
-
-```ts
-// Simple fade
-when(
-  isVisible,
-  () => Content(),
-  () => div(),
-  {
-    animate: { enter: "fade-in", exit: "fade-out" },
-  },
-);
-
-// With initial/final state classes (great for Tailwind)
-when(
-  isOpen,
-  () => Modal(),
-  () => div(),
-  {
-    animate: {
-      enterFrom: "opacity-0 scale-95",
-      enterTo: "opacity-100 scale-100",
-      exit: "fade-out",
-    },
-  },
-);
-
-// Staggered list animations
-each(items, keyFn, render, {
-  animate: {
-    enter: "slide-in",
-    exit: "slide-out",
-    stagger: 50, // 50ms between items
-  },
-});
-
-// Custom stagger functions
-each(items, keyFn, render, {
-  animate: {
-    enter: "scale-in",
-    stagger: staggerFromCenter(30), // Animate from center outward
-  },
-});
-
-// With lifecycle hooks
-match(status, cases, undefined, {
-  animate: {
-    enter: "fade-in",
-    exit: "fade-out",
-    onEnter: (el) => Effect.sync(() => el.focus()),
-  },
-});
-```
-
-**Animation Options:**
-
-```ts
-interface AnimationOptions {
-  enter?: string; // Class(es) for enter animation
-  exit?: string; // Class(es) for exit animation
-  enterFrom?: string; // Initial state class (removed after animation)
-  enterTo?: string; // Final state class (persisted)
-  exitTo?: string; // Exit target state class
-  timeout?: number; // Max wait time (default: 5000ms)
-  respectReducedMotion?: boolean; // Default: true
-
-  // Lifecycle hooks
-  onBeforeEnter?: (el: HTMLElement) => Effect<void> | void;
-  onEnter?: (el: HTMLElement) => Effect<void> | void;
-  onBeforeExit?: (el: HTMLElement) => Effect<void> | void;
-  onExit?: (el: HTMLElement) => Effect<void> | void;
-}
-```
-
-**Stagger Utilities:**
-
-```ts
-stagger(50); // Linear: 0ms, 50ms, 100ms...
-staggerFromCenter(30); // Center-out: middle items first
-staggerEased(500, easeOut); // Apply easing curve to delays
-```
-
-**Timing Utilities:**
-
-```ts
-delay(ms, effect); // Add delay before animation
-sequence(...effects); // Run animations sequentially
-parallel(...effects); // Run animations concurrently
-```
-
-**Why this approach:**
-
-- Core stays lean, covers 80% of use cases
-- CSS handles performance (GPU-accelerated)
-- Exit animations wait for completion before DOM removal
-- Backward compatible - animation options are optional
-- Enables ecosystem libraries like "effect-ui-framer" or "effect-ui-motion-one"
-
-### Element Error Channel
-
-- `Element<E = never>` - generic over error type
-- `Child<E = never>` - children propagate errors
-- `mount()` requires `Element<never>` - all errors must be handled before mounting
-- Use `ErrorBoundary` or Effect combinators to handle errors
-
-### className vs class
-
-Using `class` directly since we're not using JSX. No reserved word issues with function calls.
-
-### Suspense API
-
-Unified all Suspense variants into a single `Suspense` component with options:
-
-```ts
-Suspense({
-  render: () => asyncEffect,
-  fallback: () => loadingElement,
-  catch: (error) => errorElement, // optional
-  delay: "200 millis", // optional - delays fallback to avoid flash
-});
-```
-
-The `delay` option accepts Effect Duration strings. If the render completes before the delay, no fallback is shown - great for route transitions.
-
-### Class arrays for Tailwind
-
-The `class` attribute accepts multiple formats for Tailwind-friendly ergonomics:
-
-```ts
-div({ class: "flex items-center" }); // string
-div({ class: ["flex", "items-center", "gap-4"] }); // string[]
-div({ class: isActive.map((a) => (a ? "on" : "off")) }); // Readable<string>
-div({ class: ["btn", variant.map((v) => `btn-${v}`)] }); // mixed with reactives
-```
-
-### SSR & Multi-Target Rendering
-
-**Approach:** Abstract rendering through Effect Layers to support multiple targets
-
-The reactive core (Signals, Derived, Readable) is completely platform-agnostic. Only the `$` element factories are DOM-specific. By abstracting rendering through Layers, the same component code can target different environments.
-
-**Architecture:**
-
-```
-┌─────────────────────────────────────────────────┐
-│                  Component Logic                 │
-│         (Signals, Derived, Effects, Streams)     │
-└─────────────────────┬───────────────────────────┘
-                      │
-                      ▼
-┌─────────────────────────────────────────────────┐
-│              Element Description                 │
-│    { type: "div", props: {...}, children: [] }  │
-└─────────────────────┬───────────────────────────┘
-                      │
-        ┌─────────────┼─────────────┬─────────────┐
-        ▼             ▼             ▼             ▼
-   ┌─────────┐  ┌──────────┐  ┌─────────┐  ┌───────────┐
-   │   DOM   │  │  String  │  │ Terminal│  │  Native   │
-   │ Renderer│  │ Renderer │  │ Renderer│  │ Renderer  │
-   └─────────┘  └──────────┘  └─────────┘  └───────────┘
-```
-
-**Renderer Interface:**
-
-```ts
-interface Renderer<Node> {
-  createNode: (type: string, props: Props) => Effect<Node>
-  createTextNode: (text: string) => Effect<Node>
-  appendChild: (parent: Node, child: Node) => Effect<void>
-  removeChild: (parent: Node, child: Node) => Effect<void>
-  setAttribute: (node: Node, key: string, value: unknown) => Effect<void>
-  setTextContent: (node: Node, text: string) => Effect<void>
-  addEventListener: (node: Node, event: string, handler: Handler) => Effect<void>
-}
-
-class RendererContext extends Context.Tag("Renderer")<
-  RendererContext,
-  Renderer<unknown>
->() {}
-```
-
-**Potential Targets:**
-
-- `@effex/dom` - Browser DOM (current implementation)
-- `@effex/string` - HTML strings for SSR/static site generation
-- `@effex/terminal` - Terminal UI (like Ink for React)
-- `@effex/native` - iOS/Android native views
-- `@effex/canvas` - Canvas/WebGL for games, data viz
-- `@effex/test` - Fast virtual renderer for unit tests (no jsdom)
-
-**Key Insight:** Reactivity works across all targets. A Signal updating triggers `setTextContent` or `setAttribute` on whatever renderer is active. The renderer receives imperative commands and doesn't need to know about reactivity.
-
-**SSR-Specific Considerations:**
-
-1. **Server reactivity** - Only need initial values, not subscriptions. Could provide simplified Signal that skips stream setup.
-
-2. **Streaming** - Effect's streaming could enable progressive HTML. Suspense boundaries could flush placeholders early.
-
-**Hydration via Data Attributes (Preferred Approach):**
-
-Instead of walking the DOM in creation order or using comment markers, use data attributes for direct lookup. Each reactive binding gets a deterministic ID (from creation order via SignalRegistry), and elements are tagged with that ID.
-
-```html
-<!-- Reactive text -->
-<span data-effex-text="s:0">42</span>
-
-<!-- Reactive attribute -->
-<div class="active" data-effex-class="s:1">...</div>
-
-<!-- Event handler (via delegation) -->
-<button data-effex-click="h:0">Click me</button>
-
-<!-- when conditional -->
-<div style="display:contents" data-effex-when="w:0" data-effex-branch="true">
-  <div>Welcome!</div>
-</div>
-
-<!-- match -->
-<div style="display:contents" data-effex-match="m:0" data-effex-pattern="success">
-  <div>Done!</div>
-</div>
-
-<!-- each list -->
-<div style="display:contents" data-effex-each="e:0">
-  <li data-effex-key="item-1">Apple</li>
-  <li data-effex-key="item-2">Banana</li>
-</div>
-```
-
-Hydration process:
-1. Run component code (same as server) - creates signals, derived values
-2. Each reactive primitive gets deterministic ID from creation order
-3. Query DOM by data attributes: `[data-effex-text="s:0"]`
-4. Attach subscriptions to found elements
-5. Event handlers use delegation from root
-
-Benefits:
-- O(1) lookup vs O(n) DOM walking
-- No comment markers needed
-- `when`/`match`/`each` already have wrapper divs (`display: contents`) - perfect anchor points
-- Out-of-order hydration possible
-- Bindings visible in DevTools
-
-| Binding | Data attribute | Extra info |
-|---------|----------------|------------|
-| Text | `data-effex-text="id"` | — |
-| Attribute | `data-effex-attr-{name}="id"` | — |
-| Event | `data-effex-{event}="id"` | delegation |
-| `when` | `data-effex-when="id"` | `data-effex-branch` |
-| `match` | `data-effex-match="id"` | `data-effex-pattern` |
-| `each` | `data-effex-each="id"` | keys on children |
-
-**Open Questions:**
-
-- How to handle DOM-specific primitives (Portal, form inputs) in non-DOM targets?
-- Scope lifecycle on server - when does cleanup run?
-- Async boundaries - wait for all data vs stream vs placeholders?
-- Multiple bindings from same signal - need compound IDs like `s:0:0`, `s:0:1`?
-
-## Refactoring: createKeyboardNav Helper Adoption
-
-The `createKeyboardNav` helper (in `@effex/dom`) provides standardized arrow key navigation with orientation support, looping, Home/End keys, and activation callbacks. The following primitives have keyboard navigation that could potentially use this helper.
-
-### Good Candidates (Standard Pattern)
-
-These primitives have straightforward arrow key navigation that matches the helper's capabilities:
-
-- [x] **Tabs** (`Tabs.ts`) - Refactored to use `createKeyboardNav`
-  - Selector: `[data-tabs-trigger]:not([data-disabled])`
-  - Orientation: Dynamic (horizontal/vertical)
-  - Loop: Configurable via props
-  - Special: `activationMode` determines if `onFocus` triggers selection ("automatic") or only `onActivate` does ("manual")
-
-- [x] **RadioGroup** (`RadioGroup.ts`) - Refactored to use `createKeyboardNav`
-  - Selector: `[data-radio-item]:not([data-disabled])`
-  - Orientation: Dynamic (horizontal/vertical)
-  - Loop: Configurable via props
-  - Special: Always selects on focus (roving tabindex pattern)
-
-- [x] **Toolbar** (`Toolbar.ts`) - Refactored to use `createKeyboardNav`
-  - Selector: `[data-toolbar-item]:not([data-disabled])`
-  - Orientation: Dynamic (horizontal/vertical)
-  - Loop: Usually true
-  - Special: Contains heterogeneous items (buttons, toggles, separators)
-
-- [x] **Accordion** (`Accordion.ts`) - Refactored to use `createKeyboardNav`
-  - Selector: `[data-accordion-trigger]:not([data-disabled])`
-  - Orientation: Always vertical
-  - Loop: true
-  - Special: Shared handler defined at module level (static orientation)
-
-### Partial Candidates (Refactored)
-
-These primitives have been refactored to use `createKeyboardNav`:
-
-- [x] **DropdownMenu** (`DropdownMenu.ts`) - Refactored to use `createKeyboardNav`
-  - Content and SubContent use `onEscape` and `onActivate`
-  - SubContent handles ArrowLeft separately for submenu closing
-  - Tab handling kept separate (closes without preventDefault)
-
-- [x] **ContextMenu** (`ContextMenu.ts`) - Refactored to use `createKeyboardNav`
-  - Same pattern as DropdownMenu
-  - Content and SubContent both use the helper
-
-- [x] **Select** (`Select.ts`) - Refactored to use `createKeyboardNav`
-  - Uses `onEscape` and `onActivate`
-  - Now has full arrow/Home/End navigation (was previously missing!)
-
-### Remaining Partial Candidates
-
-- [ ] **Combobox** (`Combobox.ts`)
-  - Input field + listbox coordination
-  - Special: Navigation in listbox while typing in input
-  - Would need: Significant extension for input/listbox coordination
-
-- [ ] **NavigationMenu** (`NavigationMenu.ts`)
-  - Horizontal top-level + vertical submenus
-  - Arrow keys switch between open/close of items
-  - Delay-based open/close logic
-  - Would need: Multi-level navigation, delay integration
-
-- [ ] **TreeView** (`TreeView.ts`)
-  - Hierarchical navigation (ArrowRight expands, ArrowLeft collapses/goes to parent)
-  - Can use `hierarchy` extension once TreeView is implemented
-  - Additional keys: asterisk (*) to expand all siblings
-
-### Not Applicable (Different Purpose)
-
-These use arrow keys for value adjustment, not focus navigation:
-
-- **Slider** - Arrow keys adjust the slider value, not focus
-- **Splitter** - Arrow keys resize panels, not focus navigation
-
-### Helper Extensions (Implemented)
-
-The following extensions have been added to `createKeyboardNav`:
-
-```typescript
-interface KeyboardNavOptions {
-  // ... existing options ...
-
-  /** Called when Escape is pressed */
-  onEscape?: () => Effect.Effect<void>;
-
-  /** Enable typeahead search (for menus, selects) */
-  typeahead?: TypeaheadOptions;
-
-  /** For hierarchical navigation (TreeView) */
-  hierarchy?: HierarchyOptions;
-}
-
-interface TypeaheadOptions {
-  /** Get text content from element for matching */
-  getText: (el: HTMLElement) => string;
-  /** Called when typeahead matches an item */
-  onMatch?: (el: HTMLElement, index: number) => Effect.Effect<void>;
-  /** Timeout before resetting search buffer (default: 500ms) */
-  timeout?: number;
-}
-
-interface HierarchyOptions {
-  /** Get parent item of current item */
-  getParent: (el: HTMLElement) => Option<HTMLElement>;
-  /** Get first child of current item */
-  getFirstChild: (el: HTMLElement) => Option<HTMLElement>;
-  /** Whether item is expanded */
-  isExpanded: (el: HTMLElement) => boolean;
-  /** Expand/collapse callbacks */
-  onExpand: (el: HTMLElement) => Effect.Effect<void>;
-  onCollapse: (el: HTMLElement) => Effect.Effect<void>;
-}
-```
-
-**Behavior:**
-- `onEscape`: Called when Escape key is pressed, useful for closing menus/selects
-- `typeahead`: Type-to-search functionality with buffer accumulation and automatic timeout reset
-- `hierarchy`: TreeView-style navigation where ArrowRight expands/enters children and ArrowLeft collapses/moves to parent
-
-### Implementation Priority
-
-1. **Tabs** and **RadioGroup** - Most straightforward, high usage
-2. **Accordion** and **Toolbar** - Simple vertical navigation
-3. **Menu components** - Requires typeahead/Escape extensions
-4. **TreeView** - Requires hierarchy extensions
-
-## Notes
-
-- TypeDoc is configured for Markdown output (`pnpm docs:gen`)
+---
 
 ## Development Guidelines
 
-- **NEVER disable TypeScript or ESLint** - If types are difficult to get right, stop and ask for help rather than using `// @ts-ignore`, `// eslint-disable`, or `any` types. Proper typing is essential for this library.
+- **NEVER disable TypeScript or ESLint** - Ask for help rather than using `@ts-ignore`, `eslint-disable`, or `any`.
 
 ## Package Structure
 
 ```
 packages/
-├── core/        → @effex/core (platform-agnostic reactivity primitives)
-├── dom/         → @effex/dom (DOM rendering, depends on core)
-├── router/      → @effex/router (routing, depends on dom)
-├── form/        → @effex/form (form handling, depends on dom)
-├── primitives/  → @effex/primitives (UI primitives, depends on dom)
-└── platform/    → @effex/platform (meta-framework, re-exports all above)
+├── core/        → @effex/core (platform-agnostic reactivity)
+├── dom/         → @effex/dom (DOM rendering)
+├── router/      → @effex/router (routing)
+├── form/        → @effex/form (form handling)
+├── primitives/  → @effex/primitives (UI primitives)
+└── platform/    → @effex/platform (meta-framework)
 ```

@@ -49,6 +49,8 @@ const createMockRouter = (options?: {
     pathname: makeTestReadable(pathname),
     searchParams: makeTestReadable(new URLSearchParams()),
     currentRoute: makeTestReadable(Option.some("test")),
+    activeLayouts: makeTestReadable([] as readonly string[]),
+    layouts: {},
     loaderState: makeTestReadable({
       routeName: "test",
       params: {},

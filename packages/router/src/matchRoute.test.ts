@@ -36,6 +36,8 @@ const createMockRouter = (options?: {
     currentRoute: makeTestReadable(
       currentRoute === null ? Option.none() : Option.some(currentRoute),
     ),
+    activeLayouts: makeTestReadable([] as readonly string[]),
+    layouts: {},
     loaderState: makeTestReadable({
       routeName: currentRoute,
       params: {},

@@ -1,7 +1,7 @@
 import { Context, Effect, Layer } from "effect";
 
 import type { Readable } from "@effex/core";
-import { a, type Component } from "@effex/dom";
+import { a, Component } from "@effex/dom";
 
 import type { ActionState, BaseRouter } from "./types";
 
@@ -117,38 +117,34 @@ export interface LinkProps {
  * Link({ href: "/login", replace: true }, "Login")
  * ```
  */
-export const Link: Component.Node<LinkProps, RouterContext> = (
-  props,
-  children,
-) =>
-  Effect.gen(function* () {
-    const router = yield* RouterContext;
+export const Link = Component.gen(function* (props: LinkProps, children) {
+  const router = yield* RouterContext;
 
-    const isActive = router.pathname.map((p) => p === props.href);
+  const isActive = router.pathname.map((p) => p === props.href);
 
-    const baseClass = props.class ?? "link";
-    const classValue = isActive.map((active) =>
-      active ? `${baseClass} active` : baseClass,
-    );
+  const baseClass = props.class ?? "link";
+  const classValue = isActive.map((active) =>
+    active ? `${baseClass} active` : baseClass,
+  );
 
-    return yield* a(
-      {
-        href: props.href,
-        class: classValue,
-        onClick: (e) => {
-          // Allow ctrl/cmd+click and middle-click to work normally
-          if (e.ctrlKey || e.metaKey || e.button === 1) {
-            return Effect.void;
-          }
-          e.preventDefault();
-          return props.replace
-            ? router.replace(props.href)
-            : router.push(props.href);
-        },
+  return yield* a(
+    {
+      href: props.href,
+      class: classValue,
+      onClick: (e) => {
+        // Allow ctrl/cmd+click and middle-click to work normally
+        if (e.ctrlKey || e.metaKey || e.button === 1) {
+          return Effect.void;
+        }
+        e.preventDefault();
+        return props.replace
+          ? router.replace(props.href)
+          : router.push(props.href);
       },
-      children ?? [],
-    );
-  });
+    },
+    children ?? [],
+  );
+});
 
 /**
  * Access the current action state from the router.
