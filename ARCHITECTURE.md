@@ -188,25 +188,37 @@ Registers a finalizer to remove the element when scope closes.
 
 ### Component
 
-Components are typed using the `Component` namespace which provides four type helpers:
+Components are created using `Component.gen`, which wraps `Effect.gen` with proper type inference:
 
 ```ts
-// No props, no children
-type Component.Unit<R = never, E = never> = () => Element<E, R>
+// No props
+const Counter = Component.gen(function* () {
+  const count = yield* Signal.make(0);
+  return yield* $.div(count);
+});
 
-// Props, no children
-type Component.Leaf<Props, R = never, E = never> = (props: Props) => Element<E, R>
+// With props
+const Greeting = Component.gen(function* (props: { name: string }) {
+  return yield* $.h1(`Hello, ${props.name}!`);
+});
 
-// Props, optional children
-type Component.Node<Props, ChildReqs = never, R = never, E = never> =
-  (props: Props, children?: Child<E, ChildReqs>[]) => Element<E, R>
-
-// Props, required children (providers)
-type Component.Branch<Props, ChildReqs = never, R = never, E = never> =
-  (props: Props, children: Child<E, ChildReqs>[]) => Element<E, R>
+// With props and children
+const Card = Component.gen(function* (props: { title: string }, children) {
+  return yield* $.div({ class: "card" }, [
+    $.h2(props.title),
+    ...(children ?? []),
+  ]);
+});
 ```
 
-This replaces the old `component()` helper function with explicit type annotations.
+The `Component` namespace also provides type helpers for explicit typing if needed:
+
+```ts
+type Component.Unit<R = never, E = never> = () => Element<E, R>
+type Component.Leaf<Props, R = never, E = never> = (props: Props) => Element<E, R>
+type Component.Node<Props, ChildReqs = never, R = never, E = never> =
+  (props: Props, children?: Child<E, ChildReqs>[]) => Element<E, R>
+```
 
 ## Scope and Lifecycle
 

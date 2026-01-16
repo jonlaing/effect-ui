@@ -186,15 +186,13 @@ yield* eventSource.pipe(
 
 ```ts
 // Effex
-const Counter: Component.Unit = () =>
-  Effect.gen(function* () {
-    const count = yield* Signal.make(0);
-    return yield* $.button(
-      { onClick: () => count.update((c) => c + 1) },
-      count,
-    );
-  }),
-);
+const Counter = Component.gen(function* () {
+  const count = yield* Signal.make(0);
+  return yield* $.button(
+    { onClick: () => count.update((c) => c + 1) },
+    count,
+  );
+});
 ```
 
 ### Derived State
@@ -219,14 +217,12 @@ const Counter: Component.Unit = () =>
 
 ```ts
 // Effex
-const Cart: Component.Leaf<{ items: Readable<Item[]> }> = (props) =>
-  Effect.gen(function* () {
-    const total = yield* Derived.sync([props.items], ([items]) =>
-      items.reduce((sum, i) => sum + i.price, 0),
-    );
-    return yield* $.div(total.map((t) => `Total: $${t}`));
-  }),
-);
+const Cart = Component.gen(function* (props: { items: Readable<Item[]> }) {
+  const total = yield* Derived.sync([props.items], ([items]) =>
+    items.reduce((sum, i) => sum + i.price, 0),
+  );
+  return yield* $.div(total.map((t) => `Total: $${t}`));
+});
 ```
 
 ### Conditional Rendering
@@ -246,12 +242,11 @@ const Cart: Component.Leaf<{ items: Readable<Item[]> }> = (props) =>
 
 ```ts
 // Effex
-const Auth: Component.Leaf<{ isLoggedIn: Readable<boolean> }> = (props) =>
+const Auth = (props: { isLoggedIn: Readable<boolean> }) =>
   when(props.isLoggedIn, {
     onTrue: () => Dashboard(),
     onFalse: () => Login(),
-  }),
-);
+  });
 ```
 
 ### Lists
@@ -271,13 +266,12 @@ const Auth: Component.Leaf<{ isLoggedIn: Readable<boolean> }> = (props) =>
 
 ```ts
 // Effex
-const TodoList: Component.Leaf<{ todos: Readable<Todo[]> }> = (props) =>
+const TodoList = (props: { todos: Readable<Todo[]> }) =>
   each(props.todos, {
     container: () => $.ul(),
     key: (todo) => todo.id,
     render: (todo) => $.li(todo.map((t) => t.text)),
-  }),
-);
+  });
 ```
 
 ### Effects / Reactions
@@ -313,23 +307,21 @@ const TodoList: Component.Leaf<{ todos: Readable<Todo[]> }> = (props) =>
 
 ```ts
 // Effex
-const DocumentTitle: Component.Leaf<{ title: Readable<string>; unreadCount: Readable<number> }> =
-  (props) =>
-    Effect.gen(function* () {
-      // Runs whenever title or unreadCount changes
-      yield* Reaction.make([props.title, props.unreadCount], ([title, count]) =>
-        Effect.sync(() => {
-          document.title = count > 0 ? `(${count}) ${title}` : title;
-        }),
-      );
+const DocumentTitle = Component.gen(function* (props: { title: Readable<string>; unreadCount: Readable<number> }) {
+  // Runs whenever title or unreadCount changes
+  yield* Reaction.make([props.title, props.unreadCount], ([title, count]) =>
+    Effect.sync(() => {
+      document.title = count > 0 ? `(${count}) ${title}` : title;
+    }),
+  );
 
-      // Runs whenever title changes
-      yield* Reaction.make([props.title], ([title]) =>
-        Effect.sync(() => localStorage.setItem("lastTitle", title)),
-      );
+  // Runs whenever title changes
+  yield* Reaction.make([props.title], ([title]) =>
+    Effect.sync(() => localStorage.setItem("lastTitle", title)),
+  );
 
-      return yield* $.h1(props.title);
-    });
+  return yield* $.h1(props.title);
+});
 ```
 
 ### Context (Services)
@@ -354,12 +346,10 @@ const DocumentTitle: Component.Leaf<{ title: Readable<string>; unreadCount: Read
 // Effex
 class ThemeService extends Context.Tag("Theme")<ThemeService, string>() {}
 
-const Page: Component.Unit = () =>
-  Effect.gen(function* () {
-    const theme = yield* ThemeService;
-    return yield* $.div({ class: theme }, "...");
-  }),
-);
+const Page = Component.gen(function* () {
+  const theme = yield* ThemeService;
+  return yield* $.div({ class: theme }, "...");
+});
 
 // Provide at mount (like wrapping the root)
 runApp(mount(Page().pipe(Effect.provideService(ThemeService, "dark")), root));
@@ -388,18 +378,16 @@ $.div(
 
 ```ts
 // Effex
-const TextInput: Component.Unit = () =>
-  Effect.gen(function* () {
-    const text = yield* Signal.make("");
-    return yield* $.div([
-      $.input({
-        value: text,
-        onInput: (e) => text.set((e.target as HTMLInputElement).value),
-      }),
-      $.p(t`You typed: ${text}`),
-    ]);
-  }),
-);
+const TextInput = Component.gen(function* () {
+  const text = yield* Signal.make("");
+  return yield* $.div([
+    $.input({
+      value: text,
+      onInput: (e) => text.set((e.target as HTMLInputElement).value),
+    }),
+    $.p(t`You typed: ${text}`),
+  ]);
+});
 ```
 
 ### Stores (Svelte 4)
@@ -419,17 +407,15 @@ const TextInput: Component.Unit = () =>
 
 ```ts
 // Effex
-const Counter: Component.Unit = () =>
-  Effect.gen(function* () {
-    const count = yield* Signal.make(0);
-    const doubled = yield* Derived.sync([count], ([c]) => c * 2);
+const Counter = Component.gen(function* () {
+  const count = yield* Signal.make(0);
+  const doubled = yield* Derived.sync([count], ([c]) => c * 2);
 
-    return yield* $.div([
-      $.button({ onClick: () => count.update((c) => c + 1) }, count),
-      $.p(t`Doubled: ${doubled}`)),
-    ]);
-  }),
-);
+  return yield* $.div([
+    $.button({ onClick: () => count.update((c) => c + 1) }, count),
+    $.p(t`Doubled: ${doubled}`),
+  ]);
+});
 ```
 
 ### Slots / Children
@@ -455,7 +441,7 @@ interface CardProps {
   children: Element;
 }
 
-const Card: Component.Leaf<CardProps> = (props) =>
+const Card = (props: CardProps) =>
   $.div({ class: "card" }, [
     props.header ?? $.span(), // Named "slot"
     props.children,           // Default children
@@ -586,21 +572,19 @@ In Effex, the `Element` namespace provides pipeable helpers for DOM manipulation
 
 ```ts
 // Effex
-const FocusInput: Component.Unit = () =>
-  Effect.gen(function* () {
-    const inputRef = yield* Element.ref<HTMLInputElement>();
+const FocusInput = Component.gen(function* () {
+  const inputRef = yield* Element.ref<HTMLInputElement>();
 
-    const handleFocus = () =>
-      inputRef.pipe(
-        Element.focus,
-        Element.scrollIntoView({ behavior: "smooth" }),
-        Element.addClass("focused"),
-        Effect.runPromise,
-      );
+  const handleFocus = () =>
+    inputRef.pipe(
+      Element.focus,
+      Element.scrollIntoView({ behavior: "smooth" }),
+      Element.addClass("focused"),
+      Effect.runPromise,
+    );
 
-    return yield* $.input({ ref: inputRef, onClick: handleFocus });
-  }),
-);
+  return yield* $.input({ ref: inputRef, onClick: handleFocus });
+});
 ```
 
 ### Common Svelte DOM Patterns
