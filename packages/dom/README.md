@@ -832,3 +832,40 @@ Use `Effect.option` to convert failures to `Option<T>`:
 ```ts
 // Instead of failing, get Option<string>
 el.pipe(Element.getAttribute("maybe-exists"), Effect.option)
+```
+
+## Editor Setup
+
+### Tailwind IntelliSense
+
+Effex uses `class` (not `className`) which matches HTML and most modern frameworks. To get Tailwind autocomplete working, configure the language server to recognize Effex's class patterns.
+
+**Neovim** (via `nvim-lspconfig`):
+
+```lua
+require('lspconfig').tailwindcss.setup({
+  settings = {
+    tailwindCSS = {
+      experimental = {
+        classRegex = {
+          { "class:\\s*\"([^\"]*)\"", 1 },
+          { "class:\\s*'([^']*)'", 1 },
+        },
+      },
+    },
+  },
+})
+```
+
+**VS Code** (`.vscode/settings.json`):
+
+```json
+{
+  "tailwindCSS.experimental.classRegex": [
+    ["class:\\s*\"([^\"]*)\"", 1],
+    ["class:\\s*'([^']*)'", 1]
+  ]
+}
+```
+
+This enables autocomplete for `class: "..."` in element props.
