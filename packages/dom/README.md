@@ -419,6 +419,39 @@ yield* sequence(exitAnimation, enterAnimation);
 yield* parallel(anim1, anim2, anim3);
 ```
 
+### Imperative Animations
+
+For one-off animations triggered by user actions, use `Element.animate` which wraps the Web Animations API:
+
+```ts
+import { Element, $ } from "@effex/dom";
+
+const SubmitButton = Component.gen(function* () {
+  const buttonRef = yield* Element.ref<HTMLButtonElement>();
+
+  const handleClick = () =>
+    buttonRef.pipe(
+      // Pulse animation - resolves when complete
+      Element.animate(
+        [
+          { transform: "scale(1)" },
+          { transform: "scale(1.1)" },
+          { transform: "scale(1)" },
+        ],
+        { duration: 200, easing: "ease-out" },
+      ),
+    );
+
+  return yield* $.button({ ref: buttonRef, onClick: handleClick }, "Submit");
+});
+
+// Chain actions after animation completes
+inputRef.pipe(
+  Element.animate([{ opacity: "0" }, { opacity: "1" }], 300),
+  Element.focus, // Runs after animation finishes
+);
+```
+
 ### Example CSS
 
 ```css
