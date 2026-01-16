@@ -34,8 +34,16 @@ export const parseRouteExportsFromContent = (content: string): RouteExports => {
     /export\s+(const|let|var)\s+route\b/.test(content) ||
     /export\s*\{\s*[^}]*\broute\b/.test(content);
 
+  // Detect staticPaths export for SSG
+  // Matches: export const staticPaths, export function staticPaths, export { staticPaths }
+  const hasStaticPaths =
+    /export\s+(const|let|var)\s+staticPaths\b/.test(content) ||
+    /export\s+(async\s+)?function\s+staticPaths\b/.test(content) ||
+    /export\s*\{\s*[^}]*\bstaticPaths\b/.test(content);
+
   return {
     hasDefaultExport,
     hasRoute,
+    hasStaticPaths,
   };
 };

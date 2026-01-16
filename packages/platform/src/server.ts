@@ -92,3 +92,15 @@ export {
   type PlatformForm,
   type PlatformFormOptions,
 } from "./actions/PlatformForm.js";
+
+// Static Site Generation
+export {
+  buildStaticPages,
+  getStaticRoutes,
+  type SSGBuildOptions,
+  type SSGBuildResult,
+  type StaticPage,
+  type StaticRouteConfig,
+  type StaticRouteConfigMap,
+  type RouteDefinition,
+} from "./ssg/SSG.js";

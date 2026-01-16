@@ -201,6 +201,30 @@ export const generateRoutes = (
     lines.push("");
   }
 
+  // Generate static routes map (for SSG)
+  const staticRoutes = routes.filter(
+    (r) => r.exports.hasRoute, // Only routes with Route.define can be static
+  );
+  if (staticRoutes.length > 0) {
+    lines.push("// Static route configuration (for SSG)");
+    lines.push("export const staticRouteConfig = {");
+
+    for (const route of staticRoutes) {
+      lines.push(`  ${route.routeName}: {`);
+      lines.push(`    static: ${route.importName}.route._config.static,`);
+      lines.push(
+        `    revalidate: ${route.importName}.route._config.revalidate,`,
+      );
+      lines.push(
+        `    staticPaths: ${route.exports.hasStaticPaths ? `${route.importName}.staticPaths` : "undefined"},`,
+      );
+      lines.push("  },");
+    }
+
+    lines.push("} as const;");
+    lines.push("");
+  }
+
   // Generate type exports
   lines.push("// Type inference helpers");
   lines.push("export type Routes = typeof routes;");

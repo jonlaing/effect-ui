@@ -36,27 +36,37 @@ Dialog, DropdownMenu, Select, Combobox, Popover, Tooltip, Tabs, Accordion, Toggl
 ### Refactoring
 - `createKeyboardNav` helper adopted in: Tabs, RadioGroup, Toolbar, Accordion, DropdownMenu, ContextMenu, Select
 
+### Layouts & Outlet
+- `_layout.tsx` file convention with nested layout hierarchy
+- `Outlet` component in `@effex/router` for rendering child content
+- `Router.make` accepts `layouts` and `routeLayouts` configuration
+- `router.activeLayouts` reactive state, per-layout `isActive` state
+- Vite plugin generates `layouts`, `layoutComponents`, `routeLayouts`, `layoutParents`
+- `Routes` component automatically wraps routes in their layout hierarchy
+
+### Static Site Generation (SSG)
+- `Route.define({ static: true })` - Mark route as static
+- `Route.define({ revalidate: number })` - ISR support
+- `staticPaths` export for dynamic static routes
+- Vite plugin detects `staticPaths` exports and generates `staticRouteConfig`
+- `buildStaticPages()` in `@effex/platform/server` renders and writes HTML files
+- `getStaticRoutes()` helper to enumerate all static paths
+
 ---
 
 ## TODO
 
 ### High Priority
 
-- [ ] **Layouts & Outlet** (Router Phase 3)
-  - `__layout.ts` file convention
-  - `Outlet` component for nested rendering
-  - Layout data loaders
-  - Parallel route segments
-
-- [ ] **Static Site Generation (SSG)**
-  - `Route.define({ static: true })` - Mark route as static
-  - `staticPaths()` - Enumerate params for dynamic static routes
-  - `revalidate: number` - ISR support
-  - Build command renders static routes to disk
+- [x] **Effex CLI** (`@effex/cli`)
+  - `effex dev` - runs Vite dev server with SSR
+  - `effex build` - orchestrates client build + SSG in one command
+  - Looks for `ssg-entry.ts` or `effex.config.ts` for SSG configuration
+  - [ ] Platform adapters (Vercel, Cloudflare, Node) - future work
 
 - [ ] **Documentation Site**
   - Built with Effex (dogfooding)
-  - Requires: Layouts, SSG, Markdown rendering
+  - Requires: SSG, Markdown rendering
   - Location: `apps/docs/` or `sites/docs/`
 
 ### Medium Priority
@@ -87,16 +97,13 @@ Dialog, DropdownMenu, Select, Combobox, Popover, Tooltip, Tabs, Accordion, Toggl
   - Dependency graph, Timeline/time travel
 
 - [ ] **Platform V2+**
-  - Build orchestration (SSR build, client build, asset manifest)
-  - Platform adapters (Vercel, Cloudflare, Node)
-  - CLI (`create-effex-app`, `effex dev`, `effex build`)
   - `Link` with `prefetch` prop
   - Streaming SSR
 
 - [ ] **Router V2**
-  - Nested routes with accumulated params
   - Hash routing, route guards, query param schemas
   - Route prefetching, View Transitions API
+  - Layout loaders (run layout-specific data fetching)
 
 - [ ] **Demo: Effex IDE** - VSCode-like clone showcasing primitives
   - File explorer (TreeView), editor tabs, resizable panels (Splitter)

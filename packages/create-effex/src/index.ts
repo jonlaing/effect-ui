@@ -172,11 +172,20 @@ async function main() {
 
   if (options.template === "ssr") {
     console.log(
-      `    ${pc.cyan("pnpm")} dev          ${pc.dim("# Start dev server")}`,
+      `    ${pc.cyan("pnpm")} dev          ${pc.dim("# Start dev server with SSR")}`,
+    );
+    console.log(
+      `    ${pc.cyan("pnpm")} build        ${pc.dim("# Build for production (client + SSG)")}`,
+    );
+    console.log(
+      `    ${pc.cyan("pnpm")} start        ${pc.dim("# Start production server")}`,
     );
   } else {
     console.log(
       `    ${pc.cyan("pnpm")} dev          ${pc.dim("# Start Vite dev server")}`,
+    );
+    console.log(
+      `    ${pc.cyan("pnpm")} build        ${pc.dim("# Build for production")}`,
     );
   }
 

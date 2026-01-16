@@ -201,6 +201,50 @@ export interface DefineOptions<
   /** Action function to handle form submissions for this route */
   readonly action?: ActionFn<AA, AE, AR>;
   /**
+   * Mark this route for static site generation.
+   * When true, this route will be pre-rendered at build time.
+   *
+   * For dynamic routes (with params), you must also export a `staticPaths` function
+   * that returns all paths to pre-render.
+   *
+   * @example
+   * ```ts
+   * // Static page (no params)
+   * export const route = Route.define({ static: true });
+   *
+   * // Dynamic static page (with params)
+   * export const route = Route.define({
+   *   static: true,
+   *   params: Schema.Struct({ slug: Schema.String }),
+   * });
+   *
+   * // Must also export staticPaths for dynamic routes:
+   * export const staticPaths = async () => [
+   *   { slug: "hello-world" },
+   *   { slug: "about-us" },
+   * ];
+   * ```
+   */
+  readonly static?: boolean;
+  /**
+   * Time in seconds after which a statically generated page should be regenerated.
+   * Only applies when `static: true`.
+   *
+   * This enables Incremental Static Regeneration (ISR) on platforms that support it.
+   * - `undefined` (default): Page is generated once at build time
+   * - `0`: Page is regenerated on every request (SSR)
+   * - `> 0`: Page is regenerated after the specified number of seconds
+   *
+   * @example
+   * ```ts
+   * export const route = Route.define({
+   *   static: true,
+   *   revalidate: 60, // Regenerate every 60 seconds
+   * });
+   * ```
+   */
+  readonly revalidate?: number;
+  /**
    * @internal Injected by vite-plugin - do not set manually
    */
   readonly __path?: string;
@@ -261,6 +305,8 @@ export interface DefinedRoute<
     readonly paramsSchema: P | undefined;
     readonly loader: LoaderFn<Schema.Schema.Type<P>, LA, LE, LR> | undefined;
     readonly action: ActionFn<AA, AE, AR> | undefined;
+    readonly static: boolean;
+    readonly revalidate: number | undefined;
   };
   /** @internal */
   readonly _path: string;
@@ -354,6 +400,8 @@ export const define = <
       paramsSchema: options.params,
       loader: options.loader,
       action: options.action,
+      static: options.static ?? false,
+      revalidate: options.revalidate,
     },
     _path: path,
     _segments: segments,

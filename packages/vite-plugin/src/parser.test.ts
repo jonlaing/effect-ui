@@ -119,4 +119,84 @@ describe("parseRouteExportsFromContent", () => {
     expect(exports.hasRoute).toBe(true);
     expect(exports.hasDefaultExport).toBe(true);
   });
+
+  it("should detect staticPaths export as const", () => {
+    const content = `
+      export const staticPaths = async () => [
+        { slug: "hello-world" },
+        { slug: "getting-started" },
+      ];
+
+      export const route = Route.define({ static: true });
+      export default MyPage;
+    `;
+
+    const exports = parseRouteExportsFromContent(content);
+
+    expect(exports.hasStaticPaths).toBe(true);
+  });
+
+  it("should detect staticPaths export as function", () => {
+    const content = `
+      export async function staticPaths() {
+        return [{ slug: "hello-world" }];
+      }
+
+      export const route = Route.define({ static: true });
+      export default MyPage;
+    `;
+
+    const exports = parseRouteExportsFromContent(content);
+
+    expect(exports.hasStaticPaths).toBe(true);
+  });
+
+  it("should detect staticPaths export with re-export syntax", () => {
+    const content = `
+      const staticPaths = async () => [{ slug: "hello" }];
+      export { staticPaths };
+      export default MyPage;
+    `;
+
+    const exports = parseRouteExportsFromContent(content);
+
+    expect(exports.hasStaticPaths).toBe(true);
+  });
+
+  it("should not detect staticPaths when not exported", () => {
+    const content = `
+      const staticPaths = async () => [{ slug: "hello" }];
+      export default MyPage;
+    `;
+
+    const exports = parseRouteExportsFromContent(content);
+
+    expect(exports.hasStaticPaths).toBe(false);
+  });
+
+  it("should detect all exports in a complete SSG route file", () => {
+    const content = `
+      import { Effect, Schema } from "effect";
+      import { Route } from "@effex/router";
+
+      export const route = Route.define({
+        static: true,
+        params: Schema.Struct({ slug: Schema.String }),
+        loader: (params) => Effect.succeed({ title: params.slug }),
+      });
+
+      export const staticPaths = async () => {
+        const posts = await fetchPosts();
+        return posts.map(p => ({ slug: p.slug }));
+      };
+
+      export default BlogPostPage;
+    `;
+
+    const exports = parseRouteExportsFromContent(content);
+
+    expect(exports.hasRoute).toBe(true);
+    expect(exports.hasStaticPaths).toBe(true);
+    expect(exports.hasDefaultExport).toBe(true);
+  });
 });

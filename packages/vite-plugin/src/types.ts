@@ -6,6 +6,8 @@ export interface RouteExports {
   readonly hasDefaultExport: boolean;
   /** Whether the file exports a `route` (DefinedRoute from Route.define) */
   readonly hasRoute: boolean;
+  /** Whether the file exports a `staticPaths` function for SSG */
+  readonly hasStaticPaths: boolean;
 }
 
 /**

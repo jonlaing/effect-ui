@@ -45,9 +45,11 @@
 
 export { effexRoutes } from "./plugin.js";
 export { effexSSR } from "./ssr.js";
+export { effexSSG } from "./ssg.js";
 export type {
   EffexPluginOptions,
   ScannedRoute,
   RouteExports,
 } from "./types.js";
 export type { EffexSSROptions } from "./ssr.js";
+export type { EffexSSGOptions } from "./ssg.js";

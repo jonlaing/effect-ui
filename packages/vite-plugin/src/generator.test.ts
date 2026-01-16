@@ -17,6 +17,7 @@ describe("generateRoutes", () => {
         exports: {
           hasDefaultExport: true,
           hasRoute: false,
+          hasStaticPaths: false,
         },
         layouts: [],
       },
@@ -51,6 +52,7 @@ describe("generateRoutes", () => {
         exports: {
           hasDefaultExport: true,
           hasRoute: true,
+          hasStaticPaths: false,
         },
         layouts: [],
       },
@@ -83,6 +85,7 @@ describe("generateRoutes", () => {
         exports: {
           hasDefaultExport: true,
           hasRoute: true,
+          hasStaticPaths: false,
         },
         layouts: [],
       },
@@ -97,6 +100,7 @@ describe("generateRoutes", () => {
         exports: {
           hasDefaultExport: true,
           hasRoute: false,
+          hasStaticPaths: false,
         },
         layouts: [],
       },
@@ -111,6 +115,7 @@ describe("generateRoutes", () => {
         exports: {
           hasDefaultExport: true,
           hasRoute: true,
+          hasStaticPaths: false,
         },
         layouts: [],
       },
@@ -165,6 +170,7 @@ describe("generateRoutes", () => {
         exports: {
           hasDefaultExport: true,
           hasRoute: true,
+          hasStaticPaths: false,
         },
         layouts: [],
       },
@@ -198,6 +204,7 @@ describe("generateRoutes", () => {
         exports: {
           hasDefaultExport: true,
           hasRoute: false,
+          hasStaticPaths: false,
         },
       },
       {
@@ -210,6 +217,7 @@ describe("generateRoutes", () => {
         exports: {
           hasDefaultExport: true,
           hasRoute: true,
+          hasStaticPaths: false,
         },
       },
     ];
@@ -226,6 +234,7 @@ describe("generateRoutes", () => {
         exports: {
           hasDefaultExport: true,
           hasRoute: false,
+          hasStaticPaths: false,
         },
         layouts: ["root_layout"],
       },
@@ -240,6 +249,7 @@ describe("generateRoutes", () => {
         exports: {
           hasDefaultExport: true,
           hasRoute: false,
+          hasStaticPaths: false,
         },
         layouts: ["root_layout", "users_layout"],
       },
@@ -292,5 +302,81 @@ describe("generateRoutes", () => {
     // Type exports
     expect(code).toContain("export type Layouts = typeof layouts");
     expect(code).toContain("export type LayoutNames = keyof Layouts");
+  });
+
+  it("should generate staticRouteConfig for routes with Route.define", () => {
+    const routes: ScannedRoute[] = [
+      {
+        filePath: "_index.tsx",
+        routePath: "/",
+        routeName: "index",
+        importName: "IndexRoute",
+        componentImportName: "IndexComponent",
+        isLayout: false,
+        isIndex: true,
+        exports: {
+          hasDefaultExport: true,
+          hasRoute: true,
+          hasStaticPaths: false,
+        },
+        layouts: [],
+      },
+      {
+        filePath: "blog.$slug.tsx",
+        routePath: "/blog/:slug",
+        routeName: "blog_$slug",
+        importName: "BlogSlugRoute",
+        componentImportName: "BlogSlugComponent",
+        isLayout: false,
+        isIndex: false,
+        exports: {
+          hasDefaultExport: true,
+          hasRoute: true,
+          hasStaticPaths: true,
+        },
+        layouts: [],
+      },
+      {
+        filePath: "about.tsx",
+        routePath: "/about",
+        routeName: "about",
+        importName: "AboutRoute",
+        componentImportName: "AboutComponent",
+        isLayout: false,
+        isIndex: false,
+        exports: {
+          hasDefaultExport: true,
+          hasRoute: false,
+          hasStaticPaths: false,
+        },
+        layouts: [],
+      },
+    ];
+
+    const code = generateRoutes(
+      { routes, layouts: [] },
+      {
+        routesDir: "/app/src/routes",
+        outputPath: "/app/src/generated/routes.ts",
+      },
+    );
+
+    // Should generate staticRouteConfig
+    expect(code).toContain("export const staticRouteConfig = {");
+
+    // Should include routes with Route.define
+    expect(code).toContain("index: {");
+    expect(code).toContain("static: IndexRoute.route._config.static,");
+    expect(code).toContain("revalidate: IndexRoute.route._config.revalidate,");
+    expect(code).toContain("staticPaths: undefined,");
+
+    expect(code).toContain("blog_$slug: {");
+    expect(code).toContain("static: BlogSlugRoute.route._config.static,");
+    expect(code).toContain("staticPaths: BlogSlugRoute.staticPaths,");
+
+    // Should NOT include routes without Route.define (about is not in staticRouteConfig)
+    // The about route doesn't have hasRoute: true, so it won't appear in staticRouteConfig
+    const aboutMatch = code.match(/about:\s*\{[^}]*static:/);
+    expect(aboutMatch).toBeNull();
   });
 });
