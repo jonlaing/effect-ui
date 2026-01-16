@@ -106,6 +106,52 @@ runApp(
 );
 ```
 
+## Full-Stack with @effex/platform
+
+For production apps, `@effex/platform` provides everything you need: SSR, hydration, file-based routing, loaders, and actions.
+
+```ts
+// src/routes/users.$id.ts
+import { Effect, Schema } from "effect";
+import { $, Component, Route } from "@effex/platform";
+
+// Define route with typed params, loader, and action
+export const route = Route.define({
+  params: Schema.Struct({ id: Schema.String }),
+  loader: (params) => fetchUser(params.id),
+  action: ({ formData }) =>
+    Effect.gen(function* () {
+      yield* updateUser(formData);
+      return { success: true };
+    }),
+});
+
+// Component with type-safe access to loader data
+const UserPage = Component.gen(function* () {
+  const user = yield* route.loaderData(); // User type inferred from loader
+
+  return yield* $.div([
+    $.h1(user.name),
+    $.form({ method: "post" }, [
+      $.input({ name: "email", value: user.email }),
+      $.button({ type: "submit" }, "Save"),
+    ]),
+  ]);
+});
+
+export default UserPage;
+```
+
+Key features:
+- **SSR + Hydration** - Server renders HTML, client picks up seamlessly
+- **Loaders** - Fetch data on the server before rendering
+- **Actions** - Handle form submissions with typed responses
+- **File-based routing** - Routes derived from filesystem structure
+- **HttpApi integration** - Mount Effect's HttpApi alongside pages on a single server
+- **Shared schemas** - Same Effect Schema validates data on server and client
+
+See the [`@effex/platform` README](./packages/platform/README.md) for the full documentation.
+
 ## Packages
 
 Effex is organized into focused packages. Use what you need:

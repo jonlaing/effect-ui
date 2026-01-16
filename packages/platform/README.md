@@ -261,6 +261,80 @@ const App = Component.gen(function* () {
 });
 ```
 
+## Integrating with Effect HttpApi
+
+Effex's server produces an `HttpApp.Default` that composes naturally with Effect's `HttpRouter`. This lets you serve both Effex pages and HttpApi endpoints from a single server:
+
+```ts
+import { HttpApi, HttpApiBuilder, HttpApiEndpoint, HttpApiGroup, HttpRouter, HttpServer } from "@effect/platform";
+import { NodeHttpServer, NodeRuntime } from "@effect/platform-node";
+import { Effect, Layer, Schema } from "effect";
+import { EffexServer } from "@effex/platform/server";
+import { App, router as effexRouter } from "./app";
+
+// Define your API
+class UsersApi extends HttpApiGroup.make("users").pipe(
+  HttpApiGroup.add(
+    HttpApiEndpoint.get("list", "/").pipe(
+      HttpApiEndpoint.setSuccess(Schema.Array(UserSchema)),
+    ),
+  ),
+  HttpApiGroup.add(
+    HttpApiEndpoint.get("get", "/:id").pipe(
+      HttpApiEndpoint.setSuccess(UserSchema),
+    ),
+  ),
+) {}
+
+class MyApi extends HttpApi.make("api").pipe(
+  HttpApi.addGroup(UsersApi),
+) {}
+
+// Implement handlers
+const usersHandlers = HttpApiBuilder.group(MyApi, "users", (handlers) =>
+  handlers
+    .handle("list", () => Effect.succeed([...]))
+    .handle("get", ({ path }) => fetchUser(path.id)),
+);
+
+const apiLive = HttpApiBuilder.api(MyApi).pipe(
+  Layer.provide(usersHandlers),
+);
+
+// Create the Effex app for pages
+const effexApp = EffexServer.makeHttpApp({
+  app: () => App(),
+  router: effexRouter,
+  document: {
+    title: "My App",
+    scripts: ["/client.js"],
+    styles: ["/styles.css"],
+  },
+});
+
+// Compose into a single router
+const mainRouter = HttpRouter.empty.pipe(
+  // API routes at /api prefix
+  HttpRouter.mount("/api", HttpApiBuilder.toWebHandler(apiLive)),
+  // Effex handles everything else (pages)
+  HttpRouter.all("/*", effexApp),
+);
+
+// Single server for both pages and API
+const server = HttpServer.serve(mainRouter).pipe(
+  Layer.provide(NodeHttpServer.layer({ port: 3000 })),
+);
+
+NodeRuntime.runMain(Layer.launch(server));
+```
+
+This approach gives you:
+- Single port/server - no CORS issues between frontend and API
+- Full type safety from HttpApi's schema definitions
+- Shared Effect services between pages and API handlers
+- API routes matched before the catch-all Effex handler
+- **Shared schemas** - The same Schema definitions validate data on both server and client, ensuring your frontend and backend always agree on data shapes
+
 ## Subpath Exports
 
 For environment-specific code:
