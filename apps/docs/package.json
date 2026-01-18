@@ -1,0 +1,31 @@
+{
+  "name": "@effex/docs",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "effex dev",
+    "build": "effex build",
+    "build:client": "vite build",
+    "build:server": "vite build --ssr src/server.ts --outDir dist/server",
+    "start": "node dist/server/server.js"
+  },
+  "dependencies": {
+    "@effex/platform": "workspace:*",
+    "@effect/platform": "^0.94.0",
+    "@effect/platform-node": "^0.104.0",
+    "effect": "^3.19.13",
+    "glob": "^11.0.0",
+    "gray-matter": "^4.0.3",
+    "marked": "^15.0.0"
+  },
+  "devDependencies": {
+    "@effex/cli": "workspace:*",
+    "@effex/vite-plugin": "workspace:*",
+    "@types/node": "^24.10.4",
+    "shiki": "^1.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "~5.9.3",
+    "vite": "^6.1.7"
+  }
+}
