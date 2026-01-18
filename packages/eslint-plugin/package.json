@@ -1,22 +1,22 @@
 {
-  "name": "@effex/primitives",
+  "name": "@effex/eslint-plugin",
   "version": "0.0.1",
-  "description": "Headless UI primitives for Effex applications",
+  "description": "ESLint plugin for Effex - an Effect.ts-based reactive UI framework",
   "type": "module",
   "license": "MIT",
   "author": "Jon Laing",
   "repository": {
     "type": "git",
     "url": "https://github.com/jonlaing/effex.git",
-    "directory": "packages/primitives"
+    "directory": "packages/eslint-plugin"
   },
   "keywords": [
+    "effex",
     "effect",
     "effect-ts",
-    "ui",
-    "headless",
-    "primitives",
-    "accessible"
+    "eslint",
+    "eslint-plugin",
+    "linting"
   ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -33,22 +33,17 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsup",
-    "dev": "storybook dev -p 6006",
-    "lint": "eslint src/"
+    "build": "tsup"
   },
   "dependencies": {
-    "@effex/dom": "workspace:*"
+    "@typescript-eslint/utils": "^8.0.0"
   },
   "peerDependencies": {
-    "effect": "^3.0.0"
+    "eslint": "^9.0.0",
+    "typescript-eslint": "^8.0.0"
   },
   "devDependencies": {
-    "@effex/eslint-plugin": "workspace:*",
-    "@tailwindcss/vite": "^4.1.18",
-    "daisyui": "^5.5.14",
-    "eslint": "^9.0.0",
-    "tailwindcss": "^4.1.18",
-    "typescript-eslint": "^8.0.0"
+    "tsup": "^8.4.0",
+    "typescript": "~5.9.3"
   }
 }

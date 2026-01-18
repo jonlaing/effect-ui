@@ -1,6 +1,6 @@
 import { Effect, Option } from "effect";
 
-import { Component, div, match, mount, runApp } from "@effex/dom";
+import { $, Component, match, mount, runApp } from "@effex/dom";
 import { Router, RouterContext } from "@effex/router";
 
 import { components, routes } from "./generated/routes.js";
@@ -19,7 +19,7 @@ const Routes = Component.gen(function* () {
 
   return yield* match(currentRoute, {
     cases,
-    fallback: () => div({ class: "page" }, ["Page not found"]),
+    fallback: () => $.div({ class: "page" }, "Page not found"),
   });
 });
 

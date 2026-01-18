@@ -14,9 +14,9 @@ export { routes, components };
  */
 export const NotFound = () =>
   $.div({ class: "page" }, [
-    $.h1({}, ["404 - Page Not Found"]),
-    $.p({}, ["The page you're looking for doesn't exist."]),
-    $.p({}, [Link({ href: "/" }, "Go Home")]),
+    $.h1("404 - Page Not Found"),
+    $.p("The page you're looking for doesn't exist."),
+    $.p(Link({ href: "/" }, "Go Home")),
   ]);
 
 /**
