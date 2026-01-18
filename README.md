@@ -164,7 +164,9 @@ Effex is organized into focused packages. Use what you need:
 | [`@effex/form`](./packages/form) | Form handling with Effect Schema validation |
 | [`@effex/primitives`](./packages/primitives) | Headless UI components (Dialog, Dropdown, Tabs, etc.) |
 | [`@effex/platform`](./packages/platform) | Full-stack meta-framework: SSR, hydration, loaders, actions |
+| [`@effex/cli`](./packages/cli) | Dev server and build tooling |
 | [`@effex/vite-plugin`](./packages/vite-plugin) | Vite plugin for file-based routing |
+| [`@effex/eslint-plugin`](./packages/eslint-plugin) | ESLint rules for Effect.ts/Effex best practices |
 | [`create-effex`](./packages/create-effex) | CLI to scaffold new projects |
 
 **Note:** `@effex/dom` re-exports everything from `@effex/core`, and `@effex/platform` re-exports everything from all packages. For most apps, you only need one import.
