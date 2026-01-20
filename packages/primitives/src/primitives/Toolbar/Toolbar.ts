@@ -203,7 +203,7 @@ const Root = Component.gen(function* (props: ToolbarRootProps, children) {
       class: props.class,
       onKeyDown: handleKeyDown,
     },
-    provide(ToolbarCtx, ctx, Array.isArray(children) ? children : [children]),
+    provide(ToolbarCtx, ctx, Component.normalizeChildren(children)),
   );
 });
 
@@ -306,17 +306,18 @@ const ToggleItem = Component.gen(function* (
   }
 
   // Determine if we're in a ToggleGroup or standalone
+  const toggleValue = props.value;
   const inToggleGroup =
-    Option.isSome(toggleGroupCtx) && props.value !== undefined;
+    Option.isSome(toggleGroupCtx) && toggleValue !== undefined;
 
   // Pressed state - either from ToggleGroup, controlled, or internal
   const pressed = inToggleGroup
-    ? toggleGroupCtx.value.isSelected(props.value)
+    ? toggleGroupCtx.value.isSelected(toggleValue)
     : yield* Signal.fromNullable(props.pressed, props.defaultPressed ?? false);
 
   const setPressed = (newPressed: boolean): Effect.Effect<void> => {
-    if (inToggleGroup) {
-      return toggleGroupCtx.value.toggle(props.value!);
+    if (inToggleGroup && toggleValue !== undefined) {
+      return toggleGroupCtx.value.toggle(toggleValue);
     }
 
     return Effect.gen(function* () {
@@ -430,9 +431,8 @@ const ToggleGroup = Component.gen(function* (
   const isSelected = (value: string): Readable.Readable<boolean> => {
     if (type === "single") {
       return singleValue.map((v) => v === value);
-    } else {
-      return multipleValue.map((values) => values.includes(value));
     }
+    return multipleValue.map((values) => values.includes(value));
   };
 
   const groupCtx: ToolbarToggleGroupContext = {
@@ -444,14 +444,17 @@ const ToggleGroup = Component.gen(function* (
     isSelected,
   };
 
-  const childArray = Array.isArray(children) ? children : [children];
   return yield* $.div(
     {
       role: "group",
       "aria-label": props["aria-label"],
       class: props.class,
     },
-    provide(ToolbarToggleGroupCtx, groupCtx, childArray),
+    provide(
+      ToolbarToggleGroupCtx,
+      groupCtx,
+      Component.normalizeChildren(children),
+    ),
   );
 });
 

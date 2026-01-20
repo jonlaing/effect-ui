@@ -310,7 +310,7 @@ const Root = Component.gen(function* (props: TreeViewRootProps, children) {
       provide(
         TreeViewLevelCtx,
         levelCtx,
-        Array.isArray(children) ? children : [children],
+        Component.normalizeChildren(children),
       ),
     ),
   );

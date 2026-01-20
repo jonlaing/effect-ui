@@ -423,7 +423,7 @@ const Root = Component.gen(function* (props: SplitterRootProps, children) {
         flexDirection: orientation === "horizontal" ? "row" : "column",
       },
     },
-    provide(SplitterCtx, ctx, Array.isArray(children) ? children : [children]),
+    provide(SplitterCtx, ctx, Component.normalizeChildren(children)),
   );
 });
 
@@ -480,11 +480,7 @@ const Panel = Component.gen(function* (props: SplitterPanelProps, children) {
       class: props.class,
       style: panelStyle,
     },
-    provide(
-      SplitterPanelCtx,
-      panelCtx,
-      children ? (Array.isArray(children) ? children : [children]) : [],
-    ),
+    provide(SplitterPanelCtx, panelCtx, Component.normalizeChildren(children)),
   );
 });
 
@@ -542,14 +538,12 @@ const Handle = Component.gen(function* (props: SplitterHandleProps) {
         case "ArrowLeft":
         case "ArrowUp": {
           e.preventDefault();
-          const delta =
-            ctx.orientation === "horizontal"
-              ? e.key === "ArrowLeft"
-                ? -step
-                : 0
-              : e.key === "ArrowUp"
-                ? -step
-                : 0;
+          const getDelta = () => {
+            if (ctx.orientation === "horizontal")
+              return e.key === "ArrowLeft" ? -step : 0;
+            return e.key === "ArrowUp" ? -step : 0;
+          };
+          const delta = getDelta();
           if (delta !== 0) {
             yield* ctx.resizeByStep(handleIndex, delta);
           }
@@ -558,14 +552,12 @@ const Handle = Component.gen(function* (props: SplitterHandleProps) {
         case "ArrowRight":
         case "ArrowDown": {
           e.preventDefault();
-          const delta =
-            ctx.orientation === "horizontal"
-              ? e.key === "ArrowRight"
-                ? step
-                : 0
-              : e.key === "ArrowDown"
-                ? step
-                : 0;
+          const getDelta = () => {
+            if (ctx.orientation === "horizontal")
+              return e.key === "ArrowRight" ? step : 0;
+            return e.key === "ArrowDown" ? step : 0;
+          };
+          const delta = getDelta();
           if (delta !== 0) {
             yield* ctx.resizeByStep(handleIndex, delta);
           }

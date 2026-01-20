@@ -7,13 +7,13 @@ import {
   mergeProps,
   Portal,
   provide,
-  Readable,
   ScrollLock,
   Signal,
   UniqueId,
   when,
   type AnimationOptions,
   type ClassValue,
+  type Readable,
 } from "@effex/dom";
 
 /**

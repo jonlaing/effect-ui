@@ -79,7 +79,6 @@ const Root = Component.gen(function* (props: ProgressRootProps, children) {
     percentage,
   };
 
-  const childArray = Array.isArray(children) ? children : [children];
   return yield* $.div(
     {
       class: props.class,
@@ -93,7 +92,7 @@ const Root = Component.gen(function* (props: ProgressRootProps, children) {
       "data-value": dataValue,
       "data-max": String(max),
     },
-    provide(ProgressCtx, ctx, childArray),
+    provide(ProgressCtx, ctx, Component.normalizeChildren(children)),
   );
 });
 

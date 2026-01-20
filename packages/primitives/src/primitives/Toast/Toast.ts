@@ -8,10 +8,10 @@ import {
   mergeProps,
   Portal,
   provide,
-  Readable,
   Signal,
   type ClassValue,
   type ListAnimationOptions,
+  type Readable,
 } from "@effex/dom";
 
 import {
@@ -41,12 +41,6 @@ export type {
 // ============================================================================
 // Helpers
 // ============================================================================
-
-const normalizeChildren = <T>(children: T | readonly T[] | undefined): T[] => {
-  if (!children) return [];
-  if (Array.isArray(children)) return children as T[];
-  return [children] as T[];
-};
 
 // ============================================================================
 // Context Interfaces
@@ -159,7 +153,7 @@ const Provider = Component.gen(function* (props: ToastProviderProps, children) {
       if (toast?.onDismiss) {
         yield* toast.onDismiss();
       }
-      yield* toasts.update((current) => current.filter((t) => t.id !== id));
+      yield* toasts.update((items) => items.filter((t) => t.id !== id));
     });
 
   // Dismiss all toasts
@@ -184,11 +178,9 @@ const Provider = Component.gen(function* (props: ToastProviderProps, children) {
     swipeDirection,
   };
 
-  const childArray = Array.isArray(children) ? children : [children];
-
   return yield* $.div(
     { style: { display: "contents" } },
-    provide(ToastCtx, ctx, childArray),
+    provide(ToastCtx, ctx, Component.normalizeChildren(children)),
   );
 });
 
@@ -243,7 +235,7 @@ const Viewport = Component.gen(function* (props: ToastViewportProps, children) {
   );
 
   const viewportStyle = getViewportStyle(ctx.position);
-  const providedChildren = normalizeChildren(children);
+  const providedChildren = Component.normalizeChildren(children);
 
   // Default template when no children provided
   const defaultTemplate = [
@@ -278,8 +270,8 @@ const Viewport = Component.gen(function* (props: ToastViewportProps, children) {
             const itemCtx: ToastItemContext = {
               toast,
               dismiss: () => ctx.dismiss(toast.id),
-              pauseTimer: () => {},
-              resumeTimer: () => {},
+              pauseTimer: () => undefined,
+              resumeTimer: () => undefined,
             };
 
             return yield* $.li(provide(ToastItemCtx, itemCtx, template));
@@ -469,7 +461,7 @@ const Root = Component.gen(function* (props: ToastRootProps, children) {
       onMouseEnter: handleMouseEnter,
       onMouseLeave: handleMouseLeave,
     },
-    normalizeChildren(children as Element.Element<never, never>),
+    Component.normalizeChildren(children as Element.Element<never, never>),
   );
 });
 

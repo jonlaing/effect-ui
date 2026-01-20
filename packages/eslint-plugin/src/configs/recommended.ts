@@ -16,7 +16,6 @@ export const createRecommendedConfig = (
       // Effex custom rules
       "@effex/no-throw": "warn",
       "@effex/no-try-catch": "warn",
-      "@effex/no-null": "warn",
       "@effex/no-floating-effect": "error",
       "@effex/prefer-template-literal": "warn",
 

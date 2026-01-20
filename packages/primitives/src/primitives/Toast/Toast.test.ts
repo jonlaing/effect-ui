@@ -21,8 +21,8 @@ const mockItemCtx: ToastItemContext = {
     type: "default",
   },
   dismiss: () => Effect.void,
-  pauseTimer: () => {},
-  resumeTimer: () => {},
+  pauseTimer: () => undefined,
+  resumeTimer: () => undefined,
 };
 
 describe("Toast", () => {

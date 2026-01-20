@@ -320,9 +320,10 @@ export const ReactiveSource: Story = {
               ),
             ],
           ),
-          $.button({ class: "btn btn-primary w-48", onClick: handleNext }, [
+          $.button(
+            { class: "btn btn-primary w-48", onClick: handleNext },
             "Load Next Image",
-          ]),
+          ),
         ]),
       ]);
     });

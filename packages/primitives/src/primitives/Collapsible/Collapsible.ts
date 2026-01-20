@@ -106,16 +106,17 @@ const Root = Component.gen(function* (props: CollapsibleRootProps, children) {
     disabled,
   };
 
-  const dataState = isOpen.map((open) => (open ? "open" : "closed"));
+  const dataState = isOpen.map((isOpenValue) =>
+    isOpenValue ? "open" : "closed",
+  );
   const dataDisabled = disabled.map((d) => (d ? "" : undefined));
 
-  const childArray = Array.isArray(children) ? children : [children];
   return yield* $.div(
     {
       "data-state": dataState,
       "data-disabled": dataDisabled,
     },
-    provide(CollapsibleCtx, ctxValue, childArray),
+    provide(CollapsibleCtx, ctxValue, Component.normalizeChildren(children)),
   );
 });
 

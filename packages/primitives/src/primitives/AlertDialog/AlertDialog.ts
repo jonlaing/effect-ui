@@ -1,4 +1,4 @@
-import { Array, Context, Effect } from "effect";
+import { Context, Effect } from "effect";
 
 import {
   $,
@@ -8,7 +8,6 @@ import {
   mergeProps,
   Portal,
   provide,
-  Readable,
   ScrollLock,
   Signal,
   UniqueId,
@@ -16,6 +15,7 @@ import {
   type AnimationOptions,
   type ClassValue,
   type ElementRef,
+  type Readable,
 } from "@effex/dom";
 
 /**
@@ -90,14 +90,9 @@ const Root = Component.gen(function* (props: AlertDialogRootProps, children) {
     cancelRef,
   };
 
-  const childArray = Array.isArray(children)
-    ? children
-    : children
-      ? [children]
-      : [];
   return yield* $.div(
     { style: { display: "contents" } },
-    provide(AlertDialogCtx, ctx, childArray),
+    provide(AlertDialogCtx, ctx, Component.normalizeChildren(children)),
   );
 });
 
@@ -163,17 +158,12 @@ const AlertDialogPortal = Component.gen(function* (
 
   // Portal is always rendered, but the content inside uses `when` for animations.
   // This ensures animations apply to the actual visible content, not a placeholder.
-  const childArray = Array.isArray(children)
-    ? children
-    : children
-      ? [children]
-      : [];
   return yield* Portal({ target: props.target }, () =>
     when(ctx.isOpen, {
       onTrue: () =>
         $.div(
           { style: { display: "contents" }, "data-alertdialog-portal": "" },
-          provide(AlertDialogCtx, ctx, childArray),
+          provide(AlertDialogCtx, ctx, Component.normalizeChildren(children)),
         ),
       onFalse: () => $.div({ style: { display: "none" } }),
       animate: props.animate,

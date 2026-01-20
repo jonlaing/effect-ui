@@ -276,13 +276,11 @@ const Root = Component.gen(function* (props: SliderRootProps, children) {
       })
     : null;
 
-  const childArray = Array.isArray(children)
-    ? children
-    : children
-      ? [children]
-      : [];
-
-  const provided = provide(SliderCtx, ctx, childArray);
+  const provided = provide(
+    SliderCtx,
+    ctx,
+    Component.normalizeChildren(children),
+  );
   const hiddenPart = hiddenInput ? [hiddenInput] : [];
 
   const newChildren = [...hiddenPart, ...provided];
@@ -391,11 +389,10 @@ const Range = Component.gen(function* (props: SliderRangeProps) {
         startPercent,
         endPercent,
       );
-    } else {
-      // Single value - range from 0 to current
-      const percent = ctx.valueToPercent(val);
-      return getRangeStyle(ctx.orientation, ctx.inverted, 0, percent);
     }
+    // Single value - range from 0 to current
+    const percent = ctx.valueToPercent(val);
+    return getRangeStyle(ctx.orientation, ctx.inverted, 0, percent);
   });
 
   return yield* $.div({
@@ -471,20 +468,16 @@ const Thumb = Component.gen(function* (props: SliderThumbProps) {
 
       const isHorizontal = ctx.orientation === "horizontal";
       // Arrow key mapping depends on orientation and inversion
-      const decreaseKey = isHorizontal
-        ? ctx.inverted
-          ? "ArrowRight"
-          : "ArrowLeft"
-        : ctx.inverted
-          ? "ArrowUp"
-          : "ArrowDown";
-      const increaseKey = isHorizontal
-        ? ctx.inverted
-          ? "ArrowLeft"
-          : "ArrowRight"
-        : ctx.inverted
-          ? "ArrowDown"
-          : "ArrowUp";
+      const getDecreaseKey = () => {
+        if (isHorizontal) return ctx.inverted ? "ArrowRight" : "ArrowLeft";
+        return ctx.inverted ? "ArrowUp" : "ArrowDown";
+      };
+      const getIncreaseKey = () => {
+        if (isHorizontal) return ctx.inverted ? "ArrowLeft" : "ArrowRight";
+        return ctx.inverted ? "ArrowDown" : "ArrowUp";
+      };
+      const decreaseKey = getDecreaseKey();
+      const increaseKey = getIncreaseKey();
 
       switch (e.key) {
         case decreaseKey:

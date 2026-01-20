@@ -137,11 +137,7 @@ const Root = Component.gen(function* (props: RadioGroupRootProps, children) {
       "data-disabled": dataDisabled,
       onKeyDown: handleKeyDown,
     },
-    provide(
-      RadioGroupCtx,
-      ctx,
-      Array.isArray(children) ? children : [children],
-    ),
+    provide(RadioGroupCtx, ctx, Component.normalizeChildren(children)),
   );
 });
 

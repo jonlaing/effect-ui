@@ -12,29 +12,23 @@ export function getTransform(
 ): string {
   const isVertical = side === "top" || side === "bottom";
 
+  const getAlignTranslate = () =>
+    Match.value(align).pipe(
+      Match.when("center", () => "-50%"),
+      Match.when("end", () => "-100%"),
+      Match.orElse(() => "0"),
+    );
+
+  const getHorizontalX = () => (side === "left" ? "-100%" : "0");
+  const getVerticalY = () => (side === "top" ? "-100%" : "0");
+
   // For vertical sides (top/bottom): translateX is based on align
   // For horizontal sides (left/right): translateX is -100% for left, 0 for right
-  const translateX = isVertical
-    ? Match.value(align).pipe(
-        Match.when("center", () => "-50%"),
-        Match.when("end", () => "-100%"),
-        Match.orElse(() => "0"),
-      )
-    : side === "left"
-      ? "-100%"
-      : "0";
+  const translateX = isVertical ? getAlignTranslate() : getHorizontalX();
 
   // For vertical sides (top/bottom): translateY is -100% for top, 0 for bottom
   // For horizontal sides (left/right): translateY is based on align
-  const translateY = isVertical
-    ? side === "top"
-      ? "-100%"
-      : "0"
-    : Match.value(align).pipe(
-        Match.when("center", () => "-50%"),
-        Match.when("end", () => "-100%"),
-        Match.orElse(() => "0"),
-      );
+  const translateY = isVertical ? getVerticalY() : getAlignTranslate();
 
   if (translateX === "0" && translateY === "0") {
     return "none";

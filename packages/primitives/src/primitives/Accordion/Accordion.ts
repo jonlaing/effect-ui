@@ -172,7 +172,6 @@ const Root = Component.gen(function* (props: AccordionRootProps, children) {
 
   const dataDisabled = disabled.map((d) => (d ? "" : undefined));
 
-  const childArray = Array.isArray(children) ? children : [children];
   return yield* $.div(
     {
       "data-state": dataState,
@@ -180,7 +179,7 @@ const Root = Component.gen(function* (props: AccordionRootProps, children) {
       "data-orientation": "vertical",
       class: props.class,
     },
-    provide(AccordionCtx, ctxValue, childArray),
+    provide(AccordionCtx, ctxValue, Component.normalizeChildren(children)),
   );
 });
 
@@ -236,14 +235,13 @@ const Item = Component.gen(function* (props: AccordionItemProps, children) {
   const dataState = isOpen.map((open) => (open ? "open" : "closed"));
   const dataDisabled = disabled.map((d) => (d ? "" : undefined));
 
-  const childArray = Array.isArray(children) ? children : [children];
   return yield* $.div(
     {
       "data-state": dataState,
       "data-disabled": dataDisabled,
       class: props.class,
     },
-    provide(AccordionItemCtx, itemCtx, childArray),
+    provide(AccordionItemCtx, itemCtx, Component.normalizeChildren(children)),
   );
 });
 

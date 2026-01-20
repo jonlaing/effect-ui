@@ -99,10 +99,9 @@ const Root = Component.gen(function* (props: TabsRootProps, children) {
     activationMode,
   };
 
-  const childArray = Array.isArray(children) ? children : [children];
   return yield* $.div(
     { "data-orientation": orientation },
-    provide(TabsCtx, ctx, childArray),
+    provide(TabsCtx, ctx, Component.normalizeChildren(children)),
   );
 });
 

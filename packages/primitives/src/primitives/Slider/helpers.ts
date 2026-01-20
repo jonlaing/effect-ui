@@ -55,9 +55,8 @@ export const enforceRange = (
   if (minVal > maxVal - minGap) {
     if (movedThumb === 0) {
       return [Math.min(minVal, maxVal - minGap), maxVal];
-    } else {
-      return [minVal, Math.max(maxVal, minVal + minGap)];
     }
+    return [minVal, Math.max(maxVal, minVal + minGap)];
   }
   return range;
 };

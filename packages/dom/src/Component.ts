@@ -67,9 +67,26 @@ const gen: <
   InferError<Eff>
 > = (body) => (props, children) => Effect.gen(() => body(props, children));
 
+/**
+ * Normalize children to always be an array.
+ * Handles undefined, single child, or array of children.
+ *
+ * @example
+ * ```ts
+ * const MyComponent = Component.gen(function* (props, children) {
+ *   const childArray = Component.normalizeChildren(children);
+ *   // childArray is always T[]
+ * });
+ * ```
+ */
+const normalizeChildren = <T>(children: T | T[] | undefined): T[] => {
+  if (Array.isArray(children)) return children;
+  return children !== undefined ? [children] : [];
+};
+
 // Runtime value to allow namespace member access with verbatimModuleSyntax
 // eslint-disable-next-line @typescript-eslint/no-namespace
-export const Component = { gen } as const;
+export const Component = { gen, normalizeChildren } as const;
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export declare namespace Component {

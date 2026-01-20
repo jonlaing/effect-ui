@@ -194,7 +194,6 @@ const Root = Component.gen(function* (
     triggerRefs,
   };
 
-  const childArray = Array.isArray(children) ? children : [children];
   return yield* $.nav(
     {
       class: props.class,
@@ -202,7 +201,7 @@ const Root = Component.gen(function* (
       "data-navigationmenu-root": "",
       "data-orientation": orientation,
     },
-    provide(NavigationMenuCtx, ctx, childArray),
+    provide(NavigationMenuCtx, ctx, Component.normalizeChildren(children)),
   );
 });
 

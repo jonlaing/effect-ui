@@ -103,10 +103,9 @@ const Root = Component.gen(function* (props: TooltipRootProps, children) {
     delayDuration,
   };
 
-  const childArray = Array.isArray(children) ? children : [children];
   return yield* $.div(
     { style: { display: "contents" } },
-    provide(TooltipCtx, ctx, childArray),
+    provide(TooltipCtx, ctx, Component.normalizeChildren(children)),
   );
 });
 

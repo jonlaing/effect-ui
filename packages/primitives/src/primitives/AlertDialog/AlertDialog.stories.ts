@@ -52,10 +52,13 @@ export const Default: Story = {
                 "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-base-100 rounded-box p-6 w-full max-w-md shadow-2xl",
             },
             [
-              AlertDialog.Title({ class: "font-bold text-lg" }, args.title!),
+              AlertDialog.Title(
+                { class: "font-bold text-lg" },
+                args.title ?? "",
+              ),
               AlertDialog.Description(
                 { class: "py-4 text-base-content/70" },
-                args.description!,
+                args.description ?? "",
               ),
               $.div({ class: "flex justify-end gap-2" }, [
                 AlertDialog.Cancel({ class: "btn btn-ghost" }, "Cancel"),

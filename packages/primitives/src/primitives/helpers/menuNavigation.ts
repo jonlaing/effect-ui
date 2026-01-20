@@ -41,19 +41,20 @@ export const getMenuNavigationState = (
   );
   const currentIndex = currentItem ? items.indexOf(currentItem) : -1;
 
-  const nextIndex =
-    items.length === 0
-      ? -1
-      : loop
-        ? (currentIndex + 1) % items.length
-        : Math.min(items.length - 1, currentIndex + 1);
+  const getNextIndex = () => {
+    if (items.length === 0) return -1;
+    if (loop) return (currentIndex + 1) % items.length;
+    return Math.min(items.length - 1, currentIndex + 1);
+  };
 
-  const prevIndex =
-    items.length === 0
-      ? -1
-      : loop
-        ? (currentIndex - 1 + items.length) % items.length
-        : Math.max(0, currentIndex - 1);
+  const getPrevIndex = () => {
+    if (items.length === 0) return -1;
+    if (loop) return (currentIndex - 1 + items.length) % items.length;
+    return Math.max(0, currentIndex - 1);
+  };
+
+  const nextIndex = getNextIndex();
+  const prevIndex = getPrevIndex();
 
   return { items, currentItem, currentIndex, nextIndex, prevIndex };
 };

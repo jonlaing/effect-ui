@@ -7,10 +7,10 @@ import {
   Derived,
   Element,
   provide,
-  Readable,
   Signal,
   type ClassValue,
   type ElementRef,
+  type Readable,
 } from "@effex/dom";
 
 // ============================================================================
@@ -255,11 +255,7 @@ const Root = Component.gen(function* (props: ScrollAreaRootProps, children) {
       onMouseEnter: handleMouseEnter,
       onMouseLeave: handleMouseLeave,
     },
-    provide(
-      ScrollAreaCtx,
-      ctx,
-      Array.isArray(children) ? children : [children],
-    ),
+    provide(ScrollAreaCtx, ctx, Component.normalizeChildren(children)),
   );
 });
 
@@ -431,11 +427,10 @@ const Scrollbar = Component.gen(function* (
         if (content.height <= 0) return 100;
         const size = (viewport.height / content.height) * 100;
         return Math.max(10, Math.min(100, size)); // Min 10%, max 100%
-      } else {
-        if (content.width <= 0) return 100;
-        const size = (viewport.width / content.width) * 100;
-        return Math.max(10, Math.min(100, size));
       }
+      if (content.width <= 0) return 100;
+      const size = (viewport.width / content.width) * 100;
+      return Math.max(10, Math.min(100, size));
     },
   );
 
@@ -449,12 +444,11 @@ const Scrollbar = Component.gen(function* (
         const scrollPercent = scroll.y / maxScroll;
         // Thumb position ranges from 0% to (100 - thumbSize)%
         return scrollPercent * (100 - size);
-      } else {
-        const maxScroll = content.width - viewport.width;
-        if (maxScroll <= 0) return 0;
-        const scrollPercent = scroll.x / maxScroll;
-        return scrollPercent * (100 - size);
       }
+      const maxScroll = content.width - viewport.width;
+      if (maxScroll <= 0) return 0;
+      const scrollPercent = scroll.x / maxScroll;
+      return scrollPercent * (100 - size);
     },
   );
 
@@ -464,9 +458,8 @@ const Scrollbar = Component.gen(function* (
     ([viewport, content]) => {
       if (orientation === "vertical") {
         return content.height > viewport.height;
-      } else {
-        return content.width > viewport.width;
       }
+      return content.width > viewport.width;
     },
   );
 
@@ -639,15 +632,14 @@ const Thumb = Component.gen(function* (props: ScrollAreaThumbProps) {
           height: `${size}%`,
           top: `${position}%`,
         };
-      } else {
-        return {
-          position: "absolute",
-          top: "0",
-          bottom: "0",
-          width: `${size}%`,
-          left: `${position}%`,
-        };
       }
+      return {
+        position: "absolute",
+        top: "0",
+        bottom: "0",
+        width: `${size}%`,
+        left: `${position}%`,
+      };
     },
   );
 

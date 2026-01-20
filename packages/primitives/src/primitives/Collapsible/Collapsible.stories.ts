@@ -47,13 +47,16 @@ const meta: Meta<CollapsibleStoryArgs> = {
         disabled: args.disabled,
       },
       [
-        Collapsible.Trigger({ class: "btn btn-primary" }, args.triggerText!),
+        Collapsible.Trigger(
+          { class: "btn btn-primary" },
+          args.triggerText ?? "",
+        ),
         Collapsible.Content(
           {
             class:
               "mt-4 p-4 bg-base-200 rounded-box data-[state=closed]:hidden",
           },
-          [$.p({ class: "text-base-content" }, args.contentText!)],
+          [$.p({ class: "text-base-content" }, args.contentText ?? "")],
         ),
       ],
     );

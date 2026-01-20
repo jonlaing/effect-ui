@@ -41,10 +41,10 @@ const meta: Meta<DialogStoryArgs> = {
         Dialog.Portal({ class: "modal modal-open" }, [
           Dialog.Overlay({ class: "modal-backdrop bg-black/50" }),
           Dialog.Content({ class: "modal-box" }, [
-            Dialog.Title({ class: "font-bold text-lg" }, args.title!),
+            Dialog.Title({ class: "font-bold text-lg" }, args.title ?? ""),
             Dialog.Description(
               { class: "py-4 text-base-content/70" },
-              args.description!,
+              args.description ?? "",
             ),
             $.p({ class: "text-sm" }, "Dialog content goes here."),
             $.div({ class: "modal-action" }, [

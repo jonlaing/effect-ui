@@ -254,10 +254,9 @@ const Root = Component.gen(function* (props: ComboboxRootProps, children) {
     loop,
   };
 
-  const childArray = Array.isArray(children) ? children : [children];
   return yield* $.div(
     { style: { display: "contents" } },
-    provide(ComboboxCtx, ctx, childArray),
+    provide(ComboboxCtx, ctx, Component.normalizeChildren(children)),
   );
 });
 
@@ -594,12 +593,13 @@ const Item = Component.gen(function* (props: ComboboxItemProps, children) {
   yield* Effect.addFinalizer(() => ctx.unregisterItem(props.value));
 
   // Compute whether this item should show based on filter
-  const shouldShow = ctx.filterFn
+  const filterFn = ctx.filterFn;
+  const shouldShow = filterFn
     ? yield* Derived.sync(
         [ctx.inputValue, textValueSignal] as const,
         ([input, textValue]) => {
           if (input === "") return true;
-          return ctx.filterFn!(input, textValue);
+          return filterFn(input, textValue);
         },
       )
     : Readable.of(true);
@@ -665,7 +665,7 @@ const Item = Component.gen(function* (props: ComboboxItemProps, children) {
         provide(
           ComboboxItemCtx,
           itemCtx,
-          Array.isArray(children) ? children : [children],
+          Component.normalizeChildren(children),
         ),
       ),
     onFalse: () => $.div({ style: { display: "none" } }),

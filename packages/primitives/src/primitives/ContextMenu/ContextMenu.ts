@@ -145,10 +145,9 @@ const Root = Component.gen(function* (props: ContextMenuRootProps, children) {
     contentRef,
   };
 
-  const childArray = Array.isArray(children) ? children : [children];
   return yield* $.div(
     { style: { display: "contents" } },
-    provide(ContextMenuCtx, ctx, childArray),
+    provide(ContextMenuCtx, ctx, Component.normalizeChildren(children)),
   );
 });
 

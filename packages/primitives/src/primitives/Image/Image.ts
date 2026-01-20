@@ -42,14 +42,13 @@ const Root = Component.gen(function* (props: ImageRootProps, children) {
     setStatus: (s) => status.set(s),
   };
 
-  const childArray = Array.isArray(children) ? children : [children];
   return yield* $.span(
     {
       class: props.class,
       "data-image-root": "",
       "data-state": status,
     },
-    provide(ImageCtx, ctx, childArray),
+    provide(ImageCtx, ctx, Component.normalizeChildren(children)),
   );
 });
 

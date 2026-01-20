@@ -27,22 +27,16 @@ export const preferTemplateLiteral = createRule({
       );
     }
 
-    function isElementCall(node: TSESTree.Node): boolean {
-      // Check if this is a $.element() call
-      if (node.type !== AST_NODE_TYPES.CallExpression) return false;
-
-      const callee = node.callee;
-
-      // $.element() pattern
-      if (
-        callee.type === AST_NODE_TYPES.MemberExpression &&
-        callee.object.type === AST_NODE_TYPES.Identifier &&
-        callee.object.name === "$"
-      ) {
-        return true;
-      }
-
-      return false;
+    function isElementExpression(node: TSESTree.Node): boolean {
+      // Accept expressions that likely produce elements:
+      // - Function calls: $.element(), Checkbox(), Dialog.Root(), Effect.gen()
+      // - Identifiers: variables that hold element values
+      // - Member expressions: obj.element (for accessing stored elements)
+      return (
+        node.type === AST_NODE_TYPES.CallExpression ||
+        node.type === AST_NODE_TYPES.Identifier ||
+        node.type === AST_NODE_TYPES.MemberExpression
+      );
     }
 
     function shouldWarnOnArray(node: TSESTree.ArrayExpression): boolean {
@@ -53,9 +47,9 @@ export const preferTemplateLiteral = createRule({
       // Empty array is fine
       if (elements.length === 0) return false;
 
-      // Check if ALL elements are $.*() calls - if so, don't warn
+      // Check if ALL elements are element expressions - if so, don't warn
       const allElementCalls = elements.every((element) =>
-        isElementCall(element),
+        isElementExpression(element),
       );
       if (allElementCalls) return false;
 

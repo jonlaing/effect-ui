@@ -88,10 +88,9 @@ const Root = Component.gen(function* (props: PopoverRootProps, children) {
     contentId,
   };
 
-  const childArray = Array.isArray(children) ? children : [children];
   return yield* $.div(
     { style: { display: "contents" } },
-    provide(PopoverCtx, ctx, childArray),
+    provide(PopoverCtx, ctx, Component.normalizeChildren(children)),
   );
 });
 

@@ -1,7 +1,7 @@
-import { Effect, Scope } from "effect";
+import { Effect, type Scope } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { DOMRendererLive, RendererContext, Signal } from "@effex/dom";
+import { DOMRendererLive, Signal, type RendererContext } from "@effex/dom";
 
 import { Slider, type SliderValue } from "./Slider";
 

@@ -65,12 +65,14 @@ export const Indeterminate: Story = {
     const element = Effect.gen(function* () {
       const selectAll = yield* Signal.make<CheckedState>("indeterminate");
 
+      const getStateLabel = (c: CheckedState) => {
+        if (c === "indeterminate") return "indeterminate";
+        return c ? "checked" : "unchecked";
+      };
+
       const status = $.div(
         { class: "text-sm text-base-content/70 mt-2" },
-        selectAll.map(
-          (c) =>
-            `State: ${c === "indeterminate" ? "indeterminate" : c ? "checked" : "unchecked"}`,
-        ),
+        selectAll.map((c) => `State: ${getStateLabel(c)}`),
       );
 
       return yield* $.div({}, [

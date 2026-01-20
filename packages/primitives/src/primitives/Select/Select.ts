@@ -196,10 +196,9 @@ const Root = Component.gen(function* (props: SelectRootProps, children) {
     placeholder,
   };
 
-  const childArray = Array.isArray(children) ? children : [children];
   return yield* $.div(
     { style: { display: "contents" } },
-    provide(SelectCtx, ctx, childArray),
+    provide(SelectCtx, ctx, Component.normalizeChildren(children)),
   );
 });
 
@@ -562,11 +561,7 @@ const Item = Component.gen(function* (props: SelectItemProps, children) {
       tabIndex,
       onClick: handleClick,
     },
-    provide(
-      SelectItemCtx,
-      itemCtx,
-      Array.isArray(children) ? children : [children],
-    ),
+    provide(SelectItemCtx, itemCtx, Component.normalizeChildren(children)),
   );
 });
 
