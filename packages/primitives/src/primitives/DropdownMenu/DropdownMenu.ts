@@ -430,10 +430,7 @@ const Content = Component.gen(function* (
     when(ctx.isOpen, {
       onTrue: () =>
         props.asChild && Effect.isEffect(children)
-          ? mergeProps(
-              contentProps,
-              children as Element.Element<never, DropdownMenuCtx>,
-            )
+          ? mergeProps(contentProps, children)
           : $.div({ ...contentProps, class: props.class }, children ?? []),
       onFalse: () => $.div({ style: { display: "none" } }),
       animate: animateConfig,

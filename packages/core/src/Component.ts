@@ -34,15 +34,8 @@ export declare namespace Component {
    * @template ChildError - Error type from children
    * @template ComponentError - Error type from the component
    */
-  export type Node<
-    N,
-    Props,
-    ChildReqs = never,
-    ComponentReqs = ChildReqs,
-    ChildError = never,
-    ComponentError = ChildError,
-  > = (
+  export type Node<N, Props, ComponentError = never, ComponentReqs = never> = (
     props: Props,
-    children?: Children<N, ChildError, ChildReqs>,
+    children?: Children,
   ) => Element<N, ComponentError, ComponentReqs>;
 }

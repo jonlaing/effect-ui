@@ -1,29 +1,37 @@
 import { Effect } from "effect";
 import type { YieldWrap } from "effect/Utils";
 
-import {
-  Component as CoreComponent,
-  type Children as CoreChildren,
-} from "@effex/core";
+import { Readable } from "@effex/core";
+
+import { Element } from "./Element";
+
+export type Child<E = never, R = never> =
+  | string
+  | number
+  | Element.Element<E, R>
+  | Readable.Readable<string>
+  | Readable.Readable<number>;
 
 /**
  * Valid children types for a DOM component.
  * This is the DOM-specific version with HTMLElement as the node type.
  */
-export type Children<E = never, R = never> = CoreChildren<HTMLElement, E, R>;
+export type Children<E = never, R = never> =
+  | Child<E, R>
+  | readonly Child<E, R>[];
 
 // Helper types for gen function
-type InferError<Eff> = [Eff] extends [never]
-  ? never
-  : [Eff] extends [YieldWrap<Effect.Effect<infer _A, infer E, infer _R>>]
-    ? E
-    : never;
+// type InferError<Eff> = [Eff] extends [never]
+//   ? never
+//   : [Eff] extends [YieldWrap<Effect.Effect<infer _A, infer E, infer _R>>]
+//     ? E
+//     : never;
 
-type InferRequirements<Eff> = [Eff] extends [never]
-  ? never
-  : [Eff] extends [YieldWrap<Effect.Effect<infer _A, infer _E, infer R>>]
-    ? R
-    : never;
+// type InferRequirements<Eff> = [Eff] extends [never]
+//   ? never
+//   : [Eff] extends [YieldWrap<Effect.Effect<infer _A, infer _E, infer R>>]
+//     ? R
+//     : never;
 
 /**
  * Create a component using a generator function.
@@ -49,23 +57,34 @@ type InferRequirements<Eff> = [Eff] extends [never]
  * });
  * ```
  */
-const gen: <
-  Props,
-  Eff extends YieldWrap<Effect.Effect<any, any, any>>,
-  CEff extends YieldWrap<Effect.Effect<any, any, any>>,
-  A extends HTMLElement = HTMLElement,
->(
-  body: (
+const gen =
+  <
+    Props,
+    A extends HTMLElement,
+    Eff extends YieldWrap<Effect.Effect<any, any, any>>,
+  >(
+    body: (
+      props: Props,
+      children?: Children<any, any>,
+    ) => Generator<Eff, A, never>,
+  ) =>
+  <C extends Child<any, any> | readonly Child<any, any>[]>(
     props: Props,
-    children?: Children<InferError<CEff>, InferRequirements<CEff>>,
-  ) => Generator<Eff, A, never>,
-) => Component.Node<
-  Props,
-  InferRequirements<CEff>,
-  InferRequirements<Eff>,
-  InferError<CEff>,
-  InferError<Eff>
-> = (body) => (props, children) => Effect.gen(() => body(props, children));
+    children?: C,
+  ): Effect.Effect<
+    A,
+    [Eff] extends [never]
+      ? never
+      : [Eff] extends [YieldWrap<Effect.Effect<infer _A, infer E, infer _R>>]
+        ? E
+        : never,
+    [Eff] extends [never]
+      ? never
+      : [Eff] extends [YieldWrap<Effect.Effect<infer _A, infer _E, infer R>>]
+        ? R
+        : never
+  > =>
+    Effect.gen(() => body(props, children));
 
 /**
  * Normalize children to always be an array.
@@ -79,9 +98,11 @@ const gen: <
  * });
  * ```
  */
-const normalizeChildren = <T>(children: T | T[] | undefined): T[] => {
+const normalizeChildren = <T extends Children<any, any>>(
+  children: T | readonly T[] | undefined,
+): readonly Element.Element<never, never>[] => {
   if (Array.isArray(children)) return children;
-  return children !== undefined ? [children] : [];
+  return children != null ? [children as Element.Element<never, never>] : [];
 };
 
 // Runtime value to allow namespace member access with verbatimModuleSyntax
@@ -103,18 +124,11 @@ export declare namespace Component {
    * @template ChildError - Error type from children (defaults to never)
    * @template ComponentError - Error type from the component (defaults to ChildError)
    */
-  export type Node<
-    Props,
-    ChildReqs = never,
-    ComponentReqs = ChildReqs,
+  export type Node<Props, ComponentError = never, ComponentReqs = never> = <
     ChildError = never,
-    ComponentError = ChildError,
-  > = CoreComponent.Node<
-    HTMLElement,
-    Props,
-    ChildReqs,
-    ComponentReqs,
-    ChildError,
-    ComponentError
-  >;
+    ChildReqs = never,
+  >(
+    props: Props,
+    children?: Children<ChildError, ChildReqs>,
+  ) => Element.Element<ComponentError | ChildError, ComponentReqs | ChildReqs>;
 }
