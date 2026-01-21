@@ -31,3 +31,6 @@ storybook-static
 
 # Generated API docs (regenerate with `pnpm docs`)
 docs/api
+
+# Documentation drafts
+docs-notes

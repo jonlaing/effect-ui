@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Context, Data, Effect, Layer } from "effect";
 
 import {
   $,
@@ -22,6 +22,64 @@ interface Todo {
   text: string;
   completed: boolean;
 }
+
+// =============================================================================
+// Errors
+// ============================================================================
+
+class StorageEmptyError extends Data.TaggedError("StorageEmptyError")<{
+  message: string;
+}> {}
+
+class StorageReadError extends Data.TaggedError("StorageReadError")<{
+  message: string;
+}> {}
+
+class StorageWriteError extends Data.TaggedError("StorageWriteError")<{
+  message: string;
+}> {}
+
+// =============================================================================
+// Context
+// ============================================================================
+
+class TodosStorage extends Context.Tag("TodosStorage")<
+  TodosStorage,
+  {
+    load: Effect.Effect<readonly Todo[], StorageEmptyError | StorageReadError>;
+    save: (todos: readonly Todo[]) => Effect.Effect<void, StorageWriteError>;
+  }
+>() {}
+
+const TodoStorageLive = Layer.succeed(TodosStorage, {
+  load: Effect.gen(function* () {
+    const data = localStorage.getItem("effex-todos");
+
+    if (!data) {
+      yield* Effect.fail(new StorageEmptyError({ message: "No data found" }));
+      return [];
+    }
+
+    try {
+      const todos: readonly Todo[] = JSON.parse(data);
+      return todos;
+    } catch (e) {
+      yield* Effect.fail(
+        new StorageReadError({ message: "Failed to parse todos from storage" }),
+      );
+      return [];
+    }
+  }),
+
+  save: (todos: readonly Todo[]) =>
+    Effect.try({
+      try: () => localStorage.setItem("effex-todos", JSON.stringify(todos)),
+      catch: () =>
+        new StorageWriteError({
+          message: "Failed to write todos to storage",
+        }),
+    }),
+});
 
 // =============================================================================
 // Todo Item Component
@@ -239,17 +297,25 @@ const Stats = Component.gen(function* (props: StatsProps) {
 
 const App = Component.gen(function* () {
   const toast = yield* ToastCtx;
+  const storage = yield* TodosStorage;
 
   // Initialize with some sample todos
-  const todos = yield* Signal.Array.make<Todo>([
-    { id: crypto.randomUUID(), text: "Learn Effex", completed: true },
-    {
-      id: crypto.randomUUID(),
-      text: "Build something awesome",
-      completed: false,
-    },
-    { id: crypto.randomUUID(), text: "Share with others", completed: false },
-  ]);
+  const todos = yield* Signal.Array.make<Todo>(
+    yield* storage.load.pipe(
+      Effect.catchTag("StorageEmptyError", () =>
+        Effect.succeed([
+          { id: crypto.randomUUID(), text: "Learn Effex", completed: false },
+          {
+            id: crypto.randomUUID(),
+            text: "Build a Todo App",
+            completed: true,
+          },
+          { id: crypto.randomUUID(), text: "Profit!", completed: false },
+        ]),
+      ),
+      Effect.catchAll(() => Effect.succeed([] as readonly Todo[])),
+    ),
+  );
 
   // Handlers
   const addTodo = (text: string) =>
@@ -384,7 +450,7 @@ runApp(
   Effect.gen(function* () {
     yield* mount(
       Toast.Provider({ position: "bottom-right", defaultDuration: 3000 }, [
-        App({}),
+        App({}).pipe(Effect.provide(TodoStorageLive)),
         Toast.Viewport(
           {
             class:
