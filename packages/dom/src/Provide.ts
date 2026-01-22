@@ -1,6 +1,6 @@
 import { Context, Effect } from "effect";
 
-import { Element, type Child } from "./Element";
+import type { Child } from "./Element";
 import { flattenChildren, isElement } from "./Element/helpers.js";
 
 /**
@@ -37,13 +37,26 @@ import { flattenChildren, isElement } from "./Element/helpers.js";
  * provide(AccordionItemCtx, itemCtx, children)
  * ```
  */
-export const provide = <I, S, E = never, R = I>(
+export const provide = <
+  I,
+  S,
+  C extends Child<any, any> | readonly Child<any, any>[],
+>(
   tag: Context.Tag<I, S>,
   value: S,
-  children?: Child<E, R> | readonly Child<E, R>[],
-): Child<E, Exclude<R, I>>[] => {
+  children?: C,
+) => {
+  type ChildType = C extends Child<any, any>[]
+    ? readonly Child<
+        C[number] extends Child<infer E, infer _R> ? E : never,
+        C[number] extends Child<infer _E, infer R> ? Exclude<R, I> : never
+      >[]
+    : C extends Child<infer E, infer R>
+      ? readonly Child<E, Exclude<R, I>>[]
+      : readonly Child<never, never>[];
+
   if (!children) {
-    return [];
+    return [] as unknown as ChildType;
   }
 
   const childArray = Array.isArray(children)
@@ -51,12 +64,9 @@ export const provide = <I, S, E = never, R = I>(
     : [children];
   return childArray.map((child) => {
     if (isElement(child)) {
-      return child.pipe(Effect.provideService(tag, value)) as Element.Element<
-        E,
-        Exclude<R, I>
-      >;
+      return child.pipe(Effect.provideService(tag, value));
     }
     // Strings, numbers, and Readables don't need context - pass through unchanged
-    return child as Child<E, Exclude<R, I>>;
-  });
+    return child;
+  }) as unknown as ChildType;
 };

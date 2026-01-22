@@ -8,18 +8,19 @@ import type {
   ClassValue,
   Element,
   EventHandler,
+  InferChildArray,
   StyleValue,
 } from "./types";
 
 export const isElement = (value: unknown): value is Element<unknown, unknown> =>
   Effect.isEffect(value);
 
-export const flattenChildren = <E, R>(
-  children: readonly Child<E, R>[],
-): Child<E, R>[] =>
+export const flattenChildren = <C extends readonly Child<any, any>[]>(
+  children: C,
+): InferChildArray<C> =>
   Array.flatMap(children, (child) =>
     globalThis.Array.isArray(child) ? flattenChildren(child) : [child],
-  );
+  ) as unknown as InferChildArray<C>;
 
 export const subscribeToReadable = <A>(
   readable: Readable<A>,

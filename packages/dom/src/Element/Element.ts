@@ -21,9 +21,12 @@ import { bindElementToRef, type ElementRef } from "./ref.js";
 import type {
   Child,
   ClassValue,
+  Element,
   ElementFactory,
   EventHandler,
   HTMLAttributes,
+  InferChildError,
+  InferChildRequirements,
   StyleValue,
   SVGAttributes,
   SVGElementFactory,
@@ -120,11 +123,15 @@ const applyAttributes = <K extends keyof HTMLElementTagNameMap>(
     }
   });
 
-const appendChildren = <E, R>(
+const appendChildren = <C extends readonly Child<any, any>[]>(
   renderer: RendererInterface<Node>,
   parent: Node,
-  children: readonly Child<E, R>[],
-): Effect.Effect<void, E, Scope.Scope | RendererContext | R> =>
+  children: C,
+): Effect.Effect<
+  void,
+  InferChildError<C>,
+  Scope.Scope | RendererContext | InferChildRequirements<C>
+> =>
   Effect.gen(function* () {
     const flattened = flattenChildren(children);
 
@@ -133,7 +140,10 @@ const appendChildren = <E, R>(
         const textNode = yield* renderer.createTextNode(String(child));
         yield* renderer.appendChild(parent, textNode);
       } else if (isElement(child)) {
-        const childElement = yield* child;
+        const childElement = yield* child as Element<
+          InferChildError<C>,
+          InferChildRequirements<C>
+        >;
         yield* renderer.appendChild(parent, childElement as Node);
       } else if (isReadable(child as unknown)) {
         const textNode = yield* renderer.createTextNode("");
@@ -148,14 +158,17 @@ const appendChildren = <E, R>(
     }
   });
 
-const createElement = <K extends keyof HTMLElementTagNameMap, E, R>(
+const createElement = <
+  K extends keyof HTMLElementTagNameMap,
+  C extends readonly Child<any, any>[],
+>(
   tagName: K,
   attrs: HTMLAttributes<K>,
-  children: readonly Child<E, R>[],
+  children: C,
 ): Effect.Effect<
   HTMLElementTagNameMap[K],
-  E,
-  Scope.Scope | R | RendererContext
+  InferChildError<C>,
+  Scope.Scope | InferChildRequirements<C> | RendererContext
 > =>
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
@@ -182,10 +195,21 @@ const createElement = <K extends keyof HTMLElementTagNameMap, E, R>(
 const makeElementFactory = <K extends keyof HTMLElementTagNameMap>(
   tagName: K,
 ): ElementFactory<K> => {
-  return ((...args: unknown[]) => {
+  return (<C extends Child<any, any> | readonly Child<any, any>[]>(
+    ...args: unknown[]
+  ) => {
     if (args.length === 0) {
       return createElement(tagName, {} as HTMLAttributes<K>, []);
     }
+
+    type ChildType = C extends readonly Child<any, any>[]
+      ? Child<
+          C[number] extends Child<infer E, any> ? E : never,
+          C[number] extends Child<any, infer R> ? R : never
+        >
+      : C extends Child<infer CE, infer CR>
+        ? Child<CE, CR>
+        : never;
 
     if (args.length === 1) {
       const arg = args[0];
@@ -193,7 +217,7 @@ const makeElementFactory = <K extends keyof HTMLElementTagNameMap>(
         return createElement(
           tagName,
           {} as HTMLAttributes<K>,
-          arg as Child<unknown>[],
+          arg as ChildType[],
         );
       }
       if (typeof arg === "string" || typeof arg === "number") {
@@ -201,20 +225,17 @@ const makeElementFactory = <K extends keyof HTMLElementTagNameMap>(
       }
       if (isElement(arg) || isReadable(arg)) {
         return createElement(tagName, {} as HTMLAttributes<K>, [
-          arg as Child<unknown>,
+          arg as ChildType,
         ]);
       }
       return createElement(tagName, arg as HTMLAttributes<K>, []);
     }
 
-    const [attrs, children] = args as [
-      HTMLAttributes<K>,
-      readonly Child<unknown>[],
-    ];
+    const [attrs, children] = args as [HTMLAttributes<K>, ChildType];
     return createElement(
       tagName,
       attrs,
-      Array.isArray(children) ? children : [children],
+      Array.isArray(children) ? (children as ChildType[]) : [children],
     );
   }) as ElementFactory<K>;
 };
@@ -409,7 +430,7 @@ const createSVGElement = <K extends keyof SVGElementTagNameMap, E, R>(
 const makeSVGElementFactory = <K extends keyof SVGElementTagNameMap>(
   tagName: K,
 ): SVGElementFactory<K> => {
-  return ((...args: unknown[]) => {
+  return (<E, R>(...args: unknown[]) => {
     if (args.length === 0) {
       return createSVGElement(tagName, {} as SVGAttributes<K>, []);
     }
@@ -420,7 +441,7 @@ const makeSVGElementFactory = <K extends keyof SVGElementTagNameMap>(
         return createSVGElement(
           tagName,
           {} as SVGAttributes<K>,
-          arg as Child<unknown>[],
+          arg as Child<E, R>[],
         );
       }
       if (typeof arg === "string" || typeof arg === "number") {
@@ -428,20 +449,17 @@ const makeSVGElementFactory = <K extends keyof SVGElementTagNameMap>(
       }
       if (isElement(arg) || isReadable(arg)) {
         return createSVGElement(tagName, {} as SVGAttributes<K>, [
-          arg as Child<unknown>,
+          arg as Child<E, R>,
         ]);
       }
       return createSVGElement(tagName, arg as SVGAttributes<K>, []);
     }
 
-    const [attrs, children] = args as [
-      SVGAttributes<K>,
-      readonly Child<unknown>[],
-    ];
+    const [attrs, children] = args as [SVGAttributes<K>, Child<E, R>];
     return createSVGElement(
       tagName,
       attrs,
-      Array.isArray(children) ? children : [children],
+      Array.isArray(children) ? (children as Child<E, R>[]) : [children],
     );
   }) as SVGElementFactory<K>;
 };

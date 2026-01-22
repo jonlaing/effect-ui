@@ -35,6 +35,12 @@ export { DOMRenderer, DOMRendererLive } from "./DOMRenderer";
 // Element
 export type {
   Child,
+  InferError,
+  InferRequirements,
+  InferChildren,
+  InferChildArray,
+  InferChildError,
+  InferChildRequirements,
   ClassValue,
   EventHandler,
   BaseAttributes,
@@ -214,7 +220,7 @@ export {
 } from "./Animation/index.js";
 
 // Components
-export { Component, type Children } from "./Component";
+export { Component } from "./Component";
 
 // Mounting
 export { mount, runApp } from "./Mount";

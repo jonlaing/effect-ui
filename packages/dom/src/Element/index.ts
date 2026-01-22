@@ -1,6 +1,12 @@
 export type {
   BaseAttributes,
   Child,
+  InferError,
+  InferRequirements,
+  InferChildren,
+  InferChildArray,
+  InferChildError,
+  InferChildRequirements,
   ClassValue,
   ElementFactory,
   EventAttributes,

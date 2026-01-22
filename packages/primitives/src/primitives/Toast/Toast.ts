@@ -5,11 +5,13 @@ import {
   Component,
   each,
   Element,
+  InferChildError,
   mergeProps,
   Portal,
   provide,
   Signal,
   type ClassValue,
+  type InferChildRequirements,
   type ListAnimationOptions,
   type Readable,
 } from "@effex/dom";
@@ -180,7 +182,7 @@ const Provider = Component.gen(function* (props: ToastProviderProps, children) {
 
   return yield* $.div(
     { style: { display: "contents" } },
-    provide(ToastCtx, ctx, Component.normalizeChildren(children)),
+    provide(ToastCtx, ctx, children),
   );
 });
 
@@ -242,9 +244,8 @@ const Viewport = Component.gen(function* (props: ToastViewportProps, children) {
     Root({}, [Title({}), Description({}), Action({}), Close({})]),
   ];
 
-  const template = (
-    providedChildren.length > 0 ? providedChildren : defaultTemplate
-  ) as Element.Element[];
+  const template =
+    providedChildren.length > 0 ? providedChildren : defaultTemplate;
 
   // Render toasts using the template
   const toastElements = [
@@ -461,7 +462,7 @@ const Root = Component.gen(function* (props: ToastRootProps, children) {
       onMouseEnter: handleMouseEnter,
       onMouseLeave: handleMouseLeave,
     },
-    Component.normalizeChildren(children as Element.Element<never, never>),
+    Component.normalizeChildren(children),
   );
 });
 

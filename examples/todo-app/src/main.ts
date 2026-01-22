@@ -448,9 +448,10 @@ if (!container) {
 
 runApp(
   Effect.gen(function* () {
+    const blah = [App({}), Toast.Viewport({})];
     yield* mount(
       Toast.Provider({ position: "bottom-right", defaultDuration: 3000 }, [
-        App({}).pipe(Effect.provide(TodoStorageLive)),
+        App({}),
         Toast.Viewport(
           {
             class:
@@ -495,7 +496,7 @@ runApp(
             ],
           ),
         ),
-      ]),
+      ] as const),
       container,
     );
     console.log("Todo app mounted!");

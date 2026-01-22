@@ -1,4 +1,5 @@
 import type { Effect, Scope } from "effect";
+import type { YieldWrap } from "effect/Utils";
 
 import type { Element as CoreElement, Readable } from "@effex/core";
 
@@ -57,8 +58,67 @@ export type Child<E = never, R = never> =
   | Element<E, R>
   | Readable<string>
   | Readable<number>
-  | readonly Child<E, R>[];
+  | readonly (
+      | string
+      | number
+      | Element<E, R>
+      | Readable<string>
+      | Readable<number>
+    )[];
 
+export type InferError<Eff> = [Eff] extends [never]
+  ? never
+  : [Eff] extends [YieldWrap<Effect.Effect<infer _A, infer E, infer _R>>]
+    ? E
+    : never;
+
+export type InferRequirements<Eff> = [Eff] extends [never]
+  ? never
+  : [Eff] extends [YieldWrap<Effect.Effect<infer _A, infer _E, infer R>>]
+    ? R
+    : never;
+
+export type InferChildren<
+  C extends Child<any, any> | readonly Child<any, any>[],
+> = C extends readonly Child<any, any>[]
+  ? readonly Child<
+      C[number] extends Element<infer E, infer _R> ? E : never,
+      C[number] extends Element<infer _E, infer R> ? R : never
+    >[]
+  : C extends Element<infer CE, infer CR>
+    ? Child<CE, CR>
+    : Child<never, never>;
+
+export type InferChildArray<
+  C extends Child<any, any> | readonly Child<any, any>[],
+> = C extends readonly Child<any, any>[]
+  ? readonly Child<
+      C[number] extends Element<infer E, infer _R> ? E : never,
+      C[number] extends Element<infer _E, infer R> ? R : never
+    >[]
+  : C extends Element<infer CE, infer CR>
+    ? readonly Child<CE, CR>[]
+    : readonly Child<never, never>[];
+
+export type InferChildError<
+  C extends Child<any, any> | readonly Child<any, any>[],
+> = C extends readonly Child<any, any>[]
+  ? C[number] extends Element<infer E, infer _R>
+    ? E
+    : never
+  : C extends Element<infer CE, infer _CR>
+    ? CE
+    : never;
+
+export type InferChildRequirements<
+  C extends Child<any, any> | readonly Child<any, any>[],
+> = C extends readonly Child<any, any>[]
+  ? C[number] extends Element<infer _E, infer R>
+    ? R
+    : never
+  : C extends Element<infer _CE, infer CR>
+    ? CR
+    : never;
 /**
  * Handler for DOM events that can optionally return an Effect.
  * @template E - The specific Event type
@@ -316,27 +376,26 @@ export type HTMLAttributes<K extends keyof HTMLElementTagNameMap> =
  */
 export type ElementFactory<K extends keyof HTMLElementTagNameMap> = {
   // (attrs, children[])
-  <E = never, R = never>(
+  <C extends Child<any, any> | readonly Child<any, any>[]>(
     attrs: HTMLAttributes<K>,
-    children: readonly Child<E, R>[],
-  ): Effect.Effect<HTMLElementTagNameMap[K], E, Scope.Scope | R>;
-  // (attrs, singleChild)
-  <E = never, R = never>(
-    attrs: HTMLAttributes<K>,
-    child: Child<E, R>,
-  ): Effect.Effect<HTMLElementTagNameMap[K], E, Scope.Scope | R>;
+    children: C,
+  ): Effect.Effect<
+    HTMLElementTagNameMap[K],
+    InferChildError<C>,
+    Scope.Scope | InferChildRequirements<C>
+  >;
   // (attrs)
   (
     attrs: HTMLAttributes<K>,
   ): Effect.Effect<HTMLElementTagNameMap[K], never, Scope.Scope>;
   // (children[])
-  <E = never, R = never>(
-    children: readonly Child<E, R>[],
-  ): Effect.Effect<HTMLElementTagNameMap[K], E, Scope.Scope | R>;
-  // (singleChild)
-  <E = never, R = never>(
-    child: Child<E, R>,
-  ): Effect.Effect<HTMLElementTagNameMap[K], E, Scope.Scope | R>;
+  <C extends Child<any, any> | readonly Child<any, any>[]>(
+    children: C,
+  ): Effect.Effect<
+    HTMLElementTagNameMap[K],
+    InferChildError<C>,
+    Scope.Scope | InferChildRequirements<C>
+  >;
   // ()
   (): Effect.Effect<HTMLElementTagNameMap[K], never, Scope.Scope>;
 };
