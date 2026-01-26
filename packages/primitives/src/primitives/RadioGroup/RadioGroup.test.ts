@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { DOMRendererLive, Signal } from "@effex/dom";
+import { $, collect, DOMRendererLive, Signal } from "@effex/dom";
 
 import { RadioGroup } from "./RadioGroup";
 
@@ -21,7 +21,7 @@ describe("RadioGroup", () => {
     it("should render with radiogroup role", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* RadioGroup.Root({}, []);
+          const el = yield* RadioGroup.Root({}, collect());
 
           expect(el.tagName).toBe("DIV");
           expect(el.getAttribute("role")).toBe("radiogroup");
@@ -32,7 +32,7 @@ describe("RadioGroup", () => {
     it("should set aria-orientation to vertical by default", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* RadioGroup.Root({}, []);
+          const el = yield* RadioGroup.Root({}, collect());
 
           expect(el.getAttribute("aria-orientation")).toBe("vertical");
         }),
@@ -42,7 +42,10 @@ describe("RadioGroup", () => {
     it("should set aria-orientation to horizontal", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* RadioGroup.Root({ orientation: "horizontal" }, []);
+          const el = yield* RadioGroup.Root(
+            { orientation: "horizontal" },
+            collect(),
+          );
 
           expect(el.getAttribute("aria-orientation")).toBe("horizontal");
         }),
@@ -52,7 +55,7 @@ describe("RadioGroup", () => {
     it("should set aria-required when required", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* RadioGroup.Root({ required: true }, []);
+          const el = yield* RadioGroup.Root({ required: true }, collect());
 
           expect(el.getAttribute("aria-required")).toBe("true");
         }),
@@ -62,7 +65,7 @@ describe("RadioGroup", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* RadioGroup.Root({ class: "my-group" }, []);
+          const el = yield* RadioGroup.Root({ class: "my-group" }, collect());
 
           expect(el.className).toBe("my-group");
         }),
@@ -74,9 +77,10 @@ describe("RadioGroup", () => {
     it("should render as button with radio role", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* RadioGroup.Root({}, [
-            RadioGroup.Item({ value: "option1" }),
-          ]);
+          const el = yield* RadioGroup.Root(
+            {},
+            collect(RadioGroup.Item({ value: "option1" })),
+          );
 
           const item = el.querySelector("button");
           expect(item).not.toBeNull();
@@ -88,9 +92,10 @@ describe("RadioGroup", () => {
     it("should have aria-checked=false when not selected", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* RadioGroup.Root({}, [
-            RadioGroup.Item({ value: "option1" }),
-          ]);
+          const el = yield* RadioGroup.Root(
+            {},
+            collect(RadioGroup.Item({ value: "option1" })),
+          );
 
           const item = el.querySelector("button");
           expect(item?.getAttribute("aria-checked")).toBe("false");
@@ -102,9 +107,10 @@ describe("RadioGroup", () => {
     it("should have aria-checked=true when selected", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* RadioGroup.Root({ defaultValue: "option1" }, [
-            RadioGroup.Item({ value: "option1" }),
-          ]);
+          const el = yield* RadioGroup.Root(
+            { defaultValue: "option1" },
+            collect(RadioGroup.Item({ value: "option1" })),
+          );
 
           const item = el.querySelector("button");
           expect(item?.getAttribute("aria-checked")).toBe("true");
@@ -116,9 +122,10 @@ describe("RadioGroup", () => {
     it("should set data-value attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* RadioGroup.Root({}, [
-            RadioGroup.Item({ value: "my-value" }),
-          ]);
+          const el = yield* RadioGroup.Root(
+            {},
+            collect(RadioGroup.Item({ value: "my-value" })),
+          );
 
           const item = el.querySelector("button");
           expect(item?.getAttribute("data-value")).toBe("my-value");
@@ -129,9 +136,10 @@ describe("RadioGroup", () => {
     it("should contain an indicator element", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* RadioGroup.Root({}, [
-            RadioGroup.Item({ value: "option1" }),
-          ]);
+          const el = yield* RadioGroup.Root(
+            {},
+            collect(RadioGroup.Item({ value: "option1" })),
+          );
 
           const indicator = el.querySelector("[data-radio-indicator]");
           expect(indicator).not.toBeNull();
@@ -142,9 +150,10 @@ describe("RadioGroup", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* RadioGroup.Root({}, [
-            RadioGroup.Item({ value: "option1", class: "my-item" }),
-          ]);
+          const el = yield* RadioGroup.Root(
+            {},
+            collect(RadioGroup.Item({ value: "option1", class: "my-item" })),
+          );
 
           const item = el.querySelector("button");
           expect(item?.className).toBe("my-item");
@@ -155,9 +164,10 @@ describe("RadioGroup", () => {
     it("should apply custom id", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* RadioGroup.Root({}, [
-            RadioGroup.Item({ value: "option1", id: "my-radio" }),
-          ]);
+          const el = yield* RadioGroup.Root(
+            {},
+            collect(RadioGroup.Item({ value: "option1", id: "my-radio" })),
+          );
 
           const item = el.querySelector("button");
           expect(item?.id).toBe("my-radio");
@@ -170,10 +180,13 @@ describe("RadioGroup", () => {
     it("should select item on click", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* RadioGroup.Root({}, [
-            RadioGroup.Item({ value: "option1" }),
-            RadioGroup.Item({ value: "option2" }),
-          ]);
+          const el = yield* RadioGroup.Root(
+            {},
+            collect(
+              RadioGroup.Item({ value: "option1" }),
+              RadioGroup.Item({ value: "option2" }),
+            ),
+          );
 
           const items = el.querySelectorAll("button");
 
@@ -189,10 +202,13 @@ describe("RadioGroup", () => {
     it("should change selection on click", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* RadioGroup.Root({ defaultValue: "option1" }, [
-            RadioGroup.Item({ value: "option1" }),
-            RadioGroup.Item({ value: "option2" }),
-          ]);
+          const el = yield* RadioGroup.Root(
+            { defaultValue: "option1" },
+            collect(
+              RadioGroup.Item({ value: "option1" }),
+              RadioGroup.Item({ value: "option2" }),
+            ),
+          );
 
           const items = el.querySelectorAll("button");
 
@@ -213,11 +229,14 @@ describe("RadioGroup", () => {
     it("should set tabIndex=0 on selected item only", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* RadioGroup.Root({ defaultValue: "option2" }, [
-            RadioGroup.Item({ value: "option1" }),
-            RadioGroup.Item({ value: "option2" }),
-            RadioGroup.Item({ value: "option3" }),
-          ]);
+          const el = yield* RadioGroup.Root(
+            { defaultValue: "option2" },
+            collect(
+              RadioGroup.Item({ value: "option1" }),
+              RadioGroup.Item({ value: "option2" }),
+              RadioGroup.Item({ value: "option3" }),
+            ),
+          );
 
           const items = el.querySelectorAll("button");
           expect(items[0]?.tabIndex).toBe(-1);
@@ -230,10 +249,13 @@ describe("RadioGroup", () => {
     it("should update tabIndex when selection changes", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* RadioGroup.Root({ defaultValue: "option1" }, [
-            RadioGroup.Item({ value: "option1" }),
-            RadioGroup.Item({ value: "option2" }),
-          ]);
+          const el = yield* RadioGroup.Root(
+            { defaultValue: "option1" },
+            collect(
+              RadioGroup.Item({ value: "option1" }),
+              RadioGroup.Item({ value: "option2" }),
+            ),
+          );
 
           const items = el.querySelectorAll("button");
 
@@ -254,10 +276,13 @@ describe("RadioGroup", () => {
     it("should disable all items when group is disabled", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* RadioGroup.Root({ disabled: true }, [
-            RadioGroup.Item({ value: "option1" }),
-            RadioGroup.Item({ value: "option2" }),
-          ]);
+          const el = yield* RadioGroup.Root(
+            { disabled: true },
+            collect(
+              RadioGroup.Item({ value: "option1" }),
+              RadioGroup.Item({ value: "option2" }),
+            ),
+          );
 
           const items = el.querySelectorAll(
             "button",
@@ -271,10 +296,13 @@ describe("RadioGroup", () => {
     it("should disable individual items", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* RadioGroup.Root({}, [
-            RadioGroup.Item({ value: "option1" }),
-            RadioGroup.Item({ value: "option2", disabled: true }),
-          ]);
+          const el = yield* RadioGroup.Root(
+            {},
+            collect(
+              RadioGroup.Item({ value: "option1" }),
+              RadioGroup.Item({ value: "option2", disabled: true }),
+            ),
+          );
 
           const items = el.querySelectorAll(
             "button",
@@ -288,10 +316,13 @@ describe("RadioGroup", () => {
     it("should not select disabled item on click", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* RadioGroup.Root({}, [
-            RadioGroup.Item({ value: "option1" }),
-            RadioGroup.Item({ value: "option2", disabled: true }),
-          ]);
+          const el = yield* RadioGroup.Root(
+            {},
+            collect(
+              RadioGroup.Item({ value: "option1" }),
+              RadioGroup.Item({ value: "option2", disabled: true }),
+            ),
+          );
 
           const items = el.querySelectorAll("button");
           items[1]?.click();
@@ -307,9 +338,10 @@ describe("RadioGroup", () => {
     it("should set name attribute on items", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* RadioGroup.Root({ name: "spacing" }, [
-            RadioGroup.Item({ value: "option1" }),
-          ]);
+          const el = yield* RadioGroup.Root(
+            { name: "spacing" },
+            collect(RadioGroup.Item({ value: "option1" })),
+          );
 
           const item = el.querySelector("button");
           expect(item?.getAttribute("name")).toBe("spacing");
@@ -324,10 +356,13 @@ describe("RadioGroup", () => {
         Effect.gen(function* () {
           const value = yield* Signal.make("option2");
 
-          const el = yield* RadioGroup.Root({ value }, [
-            RadioGroup.Item({ value: "option1" }),
-            RadioGroup.Item({ value: "option2" }),
-          ]);
+          const el = yield* RadioGroup.Root(
+            { value },
+            collect(
+              RadioGroup.Item({ value: "option1" }),
+              RadioGroup.Item({ value: "option2" }),
+            ),
+          );
 
           const items = el.querySelectorAll("button");
           expect(items[0]?.getAttribute("data-state")).toBe("unchecked");
@@ -356,10 +391,10 @@ describe("RadioGroup", () => {
                   changes.push(value);
                 }),
             },
-            [
+            collect(
               RadioGroup.Item({ value: "option1" }),
               RadioGroup.Item({ value: "option2" }),
-            ],
+            ),
           );
 
           const items = el.querySelectorAll("button");

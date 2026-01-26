@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { DOMRendererLive, Signal } from "@effex/dom";
+import { $, collect, DOMRendererLive, Signal } from "@effex/dom";
 
 import { Toolbar } from "./Toolbar";
 
@@ -21,9 +21,10 @@ describe("Toolbar", () => {
     it("should render with toolbar role", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({ "aria-label": "Formatting" }, [
-            Toolbar.Button({}, "Bold"),
-          ]);
+          const el = yield* Toolbar.Root(
+            { "aria-label": "Formatting" },
+            collect(Toolbar.Button({}, $.of("Bold"))),
+          );
 
           expect(el.tagName).toBe("DIV");
           expect(el.getAttribute("role")).toBe("toolbar");
@@ -36,7 +37,7 @@ describe("Toolbar", () => {
         Effect.gen(function* () {
           const el = yield* Toolbar.Root(
             { "aria-label": "Text formatting" },
-            [],
+            collect(),
           );
 
           expect(el.getAttribute("aria-label")).toBe("Text formatting");
@@ -47,7 +48,7 @@ describe("Toolbar", () => {
     it("should set aria-orientation to horizontal by default", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({}, []);
+          const el = yield* Toolbar.Root({}, collect());
 
           expect(el.getAttribute("aria-orientation")).toBe("horizontal");
           expect(el.getAttribute("data-orientation")).toBe("horizontal");
@@ -58,7 +59,10 @@ describe("Toolbar", () => {
     it("should set aria-orientation to vertical", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({ orientation: "vertical" }, []);
+          const el = yield* Toolbar.Root(
+            { orientation: "vertical" },
+            collect(),
+          );
 
           expect(el.getAttribute("aria-orientation")).toBe("vertical");
           expect(el.getAttribute("data-orientation")).toBe("vertical");
@@ -71,7 +75,10 @@ describe("Toolbar", () => {
     it("should render as button", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({}, [Toolbar.Button({}, "Bold")]);
+          const el = yield* Toolbar.Root(
+            {},
+            collect(Toolbar.Button({}, $.of("Bold"))),
+          );
 
           const button = el.querySelector("button");
           expect(button).not.toBeNull();
@@ -83,7 +90,10 @@ describe("Toolbar", () => {
     it("should have data-toolbar-item attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({}, [Toolbar.Button({}, "Bold")]);
+          const el = yield* Toolbar.Root(
+            {},
+            collect(Toolbar.Button({}, $.of("Bold"))),
+          );
 
           const button = el.querySelector("button");
           expect(button?.hasAttribute("data-toolbar-item")).toBe(true);
@@ -96,17 +106,20 @@ describe("Toolbar", () => {
         Effect.gen(function* () {
           let pressed = false;
 
-          const el = yield* Toolbar.Root({}, [
-            Toolbar.Button(
-              {
-                onPress: () =>
-                  Effect.sync(() => {
-                    pressed = true;
-                  }),
-              },
-              "Bold",
+          const el = yield* Toolbar.Root(
+            {},
+            collect(
+              Toolbar.Button(
+                {
+                  onPress: () =>
+                    Effect.sync(() => {
+                      pressed = true;
+                    }),
+                },
+                $.of("Bold"),
+              ),
             ),
-          ]);
+          );
 
           const button = el.querySelector("button") as HTMLButtonElement;
           button.click();
@@ -120,9 +133,10 @@ describe("Toolbar", () => {
     it("should be disabled when disabled prop is true", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({}, [
-            Toolbar.Button({ disabled: true }, "Bold"),
-          ]);
+          const el = yield* Toolbar.Root(
+            {},
+            collect(Toolbar.Button({ disabled: true }, $.of("Bold"))),
+          );
 
           const button = el.querySelector("button") as HTMLButtonElement;
           expect(button.disabled).toBe(true);
@@ -136,18 +150,21 @@ describe("Toolbar", () => {
         Effect.gen(function* () {
           let pressed = false;
 
-          const el = yield* Toolbar.Root({}, [
-            Toolbar.Button(
-              {
-                disabled: true,
-                onPress: () =>
-                  Effect.sync(() => {
-                    pressed = true;
-                  }),
-              },
-              "Bold",
+          const el = yield* Toolbar.Root(
+            {},
+            collect(
+              Toolbar.Button(
+                {
+                  disabled: true,
+                  onPress: () =>
+                    Effect.sync(() => {
+                      pressed = true;
+                    }),
+                },
+                $.of("Bold"),
+              ),
             ),
-          ]);
+          );
 
           const button = el.querySelector("button") as HTMLButtonElement;
           button.click();
@@ -163,9 +180,12 @@ describe("Toolbar", () => {
     it("should render with aria-pressed", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({}, [
-            Toolbar.ToggleItem({ defaultPressed: false }, "Bold"),
-          ]);
+          const el = yield* Toolbar.Root(
+            {},
+            collect(
+              Toolbar.ToggleItem({ defaultPressed: false }, $.of("Bold")),
+            ),
+          );
 
           const button = el.querySelector("button");
           expect(button?.getAttribute("aria-pressed")).toBe("false");
@@ -176,9 +196,12 @@ describe("Toolbar", () => {
     it("should toggle on click", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({}, [
-            Toolbar.ToggleItem({ defaultPressed: false }, "Bold"),
-          ]);
+          const el = yield* Toolbar.Root(
+            {},
+            collect(
+              Toolbar.ToggleItem({ defaultPressed: false }, $.of("Bold")),
+            ),
+          );
 
           const button = el.querySelector("button") as HTMLButtonElement;
           expect(button.getAttribute("aria-pressed")).toBe("false");
@@ -198,9 +221,10 @@ describe("Toolbar", () => {
         Effect.gen(function* () {
           const pressed = yield* Signal.make(true);
 
-          const el = yield* Toolbar.Root({}, [
-            Toolbar.ToggleItem({ pressed }, "Bold"),
-          ]);
+          const el = yield* Toolbar.Root(
+            {},
+            collect(Toolbar.ToggleItem({ pressed }, $.of("Bold"))),
+          );
 
           const button = el.querySelector("button") as HTMLButtonElement;
           expect(button.getAttribute("aria-pressed")).toBe("true");
@@ -218,18 +242,21 @@ describe("Toolbar", () => {
         Effect.gen(function* () {
           const changes: boolean[] = [];
 
-          const el = yield* Toolbar.Root({}, [
-            Toolbar.ToggleItem(
-              {
-                defaultPressed: false,
-                onPressedChange: (p) =>
-                  Effect.sync(() => {
-                    changes.push(p);
-                  }),
-              },
-              "Bold",
+          const el = yield* Toolbar.Root(
+            {},
+            collect(
+              Toolbar.ToggleItem(
+                {
+                  defaultPressed: false,
+                  onPressedChange: (p) =>
+                    Effect.sync(() => {
+                      changes.push(p);
+                    }),
+                },
+                $.of("Bold"),
+              ),
             ),
-          ]);
+          );
 
           const button = el.querySelector("button") as HTMLButtonElement;
           button.click();
@@ -245,13 +272,19 @@ describe("Toolbar", () => {
     it("should manage single selection", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({}, [
-            Toolbar.ToggleGroup({ type: "single", defaultValue: "left" }, [
-              Toolbar.ToggleItem({ value: "left" }, "Left"),
-              Toolbar.ToggleItem({ value: "center" }, "Center"),
-              Toolbar.ToggleItem({ value: "right" }, "Right"),
-            ]),
-          ]);
+          const el = yield* Toolbar.Root(
+            {},
+            collect(
+              Toolbar.ToggleGroup(
+                { type: "single", defaultValue: "left" },
+                collect(
+                  Toolbar.ToggleItem({ value: "left" }, $.of("Left")),
+                  Toolbar.ToggleItem({ value: "center" }, $.of("Center")),
+                  Toolbar.ToggleItem({ value: "right" }, $.of("Right")),
+                ),
+              ),
+            ),
+          );
 
           const buttons = el.querySelectorAll("button");
           expect(buttons[0]?.getAttribute("data-state")).toBe("on");
@@ -264,12 +297,18 @@ describe("Toolbar", () => {
     it("should switch selection on click in single mode", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({}, [
-            Toolbar.ToggleGroup({ type: "single", defaultValue: "left" }, [
-              Toolbar.ToggleItem({ value: "left" }, "Left"),
-              Toolbar.ToggleItem({ value: "center" }, "Center"),
-            ]),
-          ]);
+          const el = yield* Toolbar.Root(
+            {},
+            collect(
+              Toolbar.ToggleGroup(
+                { type: "single", defaultValue: "left" },
+                collect(
+                  Toolbar.ToggleItem({ value: "left" }, $.of("Left")),
+                  Toolbar.ToggleItem({ value: "center" }, $.of("Center")),
+                ),
+              ),
+            ),
+          );
 
           const buttons = el.querySelectorAll(
             "button",
@@ -287,12 +326,18 @@ describe("Toolbar", () => {
     it("should deselect on clicking selected item in single mode", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({}, [
-            Toolbar.ToggleGroup({ type: "single", defaultValue: "left" }, [
-              Toolbar.ToggleItem({ value: "left" }, "Left"),
-              Toolbar.ToggleItem({ value: "center" }, "Center"),
-            ]),
-          ]);
+          const el = yield* Toolbar.Root(
+            {},
+            collect(
+              Toolbar.ToggleGroup(
+                { type: "single", defaultValue: "left" },
+                collect(
+                  Toolbar.ToggleItem({ value: "left" }, $.of("Left")),
+                  Toolbar.ToggleItem({ value: "center" }, $.of("Center")),
+                ),
+              ),
+            ),
+          );
 
           const buttons = el.querySelectorAll(
             "button",
@@ -310,12 +355,18 @@ describe("Toolbar", () => {
     it("should support multiple selection", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({}, [
-            Toolbar.ToggleGroup({ type: "multiple", defaultValues: ["bold"] }, [
-              Toolbar.ToggleItem({ value: "bold" }, "Bold"),
-              Toolbar.ToggleItem({ value: "italic" }, "Italic"),
-            ]),
-          ]);
+          const el = yield* Toolbar.Root(
+            {},
+            collect(
+              Toolbar.ToggleGroup(
+                { type: "multiple", defaultValues: ["bold"] },
+                collect(
+                  Toolbar.ToggleItem({ value: "bold" }, $.of("Bold")),
+                  Toolbar.ToggleItem({ value: "italic" }, $.of("Italic")),
+                ),
+              ),
+            ),
+          );
 
           const buttons = el.querySelectorAll(
             "button",
@@ -344,11 +395,15 @@ describe("Toolbar", () => {
     it("should render with role=group", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({}, [
-            Toolbar.ToggleGroup({ "aria-label": "Alignment" }, [
-              Toolbar.ToggleItem({ value: "left" }, "Left"),
-            ]),
-          ]);
+          const el = yield* Toolbar.Root(
+            {},
+            collect(
+              Toolbar.ToggleGroup(
+                { "aria-label": "Alignment" },
+                collect(Toolbar.ToggleItem({ value: "left" }, $.of("Left"))),
+              ),
+            ),
+          );
 
           const group = el.querySelector("[role='group']");
           expect(group).not.toBeNull();
@@ -362,11 +417,14 @@ describe("Toolbar", () => {
     it("should render with separator role", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({}, [
-            Toolbar.Button({}, "Bold"),
-            Toolbar.Separator({}),
-            Toolbar.Button({}, "Link"),
-          ]);
+          const el = yield* Toolbar.Root(
+            {},
+            collect(
+              Toolbar.Button({}, $.of("Bold")),
+              Toolbar.Separator({}),
+              Toolbar.Button({}, $.of("Link")),
+            ),
+          );
 
           const separator = el.querySelector("[role='separator']");
           expect(separator).not.toBeNull();
@@ -378,9 +436,10 @@ describe("Toolbar", () => {
       await runTest(
         Effect.gen(function* () {
           // Horizontal toolbar -> vertical separator
-          const el = yield* Toolbar.Root({ orientation: "horizontal" }, [
-            Toolbar.Separator({}),
-          ]);
+          const el = yield* Toolbar.Root(
+            { orientation: "horizontal" },
+            collect(Toolbar.Separator({})),
+          );
 
           const separator = el.querySelector("[role='separator']");
           expect(separator?.getAttribute("aria-orientation")).toBe("vertical");
@@ -391,9 +450,10 @@ describe("Toolbar", () => {
     it("should be horizontal when toolbar is vertical", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({ orientation: "vertical" }, [
-            Toolbar.Separator({}),
-          ]);
+          const el = yield* Toolbar.Root(
+            { orientation: "vertical" },
+            collect(Toolbar.Separator({})),
+          );
 
           const separator = el.querySelector("[role='separator']");
           expect(separator?.getAttribute("aria-orientation")).toBe(
@@ -406,7 +466,7 @@ describe("Toolbar", () => {
     it("should have data-toolbar-separator attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({}, [Toolbar.Separator({})]);
+          const el = yield* Toolbar.Root({}, collect(Toolbar.Separator({})));
 
           const separator = el.querySelector("[role='separator']");
           expect(separator?.hasAttribute("data-toolbar-separator")).toBe(true);
@@ -419,9 +479,10 @@ describe("Toolbar", () => {
     it("should render as anchor", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({}, [
-            Toolbar.Link({ href: "/docs" }, "Documentation"),
-          ]);
+          const el = yield* Toolbar.Root(
+            {},
+            collect(Toolbar.Link({ href: "/docs" }, $.of("Documentation"))),
+          );
 
           const link = el.querySelector("a");
           expect(link).not.toBeNull();
@@ -434,9 +495,10 @@ describe("Toolbar", () => {
     it("should have data-toolbar-item attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({}, [
-            Toolbar.Link({ href: "/docs" }, "Docs"),
-          ]);
+          const el = yield* Toolbar.Root(
+            {},
+            collect(Toolbar.Link({ href: "/docs" }, $.of("Docs"))),
+          );
 
           const link = el.querySelector("a");
           expect(link?.hasAttribute("data-toolbar-item")).toBe(true);
@@ -447,9 +509,12 @@ describe("Toolbar", () => {
     it("should set aria-disabled when disabled", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({}, [
-            Toolbar.Link({ href: "/docs", disabled: true }, "Docs"),
-          ]);
+          const el = yield* Toolbar.Root(
+            {},
+            collect(
+              Toolbar.Link({ href: "/docs", disabled: true }, $.of("Docs")),
+            ),
+          );
 
           const link = el.querySelector("a");
           expect(link?.getAttribute("aria-disabled")).toBe("true");
@@ -463,11 +528,14 @@ describe("Toolbar", () => {
     it("should set tabIndex=0 on first button by default", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({}, [
-            Toolbar.Button({}, "Bold"),
-            Toolbar.Button({}, "Italic"),
-            Toolbar.Button({}, "Underline"),
-          ]);
+          const el = yield* Toolbar.Root(
+            {},
+            collect(
+              Toolbar.Button({}, $.of("Bold")),
+              Toolbar.Button({}, $.of("Italic")),
+              Toolbar.Button({}, $.of("Underline")),
+            ),
+          );
 
           const buttons = el.querySelectorAll(
             "button",
@@ -482,10 +550,13 @@ describe("Toolbar", () => {
     it("should move tabIndex when item is focused", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({}, [
-            Toolbar.Button({}, "Bold"),
-            Toolbar.Button({}, "Italic"),
-          ]);
+          const el = yield* Toolbar.Root(
+            {},
+            collect(
+              Toolbar.Button({}, $.of("Bold")),
+              Toolbar.Button({}, $.of("Italic")),
+            ),
+          );
 
           document.body.appendChild(el);
 
@@ -507,10 +578,13 @@ describe("Toolbar", () => {
     it("should disable all items when toolbar is disabled", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({ disabled: true }, [
-            Toolbar.Button({}, "Bold"),
-            Toolbar.Button({}, "Italic"),
-          ]);
+          const el = yield* Toolbar.Root(
+            { disabled: true },
+            collect(
+              Toolbar.Button({}, $.of("Bold")),
+              Toolbar.Button({}, $.of("Italic")),
+            ),
+          );
 
           const buttons = el.querySelectorAll(
             "button",
@@ -524,9 +598,10 @@ describe("Toolbar", () => {
     it("should disable toggle items when toolbar is disabled", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toolbar.Root({ disabled: true }, [
-            Toolbar.ToggleItem({}, "Bold"),
-          ]);
+          const el = yield* Toolbar.Root(
+            { disabled: true },
+            collect(Toolbar.ToggleItem({}, $.of("Bold"))),
+          );
 
           const button = el.querySelector("button") as HTMLButtonElement;
           expect(button.disabled).toBe(true);

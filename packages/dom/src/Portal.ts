@@ -29,17 +29,17 @@ export interface PortalOptions {
  * Portal({ target: containerElement }, () => Tooltip({ ... }))
  * ```
  */
-export function Portal<E = never, R = never>(
-  children: () => Element.Element<E, R>,
-): Element.Element<E, R>;
-export function Portal<E = never, R = never>(
+export function Portal<A extends HTMLElement | SVGElement, E, R>(
+  children: () => Element.Element<A, E, R>,
+): Element.Element<HTMLElement, E, R>;
+export function Portal<A extends HTMLElement | SVGElement, E, R>(
   options: PortalOptions,
-  children: () => Element.Element<E, R>,
-): Element.Element<E, R>;
-export function Portal<E = never, R = never>(
-  optionsOrChildren: PortalOptions | (() => Element.Element<E, R>),
-  maybeChildren?: () => Element.Element<E, R>,
-): Element.Element<E, R> {
+  children: () => Element.Element<A, E, R>,
+): Element.Element<HTMLElement, E, R>;
+export function Portal<A extends HTMLElement | SVGElement, E, R>(
+  optionsOrChildren: PortalOptions | (() => Element.Element<A, E, R>),
+  maybeChildren?: () => Element.Element<A, E, R>,
+): Element.Element<HTMLElement, E, R> {
   const options: PortalOptions =
     typeof optionsOrChildren === "function" ? {} : optionsOrChildren;
   const children =

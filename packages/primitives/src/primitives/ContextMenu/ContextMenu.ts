@@ -2,7 +2,6 @@ import { Context, Effect } from "effect";
 
 import {
   $,
-  Component,
   createKeyboardNav,
   Element,
   onClickOutside,
@@ -13,6 +12,7 @@ import {
   UniqueId,
   when,
   type AnimationOptions,
+  type ChildEffect,
   type ClassValue,
   type ElementRef,
 } from "@effex/dom";
@@ -121,35 +121,39 @@ export interface ContextMenuRootProps {
  * ])
  * ```
  */
-const Root = Component.gen(function* (props: ContextMenuRootProps, children) {
-  const isOpen = yield* Signal.fromNullable(props.open, false);
-  const position = yield* Signal.make({ x: 0, y: 0 });
+const Root = <E = never, R = never>(
+  props: ContextMenuRootProps,
+  children: ChildEffect<E, R | ContextMenuCtx>,
+): Element.Element<HTMLDivElement, E, R> =>
+  Effect.gen(function* () {
+    const isOpen = yield* Signal.fromNullable(props.open, false);
+    const position = yield* Signal.make({ x: 0, y: 0 });
 
-  const contentRef = yield* Element.ref<HTMLDivElement>();
+    const contentRef = yield* Element.ref<HTMLDivElement>();
 
-  const setOpenState = (newValue: boolean) =>
-    Effect.gen(function* () {
-      yield* isOpen.set(newValue);
-      yield* props.onOpenChange?.(newValue) ?? Effect.void;
-    });
-
-  const ctx: ContextMenuContext = {
-    isOpen,
-    openAt: (x: number, y: number) =>
+    const setOpenState = (newValue: boolean) =>
       Effect.gen(function* () {
-        yield* position.set({ x, y });
-        yield* setOpenState(true);
-      }),
-    close: () => setOpenState(false),
-    position,
-    contentRef,
-  };
+        yield* isOpen.set(newValue);
+        yield* props.onOpenChange?.(newValue) ?? Effect.void;
+      });
 
-  return yield* $.div(
-    { style: { display: "contents" } },
-    provide(ContextMenuCtx, ctx, Component.normalizeChildren(children)),
-  );
-});
+    const ctx: ContextMenuContext = {
+      isOpen,
+      openAt: (x: number, y: number) =>
+        Effect.gen(function* () {
+          yield* position.set({ x, y });
+          yield* setOpenState(true);
+        }),
+      close: () => setOpenState(false),
+      position,
+      contentRef,
+    };
+
+    return yield* $.div(
+      { style: { display: "contents" } },
+      provide(ContextMenuCtx, ctx, children),
+    );
+  }) as Element.Element<HTMLDivElement, E, R>;
 
 /**
  * Props for ContextMenu.Trigger
@@ -169,36 +173,37 @@ export interface ContextMenuTriggerProps {
  * ContextMenu.Trigger({}, div({ class: "file-item" }, "document.pdf"))
  * ```
  */
-const Trigger = Component.gen(function* (
+const Trigger = <E = never, R = never>(
   props: ContextMenuTriggerProps,
-  children,
-) {
-  const ctx = yield* ContextMenuCtx;
-  const triggerId = yield* UniqueId.make("context-menu-trigger");
+  children: ChildEffect<E, R>,
+): Element.Element<HTMLDivElement, E, R | ContextMenuCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* ContextMenuCtx;
+    const triggerId = yield* UniqueId.make("context-menu-trigger");
 
-  // Normalize disabled prop
-  const disabled = Readable.of(props.disabled ?? false);
-  const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+    // Normalize disabled prop
+    const disabled = Readable.of(props.disabled ?? false);
+    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
 
-  const handleContextMenu = (event: MouseEvent) =>
-    Effect.gen(function* () {
-      if (yield* disabled.get) return;
+    const handleContextMenu = (event: MouseEvent) =>
+      Effect.gen(function* () {
+        if (yield* disabled.get) return;
 
-      event.preventDefault();
-      yield* ctx.openAt(event.clientX, event.clientY);
-    });
+        event.preventDefault();
+        yield* ctx.openAt(event.clientX, event.clientY);
+      });
 
-  return yield* $.div(
-    {
-      id: triggerId,
-      class: props.class,
-      "data-disabled": dataDisabled,
-      "data-context-menu-trigger": "",
-      onContextMenu: handleContextMenu,
-    },
-    children ?? [],
-  );
-});
+    return yield* $.div(
+      {
+        id: triggerId,
+        class: props.class,
+        "data-disabled": dataDisabled,
+        "data-context-menu-trigger": "",
+        onContextMenu: handleContextMenu,
+      },
+      children,
+    );
+  }) as Element.Element<HTMLDivElement, E, R | ContextMenuCtx>;
 
 /**
  * Props for ContextMenu.Content
@@ -224,117 +229,118 @@ export interface ContextMenuContentProps {
  * ])
  * ```
  */
-const Content = Component.gen(function* (
+const Content = <E = never, R = never>(
   props: ContextMenuContentProps,
-  children,
-) {
-  const ctx = yield* ContextMenuCtx;
+  children: ChildEffect<E, R>,
+): Element.Element<HTMLDivElement, E, R | ContextMenuCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* ContextMenuCtx;
 
-  const id = yield* UniqueId.make("context-menu-content");
+    const id = yield* UniqueId.make("context-menu-content");
 
-  const loop = props.loop ?? true;
+    const loop = props.loop ?? true;
 
-  const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
+    const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
 
-  const handleDocumentContextMenu = (e: MouseEvent) =>
-    ctx.contentRef.pipe(
-      () => ctx.close(),
-      Effect.unlessEffect(Element.contains(ctx.contentRef, e.target as Node)),
+    const handleDocumentContextMenu = (e: MouseEvent) =>
+      ctx.contentRef.pipe(
+        () => ctx.close(),
+        Effect.unlessEffect(Element.contains(ctx.contentRef, e.target as Node)),
+      );
+
+    const keyboardNav = yield* createKeyboardNav({
+      selector: "[data-menu-item]:not([data-disabled])",
+      orientation: "vertical",
+      loop,
+      onActivate: (el) => el.pipe(Element.click, Effect.ignore),
+      onEscape: () => ctx.close(),
+    });
+
+    const handleKeyDown = (event: KeyboardEvent) =>
+      Effect.gen(function* () {
+        // Tab closes menu without preventing default
+        if (event.key === "Tab") {
+          yield* ctx.close();
+          return;
+        }
+        yield* keyboardNav(event);
+      });
+
+    yield* onClickOutside([ctx.contentRef], () => ctx.close());
+
+    const setPosition = (el: Effect.Effect<HTMLElement>) =>
+      Effect.gen(function* () {
+        const pos = yield* ctx.position.get;
+
+        return yield* el.pipe(
+          Element.setStyles({ top: `${pos.y}px`, left: `${pos.x}px` }),
+        );
+      });
+
+    document.addEventListener("contextmenu", handleDocumentContextMenu, true);
+
+    yield* Effect.addFinalizer(() =>
+      Effect.sync(() => {
+        document.removeEventListener(
+          "contextmenu",
+          handleDocumentContextMenu,
+          true,
+        );
+      }),
     );
 
-  const keyboardNav = yield* createKeyboardNav({
-    selector: "[data-menu-item]:not([data-disabled])",
-    orientation: "vertical",
-    loop,
-    onActivate: (el) => el.pipe(Element.click, Effect.ignore),
-    onEscape: () => ctx.close(),
-  });
-
-  const handleKeyDown = (event: KeyboardEvent) =>
-    Effect.gen(function* () {
-      // Tab closes menu without preventing default
-      if (event.key === "Tab") {
-        yield* ctx.close();
-        return;
-      }
-      yield* keyboardNav(event);
-    });
-
-  yield* onClickOutside([ctx.contentRef], () => ctx.close());
-
-  const setPosition = (el: Effect.Effect<HTMLElement>) =>
-    Effect.gen(function* () {
-      const pos = yield* ctx.position.get;
-
-      return yield* el.pipe(
-        Element.setStyles({ top: `${pos.y}px`, left: `${pos.x}px` }),
-      );
-    });
-
-  document.addEventListener("contextmenu", handleDocumentContextMenu, true);
-
-  yield* Effect.addFinalizer(() =>
-    Effect.sync(() => {
-      document.removeEventListener(
-        "contextmenu",
-        handleDocumentContextMenu,
-        true,
-      );
-    }),
-  );
-
-  // Portal is always rendered, but the content inside uses `when` for animations.
-  // This ensures animations apply to the actual visible content, not a placeholder.
-  return yield* Portal(() =>
-    when(ctx.isOpen, {
-      onTrue: () =>
-        Effect.gen(function* () {
-          return yield* $.div(
-            {
-              id,
-              class: props.class,
-              ref: ctx.contentRef,
-              role: "menu",
-              "aria-labelledby": Effect.runSync(
-                Element.getId(ctx.contentRef).pipe(
-                  Effect.catchAll(() => Effect.succeed("")),
+    // Portal is always rendered, but the content inside uses `when` for animations.
+    // This ensures animations apply to the actual visible content, not a placeholder.
+    return yield* Portal(() =>
+      when(ctx.isOpen, {
+        onTrue: () =>
+          Effect.gen(function* () {
+            return yield* $.div(
+              {
+                id,
+                class: props.class,
+                ref: ctx.contentRef,
+                role: "menu",
+                "aria-labelledby": Effect.runSync(
+                  Element.getId(ctx.contentRef).pipe(
+                    Effect.catchAll(() => Effect.succeed("")),
+                  ),
                 ),
-              ),
-              "data-state": dataState,
-              "data-menu-content": "",
-              "data-context-menu-content": "",
-              tabIndex: -1,
-              style: {
-                position: "fixed",
+                "data-state": dataState,
+                "data-menu-content": "",
+                "data-context-menu-content": "",
+                tabIndex: -1,
+                style: {
+                  position: "fixed",
+                },
+                onKeyDown: handleKeyDown,
               },
-              onKeyDown: handleKeyDown,
-            },
-            children ?? [],
-          );
-        }),
-      onFalse: () => $.div({ style: { display: "none" } }),
-      animate: props.animate
-        ? {
-            ...props.animate,
-            onEnter: (el) =>
-              el.pipe(
-                setPosition,
-                Element.focusFirst("[data-menu-item]:not([data-disabled])"),
-                Element.tapEffect(
-                  () => props.animate?.onEnter?.(el) ?? Effect.void,
+              children,
+            );
+          }),
+        onFalse: () => $.div({ style: { display: "none" } }),
+        animate: props.animate
+          ? {
+              ...props.animate,
+              onEnter: (el) =>
+                (el as Effect.Effect<HTMLElement>).pipe(
+                  setPosition,
+                  Element.focusFirst("[data-menu-item]:not([data-disabled])"),
+                  Element.tapEffect(
+                    () => props.animate?.onEnter?.(el) ?? Effect.void,
+                  ),
                 ),
-              ),
-          }
-        : {
-            onEnter: (el) =>
-              el.pipe(
-                setPosition,
-                Element.focusFirst("[data-menu-item]:not([data-disabled])"),
-              ),
-          },
-    }),
-  );
-});
+            }
+          : {
+              onEnter: (el) =>
+                (el as Effect.Effect<HTMLElement>).pipe(
+                  setPosition,
+                  Element.focusFirst("[data-menu-item]:not([data-disabled])"),
+                ),
+            },
+      }),
+    );
+  }) as Element.Element<HTMLDivElement, E, R | ContextMenuCtx>;
 
 /**
  * Props for ContextMenu.Item
@@ -356,37 +362,41 @@ export interface ContextMenuItemProps {
  * ContextMenu.Item({ onSelect: () => Effect.log("Clicked!") }, "Copy")
  * ```
  */
-const Item = Component.gen(function* (props: ContextMenuItemProps, children) {
-  const ctx = yield* ContextMenuCtx;
+const Item = <E = never, R = never>(
+  props: ContextMenuItemProps,
+  children: ChildEffect<E, R>,
+): Element.Element<HTMLDivElement, E, R | ContextMenuCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* ContextMenuCtx;
 
-  // Normalize disabled prop
-  const disabled = Readable.of(props.disabled ?? false);
-  const dataDisabled = disabled.map((d) => (d ? "" : undefined));
-  const tabIndex = disabled.map((d) => (d ? -1 : 0));
+    // Normalize disabled prop
+    const disabled = Readable.of(props.disabled ?? false);
+    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+    const tabIndex = disabled.map((d) => (d ? -1 : 0));
 
-  const handleClick = () =>
-    Effect.gen(function* () {
-      if (yield* disabled.get) return;
+    const handleClick = () =>
+      Effect.gen(function* () {
+        if (yield* disabled.get) return;
 
-      yield* props.onSelect?.() ?? Effect.void;
+        yield* props.onSelect?.() ?? Effect.void;
 
-      // Close menu
-      yield* ctx.close();
-    });
+        // Close menu
+        yield* ctx.close();
+      });
 
-  return yield* $.div(
-    {
-      class: props.class,
-      role: "menuitem",
-      "data-disabled": dataDisabled,
-      "data-menu-item": "",
-      "data-context-menu-item": "",
-      tabIndex,
-      onClick: handleClick,
-    },
-    children ?? [],
-  );
-});
+    return yield* $.div(
+      {
+        class: props.class,
+        role: "menuitem",
+        "data-disabled": dataDisabled,
+        "data-menu-item": "",
+        "data-context-menu-item": "",
+        tabIndex,
+        onClick: handleClick,
+      },
+      children,
+    );
+  }) as Element.Element<HTMLDivElement, E, R | ContextMenuCtx>;
 
 /**
  * Props for ContextMenu.Group
@@ -408,17 +418,21 @@ export interface ContextMenuGroupProps {
  * ])
  * ```
  */
-const Group = Component.gen(function* (props: ContextMenuGroupProps, children) {
-  return yield* $.div(
-    {
-      class: props.class,
-      role: "group",
-      "data-menu-group": "",
-      "data-context-menu-group": "",
-    },
-    children ?? [],
-  );
-});
+const Group = <E = never, R = never>(
+  props: ContextMenuGroupProps,
+  children: ChildEffect<E, R>,
+): Element.Element<HTMLDivElement, E, R> =>
+  Effect.gen(function* () {
+    return yield* $.div(
+      {
+        class: props.class,
+        role: "group",
+        "data-menu-group": "",
+        "data-context-menu-group": "",
+      },
+      children,
+    );
+  }) as Element.Element<HTMLDivElement, E, R>;
 
 /**
  * Props for ContextMenu.Label
@@ -436,16 +450,20 @@ export interface ContextMenuLabelProps {
  * ContextMenu.Label({}, "Section Title")
  * ```
  */
-const Label = Component.gen(function* (props: ContextMenuLabelProps, children) {
-  return yield* $.div(
-    {
-      class: props.class,
-      "data-menu-label": "",
-      "data-context-menu-label": "",
-    },
-    children ?? [],
-  );
-});
+const Label = <E = never, R = never>(
+  props: ContextMenuLabelProps,
+  children: ChildEffect<E, R>,
+): Element.Element<HTMLDivElement, E, R> =>
+  Effect.gen(function* () {
+    return yield* $.div(
+      {
+        class: props.class,
+        "data-menu-label": "",
+        "data-context-menu-label": "",
+      },
+      children,
+    );
+  }) as Element.Element<HTMLDivElement, E, R>;
 
 /**
  * Props for ContextMenu.Separator
@@ -463,14 +481,17 @@ export interface ContextMenuSeparatorProps {
  * ContextMenu.Separator({})
  * ```
  */
-const Separator = Component.gen(function* (props: ContextMenuSeparatorProps) {
-  return yield* $.div({
-    class: props.class,
-    role: "separator",
-    "data-menu-separator": "",
-    "data-context-menu-separator": "",
+const Separator = (
+  props: ContextMenuSeparatorProps,
+): Element.Element<HTMLDivElement, never, never> =>
+  Effect.gen(function* () {
+    return yield* $.div({
+      class: props.class,
+      role: "separator",
+      "data-menu-separator": "",
+      "data-context-menu-separator": "",
+    });
   });
-});
 
 /**
  * Props for ContextMenu.CheckboxItem
@@ -497,55 +518,56 @@ export interface ContextMenuCheckboxItemProps {
  * ContextMenu.CheckboxItem({ checked: showHidden }, "Show Hidden Files")
  * ```
  */
-const CheckboxItem = Component.gen(function* (
+const CheckboxItem = <E = never, R = never>(
   props: ContextMenuCheckboxItemProps,
-  children,
-) {
-  const ctx = yield* ContextMenuCtx;
+  children: ChildEffect<E, R>,
+): Element.Element<HTMLDivElement, E, R | ContextMenuCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* ContextMenuCtx;
 
-  // Normalize disabled prop
-  const disabled = Readable.of(props.disabled ?? false);
-  const dataDisabled = disabled.map((d) => (d ? "" : undefined));
-  const tabIndex = disabled.map((d) => (d ? -1 : 0));
+    // Normalize disabled prop
+    const disabled = Readable.of(props.disabled ?? false);
+    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+    const tabIndex = disabled.map((d) => (d ? -1 : 0));
 
-  const checked = yield* Signal.fromNullable(
-    props.checked,
-    props.defaultChecked ?? false,
-  );
+    const checked = yield* Signal.fromNullable(
+      props.checked,
+      props.defaultChecked ?? false,
+    );
 
-  const dataState = checked.map((c) => (c ? "checked" : "unchecked"));
-  const ariaChecked = checked.map((c) => (c ? "true" : "false"));
+    const dataState = checked.map((c) => (c ? "checked" : "unchecked"));
+    const ariaChecked = checked.map((c) => (c ? "true" : "false"));
 
-  const handleClick = () =>
-    Effect.gen(function* () {
-      if (yield* disabled.get) return;
+    const handleClick = () =>
+      Effect.gen(function* () {
+        if (yield* disabled.get) return;
 
-      const current = yield* checked.get;
-      const newValue = !current;
-      yield* checked.set(newValue);
-      yield* props.onCheckedChange?.(newValue) ?? Effect.void;
+        const current = yield* checked.get;
+        const newValue = !current;
+        yield* checked.set(newValue);
+        yield* props.onCheckedChange?.(newValue) ?? Effect.void;
 
-      // Close menu
-      yield* ctx.close();
-    });
+        // Close menu
+        yield* ctx.close();
+      });
 
-  return yield* $.div(
-    {
-      class: props.class,
-      role: "menuitemcheckbox",
-      "aria-checked": ariaChecked,
-      "data-state": dataState,
-      "data-disabled": dataDisabled,
-      "data-menu-item": "",
-      "data-menu-checkbox-item": "",
-      "data-context-menu-item": "",
-      "data-context-menu-checkbox-item": "",
-      tabIndex,
-      onClick: handleClick,
-    },
-    children ?? [],
-  );
-});
+    return yield* $.div(
+      {
+        class: props.class,
+        role: "menuitemcheckbox",
+        "aria-checked": ariaChecked,
+        "data-state": dataState,
+        "data-disabled": dataDisabled,
+        "data-menu-item": "",
+        "data-menu-checkbox-item": "",
+        "data-context-menu-item": "",
+        "data-context-menu-checkbox-item": "",
+        tabIndex,
+        onClick: handleClick,
+      },
+      children,
+    );
+  }) as Element.Element<HTMLDivElement, E, R | ContextMenuCtx>;
 
 /**
  * Props for ContextMenu.RadioGroup
@@ -573,36 +595,37 @@ export interface ContextMenuRadioGroupProps {
  * ])
  * ```
  */
-const RadioGroup = Component.gen(function* (
+const RadioGroup = <E = never, R = never>(
   props: ContextMenuRadioGroupProps,
-  children,
-) {
-  const value = yield* Signal.fromNullable(
-    props.value,
-    props.defaultValue ?? "",
-  );
+  children: ChildEffect<E, R | ContextMenuRadioGroupCtx>,
+): Element.Element<HTMLDivElement, E, R> =>
+  Effect.gen(function* () {
+    const value = yield* Signal.fromNullable(
+      props.value,
+      props.defaultValue ?? "",
+    );
 
-  const setValue = (newValue: string) =>
-    Effect.gen(function* () {
-      yield* value.set(newValue);
-      yield* props.onValueChange?.(newValue) ?? Effect.void;
-    });
+    const setValue = (newValue: string) =>
+      Effect.gen(function* () {
+        yield* value.set(newValue);
+        yield* props.onValueChange?.(newValue) ?? Effect.void;
+      });
 
-  const radioCtx: ContextMenuRadioGroupContext = {
-    value,
-    setValue,
-  };
+    const radioCtx: ContextMenuRadioGroupContext = {
+      value,
+      setValue,
+    };
 
-  return yield* $.div(
-    {
-      class: props.class,
-      role: "group",
-      "data-menu-radio-group": "",
-      "data-context-menu-radio-group": "",
-    },
-    provide(ContextMenuRadioGroupCtx, radioCtx, children),
-  );
-});
+    return yield* $.div(
+      {
+        class: props.class,
+        role: "group",
+        "data-menu-radio-group": "",
+        "data-context-menu-radio-group": "",
+      },
+      provide(ContextMenuRadioGroupCtx, radioCtx, children),
+    );
+  }) as Element.Element<HTMLDivElement, E, R>;
 
 /**
  * Props for ContextMenu.RadioItem
@@ -624,49 +647,58 @@ export interface ContextMenuRadioItemProps {
  * ContextMenu.RadioItem({ value: "list" }, "List View")
  * ```
  */
-const RadioItem = Component.gen(function* (
+const RadioItem = <E = never, R = never>(
   props: ContextMenuRadioItemProps,
-  children,
-) {
-  const ctx = yield* ContextMenuCtx;
-  const radioCtx = yield* ContextMenuRadioGroupCtx;
+  children: ChildEffect<E, R>,
+): Element.Element<
+  HTMLDivElement,
+  E,
+  R | ContextMenuCtx | ContextMenuRadioGroupCtx
+> =>
+  Effect.gen(function* () {
+    const ctx = yield* ContextMenuCtx;
+    const radioCtx = yield* ContextMenuRadioGroupCtx;
 
-  // Normalize disabled prop
-  const disabled = Readable.of(props.disabled ?? false);
-  const dataDisabled = disabled.map((d) => (d ? "" : undefined));
-  const tabIndex = disabled.map((d) => (d ? -1 : 0));
+    // Normalize disabled prop
+    const disabled = Readable.of(props.disabled ?? false);
+    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+    const tabIndex = disabled.map((d) => (d ? -1 : 0));
 
-  const isChecked = radioCtx.value.map((v) => v === props.value);
-  const dataState = isChecked.map((c) => (c ? "checked" : "unchecked"));
-  const ariaChecked = isChecked.map((c) => (c ? "true" : "false"));
+    const isChecked = radioCtx.value.map((v) => v === props.value);
+    const dataState = isChecked.map((c) => (c ? "checked" : "unchecked"));
+    const ariaChecked = isChecked.map((c) => (c ? "true" : "false"));
 
-  const handleClick = () =>
-    Effect.gen(function* () {
-      if (yield* disabled.get) return;
+    const handleClick = () =>
+      Effect.gen(function* () {
+        if (yield* disabled.get) return;
 
-      yield* radioCtx.setValue(props.value);
+        yield* radioCtx.setValue(props.value);
 
-      // Close menu
-      yield* ctx.close();
-    });
+        // Close menu
+        yield* ctx.close();
+      });
 
-  return yield* $.div(
-    {
-      class: props.class,
-      role: "menuitemradio",
-      "aria-checked": ariaChecked,
-      "data-state": dataState,
-      "data-disabled": dataDisabled,
-      "data-menu-item": "",
-      "data-menu-radio-item": "",
-      "data-context-menu-item": "",
-      "data-context-menu-radio-item": "",
-      tabIndex,
-      onClick: handleClick,
-    },
-    children ?? [],
-  );
-});
+    return yield* $.div(
+      {
+        class: props.class,
+        role: "menuitemradio",
+        "aria-checked": ariaChecked,
+        "data-state": dataState,
+        "data-disabled": dataDisabled,
+        "data-menu-item": "",
+        "data-menu-radio-item": "",
+        "data-context-menu-item": "",
+        "data-context-menu-radio-item": "",
+        tabIndex,
+        onClick: handleClick,
+      },
+      children,
+    );
+  }) as Element.Element<
+    HTMLDivElement,
+    E,
+    R | ContextMenuCtx | ContextMenuRadioGroupCtx
+  >;
 
 /**
  * Props for ContextMenu.Sub
@@ -695,59 +727,63 @@ export interface ContextMenuSubProps {
  * ])
  * ```
  */
-const Sub = Component.gen(function* (props: ContextMenuSubProps, children) {
-  const isOpen = yield* Signal.fromNullable(
-    props.open,
-    props.defaultOpen ?? false,
-  );
+const Sub = <E = never, R = never>(
+  props: ContextMenuSubProps,
+  children: ChildEffect<E, R | ContextMenuSubCtx>,
+): Element.Element<HTMLDivElement, E, R> =>
+  Effect.gen(function* () {
+    const isOpen = yield* Signal.fromNullable(
+      props.open,
+      props.defaultOpen ?? false,
+    );
 
-  const triggerRef = yield* Element.ref<HTMLDivElement>();
-  const contentRef = yield* Element.ref<HTMLDivElement>();
+    const triggerRef = yield* Element.ref<HTMLDivElement>();
+    const contentRef = yield* Element.ref<HTMLDivElement>();
 
-  // Shared close timeout
-  let closeTimeout: ReturnType<typeof setTimeout> | null = null;
+    // Shared close timeout
+    let closeTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  const cancelClose = () => {
-    if (closeTimeout) {
-      clearTimeout(closeTimeout);
-      closeTimeout = null;
-    }
-  };
-
-  const scheduleClose = () => {
-    cancelClose();
-    closeTimeout = setTimeout(() => {
-      Effect.runSync(isOpen.set(false));
-      if (props.onOpenChange) {
-        Effect.runSync(props.onOpenChange(false));
+    const cancelClose = () => {
+      if (closeTimeout) {
+        clearTimeout(closeTimeout);
+        closeTimeout = null;
       }
-    }, 100);
-  };
+    };
 
-  const setOpenState = (newValue: boolean) =>
-    Effect.gen(function* () {
-      if (newValue) {
-        cancelClose();
-      }
-      yield* isOpen.set(newValue);
-      yield* props.onOpenChange?.(newValue) ?? Effect.void;
-    });
+    const scheduleClose = () => {
+      cancelClose();
+      closeTimeout = setTimeout(() => {
+        Effect.runSync(isOpen.set(false));
+        if (props.onOpenChange) {
+          Effect.runSync(props.onOpenChange(false));
+        }
+      }, 100);
+    };
 
-  const subCtx: ContextMenuSubContext = {
-    isOpen,
-    open: () => setOpenState(true),
-    close: () => setOpenState(false),
-    cancelClose,
-    scheduleClose,
-    triggerRef,
-    contentRef,
-  };
+    const setOpenState = (newValue: boolean) =>
+      Effect.gen(function* () {
+        if (newValue) {
+          cancelClose();
+        }
+        yield* isOpen.set(newValue);
+        yield* props.onOpenChange?.(newValue) ?? Effect.void;
+      });
 
-  return yield* $.div(
-    { style: { display: "contents" } },
-    provide(ContextMenuSubCtx, subCtx, children),
-  );
-});
+    const subCtx: ContextMenuSubContext = {
+      isOpen,
+      open: () => setOpenState(true),
+      close: () => setOpenState(false),
+      cancelClose,
+      scheduleClose,
+      triggerRef,
+      contentRef,
+    };
+
+    return yield* $.div(
+      { style: { display: "contents" } },
+      provide(ContextMenuSubCtx, subCtx, children),
+    );
+  }) as Element.Element<HTMLDivElement, E, R>;
 
 /**
  * Props for ContextMenu.SubTrigger
@@ -767,92 +803,93 @@ export interface ContextMenuSubTriggerProps {
  * ContextMenu.SubTrigger({}, "More Options →")
  * ```
  */
-const SubTrigger = Component.gen(function* (
+const SubTrigger = <E = never, R = never>(
   props: ContextMenuSubTriggerProps,
-  children,
-) {
-  const subCtx = yield* ContextMenuSubCtx;
+  children: ChildEffect<E, R>,
+): Element.Element<HTMLDivElement, E, R | ContextMenuSubCtx> =>
+  Effect.gen(function* () {
+    const subCtx = yield* ContextMenuSubCtx;
 
-  const triggerId = yield* UniqueId.make("context-submenu-trigger");
+    const triggerId = yield* UniqueId.make("context-submenu-trigger");
 
-  // Normalize disabled prop
-  const disabled = Readable.of(props.disabled ?? false);
-  const dataDisabled = disabled.map((d) => (d ? "" : undefined));
-  const tabIndex = disabled.map((d) => (d ? -1 : 0));
+    // Normalize disabled prop
+    const disabled = Readable.of(props.disabled ?? false);
+    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+    const tabIndex = disabled.map((d) => (d ? -1 : 0));
 
-  const dataState = subCtx.isOpen.map((open) => (open ? "open" : "closed"));
+    const dataState = subCtx.isOpen.map((open) => (open ? "open" : "closed"));
 
-  let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
+    let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  const handleMouseEnter = () =>
-    Effect.sync(() => {
-      subCtx.cancelClose();
-      hoverTimeout = setTimeout(() => {
-        Effect.runSync(subCtx.open());
-      }, 100);
-    });
+    const handleMouseEnter = () =>
+      Effect.sync(() => {
+        subCtx.cancelClose();
+        hoverTimeout = setTimeout(() => {
+          Effect.runSync(subCtx.open());
+        }, 100);
+      });
 
-  const handleMouseLeave = () =>
-    Effect.sync(() => {
-      if (hoverTimeout) {
-        clearTimeout(hoverTimeout);
-        hoverTimeout = null;
-      }
-      subCtx.scheduleClose();
-    });
+    const handleMouseLeave = () =>
+      Effect.sync(() => {
+        if (hoverTimeout) {
+          clearTimeout(hoverTimeout);
+          hoverTimeout = null;
+        }
+        subCtx.scheduleClose();
+      });
 
-  const handleKeyDown = (event: KeyboardEvent) =>
-    Effect.gen(function* () {
-      if (yield* disabled.get) return;
+    const handleKeyDown = (event: KeyboardEvent) =>
+      Effect.gen(function* () {
+        if (yield* disabled.get) return;
 
-      if (event.key === "ArrowRight" || event.key === "Enter") {
-        event.preventDefault();
-        event.stopPropagation();
+        if (event.key === "ArrowRight" || event.key === "Enter") {
+          event.preventDefault();
+          event.stopPropagation();
+          yield* subCtx.open();
+          // Focus first item in submenu
+          yield* subCtx.contentRef.pipe(
+            Element.focusFirst("[data-menu-item]:not([data-disabled])"),
+            Effect.ignore,
+          );
+          return;
+        }
+      });
+
+    const handleClick = () =>
+      Effect.gen(function* () {
+        if (yield* disabled.get) return;
         yield* subCtx.open();
-        // Focus first item in submenu
-        yield* subCtx.contentRef.pipe(
-          Element.focusFirst("[data-menu-item]:not([data-disabled])"),
-          Effect.ignore,
-        );
-        return;
-      }
-    });
+      });
 
-  const handleClick = () =>
-    Effect.gen(function* () {
-      if (yield* disabled.get) return;
-      yield* subCtx.open();
-    });
-
-  return yield* $.div(
-    {
-      ref: subCtx.triggerRef,
-      id: triggerId,
-      class: props.class,
-      role: "menuitem",
-      "aria-haspopup": "menu",
-      "aria-expanded": subCtx.isOpen.map((open) => (open ? "true" : "false")),
-      "aria-controls": Effect.runSync(
-        subCtx.contentRef.pipe(
-          Element.getId,
-          Effect.catchAll(() => Effect.succeed("")),
+    return yield* $.div(
+      {
+        ref: subCtx.triggerRef,
+        id: triggerId,
+        class: props.class,
+        role: "menuitem",
+        "aria-haspopup": "menu",
+        "aria-expanded": subCtx.isOpen.map((open) => (open ? "true" : "false")),
+        "aria-controls": Effect.runSync(
+          subCtx.contentRef.pipe(
+            Element.getId,
+            Effect.catchAll(() => Effect.succeed("")),
+          ),
         ),
-      ),
-      "data-state": dataState,
-      "data-disabled": dataDisabled,
-      "data-menu-item": "",
-      "data-menu-subtrigger": "",
-      "data-context-menu-item": "",
-      "data-context-menu-subtrigger": "",
-      tabIndex,
-      onMouseEnter: handleMouseEnter,
-      onMouseLeave: handleMouseLeave,
-      onKeyDown: handleKeyDown,
-      onClick: handleClick,
-    },
-    children ?? [],
-  );
-});
+        "data-state": dataState,
+        "data-disabled": dataDisabled,
+        "data-menu-item": "",
+        "data-menu-subtrigger": "",
+        "data-context-menu-item": "",
+        "data-context-menu-subtrigger": "",
+        tabIndex,
+        onMouseEnter: handleMouseEnter,
+        onMouseLeave: handleMouseLeave,
+        onKeyDown: handleKeyDown,
+        onClick: handleClick,
+      },
+      children,
+    );
+  }) as Element.Element<HTMLDivElement, E, R | ContextMenuSubCtx>;
 
 /**
  * Props for ContextMenu.SubContent
@@ -879,169 +916,174 @@ export interface ContextMenuSubContentProps {
  * ])
  * ```
  */
-const SubContent = Component.gen(function* (
+const SubContent = <E = never, R = never>(
   props: ContextMenuSubContentProps,
-  children,
-) {
-  const rootCtx = yield* ContextMenuCtx;
-  const subCtx = yield* ContextMenuSubCtx;
+  children: ChildEffect<E, R>,
+): Element.Element<HTMLDivElement, E, R | ContextMenuCtx | ContextMenuSubCtx> =>
+  Effect.gen(function* () {
+    const rootCtx = yield* ContextMenuCtx;
+    const subCtx = yield* ContextMenuSubCtx;
 
-  const contentId = yield* UniqueId.make("context-submenu-content");
+    const contentId = yield* UniqueId.make("context-submenu-content");
 
-  // Normalize sideOffset prop
-  const sideOffset = Readable.of(props.sideOffset ?? 0);
-  const loop = props.loop ?? true;
+    // Normalize sideOffset prop
+    const sideOffset = Readable.of(props.sideOffset ?? 0);
+    const loop = props.loop ?? true;
 
-  const dataState = subCtx.isOpen.map((open) => (open ? "open" : "closed"));
+    const dataState = subCtx.isOpen.map((open) => (open ? "open" : "closed"));
 
-  const handleMouseEnter = () =>
-    Effect.sync(() => {
-      subCtx.cancelClose();
-    });
+    const handleMouseEnter = () =>
+      Effect.sync(() => {
+        subCtx.cancelClose();
+      });
 
-  const handleMouseLeave = (event: MouseEvent) =>
-    Effect.sync(() => {
-      const contentEl = document.getElementById(contentId);
-      const relatedTarget = event.relatedTarget;
+    const handleMouseLeave = (event: MouseEvent) =>
+      Effect.sync(() => {
+        const contentEl = document.getElementById(contentId);
+        const relatedTarget = event.relatedTarget;
 
-      // Don't schedule close if moving to a child element
-      if (
-        contentEl &&
-        relatedTarget instanceof Node &&
-        contentEl.contains(relatedTarget)
-      ) {
-        return;
-      }
+        // Don't schedule close if moving to a child element
+        if (
+          contentEl &&
+          relatedTarget instanceof Node &&
+          contentEl.contains(relatedTarget)
+        ) {
+          return;
+        }
 
-      // Don't schedule close if moving to a nested submenu content
-      if (
-        relatedTarget instanceof HTMLElement &&
-        (relatedTarget.hasAttribute("data-menu-subcontent") ||
-          relatedTarget.closest("[data-menu-subcontent]"))
-      ) {
-        return;
-      }
+        // Don't schedule close if moving to a nested submenu content
+        if (
+          relatedTarget instanceof HTMLElement &&
+          (relatedTarget.hasAttribute("data-menu-subcontent") ||
+            relatedTarget.closest("[data-menu-subcontent]"))
+        ) {
+          return;
+        }
 
-      subCtx.scheduleClose();
-    });
+        subCtx.scheduleClose();
+      });
 
-  const keyboardNav = yield* createKeyboardNav({
-    selector: "[data-menu-item]:not([data-disabled])",
-    orientation: "vertical",
-    loop,
-    onActivate: (el) =>
-      // Don't activate subtriggers
-      Effect.unlessEffect(
-        el.pipe(Element.click, Effect.ignore),
-        el.pipe(Element.hasAttribute("data-menu-subtrigger")),
-      ),
-    onEscape: () =>
-      subCtx.close().pipe(
-        Effect.andThen(
-          subCtx.triggerRef.pipe(
-            Element.focus,
-            Effect.catchAll(() => Effect.void),
+    const keyboardNav = yield* createKeyboardNav({
+      selector: "[data-menu-item]:not([data-disabled])",
+      orientation: "vertical",
+      loop,
+      onActivate: (el) =>
+        // Don't activate subtriggers
+        Effect.unlessEffect(
+          el.pipe(Element.click, Effect.ignore),
+          el.pipe(Element.hasAttribute("data-menu-subtrigger")),
+        ),
+      onEscape: () =>
+        subCtx.close().pipe(
+          Effect.andThen(
+            subCtx.triggerRef.pipe(
+              Element.focus,
+              Effect.catchAll(() => Effect.void),
+            ),
           ),
         ),
-      ),
-  });
+    });
 
-  const handleKeyDown = (event: KeyboardEvent) =>
-    Effect.gen(function* () {
-      // ArrowLeft closes submenu and returns to parent
-      if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        event.stopPropagation();
-        yield* subCtx.close();
-        yield* subCtx.triggerRef.pipe(
-          Element.focus,
-          Effect.catchAll(() => Effect.void),
+    const handleKeyDown = (event: KeyboardEvent) =>
+      Effect.gen(function* () {
+        // ArrowLeft closes submenu and returns to parent
+        if (event.key === "ArrowLeft") {
+          event.preventDefault();
+          event.stopPropagation();
+          yield* subCtx.close();
+          yield* subCtx.triggerRef.pipe(
+            Element.focus,
+            Effect.catchAll(() => Effect.void),
+          );
+          return;
+        }
+
+        // Tab closes entire menu tree
+        if (event.key === "Tab") {
+          yield* subCtx.close();
+          yield* rootCtx.close();
+          return;
+        }
+
+        yield* keyboardNav(event);
+      });
+
+    const setPosition = (el: Effect.Effect<HTMLElement>) =>
+      Effect.gen(function* () {
+        const currentSideOffset = yield* sideOffset.get;
+        const positionStyle = yield* subCtx.triggerRef.pipe(
+          Element.getBoundingClientRect,
+          Effect.map((rect) => ({
+            position: "fixed",
+            top: `${rect.top}px`,
+            left: `${rect.right + currentSideOffset}px`,
+          })),
         );
-        return;
-      }
 
-      // Tab closes entire menu tree
-      if (event.key === "Tab") {
-        yield* subCtx.close();
-        yield* rootCtx.close();
-        return;
-      }
+        return yield* el.pipe(Element.setStyles(positionStyle));
+      });
 
-      yield* keyboardNav(event);
-    });
-
-  const setPosition = (el: Effect.Effect<HTMLElement>) =>
-    Effect.gen(function* () {
-      const currentSideOffset = yield* sideOffset.get;
-      const positionStyle = yield* subCtx.triggerRef.pipe(
-        Element.getBoundingClientRect,
-        Effect.map((rect) => ({
-          position: "fixed",
-          top: `${rect.top}px`,
-          left: `${rect.right + currentSideOffset}px`,
-        })),
-      );
-
-      return yield* el.pipe(Element.setStyles(positionStyle));
-    });
-
-  // Portal is always rendered, but the content inside uses `when` for animations.
-  // This ensures animations apply to the actual visible content, not a placeholder.
-  return yield* Portal(() =>
-    when(subCtx.isOpen, {
-      onTrue: () =>
-        $.div(
-          {
-            id: contentId,
-            class: props.class,
-            role: "menu",
-            "aria-labelledby": Effect.runSync(
-              subCtx.triggerRef.pipe(
-                Element.getId,
-                Effect.catchAll(() => Effect.succeed("")),
-              ),
-            ),
-            ref: subCtx.contentRef,
-            "data-state": dataState,
-            "data-side": "right",
-            "data-menu-content": "",
-            "data-menu-subcontent": "",
-            "data-context-menu-content": "",
-            "data-context-menu-subcontent": "",
-            tabIndex: -1,
-            onMouseEnter: handleMouseEnter,
-            onMouseLeave: handleMouseLeave,
-            onKeyDown: handleKeyDown,
-          },
-          children ?? [],
-        ),
-
-      onFalse: () => $.div({ style: { display: "none" } }),
-      animate: props.animate
-        ? {
-            ...props.animate,
-            onEnter: (el) =>
-              el.pipe(
-                setPosition,
-                Element.focusFirst("[data-menu-item]:not([data-disabled])"),
-                Element.tapEffect(
-                  () => props.animate?.onEnter?.(el) ?? Effect.void,
+    // Portal is always rendered, but the content inside uses `when` for animations.
+    // This ensures animations apply to the actual visible content, not a placeholder.
+    return yield* Portal(() =>
+      when(subCtx.isOpen, {
+        onTrue: () =>
+          $.div(
+            {
+              id: contentId,
+              class: props.class,
+              role: "menu",
+              "aria-labelledby": Effect.runSync(
+                subCtx.triggerRef.pipe(
+                  Element.getId,
+                  Effect.catchAll(() => Effect.succeed("")),
                 ),
-                Effect.ignore,
               ),
-          }
-        : {
-            // Focus first item on open
-            onEnter: (el) =>
-              el.pipe(
-                setPosition,
-                Element.focusFirst("[data-menu-item]:not([data-disabled])"),
-                Effect.ignore,
-              ),
-          },
-    }),
-  );
-});
+              ref: subCtx.contentRef,
+              "data-state": dataState,
+              "data-side": "right",
+              "data-menu-content": "",
+              "data-menu-subcontent": "",
+              "data-context-menu-content": "",
+              "data-context-menu-subcontent": "",
+              tabIndex: -1,
+              onMouseEnter: handleMouseEnter,
+              onMouseLeave: handleMouseLeave,
+              onKeyDown: handleKeyDown,
+            },
+            children,
+          ),
+
+        onFalse: () => $.div({ style: { display: "none" } }),
+        animate: props.animate
+          ? {
+              ...props.animate,
+              onEnter: (el) =>
+                (el as Effect.Effect<HTMLElement>).pipe(
+                  setPosition,
+                  Element.focusFirst("[data-menu-item]:not([data-disabled])"),
+                  Element.tapEffect(
+                    () => props.animate?.onEnter?.(el) ?? Effect.void,
+                  ),
+                  Effect.ignore,
+                ),
+            }
+          : {
+              // Focus first item on open
+              onEnter: (el) =>
+                (el as Effect.Effect<HTMLElement>).pipe(
+                  setPosition,
+                  Element.focusFirst("[data-menu-item]:not([data-disabled])"),
+                  Effect.ignore,
+                ),
+            },
+      }),
+    );
+  }) as Element.Element<
+    HTMLDivElement,
+    E,
+    R | ContextMenuCtx | ContextMenuSubCtx
+  >;
 
 /**
  * Headless ContextMenu primitive for building accessible context menus.

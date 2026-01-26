@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { $, DOMRendererLive, Signal } from "@effex/dom";
+import { $, collect, DOMRendererLive, Signal } from "@effex/dom";
 
 import { Accordion } from "./Accordion";
 
@@ -21,12 +21,18 @@ describe("Accordion", () => {
     it("should render children", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Accordion.Root({ type: "single" }, [
-            Accordion.Item({ value: "item-1" }, [
-              Accordion.Trigger({}, "Toggle"),
-              Accordion.Content({}, [$.div("Content")]),
-            ]),
-          ]);
+          const el = yield* Accordion.Root(
+            { type: "single" },
+            collect(
+              Accordion.Item(
+                { value: "item-1" },
+                collect(
+                  Accordion.Trigger({}, $.of("Toggle")),
+                  Accordion.Content({}, collect($.div($.of("Content")))),
+                ),
+              ),
+            ),
+          );
 
           expect(el.tagName).toBe("DIV");
           expect(el.children.length).toBe(1);
@@ -37,7 +43,7 @@ describe("Accordion", () => {
     it("should set data-orientation to vertical by default", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Accordion.Root({ type: "single" }, []);
+          const el = yield* Accordion.Root({ type: "single" }, collect());
 
           expect(el.getAttribute("data-orientation")).toBe("vertical");
         }),
@@ -49,7 +55,7 @@ describe("Accordion", () => {
         Effect.gen(function* () {
           const el = yield* Accordion.Root(
             { type: "single", defaultValue: "item-1" },
-            [],
+            collect(),
           );
 
           expect(el.getAttribute("data-state")).toBe("has-value");
@@ -60,7 +66,7 @@ describe("Accordion", () => {
     it("should set data-state to empty when no value", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Accordion.Root({ type: "single" }, []);
+          const el = yield* Accordion.Root({ type: "single" }, collect());
 
           expect(el.getAttribute("data-state")).toBe("empty");
         }),
@@ -74,16 +80,22 @@ describe("Accordion", () => {
         Effect.gen(function* () {
           const el = yield* Accordion.Root(
             { type: "single", defaultValue: "item-1" },
-            [
-              Accordion.Item({ value: "item-1" }, [
-                Accordion.Trigger({}, "Section 1"),
-                Accordion.Content({}, [$.div("Content 1")]),
-              ]),
-              Accordion.Item({ value: "item-2" }, [
-                Accordion.Trigger({}, "Section 2"),
-                Accordion.Content({}, [$.div("Content 2")]),
-              ]),
-            ],
+            collect(
+              Accordion.Item(
+                { value: "item-1" },
+                collect(
+                  Accordion.Trigger({}, $.of("Section 1")),
+                  Accordion.Content({}, collect($.div($.of("Content 1")))),
+                ),
+              ),
+              Accordion.Item(
+                { value: "item-2" },
+                collect(
+                  Accordion.Trigger({}, $.of("Section 2")),
+                  Accordion.Content({}, collect($.div($.of("Content 2")))),
+                ),
+              ),
+            ),
           );
 
           // Use el.children to get only direct item children, not the root
@@ -99,14 +111,16 @@ describe("Accordion", () => {
         Effect.gen(function* () {
           const el = yield* Accordion.Root(
             { type: "single", defaultValue: "item-1", collapsible: true },
-            [
-              Accordion.Item({ value: "item-1" }, [
-                Accordion.Trigger({}, "Section 1"),
-              ]),
-              Accordion.Item({ value: "item-2" }, [
-                Accordion.Trigger({}, "Section 2"),
-              ]),
-            ],
+            collect(
+              Accordion.Item(
+                { value: "item-1" },
+                collect(Accordion.Trigger({}, $.of("Section 1"))),
+              ),
+              Accordion.Item(
+                { value: "item-2" },
+                collect(Accordion.Trigger({}, $.of("Section 2"))),
+              ),
+            ),
           );
 
           const triggers = el.querySelectorAll("button");
@@ -127,11 +141,12 @@ describe("Accordion", () => {
         Effect.gen(function* () {
           const el = yield* Accordion.Root(
             { type: "single", defaultValue: "item-1", collapsible: false },
-            [
-              Accordion.Item({ value: "item-1" }, [
-                Accordion.Trigger({}, "Section 1"),
-              ]),
-            ],
+            collect(
+              Accordion.Item(
+                { value: "item-1" },
+                collect(Accordion.Trigger({}, $.of("Section 1"))),
+              ),
+            ),
           );
 
           const trigger = el.querySelector("button") as HTMLButtonElement;
@@ -152,11 +167,12 @@ describe("Accordion", () => {
         Effect.gen(function* () {
           const el = yield* Accordion.Root(
             { type: "single", defaultValue: "item-1", collapsible: true },
-            [
-              Accordion.Item({ value: "item-1" }, [
-                Accordion.Trigger({}, "Section 1"),
-              ]),
-            ],
+            collect(
+              Accordion.Item(
+                { value: "item-1" },
+                collect(Accordion.Trigger({}, $.of("Section 1"))),
+              ),
+            ),
           );
 
           const trigger = el.querySelector("button") as HTMLButtonElement;
@@ -177,17 +193,20 @@ describe("Accordion", () => {
         Effect.gen(function* () {
           const el = yield* Accordion.Root(
             { type: "multiple", defaultValue: ["item-1", "item-2"] },
-            [
-              Accordion.Item({ value: "item-1" }, [
-                Accordion.Trigger({}, "Section 1"),
-              ]),
-              Accordion.Item({ value: "item-2" }, [
-                Accordion.Trigger({}, "Section 2"),
-              ]),
-              Accordion.Item({ value: "item-3" }, [
-                Accordion.Trigger({}, "Section 3"),
-              ]),
-            ],
+            collect(
+              Accordion.Item(
+                { value: "item-1" },
+                collect(Accordion.Trigger({}, $.of("Section 1"))),
+              ),
+              Accordion.Item(
+                { value: "item-2" },
+                collect(Accordion.Trigger({}, $.of("Section 2"))),
+              ),
+              Accordion.Item(
+                { value: "item-3" },
+                collect(Accordion.Trigger({}, $.of("Section 3"))),
+              ),
+            ),
           );
 
           const items = el.children;
@@ -203,14 +222,16 @@ describe("Accordion", () => {
         Effect.gen(function* () {
           const el = yield* Accordion.Root(
             { type: "multiple", defaultValue: ["item-1"] },
-            [
-              Accordion.Item({ value: "item-1" }, [
-                Accordion.Trigger({}, "Section 1"),
-              ]),
-              Accordion.Item({ value: "item-2" }, [
-                Accordion.Trigger({}, "Section 2"),
-              ]),
-            ],
+            collect(
+              Accordion.Item(
+                { value: "item-1" },
+                collect(Accordion.Trigger({}, $.of("Section 1"))),
+              ),
+              Accordion.Item(
+                { value: "item-2" },
+                collect(Accordion.Trigger({}, $.of("Section 2"))),
+              ),
+            ),
           );
 
           const triggers = el.querySelectorAll("button");
@@ -241,14 +262,16 @@ describe("Accordion", () => {
         Effect.gen(function* () {
           const el = yield* Accordion.Root(
             { type: "single", defaultValue: "item-1" },
-            [
-              Accordion.Item({ value: "item-1" }, [
-                Accordion.Trigger({}, "Section 1"),
-              ]),
-              Accordion.Item({ value: "item-2" }, [
-                Accordion.Trigger({}, "Section 2"),
-              ]),
-            ],
+            collect(
+              Accordion.Item(
+                { value: "item-1" },
+                collect(Accordion.Trigger({}, $.of("Section 1"))),
+              ),
+              Accordion.Item(
+                { value: "item-2" },
+                collect(Accordion.Trigger({}, $.of("Section 2"))),
+              ),
+            ),
           );
 
           const triggers = el.querySelectorAll("button");
@@ -261,12 +284,18 @@ describe("Accordion", () => {
     it("should have aria-controls pointing to content", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Accordion.Root({ type: "single" }, [
-            Accordion.Item({ value: "item-1" }, [
-              Accordion.Trigger({}, "Toggle"),
-              Accordion.Content({}, [$.div("Content")]),
-            ]),
-          ]);
+          const el = yield* Accordion.Root(
+            { type: "single" },
+            collect(
+              Accordion.Item(
+                { value: "item-1" },
+                collect(
+                  Accordion.Trigger({}, $.of("Toggle")),
+                  Accordion.Content({}, collect($.div($.of("Content")))),
+                ),
+              ),
+            ),
+          );
 
           const trigger = el.querySelector("button");
           const content = el.querySelector("[role='region']");
@@ -278,11 +307,17 @@ describe("Accordion", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Accordion.Root({ type: "single" }, [
-            Accordion.Item({ value: "item-1" }, [
-              Accordion.Trigger({ class: "my-trigger" }, "Toggle"),
-            ]),
-          ]);
+          const el = yield* Accordion.Root(
+            { type: "single" },
+            collect(
+              Accordion.Item(
+                { value: "item-1" },
+                collect(
+                  Accordion.Trigger({ class: "my-trigger" }, $.of("Toggle")),
+                ),
+              ),
+            ),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.className).toBe("my-trigger");
@@ -295,12 +330,18 @@ describe("Accordion", () => {
     it("should have role=region", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Accordion.Root({ type: "single" }, [
-            Accordion.Item({ value: "item-1" }, [
-              Accordion.Trigger({}, "Toggle"),
-              Accordion.Content({}, [$.div("Content")]),
-            ]),
-          ]);
+          const el = yield* Accordion.Root(
+            { type: "single" },
+            collect(
+              Accordion.Item(
+                { value: "item-1" },
+                collect(
+                  Accordion.Trigger({}, $.of("Toggle")),
+                  Accordion.Content({}, collect($.div($.of("Content")))),
+                ),
+              ),
+            ),
+          );
 
           const content = el.querySelector("[role='region']");
           expect(content).not.toBeNull();
@@ -311,12 +352,18 @@ describe("Accordion", () => {
     it("should have aria-labelledby pointing to trigger", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Accordion.Root({ type: "single" }, [
-            Accordion.Item({ value: "item-1" }, [
-              Accordion.Trigger({}, "Toggle"),
-              Accordion.Content({}, [$.div("Content")]),
-            ]),
-          ]);
+          const el = yield* Accordion.Root(
+            { type: "single" },
+            collect(
+              Accordion.Item(
+                { value: "item-1" },
+                collect(
+                  Accordion.Trigger({}, $.of("Toggle")),
+                  Accordion.Content({}, collect($.div($.of("Content")))),
+                ),
+              ),
+            ),
+          );
 
           const trigger = el.querySelector("button");
           const content = el.querySelector("[role='region']");
@@ -328,12 +375,21 @@ describe("Accordion", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Accordion.Root({ type: "single" }, [
-            Accordion.Item({ value: "item-1" }, [
-              Accordion.Trigger({}, "Toggle"),
-              Accordion.Content({ class: "my-content" }, [$.div("Content")]),
-            ]),
-          ]);
+          const el = yield* Accordion.Root(
+            { type: "single" },
+            collect(
+              Accordion.Item(
+                { value: "item-1" },
+                collect(
+                  Accordion.Trigger({}, $.of("Toggle")),
+                  Accordion.Content(
+                    { class: "my-content" },
+                    collect($.div($.of("Content"))),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const content = el.querySelector("[role='region']");
           expect(content?.className).toBe("my-content");
@@ -346,14 +402,19 @@ describe("Accordion", () => {
     it("should disable all triggers when root is disabled", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Accordion.Root({ type: "single", disabled: true }, [
-            Accordion.Item({ value: "item-1" }, [
-              Accordion.Trigger({}, "Section 1"),
-            ]),
-            Accordion.Item({ value: "item-2" }, [
-              Accordion.Trigger({}, "Section 2"),
-            ]),
-          ]);
+          const el = yield* Accordion.Root(
+            { type: "single", disabled: true },
+            collect(
+              Accordion.Item(
+                { value: "item-1" },
+                collect(Accordion.Trigger({}, $.of("Section 1"))),
+              ),
+              Accordion.Item(
+                { value: "item-2" },
+                collect(Accordion.Trigger({}, $.of("Section 2"))),
+              ),
+            ),
+          );
 
           const triggers = el.querySelectorAll(
             "button",
@@ -367,14 +428,19 @@ describe("Accordion", () => {
     it("should disable individual items", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Accordion.Root({ type: "single" }, [
-            Accordion.Item({ value: "item-1" }, [
-              Accordion.Trigger({}, "Section 1"),
-            ]),
-            Accordion.Item({ value: "item-2", disabled: true }, [
-              Accordion.Trigger({}, "Section 2"),
-            ]),
-          ]);
+          const el = yield* Accordion.Root(
+            { type: "single" },
+            collect(
+              Accordion.Item(
+                { value: "item-1" },
+                collect(Accordion.Trigger({}, $.of("Section 1"))),
+              ),
+              Accordion.Item(
+                { value: "item-2", disabled: true },
+                collect(Accordion.Trigger({}, $.of("Section 2"))),
+              ),
+            ),
+          );
 
           const triggers = el.querySelectorAll(
             "button",
@@ -392,14 +458,19 @@ describe("Accordion", () => {
         Effect.gen(function* () {
           const value = yield* Signal.make<string | null>("item-2");
 
-          const el = yield* Accordion.Root({ type: "single", value }, [
-            Accordion.Item({ value: "item-1" }, [
-              Accordion.Trigger({}, "Section 1"),
-            ]),
-            Accordion.Item({ value: "item-2" }, [
-              Accordion.Trigger({}, "Section 2"),
-            ]),
-          ]);
+          const el = yield* Accordion.Root(
+            { type: "single", value },
+            collect(
+              Accordion.Item(
+                { value: "item-1" },
+                collect(Accordion.Trigger({}, $.of("Section 1"))),
+              ),
+              Accordion.Item(
+                { value: "item-2" },
+                collect(Accordion.Trigger({}, $.of("Section 2"))),
+              ),
+            ),
+          );
 
           const items = el.children;
           expect(items[0]?.getAttribute("data-state")).toBe("closed");
@@ -430,11 +501,12 @@ describe("Accordion", () => {
                   changes.push(value);
                 }),
             },
-            [
-              Accordion.Item({ value: "item-1" }, [
-                Accordion.Trigger({}, "Section 1"),
-              ]),
-            ],
+            collect(
+              Accordion.Item(
+                { value: "item-1" },
+                collect(Accordion.Trigger({}, $.of("Section 1"))),
+              ),
+            ),
           );
 
           const trigger = el.querySelector("button") as HTMLButtonElement;

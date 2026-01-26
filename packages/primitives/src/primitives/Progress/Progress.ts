@@ -1,12 +1,13 @@
-import { Context } from "effect";
+import { Context, Effect } from "effect";
 
 import {
   $,
-  Component,
   Derived,
   provide,
   Readable,
+  type ChildEffect,
   type ClassValue,
+  type Element,
 } from "@effex/dom";
 
 export type ProgressState = "loading" | "complete" | "indeterminate";
@@ -36,85 +37,92 @@ export interface ProgressRootProps {
   readonly class?: ClassValue;
 }
 
-const Root = Component.gen(function* (props: ProgressRootProps, children) {
-  const max = props.max ?? 100;
+const Root = <E = never, R = never>(
+  props: ProgressRootProps,
+  children: ChildEffect<E, R | ProgressCtx>,
+): Element.Element<HTMLDivElement, E, R> =>
+  Effect.gen(function* () {
+    const max = props.max ?? 100;
 
-  // Normalize value to Readable
-  const value: Readable.Readable<number | null> = Readable.of(
-    props.value ?? null,
-  );
+    // Normalize value to Readable
+    const value: Readable.Readable<number | null> = Readable.of(
+      props.value ?? null,
+    );
 
-  // Calculate percentage
-  const percentage = yield* Derived.sync([value], ([v]) => {
-    if (v === null) return 0;
-    return Math.min(100, Math.max(0, (v / max) * 100));
-  });
+    // Calculate percentage
+    const percentage = yield* Derived.sync([value], ([v]) => {
+      if (v === null) return 0;
+      return Math.min(100, Math.max(0, (v / max) * 100));
+    });
 
-  // Calculate state
-  const state: Readable.Readable<ProgressState> = yield* Derived.sync(
-    [value],
-    ([v]) => {
-      if (v === null) return "indeterminate";
-      if (v >= max) return "complete";
-      return "loading";
-    },
-  );
+    // Calculate state
+    const state: Readable.Readable<ProgressState> = yield* Derived.sync(
+      [value],
+      ([v]) => {
+        if (v === null) return "indeterminate";
+        if (v >= max) return "complete";
+        return "loading";
+      },
+    );
 
-  // ARIA attributes
-  const ariaValueNow = value.map((v) => (v === null ? undefined : String(v)));
+    // ARIA attributes
+    const ariaValueNow = value.map((v) => (v === null ? undefined : String(v)));
 
-  const ariaValueText = value.map((v) => {
-    if (v === null) return undefined;
-    if (props.getValueLabel) {
-      return props.getValueLabel(v, max);
-    }
-    return `${Math.round((v / max) * 100)}%`;
-  });
+    const ariaValueText = value.map((v) => {
+      if (v === null) return undefined;
+      if (props.getValueLabel) {
+        return props.getValueLabel(v, max);
+      }
+      return `${Math.round((v / max) * 100)}%`;
+    });
 
-  const dataValue = value.map((v) => (v === null ? undefined : String(v)));
+    const dataValue = value.map((v) => (v === null ? undefined : String(v)));
 
-  const ctx: ProgressContext = {
-    value,
-    max,
-    percentage,
-  };
+    const ctx: ProgressContext = {
+      value,
+      max,
+      percentage,
+    };
 
-  return yield* $.div(
-    {
-      class: props.class,
-      role: "progressbar",
-      "aria-valuenow": ariaValueNow,
-      "aria-valuemin": "0",
-      "aria-valuemax": String(max),
-      "aria-valuetext": ariaValueText,
-      "data-progress-root": "",
-      "data-state": state,
-      "data-value": dataValue,
-      "data-max": String(max),
-    },
-    provide(ProgressCtx, ctx, Component.normalizeChildren(children)),
-  );
-});
+    return yield* $.div(
+      {
+        class: props.class,
+        role: "progressbar",
+        "aria-valuenow": ariaValueNow,
+        "aria-valuemin": "0",
+        "aria-valuemax": String(max),
+        "aria-valuetext": ariaValueText,
+        "data-progress-root": "",
+        "data-state": state,
+        "data-value": dataValue,
+        "data-max": String(max),
+      },
+      provide(ProgressCtx, ctx, children),
+    );
+  }) as Element.Element<HTMLDivElement, E, R>;
 
 export interface ProgressIndicatorProps {
   /** Additional class names */
   readonly class?: ClassValue;
 }
 
-const Indicator = Component.gen(function* (props: ProgressIndicatorProps) {
-  const ctx = yield* ProgressCtx;
+const Indicator = (
+  props: ProgressIndicatorProps,
+): Element.Element<HTMLDivElement, never, ProgressCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* ProgressCtx;
 
-  // Style for the indicator - uses translateX for the progress effect
-  const indicatorStyle = ctx.percentage.map((pct) => ({
-    transform: `translateX(-${100 - pct}%)`,
-  }));
+    // Style for the indicator - uses translateX for the progress effect
+    const indicatorStyle = ctx.percentage.map((pct) => ({
+      transform: `translateX(-${100 - pct}%)`,
+    }));
 
-  return yield* $.div({
-    class: props.class,
-    "data-progress-indicator": "",
-    style: indicatorStyle,
-  });
-});
+    return yield* $.div({
+      class: props.class,
+      "data-progress-indicator": "",
+      style: indicatorStyle,
+    });
+  }) as Element.Element<HTMLDivElement, never, ProgressCtx>;
 
 /**
  * Headless Progress primitive for building progress bars.

@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { $, DOMRendererLive, Signal } from "@effex/dom";
+import { $, collect, DOMRendererLive, Signal } from "@effex/dom";
 
 import { Tooltip } from "./Tooltip";
 
@@ -21,9 +21,10 @@ describe("Tooltip", () => {
     it("should render children", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tooltip.Root({}, [
-            Tooltip.Trigger({}, $.button({}, "Hover me")),
-          ]);
+          const el = yield* Tooltip.Root(
+            {},
+            collect(Tooltip.Trigger({}, $.button({}, $.of("Hover me")))),
+          );
 
           expect(el.tagName).toBe("DIV");
           expect(el.querySelector("[data-tooltip-trigger]")).not.toBeNull();
@@ -34,9 +35,10 @@ describe("Tooltip", () => {
     it("should be closed by default", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tooltip.Root({}, [
-            Tooltip.Trigger({}, $.button({}, "Hover me")),
-          ]);
+          const el = yield* Tooltip.Root(
+            {},
+            collect(Tooltip.Trigger({}, $.button({}, $.of("Hover me")))),
+          );
 
           const trigger = el.querySelector("[data-tooltip-trigger]");
           expect(trigger?.getAttribute("data-state")).toBe("closed");
@@ -47,9 +49,10 @@ describe("Tooltip", () => {
     it("should respect defaultOpen=true", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tooltip.Root({ defaultOpen: true }, [
-            Tooltip.Trigger({}, $.button({}, "Hover me")),
-          ]);
+          const el = yield* Tooltip.Root(
+            { defaultOpen: true },
+            collect(Tooltip.Trigger({}, $.button({}, $.of("Hover me")))),
+          );
 
           const trigger = el.querySelector("[data-tooltip-trigger]");
           expect(trigger?.getAttribute("data-state")).toBe("open");
@@ -61,9 +64,10 @@ describe("Tooltip", () => {
       await runTest(
         Effect.gen(function* () {
           // Just verify it renders without error with custom delay
-          const el = yield* Tooltip.Root({ delayDuration: 300 }, [
-            Tooltip.Trigger({}, $.button({}, "Hover me")),
-          ]);
+          const el = yield* Tooltip.Root(
+            { delayDuration: 300 },
+            collect(Tooltip.Trigger({}, $.button({}, $.of("Hover me")))),
+          );
 
           expect(el.querySelector("[data-tooltip-trigger]")).not.toBeNull();
         }),
@@ -75,9 +79,10 @@ describe("Tooltip", () => {
     it("should render as span wrapper with trigger data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tooltip.Root({}, [
-            Tooltip.Trigger({}, $.button({}, "Hover me")),
-          ]);
+          const el = yield* Tooltip.Root(
+            {},
+            collect(Tooltip.Trigger({}, $.button({}, $.of("Hover me")))),
+          );
 
           const trigger = el.querySelector("[data-tooltip-trigger]");
           expect(trigger).not.toBeNull();
@@ -89,9 +94,10 @@ describe("Tooltip", () => {
     it("should contain children", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tooltip.Root({}, [
-            Tooltip.Trigger({}, $.button({}, "Click me")),
-          ]);
+          const el = yield* Tooltip.Root(
+            {},
+            collect(Tooltip.Trigger({}, $.button({}, $.of("Click me")))),
+          );
 
           const trigger = el.querySelector("[data-tooltip-trigger]");
           const button = trigger?.querySelector("button");
@@ -104,9 +110,10 @@ describe("Tooltip", () => {
     it("should have data-state attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tooltip.Root({}, [
-            Tooltip.Trigger({}, $.button({}, "Hover me")),
-          ]);
+          const el = yield* Tooltip.Root(
+            {},
+            collect(Tooltip.Trigger({}, $.button({}, $.of("Hover me")))),
+          );
 
           const trigger = el.querySelector("[data-tooltip-trigger]");
           expect(trigger?.getAttribute("data-state")).toBe("closed");
@@ -117,9 +124,10 @@ describe("Tooltip", () => {
     it("should update data-state when open", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tooltip.Root({ defaultOpen: true }, [
-            Tooltip.Trigger({}, $.button({}, "Hover me")),
-          ]);
+          const el = yield* Tooltip.Root(
+            { defaultOpen: true },
+            collect(Tooltip.Trigger({}, $.button({}, $.of("Hover me")))),
+          );
 
           const trigger = el.querySelector("[data-tooltip-trigger]");
           expect(trigger?.getAttribute("data-state")).toBe("open");
@@ -130,9 +138,15 @@ describe("Tooltip", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tooltip.Root({}, [
-            Tooltip.Trigger({ class: "my-trigger" }, $.button({}, "Hover")),
-          ]);
+          const el = yield* Tooltip.Root(
+            {},
+            collect(
+              Tooltip.Trigger(
+                { class: "my-trigger" },
+                $.button({}, $.of("Hover")),
+              ),
+            ),
+          );
 
           const trigger = el.querySelector("[data-tooltip-trigger]");
           expect(trigger?.className).toBe("my-trigger");
@@ -143,9 +157,10 @@ describe("Tooltip", () => {
     it("should have aria-describedby when open", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tooltip.Root({ defaultOpen: true }, [
-            Tooltip.Trigger({}, $.button({}, "Hover me")),
-          ]);
+          const el = yield* Tooltip.Root(
+            { defaultOpen: true },
+            collect(Tooltip.Trigger({}, $.button({}, $.of("Hover me")))),
+          );
 
           const trigger = el.querySelector("[data-tooltip-trigger]");
           expect(trigger?.getAttribute("aria-describedby")).toMatch(
@@ -158,9 +173,10 @@ describe("Tooltip", () => {
     it("should not have aria-describedby when closed", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tooltip.Root({}, [
-            Tooltip.Trigger({}, $.button({}, "Hover me")),
-          ]);
+          const el = yield* Tooltip.Root(
+            {},
+            collect(Tooltip.Trigger({}, $.button({}, $.of("Hover me")))),
+          );
 
           const trigger = el.querySelector("[data-tooltip-trigger]");
           expect(trigger?.getAttribute("aria-describedby")).toBeNull();
@@ -175,9 +191,10 @@ describe("Tooltip", () => {
         Effect.gen(function* () {
           const open = yield* Signal.make(false);
 
-          const el = yield* Tooltip.Root({ open }, [
-            Tooltip.Trigger({}, $.button({}, "Hover me")),
-          ]);
+          const el = yield* Tooltip.Root(
+            { open },
+            collect(Tooltip.Trigger({}, $.button({}, $.of("Hover me")))),
+          );
 
           const trigger = el.querySelector("[data-tooltip-trigger]");
           expect(trigger?.getAttribute("data-state")).toBe("closed");
@@ -204,7 +221,7 @@ describe("Tooltip", () => {
                   changes.push(isOpen);
                 }),
             },
-            [Tooltip.Trigger({}, $.button({}, "Hover me"))],
+            collect(Tooltip.Trigger({}, $.button({}, $.of("Hover me")))),
           );
 
           // Focus the trigger to open tooltip (focus opens immediately)

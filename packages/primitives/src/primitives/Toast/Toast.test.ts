@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { DOMRendererLive } from "@effex/dom";
+import { $, collect, DOMRendererLive } from "@effex/dom";
 
 import { Toast, ToastCtx, ToastItemCtx, type ToastItemContext } from "./Toast";
 
@@ -34,12 +34,15 @@ describe("Toast", () => {
     it("should render children", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toast.Provider({}, [
-            Effect.gen(function* () {
-              yield* ToastCtx;
-              return yield* Effect.succeed(document.createElement("div"));
-            }),
-          ]);
+          const el = yield* Toast.Provider(
+            {},
+            collect(
+              Effect.gen(function* () {
+                yield* ToastCtx;
+                return yield* Effect.succeed(document.createElement("div"));
+              }),
+            ),
+          );
 
           expect(el.tagName).toBe("DIV");
         }),
@@ -51,13 +54,16 @@ describe("Toast", () => {
         Effect.gen(function* () {
           let capturedPosition: string | null = null;
 
-          yield* Toast.Provider({}, [
-            Effect.gen(function* () {
-              const ctx = yield* ToastCtx;
-              capturedPosition = ctx.position;
-              return document.createElement("div");
-            }),
-          ]);
+          yield* Toast.Provider(
+            {},
+            collect(
+              Effect.gen(function* () {
+                const ctx = yield* ToastCtx;
+                capturedPosition = ctx.position;
+                return document.createElement("div");
+              }),
+            ),
+          );
 
           expect(capturedPosition).toBe("bottom-right");
         }),
@@ -69,13 +75,16 @@ describe("Toast", () => {
         Effect.gen(function* () {
           let capturedPosition: string | null = null;
 
-          yield* Toast.Provider({ position: "top-center" }, [
-            Effect.gen(function* () {
-              const ctx = yield* ToastCtx;
-              capturedPosition = ctx.position;
-              return document.createElement("div");
-            }),
-          ]);
+          yield* Toast.Provider(
+            { position: "top-center" },
+            collect(
+              Effect.gen(function* () {
+                const ctx = yield* ToastCtx;
+                capturedPosition = ctx.position;
+                return document.createElement("div");
+              }),
+            ),
+          );
 
           expect(capturedPosition).toBe("top-center");
         }),
@@ -87,13 +96,16 @@ describe("Toast", () => {
         Effect.gen(function* () {
           let capturedMaxVisible: number | null = null;
 
-          yield* Toast.Provider({}, [
-            Effect.gen(function* () {
-              const ctx = yield* ToastCtx;
-              capturedMaxVisible = ctx.maxVisible;
-              return document.createElement("div");
-            }),
-          ]);
+          yield* Toast.Provider(
+            {},
+            collect(
+              Effect.gen(function* () {
+                const ctx = yield* ToastCtx;
+                capturedMaxVisible = ctx.maxVisible;
+                return document.createElement("div");
+              }),
+            ),
+          );
 
           expect(capturedMaxVisible).toBe(5);
         }),
@@ -105,13 +117,16 @@ describe("Toast", () => {
         Effect.gen(function* () {
           let capturedDuration: number | null = null;
 
-          yield* Toast.Provider({}, [
-            Effect.gen(function* () {
-              const ctx = yield* ToastCtx;
-              capturedDuration = ctx.defaultDuration;
-              return document.createElement("div");
-            }),
-          ]);
+          yield* Toast.Provider(
+            {},
+            collect(
+              Effect.gen(function* () {
+                const ctx = yield* ToastCtx;
+                capturedDuration = ctx.defaultDuration;
+                return document.createElement("div");
+              }),
+            ),
+          );
 
           expect(capturedDuration).toBe(5000);
         }),
@@ -123,13 +138,16 @@ describe("Toast", () => {
         Effect.gen(function* () {
           let capturedDuration: number | null = null;
 
-          yield* Toast.Provider({ defaultDuration: 3000 }, [
-            Effect.gen(function* () {
-              const ctx = yield* ToastCtx;
-              capturedDuration = ctx.defaultDuration;
-              return document.createElement("div");
-            }),
-          ]);
+          yield* Toast.Provider(
+            { defaultDuration: 3000 },
+            collect(
+              Effect.gen(function* () {
+                const ctx = yield* ToastCtx;
+                capturedDuration = ctx.defaultDuration;
+                return document.createElement("div");
+              }),
+            ),
+          );
 
           expect(capturedDuration).toBe(3000);
         }),
@@ -143,16 +161,19 @@ describe("Toast", () => {
         Effect.gen(function* () {
           let toastId: string | null = null;
 
-          yield* Toast.Provider({}, [
-            Effect.gen(function* () {
-              const ctx = yield* ToastCtx;
-              toastId = yield* ctx.add({
-                title: "Test Toast",
-                description: "Test description",
-              });
-              return document.createElement("div");
-            }),
-          ]);
+          yield* Toast.Provider(
+            {},
+            collect(
+              Effect.gen(function* () {
+                const ctx = yield* ToastCtx;
+                toastId = yield* ctx.add({
+                  title: "Test Toast",
+                  description: "Test description",
+                });
+                return document.createElement("div");
+              }),
+            ),
+          );
 
           expect(toastId).not.toBeNull();
           expect(typeof toastId).toBe("string");
@@ -165,16 +186,19 @@ describe("Toast", () => {
         Effect.gen(function* () {
           let toastsAfterDismiss: number | null = null;
 
-          yield* Toast.Provider({}, [
-            Effect.gen(function* () {
-              const ctx = yield* ToastCtx;
-              const id = yield* ctx.add({ title: "Test" });
-              yield* ctx.dismiss(id);
-              const toasts = yield* ctx.toasts.get;
-              toastsAfterDismiss = toasts.length;
-              return document.createElement("div");
-            }),
-          ]);
+          yield* Toast.Provider(
+            {},
+            collect(
+              Effect.gen(function* () {
+                const ctx = yield* ToastCtx;
+                const id = yield* ctx.add({ title: "Test" });
+                yield* ctx.dismiss(id);
+                const toasts = yield* ctx.toasts.get;
+                toastsAfterDismiss = toasts.length;
+                return document.createElement("div");
+              }),
+            ),
+          );
 
           expect(toastsAfterDismiss).toBe(0);
         }),
@@ -186,18 +210,21 @@ describe("Toast", () => {
         Effect.gen(function* () {
           let toastsAfterDismiss: number | null = null;
 
-          yield* Toast.Provider({}, [
-            Effect.gen(function* () {
-              const ctx = yield* ToastCtx;
-              yield* ctx.add({ title: "Toast 1" });
-              yield* ctx.add({ title: "Toast 2" });
-              yield* ctx.add({ title: "Toast 3" });
-              yield* ctx.dismissAll();
-              const toasts = yield* ctx.toasts.get;
-              toastsAfterDismiss = toasts.length;
-              return document.createElement("div");
-            }),
-          ]);
+          yield* Toast.Provider(
+            {},
+            collect(
+              Effect.gen(function* () {
+                const ctx = yield* ToastCtx;
+                yield* ctx.add({ title: "Toast 1" });
+                yield* ctx.add({ title: "Toast 2" });
+                yield* ctx.add({ title: "Toast 3" });
+                yield* ctx.dismissAll();
+                const toasts = yield* ctx.toasts.get;
+                toastsAfterDismiss = toasts.length;
+                return document.createElement("div");
+              }),
+            ),
+          );
 
           expect(toastsAfterDismiss).toBe(0);
         }),
@@ -209,7 +236,7 @@ describe("Toast", () => {
     it("should render with toast-title data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toast.Title({}, "Title Text").pipe(
+          const el = yield* Toast.Title({}, $.of("Title Text")).pipe(
             Effect.provideService(ToastItemCtx, mockItemCtx),
           );
 
@@ -222,9 +249,10 @@ describe("Toast", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toast.Title({ class: "my-title" }, "Title").pipe(
-            Effect.provideService(ToastItemCtx, mockItemCtx),
-          );
+          const el = yield* Toast.Title(
+            { class: "my-title" },
+            $.of("Title"),
+          ).pipe(Effect.provideService(ToastItemCtx, mockItemCtx));
 
           expect(el.className).toBe("my-title");
         }),
@@ -248,9 +276,10 @@ describe("Toast", () => {
     it("should render with toast-description data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toast.Description({}, "Description text").pipe(
-            Effect.provideService(ToastItemCtx, mockItemCtx),
-          );
+          const el = yield* Toast.Description(
+            {},
+            $.of("Description text"),
+          ).pipe(Effect.provideService(ToastItemCtx, mockItemCtx));
 
           expect(el.dataset.toastDescription).toBe("");
           expect(el.textContent).toBe("Description text");
@@ -263,7 +292,7 @@ describe("Toast", () => {
         Effect.gen(function* () {
           const el = yield* Toast.Description(
             { class: "my-desc" },
-            "Description",
+            $.of("Description"),
           ).pipe(Effect.provideService(ToastItemCtx, mockItemCtx));
 
           expect(el.className).toBe("my-desc");

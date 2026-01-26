@@ -2,7 +2,6 @@ import { Context, Effect } from "effect";
 
 import {
   $,
-  Component,
   Element,
   Portal,
   provide,
@@ -11,6 +10,7 @@ import {
   UniqueId,
   when,
   type AnimationOptions,
+  type ChildEffect,
   type ClassValue,
   type ElementRef,
 } from "@effex/dom";
@@ -77,37 +77,41 @@ export interface TooltipRootProps {
  * ])
  * ```
  */
-const Root = Component.gen(function* (props: TooltipRootProps, children) {
-  const isOpen = yield* Signal.fromNullable(
-    props.open,
-    props.defaultOpen ?? false,
-  );
+const Root = <E = never, R = never>(
+  props: TooltipRootProps,
+  children: ChildEffect<E, R | TooltipCtx>,
+): Element.Element<HTMLDivElement, E, R> =>
+  Effect.gen(function* () {
+    const isOpen = yield* Signal.fromNullable(
+      props.open,
+      props.defaultOpen ?? false,
+    );
 
-  const triggerRef = yield* Element.ref<HTMLDivElement>();
-  const contentId = yield* UniqueId.make("tooltip-content");
+    const triggerRef = yield* Element.ref<HTMLDivElement>();
+    const contentId = yield* UniqueId.make("tooltip-content");
 
-  const delayDuration = props.delayDuration ?? 700;
+    const delayDuration = props.delayDuration ?? 700;
 
-  const setOpenState = (newValue: boolean) =>
-    Effect.gen(function* () {
-      yield* isOpen.set(newValue);
-      yield* props.onOpenChange?.(newValue) ?? Effect.void;
-    });
+    const setOpenState = (newValue: boolean) =>
+      Effect.gen(function* () {
+        yield* isOpen.set(newValue);
+        yield* props.onOpenChange?.(newValue) ?? Effect.void;
+      });
 
-  const ctx: TooltipContext = {
-    isOpen,
-    open: () => setOpenState(true),
-    close: () => setOpenState(false),
-    triggerRef,
-    contentId,
-    delayDuration,
-  };
+    const ctx: TooltipContext = {
+      isOpen,
+      open: () => setOpenState(true),
+      close: () => setOpenState(false),
+      triggerRef,
+      contentId,
+      delayDuration,
+    };
 
-  return yield* $.div(
-    { style: { display: "contents" } },
-    provide(TooltipCtx, ctx, Component.normalizeChildren(children)),
-  );
-});
+    return yield* $.div(
+      { style: { display: "contents" } },
+      provide(TooltipCtx, ctx, children),
+    );
+  }) as Element.Element<HTMLDivElement, E, R>;
 
 /**
  * Props for Tooltip.Trigger
@@ -128,49 +132,53 @@ export interface TooltipTriggerProps {
  * Tooltip.Trigger({}, $.button({}, "Hover me"))
  * ```
  */
-const Trigger = Component.gen(function* (props: TooltipTriggerProps, children) {
-  const ctx = yield* TooltipCtx;
+const Trigger = <E = never, R = never>(
+  props: TooltipTriggerProps,
+  children: ChildEffect<E, R>,
+): Element.Element<HTMLSpanElement, E, R | TooltipCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* TooltipCtx;
 
-  let openTimeoutId: ReturnType<typeof setTimeout> | null = null;
+    let openTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
-  const handleMouseEnter = () =>
-    Effect.sync(() => {
-      if (openTimeoutId) clearTimeout(openTimeoutId);
-      openTimeoutId = setTimeout(() => {
-        Effect.runSync(ctx.open());
-      }, ctx.delayDuration);
-    });
+    const handleMouseEnter = () =>
+      Effect.sync(() => {
+        if (openTimeoutId) clearTimeout(openTimeoutId);
+        openTimeoutId = setTimeout(() => {
+          Effect.runSync(ctx.open());
+        }, ctx.delayDuration);
+      });
 
-  const handleMouseLeave = () =>
-    Effect.sync(() => {
-      if (openTimeoutId) {
-        clearTimeout(openTimeoutId);
-        openTimeoutId = null;
-      }
-      Effect.runSync(ctx.close());
-    });
+    const handleMouseLeave = () =>
+      Effect.sync(() => {
+        if (openTimeoutId) {
+          clearTimeout(openTimeoutId);
+          openTimeoutId = null;
+        }
+        Effect.runSync(ctx.close());
+      });
 
-  const handleFocus = () => ctx.open();
-  const handleBlur = () => ctx.close();
+    const handleFocus = () => ctx.open();
+    const handleBlur = () => ctx.close();
 
-  return yield* $.span(
-    {
-      ref: ctx.triggerRef,
-      class: props.class,
-      "aria-describedby": ctx.isOpen.map((open) =>
-        open ? ctx.contentId : undefined,
-      ),
-      "data-state": ctx.isOpen.map((open) => (open ? "open" : "closed")),
-      "data-tooltip-trigger": "",
-      onMouseEnter: handleMouseEnter,
-      onMouseLeave: handleMouseLeave,
-      onFocus: handleFocus,
-      onBlur: handleBlur,
-      style: { display: "inline-block" },
-    },
-    children ?? [],
-  );
-});
+    return yield* $.span(
+      {
+        ref: ctx.triggerRef,
+        class: props.class,
+        "aria-describedby": ctx.isOpen.map((open) =>
+          open ? ctx.contentId : undefined,
+        ),
+        "data-state": ctx.isOpen.map((open) => (open ? "open" : "closed")),
+        "data-tooltip-trigger": "",
+        onMouseEnter: handleMouseEnter,
+        onMouseLeave: handleMouseLeave,
+        onFocus: handleFocus,
+        onBlur: handleBlur,
+        style: { display: "inline-block" },
+      },
+      children,
+    );
+  }) as Element.Element<HTMLSpanElement, E, R | TooltipCtx>;
 
 /**
  * Props for Tooltip.Content
@@ -199,107 +207,111 @@ export interface TooltipContentProps {
  * Tooltip.Content({ side: "top", align: "center" }, "Tooltip text")
  * ```
  */
-const Content = Component.gen(function* (props: TooltipContentProps, children) {
-  const ctx = yield* TooltipCtx;
+const Content = <E = never, R = never>(
+  props: TooltipContentProps,
+  children: ChildEffect<E, R>,
+): Element.Element<HTMLDivElement, E, R | TooltipCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* TooltipCtx;
 
-  // Normalize positioning props
-  const side = Readable.of(props.side ?? "top");
-  const align = Readable.of(props.align ?? "center");
-  const sideOffset = Readable.of(props.sideOffset ?? 4);
-  const alignOffset = Readable.of(props.alignOffset ?? 0);
+    // Normalize positioning props
+    const side = Readable.of(props.side ?? "top");
+    const align = Readable.of(props.align ?? "center");
+    const sideOffset = Readable.of(props.sideOffset ?? 4);
+    const alignOffset = Readable.of(props.alignOffset ?? 0);
 
-  const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
+    const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
 
-  // Helper to position the content relative to trigger
-  const setPosition = (el: Effect.Effect<HTMLElement>) =>
-    Effect.gen(function* () {
-      const currentSide = yield* side.get;
-      const currentAlign = yield* align.get;
-      const currentSideOffset = yield* sideOffset.get;
-      const currentAlignOffset = yield* alignOffset.get;
+    // Helper to position the content relative to trigger
+    const setPosition = (el: Effect.Effect<HTMLElement | SVGElement>) =>
+      Effect.gen(function* () {
+        const currentSide = yield* side.get;
+        const currentAlign = yield* align.get;
+        const currentSideOffset = yield* sideOffset.get;
+        const currentAlignOffset = yield* alignOffset.get;
 
-      const contentRect = yield* el.pipe(Element.getBoundingClientRect);
+        const contentRect = yield* el.pipe(Element.getBoundingClientRect);
 
-      const positionStyle = yield* ctx.triggerRef.pipe(
-        Element.getBoundingClientRect,
-        Effect.map((anchorRect) => {
-          const { top, left } = calculatePosition(
-            anchorRect,
-            currentSide,
-            currentAlign,
-            currentSideOffset,
-            currentAlignOffset,
-            contentRect.width,
-            contentRect.height,
-          );
+        const positionStyle = yield* ctx.triggerRef.pipe(
+          Element.getBoundingClientRect,
+          Effect.map((anchorRect) => {
+            const { top, left } = calculatePosition(
+              anchorRect,
+              currentSide,
+              currentAlign,
+              currentSideOffset,
+              currentAlignOffset,
+              contentRect.width,
+              contentRect.height,
+            );
 
-          return {
-            top: `${top}px`,
-            left: `${left}px`,
-            opacity: "",
-            animation: "none",
-          };
-        }),
-      );
+            return {
+              top: `${top}px`,
+              left: `${left}px`,
+              opacity: "",
+              animation: "none",
+            };
+          }),
+        );
 
-      return yield* el.pipe(Element.setStyles(positionStyle));
-    });
+        return yield* el.pipe(Element.setStyles(positionStyle));
+      });
 
-  // Portal is always rendered, but the content inside uses `when` for animations.
-  return yield* Portal(() =>
-    when(ctx.isOpen, {
-      onTrue: () =>
-        $.div(
-          {
-            id: ctx.contentId,
-            class: props.class,
-            role: "tooltip",
-            "data-state": dataState,
-            "data-side": side,
-            "data-align": align,
-            "data-tooltip-content": "",
-            style: {
-              position: "fixed",
-              opacity: "0",
+    // Portal is always rendered, but the content inside uses `when` for animations.
+    return yield* Portal(() =>
+      when(ctx.isOpen, {
+        onTrue: () =>
+          $.div(
+            {
+              id: ctx.contentId,
+              class: props.class,
+              role: "tooltip",
+              "data-state": dataState,
+              "data-side": side,
+              "data-align": align,
+              "data-tooltip-content": "",
+              style: {
+                position: "fixed",
+                opacity: "0",
+              },
             },
-          },
-          children ?? [],
-        ),
-      onFalse: () => $.div({ style: { display: "none" } }),
-      animate: props.animate
-        ? {
-            ...props.animate,
-            onBeforeEnter: (el) =>
-              el.pipe(
-                setPosition,
-                Element.tapEffect(
-                  () => props.animate?.onBeforeEnter?.(el) ?? Effect.void,
+            children,
+          ),
+        onFalse: () => $.div({ style: { display: "none" } }),
+        animate: props.animate
+          ? {
+              ...props.animate,
+              onBeforeEnter: (el) =>
+                el.pipe(
+                  setPosition,
+                  Element.tapEffect(
+                    () => props.animate?.onBeforeEnter?.(el) ?? Effect.void,
+                  ),
+                  Effect.ignore,
                 ),
-                Effect.ignore,
-              ),
-            onEnter: (el) =>
-              el.pipe(
-                Element.setStyles({ animation: "" }),
-                Element.tapEffect(
-                  () => props.animate?.onEnter?.(el) ?? Effect.void,
+              onEnter: (el) =>
+                el.pipe(
+                  Element.setStyles({ animation: "" }),
+                  Element.tapEffect(
+                    () => props.animate?.onEnter?.(el) ?? Effect.void,
+                  ),
+                  Effect.ignore,
                 ),
-                Effect.ignore,
-              ),
-            onBeforeExit: (el) =>
-              el.pipe(
-                Element.setStyles({ animation: "" }),
-                Element.tapEffect(
-                  () => props.animate?.onBeforeExit?.(el) ?? Effect.void,
+              onBeforeExit: (el) =>
+                el.pipe(
+                  Element.setStyles({ animation: "" }),
+                  Element.tapEffect(
+                    () => props.animate?.onBeforeExit?.(el) ?? Effect.void,
+                  ),
+                  Effect.ignore,
                 ),
-                Effect.ignore,
-              ),
-          }
-        : {
-            onBeforeEnter: (el) => el.pipe(setPosition, Effect.ignore),
-          },
-    }),
-  );
-});
+            }
+          : {
+              onBeforeEnter: (el) => el.pipe(setPosition, Effect.ignore),
+            },
+      }),
+    );
+  }) as Element.Element<HTMLDivElement, E, R | TooltipCtx>;
 
 /**
  * Headless Tooltip primitive for building accessible hover hints.

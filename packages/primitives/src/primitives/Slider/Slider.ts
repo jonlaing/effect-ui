@@ -2,11 +2,12 @@ import { Array, Context, Effect, MutableRef } from "effect";
 
 import {
   $,
-  Component,
+  collect,
   Element,
   provide,
   Readable,
   Signal,
+  type ChildEffect,
   type ClassValue,
   type ElementRef,
 } from "@effex/dom";
@@ -127,177 +128,188 @@ export interface SliderRootProps {
 /**
  * Root container for Slider. Manages value state and provides context.
  */
-const Root = Component.gen(function* (props: SliderRootProps, children) {
-  // Defaults
-  const min = props.min ?? 0;
-  const max = props.max ?? 100;
-  const step = props.step ?? 1;
-  const largeStep = props.largeStep ?? Math.max(step * 10, (max - min) / 10);
-  const orientation = props.orientation ?? "horizontal";
-  const disabled = Readable.of(props.disabled ?? false);
-  const inverted = props.inverted ?? false;
-  const minStepsBetweenThumbs = props.minStepsBetweenThumbs ?? 0;
+const Root = <E = never, R = never>(
+  props: SliderRootProps,
+  children?: ChildEffect<E, R | SliderCtx>,
+): Element.Element<HTMLDivElement, E, R> =>
+  Effect.gen(function* () {
+    // Defaults
+    const min = props.min ?? 0;
+    const max = props.max ?? 100;
+    const step = props.step ?? 1;
+    const largeStep = props.largeStep ?? Math.max(step * 10, (max - min) / 10);
+    const orientation = props.orientation ?? "horizontal";
+    const disabled = Readable.of(props.disabled ?? false);
+    const inverted = props.inverted ?? false;
+    const minStepsBetweenThumbs = props.minStepsBetweenThumbs ?? 0;
 
-  // Create or use controlled value signal
-  const defaultVal = props.defaultValue ?? min;
-  const value = yield* Signal.fromNullable(props.value, defaultVal);
+    // Create or use controlled value signal
+    const defaultVal = props.defaultValue ?? min;
+    const value = yield* Signal.fromNullable(props.value, defaultVal);
 
-  // Determine if range mode from initial value (check controlled value first)
-  const initialValue = yield* value.get;
-  const isRange = Array.isArray(initialValue);
+    // Determine if range mode from initial value (check controlled value first)
+    const initialValue = yield* value.get;
+    const isRange = Array.isArray(initialValue);
 
-  // Track ref for position calculations
-  const trackRef = yield* Element.ref<HTMLDivElement>();
+    // Track ref for position calculations
+    const trackRef = yield* Element.ref<HTMLDivElement>();
 
-  // Dragging state
-  const draggingThumb = yield* Signal.make<number>(-1);
+    // Dragging state
+    const draggingThumb = yield* Signal.make<number>(-1);
 
-  // Track cleanup functions for document listeners (to clean up on unmount)
-  const dragCleanup = MutableRef.make<(() => void) | null>(null);
+    // Track cleanup functions for document listeners (to clean up on unmount)
+    const dragCleanup = MutableRef.make<(() => void) | null>(null);
 
-  // Thumb registration counter
-  const thumbCount = MutableRef.make(0);
+    // Thumb registration counter
+    const thumbCount = MutableRef.make(0);
 
-  // Convert pointer position to value
-  const pointerToValue = (clientX: number, clientY: number): number => {
-    const track = Element.getUnsafe(trackRef);
-    if (!track) return min;
+    // Convert pointer position to value
+    const pointerToValue = (clientX: number, clientY: number): number => {
+      const track = Element.getUnsafe(trackRef);
+      if (!track) return min;
 
-    const rect = track.getBoundingClientRect();
-    let percent: number;
+      const rect = track.getBoundingClientRect();
+      let percent: number;
 
-    if (orientation === "horizontal") {
-      percent = (clientX - rect.left) / rect.width;
-      if (inverted) percent = 1 - percent;
-    } else {
-      // Vertical: bottom is min, top is max
-      percent = (rect.bottom - clientY) / rect.height;
-      if (inverted) percent = 1 - percent;
-    }
-
-    percent = Math.max(0, Math.min(1, percent));
-    return clampAndSnap(min + percent * (max - min), min, max, step);
-  };
-
-  // Set value with callbacks
-  const setValue = (newValue: SliderValue) =>
-    Effect.gen(function* () {
-      yield* value.set(newValue);
-      yield* props.onValueChange?.(newValue) ?? Effect.void;
-    });
-
-  // Set specific thumb value
-  const setThumbValue = (index: number, newVal: number) =>
-    Effect.gen(function* () {
-      const current = yield* value.get;
-      const clamped = clampAndSnap(newVal, min, max, step);
-
-      if (isRangeValue(current)) {
-        const newRange: [number, number] =
-          index === 0 ? [clamped, current[1]] : [current[0], clamped];
-        const minGap = minStepsBetweenThumbs * step;
-        yield* setValue(enforceRange(newRange, index, minGap));
+      if (orientation === "horizontal") {
+        percent = (clientX - rect.left) / rect.width;
+        if (inverted) percent = 1 - percent;
       } else {
-        yield* setValue(clamped);
+        // Vertical: bottom is min, top is max
+        percent = (rect.bottom - clientY) / rect.height;
+        if (inverted) percent = 1 - percent;
       }
-    });
 
-  // Register thumb
-  const registerThumb = (): number => {
-    const index = MutableRef.get(thumbCount);
-    MutableRef.update(thumbCount, (n) => n + 1);
-    return index;
-  };
+      percent = Math.max(0, Math.min(1, percent));
+      return clampAndSnap(min + percent * (max - min), min, max, step);
+    };
 
-  // Start drag
-  const startDrag = (thumbIndex: number) => draggingThumb.set(thumbIndex);
+    // Set value with callbacks
+    const setValue = (newValue: SliderValue) =>
+      Effect.gen(function* () {
+        yield* value.set(newValue);
+        yield* props.onValueChange?.(newValue) ?? Effect.void;
+      });
 
-  // Stop drag
-  const stopDrag = () =>
-    Effect.gen(function* () {
-      const idx = yield* draggingThumb.get;
-      if (idx >= 0) {
-        yield* draggingThumb.set(-1);
-        if (props.onValueCommit) {
-          const currentValue = yield* value.get;
-          yield* props.onValueCommit(currentValue);
+    // Set specific thumb value
+    const setThumbValue = (index: number, newVal: number) =>
+      Effect.gen(function* () {
+        const current = yield* value.get;
+        const clamped = clampAndSnap(newVal, min, max, step);
+
+        if (isRangeValue(current)) {
+          const newRange: [number, number] =
+            index === 0 ? [clamped, current[1]] : [current[0], clamped];
+          const minGap = minStepsBetweenThumbs * step;
+          yield* setValue(enforceRange(newRange, index, minGap));
+        } else {
+          yield* setValue(clamped);
         }
-      }
-    });
+      });
 
-  // Set drag cleanup function
-  const setDragCleanup = (cleanup: (() => void) | null) => {
-    MutableRef.set(dragCleanup, cleanup);
-  };
+    // Register thumb
+    const registerThumb = (): number => {
+      const index = MutableRef.get(thumbCount);
+      MutableRef.update(thumbCount, (n) => n + 1);
+      return index;
+    };
 
-  // Build context
-  const ctx: SliderContext = {
-    value,
-    setValue,
-    setThumbValue,
-    min,
-    max,
-    step,
-    largeStep,
-    orientation,
-    disabled,
-    isRange,
-    inverted,
-    trackRef,
-    registerThumb,
-    pointerToValue,
-    valueToPercent: (val: number) => valueToPercent(val, min, max),
-    startDrag,
-    stopDrag,
-    draggingThumb,
-    minStepsBetweenThumbs,
-    setDragCleanup,
-  };
+    // Start drag
+    const startDrag = (thumbIndex: number) => draggingThumb.set(thumbIndex);
 
-  // Clean up drag listeners on unmount
-  yield* Effect.addFinalizer(() =>
-    Effect.sync(() => {
-      const cleanup = MutableRef.get(dragCleanup);
-      if (cleanup) {
-        cleanup();
-        MutableRef.set(dragCleanup, null);
-      }
-    }),
-  );
+    // Stop drag
+    const stopDrag = () =>
+      Effect.gen(function* () {
+        const idx = yield* draggingThumb.get;
+        if (idx >= 0) {
+          yield* draggingThumb.set(-1);
+          if (props.onValueCommit) {
+            const currentValue = yield* value.get;
+            yield* props.onValueCommit(currentValue);
+          }
+        }
+      });
 
-  // Hidden input for form submission (if name is provided)
-  const hiddenInput = props.name
-    ? $.input({
-        type: "hidden",
-        name: props.name,
-        value: value.map((v) =>
-          isRangeValue(v) ? `${v[0]},${v[1]}` : String(v),
-        ),
-      })
-    : null;
+    // Set drag cleanup function
+    const setDragCleanup = (cleanup: (() => void) | null) => {
+      MutableRef.set(dragCleanup, cleanup);
+    };
 
-  const provided = provide(
-    SliderCtx,
-    ctx,
-    Component.normalizeChildren(children),
-  );
-  const hiddenPart = hiddenInput ? [hiddenInput] : [];
+    // Build context
+    const ctx: SliderContext = {
+      value,
+      setValue,
+      setThumbValue,
+      min,
+      max,
+      step,
+      largeStep,
+      orientation,
+      disabled,
+      isRange,
+      inverted,
+      trackRef,
+      registerThumb,
+      pointerToValue,
+      valueToPercent: (val: number) => valueToPercent(val, min, max),
+      startDrag,
+      stopDrag,
+      draggingThumb,
+      minStepsBetweenThumbs,
+      setDragCleanup,
+    };
 
-  const newChildren = [...hiddenPart, ...provided];
+    // Clean up drag listeners on unmount
+    yield* Effect.addFinalizer(() =>
+      Effect.sync(() => {
+        const cleanup = MutableRef.get(dragCleanup);
+        if (cleanup) {
+          cleanup();
+          MutableRef.set(dragCleanup, null);
+        }
+      }),
+    );
 
-  return yield* $.div(
-    {
-      class: props.class,
-      style: { position: "relative" },
-      "data-slider-root": "",
-      "data-orientation": orientation,
-      "data-disabled": disabled.map((d) => (d ? "" : undefined)),
-      "aria-label": props["aria-label"],
-      "aria-labelledby": props["aria-labelledby"],
-    },
-    newChildren,
-  );
-});
+    // Hidden input for form submission (if name is provided)
+    const hiddenInput = props.name
+      ? $.input({
+          type: "hidden",
+          name: props.name,
+          value: value.map((v) =>
+            isRangeValue(v) ? `${v[0]},${v[1]}` : String(v),
+          ),
+        })
+      : null;
+
+    const provided = provide(
+      SliderCtx,
+      ctx,
+      (children ?? collect()) as ChildEffect<E, R | SliderCtx>,
+    );
+    const finalChildren = hiddenInput
+      ? Effect.flatMap(hiddenInput, (input) =>
+          Effect.map(provided, (childNodes) => {
+            const nodes = globalThis.Array.isArray(childNodes)
+              ? childNodes
+              : [childNodes];
+            return [input, ...nodes];
+          }),
+        )
+      : provided;
+
+    return yield* $.div(
+      {
+        class: props.class,
+        style: { position: "relative" },
+        "data-slider-root": "",
+        "data-orientation": orientation,
+        "data-disabled": disabled.map((d) => (d ? "" : undefined)),
+        "aria-label": props["aria-label"],
+        "aria-labelledby": props["aria-labelledby"],
+      },
+      finalChildren,
+    );
+  }) as Element.Element<HTMLDivElement, E, R>;
 
 /**
  * Props for Slider.Track
@@ -310,58 +322,62 @@ export interface SliderTrackProps {
 /**
  * The track area of the slider. Clickable to jump thumb to position.
  */
-const Track = Component.gen(function* (props: SliderTrackProps, children) {
-  const ctx = yield* SliderCtx;
+const Track = <E = never, R = never>(
+  props: SliderTrackProps,
+  children?: ChildEffect<E, R>,
+): Element.Element<HTMLDivElement, E, R | SliderCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* SliderCtx;
 
-  // Handle pointer down on track - jump to position and start drag
-  const handlePointerDown = (e: PointerEvent) =>
-    Effect.gen(function* () {
-      if (yield* ctx.disabled.get) return;
+    // Handle pointer down on track - jump to position and start drag
+    const handlePointerDown = (e: PointerEvent) =>
+      Effect.gen(function* () {
+        if (yield* ctx.disabled.get) return;
 
-      e.preventDefault();
-      const newValue = ctx.pointerToValue(e.clientX, e.clientY);
+        e.preventDefault();
+        const newValue = ctx.pointerToValue(e.clientX, e.clientY);
 
-      // Determine which thumb to move
-      let thumbIndex = 0;
-      if (ctx.isRange) {
-        const current = yield* ctx.value.get;
-        if (isRangeValue(current)) {
-          const [minVal, maxVal] = current;
-          const distToMin = Math.abs(newValue - minVal);
-          const distToMax = Math.abs(newValue - maxVal);
-          thumbIndex = distToMin <= distToMax ? 0 : 1;
+        // Determine which thumb to move
+        let thumbIndex = 0;
+        if (ctx.isRange) {
+          const current = yield* ctx.value.get;
+          if (isRangeValue(current)) {
+            const [minVal, maxVal] = current;
+            const distToMin = Math.abs(newValue - minVal);
+            const distToMax = Math.abs(newValue - maxVal);
+            thumbIndex = distToMin <= distToMax ? 0 : 1;
+          }
         }
-      }
 
-      // Use setThumbValue for consistency (handles clamping/snapping)
-      yield* ctx.setThumbValue(thumbIndex, newValue);
-      yield* ctx.startDrag(thumbIndex);
+        // Use setThumbValue for consistency (handles clamping/snapping)
+        yield* ctx.setThumbValue(thumbIndex, newValue);
+        yield* ctx.startDrag(thumbIndex);
 
-      // Focus the thumb for keyboard accessibility
-      const thumbEl = Element.getUnsafe(
-        ctx.trackRef,
-      )?.parentElement?.querySelector(
-        `[data-slider-thumb][data-thumb-index="${thumbIndex}"]`,
-      ) as HTMLElement | null;
-      thumbEl?.focus({ preventScroll: true });
+        // Focus the thumb for keyboard accessibility
+        const thumbEl = Element.getUnsafe(
+          ctx.trackRef,
+        )?.parentElement?.querySelector(
+          `[data-slider-thumb][data-thumb-index="${thumbIndex}"]`,
+        ) as HTMLElement | null;
+        thumbEl?.focus({ preventScroll: true });
 
-      // Setup document-level tracking
-      yield* setupDragTracking(ctx, e.pointerId);
-    });
+        // Setup document-level tracking
+        yield* setupDragTracking(ctx, e.pointerId);
+      });
 
-  return yield* $.div(
-    {
-      ref: ctx.trackRef,
-      class: props.class,
-      "data-slider-track": "",
-      "data-orientation": ctx.orientation,
-      "data-disabled": ctx.disabled.map((d) => (d ? "" : undefined)),
-      onPointerDown: handlePointerDown,
-      style: { position: "relative", touchAction: "none" },
-    },
-    children ?? [],
-  );
-});
+    return yield* $.div(
+      {
+        ref: ctx.trackRef,
+        class: props.class,
+        "data-slider-track": "",
+        "data-orientation": ctx.orientation,
+        "data-disabled": ctx.disabled.map((d) => (d ? "" : undefined)),
+        onPointerDown: handlePointerDown,
+        style: { position: "relative", touchAction: "none" },
+      },
+      (children ?? collect()) as ChildEffect<E, R>,
+    );
+  }) as Element.Element<HTMLDivElement, E, R | SliderCtx>;
 
 /**
  * Props for Slider.Range
@@ -374,33 +390,36 @@ export interface SliderRangeProps {
 /**
  * Visual fill between min and value (or between thumbs in range mode).
  */
-const Range = Component.gen(function* (props: SliderRangeProps) {
-  const ctx = yield* SliderCtx;
+const Range = (
+  props: SliderRangeProps,
+): Element.Element<HTMLDivElement, never, SliderCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* SliderCtx;
 
-  // Compute range style based on value(s)
-  const rangeStyle = ctx.value.map((val): Record<string, string> => {
-    if (isRangeValue(val)) {
-      const [minVal, maxVal] = val;
-      const startPercent = ctx.valueToPercent(minVal);
-      const endPercent = ctx.valueToPercent(maxVal);
-      return getRangeStyle(
-        ctx.orientation,
-        ctx.inverted,
-        startPercent,
-        endPercent,
-      );
-    }
-    // Single value - range from 0 to current
-    const percent = ctx.valueToPercent(val);
-    return getRangeStyle(ctx.orientation, ctx.inverted, 0, percent);
-  });
+    // Compute range style based on value(s)
+    const rangeStyle = ctx.value.map((val): Record<string, string> => {
+      if (isRangeValue(val)) {
+        const [minVal, maxVal] = val;
+        const startPercent = ctx.valueToPercent(minVal);
+        const endPercent = ctx.valueToPercent(maxVal);
+        return getRangeStyle(
+          ctx.orientation,
+          ctx.inverted,
+          startPercent,
+          endPercent,
+        );
+      }
+      // Single value - range from 0 to current
+      const percent = ctx.valueToPercent(val);
+      return getRangeStyle(ctx.orientation, ctx.inverted, 0, percent);
+    });
 
-  return yield* $.div({
-    class: props.class,
-    style: rangeStyle,
-    "data-slider-range": "",
-  });
-});
+    return yield* $.div({
+      class: props.class,
+      style: rangeStyle,
+      "data-slider-range": "",
+    });
+  }) as Element.Element<HTMLDivElement, never, SliderCtx>;
 
 /**
  * Props for Slider.Thumb
@@ -419,106 +438,108 @@ export interface SliderThumbProps {
 /**
  * Draggable thumb handle. Has role="slider" with ARIA attributes.
  */
-const Thumb = Component.gen(function* (props: SliderThumbProps) {
-  const ctx = yield* SliderCtx;
+const Thumb = (
+  props: SliderThumbProps,
+): Element.Element<HTMLDivElement, never, SliderCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* SliderCtx;
 
-  // Register this thumb and get its index
-  const thumbIndex = ctx.registerThumb();
+    // Register this thumb and get its index
+    const thumbIndex = ctx.registerThumb();
 
-  // Get this thumb's value
-  const thumbValue = ctx.value.map((val) =>
-    isRangeValue(val) ? (val[thumbIndex] ?? val[0]) : val,
-  );
+    // Get this thumb's value
+    const thumbValue = ctx.value.map((val) =>
+      isRangeValue(val) ? (val[thumbIndex] ?? val[0]) : val,
+    );
 
-  // Dragging state for this thumb
-  const isDragging = ctx.draggingThumb.map((idx) => idx === thumbIndex);
+    // Dragging state for this thumb
+    const isDragging = ctx.draggingThumb.map((idx) => idx === thumbIndex);
 
-  // ARIA value text - only set if explicitly provided (aria-valuenow is sufficient otherwise)
-  const ariaValueText =
-    props["aria-valuetext"] !== undefined
-      ? thumbValue.map((val) => {
-          if (typeof props["aria-valuetext"] === "function") {
-            return props["aria-valuetext"](val);
-          }
-          return props["aria-valuetext"] as string;
-        })
-      : undefined;
+    // ARIA value text - only set if explicitly provided (aria-valuenow is sufficient otherwise)
+    const ariaValueText =
+      props["aria-valuetext"] !== undefined
+        ? thumbValue.map((val) => {
+            if (typeof props["aria-valuetext"] === "function") {
+              return props["aria-valuetext"](val);
+            }
+            return props["aria-valuetext"] as string;
+          })
+        : undefined;
 
-  // Handle pointer down on thumb
-  const handlePointerDown = (e: PointerEvent) =>
-    Effect.gen(function* () {
-      if (yield* ctx.disabled.get) return;
-      e.preventDefault();
-      e.stopPropagation();
+    // Handle pointer down on thumb
+    const handlePointerDown = (e: PointerEvent) =>
+      Effect.gen(function* () {
+        if (yield* ctx.disabled.get) return;
+        e.preventDefault();
+        e.stopPropagation();
 
-      yield* ctx.startDrag(thumbIndex);
-      yield* setupDragTracking(ctx, e.pointerId);
+        yield* ctx.startDrag(thumbIndex);
+        yield* setupDragTracking(ctx, e.pointerId);
 
-      // Focus the thumb
-      (e.currentTarget as HTMLElement).focus({ preventScroll: true });
+        // Focus the thumb
+        (e.currentTarget as HTMLElement).focus({ preventScroll: true });
+      });
+
+    // Keyboard navigation
+    const handleKeyDown = (e: KeyboardEvent) =>
+      Effect.gen(function* () {
+        if (yield* ctx.disabled.get) return;
+
+        const currentValue = yield* thumbValue.get;
+        let newValue: number | null = null;
+
+        const isHorizontal = ctx.orientation === "horizontal";
+        // Arrow key mapping depends on orientation and inversion
+        const getDecreaseKey = () => {
+          if (isHorizontal) return ctx.inverted ? "ArrowRight" : "ArrowLeft";
+          return ctx.inverted ? "ArrowUp" : "ArrowDown";
+        };
+        const getIncreaseKey = () => {
+          if (isHorizontal) return ctx.inverted ? "ArrowLeft" : "ArrowRight";
+          return ctx.inverted ? "ArrowDown" : "ArrowUp";
+        };
+        const decreaseKey = getDecreaseKey();
+        const increaseKey = getIncreaseKey();
+
+        switch (e.key) {
+          case decreaseKey:
+            e.preventDefault();
+            newValue = currentValue - ctx.step;
+            break;
+          case increaseKey:
+            e.preventDefault();
+            newValue = currentValue + ctx.step;
+            break;
+          case "PageDown":
+            e.preventDefault();
+            newValue = currentValue - ctx.largeStep;
+            break;
+          case "PageUp":
+            e.preventDefault();
+            newValue = currentValue + ctx.largeStep;
+            break;
+          case "Home":
+            e.preventDefault();
+            newValue = ctx.min;
+            break;
+          case "End":
+            e.preventDefault();
+            newValue = ctx.max;
+            break;
+        }
+
+        if (newValue !== null) {
+          yield* ctx.setThumbValue(thumbIndex, newValue);
+        }
+      });
+
+    // Compute thumb position style
+    const thumbStyle = thumbValue.map((val): Record<string, string> => {
+      const percent = ctx.valueToPercent(val);
+      return getThumbStyle(ctx.orientation, ctx.inverted, percent);
     });
 
-  // Keyboard navigation
-  const handleKeyDown = (e: KeyboardEvent) =>
-    Effect.gen(function* () {
-      if (yield* ctx.disabled.get) return;
-
-      const currentValue = yield* thumbValue.get;
-      let newValue: number | null = null;
-
-      const isHorizontal = ctx.orientation === "horizontal";
-      // Arrow key mapping depends on orientation and inversion
-      const getDecreaseKey = () => {
-        if (isHorizontal) return ctx.inverted ? "ArrowRight" : "ArrowLeft";
-        return ctx.inverted ? "ArrowUp" : "ArrowDown";
-      };
-      const getIncreaseKey = () => {
-        if (isHorizontal) return ctx.inverted ? "ArrowLeft" : "ArrowRight";
-        return ctx.inverted ? "ArrowDown" : "ArrowUp";
-      };
-      const decreaseKey = getDecreaseKey();
-      const increaseKey = getIncreaseKey();
-
-      switch (e.key) {
-        case decreaseKey:
-          e.preventDefault();
-          newValue = currentValue - ctx.step;
-          break;
-        case increaseKey:
-          e.preventDefault();
-          newValue = currentValue + ctx.step;
-          break;
-        case "PageDown":
-          e.preventDefault();
-          newValue = currentValue - ctx.largeStep;
-          break;
-        case "PageUp":
-          e.preventDefault();
-          newValue = currentValue + ctx.largeStep;
-          break;
-        case "Home":
-          e.preventDefault();
-          newValue = ctx.min;
-          break;
-        case "End":
-          e.preventDefault();
-          newValue = ctx.max;
-          break;
-      }
-
-      if (newValue !== null) {
-        yield* ctx.setThumbValue(thumbIndex, newValue);
-      }
-    });
-
-  // Compute thumb position style
-  const thumbStyle = thumbValue.map((val): Record<string, string> => {
-    const percent = ctx.valueToPercent(val);
-    return getThumbStyle(ctx.orientation, ctx.inverted, percent);
-  });
-
-  return yield* $.div(
-    {
+    return yield* $.div({
       class: props.class,
       style: thumbStyle,
       role: "slider",
@@ -537,10 +558,8 @@ const Thumb = Component.gen(function* (props: SliderThumbProps) {
       "data-thumb-index": thumbIndex,
       onPointerDown: handlePointerDown,
       onKeyDown: handleKeyDown,
-    },
-    [],
-  );
-});
+    });
+  }) as Element.Element<HTMLDivElement, never, SliderCtx>;
 
 // ============================================================================
 // Drag Tracking Helper

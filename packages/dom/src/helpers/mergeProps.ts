@@ -29,7 +29,8 @@ import { Element, MergePropsCtx } from "../Element";
  * return yield* $.button(itemProps, children);
  * ```
  */
-export const mergeProps = <E, R>(
+export const mergeProps = <A extends HTMLElement | SVGElement, E, R>(
   props: Record<string, unknown>,
-  child: Element.Element<E, R>,
-): Element.Element<E, R> => Effect.provideService(child, MergePropsCtx, props);
+  child: Element.Element<A, E, R>,
+): Element.Element<A, E, R> =>
+  Effect.provideService(child, MergePropsCtx, props);

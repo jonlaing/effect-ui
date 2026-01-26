@@ -8,9 +8,9 @@ import { t } from "./Template";
 describe("Template (t)", () => {
   describe("static templates", () => {
     it("should handle template with no interpolations", async () => {
-      const result = t`Hello, World!`;
+      const readable = await Effect.runPromise(t`Hello, World!`);
 
-      const value = await Effect.runPromise(result.get);
+      const value = await Effect.runPromise(readable.get);
 
       expect(value).toBe("Hello, World!");
     });
@@ -19,28 +19,30 @@ describe("Template (t)", () => {
       const name = "Alice";
       const count = 42;
 
-      const result = t`Hello, ${name}! Count: ${count}`;
+      const readable = await Effect.runPromise(
+        t`Hello, ${name}! Count: ${count}`,
+      );
 
-      const value = await Effect.runPromise(result.get);
+      const value = await Effect.runPromise(readable.get);
 
       expect(value).toBe("Hello, Alice! Count: 42");
     });
 
     it("should have empty changes stream for static templates", async () => {
-      const result = t`Static template`;
+      const readable = await Effect.runPromise(t`Static template`);
 
       const changes = await Effect.runPromise(
-        result.changes.pipe(Stream.runCollect),
+        readable.changes.pipe(Stream.runCollect),
       );
 
       expect(Array.from(changes)).toEqual([]);
     });
 
     it("should have single value in values stream for static templates", async () => {
-      const result = t`Static value`;
+      const readable = await Effect.runPromise(t`Static value`);
 
       const values = await Effect.runPromise(
-        result.values.pipe(Stream.take(1), Stream.runCollect),
+        readable.values.pipe(Stream.take(1), Stream.runCollect),
       );
 
       expect(Array.from(values)).toEqual(["Static value"]);
@@ -54,9 +56,9 @@ describe("Template (t)", () => {
           Effect.gen(function* () {
             const name = yield* Signal.make("World");
 
-            const result = t`Hello, ${name}!`;
+            const readable = yield* t`Hello, ${name}!`;
 
-            const value = yield* result.get;
+            const value = yield* readable.get;
             expect(value).toBe("Hello, World!");
           }),
         ),
@@ -70,9 +72,9 @@ describe("Template (t)", () => {
             const firstName = yield* Signal.make("John");
             const lastName = yield* Signal.make("Doe");
 
-            const result = t`Name: ${firstName} ${lastName}`;
+            const readable = yield* t`Name: ${firstName} ${lastName}`;
 
-            const value = yield* result.get;
+            const value = yield* readable.get;
             expect(value).toBe("Name: John Doe");
           }),
         ),
@@ -86,9 +88,10 @@ describe("Template (t)", () => {
             const count = yield* Signal.make(5);
             const staticLabel = "items";
 
-            const result = t`You have ${count} ${staticLabel} remaining`;
+            const readable =
+              yield* t`You have ${count} ${staticLabel} remaining`;
 
-            const value = yield* result.get;
+            const value = yield* readable.get;
             expect(value).toBe("You have 5 items remaining");
           }),
         ),
@@ -101,17 +104,17 @@ describe("Template (t)", () => {
           Effect.gen(function* () {
             const count = yield* Signal.make(0);
 
-            const result = t`Count: ${count}`;
+            const readable = yield* t`Count: ${count}`;
 
             // Initial value
-            const initial = yield* result.get;
+            const initial = yield* readable.get;
             expect(initial).toBe("Count: 0");
 
             // Update the signal
             yield* count.set(10);
 
             // Get updated value
-            const updated = yield* result.get;
+            const updated = yield* readable.get;
             expect(updated).toBe("Count: 10");
           }),
         ),
@@ -124,11 +127,11 @@ describe("Template (t)", () => {
           Effect.gen(function* () {
             const count = yield* Signal.make(0);
 
-            const result = t`Count: ${count}`;
+            const readable = yield* t`Count: ${count}`;
 
             // Collect first change in a fiber
             const fiber = yield* Effect.fork(
-              result.changes.pipe(Stream.take(1), Stream.runCollect),
+              readable.changes.pipe(Stream.take(1), Stream.runCollect),
             );
 
             // Update the signal
@@ -149,8 +152,8 @@ describe("Template (t)", () => {
           Effect.gen(function* () {
             const name = yield* Signal.make("world");
 
-            const result = t`hello, ${name}!`;
-            const upperResult = result.map((s) => s.toUpperCase());
+            const readable = yield* t`hello, ${name}!`;
+            const upperResult = readable.map((s) => s.toUpperCase());
 
             const value = yield* upperResult.get;
             expect(value).toBe("HELLO, WORLD!");
@@ -165,8 +168,8 @@ describe("Template (t)", () => {
           Effect.gen(function* () {
             const count = yield* Signal.make(1);
 
-            const result = t`${count}`;
-            const doubled = result.map((s) => `${parseInt(s) * 2}`);
+            const readable = yield* t`${count}`;
+            const doubled = readable.map((s) => `${parseInt(s) * 2}`);
 
             yield* count.set(5);
 
@@ -180,9 +183,9 @@ describe("Template (t)", () => {
 
   describe("edge cases", () => {
     it("should handle empty template", async () => {
-      const result = t``;
+      const readable = await Effect.runPromise(t``);
 
-      const value = await Effect.runPromise(result.get);
+      const value = await Effect.runPromise(readable.get);
 
       expect(value).toBe("");
     });
@@ -193,9 +196,9 @@ describe("Template (t)", () => {
           Effect.gen(function* () {
             const value = yield* Signal.make("solo");
 
-            const result = t`${value}`;
+            const readable = yield* t`${value}`;
 
-            const str = yield* result.get;
+            const str = yield* readable.get;
             expect(str).toBe("solo");
           }),
         ),
@@ -208,9 +211,9 @@ describe("Template (t)", () => {
           Effect.gen(function* () {
             const num = yield* Signal.make(123);
 
-            const result = t`Number: ${num}`;
+            const readable = yield* t`Number: ${num}`;
 
-            const value = yield* result.get;
+            const value = yield* readable.get;
             expect(value).toBe("Number: 123");
           }),
         ),
@@ -220,9 +223,9 @@ describe("Template (t)", () => {
     it("should handle undefined static values", async () => {
       const undef = undefined;
 
-      const result = t`Value: ${undef}`;
+      const readable = await Effect.runPromise(t`Value: ${undef}`);
 
-      const value = await Effect.runPromise(result.get);
+      const value = await Effect.runPromise(readable.get);
 
       // undefined values are omitted in template output
       expect(value).toBe("Value: ");
@@ -231,9 +234,9 @@ describe("Template (t)", () => {
     it("should handle null static values", async () => {
       const nullVal = null;
 
-      const result = t`Value: ${nullVal}`;
+      const readable = await Effect.runPromise(t`Value: ${nullVal}`);
 
-      const value = await Effect.runPromise(result.get);
+      const value = await Effect.runPromise(readable.get);
 
       expect(value).toBe("Value: null");
     });

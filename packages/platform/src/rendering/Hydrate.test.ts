@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { div } from "@effex/dom";
+import { $, collect, div } from "@effex/dom";
 import { renderToString } from "@effex/dom/server";
 
 import type { LoaderData } from "../routing/RouteLoader";
@@ -31,10 +31,12 @@ describe("hydrate", () => {
 
   describe("hydrateApp", () => {
     it("should hydrate a simple element", async () => {
-      const html = await run(renderToString(div({ class: "test" }, "Hello")));
+      const html = await run(
+        renderToString(div({ class: "test" }, $.of("Hello"))),
+      );
       container.innerHTML = html;
 
-      await hydrateApp(div({ class: "test" }, "Hello"), container);
+      await hydrateApp(div({ class: "test" }, $.of("Hello")), container);
 
       expect(container.querySelector(".test")).toBeTruthy();
       expect(container.textContent).toContain("Hello");
@@ -44,12 +46,12 @@ describe("hydrate", () => {
       const onClick = vi.fn();
 
       const html = await run(
-        renderToString(div({ class: "clickable" }, "Click me")),
+        renderToString(div({ class: "clickable" }, $.of("Click me"))),
       );
       container.innerHTML = html;
 
       await hydrateApp(
-        div({ class: "clickable", onClick }, "Click me"),
+        div({ class: "clickable", onClick }, $.of("Click me")),
         container,
       );
 
@@ -75,11 +77,11 @@ describe("hydrate", () => {
       };
 
       const html = await run(
-        renderToString(div({ class: "users" }, "User list")),
+        renderToString(div({ class: "users" }, $.of("User list"))),
       );
       container.innerHTML = html;
 
-      await hydrateApp(div({ class: "users" }, "User list"), container);
+      await hydrateApp(div({ class: "users" }, $.of("User list")), container);
 
       // Loader data should be available for use
       expect(container.querySelector(".users")).toBeTruthy();
@@ -96,10 +98,10 @@ describe("hydrate", () => {
         },
       };
 
-      const html = await run(renderToString(div("Test")));
+      const html = await run(renderToString(div($.of("Test"))));
       container.innerHTML = html;
 
-      await hydrateApp(div("Test"), container, {
+      await hydrateApp(div($.of("Test")), container, {
         loaderData: {
           "routes/test": {
             data: { source: "options" },
@@ -123,10 +125,10 @@ describe("hydrate", () => {
         },
       };
 
-      const html = await run(renderToString(div("Test")));
+      const html = await run(renderToString(div($.of("Test"))));
       container.innerHTML = html;
 
-      await hydrateApp(div("Test"), container);
+      await hydrateApp(div($.of("Test")), container);
 
       // Loader data should be cleaned up
       expect(
@@ -136,10 +138,10 @@ describe("hydrate", () => {
     });
 
     it("should work with empty loader data", async () => {
-      const html = await run(renderToString(div("No loader data")));
+      const html = await run(renderToString(div($.of("No loader data"))));
       container.innerHTML = html;
 
-      await hydrateApp(div("No loader data"), container);
+      await hydrateApp(div($.of("No loader data")), container);
 
       expect(container.textContent).toContain("No loader data");
     });
@@ -166,10 +168,10 @@ describe("hydrate", () => {
         },
       };
 
-      const html = await run(renderToString(div("Test")));
+      const html = await run(renderToString(div($.of("Test"))));
       container.innerHTML = html;
 
-      await hydrateApp(div("Test"), container);
+      await hydrateApp(div($.of("Test")), container);
 
       // Data should be deserialized - cleanup happens after
     });
@@ -193,10 +195,10 @@ describe("hydrate", () => {
         },
       };
 
-      const html = await run(renderToString(div("Test")));
+      const html = await run(renderToString(div($.of("Test"))));
       container.innerHTML = html;
 
-      await hydrateApp(div("Test"), container);
+      await hydrateApp(div($.of("Test")), container);
     });
 
     it("should deserialize Set objects", async () => {
@@ -215,10 +217,10 @@ describe("hydrate", () => {
         },
       };
 
-      const html = await run(renderToString(div("Test")));
+      const html = await run(renderToString(div($.of("Test"))));
       container.innerHTML = html;
 
-      await hydrateApp(div("Test"), container);
+      await hydrateApp(div($.of("Test")), container);
     });
 
     it("should deserialize BigInt", async () => {
@@ -237,10 +239,10 @@ describe("hydrate", () => {
         },
       };
 
-      const html = await run(renderToString(div("Test")));
+      const html = await run(renderToString(div($.of("Test"))));
       container.innerHTML = html;
 
-      await hydrateApp(div("Test"), container);
+      await hydrateApp(div($.of("Test")), container);
     });
 
     it("should deserialize undefined values", async () => {
@@ -256,10 +258,10 @@ describe("hydrate", () => {
         },
       };
 
-      const html = await run(renderToString(div("Test")));
+      const html = await run(renderToString(div($.of("Test"))));
       container.innerHTML = html;
 
-      await hydrateApp(div("Test"), container);
+      await hydrateApp(div($.of("Test")), container);
     });
 
     it("should deserialize NaN and Infinity", async () => {
@@ -277,10 +279,10 @@ describe("hydrate", () => {
         },
       };
 
-      const html = await run(renderToString(div("Test")));
+      const html = await run(renderToString(div($.of("Test"))));
       container.innerHTML = html;
 
-      await hydrateApp(div("Test"), container);
+      await hydrateApp(div($.of("Test")), container);
     });
 
     it("should deserialize RegExp", async () => {
@@ -299,10 +301,10 @@ describe("hydrate", () => {
         },
       };
 
-      const html = await run(renderToString(div("Test")));
+      const html = await run(renderToString(div($.of("Test"))));
       container.innerHTML = html;
 
-      await hydrateApp(div("Test"), container);
+      await hydrateApp(div($.of("Test")), container);
     });
 
     it("should deserialize URL", async () => {
@@ -321,10 +323,10 @@ describe("hydrate", () => {
         },
       };
 
-      const html = await run(renderToString(div("Test")));
+      const html = await run(renderToString(div($.of("Test"))));
       container.innerHTML = html;
 
-      await hydrateApp(div("Test"), container);
+      await hydrateApp(div($.of("Test")), container);
     });
 
     it("should deserialize nested special types", async () => {
@@ -357,10 +359,10 @@ describe("hydrate", () => {
         },
       };
 
-      const html = await run(renderToString(div("Test")));
+      const html = await run(renderToString(div($.of("Test"))));
       container.innerHTML = html;
 
-      await hydrateApp(div("Test"), container);
+      await hydrateApp(div($.of("Test")), container);
     });
   });
 
@@ -399,10 +401,10 @@ describe("hydrate", () => {
 
       expect(isHydrating()).toBe(true);
 
-      const html = await run(renderToString(div("Test")));
+      const html = await run(renderToString(div($.of("Test"))));
       container.innerHTML = html;
 
-      await hydrateApp(div("Test"), container);
+      await hydrateApp(div($.of("Test")), container);
 
       expect(isHydrating()).toBe(false);
     });
@@ -432,21 +434,25 @@ describe("hydrate", () => {
 
       const html = await run(
         renderToString(
-          div([
-            div({ class: "layout" }, "Layout"),
-            div({ class: "users" }, "Users"),
-            div({ class: "user-detail" }, "User Detail"),
-          ]),
+          div(
+            collect(
+              div({ class: "layout" }, $.of("Layout")),
+              div({ class: "users" }, $.of("Users")),
+              div({ class: "user-detail" }, $.of("User Detail")),
+            ),
+          ),
         ),
       );
       container.innerHTML = html;
 
       await hydrateApp(
-        div([
-          div({ class: "layout" }, "Layout"),
-          div({ class: "users" }, "Users"),
-          div({ class: "user-detail" }, "User Detail"),
-        ]),
+        div(
+          collect(
+            div({ class: "layout" }, $.of("Layout")),
+            div({ class: "users" }, $.of("Users")),
+            div({ class: "user-detail" }, $.of("User Detail")),
+          ),
+        ),
         container,
       );
 
@@ -472,10 +478,12 @@ describe("hydrate", () => {
         },
       };
 
-      const html = await run(renderToString(div("User profile")));
+      const html = await run(renderToString(div($.of("User profile"))));
       container.innerHTML = html;
 
-      await hydrateApp(div("User profile"), container, { router: mockRouter });
+      await hydrateApp(div($.of("User profile")), container, {
+        router: mockRouter,
+      });
 
       expect(initializeLoaderDataMock).toHaveBeenCalledWith(
         "routes/user",
@@ -512,10 +520,10 @@ describe("hydrate", () => {
         },
       };
 
-      const html = await run(renderToString(div("App")));
+      const html = await run(renderToString(div($.of("App"))));
       container.innerHTML = html;
 
-      await hydrateApp(div("App"), container, { router: mockRouter });
+      await hydrateApp(div($.of("App")), container, { router: mockRouter });
 
       expect(initializeLoaderDataMock).toHaveBeenCalledTimes(2);
       expect(calls).toContainEqual(["routes/layout", {}, { theme: "dark" }]);
@@ -537,11 +545,11 @@ describe("hydrate", () => {
         },
       };
 
-      const html = await run(renderToString(div("Test")));
+      const html = await run(renderToString(div($.of("Test"))));
       container.innerHTML = html;
 
       // Should not throw when router is not provided
-      await hydrateApp(div("Test"), container);
+      await hydrateApp(div($.of("Test")), container);
 
       expect(container.textContent).toContain("Test");
     });
@@ -582,10 +590,10 @@ describe("hydrate", () => {
         },
       };
 
-      const html = await run(renderToString(div("Test")));
+      const html = await run(renderToString(div($.of("Test"))));
       container.innerHTML = html;
 
-      await hydrateApp(div("Test"), container, { router: mockRouter });
+      await hydrateApp(div($.of("Test")), container, { router: mockRouter });
 
       // Data should be deserialized
       const data = receivedData as { created: Date; tags: Set<string> };

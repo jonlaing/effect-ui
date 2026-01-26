@@ -13,7 +13,7 @@ import type { HydrateOptions } from "./index";
  * Used by control flow components to find their containers.
  */
 export interface HydrationState {
-  readonly root: HTMLElement;
+  readonly root: HTMLElement | SVGElement;
   readonly onMismatch: (message: string, node: Node | null) => void;
 }
 
@@ -27,7 +27,7 @@ export interface HydrationState {
  * and child index, properly handling nested element structures.
  */
 export const createHydrationRenderer = (
-  container: HTMLElement,
+  container: HTMLElement | SVGElement,
   options: HydrateOptions = {},
 ): Renderer<Node> => {
   const onMismatch =

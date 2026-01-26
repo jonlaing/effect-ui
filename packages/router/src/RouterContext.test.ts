@@ -2,7 +2,7 @@ import { Effect, Option, Stream } from "effect";
 import { describe, expect, it } from "vitest";
 
 import type { Readable } from "@effex/core";
-import { DOMRendererLive } from "@effex/dom";
+import { $, DOMRendererLive } from "@effex/dom";
 
 import { Link, makeRouterLayer, RouterContext } from "./RouterContext";
 import type { BaseRouter } from "./types";
@@ -83,7 +83,7 @@ describe("RouterContext", () => {
 
       const element = await Effect.runPromise(
         Effect.scoped(
-          Link({ href: "/test" }, "Test").pipe(
+          Link({ href: "/test" }, $.of("Test")).pipe(
             Effect.provide(layer),
             Effect.provide(DOMRendererLive),
           ),
@@ -102,7 +102,7 @@ describe("RouterContext", () => {
       // Test non-active link
       const element = await Effect.runPromise(
         Effect.scoped(
-          Link({ href: "/other", class: "nav" }, "Other").pipe(
+          Link({ href: "/other", class: "nav" }, $.of("Other")).pipe(
             Effect.provide(layer),
             Effect.provide(DOMRendererLive),
           ),
@@ -113,7 +113,7 @@ describe("RouterContext", () => {
       // Test active link (matches current path "/")
       const activeElement = await Effect.runPromise(
         Effect.scoped(
-          Link({ href: "/", class: "nav" }, "Home").pipe(
+          Link({ href: "/", class: "nav" }, $.of("Home")).pipe(
             Effect.provide(layer),
             Effect.provide(DOMRendererLive),
           ),

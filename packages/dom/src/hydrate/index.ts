@@ -53,8 +53,8 @@ export interface HydrateOptions {
  * hydrate(App(), document.getElementById("root")!);
  * ```
  */
-export const hydrate = (
-  element: Element.Element<never, RendererContext>,
+export const hydrate = <A extends HTMLElement | SVGElement>(
+  element: Element.Element<A, never, RendererContext>,
   container: HTMLElement,
   options: HydrateOptions = {},
 ): Promise<void> => {

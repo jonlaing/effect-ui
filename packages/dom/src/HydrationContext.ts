@@ -14,18 +14,20 @@ export interface HydrationContextService {
   /**
    * The root container element for DOM queries.
    */
-  readonly root: HTMLElement;
+  readonly root: HTMLElement | SVGElement;
 
   /**
    * Find an element by its hydration ID.
    */
-  readonly findById: (id: string) => Effect.Effect<HTMLElement | null>;
+  readonly findById: (
+    id: string,
+  ) => Effect.Effect<HTMLElement | SVGElement | null>;
 
   /**
    * Find a suspense container and get its current state.
    */
   readonly findSuspense: (id: string) => Effect.Effect<{
-    container: HTMLElement;
+    container: HTMLElement | SVGElement;
     state: "loading" | "loaded" | "error";
     fallback: Node | null;
   } | null>;
@@ -45,7 +47,7 @@ export class HydrationContext extends Context.Tag("@effex/HydrationContext")<
  * Create a HydrationContext layer for a given root element.
  */
 export const makeHydrationContext = (
-  root: HTMLElement,
+  root: HTMLElement | SVGElement,
 ): Effect.Effect<Layer.Layer<HydrationContext>> =>
   Effect.gen(function* () {
     const counter = yield* Ref.make(0);
@@ -58,13 +60,11 @@ export const makeHydrationContext = (
       root,
 
       findById: (id: string) =>
-        Effect.sync(() =>
-          root.querySelector<HTMLElement>(`[data-effex-id="${id}"]`),
-        ),
+        Effect.sync(() => root.querySelector(`[data-effex-id="${id}"]`)),
 
       findSuspense: (id: string) =>
         Effect.sync(() => {
-          const container = root.querySelector<HTMLElement>(
+          const container = root.querySelector<HTMLElement | SVGElement>(
             `[data-effex-id="${id}"][data-effex-type="suspense"]`,
           );
           if (!container) return null;

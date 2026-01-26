@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { $, DOMRendererLive, Signal } from "@effex/dom";
+import { $, collect, DOMRendererLive, Signal } from "@effex/dom";
 
 import { ContextMenu } from "./ContextMenu";
 
@@ -21,9 +21,10 @@ describe("ContextMenu", () => {
     it("should render children", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.Trigger({}, $.div({}, "Right click me")),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(ContextMenu.Trigger({}, $.div({}, $.of("Right click me")))),
+          );
 
           expect(el.tagName).toBe("DIV");
           expect(
@@ -38,9 +39,10 @@ describe("ContextMenu", () => {
     it("should render with context-menu-trigger data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.Trigger({}, $.div({}, "Content")),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(ContextMenu.Trigger({}, $.div({}, $.of("Content")))),
+          );
 
           const trigger = el.querySelector("[data-context-menu-trigger]");
           expect(trigger).not.toBeNull();
@@ -51,9 +53,15 @@ describe("ContextMenu", () => {
     it("should render children", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.Trigger({}, $.div({ "data-test": "" }, "Test content")),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(
+              ContextMenu.Trigger(
+                {},
+                $.div({ "data-test": "" }, $.of("Test content")),
+              ),
+            ),
+          );
 
           const testContent = el.querySelector("[data-test]");
           expect(testContent).not.toBeNull();
@@ -65,9 +73,15 @@ describe("ContextMenu", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.Trigger({ class: "my-trigger" }, $.div({}, "Content")),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(
+              ContextMenu.Trigger(
+                { class: "my-trigger" },
+                $.div({}, $.of("Content")),
+              ),
+            ),
+          );
 
           const trigger = el.querySelector("[data-context-menu-trigger]");
           expect(trigger?.className).toBe("my-trigger");
@@ -78,9 +92,15 @@ describe("ContextMenu", () => {
     it("should have data-disabled when disabled", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.Trigger({ disabled: true }, $.div({}, "Content")),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(
+              ContextMenu.Trigger(
+                { disabled: true },
+                $.div({}, $.of("Content")),
+              ),
+            ),
+          );
 
           const trigger = el.querySelector("[data-context-menu-trigger]");
           expect(trigger?.getAttribute("data-disabled")).toBe("");
@@ -93,9 +113,10 @@ describe("ContextMenu", () => {
     it("should render with context-menu-item data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.Item({}, "Menu Item"),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(ContextMenu.Item({}, $.of("Menu Item"))),
+          );
 
           const item = el.querySelector("[data-context-menu-item]");
           expect(item).not.toBeNull();
@@ -106,9 +127,10 @@ describe("ContextMenu", () => {
     it("should have role=menuitem", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.Item({}, "Menu Item"),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(ContextMenu.Item({}, $.of("Menu Item"))),
+          );
 
           const item = el.querySelector("[data-context-menu-item]");
           expect(item?.getAttribute("role")).toBe("menuitem");
@@ -119,9 +141,10 @@ describe("ContextMenu", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.Item({ class: "my-item" }, "Menu Item"),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(ContextMenu.Item({ class: "my-item" }, $.of("Menu Item"))),
+          );
 
           const item = el.querySelector("[data-context-menu-item]");
           expect(item?.className).toBe("my-item");
@@ -132,9 +155,10 @@ describe("ContextMenu", () => {
     it("should have data-disabled when disabled", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.Item({ disabled: true }, "Menu Item"),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(ContextMenu.Item({ disabled: true }, $.of("Menu Item"))),
+          );
 
           const item = el.querySelector("[data-context-menu-item]");
           expect(item?.getAttribute("data-disabled")).toBe("");
@@ -147,9 +171,15 @@ describe("ContextMenu", () => {
     it("should render with context-menu-group data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.Group({}, [ContextMenu.Item({}, "Item")]),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(
+              ContextMenu.Group(
+                {},
+                collect(ContextMenu.Item({}, $.of("Item"))),
+              ),
+            ),
+          );
 
           const group = el.querySelector("[data-context-menu-group]");
           expect(group).not.toBeNull();
@@ -160,9 +190,15 @@ describe("ContextMenu", () => {
     it("should have role=group", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.Group({}, [ContextMenu.Item({}, "Item")]),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(
+              ContextMenu.Group(
+                {},
+                collect(ContextMenu.Item({}, $.of("Item"))),
+              ),
+            ),
+          );
 
           const group = el.querySelector("[data-context-menu-group]");
           expect(group?.getAttribute("role")).toBe("group");
@@ -173,9 +209,10 @@ describe("ContextMenu", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.Group({ class: "my-group" }, []),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(ContextMenu.Group({ class: "my-group" }, collect())),
+          );
 
           const group = el.querySelector("[data-context-menu-group]");
           expect(group?.className).toBe("my-group");
@@ -188,9 +225,10 @@ describe("ContextMenu", () => {
     it("should render with context-menu-label data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.Label({}, "Section Title"),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(ContextMenu.Label({}, $.of("Section Title"))),
+          );
 
           const label = el.querySelector("[data-context-menu-label]");
           expect(label).not.toBeNull();
@@ -202,9 +240,10 @@ describe("ContextMenu", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.Label({ class: "my-label" }, "Label"),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(ContextMenu.Label({ class: "my-label" }, $.of("Label"))),
+          );
 
           const label = el.querySelector("[data-context-menu-label]");
           expect(label?.className).toBe("my-label");
@@ -217,7 +256,10 @@ describe("ContextMenu", () => {
     it("should render with context-menu-separator data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [ContextMenu.Separator({})]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(ContextMenu.Separator({})),
+          );
 
           const separator = el.querySelector("[data-context-menu-separator]");
           expect(separator).not.toBeNull();
@@ -228,7 +270,10 @@ describe("ContextMenu", () => {
     it("should have role=separator", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [ContextMenu.Separator({})]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(ContextMenu.Separator({})),
+          );
 
           const separator = el.querySelector("[data-context-menu-separator]");
           expect(separator?.getAttribute("role")).toBe("separator");
@@ -239,9 +284,10 @@ describe("ContextMenu", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.Separator({ class: "my-separator" }),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(ContextMenu.Separator({ class: "my-separator" })),
+          );
 
           const separator = el.querySelector("[data-context-menu-separator]");
           expect(separator?.className).toBe("my-separator");
@@ -254,9 +300,10 @@ describe("ContextMenu", () => {
     it("should render with checkbox-item data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.CheckboxItem({}, "Check me"),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(ContextMenu.CheckboxItem({}, $.of("Check me"))),
+          );
 
           const item = el.querySelector("[data-context-menu-checkbox-item]");
           expect(item).not.toBeNull();
@@ -267,9 +314,10 @@ describe("ContextMenu", () => {
     it("should have role=menuitemcheckbox", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.CheckboxItem({}, "Check me"),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(ContextMenu.CheckboxItem({}, $.of("Check me"))),
+          );
 
           const item = el.querySelector("[data-context-menu-checkbox-item]");
           expect(item?.getAttribute("role")).toBe("menuitemcheckbox");
@@ -280,9 +328,10 @@ describe("ContextMenu", () => {
     it("should default to unchecked", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.CheckboxItem({}, "Check me"),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(ContextMenu.CheckboxItem({}, $.of("Check me"))),
+          );
 
           const item = el.querySelector("[data-context-menu-checkbox-item]");
           expect(item?.getAttribute("data-state")).toBe("unchecked");
@@ -294,9 +343,15 @@ describe("ContextMenu", () => {
     it("should reflect defaultChecked=true", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.CheckboxItem({ defaultChecked: true }, "Check me"),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(
+              ContextMenu.CheckboxItem(
+                { defaultChecked: true },
+                $.of("Check me"),
+              ),
+            ),
+          );
 
           const item = el.querySelector("[data-context-menu-checkbox-item]");
           expect(item?.getAttribute("data-state")).toBe("checked");
@@ -310,9 +365,10 @@ describe("ContextMenu", () => {
         Effect.gen(function* () {
           const checked = yield* Signal.make(true);
 
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.CheckboxItem({ checked }, "Check me"),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(ContextMenu.CheckboxItem({ checked }, $.of("Check me"))),
+          );
 
           const item = el.querySelector("[data-context-menu-checkbox-item]");
           expect(item?.getAttribute("data-state")).toBe("checked");
@@ -330,9 +386,10 @@ describe("ContextMenu", () => {
     it("should render with radio-group data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.RadioGroup({}, []),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(ContextMenu.RadioGroup({}, collect())),
+          );
 
           const group = el.querySelector("[data-context-menu-radio-group]");
           expect(group).not.toBeNull();
@@ -343,9 +400,10 @@ describe("ContextMenu", () => {
     it("should have role=group", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.RadioGroup({}, []),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(ContextMenu.RadioGroup({}, collect())),
+          );
 
           const group = el.querySelector("[data-context-menu-radio-group]");
           expect(group?.getAttribute("role")).toBe("group");
@@ -358,11 +416,17 @@ describe("ContextMenu", () => {
     it("should render with radio-item data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.RadioGroup({}, [
-              ContextMenu.RadioItem({ value: "option1" }, "Option 1"),
-            ]),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(
+              ContextMenu.RadioGroup(
+                {},
+                collect(
+                  ContextMenu.RadioItem({ value: "option1" }, $.of("Option 1")),
+                ),
+              ),
+            ),
+          );
 
           const item = el.querySelector("[data-context-menu-radio-item]");
           expect(item).not.toBeNull();
@@ -373,11 +437,17 @@ describe("ContextMenu", () => {
     it("should have role=menuitemradio", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.RadioGroup({}, [
-              ContextMenu.RadioItem({ value: "option1" }, "Option 1"),
-            ]),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(
+              ContextMenu.RadioGroup(
+                {},
+                collect(
+                  ContextMenu.RadioItem({ value: "option1" }, $.of("Option 1")),
+                ),
+              ),
+            ),
+          );
 
           const item = el.querySelector("[data-context-menu-radio-item]");
           expect(item?.getAttribute("role")).toBe("menuitemradio");
@@ -388,12 +458,18 @@ describe("ContextMenu", () => {
     it("should reflect defaultValue selection", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ContextMenu.Root({}, [
-            ContextMenu.RadioGroup({ defaultValue: "option2" }, [
-              ContextMenu.RadioItem({ value: "option1" }, "Option 1"),
-              ContextMenu.RadioItem({ value: "option2" }, "Option 2"),
-            ]),
-          ]);
+          const el = yield* ContextMenu.Root(
+            {},
+            collect(
+              ContextMenu.RadioGroup(
+                { defaultValue: "option2" },
+                collect(
+                  ContextMenu.RadioItem({ value: "option1" }, $.of("Option 1")),
+                  ContextMenu.RadioItem({ value: "option2" }, $.of("Option 2")),
+                ),
+              ),
+            ),
+          );
 
           const items = el.querySelectorAll("[data-context-menu-radio-item]");
           expect(items[0]?.getAttribute("data-state")).toBe("unchecked");
@@ -409,9 +485,10 @@ describe("ContextMenu", () => {
         Effect.gen(function* () {
           const open = yield* Signal.make(false);
 
-          yield* ContextMenu.Root({ open }, [
-            ContextMenu.Trigger({}, $.div({}, "Trigger")),
-          ]);
+          yield* ContextMenu.Root(
+            { open },
+            collect(ContextMenu.Trigger({}, $.div({}, $.of("Trigger")))),
+          );
 
           // Menu starts closed
           expect(yield* open.get).toBe(false);

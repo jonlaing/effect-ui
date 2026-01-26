@@ -18,8 +18,8 @@ import type { Element as ElementType } from "./types.js";
  * ```ts
  * import { Element } from "@effex/dom";
  *
- * // The Element type
- * const MyComponent: Element.Element<never, SomeContext> = ...
+ * // The Element type with specific element, error, and context types
+ * const myDiv: Element.Element<HTMLDivElement, MyError, SomeContext> = ...
  *
  * // Pipeable DOM manipulation in animation hooks (data-last)
  * onEnter: (el) => el.pipe(
@@ -34,12 +34,17 @@ import type { Element as ElementType } from "./types.js";
 export declare namespace Element {
   /**
    * A DOM element wrapped in an Effect with scope management.
-   * This is the DOM-specialized version that returns HTMLElement.
+   * This is the DOM-specialized version for HTML and SVG elements.
    *
+   * @template A - The specific element type (e.g., HTMLDivElement, SVGSVGElement)
    * @template E - The error type (defaults to never for infallible elements)
    * @template R - The requirements/context type (defaults to never for no requirements)
    */
-  export type Element<E = never, R = never> = ElementType<E, R>;
+  export type Element<
+    A extends HTMLElement | SVGElement,
+    E = never,
+    R = never,
+  > = ElementType<A, E, R>;
 }
 
 /**
@@ -65,7 +70,7 @@ export const Element = {
   // Querying & Traversal
   // ===========================================================================
 
-  getId: <A extends HTMLElement, E, R>(
+  getId: <A extends HTMLElement | SVGElement, E, R>(
     self: Effect.Effect<A, E, R>,
   ): Effect.Effect<string, E, R> => Effect.map(self, (el) => el.id),
 
@@ -77,9 +82,9 @@ export const Element = {
    * el.pipe(Element.getParent)
    * ```
    */
-  getParent: <A extends HTMLElement, E, R>(
+  getParent: <A extends HTMLElement | SVGElement, E, R>(
     self: Effect.Effect<A, E, R>,
-  ): Effect.Effect<HTMLElement, E | NoSuchElementException, R> =>
+  ): Effect.Effect<HTMLElement | SVGElement, E | NoSuchElementException, R> =>
     self.pipe(Effect.flatMap((el) => Effect.fromNullable(el.parentElement))),
 
   /**
@@ -90,7 +95,7 @@ export const Element = {
    * el.pipe(Element.getBoundingClientRect)
    * ```
    */
-  getBoundingClientRect: <A extends HTMLElement, E, R>(
+  getBoundingClientRect: <A extends HTMLElement | SVGElement, E, R>(
     self: Effect.Effect<A, E, R>,
   ): Effect.Effect<DOMRect, E, R> =>
     Effect.map(self, (el) => el.getBoundingClientRect()),
@@ -117,7 +122,7 @@ export const Element = {
    * el.pipe(Element.getScrollHeight)
    * ```
    */
-  getScrollHeight: <A extends HTMLElement, E, R>(
+  getScrollHeight: <A extends HTMLElement | SVGElement, E, R>(
     self: Effect.Effect<A, E, R>,
   ): Effect.Effect<number, E, R> => Effect.map(self, (el) => el.scrollHeight),
 
@@ -141,7 +146,7 @@ export const Element = {
    * el.pipe(Element.getScrollWidth)
    * ```
    */
-  getScrollWidth: <A extends HTMLElement, E, R>(
+  getScrollWidth: <A extends HTMLElement | SVGElement, E, R>(
     self: Effect.Effect<A, E, R>,
   ): Effect.Effect<number, E, R> => Effect.map(self, (el) => el.scrollWidth),
 
@@ -157,21 +162,23 @@ export const Element = {
   querySelector: dual<
     (
       selector: string,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
-    ) => Effect.Effect<HTMLElement, E | NoSuchElementException, R>,
-    <A extends HTMLElement, E, R>(
+    ) => Effect.Effect<HTMLElement | SVGElement, E | NoSuchElementException, R>,
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       selector: string,
-    ) => Effect.Effect<HTMLElement, E | NoSuchElementException, R>
+    ) => Effect.Effect<HTMLElement | SVGElement, E | NoSuchElementException, R>
   >(
     2,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       selector: string,
-    ): Effect.Effect<HTMLElement, E | NoSuchElementException, R> =>
+    ): Effect.Effect<HTMLElement | SVGElement, E | NoSuchElementException, R> =>
       Effect.flatMap(self, (el) =>
-        Effect.fromNullable(el.querySelector(selector) as HTMLElement | null),
+        Effect.fromNullable(
+          el.querySelector(selector) as HTMLElement | SVGElement | null,
+        ),
       ),
   ),
 
@@ -186,22 +193,25 @@ export const Element = {
   querySelectorAll: dual<
     (
       selector: string,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
-    ) => Effect.Effect<HTMLElement[], E, R>,
-    <A extends HTMLElement, E, R>(
+    ) => Effect.Effect<HTMLElement[] | SVGElement[], E, R>,
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       selector: string,
-    ) => Effect.Effect<HTMLElement[], E, R>
+    ) => Effect.Effect<HTMLElement[] | SVGElement[], E, R>
   >(
     2,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       selector: string,
-    ): Effect.Effect<HTMLElement[], E, R> =>
+    ): Effect.Effect<HTMLElement[] | SVGElement[], E, R> =>
       Effect.map(
         self,
-        (el) => Array.from(el.querySelectorAll(selector)) as HTMLElement[],
+        (el) =>
+          Array.from(el.querySelectorAll(selector)) as
+            | HTMLElement[]
+            | SVGElement[],
       ),
   ),
 
@@ -217,21 +227,23 @@ export const Element = {
   closest: dual<
     (
       selector: string,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
-    ) => Effect.Effect<HTMLElement, E | NoSuchElementException, R>,
-    <A extends HTMLElement, E, R>(
+    ) => Effect.Effect<HTMLElement | SVGElement, E | NoSuchElementException, R>,
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       selector: string,
-    ) => Effect.Effect<HTMLElement, E | NoSuchElementException, R>
+    ) => Effect.Effect<HTMLElement | SVGElement, E | NoSuchElementException, R>
   >(
     2,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       selector: string,
-    ): Effect.Effect<HTMLElement, E | NoSuchElementException, R> =>
+    ): Effect.Effect<HTMLElement | SVGElement, E | NoSuchElementException, R> =>
       Effect.flatMap(self, (el) =>
-        Effect.fromNullable(el.closest(selector) as HTMLElement | null),
+        Effect.fromNullable(
+          el.closest(selector) as HTMLElement | SVGElement | null,
+        ),
       ),
   ),
 
@@ -246,16 +258,16 @@ export const Element = {
   matches: dual<
     (
       selector: string,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<boolean, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       selector: string,
     ) => Effect.Effect<boolean, E, R>
   >(
     2,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       selector: string,
     ): Effect.Effect<boolean, E, R> =>
@@ -265,16 +277,16 @@ export const Element = {
   contains: dual<
     (
       element?: Node | null,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<boolean, NoSuchElementException | E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       element?: Node | null,
     ) => Effect.Effect<boolean, NoSuchElementException | E, R>
   >(
     2,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       element?: Node | null,
     ): Effect.Effect<boolean, NoSuchElementException | E, R> =>
@@ -304,16 +316,16 @@ export const Element = {
   setStyles: dual<
     (
       styles: Record<string, string>,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       styles: Record<string, string>,
     ) => Effect.Effect<A, E, R>
   >(
     2,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       styles: Record<string, string>,
     ): Effect.Effect<A, E, R> =>
@@ -342,17 +354,17 @@ export const Element = {
     (
       property: string,
       value: string,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       property: string,
       value: string,
     ) => Effect.Effect<A, E, R>
   >(
     3,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       property: string,
       value: string,
@@ -380,16 +392,16 @@ export const Element = {
   removeStyle: dual<
     (
       property: string,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       property: string,
     ) => Effect.Effect<A, E, R>
   >(
     2,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       property: string,
     ): Effect.Effect<A, E, R> =>
@@ -413,16 +425,16 @@ export const Element = {
   addClass: dual<
     (
       ...classes: string[]
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       ...classes: string[]
     ) => Effect.Effect<A, E, R>
   >(
     (args) => Effect.isEffect(args[0]),
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       ...classes: string[]
     ): Effect.Effect<A, E, R> =>
@@ -440,16 +452,16 @@ export const Element = {
   removeClass: dual<
     (
       ...classes: string[]
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       ...classes: string[]
     ) => Effect.Effect<A, E, R>
   >(
     (args) => Effect.isEffect(args[0]),
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       ...classes: string[]
     ): Effect.Effect<A, E, R> =>
@@ -471,17 +483,17 @@ export const Element = {
     (
       className: string,
       force?: boolean,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       className: string,
       force?: boolean,
     ) => Effect.Effect<A, E, R>
   >(
     (args) => Effect.isEffect(args[0]),
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       className: string,
       force?: boolean,
@@ -503,17 +515,17 @@ export const Element = {
     (
       oldClass: string,
       newClass: string,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       oldClass: string,
       newClass: string,
     ) => Effect.Effect<A, E, R>
   >(
     3,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       oldClass: string,
       newClass: string,
@@ -530,16 +542,16 @@ export const Element = {
   hasAttribute: dual<
     (
       name: string,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<boolean, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       name: string,
     ) => Effect.Effect<boolean, E, R>
   >(
     2,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       name: string,
     ): Effect.Effect<boolean, E, R> =>
@@ -558,17 +570,17 @@ export const Element = {
     (
       name: string,
       value: string,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       name: string,
       value: string,
     ) => Effect.Effect<A, E, R>
   >(
     3,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       name: string,
       value: string,
@@ -587,16 +599,16 @@ export const Element = {
   setAttributes: dual<
     (
       attrs: Record<string, string>,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       attrs: Record<string, string>,
     ) => Effect.Effect<A, E, R>
   >(
     2,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       attrs: Record<string, string>,
     ): Effect.Effect<A, E, R> =>
@@ -620,16 +632,16 @@ export const Element = {
   removeAttribute: dual<
     (
       name: string,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       name: string,
     ) => Effect.Effect<A, E, R>
   >(
     2,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       name: string,
     ): Effect.Effect<A, E, R> =>
@@ -649,17 +661,17 @@ export const Element = {
     (
       name: string,
       force?: boolean,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       name: string,
       force?: boolean,
     ) => Effect.Effect<A, E, R>
   >(
     (args) => Effect.isEffect(args[0]),
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       name: string,
       force?: boolean,
@@ -681,16 +693,16 @@ export const Element = {
   getAttribute: dual<
     (
       name: string,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<string, AttributeNotFound | E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       name: string,
     ) => Effect.Effect<string, AttributeNotFound | E, R>
   >(
     2,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       name: string,
     ): Effect.Effect<string, AttributeNotFound | E, R> =>
@@ -719,17 +731,17 @@ export const Element = {
     (
       key: string,
       value: string,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       key: string,
       value: string,
     ) => Effect.Effect<A, E, R>
   >(
     3,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       key: string,
       value: string,
@@ -748,16 +760,16 @@ export const Element = {
   removeData: dual<
     (
       key: string,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       key: string,
     ) => Effect.Effect<A, E, R>
   >(
     2,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       key: string,
     ): Effect.Effect<A, E, R> =>
@@ -776,16 +788,16 @@ export const Element = {
   getData: dual<
     (
       key: string,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<string, DataAttributeNotFound | E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       key: string,
     ) => Effect.Effect<string, DataAttributeNotFound | E, R>
   >(
     2,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       key: string,
     ): Effect.Effect<string, DataAttributeNotFound | E, R> =>
@@ -813,16 +825,16 @@ export const Element = {
   setTextContent: dual<
     (
       text: string,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       text: string,
     ) => Effect.Effect<A, E, R>
   >(
     2,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       text: string,
     ): Effect.Effect<A, E, R> =>
@@ -841,16 +853,16 @@ export const Element = {
   setInnerHTML: dual<
     (
       html: string,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       html: string,
     ) => Effect.Effect<A, E, R>
   >(
     2,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       html: string,
     ): Effect.Effect<A, E, R> =>
@@ -870,20 +882,20 @@ export const Element = {
    * ```
    */
   setProperty: dual<
-    <K extends keyof HTMLElement>(
+    <K extends keyof (HTMLElement | SVGElement)>(
       key: K,
-      value: HTMLElement[K],
-    ) => <A extends HTMLElement, E, R>(
+      value: HTMLElement[K] | SVGElement[K],
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R, K extends keyof A>(
+    <A extends HTMLElement | SVGElement, E, R, K extends keyof A>(
       self: Effect.Effect<A, E, R>,
       key: K,
       value: A[K],
     ) => Effect.Effect<A, E, R>
   >(
     3,
-    <A extends HTMLElement, E, R, K extends keyof A>(
+    <A extends HTMLElement | SVGElement, E, R, K extends keyof A>(
       self: Effect.Effect<A, E, R>,
       key: K,
       value: A[K],
@@ -903,7 +915,7 @@ export const Element = {
    * el.pipe(Element.focus)
    * ```
    */
-  focus: <A extends HTMLElement, E, R>(
+  focus: <A extends HTMLElement | SVGElement, E, R>(
     self: Effect.Effect<A, E, R>,
   ): Effect.Effect<A, E, R> =>
     Effect.tap(self, (el) =>
@@ -921,16 +933,16 @@ export const Element = {
   focusWithOptions: dual<
     (
       options: FocusOptions,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       options: FocusOptions,
     ) => Effect.Effect<A, E, R>
   >(
     2,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       options: FocusOptions,
     ): Effect.Effect<A, E, R> =>
@@ -945,7 +957,7 @@ export const Element = {
    * el.pipe(Element.blur)
    * ```
    */
-  blur: <A extends HTMLElement, E, R>(
+  blur: <A extends HTMLElement | SVGElement, E, R>(
     self: Effect.Effect<A, E, R>,
   ): Effect.Effect<A, E, R> =>
     Effect.tap(self, (el) => Effect.sync(() => el.blur())),
@@ -962,22 +974,25 @@ export const Element = {
   focusFirst: dual<
     (
       selector: string,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       selector: string,
     ) => Effect.Effect<A, E, R>
   >(
     2,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       selector: string,
     ): Effect.Effect<A, E, R> =>
       Effect.tap(self, (el) =>
         Effect.sync(() => {
-          const first = el.querySelector(selector) as HTMLElement | null;
+          const first = el.querySelector(selector) as
+            | HTMLElement
+            | SVGElement
+            | null;
           if (first) {
             first.focus({ preventScroll: true });
           } else {
@@ -998,23 +1013,26 @@ export const Element = {
   focusLast: dual<
     (
       selector: string,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       selector: string,
     ) => Effect.Effect<A, E, R>
   >(
     2,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       selector: string,
     ): Effect.Effect<A, E, R> =>
       Effect.tap(self, (el) =>
         Effect.sync(() => {
           const items = el.querySelectorAll(selector);
-          const last = items[items.length - 1] as HTMLElement | undefined;
+          const last = items[items.length - 1] as
+            | HTMLElement
+            | SVGElement
+            | undefined;
           if (last) {
             last.focus({ preventScroll: true });
           } else {
@@ -1039,16 +1057,16 @@ export const Element = {
   scrollIntoView: dual<
     (
       options?: ScrollIntoViewOptions,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       options?: ScrollIntoViewOptions,
     ) => Effect.Effect<A, E, R>
   >(
     (args) => Effect.isEffect(args[0]),
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       options?: ScrollIntoViewOptions,
     ): Effect.Effect<A, E, R> =>
@@ -1066,16 +1084,16 @@ export const Element = {
   scrollTo: dual<
     (
       options: ScrollToOptions,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       options: ScrollToOptions,
     ) => Effect.Effect<A, E, R>
   >(
     2,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       options: ScrollToOptions,
     ): Effect.Effect<A, E, R> =>
@@ -1093,16 +1111,16 @@ export const Element = {
   scrollBy: dual<
     (
       options: ScrollToOptions,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       options: ScrollToOptions,
     ) => Effect.Effect<A, E, R>
   >(
     2,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       options: ScrollToOptions,
     ): Effect.Effect<A, E, R> =>
@@ -1138,17 +1156,17 @@ export const Element = {
     (
       keyframes: Keyframe[] | PropertyIndexedKeyframes,
       options?: number | KeyframeAnimationOptions,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       keyframes: Keyframe[] | PropertyIndexedKeyframes,
       options?: number | KeyframeAnimationOptions,
     ) => Effect.Effect<A, E, R>
   >(
     (args) => Effect.isEffect(args[0]),
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       keyframes: Keyframe[] | PropertyIndexedKeyframes,
       options?: number | KeyframeAnimationOptions,
@@ -1186,16 +1204,16 @@ export const Element = {
   dispatchEvent: dual<
     (
       event: Event,
-    ) => <A extends HTMLElement, E, R>(
+    ) => <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       event: Event,
     ) => Effect.Effect<A, E, R>
   >(
     2,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       event: Event,
     ): Effect.Effect<A, E, R> =>
@@ -1271,16 +1289,16 @@ export const Element = {
    * ```
    */
   tap: dual<
-    <A extends HTMLElement>(
+    <A extends HTMLElement | SVGElement>(
       fn: (el: A) => void,
     ) => <E, R>(self: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       fn: (el: A) => void,
     ) => Effect.Effect<A, E, R>
   >(
     2,
-    <A extends HTMLElement, E, R>(
+    <A extends HTMLElement | SVGElement, E, R>(
       self: Effect.Effect<A, E, R>,
       fn: (el: A) => void,
     ): Effect.Effect<A, E, R> =>
@@ -1300,18 +1318,18 @@ export const Element = {
    * ```
    */
   tapEffect: dual<
-    <A extends HTMLElement, E2, R2>(
+    <A extends HTMLElement | SVGElement, E2, R2>(
       fn: (el: A) => Effect.Effect<unknown, E2, R2>,
     ) => <E, R>(
       self: Effect.Effect<A, E, R>,
     ) => Effect.Effect<A, E | E2, R | R2>,
-    <A extends HTMLElement, E, R, E2, R2>(
+    <A extends HTMLElement | SVGElement, E, R, E2, R2>(
       self: Effect.Effect<A, E, R>,
       fn: (el: A) => Effect.Effect<unknown, E2, R2>,
     ) => Effect.Effect<A, E | E2, R | R2>
   >(
     2,
-    <A extends HTMLElement, E, R, E2, R2>(
+    <A extends HTMLElement | SVGElement, E, R, E2, R2>(
       self: Effect.Effect<A, E, R>,
       fn: (el: A) => Effect.Effect<unknown, E2, R2>,
     ): Effect.Effect<A, E | E2, R | R2> => Effect.tap(self, fn),

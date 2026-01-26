@@ -88,8 +88,8 @@ describe("Animation", () => {
 
     it("should call lifecycle hooks with Effect-wrapped element", async () => {
       const element = document.createElement("div");
-      let beforeEnterEl: HTMLElement | null = null;
-      let enterEl: HTMLElement | null = null;
+      let beforeEnterEl: HTMLElement | SVGElement | null = null;
+      let enterEl: HTMLElement | SVGElement | null = null;
 
       await Effect.runPromise(
         runEnterAnimation(element, {
@@ -203,8 +203,8 @@ describe("Animation", () => {
 
     it("should call lifecycle hooks with Effect-wrapped element", async () => {
       const element = document.createElement("div");
-      let beforeExitEl: HTMLElement | null = null;
-      let exitEl: HTMLElement | null = null;
+      let beforeExitEl: HTMLElement | SVGElement | null = null;
+      let exitEl: HTMLElement | SVGElement | null = null;
 
       await Effect.runPromise(
         runExitAnimation(element, {

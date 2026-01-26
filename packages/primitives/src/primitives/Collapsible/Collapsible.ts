@@ -2,13 +2,14 @@ import { Context, Effect } from "effect";
 
 import {
   $,
-  Component,
   mergeProps,
   provide,
   Readable,
   Signal,
   UniqueId,
+  type ChildEffect,
   type ClassValue,
+  type Element,
 } from "@effex/dom";
 
 /**
@@ -65,60 +66,64 @@ export interface CollapsibleRootProps {
  * ])
  * ```
  */
-const Root = Component.gen(function* (props: CollapsibleRootProps, children) {
-  // Handle controlled vs uncontrolled state
-  const isOpen = yield* Signal.fromNullable(
-    props.open,
-    props.defaultOpen ?? false,
-  );
+const Root = <E = never, R = never>(
+  props: CollapsibleRootProps,
+  children: ChildEffect<E, R | CollapsibleCtx>,
+): Element.Element<HTMLDivElement, E, R> =>
+  Effect.gen(function* () {
+    // Handle controlled vs uncontrolled state
+    const isOpen = yield* Signal.fromNullable(
+      props.open,
+      props.defaultOpen ?? false,
+    );
 
-  // Handle disabled state
-  const disabled: Readable.Readable<boolean> = Readable.of(
-    props.disabled ?? false,
-  );
+    // Handle disabled state
+    const disabled: Readable.Readable<boolean> = Readable.of(
+      props.disabled ?? false,
+    );
 
-  const contentId = yield* UniqueId.make("collapsible-content");
+    const contentId = yield* UniqueId.make("collapsible-content");
 
-  const setOpenState = (newValue: boolean) =>
-    Effect.gen(function* () {
-      const isDisabled = yield* disabled.get;
-      if (isDisabled) return;
+    const setOpenState = (newValue: boolean) =>
+      Effect.gen(function* () {
+        const isDisabled = yield* disabled.get;
+        if (isDisabled) return;
 
-      yield* isOpen.set(newValue);
-      yield* props.onOpenChange?.(newValue) ?? Effect.void;
-    });
+        yield* isOpen.set(newValue);
+        yield* props.onOpenChange?.(newValue) ?? Effect.void;
+      });
 
-  const toggle = () =>
-    Effect.gen(function* () {
-      const current = yield* isOpen.get;
-      yield* setOpenState(!current);
-    });
+    const toggle = () =>
+      Effect.gen(function* () {
+        const current = yield* isOpen.get;
+        yield* setOpenState(!current);
+      });
 
-  const open = () => setOpenState(true);
-  const close = () => setOpenState(false);
+    const open = () => setOpenState(true);
+    const close = () => setOpenState(false);
 
-  const ctxValue: CollapsibleContext = {
-    isOpen,
-    toggle,
-    open,
-    close,
-    contentId,
-    disabled,
-  };
+    const ctxValue: CollapsibleContext = {
+      isOpen,
+      toggle,
+      open,
+      close,
+      contentId,
+      disabled,
+    };
 
-  const dataState = isOpen.map((isOpenValue) =>
-    isOpenValue ? "open" : "closed",
-  );
-  const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+    const dataState = isOpen.map((isOpenValue) =>
+      isOpenValue ? "open" : "closed",
+    );
+    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
 
-  return yield* $.div(
-    {
-      "data-state": dataState,
-      "data-disabled": dataDisabled,
-    },
-    provide(CollapsibleCtx, ctxValue, Component.normalizeChildren(children)),
-  );
-});
+    return yield* $.div(
+      {
+        "data-state": dataState,
+        "data-disabled": dataDisabled,
+      },
+      provide(CollapsibleCtx, ctxValue, children),
+    );
+  }) as Element.Element<HTMLDivElement, E, R>;
 
 /**
  * Props for Collapsible.Trigger
@@ -142,61 +147,69 @@ export interface CollapsibleTriggerProps {
  * Collapsible.Trigger({ as: "div" }, $.span("Custom trigger"))
  * ```
  */
-const Trigger = Component.gen(function* (
+const Trigger = <E = never, R = never>(
   props: CollapsibleTriggerProps,
-  children,
-) {
-  const ctx = yield* CollapsibleCtx;
+  children: ChildEffect<E, R>,
+): Element.Element<HTMLButtonElement | HTMLDivElement, E, R | CollapsibleCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* CollapsibleCtx;
 
-  const handleKeyDown = (e: KeyboardEvent) =>
-    Effect.suspend(() => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        return ctx.toggle();
-      }
-      return Effect.void;
-    });
+    const handleKeyDown = (e: KeyboardEvent) =>
+      Effect.suspend(() => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          return ctx.toggle();
+        }
+        return Effect.void;
+      });
 
-  const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
-  const dataDisabled = ctx.disabled.map((d) => (d ? "" : undefined));
-  const ariaExpanded = ctx.isOpen.map((open) => (open ? "true" : "false"));
+    const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
+    const dataDisabled = ctx.disabled.map((d) => (d ? "" : undefined));
+    const ariaExpanded = ctx.isOpen.map((open) => (open ? "true" : "false"));
 
-  const triggerProps = {
-    "aria-expanded": ariaExpanded,
-    "aria-controls": ctx.contentId,
-    "data-state": dataState,
-    "data-disabled": dataDisabled,
-    onClick: ctx.toggle,
-  };
+    const triggerProps = {
+      "aria-expanded": ariaExpanded,
+      "aria-controls": ctx.contentId,
+      "data-state": dataState,
+      "data-disabled": dataDisabled,
+      onClick: ctx.toggle,
+    };
 
-  if (props.asChild && Effect.isEffect(children)) {
-    return yield* mergeProps(triggerProps, children);
-  }
+    if (props.asChild && Effect.isEffect(children)) {
+      return yield* mergeProps(
+        triggerProps,
+        children as Element.Element<HTMLElement | SVGElement, E, R>,
+      );
+    }
 
-  if (props.as === "div") {
-    return yield* $.div(
+    if (props.as === "div") {
+      return yield* $.div(
+        {
+          ...triggerProps,
+          class: props.class,
+          role: "button",
+          tabIndex: ctx.disabled.map((d) => (d ? -1 : 0)),
+          onKeyDown: handleKeyDown,
+        },
+        children,
+      );
+    }
+
+    // Default: button
+    return yield* $.button(
       {
         ...triggerProps,
         class: props.class,
-        role: "button",
-        tabIndex: ctx.disabled.map((d) => (d ? -1 : 0)),
-        onKeyDown: handleKeyDown,
+        type: "button",
+        disabled: ctx.disabled,
       },
-      children ?? [],
+      children,
     );
-  }
-
-  // Default: button
-  return yield* $.button(
-    {
-      ...triggerProps,
-      class: props.class,
-      type: "button",
-      disabled: ctx.disabled,
-    },
-    children ?? [],
-  );
-});
+  }) as Element.Element<
+    HTMLButtonElement | HTMLDivElement,
+    E,
+    R | CollapsibleCtx
+  >;
 
 /**
  * Props for Collapsible.Content
@@ -221,26 +234,27 @@ export interface CollapsibleContentProps {
  * ])
  * ```
  */
-const Content = Component.gen(function* (
+const Content = <E = never, R = never>(
   props: CollapsibleContentProps,
-  children,
-) {
-  const ctx = yield* CollapsibleCtx;
+  children: ChildEffect<E, R>,
+): Element.Element<HTMLDivElement, E, R | CollapsibleCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* CollapsibleCtx;
 
-  const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
+    const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
 
-  // Outer div uses CSS grid for height animation
-  // Inner div wraps children with overflow: hidden for the animation to work
-  return yield* $.div(
-    {
-      id: ctx.contentId,
-      class: props.class,
-      role: "region",
-      "data-state": dataState,
-    },
-    [$.div({ "data-collapsible-inner": "" }, children ?? [])],
-  );
-});
+    // Outer div uses CSS grid for height animation
+    // Inner div wraps children with overflow: hidden for the animation to work
+    return yield* $.div(
+      {
+        id: ctx.contentId,
+        class: props.class,
+        role: "region",
+        "data-state": dataState,
+      },
+      $.div({ "data-collapsible-inner": "" }, children),
+    );
+  }) as Element.Element<HTMLDivElement, E, R | CollapsibleCtx>;
 
 /**
  * Headless Collapsible primitive for building accessible

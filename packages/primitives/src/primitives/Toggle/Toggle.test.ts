@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { DOMRendererLive, Signal } from "@effex/dom";
+import { $, collect, DOMRendererLive, Signal } from "@effex/dom";
 
 import { Toggle } from "./Toggle";
 
@@ -21,7 +21,7 @@ describe("Toggle", () => {
     it("should render as a button", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toggle({}, "Toggle me");
+          const el = yield* Toggle({}, $.of("Toggle me"));
 
           expect(el.tagName).toBe("BUTTON");
           expect(el.getAttribute("type")).toBe("button");
@@ -33,7 +33,7 @@ describe("Toggle", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toggle({ class: "my-toggle" }, "Toggle");
+          const el = yield* Toggle({ class: "my-toggle" }, $.of("Toggle"));
 
           expect(el.className).toBe("my-toggle");
         }),
@@ -43,7 +43,7 @@ describe("Toggle", () => {
     it("should apply custom id", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toggle({ id: "my-toggle" }, "Toggle");
+          const el = yield* Toggle({ id: "my-toggle" }, $.of("Toggle"));
 
           expect(el.id).toBe("my-toggle");
         }),
@@ -55,7 +55,7 @@ describe("Toggle", () => {
     it("should default to unpressed state", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toggle({}, "Toggle");
+          const el = yield* Toggle({}, $.of("Toggle"));
 
           expect(el.getAttribute("data-state")).toBe("off");
           expect(el.getAttribute("aria-pressed")).toBe("false");
@@ -66,7 +66,7 @@ describe("Toggle", () => {
     it("should respect defaultPressed=true", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toggle({ defaultPressed: true }, "Toggle");
+          const el = yield* Toggle({ defaultPressed: true }, $.of("Toggle"));
 
           expect(el.getAttribute("data-state")).toBe("on");
           expect(el.getAttribute("aria-pressed")).toBe("true");
@@ -77,7 +77,7 @@ describe("Toggle", () => {
     it("should toggle state on click", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toggle({ defaultPressed: false }, "Toggle");
+          const el = yield* Toggle({ defaultPressed: false }, $.of("Toggle"));
 
           expect(el.getAttribute("data-state")).toBe("off");
 
@@ -102,7 +102,7 @@ describe("Toggle", () => {
       await runTest(
         Effect.gen(function* () {
           const pressed = yield* Signal.make(true);
-          const el = yield* Toggle({ pressed }, "Toggle");
+          const el = yield* Toggle({ pressed }, $.of("Toggle"));
 
           expect(el.getAttribute("data-state")).toBe("on");
 
@@ -118,7 +118,7 @@ describe("Toggle", () => {
       await runTest(
         Effect.gen(function* () {
           const pressed = yield* Signal.make(false);
-          const el = yield* Toggle({ pressed }, "Toggle");
+          const el = yield* Toggle({ pressed }, $.of("Toggle"));
 
           el.click();
           yield* Effect.sleep("10 millis");
@@ -134,7 +134,7 @@ describe("Toggle", () => {
     it("should set disabled attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Toggle({ disabled: true }, "Toggle");
+          const el = yield* Toggle({ disabled: true }, $.of("Toggle"));
 
           expect((el as HTMLButtonElement).disabled).toBe(true);
           expect(el.getAttribute("data-disabled")).toBe("");
@@ -147,7 +147,7 @@ describe("Toggle", () => {
         Effect.gen(function* () {
           const el = yield* Toggle(
             { disabled: true, defaultPressed: false },
-            "Toggle",
+            $.of("Toggle"),
           );
 
           expect(el.getAttribute("data-state")).toBe("off");
@@ -164,7 +164,7 @@ describe("Toggle", () => {
       await runTest(
         Effect.gen(function* () {
           const disabled = yield* Signal.make(false);
-          const el = yield* Toggle({ disabled }, "Toggle");
+          const el = yield* Toggle({ disabled }, $.of("Toggle"));
 
           expect((el as HTMLButtonElement).disabled).toBe(false);
 
@@ -191,7 +191,7 @@ describe("Toggle", () => {
                   changes.push(pressed);
                 }),
             },
-            "Toggle",
+            $.of("Toggle"),
           );
 
           el.click();

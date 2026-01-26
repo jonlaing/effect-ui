@@ -5,7 +5,11 @@ import type { Element } from "@effex/dom";
 /**
  * A component function that returns an Element.
  */
-export type LayoutComponent<E = never, R = never> = () => Element.Element<E, R>;
+export type LayoutComponent<E = never, R = never> = () => Element.Element<
+  HTMLElement | SVGElement,
+  E,
+  R
+>;
 
 /**
  * Context for passing outlet content through the layout hierarchy.
@@ -35,39 +39,37 @@ export class OutletContext extends Context.Tag("OutletContext")<
  * @example
  * ```ts
  * // _layout.tsx - Root layout
- * export default component("RootLayout", () =>
+ * const RootLayout = () =>
  *   Effect.gen(function* () {
- *     return yield* div([
+ *     return yield* div({}, collect(
  *       Header(),
- *       main([
- *         Outlet(), // Child layout or route renders here
- *       ]),
+ *       main({}, Outlet()), // Child layout or route renders here
  *       Footer(),
- *     ]);
- *   })
- * );
+ *     ));
+ *   });
  * ```
  *
  * @example
  * ```ts
  * // users._layout.tsx - Nested layout
- * export default component("UsersLayout", () =>
+ * const UsersLayout = () =>
  *   Effect.gen(function* () {
- *     return yield* div({ class: "users-layout" }, [
- *       aside([UsersSidebar()]),
- *       section([
- *         Outlet(), // Route component renders here
- *       ]),
- *     ]);
- *   })
- * );
+ *     return yield* div({ class: "users-layout" }, collect(
+ *       aside({}, UsersSidebar()),
+ *       section({}, Outlet()), // Route component renders here
+ *     ));
+ *   });
  * ```
  */
-export const Outlet = (): Element.Element<never, OutletContext> =>
+export const Outlet = (): Element.Element<
+  HTMLElement | SVGElement,
+  never,
+  OutletContext
+> =>
   Effect.gen(function* () {
     const ctx = yield* OutletContext;
     return yield* ctx.content();
-  }) as Element.Element<never, OutletContext>;
+  }) as Element.Element<HTMLElement | SVGElement, never, OutletContext>;
 
 /**
  * Creates an OutletContext layer with the given content.
@@ -94,12 +96,16 @@ export type LayoutComponentsMap = {
  * Extracts the union of all error types from a layout components map.
  */
 export type LayoutComponentsError<T extends LayoutComponentsMap> = {
-  [K in keyof T]: T[K] extends () => Element.Element<infer E, any> ? E : never;
+  [K in keyof T]: T[K] extends () => Element.Element<any, infer E, any>
+    ? E
+    : never;
 }[keyof T];
 
 /**
  * Extracts the union of all requirement types from a layout components map.
  */
 export type LayoutComponentsRequirements<T extends LayoutComponentsMap> = {
-  [K in keyof T]: T[K] extends () => Element.Element<any, infer R> ? R : never;
+  [K in keyof T]: T[K] extends () => Element.Element<any, any, infer R>
+    ? R
+    : never;
 }[keyof T];

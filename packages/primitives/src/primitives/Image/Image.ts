@@ -2,13 +2,13 @@ import { Context, Effect } from "effect";
 
 import {
   $,
-  Component,
   Derived,
   Element,
   provide,
   Reaction,
   Readable,
   Signal,
+  type ChildEffect,
   type ClassValue,
 } from "@effex/dom";
 
@@ -34,23 +34,27 @@ export interface ImageRootProps {
 /**
  * Container for image components. Provides loading state context to Img and Fallback.
  */
-const Root = Component.gen(function* (props: ImageRootProps, children) {
-  const status = yield* Signal.make<ImageLoadingStatus>("idle");
+const Root = <E = never, R = never>(
+  props: ImageRootProps,
+  children: ChildEffect<E, R | ImageCtx>,
+): Element.Element<HTMLSpanElement, E, R> =>
+  Effect.gen(function* () {
+    const status = yield* Signal.make<ImageLoadingStatus>("idle");
 
-  const ctx: ImageContext = {
-    status,
-    setStatus: (s) => status.set(s),
-  };
+    const ctx: ImageContext = {
+      status,
+      setStatus: (s) => status.set(s),
+    };
 
-  return yield* $.span(
-    {
-      class: props.class,
-      "data-image-root": "",
-      "data-state": status,
-    },
-    provide(ImageCtx, ctx, Component.normalizeChildren(children)),
-  );
-});
+    return yield* $.span(
+      {
+        class: props.class,
+        "data-image-root": "",
+        "data-state": status,
+      },
+      provide(ImageCtx, ctx, children),
+    );
+  }) as Element.Element<HTMLSpanElement, E, R>;
 
 export interface ImageImgProps {
   /** Image source URL */
@@ -64,64 +68,67 @@ export interface ImageImgProps {
 /**
  * The actual image element. Tracks loading state and reports to context.
  */
-const Img = Component.gen(function* (props: ImageImgProps) {
-  const ctx = yield* ImageCtx;
-  const imgRef = yield* Element.ref<HTMLImageElement>();
+const Img = (
+  props: ImageImgProps,
+): Element.Element<HTMLImageElement, never, ImageCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* ImageCtx;
+    const imgRef = yield* Element.ref<HTMLImageElement>();
 
-  // Normalize src to Readable
-  const src = Readable.of(props.src);
+    // Normalize src to Readable
+    const src = Readable.of(props.src);
 
-  // React to src changes - reset status to loading
-  yield* Reaction.make([src], ([currentSrc]) =>
-    Effect.gen(function* () {
-      const img = yield* imgRef;
+    // React to src changes - reset status to loading
+    yield* Reaction.make([src], ([currentSrc]) =>
+      Effect.gen(function* () {
+        const img = yield* imgRef;
 
-      if (currentSrc) {
-        yield* ctx.setStatus("loading");
-      }
+        if (currentSrc) {
+          yield* ctx.setStatus("loading");
+        }
 
-      // Check if already loaded (cached image)
-      if (img && img.complete && img.naturalWidth > 0) {
-        yield* ctx.setStatus("loaded");
-      }
-    }).pipe(Effect.ignore),
-  );
+        // Check if already loaded (cached image)
+        if (img && img.complete && img.naturalWidth > 0) {
+          yield* ctx.setStatus("loaded");
+        }
+      }).pipe(Effect.ignore),
+    );
 
-  // One-time setup: attach event listeners once element exists
-  yield* Reaction.make([], () =>
-    imgRef.pipe(
-      Effect.tap((img) =>
-        Effect.sync(() => {
-          img.addEventListener("load", () =>
-            Effect.runSync(ctx.setStatus("loaded")),
-          );
-          img.addEventListener("error", () =>
-            Effect.runSync(ctx.setStatus("error")),
-          );
-        }),
+    // One-time setup: attach event listeners once element exists
+    yield* Reaction.make([], () =>
+      imgRef.pipe(
+        Effect.tap((img) =>
+          Effect.sync(() => {
+            img.addEventListener("load", () =>
+              Effect.runSync(ctx.setStatus("loaded")),
+            );
+            img.addEventListener("error", () =>
+              Effect.runSync(ctx.setStatus("error")),
+            );
+          }),
+        ),
+        Effect.ignore,
       ),
-      Effect.ignore,
-    ),
-  );
+    );
 
-  // Hide image until loaded to prevent flash of broken image
-  // Explicitly reset styles when loaded (empty object doesn't clear inline styles)
-  const style = ctx.status.map(
-    (s): Record<string, string> =>
-      s === "loaded"
-        ? { position: "", width: "", height: "", opacity: "" }
-        : { position: "absolute", width: "1px", height: "1px", opacity: "0" },
-  );
+    // Hide image until loaded to prevent flash of broken image
+    // Explicitly reset styles when loaded (empty object doesn't clear inline styles)
+    const style = ctx.status.map(
+      (s): Record<string, string> =>
+        s === "loaded"
+          ? { position: "", width: "", height: "", opacity: "" }
+          : { position: "absolute", width: "1px", height: "1px", opacity: "0" },
+    );
 
-  return yield* $.img({
-    ref: imgRef,
-    src,
-    alt: props.alt,
-    class: props.class,
-    style,
-    "data-image-img": "",
-  });
-});
+    return yield* $.img({
+      ref: imgRef,
+      src,
+      alt: props.alt,
+      class: props.class,
+      style,
+      "data-image-img": "",
+    });
+  }) as Element.Element<HTMLImageElement, never, ImageCtx>;
 
 export interface ImageFallbackProps {
   /** Additional class names */
@@ -137,45 +144,49 @@ export interface ImageFallbackProps {
 /**
  * Fallback content shown while image is loading or if it fails to load.
  */
-const Fallback = Component.gen(function* (props: ImageFallbackProps, children) {
-  const ctx = yield* ImageCtx;
-  const delayMs = props.delayMs ?? 0;
+const Fallback = <E = never, R = never>(
+  props: ImageFallbackProps,
+  children: ChildEffect<E, R>,
+): Element.Element<HTMLSpanElement, E, R | ImageCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* ImageCtx;
+    const delayMs = props.delayMs ?? 0;
 
-  // Track if delay has passed
-  const delayPassed = yield* Signal.make(delayMs === 0);
+    // Track if delay has passed
+    const delayPassed = yield* Signal.make(delayMs === 0);
 
-  // Start delay timer if needed
-  if (delayMs > 0) {
-    yield* Reaction.make([], () =>
-      Effect.gen(function* () {
-        yield* Effect.sleep(`${delayMs} millis`);
-        yield* delayPassed.set(true);
-      }),
+    // Start delay timer if needed
+    if (delayMs > 0) {
+      yield* Reaction.make([], () =>
+        Effect.gen(function* () {
+          yield* Effect.sleep(`${delayMs} millis`);
+          yield* delayPassed.set(true);
+        }),
+      );
+    }
+
+    // Show fallback if: (idle or loading or error) AND delay has passed
+    // Don't show if image is loaded
+    const shouldShow = yield* Derived.sync(
+      [ctx.status, delayPassed],
+      ([status, delayed]) => {
+        if (status === "loaded") return false;
+        if (!delayed) return false;
+        return true;
+      },
     );
-  }
 
-  // Show fallback if: (idle or loading or error) AND delay has passed
-  // Don't show if image is loaded
-  const shouldShow = yield* Derived.sync(
-    [ctx.status, delayPassed],
-    ([status, delayed]) => {
-      if (status === "loaded") return false;
-      if (!delayed) return false;
-      return true;
-    },
-  );
+    const dataState = shouldShow.map((show) => (show ? "visible" : "hidden"));
 
-  const dataState = shouldShow.map((show) => (show ? "visible" : "hidden"));
-
-  return yield* $.span(
-    {
-      class: props.class,
-      "data-image-fallback": "",
-      "data-state": dataState,
-    },
-    children ?? [],
-  );
-});
+    return yield* $.span(
+      {
+        class: props.class,
+        "data-image-fallback": "",
+        "data-state": dataState,
+      },
+      children,
+    );
+  }) as Element.Element<HTMLSpanElement, E, R | ImageCtx>;
 
 /**
  * Headless Image primitive with loading state management and fallback support.

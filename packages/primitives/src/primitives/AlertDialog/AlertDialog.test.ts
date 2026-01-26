@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { DOMRendererLive, Signal } from "@effex/dom";
+import { $, collect, DOMRendererLive, Signal } from "@effex/dom";
 
 import { AlertDialog } from "./AlertDialog";
 
@@ -21,9 +21,10 @@ describe("AlertDialog", () => {
     it("should render children", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* AlertDialog.Root({}, [
-            AlertDialog.Trigger({}, "Open"),
-          ]);
+          const el = yield* AlertDialog.Root(
+            {},
+            collect(AlertDialog.Trigger({}, $.of("Open"))),
+          );
 
           expect(el.tagName).toBe("DIV");
           expect(el.querySelector("button")).not.toBeNull();
@@ -34,9 +35,10 @@ describe("AlertDialog", () => {
     it("should be closed by default", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* AlertDialog.Root({}, [
-            AlertDialog.Trigger({}, "Open"),
-          ]);
+          const el = yield* AlertDialog.Root(
+            {},
+            collect(AlertDialog.Trigger({}, $.of("Open"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("data-state")).toBe("closed");
@@ -47,9 +49,10 @@ describe("AlertDialog", () => {
     it("should respect defaultOpen=true", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* AlertDialog.Root({ defaultOpen: true }, [
-            AlertDialog.Trigger({}, "Open"),
-          ]);
+          const el = yield* AlertDialog.Root(
+            { defaultOpen: true },
+            collect(AlertDialog.Trigger({}, $.of("Open"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("data-state")).toBe("open");
@@ -62,9 +65,10 @@ describe("AlertDialog", () => {
     it("should render as button", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* AlertDialog.Root({}, [
-            AlertDialog.Trigger({}, "Delete"),
-          ]);
+          const el = yield* AlertDialog.Root(
+            {},
+            collect(AlertDialog.Trigger({}, $.of("Delete"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger).not.toBeNull();
@@ -76,9 +80,10 @@ describe("AlertDialog", () => {
     it("should have aria-haspopup=alertdialog", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* AlertDialog.Root({}, [
-            AlertDialog.Trigger({}, "Delete"),
-          ]);
+          const el = yield* AlertDialog.Root(
+            {},
+            collect(AlertDialog.Trigger({}, $.of("Delete"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("aria-haspopup")).toBe("alertdialog");
@@ -89,9 +94,10 @@ describe("AlertDialog", () => {
     it("should have aria-expanded attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* AlertDialog.Root({}, [
-            AlertDialog.Trigger({}, "Delete"),
-          ]);
+          const el = yield* AlertDialog.Root(
+            {},
+            collect(AlertDialog.Trigger({}, $.of("Delete"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("aria-expanded")).toBe("false");
@@ -102,9 +108,12 @@ describe("AlertDialog", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* AlertDialog.Root({}, [
-            AlertDialog.Trigger({ class: "my-trigger" }, "Delete"),
-          ]);
+          const el = yield* AlertDialog.Root(
+            {},
+            collect(
+              AlertDialog.Trigger({ class: "my-trigger" }, $.of("Delete")),
+            ),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.className).toBe("my-trigger");
@@ -115,9 +124,10 @@ describe("AlertDialog", () => {
     it("should open dialog on click", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* AlertDialog.Root({}, [
-            AlertDialog.Trigger({}, "Delete"),
-          ]);
+          const el = yield* AlertDialog.Root(
+            {},
+            collect(AlertDialog.Trigger({}, $.of("Delete"))),
+          );
 
           const trigger = el.querySelector("button") as HTMLButtonElement;
           expect(trigger.getAttribute("data-state")).toBe("closed");
@@ -135,9 +145,10 @@ describe("AlertDialog", () => {
     it("should render as button with cancel data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* AlertDialog.Root({ defaultOpen: true }, [
-            AlertDialog.Cancel({}, "Cancel"),
-          ]);
+          const el = yield* AlertDialog.Root(
+            { defaultOpen: true },
+            collect(AlertDialog.Cancel({}, $.of("Cancel"))),
+          );
 
           const cancel = el.querySelector("[data-alertdialog-cancel]");
           expect(cancel).not.toBeNull();
@@ -150,9 +161,10 @@ describe("AlertDialog", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* AlertDialog.Root({}, [
-            AlertDialog.Cancel({ class: "my-cancel" }, "Cancel"),
-          ]);
+          const el = yield* AlertDialog.Root(
+            {},
+            collect(AlertDialog.Cancel({ class: "my-cancel" }, $.of("Cancel"))),
+          );
 
           const cancel = el.querySelector("[data-alertdialog-cancel]");
           expect(cancel?.className).toBe("my-cancel");
@@ -165,9 +177,10 @@ describe("AlertDialog", () => {
     it("should render as button with action data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* AlertDialog.Root({}, [
-            AlertDialog.Action({}, "Delete"),
-          ]);
+          const el = yield* AlertDialog.Root(
+            {},
+            collect(AlertDialog.Action({}, $.of("Delete"))),
+          );
 
           const action = el.querySelector("[data-alertdialog-action]");
           expect(action).not.toBeNull();
@@ -180,9 +193,10 @@ describe("AlertDialog", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* AlertDialog.Root({}, [
-            AlertDialog.Action({ class: "my-action" }, "Delete"),
-          ]);
+          const el = yield* AlertDialog.Root(
+            {},
+            collect(AlertDialog.Action({ class: "my-action" }, $.of("Delete"))),
+          );
 
           const action = el.querySelector("[data-alertdialog-action]");
           expect(action?.className).toBe("my-action");
@@ -195,17 +209,20 @@ describe("AlertDialog", () => {
         Effect.gen(function* () {
           const clicks: string[] = [];
 
-          const el = yield* AlertDialog.Root({}, [
-            AlertDialog.Action(
-              {
-                onClick: () =>
-                  Effect.sync(() => {
-                    clicks.push("clicked");
-                  }),
-              },
-              "Delete",
+          const el = yield* AlertDialog.Root(
+            {},
+            collect(
+              AlertDialog.Action(
+                {
+                  onClick: () =>
+                    Effect.sync(() => {
+                      clicks.push("clicked");
+                    }),
+                },
+                $.of("Delete"),
+              ),
             ),
-          ]);
+          );
 
           const action = el.querySelector(
             "[data-alertdialog-action]",
@@ -223,9 +240,10 @@ describe("AlertDialog", () => {
     it("should render as h2 with title data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* AlertDialog.Root({}, [
-            AlertDialog.Title({}, "Are you sure?"),
-          ]);
+          const el = yield* AlertDialog.Root(
+            {},
+            collect(AlertDialog.Title({}, $.of("Are you sure?"))),
+          );
 
           const title = el.querySelector("[data-alertdialog-title]");
           expect(title).not.toBeNull();
@@ -238,9 +256,10 @@ describe("AlertDialog", () => {
     it("should have unique id for aria-labelledby", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* AlertDialog.Root({}, [
-            AlertDialog.Title({}, "Are you sure?"),
-          ]);
+          const el = yield* AlertDialog.Root(
+            {},
+            collect(AlertDialog.Title({}, $.of("Are you sure?"))),
+          );
 
           const title = el.querySelector("[data-alertdialog-title]");
           expect(title?.id).toMatch(/alertdialog-title-/);
@@ -251,9 +270,12 @@ describe("AlertDialog", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* AlertDialog.Root({}, [
-            AlertDialog.Title({ class: "my-title" }, "Are you sure?"),
-          ]);
+          const el = yield* AlertDialog.Root(
+            {},
+            collect(
+              AlertDialog.Title({ class: "my-title" }, $.of("Are you sure?")),
+            ),
+          );
 
           const title = el.querySelector("[data-alertdialog-title]");
           expect(title?.className).toBe("my-title");
@@ -266,9 +288,15 @@ describe("AlertDialog", () => {
     it("should render as p with description data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* AlertDialog.Root({}, [
-            AlertDialog.Description({}, "This action cannot be undone."),
-          ]);
+          const el = yield* AlertDialog.Root(
+            {},
+            collect(
+              AlertDialog.Description(
+                {},
+                $.of("This action cannot be undone."),
+              ),
+            ),
+          );
 
           const desc = el.querySelector("[data-alertdialog-description]");
           expect(desc).not.toBeNull();
@@ -281,9 +309,15 @@ describe("AlertDialog", () => {
     it("should have unique id for aria-describedby", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* AlertDialog.Root({}, [
-            AlertDialog.Description({}, "This action cannot be undone."),
-          ]);
+          const el = yield* AlertDialog.Root(
+            {},
+            collect(
+              AlertDialog.Description(
+                {},
+                $.of("This action cannot be undone."),
+              ),
+            ),
+          );
 
           const desc = el.querySelector("[data-alertdialog-description]");
           expect(desc?.id).toMatch(/alertdialog-description-/);
@@ -294,12 +328,15 @@ describe("AlertDialog", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* AlertDialog.Root({}, [
-            AlertDialog.Description(
-              { class: "my-desc" },
-              "This action cannot be undone.",
+          const el = yield* AlertDialog.Root(
+            {},
+            collect(
+              AlertDialog.Description(
+                { class: "my-desc" },
+                $.of("This action cannot be undone."),
+              ),
             ),
-          ]);
+          );
 
           const desc = el.querySelector("[data-alertdialog-description]");
           expect(desc?.className).toBe("my-desc");
@@ -314,9 +351,10 @@ describe("AlertDialog", () => {
         Effect.gen(function* () {
           const open = yield* Signal.make(false);
 
-          const el = yield* AlertDialog.Root({ open }, [
-            AlertDialog.Trigger({}, "Open"),
-          ]);
+          const el = yield* AlertDialog.Root(
+            { open },
+            collect(AlertDialog.Trigger({}, $.of("Open"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("data-state")).toBe("closed");
@@ -343,7 +381,7 @@ describe("AlertDialog", () => {
                   changes.push(open);
                 }),
             },
-            [AlertDialog.Trigger({}, "Open")],
+            collect(AlertDialog.Trigger({}, $.of("Open"))),
           );
 
           const trigger = el.querySelector("button") as HTMLButtonElement;

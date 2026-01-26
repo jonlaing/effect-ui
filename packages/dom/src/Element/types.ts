@@ -1,124 +1,9 @@
-import type { Effect, Scope } from "effect";
-import type { YieldWrap } from "effect/Utils";
+import type { Effect } from "effect";
 
 import type { Element as CoreElement, Readable } from "@effex/core";
 
 import type { ElementRef } from "./ref.js";
 
-/**
- * A DOM element wrapped in an Effect with scope management.
- * This is the DOM-specialized version that returns HTMLElement.
- *
- * @template E - The error type (defaults to never for infallible elements)
- * @template R - The requirements/context type (defaults to never for no requirements)
- *
- * @example
- * ```ts
- * const myButton: Element.Element = button({ className: "primary" }, ["Click me"])
- *
- * // Component that can fail
- * const UserProfile: Element.Element<UserNotFoundError> = Effect.gen(function* () {
- *   const user = yield* fetchUser(userId)
- *   return yield* div([user.name])
- * })
- *
- * // Component with requirements
- * const NavLink: Element.Element<never, RouterContext> = Effect.gen(function* () {
- *   const router = yield* RouterContext
- *   return yield* button({ onClick: () => router.push("/") }, "Home")
- * })
- * ```
- */
-export type Element<E = never, R = never> = CoreElement<HTMLElement, E, R>;
-
-/**
- * Valid child types for an element: strings, numbers, elements, reactive values, or arrays thereof.
- * @template E - The error type for child elements
- * @template R - The requirements/context type for child elements
- *
- * @example
- * ```ts
- * // Static text
- * div(["Hello, world!"])
- *
- * // Reactive text
- * const count = yield* Signal.make(0)
- * div([count])  // Updates automatically when count changes
- *
- * // Nested elements
- * div([
- *   h1(["Title"]),
- *   p(["Content"])
- * ])
- * ```
- */
-export type Child<E = never, R = never> =
-  | string
-  | number
-  | Element<E, R>
-  | Readable<string>
-  | Readable<number>
-  | readonly (
-      | string
-      | number
-      | Element<E, R>
-      | Readable<string>
-      | Readable<number>
-    )[];
-
-export type InferError<Eff> = [Eff] extends [never]
-  ? never
-  : [Eff] extends [YieldWrap<Effect.Effect<infer _A, infer E, infer _R>>]
-    ? E
-    : never;
-
-export type InferRequirements<Eff> = [Eff] extends [never]
-  ? never
-  : [Eff] extends [YieldWrap<Effect.Effect<infer _A, infer _E, infer R>>]
-    ? R
-    : never;
-
-export type InferChildren<
-  C extends Child<any, any> | readonly Child<any, any>[],
-> = C extends readonly Child<any, any>[]
-  ? readonly Child<
-      C[number] extends Element<infer E, infer _R> ? E : never,
-      C[number] extends Element<infer _E, infer R> ? R : never
-    >[]
-  : C extends Element<infer CE, infer CR>
-    ? Child<CE, CR>
-    : Child<never, never>;
-
-export type InferChildArray<
-  C extends Child<any, any> | readonly Child<any, any>[],
-> = C extends readonly Child<any, any>[]
-  ? readonly Child<
-      C[number] extends Element<infer E, infer _R> ? E : never,
-      C[number] extends Element<infer _E, infer R> ? R : never
-    >[]
-  : C extends Element<infer CE, infer CR>
-    ? readonly Child<CE, CR>[]
-    : readonly Child<never, never>[];
-
-export type InferChildError<
-  C extends Child<any, any> | readonly Child<any, any>[],
-> = C extends readonly Child<any, any>[]
-  ? C[number] extends Element<infer E, infer _R>
-    ? E
-    : never
-  : C extends Element<infer CE, infer _CR>
-    ? CE
-    : never;
-
-export type InferChildRequirements<
-  C extends Child<any, any> | readonly Child<any, any>[],
-> = C extends readonly Child<any, any>[]
-  ? C[number] extends Element<infer _E, infer R>
-    ? R
-    : never
-  : C extends Element<infer _CE, infer CR>
-    ? CR
-    : never;
 /**
  * Handler for DOM events that can optionally return an Effect.
  * @template E - The specific Event type
@@ -128,12 +13,12 @@ export type InferChildRequirements<
  * // Synchronous handler
  * button({
  *   onClick: (e) => console.log("clicked", e.target)
- * }, ["Click"])
+ * }, $.of("Click"))
  *
  * // Effect-based handler
  * button({
  *   onClick: (e) => Effect.log(`Clicked at ${e.clientX}, ${e.clientY}`)
- * }, ["Click"])
+ * }, $.of("Click"))
  * ```
  */
 export type EventHandler<E extends Event> = (
@@ -191,36 +76,36 @@ export interface AriaAttributes {
  * @example
  * ```ts
  * // Static class
- * div({ class: "container" }, [...])
+ * div({ class: "container" }, $.of("content"))
  *
  * // Array of classes (great for Tailwind)
- * div({ class: ["flex", "items-center", "gap-4"] }, [...])
+ * div({ class: ["flex", "items-center", "gap-4"] }, $.of("content"))
  *
  * // Reactive class
  * const isActive = yield* Signal.make(false)
- * div({ class: isActive.map(a => a ? "active" : "inactive") }, [...])
+ * div({ class: isActive.map(a => a ? "active" : "inactive") }, $.of("content"))
  *
  * // Mixed array with reactive items
  * const variant = yield* Signal.make("primary")
- * div({ class: ["btn", variant.map(v => `btn-${v}`), "rounded"] }, [...])
+ * div({ class: ["btn", variant.map(v => `btn-${v}`), "rounded"] }, $.of("content"))
  *
  * // Reactive array of classes
  * const classes = yield* Signal.make(["btn", "btn-primary"])
- * div({ class: classes }, [...])
+ * div({ class: classes }, $.of("content"))
  *
  * // Static styles
- * div({ style: { color: "red", "font-size": "16px" } }, [...])
+ * div({ style: { color: "red", "font-size": "16px" } }, $.of("content"))
  *
  * // Reactive styles
  * const width = yield* Signal.make(100)
- * div({ style: { width: width.map(w => `${w}px`) } }, [...])
+ * div({ style: { width: width.map(w => `${w}px`) } }, $.of("content"))
  *
  * // Data attributes
- * div({ "data-state": "open", "data-testid": "my-div" }, [...])
+ * div({ "data-state": "open", "data-testid": "my-div" }, $.of("content"))
  *
  * // Reactive data attributes
  * const state = yield* Signal.make("closed")
- * div({ "data-state": state }, [...])
+ * div({ "data-state": state }, $.of("content"))
  * ```
  */
 export interface BaseAttributes<T extends HTMLElement>
@@ -241,7 +126,7 @@ export interface BaseAttributes<T extends HTMLElement>
    * @example
    * ```ts
    * const myRef = yield* Element.ref<HTMLDivElement>();
-   * return yield* $.div({ ref: myRef }, [...]);
+   * return yield* $.div({ ref: myRef }, $.of("content"));
    * ```
    */
   readonly ref?: ElementRef<T>;
@@ -369,38 +254,6 @@ export type HTMLAttributes<K extends keyof HTMLElementTagNameMap> =
     };
 
 /**
- * Factory function for creating a specific HTML element type.
- * Supports multiple call signatures for convenience.
- * The error and requirements types are inferred from children.
- * @template K - The HTML element tag name
- */
-export type ElementFactory<K extends keyof HTMLElementTagNameMap> = {
-  // (attrs, children[])
-  <C extends Child<any, any> | readonly Child<any, any>[]>(
-    attrs: HTMLAttributes<K>,
-    children: C,
-  ): Effect.Effect<
-    HTMLElementTagNameMap[K],
-    InferChildError<C>,
-    Scope.Scope | InferChildRequirements<C>
-  >;
-  // (attrs)
-  (
-    attrs: HTMLAttributes<K>,
-  ): Effect.Effect<HTMLElementTagNameMap[K], never, Scope.Scope>;
-  // (children[])
-  <C extends Child<any, any> | readonly Child<any, any>[]>(
-    children: C,
-  ): Effect.Effect<
-    HTMLElementTagNameMap[K],
-    InferChildError<C>,
-    Scope.Scope | InferChildRequirements<C>
-  >;
-  // ()
-  (): Effect.Effect<HTMLElementTagNameMap[K], never, Scope.Scope>;
-};
-
-/**
  * Base attributes available on all SVG elements.
  */
 export interface SVGBaseAttributes<T extends SVGElement>
@@ -444,32 +297,114 @@ export type SVGAttributes<K extends keyof SVGElementTagNameMap> =
     };
 
 /**
+ * A DOM element wrapped in an Effect with scope management.
+ * This is the DOM-specialized version for HTML and SVG elements.
+ *
+ * @template A - The specific element type (e.g., HTMLDivElement, SVGSVGElement)
+ * @template E - The error type (defaults to never for infallible elements)
+ * @template R - The requirements/context type (defaults to never for no requirements)
+ *
+ * @example
+ * ```ts
+ * // Simple element
+ * const myButton: Element<HTMLButtonElement> = button({ class: "primary" }, $.of("Click me"))
+ *
+ * // Function that can fail
+ * const UserProfile = <E, R>(children: ChildEffect<E, R>) =>
+ *   Effect.gen(function* () {
+ *     const user = yield* fetchUser(userId)
+ *     return yield* div({}, collect($.of(user.name), children))
+ *   })
+ *
+ * // Function with context requirements
+ * const NavLink = () =>
+ *   Effect.gen(function* () {
+ *     const router = yield* RouterContext
+ *     return yield* button({ onClick: () => router.push("/") }, $.of("Home"))
+ *   })
+ * ```
+ */
+export type Element<
+  A extends HTMLElement | SVGElement,
+  E = never,
+  R = never,
+> = CoreElement<A, E, R>;
+
+/**
+ * Primitive child node types that can be rendered directly.
+ * These are the raw values that elements can contain.
+ */
+export type ChildNode =
+  | string
+  | number
+  | Readable<string>
+  | Readable<number>
+  | HTMLElement
+  | SVGElement;
+
+/**
+ * An Effect that produces child nodes. This is the standard way to pass
+ * children to element factories. Use `$.of()` to lift primitives and
+ * `collect()` to combine multiple children.
+ *
+ * @template E - Error type from child effects
+ * @template R - Context requirements from child effects
+ *
+ * @example
+ * ```ts
+ * // Single child with $.of()
+ * div({}, $.of("Hello"))
+ *
+ * // Multiple children with collect()
+ * div({}, collect(
+ *   $.of("Hello"),
+ *   span({}, $.of("World")),
+ *   someComponentWithEffects
+ * ))
+ *
+ * // Generic function that accepts children
+ * const Card = <E, R>(props: CardProps, children: ChildEffect<E, R>) =>
+ *   Effect.gen(function* () {
+ *     return yield* div({ class: "card" }, children)
+ *   })
+ * ```
+ */
+export type ChildEffect<E = never, R = never> = Effect.Effect<
+  ChildNode | ChildNode[],
+  E,
+  R
+>;
+
+/**
+ * Factory function for creating a specific HTML element type.
+ * Supports multiple call signatures for convenience.
+ * The error and requirements types are inferred from children.
+ * @template K - The HTML element tag name
+ */
+export type ElementFactory<K extends keyof HTMLElementTagNameMap> = {
+  <E = never, R = never>(
+    attrs: HTMLAttributes<K>,
+    children: ChildEffect<E, R>,
+  ): Element<HTMLElementTagNameMap[K], E, R>;
+  (attrs: HTMLAttributes<K>): Element<HTMLElementTagNameMap[K], never, never>;
+  <E = never, R = never>(
+    children: ChildEffect<E, R>,
+  ): Element<HTMLElementTagNameMap[K], E, R>;
+  (): Element<HTMLElementTagNameMap[K], never, never>;
+};
+
+/**
  * Factory function for creating a specific SVG element type.
  * @template K - The SVG element tag name
  */
 export type SVGElementFactory<K extends keyof SVGElementTagNameMap> = {
-  // (attrs, children[])
   <E = never, R = never>(
     attrs: SVGAttributes<K>,
-    children: readonly Child<E, R>[],
-  ): Effect.Effect<SVGElementTagNameMap[K], E, Scope.Scope | R>;
-  // (attrs, singleChild)
+    children: ChildEffect<E, R>,
+  ): Element<SVGElementTagNameMap[K], E, R>;
+  (attrs: SVGAttributes<K>): Element<SVGElementTagNameMap[K], never, never>;
   <E = never, R = never>(
-    attrs: SVGAttributes<K>,
-    child: Child<E, R>,
-  ): Effect.Effect<SVGElementTagNameMap[K], E, Scope.Scope | R>;
-  // (attrs)
-  (
-    attrs: SVGAttributes<K>,
-  ): Effect.Effect<SVGElementTagNameMap[K], never, Scope.Scope>;
-  // (children[])
-  <E = never, R = never>(
-    children: readonly Child<E, R>[],
-  ): Effect.Effect<SVGElementTagNameMap[K], E, Scope.Scope | R>;
-  // (singleChild)
-  <E = never, R = never>(
-    child: Child<E, R>,
-  ): Effect.Effect<SVGElementTagNameMap[K], E, Scope.Scope | R>;
-  // ()
-  (): Effect.Effect<SVGElementTagNameMap[K], never, Scope.Scope>;
+    child: ChildEffect<E, R>,
+  ): Element<SVGElementTagNameMap[K], E, R>;
+  (): Element<SVGElementTagNameMap[K], never, never>;
 };

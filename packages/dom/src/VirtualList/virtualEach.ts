@@ -107,7 +107,7 @@ const createIndexReadable = (initialIndex: number) => {
 export const virtualEach = <A, E = never, R = never>(
   items: Readable<readonly A[]>,
   options: VirtualEachOptions<A, E, R>,
-): Element.Element<E, R> =>
+): Element.Element<HTMLDivElement, E, R> =>
   Effect.gen(function* () {
     const scope = yield* Effect.scope;
 
@@ -380,5 +380,5 @@ export const virtualEach = <A, E = never, R = never>(
       }),
     );
 
-    return viewport as HTMLElement;
-  }) as Element.Element<E, R>;
+    return viewport;
+  }) as Element.Element<HTMLDivElement, E, R>;

@@ -62,16 +62,14 @@ export class DataAttributeNotFound extends Data.TaggedError(
  * });
  * ```
  */
-export type ElementRef<T extends Element = HTMLElement> = Effect.Effect<
-  T,
-  NoSuchElementException
-> & {
-  /**
-   * A Readable that tracks whether the element is connected to the DOM.
-   * Use with Reaction to run effects when the element mounts/unmounts.
-   */
-  readonly isConnected: Readable<boolean>;
-};
+export type ElementRef<T extends Element = HTMLElement | SVGElement> =
+  Effect.Effect<T, NoSuchElementException> & {
+    /**
+     * A Readable that tracks whether the element is connected to the DOM.
+     * Use with Reaction to run effects when the element mounts/unmounts.
+     */
+    readonly isConnected: Readable<boolean>;
+  };
 
 /**
  * Internal WeakMap that binds ref Effects to their DOM elements.
@@ -156,7 +154,7 @@ export const elementRefSymbol = Symbol.for("@effex/dom/ElementRef");
  * ```
  */
 export const makeElementRef = <
-  T extends Element = HTMLElement,
+  T extends Element = HTMLElement | SVGElement,
 >(): Effect.Effect<ElementRef<T>> =>
   Effect.sync(() => {
     // Create a suspended Effect that reads from the WeakMap

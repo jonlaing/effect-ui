@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { $, DOMRendererLive, Signal } from "@effex/dom";
+import { $, collect, DOMRendererLive, Signal } from "@effex/dom";
 
 import { Tabs } from "./Tabs";
 
@@ -21,10 +21,16 @@ describe("Tabs", () => {
     it("should render children", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tabs.Root({ defaultValue: "tab1" }, [
-            Tabs.List({}, [Tabs.Trigger({ value: "tab1" }, "Tab 1")]),
-            Tabs.Content({ value: "tab1" }, [$.p("Content 1")]),
-          ]);
+          const el = yield* Tabs.Root(
+            { defaultValue: "tab1" },
+            collect(
+              Tabs.List(
+                {},
+                collect(Tabs.Trigger({ value: "tab1" }, $.of("Tab 1"))),
+              ),
+              Tabs.Content({ value: "tab1" }, collect($.p($.of("Content 1")))),
+            ),
+          );
 
           expect(el.tagName).toBe("DIV");
           expect(el.children.length).toBe(2);
@@ -35,7 +41,7 @@ describe("Tabs", () => {
     it("should set data-orientation to horizontal by default", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tabs.Root({ defaultValue: "tab1" }, []);
+          const el = yield* Tabs.Root({ defaultValue: "tab1" }, collect());
 
           expect(el.getAttribute("data-orientation")).toBe("horizontal");
         }),
@@ -47,7 +53,7 @@ describe("Tabs", () => {
         Effect.gen(function* () {
           const el = yield* Tabs.Root(
             { defaultValue: "tab1", orientation: "vertical" },
-            [],
+            collect(),
           );
 
           expect(el.getAttribute("data-orientation")).toBe("vertical");
@@ -60,9 +66,10 @@ describe("Tabs", () => {
     it("should render with tablist role", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tabs.Root({ defaultValue: "tab1" }, [
-            Tabs.List({}, []),
-          ]);
+          const el = yield* Tabs.Root(
+            { defaultValue: "tab1" },
+            collect(Tabs.List({}, collect())),
+          );
 
           const list = el.querySelector("[role='tablist']");
           expect(list).not.toBeNull();
@@ -73,9 +80,10 @@ describe("Tabs", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tabs.Root({ defaultValue: "tab1" }, [
-            Tabs.List({ class: "my-list" }, []),
-          ]);
+          const el = yield* Tabs.Root(
+            { defaultValue: "tab1" },
+            collect(Tabs.List({ class: "my-list" }, collect())),
+          );
 
           const list = el.querySelector("[role='tablist']");
           expect(list?.className).toBe("my-list");
@@ -86,9 +94,10 @@ describe("Tabs", () => {
     it("should have aria-orientation attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tabs.Root({ defaultValue: "tab1" }, [
-            Tabs.List({}, []),
-          ]);
+          const el = yield* Tabs.Root(
+            { defaultValue: "tab1" },
+            collect(Tabs.List({}, collect())),
+          );
 
           const list = el.querySelector("[role='tablist']");
           expect(list?.getAttribute("aria-orientation")).toBe("horizontal");
@@ -101,9 +110,15 @@ describe("Tabs", () => {
     it("should render as button with tab role", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tabs.Root({ defaultValue: "tab1" }, [
-            Tabs.List({}, [Tabs.Trigger({ value: "tab1" }, "Tab 1")]),
-          ]);
+          const el = yield* Tabs.Root(
+            { defaultValue: "tab1" },
+            collect(
+              Tabs.List(
+                {},
+                collect(Tabs.Trigger({ value: "tab1" }, $.of("Tab 1"))),
+              ),
+            ),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger).not.toBeNull();
@@ -115,12 +130,18 @@ describe("Tabs", () => {
     it("should have aria-selected=true when active", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tabs.Root({ defaultValue: "tab1" }, [
-            Tabs.List({}, [
-              Tabs.Trigger({ value: "tab1" }, "Tab 1"),
-              Tabs.Trigger({ value: "tab2" }, "Tab 2"),
-            ]),
-          ]);
+          const el = yield* Tabs.Root(
+            { defaultValue: "tab1" },
+            collect(
+              Tabs.List(
+                {},
+                collect(
+                  Tabs.Trigger({ value: "tab1" }, $.of("Tab 1")),
+                  Tabs.Trigger({ value: "tab2" }, $.of("Tab 2")),
+                ),
+              ),
+            ),
+          );
 
           const triggers = el.querySelectorAll("button");
           expect(triggers[0]?.getAttribute("aria-selected")).toBe("true");
@@ -132,12 +153,18 @@ describe("Tabs", () => {
     it("should have data-state attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tabs.Root({ defaultValue: "tab1" }, [
-            Tabs.List({}, [
-              Tabs.Trigger({ value: "tab1" }, "Tab 1"),
-              Tabs.Trigger({ value: "tab2" }, "Tab 2"),
-            ]),
-          ]);
+          const el = yield* Tabs.Root(
+            { defaultValue: "tab1" },
+            collect(
+              Tabs.List(
+                {},
+                collect(
+                  Tabs.Trigger({ value: "tab1" }, $.of("Tab 1")),
+                  Tabs.Trigger({ value: "tab2" }, $.of("Tab 2")),
+                ),
+              ),
+            ),
+          );
 
           const triggers = el.querySelectorAll("button");
           expect(triggers[0]?.getAttribute("data-state")).toBe("active");
@@ -149,10 +176,16 @@ describe("Tabs", () => {
     it("should have aria-controls pointing to content", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tabs.Root({ defaultValue: "tab1" }, [
-            Tabs.List({}, [Tabs.Trigger({ value: "tab1" }, "Tab 1")]),
-            Tabs.Content({ value: "tab1" }, [$.p("Content")]),
-          ]);
+          const el = yield* Tabs.Root(
+            { defaultValue: "tab1" },
+            collect(
+              Tabs.List(
+                {},
+                collect(Tabs.Trigger({ value: "tab1" }, $.of("Tab 1"))),
+              ),
+              Tabs.Content({ value: "tab1" }, collect($.p($.of("Content")))),
+            ),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("aria-controls")).toBe(
@@ -165,12 +198,18 @@ describe("Tabs", () => {
     it("should switch tab on click", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tabs.Root({ defaultValue: "tab1" }, [
-            Tabs.List({}, [
-              Tabs.Trigger({ value: "tab1" }, "Tab 1"),
-              Tabs.Trigger({ value: "tab2" }, "Tab 2"),
-            ]),
-          ]);
+          const el = yield* Tabs.Root(
+            { defaultValue: "tab1" },
+            collect(
+              Tabs.List(
+                {},
+                collect(
+                  Tabs.Trigger({ value: "tab1" }, $.of("Tab 1")),
+                  Tabs.Trigger({ value: "tab2" }, $.of("Tab 2")),
+                ),
+              ),
+            ),
+          );
 
           const triggers = el.querySelectorAll("button");
 
@@ -186,11 +225,20 @@ describe("Tabs", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tabs.Root({ defaultValue: "tab1" }, [
-            Tabs.List({}, [
-              Tabs.Trigger({ value: "tab1", class: "my-trigger" }, "Tab 1"),
-            ]),
-          ]);
+          const el = yield* Tabs.Root(
+            { defaultValue: "tab1" },
+            collect(
+              Tabs.List(
+                {},
+                collect(
+                  Tabs.Trigger(
+                    { value: "tab1", class: "my-trigger" },
+                    $.of("Tab 1"),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.className).toBe("my-trigger");
@@ -203,13 +251,19 @@ describe("Tabs", () => {
     it("should set tabIndex=0 on active trigger only", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tabs.Root({ defaultValue: "tab2" }, [
-            Tabs.List({}, [
-              Tabs.Trigger({ value: "tab1" }, "Tab 1"),
-              Tabs.Trigger({ value: "tab2" }, "Tab 2"),
-              Tabs.Trigger({ value: "tab3" }, "Tab 3"),
-            ]),
-          ]);
+          const el = yield* Tabs.Root(
+            { defaultValue: "tab2" },
+            collect(
+              Tabs.List(
+                {},
+                collect(
+                  Tabs.Trigger({ value: "tab1" }, $.of("Tab 1")),
+                  Tabs.Trigger({ value: "tab2" }, $.of("Tab 2")),
+                  Tabs.Trigger({ value: "tab3" }, $.of("Tab 3")),
+                ),
+              ),
+            ),
+          );
 
           const triggers = el.querySelectorAll("button");
           expect(triggers[0]?.tabIndex).toBe(-1);
@@ -224,10 +278,16 @@ describe("Tabs", () => {
     it("should render with tabpanel role", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tabs.Root({ defaultValue: "tab1" }, [
-            Tabs.List({}, [Tabs.Trigger({ value: "tab1" }, "Tab 1")]),
-            Tabs.Content({ value: "tab1" }, [$.p("Content 1")]),
-          ]);
+          const el = yield* Tabs.Root(
+            { defaultValue: "tab1" },
+            collect(
+              Tabs.List(
+                {},
+                collect(Tabs.Trigger({ value: "tab1" }, $.of("Tab 1"))),
+              ),
+              Tabs.Content({ value: "tab1" }, collect($.p($.of("Content 1")))),
+            ),
+          );
 
           const content = el.querySelector("[role='tabpanel']");
           expect(content).not.toBeNull();
@@ -238,10 +298,16 @@ describe("Tabs", () => {
     it("should have aria-labelledby pointing to trigger", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tabs.Root({ defaultValue: "tab1" }, [
-            Tabs.List({}, [Tabs.Trigger({ value: "tab1" }, "Tab 1")]),
-            Tabs.Content({ value: "tab1" }, [$.p("Content 1")]),
-          ]);
+          const el = yield* Tabs.Root(
+            { defaultValue: "tab1" },
+            collect(
+              Tabs.List(
+                {},
+                collect(Tabs.Trigger({ value: "tab1" }, $.of("Tab 1"))),
+              ),
+              Tabs.Content({ value: "tab1" }, collect($.p($.of("Content 1")))),
+            ),
+          );
 
           const content = el.querySelector("[role='tabpanel']");
           expect(content?.getAttribute("aria-labelledby")).toBe(
@@ -254,14 +320,20 @@ describe("Tabs", () => {
     it("should only render active content by default", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tabs.Root({ defaultValue: "tab1" }, [
-            Tabs.List({}, [
-              Tabs.Trigger({ value: "tab1" }, "Tab 1"),
-              Tabs.Trigger({ value: "tab2" }, "Tab 2"),
-            ]),
-            Tabs.Content({ value: "tab1" }, [$.p("Content 1")]),
-            Tabs.Content({ value: "tab2" }, [$.p("Content 2")]),
-          ]);
+          const el = yield* Tabs.Root(
+            { defaultValue: "tab1" },
+            collect(
+              Tabs.List(
+                {},
+                collect(
+                  Tabs.Trigger({ value: "tab1" }, $.of("Tab 1")),
+                  Tabs.Trigger({ value: "tab2" }, $.of("Tab 2")),
+                ),
+              ),
+              Tabs.Content({ value: "tab1" }, collect($.p($.of("Content 1")))),
+              Tabs.Content({ value: "tab2" }, collect($.p($.of("Content 2")))),
+            ),
+          );
 
           const panels = el.querySelectorAll("[role='tabpanel']");
           // Only active panel should be rendered with full content
@@ -274,14 +346,20 @@ describe("Tabs", () => {
     it("should switch content when tab changes", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tabs.Root({ defaultValue: "tab1" }, [
-            Tabs.List({}, [
-              Tabs.Trigger({ value: "tab1" }, "Tab 1"),
-              Tabs.Trigger({ value: "tab2" }, "Tab 2"),
-            ]),
-            Tabs.Content({ value: "tab1" }, [$.p("Content 1")]),
-            Tabs.Content({ value: "tab2" }, [$.p("Content 2")]),
-          ]);
+          const el = yield* Tabs.Root(
+            { defaultValue: "tab1" },
+            collect(
+              Tabs.List(
+                {},
+                collect(
+                  Tabs.Trigger({ value: "tab1" }, $.of("Tab 1")),
+                  Tabs.Trigger({ value: "tab2" }, $.of("Tab 2")),
+                ),
+              ),
+              Tabs.Content({ value: "tab1" }, collect($.p($.of("Content 1")))),
+              Tabs.Content({ value: "tab2" }, collect($.p($.of("Content 2")))),
+            ),
+          );
 
           const triggers = el.querySelectorAll("button");
           triggers[1]?.click();
@@ -298,12 +376,19 @@ describe("Tabs", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tabs.Root({ defaultValue: "tab1" }, [
-            Tabs.List({}, [Tabs.Trigger({ value: "tab1" }, "Tab 1")]),
-            Tabs.Content({ value: "tab1", class: "my-content" }, [
-              $.p("Content"),
-            ]),
-          ]);
+          const el = yield* Tabs.Root(
+            { defaultValue: "tab1" },
+            collect(
+              Tabs.List(
+                {},
+                collect(Tabs.Trigger({ value: "tab1" }, $.of("Tab 1"))),
+              ),
+              Tabs.Content(
+                { value: "tab1", class: "my-content" },
+                collect($.p($.of("Content"))),
+              ),
+            ),
+          );
 
           const content = el.querySelector("[role='tabpanel']");
           expect(content?.className).toBe("my-content");
@@ -314,18 +399,26 @@ describe("Tabs", () => {
     it("should force mount when forceMount=true", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tabs.Root({ defaultValue: "tab1" }, [
-            Tabs.List({}, [
-              Tabs.Trigger({ value: "tab1" }, "Tab 1"),
-              Tabs.Trigger({ value: "tab2" }, "Tab 2"),
-            ]),
-            Tabs.Content({ value: "tab1", forceMount: true }, [
-              $.p("Content 1"),
-            ]),
-            Tabs.Content({ value: "tab2", forceMount: true }, [
-              $.p("Content 2"),
-            ]),
-          ]);
+          const el = yield* Tabs.Root(
+            { defaultValue: "tab1" },
+            collect(
+              Tabs.List(
+                {},
+                collect(
+                  Tabs.Trigger({ value: "tab1" }, $.of("Tab 1")),
+                  Tabs.Trigger({ value: "tab2" }, $.of("Tab 2")),
+                ),
+              ),
+              Tabs.Content(
+                { value: "tab1", forceMount: true },
+                collect($.p($.of("Content 1"))),
+              ),
+              Tabs.Content(
+                { value: "tab2", forceMount: true },
+                collect($.p($.of("Content 2"))),
+              ),
+            ),
+          );
 
           // Both panels should exist
           const panels = el.querySelectorAll("[role='tabpanel']");
@@ -339,12 +432,21 @@ describe("Tabs", () => {
     it("should disable individual triggers", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tabs.Root({ defaultValue: "tab1" }, [
-            Tabs.List({}, [
-              Tabs.Trigger({ value: "tab1" }, "Tab 1"),
-              Tabs.Trigger({ value: "tab2", disabled: true }, "Tab 2"),
-            ]),
-          ]);
+          const el = yield* Tabs.Root(
+            { defaultValue: "tab1" },
+            collect(
+              Tabs.List(
+                {},
+                collect(
+                  Tabs.Trigger({ value: "tab1" }, $.of("Tab 1")),
+                  Tabs.Trigger(
+                    { value: "tab2", disabled: true },
+                    $.of("Tab 2"),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const triggers = el.querySelectorAll(
             "button",
@@ -358,11 +460,20 @@ describe("Tabs", () => {
     it("should set data-disabled on disabled trigger", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Tabs.Root({ defaultValue: "tab1" }, [
-            Tabs.List({}, [
-              Tabs.Trigger({ value: "tab1", disabled: true }, "Tab 1"),
-            ]),
-          ]);
+          const el = yield* Tabs.Root(
+            { defaultValue: "tab1" },
+            collect(
+              Tabs.List(
+                {},
+                collect(
+                  Tabs.Trigger(
+                    { value: "tab1", disabled: true },
+                    $.of("Tab 1"),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("data-disabled")).toBe("");
@@ -377,12 +488,18 @@ describe("Tabs", () => {
         Effect.gen(function* () {
           const value = yield* Signal.make("tab2");
 
-          const el = yield* Tabs.Root({ value }, [
-            Tabs.List({}, [
-              Tabs.Trigger({ value: "tab1" }, "Tab 1"),
-              Tabs.Trigger({ value: "tab2" }, "Tab 2"),
-            ]),
-          ]);
+          const el = yield* Tabs.Root(
+            { value },
+            collect(
+              Tabs.List(
+                {},
+                collect(
+                  Tabs.Trigger({ value: "tab1" }, $.of("Tab 1")),
+                  Tabs.Trigger({ value: "tab2" }, $.of("Tab 2")),
+                ),
+              ),
+            ),
+          );
 
           const triggers = el.querySelectorAll("button");
           expect(triggers[0]?.getAttribute("data-state")).toBe("inactive");
@@ -412,12 +529,15 @@ describe("Tabs", () => {
                   changes.push(value);
                 }),
             },
-            [
-              Tabs.List({}, [
-                Tabs.Trigger({ value: "tab1" }, "Tab 1"),
-                Tabs.Trigger({ value: "tab2" }, "Tab 2"),
-              ]),
-            ],
+            collect(
+              Tabs.List(
+                {},
+                collect(
+                  Tabs.Trigger({ value: "tab1" }, $.of("Tab 1")),
+                  Tabs.Trigger({ value: "tab2" }, $.of("Tab 2")),
+                ),
+              ),
+            ),
           );
 
           const triggers = el.querySelectorAll("button");

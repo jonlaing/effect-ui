@@ -399,11 +399,9 @@ describe("Element namespace helpers", () => {
   describe("setProperty", () => {
     it("should set a property on the element", async () => {
       const el = (await runWithElement("input", (el) =>
-        el.pipe(
-          Element.setProperty("value" as keyof HTMLElement, "test" as never),
-        ),
+        el.pipe(Element.setProperty("className", "test" as never)),
       )) as HTMLInputElement;
-      expect(el.value).toBe("test");
+      expect(el.className).toBe("test");
     });
   });
 

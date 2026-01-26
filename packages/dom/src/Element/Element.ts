@@ -1,4 +1,5 @@
-import { Array, Context, Effect, Option, Scope } from "effect";
+import { Context, Effect, Option, Scope } from "effect";
+import { isEffect } from "effect/Effect";
 
 import {
   isReadable,
@@ -14,19 +15,16 @@ import {
   applyInputValueWithRenderer,
   applyStyleWithRenderer,
   flattenChildren,
-  isElement,
   subscribeToReadable,
 } from "./helpers";
 import { bindElementToRef, type ElementRef } from "./ref.js";
 import type {
-  Child,
+  ChildEffect,
+  ChildNode,
   ClassValue,
-  Element,
   ElementFactory,
   EventHandler,
   HTMLAttributes,
-  InferChildError,
-  InferChildRequirements,
   StyleValue,
   SVGAttributes,
   SVGElementFactory,
@@ -123,29 +121,19 @@ const applyAttributes = <K extends keyof HTMLElementTagNameMap>(
     }
   });
 
-const appendChildren = <C extends readonly Child<any, any>[]>(
+const appendChildren = <E = never, R = never>(
   renderer: RendererInterface<Node>,
   parent: Node,
-  children: C,
-): Effect.Effect<
-  void,
-  InferChildError<C>,
-  Scope.Scope | RendererContext | InferChildRequirements<C>
-> =>
+  children: ChildEffect<E, R>,
+): Effect.Effect<void, E, Scope.Scope | RendererContext | R> =>
   Effect.gen(function* () {
-    const flattened = flattenChildren(children);
+    const flattened = yield* flattenChildren(children);
 
     for (const child of flattened) {
       if (typeof child === "string" || typeof child === "number") {
         const textNode = yield* renderer.createTextNode(String(child));
         yield* renderer.appendChild(parent, textNode);
-      } else if (isElement(child)) {
-        const childElement = yield* child as Element<
-          InferChildError<C>,
-          InferChildRequirements<C>
-        >;
-        yield* renderer.appendChild(parent, childElement as Node);
-      } else if (isReadable(child as unknown)) {
+      } else if (isReadable(child)) {
         const textNode = yield* renderer.createTextNode("");
         yield* renderer.appendChild(parent, textNode);
         yield* subscribeToReadable(
@@ -154,21 +142,24 @@ const appendChildren = <C extends readonly Child<any, any>[]>(
             Effect.runSync(renderer.setTextContent(textNode, String(value)));
           },
         );
+      } else {
+        yield* renderer.appendChild(parent, child as Node);
       }
     }
   });
 
 const createElement = <
   K extends keyof HTMLElementTagNameMap,
-  C extends readonly Child<any, any>[],
+  E = never,
+  R = never,
 >(
   tagName: K,
   attrs: HTMLAttributes<K>,
-  children: C,
+  children: ChildEffect<E, R>,
 ): Effect.Effect<
   HTMLElementTagNameMap[K],
-  InferChildError<C>,
-  Scope.Scope | InferChildRequirements<C> | RendererContext
+  E,
+  Scope.Scope | RendererContext | R
 > =>
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
@@ -195,48 +186,47 @@ const createElement = <
 const makeElementFactory = <K extends keyof HTMLElementTagNameMap>(
   tagName: K,
 ): ElementFactory<K> => {
-  return (<C extends Child<any, any> | readonly Child<any, any>[]>(
-    ...args: unknown[]
-  ) => {
+  return (<E = never, R = never>(...args: unknown[]) => {
     if (args.length === 0) {
-      return createElement(tagName, {} as HTMLAttributes<K>, []);
+      return createElement(
+        tagName,
+        {} as HTMLAttributes<K>,
+        Effect.succeed([]),
+      );
     }
-
-    type ChildType = C extends readonly Child<any, any>[]
-      ? Child<
-          C[number] extends Child<infer E, any> ? E : never,
-          C[number] extends Child<any, infer R> ? R : never
-        >
-      : C extends Child<infer CE, infer CR>
-        ? Child<CE, CR>
-        : never;
 
     if (args.length === 1) {
       const arg = args[0];
-      if (Array.isArray(arg)) {
+      if (typeof arg === "string" || typeof arg === "number") {
         return createElement(
           tagName,
           {} as HTMLAttributes<K>,
-          arg as ChildType[],
+          Effect.succeed(arg),
         );
       }
-      if (typeof arg === "string" || typeof arg === "number") {
-        return createElement(tagName, {} as HTMLAttributes<K>, [arg]);
+      if (isEffect(arg)) {
+        return createElement(
+          tagName,
+          {} as HTMLAttributes<K>,
+          arg as Effect.Effect<HTMLElement, E, R>,
+        );
       }
-      if (isElement(arg) || isReadable(arg)) {
-        return createElement(tagName, {} as HTMLAttributes<K>, [
-          arg as ChildType,
-        ]);
+      if (isReadable(arg)) {
+        return createElement(
+          tagName,
+          {} as HTMLAttributes<K>,
+          Effect.succeed(arg as Readable<string>),
+        );
       }
-      return createElement(tagName, arg as HTMLAttributes<K>, []);
+      return createElement(
+        tagName,
+        arg as HTMLAttributes<K>,
+        Effect.succeed([]),
+      );
     }
 
-    const [attrs, children] = args as [HTMLAttributes<K>, ChildType];
-    return createElement(
-      tagName,
-      attrs,
-      Array.isArray(children) ? (children as ChildType[]) : [children],
-    );
+    const [attrs, children] = args as [HTMLAttributes<K>, ChildEffect<E, R>];
+    return createElement(tagName, attrs, children);
   }) as ElementFactory<K>;
 };
 
@@ -400,7 +390,7 @@ const applyAttributesSVG = <K extends keyof SVGElementTagNameMap>(
 const createSVGElement = <K extends keyof SVGElementTagNameMap, E, R>(
   tagName: K,
   attrs: SVGAttributes<K>,
-  children: readonly Child<E, R>[],
+  children: ChildEffect<E, R>,
 ): Effect.Effect<
   SVGElementTagNameMap[K],
   E,
@@ -432,35 +422,45 @@ const makeSVGElementFactory = <K extends keyof SVGElementTagNameMap>(
 ): SVGElementFactory<K> => {
   return (<E, R>(...args: unknown[]) => {
     if (args.length === 0) {
-      return createSVGElement(tagName, {} as SVGAttributes<K>, []);
+      return createSVGElement(
+        tagName,
+        {} as SVGAttributes<K>,
+        Effect.succeed([]),
+      );
     }
 
     if (args.length === 1) {
       const arg = args[0];
-      if (Array.isArray(arg)) {
+      if (typeof arg === "string" || typeof arg === "number") {
         return createSVGElement(
           tagName,
           {} as SVGAttributes<K>,
-          arg as Child<E, R>[],
+          Effect.succeed(arg),
         );
       }
-      if (typeof arg === "string" || typeof arg === "number") {
-        return createSVGElement(tagName, {} as SVGAttributes<K>, [arg]);
+      if (isEffect(arg)) {
+        return createSVGElement(
+          tagName,
+          {} as SVGAttributes<K>,
+          arg as Effect.Effect<SVGElement, E, R>,
+        );
       }
-      if (isElement(arg) || isReadable(arg)) {
-        return createSVGElement(tagName, {} as SVGAttributes<K>, [
-          arg as Child<E, R>,
-        ]);
+      if (isReadable(arg)) {
+        return createSVGElement(
+          tagName,
+          {} as SVGAttributes<K>,
+          Effect.succeed(arg as Readable<string>),
+        );
       }
-      return createSVGElement(tagName, arg as SVGAttributes<K>, []);
+      return createSVGElement(
+        tagName,
+        arg as SVGAttributes<K>,
+        Effect.succeed([]),
+      );
     }
 
-    const [attrs, children] = args as [SVGAttributes<K>, Child<E, R>];
-    return createSVGElement(
-      tagName,
-      attrs,
-      Array.isArray(children) ? (children as Child<E, R>[]) : [children],
-    );
+    const [attrs, children] = args as [SVGAttributes<K>, ChildEffect<E, R>];
+    return createSVGElement(tagName, attrs, children);
   }) as SVGElementFactory<K>;
 };
 
@@ -508,30 +508,58 @@ export const foreignObject = makeSVGElementFactory("foreignObject");
 export const marker = makeSVGElementFactory("marker");
 
 /**
- * Namespace containing all HTML and SVG element factories.
- * Provides a convenient way to access elements without individual imports.
+ * Lift a primitive value into a ChildEffect.
+ * Use this to pass strings, numbers, or other ChildNode values to elements.
  *
  * @example
  * ```ts
- * import { $ } from "@effex/dom"
+ * // Lift a string
+ * div({}, $.of("Hello, world!"))
  *
- * const MyComponent = Effect.gen(function* () {
- *   return yield* $.div({ class: "card" }, [
- *     $.h1("Title"),
- *     $.p("Content"),
- *     $.button({ onClick: handleClick }, "Submit"),
- *   ])
- * })
+ * // Lift a variable
+ * div({}, $.of(props.title))
+ *
+ * // Combine with collect for multiple children
+ * div({}, collect(
+ *   $.of("Hello"),
+ *   $.of(someNumber),
+ *   span({}, $.of("nested"))
+ * ))
+ * ```
+ */
+export const of = <A extends ChildNode>(value: A) => Effect.succeed(value);
+
+/**
+ * Namespace containing all HTML and SVG element factories, plus the `of` helper.
+ * Provides a convenient way to access elements without individual imports.
+ *
+ * Use `$.of()` to lift primitives into ChildEffect, and `collect()` to combine
+ * multiple children.
+ *
+ * @example
+ * ```ts
+ * import { $, collect } from "@effex/dom"
+ *
+ * const MyComponent = () =>
+ *   Effect.gen(function* () {
+ *     return yield* $.div({ class: "card" }, collect(
+ *       $.h1({}, $.of("Title")),
+ *       $.p({}, $.of("Content")),
+ *       $.button({ onClick: handleClick }, $.of("Submit")),
+ *     ))
+ *   })
  *
  * // SVG example
- * const Icon = Effect.gen(function* () {
- *   return yield* $.svg({ viewBox: "0 0 24 24" }, [
- *     $.path({ d: "M12 2L2 7l10 5 10-5-10-5z" }),
- *   ])
- * })
+ * const Icon = () =>
+ *   Effect.gen(function* () {
+ *     return yield* $.svg({ viewBox: "0 0 24 24" },
+ *       $.path({ d: "M12 2L2 7l10 5 10-5-10-5z" })
+ *     )
+ *   })
  * ```
  */
 export const $ = {
+  of,
   // HTML elements
   div,
   span,

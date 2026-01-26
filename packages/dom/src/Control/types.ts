@@ -14,11 +14,15 @@ export interface WhenConfig<E1 = never, R1 = never, E2 = never, R2 = never> {
    * Optional custom container element. If not provided, defaults to a div
    * with `display: contents`.
    */
-  readonly container?: () => Element.Element<never, never>;
+  readonly container?: () => Element.Element<
+    HTMLElement | SVGElement,
+    never,
+    never
+  >;
   /** Element to render when condition is true */
-  readonly onTrue: () => Element.Element<E1, R1>;
+  readonly onTrue: () => Element.Element<HTMLElement | SVGElement, E1, R1>;
   /** Element to render when condition is false */
-  readonly onFalse: () => Element.Element<E2, R2>;
+  readonly onFalse: () => Element.Element<HTMLElement | SVGElement, E2, R2>;
   /** Optional animation configuration */
   readonly animate?: AnimationOptions;
 }
@@ -28,7 +32,7 @@ export interface WhenConfig<E1 = never, R1 = never, E2 = never, R2 = never> {
  */
 export interface MatchCase<A, E = never, R = never> {
   readonly pattern: A;
-  readonly render: () => Element.Element<E, R>;
+  readonly render: () => Element.Element<HTMLElement | SVGElement, E, R>;
 }
 
 /**
@@ -39,11 +43,15 @@ export interface MatchConfig<A, E = never, R = never, E2 = never, R2 = never> {
    * Optional custom container element. If not provided, defaults to a div
    * with `display: contents`.
    */
-  readonly container?: () => Element.Element<never, never>;
+  readonly container?: () => Element.Element<
+    HTMLElement | SVGElement,
+    never,
+    never
+  >;
   /** Array of pattern-render pairs */
   readonly cases: readonly MatchCase<A, E, R>[];
   /** Optional fallback if no pattern matches */
-  readonly fallback?: () => Element.Element<E2, R2>;
+  readonly fallback?: () => Element.Element<HTMLElement | SVGElement, E2, R2>;
   /** Optional animation configuration */
   readonly animate?: AnimationOptions;
   /**
@@ -76,11 +84,17 @@ export interface MatchOptionConfig<
    * Optional custom container element. If not provided, defaults to a div
    * with `display: contents`.
    */
-  readonly container?: () => Element.Element<never, never>;
+  readonly container?: () => Element.Element<
+    HTMLElement | SVGElement,
+    never,
+    never
+  >;
   /** Render when Option is Some. Receives unwrapped value as a Readable. */
-  readonly onSome: (value: Readable<A>) => Element.Element<E1, R1>;
+  readonly onSome: (
+    value: Readable<A>,
+  ) => Element.Element<HTMLElement | SVGElement, E1, R1>;
   /** Render when Option is None */
-  readonly onNone: () => Element.Element<E2, R2>;
+  readonly onNone: () => Element.Element<HTMLElement | SVGElement, E2, R2>;
   /** Optional animation configuration */
   readonly animate?: AnimationOptions;
 }
@@ -100,11 +114,19 @@ export interface MatchEitherConfig<
    * Optional custom container element. If not provided, defaults to a div
    * with `display: contents`.
    */
-  readonly container?: () => Element.Element<never, never>;
+  readonly container?: () => Element.Element<
+    HTMLElement | SVGElement,
+    never,
+    never
+  >;
   /** Render when Either is Right. Receives unwrapped value as a Readable. */
-  readonly onRight: (value: Readable<A>) => Element.Element<E1, R1>;
+  readonly onRight: (
+    value: Readable<A>,
+  ) => Element.Element<HTMLElement | SVGElement, E1, R1>;
   /** Render when Either is Left. Receives unwrapped error as a Readable. */
-  readonly onLeft: (error: Readable<E>) => Element.Element<E2, R2>;
+  readonly onLeft: (
+    error: Readable<E>,
+  ) => Element.Element<HTMLElement | SVGElement, E2, R2>;
   /** Optional animation configuration */
   readonly animate?: AnimationOptions;
 }
@@ -117,7 +139,11 @@ export interface EachConfig<A, E = never, R = never> {
    * Optional custom container element. If not provided, defaults to a div
    * with `display: contents`.
    */
-  readonly container?: () => Element.Element<never, never>;
+  readonly container?: () => Element.Element<
+    HTMLElement | SVGElement,
+    never,
+    never
+  >;
   /** Function to extract a unique key from each item */
   readonly key: (item: A) => string;
   /**
@@ -128,7 +154,7 @@ export interface EachConfig<A, E = never, R = never> {
   readonly render: (
     item: Readable<A>,
     index: Readable<number>,
-  ) => Element.Element<E, R>;
+  ) => Element.Element<HTMLElement | SVGElement, E, R>;
   /** Optional animation configuration */
   readonly animate?: ListAnimationOptions;
 }

@@ -1,8 +1,9 @@
 import { Effect, Fiber } from "effect";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { collect } from "./Collect";
 import { DOMRendererLive } from "./DOMRenderer";
-import { div, span } from "./Element";
+import { $, div, span } from "./Element";
 import { mount } from "./Mount";
 
 describe("mount", () => {
@@ -22,7 +23,7 @@ describe("mount", () => {
     await Effect.runPromise(
       Effect.scoped(
         Effect.gen(function* () {
-          yield* mount(div("Hello"), container);
+          yield* mount(div({}, $.of("Hello")), container);
 
           expect(container.children.length).toBe(1);
           expect(container.textContent).toBe("Hello");
@@ -35,7 +36,10 @@ describe("mount", () => {
     await Effect.runPromise(
       Effect.scoped(
         Effect.gen(function* () {
-          yield* mount(div([span("Hello"), span("World")]), container);
+          yield* mount(
+            div({}, collect(span({}, $.of("Hello")), span({}, $.of("World")))),
+            container,
+          );
 
           expect(container.children.length).toBe(1);
           const mounted = container.children[0];
@@ -49,7 +53,7 @@ describe("mount", () => {
     const fiber = Effect.runFork(
       Effect.scoped(
         Effect.gen(function* () {
-          yield* mount(div("Mounted"), container);
+          yield* mount(div({}, $.of("Mounted")), container);
           yield* Effect.sleep(100);
         }),
       ),
@@ -73,7 +77,7 @@ describe("mount", () => {
     const fiber = Effect.runFork(
       Effect.scoped(
         Effect.gen(function* () {
-          const el = yield* div("Test");
+          const el = yield* div({}, $.of("Test"));
           mountedElement = el;
           yield* mount(Effect.succeed(el), container);
           yield* Effect.sleep(100);
@@ -101,8 +105,8 @@ describe("mount", () => {
     await Effect.runPromise(
       Effect.scoped(
         Effect.gen(function* () {
-          yield* mount(div("First"), container);
-          yield* mount(div("Second"), container);
+          yield* mount(div({}, $.of("First")), container);
+          yield* mount(div({}, $.of("Second")), container);
 
           expect(container.children.length).toBe(2);
           expect(container.children[0].textContent).toBe("First");

@@ -7,7 +7,7 @@ import type { RendererInterface } from "@effex/core";
  */
 export const createDefaultContainer = (
   renderer: RendererInterface<Node>,
-): Effect.Effect<HTMLElement> =>
+): Effect.Effect<HTMLElement | SVGElement> =>
   Effect.gen(function* () {
     const container = yield* renderer.createNode("div");
     yield* renderer.setStyleProperty(container, "display", "contents");
@@ -19,7 +19,7 @@ export const createDefaultContainer = (
  */
 export const addHydrationMarkers = (
   renderer: RendererInterface<Node>,
-  container: HTMLElement,
+  container: HTMLElement | SVGElement,
   type: "when" | "match" | "each",
   id: string,
   metadata?: Record<string, string>,
@@ -39,6 +39,6 @@ export const addHydrationMarkers = (
  */
 export const addItemHydrationKey = (
   renderer: RendererInterface<Node>,
-  element: HTMLElement,
+  element: HTMLElement | SVGElement,
   key: string,
 ): Effect.Effect<void> => renderer.setAttribute(element, "data-effex-key", key);

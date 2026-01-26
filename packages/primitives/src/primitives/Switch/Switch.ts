@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { $, Component, Readable, Signal, type ClassValue } from "@effex/dom";
+import { $, Element, Readable, Signal, type ClassValue } from "@effex/dom";
 
 /**
  * Props for Switch component.
@@ -80,45 +80,48 @@ export interface SwitchProps {
  * Switch({ name: "notifications", value: "enabled" })
  * ```
  */
-export const Switch = Component.gen(function* (props: SwitchProps) {
-  const checked = yield* Signal.fromNullable(
-    props.checked,
-    props.defaultChecked ?? false,
-  );
+export const Switch = (
+  props: SwitchProps,
+): Element.Element<HTMLButtonElement> =>
+  Effect.gen(function* () {
+    const checked = yield* Signal.fromNullable(
+      props.checked,
+      props.defaultChecked ?? false,
+    );
 
-  // Normalize props to Readables
-  const disabled = Readable.of(props.disabled ?? false);
-  const required = Readable.of(props.required ?? false);
+    // Normalize props to Readables
+    const disabled = Readable.of(props.disabled ?? false);
+    const required = Readable.of(props.required ?? false);
 
-  const handleClick = () =>
-    Effect.gen(function* () {
-      if (yield* disabled.get) return;
+    const handleClick = () =>
+      Effect.gen(function* () {
+        if (yield* disabled.get) return;
 
-      const newChecked = !(yield* checked.get);
-      yield* checked.set(newChecked);
-      yield* props.onCheckedChange?.(newChecked) ?? Effect.void;
-    });
+        const newChecked = !(yield* checked.get);
+        yield* checked.set(newChecked);
+        yield* props.onCheckedChange?.(newChecked) ?? Effect.void;
+      });
 
-  const dataState = checked.map((c) => (c ? "checked" : "unchecked"));
-  const ariaChecked = checked.map((c) => (c ? "true" : "false"));
-  const dataDisabled = disabled.map((d) => (d ? "" : undefined));
-  const ariaRequired = required.map((r) => (r ? "true" : undefined));
+    const dataState = checked.map((c) => (c ? "checked" : "unchecked"));
+    const ariaChecked = checked.map((c) => (c ? "true" : "false"));
+    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+    const ariaRequired = required.map((r) => (r ? "true" : undefined));
 
-  return yield* $.button(
-    {
-      type: "button",
-      role: "switch",
-      id: props.id,
-      class: props.class,
-      disabled,
-      "aria-checked": ariaChecked,
-      "aria-required": ariaRequired,
-      "data-state": dataState,
-      "data-disabled": dataDisabled,
-      name: props.name,
-      value: props.value ?? "on",
-      onClick: handleClick,
-    },
-    $.span({ "data-switch-thumb": "" }),
-  );
-});
+    return yield* $.button(
+      {
+        type: "button",
+        role: "switch",
+        id: props.id,
+        class: props.class,
+        disabled,
+        "aria-checked": ariaChecked,
+        "aria-required": ariaRequired,
+        "data-state": dataState,
+        "data-disabled": dataDisabled,
+        name: props.name,
+        value: props.value ?? "on",
+        onClick: handleClick,
+      },
+      $.span({ "data-switch-thumb": "" }),
+    );
+  }) as Element.Element<HTMLButtonElement>;

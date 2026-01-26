@@ -129,10 +129,10 @@ const withDOMRenderer = <A, E, R>(
  * Create a when updater that handles state and animations.
  */
 export const createWhenUpdater = <E1, R1, E2, R2>(
-  container: HTMLElement,
+  container: HTMLElement | SVGElement,
   config: WhenConfig<E1, R1, E2, R2>,
 ) => {
-  let currentElement: HTMLElement | null = null;
+  let currentElement: HTMLElement | SVGElement | null = null;
   let currentValue: boolean | null = null;
   let currentElementScope: Scope.CloseableScope | null = null;
   const animate = config.animate;
@@ -140,7 +140,7 @@ export const createWhenUpdater = <E1, R1, E2, R2>(
   return {
     /** Set initial state (for hydration) */
     initialize: (
-      element: HTMLElement,
+      element: HTMLElement | SVGElement,
       value: boolean,
       scope: Scope.CloseableScope,
     ) => {
@@ -162,7 +162,7 @@ export const createWhenUpdater = <E1, R1, E2, R2>(
 
         currentElementScope = yield* Scope.make();
 
-        const newElement = newValue
+        const newElement: HTMLElement | SVGElement = newValue
           ? yield* withDOMRenderer(config.onTrue()).pipe(
               Effect.provideService(Scope.Scope, currentElementScope),
             )
@@ -208,10 +208,10 @@ export const createWhenUpdater = <E1, R1, E2, R2>(
  * Create a match updater that handles state and animations.
  */
 export const createMatchUpdater = <A, E, R, E2, R2>(
-  container: HTMLElement,
+  container: HTMLElement | SVGElement,
   config: MatchConfig<A, E, R, E2, R2>,
 ) => {
-  let currentElement: HTMLElement | null = null;
+  let currentElement: HTMLElement | SVGElement | null = null;
   let currentPattern: A | typeof NOT_RENDERED = NOT_RENDERED;
   let currentElementScope: Scope.CloseableScope | null = null;
   const animate = config.animate;
@@ -219,7 +219,7 @@ export const createMatchUpdater = <A, E, R, E2, R2>(
   return {
     /** Set initial state (for hydration) */
     initialize: (
-      element: HTMLElement | null,
+      element: HTMLElement | SVGElement | null,
       pattern: A,
       scope: Scope.CloseableScope | null,
     ) => {
@@ -296,13 +296,13 @@ export const createMatchUpdater = <A, E, R, E2, R2>(
  * Create an each updater that handles state and animations.
  */
 export const createEachUpdater = <A, E, R>(
-  container: HTMLElement,
+  container: HTMLElement | SVGElement,
   config: EachConfig<A, E, R>,
 ) => {
   const itemMap = new Map<
     string,
     {
-      element: HTMLElement;
+      element: HTMLElement | SVGElement;
       scope: Scope.CloseableScope;
       readable: Readable<A> & { _update: (value: A) => void };
       indexReadable: Readable<number> & { _update: (value: number) => void };
@@ -314,7 +314,7 @@ export const createEachUpdater = <A, E, R>(
     /** Add a hydrated item to tracking */
     addHydratedItem: (
       key: string,
-      element: HTMLElement,
+      element: HTMLElement | SVGElement,
       scope: Scope.CloseableScope,
       readable: Readable<A> & { _update: (value: A) => void },
       indexReadable: Readable<number> & { _update: (value: number) => void },
@@ -330,7 +330,7 @@ export const createEachUpdater = <A, E, R>(
         // Collect items to remove
         const removals: {
           key: string;
-          element: HTMLElement;
+          element: HTMLElement | SVGElement;
           scope: Scope.CloseableScope;
         }[] = [];
         for (const [key, entry] of itemMap) {
@@ -368,7 +368,10 @@ export const createEachUpdater = <A, E, R>(
         }
 
         // Track new items for enter animation
-        const newEntries: { element: HTMLElement; index: number }[] = [];
+        const newEntries: {
+          element: HTMLElement | SVGElement;
+          index: number;
+        }[] = [];
 
         for (let i = 0; i < newItems.length; i++) {
           const item = newItems[i];

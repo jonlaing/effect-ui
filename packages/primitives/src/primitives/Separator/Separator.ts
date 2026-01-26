@@ -1,4 +1,6 @@
-import { $, Component, Readable, type ClassValue } from "@effex/dom";
+import { Effect } from "effect";
+
+import { $, Readable, type ClassValue, type Element } from "@effex/dom";
 
 export type SeparatorOrientation = "horizontal" | "vertical";
 
@@ -56,15 +58,18 @@ export interface SeparatorProps {
  * ])
  * ```
  */
-export const Separator = Component.gen(function* (props: SeparatorProps = {}) {
-  const orientation = Readable.of(props.orientation ?? "horizontal");
-  const decorative = props.decorative ?? true;
+export const Separator = (
+  props: SeparatorProps = {},
+): Element.Element<HTMLDivElement> =>
+  Effect.gen(function* () {
+    const orientation = Readable.of(props.orientation ?? "horizontal");
+    const decorative = props.decorative ?? true;
 
-  return yield* $.div({
-    role: decorative ? "none" : "separator",
-    "aria-orientation": decorative ? undefined : orientation,
-    class: props.class,
-    "data-separator": "",
-    "data-orientation": orientation,
-  });
-});
+    return yield* $.div({
+      role: decorative ? "none" : "separator",
+      "aria-orientation": decorative ? undefined : orientation,
+      class: props.class,
+      "data-separator": "",
+      "data-orientation": orientation,
+    });
+  }) as Element.Element<HTMLDivElement>;

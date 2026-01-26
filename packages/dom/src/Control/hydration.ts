@@ -12,6 +12,7 @@ import {
   type RendererInterface,
 } from "@effex/core";
 
+import { Element } from "../Element";
 import { createHydrationRenderer } from "../hydrate/HydrationRenderer";
 import type { HydrationContextService } from "../HydrationContext";
 import { HydrationMismatchError } from "./errors";
@@ -28,7 +29,7 @@ import {
  * Create a scoped renderer for hydrating children inside a container.
  */
 const withScopedRenderer = <A, E, R>(
-  container: HTMLElement,
+  container: HTMLElement | SVGElement,
   effect: Effect.Effect<A, E, R>,
 ): Effect.Effect<A, E, Exclude<R, RendererContext>> => {
   const scopedRenderer = createHydrationRenderer(container);
@@ -47,17 +48,17 @@ export const hydrationWhen = <E1, R1, E2, R2>(
   ctx: HydrationContextService,
   condition: Readable<boolean>,
   config: WhenConfig<E1, R1, E2, R2>,
-): Effect.Effect<
-  HTMLElement,
+): Element.Element<
+  HTMLElement | SVGElement,
   E1 | E2 | HydrationMismatchError,
-  Scope.Scope | R1 | R2
+  R1 | R2
 > =>
   Effect.gen(function* () {
     const hydrationId = yield* ctx.generateId;
 
     const container = ctx.root.querySelector(
       `[data-effex-type="when"][data-effex-id="${hydrationId}"]`,
-    ) as HTMLElement | null;
+    ) as HTMLElement | SVGElement | null;
 
     if (!container) {
       return yield* Effect.fail(
@@ -105,7 +106,7 @@ export const hydrationMatch = <A, E, R, E2, R2>(
   value: Readable<A>,
   config: MatchConfig<A, E, R, E2, R2>,
 ): Effect.Effect<
-  HTMLElement,
+  HTMLElement | SVGElement,
   E | E2 | HydrationMismatchError,
   Scope.Scope | R | R2
 > =>
@@ -114,7 +115,7 @@ export const hydrationMatch = <A, E, R, E2, R2>(
 
     const container = ctx.root.querySelector(
       `[data-effex-type="match"][data-effex-id="${hydrationId}"]`,
-    ) as HTMLElement | null;
+    ) as HTMLElement | SVGElement | null;
 
     if (!container) {
       return yield* Effect.fail(
@@ -171,7 +172,7 @@ export const hydrationEach = <A, E, R>(
   ctx: HydrationContextService,
   items: Readable<readonly A[]>,
   config: EachConfig<A, E, R>,
-): Effect.Effect<HTMLElement, E | HydrationMismatchError, Scope.Scope | R> =>
+): Element.Element<HTMLElement | SVGElement, E | HydrationMismatchError, R> =>
   Effect.gen(function* () {
     const hydrationId = yield* ctx.generateId;
 

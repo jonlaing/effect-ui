@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { DOMRendererLive, Signal } from "@effex/dom";
+import { $, collect, DOMRendererLive, Signal } from "@effex/dom";
 
 import { NavigationMenu } from "./NavigationMenu";
 
@@ -21,7 +21,7 @@ describe("NavigationMenu", () => {
     it("should render as nav with navigationmenu-root data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, []);
+          const el = yield* NavigationMenu.Root({}, collect());
 
           expect(el.tagName).toBe("NAV");
           expect(el.getAttribute("data-navigationmenu-root")).toBe("");
@@ -32,7 +32,7 @@ describe("NavigationMenu", () => {
     it("should have default aria-label of Main", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, []);
+          const el = yield* NavigationMenu.Root({}, collect());
 
           expect(el.getAttribute("aria-label")).toBe("Main");
         }),
@@ -42,7 +42,10 @@ describe("NavigationMenu", () => {
     it("should accept custom aria-label", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({ "aria-label": "Site" }, []);
+          const el = yield* NavigationMenu.Root(
+            { "aria-label": "Site" },
+            collect(),
+          );
 
           expect(el.getAttribute("aria-label")).toBe("Site");
         }),
@@ -52,7 +55,7 @@ describe("NavigationMenu", () => {
     it("should have horizontal orientation by default", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, []);
+          const el = yield* NavigationMenu.Root({}, collect());
 
           expect(el.getAttribute("data-orientation")).toBe("horizontal");
         }),
@@ -64,7 +67,7 @@ describe("NavigationMenu", () => {
         Effect.gen(function* () {
           const el = yield* NavigationMenu.Root(
             { orientation: "vertical" },
-            [],
+            collect(),
           );
 
           expect(el.getAttribute("data-orientation")).toBe("vertical");
@@ -75,7 +78,7 @@ describe("NavigationMenu", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({ class: "my-nav" }, []);
+          const el = yield* NavigationMenu.Root({ class: "my-nav" }, collect());
 
           expect(el.className).toBe("my-nav");
         }),
@@ -87,9 +90,10 @@ describe("NavigationMenu", () => {
     it("should render as ol with navigationmenu-list data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, [
-            NavigationMenu.List({}, []),
-          ]);
+          const el = yield* NavigationMenu.Root(
+            {},
+            collect(NavigationMenu.List({}, collect())),
+          );
 
           const list = el.querySelector("[data-navigationmenu-list]");
           expect(list).not.toBeNull();
@@ -101,9 +105,10 @@ describe("NavigationMenu", () => {
     it("should have role=menubar", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, [
-            NavigationMenu.List({}, []),
-          ]);
+          const el = yield* NavigationMenu.Root(
+            {},
+            collect(NavigationMenu.List({}, collect())),
+          );
 
           const list = el.querySelector("[data-navigationmenu-list]");
           expect(list?.getAttribute("role")).toBe("menubar");
@@ -114,9 +119,10 @@ describe("NavigationMenu", () => {
     it("should have aria-orientation", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, [
-            NavigationMenu.List({}, []),
-          ]);
+          const el = yield* NavigationMenu.Root(
+            {},
+            collect(NavigationMenu.List({}, collect())),
+          );
 
           const list = el.querySelector("[data-navigationmenu-list]");
           expect(list?.getAttribute("aria-orientation")).toBe("horizontal");
@@ -127,9 +133,10 @@ describe("NavigationMenu", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, [
-            NavigationMenu.List({ class: "my-list" }, []),
-          ]);
+          const el = yield* NavigationMenu.Root(
+            {},
+            collect(NavigationMenu.List({ class: "my-list" }, collect())),
+          );
 
           const list = el.querySelector("[data-navigationmenu-list]");
           expect(list?.className).toBe("my-list");
@@ -142,11 +149,15 @@ describe("NavigationMenu", () => {
     it("should render as li with navigationmenu-item data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, [
-            NavigationMenu.List({}, [
-              NavigationMenu.Item({ value: "item1" }, []),
-            ]),
-          ]);
+          const el = yield* NavigationMenu.Root(
+            {},
+            collect(
+              NavigationMenu.List(
+                {},
+                collect(NavigationMenu.Item({ value: "item1" }, collect())),
+              ),
+            ),
+          );
 
           const item = el.querySelector("[data-navigationmenu-item]");
           expect(item).not.toBeNull();
@@ -158,11 +169,20 @@ describe("NavigationMenu", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, [
-            NavigationMenu.List({}, [
-              NavigationMenu.Item({ value: "item1", class: "my-item" }, []),
-            ]),
-          ]);
+          const el = yield* NavigationMenu.Root(
+            {},
+            collect(
+              NavigationMenu.List(
+                {},
+                collect(
+                  NavigationMenu.Item(
+                    { value: "item1", class: "my-item" },
+                    collect(),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const item = el.querySelector("[data-navigationmenu-item]");
           expect(item?.className).toBe("my-item");
@@ -175,13 +195,20 @@ describe("NavigationMenu", () => {
     it("should render as button with navigationmenu-trigger data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, [
-            NavigationMenu.List({}, [
-              NavigationMenu.Item({ value: "item1" }, [
-                NavigationMenu.Trigger({}, "Products"),
-              ]),
-            ]),
-          ]);
+          const el = yield* NavigationMenu.Root(
+            {},
+            collect(
+              NavigationMenu.List(
+                {},
+                collect(
+                  NavigationMenu.Item(
+                    { value: "item1" },
+                    collect(NavigationMenu.Trigger({}, $.of("Products"))),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const trigger = el.querySelector("[data-navigationmenu-trigger]");
           expect(trigger).not.toBeNull();
@@ -194,13 +221,20 @@ describe("NavigationMenu", () => {
     it("should have aria-haspopup=menu", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, [
-            NavigationMenu.List({}, [
-              NavigationMenu.Item({ value: "item1" }, [
-                NavigationMenu.Trigger({}, "Products"),
-              ]),
-            ]),
-          ]);
+          const el = yield* NavigationMenu.Root(
+            {},
+            collect(
+              NavigationMenu.List(
+                {},
+                collect(
+                  NavigationMenu.Item(
+                    { value: "item1" },
+                    collect(NavigationMenu.Trigger({}, $.of("Products"))),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const trigger = el.querySelector("[data-navigationmenu-trigger]");
           expect(trigger?.getAttribute("aria-haspopup")).toBe("menu");
@@ -211,13 +245,20 @@ describe("NavigationMenu", () => {
     it("should have aria-expanded=false when closed", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, [
-            NavigationMenu.List({}, [
-              NavigationMenu.Item({ value: "item1" }, [
-                NavigationMenu.Trigger({}, "Products"),
-              ]),
-            ]),
-          ]);
+          const el = yield* NavigationMenu.Root(
+            {},
+            collect(
+              NavigationMenu.List(
+                {},
+                collect(
+                  NavigationMenu.Item(
+                    { value: "item1" },
+                    collect(NavigationMenu.Trigger({}, $.of("Products"))),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const trigger = el.querySelector("[data-navigationmenu-trigger]");
           expect(trigger?.getAttribute("aria-expanded")).toBe("false");
@@ -228,13 +269,20 @@ describe("NavigationMenu", () => {
     it("should have data-state=closed by default", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, [
-            NavigationMenu.List({}, [
-              NavigationMenu.Item({ value: "item1" }, [
-                NavigationMenu.Trigger({}, "Products"),
-              ]),
-            ]),
-          ]);
+          const el = yield* NavigationMenu.Root(
+            {},
+            collect(
+              NavigationMenu.List(
+                {},
+                collect(
+                  NavigationMenu.Item(
+                    { value: "item1" },
+                    collect(NavigationMenu.Trigger({}, $.of("Products"))),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const trigger = el.querySelector("[data-navigationmenu-trigger]");
           expect(trigger?.getAttribute("data-state")).toBe("closed");
@@ -245,13 +293,25 @@ describe("NavigationMenu", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, [
-            NavigationMenu.List({}, [
-              NavigationMenu.Item({ value: "item1" }, [
-                NavigationMenu.Trigger({ class: "my-trigger" }, "Products"),
-              ]),
-            ]),
-          ]);
+          const el = yield* NavigationMenu.Root(
+            {},
+            collect(
+              NavigationMenu.List(
+                {},
+                collect(
+                  NavigationMenu.Item(
+                    { value: "item1" },
+                    collect(
+                      NavigationMenu.Trigger(
+                        { class: "my-trigger" },
+                        $.of("Products"),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const trigger = el.querySelector("[data-navigationmenu-trigger]");
           expect(trigger?.className).toBe("my-trigger");
@@ -262,13 +322,20 @@ describe("NavigationMenu", () => {
     it("should open on click", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, [
-            NavigationMenu.List({}, [
-              NavigationMenu.Item({ value: "item1" }, [
-                NavigationMenu.Trigger({}, "Products"),
-              ]),
-            ]),
-          ]);
+          const el = yield* NavigationMenu.Root(
+            {},
+            collect(
+              NavigationMenu.List(
+                {},
+                collect(
+                  NavigationMenu.Item(
+                    { value: "item1" },
+                    collect(NavigationMenu.Trigger({}, $.of("Products"))),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const trigger = el.querySelector(
             "[data-navigationmenu-trigger]",
@@ -289,14 +356,23 @@ describe("NavigationMenu", () => {
     it("should render with navigationmenu-content data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, [
-            NavigationMenu.List({}, [
-              NavigationMenu.Item({ value: "item1" }, [
-                NavigationMenu.Trigger({}, "Products"),
-                NavigationMenu.Content({}, "Content here"),
-              ]),
-            ]),
-          ]);
+          const el = yield* NavigationMenu.Root(
+            {},
+            collect(
+              NavigationMenu.List(
+                {},
+                collect(
+                  NavigationMenu.Item(
+                    { value: "item1" },
+                    collect(
+                      NavigationMenu.Trigger({}, $.of("Products")),
+                      NavigationMenu.Content({}, $.of("Content here")),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const content = el.querySelector("[data-navigationmenu-content]");
           expect(content).not.toBeNull();
@@ -308,14 +384,23 @@ describe("NavigationMenu", () => {
     it("should have data-state matching item state", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, [
-            NavigationMenu.List({}, [
-              NavigationMenu.Item({ value: "item1" }, [
-                NavigationMenu.Trigger({}, "Products"),
-                NavigationMenu.Content({}, "Content"),
-              ]),
-            ]),
-          ]);
+          const el = yield* NavigationMenu.Root(
+            {},
+            collect(
+              NavigationMenu.List(
+                {},
+                collect(
+                  NavigationMenu.Item(
+                    { value: "item1" },
+                    collect(
+                      NavigationMenu.Trigger({}, $.of("Products")),
+                      NavigationMenu.Content({}, $.of("Content")),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const content = el.querySelector("[data-navigationmenu-content]");
           expect(content?.getAttribute("data-state")).toBe("closed");
@@ -334,13 +419,25 @@ describe("NavigationMenu", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, [
-            NavigationMenu.List({}, [
-              NavigationMenu.Item({ value: "item1" }, [
-                NavigationMenu.Content({ class: "my-content" }, "Content"),
-              ]),
-            ]),
-          ]);
+          const el = yield* NavigationMenu.Root(
+            {},
+            collect(
+              NavigationMenu.List(
+                {},
+                collect(
+                  NavigationMenu.Item(
+                    { value: "item1" },
+                    collect(
+                      NavigationMenu.Content(
+                        { class: "my-content" },
+                        $.of("Content"),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const content = el.querySelector("[data-navigationmenu-content]");
           expect(content?.className).toBe("my-content");
@@ -353,10 +450,13 @@ describe("NavigationMenu", () => {
     it("should render with navigationmenu-viewport data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, [
-            NavigationMenu.List({}, []),
-            NavigationMenu.Viewport({}),
-          ]);
+          const el = yield* NavigationMenu.Root(
+            {},
+            collect(
+              NavigationMenu.List({}, collect()),
+              NavigationMenu.Viewport({}),
+            ),
+          );
 
           const viewport = el.querySelector("[data-navigationmenu-viewport]");
           expect(viewport).not.toBeNull();
@@ -367,10 +467,13 @@ describe("NavigationMenu", () => {
     it("should have data-state=closed when no item is active", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, [
-            NavigationMenu.List({}, []),
-            NavigationMenu.Viewport({}),
-          ]);
+          const el = yield* NavigationMenu.Root(
+            {},
+            collect(
+              NavigationMenu.List({}, collect()),
+              NavigationMenu.Viewport({}),
+            ),
+          );
 
           const viewport = el.querySelector("[data-navigationmenu-viewport]");
           expect(viewport?.getAttribute("data-state")).toBe("closed");
@@ -381,9 +484,10 @@ describe("NavigationMenu", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, [
-            NavigationMenu.Viewport({ class: "my-viewport" }),
-          ]);
+          const el = yield* NavigationMenu.Root(
+            {},
+            collect(NavigationMenu.Viewport({ class: "my-viewport" })),
+          );
 
           const viewport = el.querySelector("[data-navigationmenu-viewport]");
           expect(viewport?.className).toBe("my-viewport");
@@ -396,10 +500,13 @@ describe("NavigationMenu", () => {
     it("should render with navigationmenu-indicator data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, [
-            NavigationMenu.List({}, []),
-            NavigationMenu.Indicator({}),
-          ]);
+          const el = yield* NavigationMenu.Root(
+            {},
+            collect(
+              NavigationMenu.List({}, collect()),
+              NavigationMenu.Indicator({}),
+            ),
+          );
 
           const indicator = el.querySelector("[data-navigationmenu-indicator]");
           expect(indicator).not.toBeNull();
@@ -410,9 +517,10 @@ describe("NavigationMenu", () => {
     it("should have data-state=hidden when no item is active", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, [
-            NavigationMenu.Indicator({}),
-          ]);
+          const el = yield* NavigationMenu.Root(
+            {},
+            collect(NavigationMenu.Indicator({})),
+          );
 
           const indicator = el.querySelector("[data-navigationmenu-indicator]");
           expect(indicator?.getAttribute("data-state")).toBe("hidden");
@@ -423,9 +531,10 @@ describe("NavigationMenu", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* NavigationMenu.Root({}, [
-            NavigationMenu.Indicator({ class: "my-indicator" }),
-          ]);
+          const el = yield* NavigationMenu.Root(
+            {},
+            collect(NavigationMenu.Indicator({ class: "my-indicator" })),
+          );
 
           const indicator = el.querySelector("[data-navigationmenu-indicator]");
           expect(indicator?.className).toBe("my-indicator");
@@ -440,13 +549,20 @@ describe("NavigationMenu", () => {
         Effect.gen(function* () {
           const value = yield* Signal.make<string | null>(null);
 
-          const el = yield* NavigationMenu.Root({ value }, [
-            NavigationMenu.List({}, [
-              NavigationMenu.Item({ value: "item1" }, [
-                NavigationMenu.Trigger({}, "Products"),
-              ]),
-            ]),
-          ]);
+          const el = yield* NavigationMenu.Root(
+            { value },
+            collect(
+              NavigationMenu.List(
+                {},
+                collect(
+                  NavigationMenu.Item(
+                    { value: "item1" },
+                    collect(NavigationMenu.Trigger({}, $.of("Products"))),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const trigger = el.querySelector("[data-navigationmenu-trigger]");
           expect(trigger?.getAttribute("data-state")).toBe("closed");
@@ -473,13 +589,17 @@ describe("NavigationMenu", () => {
                   changes.push(val);
                 }),
             },
-            [
-              NavigationMenu.List({}, [
-                NavigationMenu.Item({ value: "item1" }, [
-                  NavigationMenu.Trigger({}, "Products"),
-                ]),
-              ]),
-            ],
+            collect(
+              NavigationMenu.List(
+                {},
+                collect(
+                  NavigationMenu.Item(
+                    { value: "item1" },
+                    collect(NavigationMenu.Trigger({}, $.of("Products"))),
+                  ),
+                ),
+              ),
+            ),
           );
 
           const trigger = el.querySelector(

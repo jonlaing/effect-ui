@@ -1,6 +1,13 @@
 import { Effect } from "effect";
 
-import { $, Component, Readable, Signal, type ClassValue } from "@effex/dom";
+import {
+  $,
+  Element,
+  Readable,
+  Signal,
+  type ChildEffect,
+  type ClassValue,
+} from "@effex/dom";
 
 /**
  * Props for Toggle.Root component.
@@ -67,40 +74,44 @@ export interface ToggleProps {
  * Toggle({ disabled: true }, "Disabled Toggle")
  * ```
  */
-export const Toggle = Component.gen(function* (props: ToggleProps, children) {
-  // Handle controlled vs uncontrolled state
-  const pressed = yield* Signal.fromNullable(
-    props.pressed,
-    props.defaultPressed ?? false,
-  );
+export const Toggle = <E = never, R = never>(
+  props: ToggleProps,
+  children: ChildEffect<E, R>,
+): Element.Element<HTMLButtonElement, E, R> =>
+  Effect.gen(function* () {
+    // Handle controlled vs uncontrolled state
+    const pressed = yield* Signal.fromNullable(
+      props.pressed,
+      props.defaultPressed ?? false,
+    );
 
-  // Normalize disabled to Readable
-  const disabled = Readable.of(props.disabled ?? false);
+    // Normalize disabled to Readable
+    const disabled = Readable.of(props.disabled ?? false);
 
-  const handleClick = () =>
-    Effect.gen(function* () {
-      if (yield* disabled.get) return;
+    const handleClick = () =>
+      Effect.gen(function* () {
+        if (yield* disabled.get) return;
 
-      const newPressed = !(yield* pressed.get);
-      yield* pressed.set(newPressed);
-      yield* props.onPressedChange?.(newPressed) ?? Effect.void;
-    });
+        const newPressed = !(yield* pressed.get);
+        yield* pressed.set(newPressed);
+        yield* props.onPressedChange?.(newPressed) ?? Effect.void;
+      });
 
-  const dataState = pressed.map((p) => (p ? "on" : "off"));
-  const ariaPressed = pressed.map((p) => (p ? "true" : "false"));
-  const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+    const dataState = pressed.map((p) => (p ? "on" : "off"));
+    const ariaPressed = pressed.map((p) => (p ? "true" : "false"));
+    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
 
-  return yield* $.button(
-    {
-      type: "button",
-      id: props.id,
-      class: props.class,
-      disabled,
-      "aria-pressed": ariaPressed,
-      "data-state": dataState,
-      "data-disabled": dataDisabled,
-      onClick: handleClick,
-    },
-    children ?? [],
-  );
-});
+    return yield* $.button(
+      {
+        type: "button",
+        id: props.id,
+        class: props.class,
+        disabled,
+        "aria-pressed": ariaPressed,
+        "data-state": dataState,
+        "data-disabled": dataDisabled,
+        onClick: handleClick,
+      },
+      children,
+    );
+  }) as Element.Element<HTMLButtonElement, E, R>;

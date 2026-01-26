@@ -2,7 +2,7 @@ import { Effect, Option, Stream } from "effect";
 import { describe, expect, it } from "vitest";
 
 import { Signal, type Readable } from "@effex/core";
-import { div, DOMRendererLive, span } from "@effex/dom";
+import { $, collect, div, DOMRendererLive, span } from "@effex/dom";
 import { makeRouterLayer, Outlet, type BaseRouter } from "@effex/router";
 
 import { Routes } from "./Routes";
@@ -67,10 +67,10 @@ const createMockRouter = (options?: {
 };
 
 // Sample page components for testing
-const HomePage = () => div({ id: "home" }, ["Home Page"]);
-const AboutPage = () => div({ id: "about" }, ["About Page"]);
-const UserPage = () => div({ id: "user" }, ["User Page"]);
-const NotFoundPage = () => div({ id: "not-found" }, ["404 - Not Found"]);
+const HomePage = () => div({ id: "home" }, $.of("Home Page"));
+const AboutPage = () => div({ id: "about" }, $.of("About Page"));
+const UserPage = () => div({ id: "user" }, $.of("User Page"));
+const NotFoundPage = () => div({ id: "not-found" }, $.of("404 - Not Found"));
 
 const testComponents = {
   home: HomePage,
@@ -264,17 +264,23 @@ describe("Routes", () => {
   describe("layouts", () => {
     // Layout components that use Outlet to render children
     const RootLayout = () =>
-      div({ id: "root-layout" }, [
-        div({ id: "root-header" }, ["Header"]),
-        div({ id: "root-content" }, [Outlet()]),
-        div({ id: "root-footer" }, ["Footer"]),
-      ]);
+      div(
+        { id: "root-layout" },
+        collect(
+          div({ id: "root-header" }, $.of("Header")),
+          div({ id: "root-content" }, Outlet()),
+          div({ id: "root-footer" }, $.of("Footer")),
+        ),
+      );
 
     const UsersLayout = () =>
-      div({ id: "users-layout" }, [
-        span({ id: "users-sidebar" }, ["Users Sidebar"]),
-        div({ id: "users-content" }, [Outlet()]),
-      ]);
+      div(
+        { id: "users-layout" },
+        collect(
+          span({ id: "users-sidebar" }, $.of("Users Sidebar")),
+          div({ id: "users-content" }, Outlet()),
+        ),
+      );
 
     // Test layout components map
     const layoutComponents = {

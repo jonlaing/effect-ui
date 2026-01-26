@@ -30,7 +30,7 @@ import {
 export const clientWhen = <E1, R1, E2, R2>(
   condition: Readable<boolean>,
   config: WhenConfig<E1, R1, E2, R2>,
-): Element.Element<E1 | E2, R1 | R2> =>
+): Element.Element<HTMLElement | SVGElement, E1 | E2, R1 | R2> =>
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
     const scope = yield* Effect.scope;
@@ -73,7 +73,7 @@ export const clientWhen = <E1, R1, E2, R2>(
 export const clientMatch = <A, E, R, E2, R2>(
   value: Readable<A>,
   config: MatchConfig<A, E, R, E2, R2>,
-): Element.Element<E | E2, R | R2> =>
+): Element.Element<HTMLElement | SVGElement, E | E2, R | R2> =>
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
     const scope = yield* Effect.scope;
@@ -126,7 +126,7 @@ export const clientMatch = <A, E, R, E2, R2>(
 export const clientEach = <A, E, R>(
   items: Readable<readonly A[]>,
   config: EachConfig<A, E, R>,
-): Element.Element<E, R> =>
+): Element.Element<HTMLElement | SVGElement, E, R> =>
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
     const scope = yield* Effect.scope;

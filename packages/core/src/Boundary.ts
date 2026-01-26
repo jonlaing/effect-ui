@@ -1,4 +1,4 @@
-import { Duration, Effect, Either, Fiber, pipe, Scope } from "effect";
+import { Duration, Effect, Either, Fiber, pipe } from "effect";
 
 import type { Element } from "./Element";
 import { RendererContext, type Renderer, type Slot } from "./Renderer";
@@ -6,25 +6,25 @@ import { RendererContext, type Renderer, type Slot } from "./Renderer";
 /**
  * Options for the suspense boundary.
  */
-export interface SuspenseOptions<N, E, R1, EF> {
+export interface SuspenseOptions<N, E, R1, RF, RC> {
   /**
    * Async function that returns the final element.
    * Can fail with error type E if `catch` is provided.
    */
-  readonly render: () => Effect.Effect<N, E, Scope.Scope | R1>;
+  readonly render: () => Element<N, E, R1>;
 
   /**
    * Function to render the loading/fallback state.
    * Must have no requirements (will be rendered in detached context if delay > 0).
    */
-  readonly fallback: () => Element<N, EF, never>;
+  readonly fallback: () => Element<N, never, RF>;
 
   /**
    * Optional error handler. If provided, errors from render are caught
    * and this function is called to render an error state.
    * Must have no requirements.
    */
-  readonly catch?: (error: E) => Element<N, never, never>;
+  readonly catch?: (error: E) => Element<N, never, RC>;
 
   /**
    * Delay before showing the fallback.
@@ -44,24 +44,29 @@ export interface SuspenseOptions<N, E, R1, EF> {
  * the success value or an error element (if catch handler is provided).
  */
 const handleRenderResult =
-  <N, E>(slot: Slot<N>, catchRender?: (error: E) => Element<N, never, never>) =>
-  (result: Either.Either<N, E>) =>
-    Either.match(result, {
-      onLeft: (error) =>
+  <N, E, R1, RC>(
+    slot: Slot<N>,
+    catchRender?: (error: E) => Element<N, never, RC>,
+  ) =>
+  (element: Element<N, E, R1>): Element<void, E, R1 | RC> =>
+    pipe(
+      element,
+      Effect.flatMap((e) => slot.setContent(e)),
+      Effect.catchAll((error) =>
         catchRender
           ? pipe(
               catchRender(error),
               Effect.flatMap((el) => slot.setContent(el)),
             )
-          : Effect.void, // No catch handler means E = never, so this branch is unreachable
-      onRight: (element) => slot.setContent(element),
-    });
+          : Effect.void,
+      ), // No catch handler means E = never, so this branch is unreachable
+    );
 
 /**
  * Create a fallback display effect that shows the fallback in a slot.
  */
-const createFallbackEffect = <N, EF>(
-  fallbackRender: () => Element<N, EF, never>,
+const createFallbackEffect = <N, RF>(
+  fallbackRender: () => Element<N, never, RF>,
   slot: Slot<N>,
 ) =>
   pipe(
@@ -82,10 +87,10 @@ const createFallbackEffect = <N, EF>(
  *
  * @example
  * ```ts
- * // Simple - show fallback immediately
+ * // Simple - show fallback immediately (using @effex/dom)
  * Boundary.suspense({
  *   render: () => fetchAndRenderUser(userId),
- *   fallback: () => div("Loading..."),
+ *   fallback: () => $.div({}, $.of("Loading...")),
  * })
  * ```
  *
@@ -97,26 +102,26 @@ const createFallbackEffect = <N, EF>(
  *     const user = yield* fetchUser(userId)
  *     return yield* UserPage({ user })
  *   }),
- *   fallback: () => div("Loading user..."),
+ *   fallback: () => $.div({}, $.of("Loading user...")),
  *   delay: "200 millis",
  * })
  * ```
  */
 export const suspense: {
   // Overload 1: No catch, render cannot fail
-  <N, R1 = never, EF = never>(
-    options: SuspenseOptions<N, never, R1, EF> & { catch?: never },
-  ): Element<N, EF, R1>;
+  <N, R1 = never, RF = never>(
+    options: SuspenseOptions<N, never, R1, RF, never> & { catch?: never },
+  ): Element<N, never, R1 | RF>;
 
   // Overload 2: With catch, render can fail
-  <N, E, R1 = never, EF = never>(
-    options: SuspenseOptions<N, E, R1, EF> & {
-      catch: (error: E) => Element<N, never, never>;
+  <N, E, R1 = never, RF = never, RC = never>(
+    options: SuspenseOptions<N, E, R1, RF, RC> & {
+      catch: (error: E) => Element<N, never, RC>;
     },
-  ): Element<N, EF, R1>;
-} = <N, E, R1 = never, EF = never>(
-  options: SuspenseOptions<N, E, R1, EF>,
-): Element<N, EF, R1> =>
+  ): Element<N, never, R1 | RF | RC>;
+} = <N, E, R1 = never, RF = never, RC = never>(
+  options: SuspenseOptions<N, E, R1, RF, RC>,
+): Element<N, never, R1 | RF | RC> =>
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as Renderer<N>;
     const scope = yield* Effect.scope;
@@ -144,16 +149,15 @@ export const suspense: {
     // Fork main render: interrupt fallback timer (if any), then handle result
     yield* pipe(
       options.render(),
-      Effect.either,
       Effect.tap(() =>
         fallbackFiber ? Fiber.interrupt(fallbackFiber) : Effect.void,
       ),
-      Effect.flatMap(handleRenderResult(slot, options.catch)),
+      handleRenderResult(slot, options.catch),
       Effect.forkIn(scope),
     );
 
     return slot.marker;
-  }) as Element<N, EF, R1>;
+  });
 
 /**
  * Error boundary that catches errors from a render function and displays a fallback element.
@@ -163,16 +167,17 @@ export const suspense: {
  *
  * @example
  * ```ts
+ * // Using @effex/dom
  * Boundary.error(
  *   () => riskyComponent(),
- *   (error) => div(["Something went wrong: ", String(error)])
+ *   (error) => $.div({}, $.of(`Something went wrong: ${String(error)}`))
  * )
  * ```
  */
-export const error = <N, E, R1 = never, E2 = never, R2 = never>(
-  tryRender: () => Effect.Effect<N, E, Scope.Scope | R1>,
-  catchRender: (error: E) => Element<N, E2, R2>,
-): Element<N, E2, R1 | R2> =>
+export const error = <N, E, R1 = never, R2 = never>(
+  tryRender: () => Element<N, E, R1>,
+  catchRender: (error: E) => Element<N, never, R2>,
+): Element<N, never, R1 | R2> =>
   Effect.gen(function* () {
     const result = yield* tryRender().pipe(Effect.either);
 
@@ -188,18 +193,18 @@ export const error = <N, E, R1 = never, E2 = never, R2 = never>(
  *
  * @example
  * ```ts
- * // Suspense boundary for async loading
+ * // Suspense boundary for async loading (using @effex/dom)
  * Boundary.suspense({
  *   render: () => fetchAndRenderData(),
- *   fallback: () => $.div("Loading..."),
- *   catch: (err) => $.div(`Error: ${err}`),
+ *   fallback: () => $.div({}, $.of("Loading...")),
+ *   catch: (err) => $.div({}, $.of(`Error: ${err}`)),
  *   delay: "200 millis",
  * })
  *
  * // Error boundary for catching render errors
  * Boundary.error(
  *   () => riskyComponent(),
- *   (err) => $.div(`Oops: ${err}`)
+ *   (err) => $.div({}, $.of(`Oops: ${err}`))
  * )
  * ```
  */

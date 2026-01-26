@@ -80,7 +80,7 @@ export type Reactive<T> = T | Readable<T>;
 export const id = <A>(value: A): Readable<A> =>
   make(Effect.succeed(value), () => Stream.empty);
 
-export const isReadable = <A>(value: A | Readable<A>): value is Readable<A> =>
+export const isReadable = (value: unknown): value is Readable<unknown> =>
   value !== null &&
   typeof value === "object" &&
   "get" in value &&

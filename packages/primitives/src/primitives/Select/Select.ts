@@ -2,7 +2,6 @@ import { Context, Effect } from "effect";
 
 import {
   $,
-  Component,
   createKeyboardNav,
   Derived,
   Element,
@@ -15,6 +14,7 @@ import {
   UniqueId,
   when,
   type AnimationOptions,
+  type ChildEffect,
   type ClassValue,
   type ElementRef,
   type SignalMap,
@@ -134,73 +134,77 @@ export interface SelectRootProps {
  * ])
  * ```
  */
-const Root = Component.gen(function* (props: SelectRootProps, children) {
-  const isOpen = yield* Signal.fromNullable(
-    props.open,
-    props.defaultOpen ?? false,
-  );
-  const value = yield* Signal.fromNullable(
-    props.value,
-    props.defaultValue ?? "",
-  );
+const Root = <E = never, R = never>(
+  props: SelectRootProps,
+  children: ChildEffect<E, R | SelectCtx>,
+): Element.Element<HTMLDivElement, E, R> =>
+  Effect.gen(function* () {
+    const isOpen = yield* Signal.fromNullable(
+      props.open,
+      props.defaultOpen ?? false,
+    );
+    const value = yield* Signal.fromNullable(
+      props.value,
+      props.defaultValue ?? "",
+    );
 
-  const valueLabels = yield* Signal.Map.make<string, string>([]);
-  const triggerRef = yield* Element.ref<HTMLButtonElement>();
-  const contentRef = yield* Element.ref<HTMLDivElement>();
-  const contentId = yield* UniqueId.make("select-content");
-  const triggerId = yield* UniqueId.make("select-trigger");
+    const valueLabels = yield* Signal.Map.make<string, string>([]);
+    const triggerRef = yield* Element.ref<HTMLButtonElement>();
+    const contentRef = yield* Element.ref<HTMLDivElement>();
+    const contentId = yield* UniqueId.make("select-content");
+    const triggerId = yield* UniqueId.make("select-trigger");
 
-  const setOpenState = (newValue: boolean) =>
-    Effect.gen(function* () {
-      if ((yield* isOpen.get) && !newValue) {
-        // Return focus to trigger when closing
-        yield* triggerRef.pipe(Element.focus, Effect.ignore);
-      }
-      yield* isOpen.set(newValue);
-      yield* props.onOpenChange?.(newValue) ?? Effect.void;
-    });
-
-  const selectValue = (newValue: string) =>
-    Effect.gen(function* () {
-      yield* value.set(newValue);
-      yield* props.onValueChange?.(newValue) ?? Effect.void;
-      yield* setOpenState(false);
-    });
-
-  const registerItem = (itemValue: string, textValue: string) =>
-    Effect.gen(function* () {
-      yield* valueLabels.set(itemValue, textValue);
-    });
-
-  const disabled = Readable.of(props.disabled ?? false);
-  const placeholder = Readable.of(props.placeholder ?? "Select...");
-
-  const ctx: SelectContext = {
-    isOpen,
-    value,
-    open: () => setOpenState(true),
-    close: () => setOpenState(false),
-    toggle: () =>
+    const setOpenState = (newValue: boolean) =>
       Effect.gen(function* () {
-        const current = yield* isOpen.get;
-        yield* setOpenState(!current);
-      }),
-    selectValue,
-    registerItem,
-    valueLabels,
-    triggerRef,
-    contentRef,
-    contentId,
-    triggerId,
-    disabled,
-    placeholder,
-  };
+        if ((yield* isOpen.get) && !newValue) {
+          // Return focus to trigger when closing
+          yield* triggerRef.pipe(Element.focus, Effect.ignore);
+        }
+        yield* isOpen.set(newValue);
+        yield* props.onOpenChange?.(newValue) ?? Effect.void;
+      });
 
-  return yield* $.div(
-    { style: { display: "contents" } },
-    provide(SelectCtx, ctx, Component.normalizeChildren(children)),
-  );
-});
+    const selectValue = (newValue: string) =>
+      Effect.gen(function* () {
+        yield* value.set(newValue);
+        yield* props.onValueChange?.(newValue) ?? Effect.void;
+        yield* setOpenState(false);
+      });
+
+    const registerItem = (itemValue: string, textValue: string) =>
+      Effect.gen(function* () {
+        yield* valueLabels.set(itemValue, textValue);
+      });
+
+    const disabled = Readable.of(props.disabled ?? false);
+    const placeholder = Readable.of(props.placeholder ?? "Select...");
+
+    const ctx: SelectContext = {
+      isOpen,
+      value,
+      open: () => setOpenState(true),
+      close: () => setOpenState(false),
+      toggle: () =>
+        Effect.gen(function* () {
+          const current = yield* isOpen.get;
+          yield* setOpenState(!current);
+        }),
+      selectValue,
+      registerItem,
+      valueLabels,
+      triggerRef,
+      contentRef,
+      contentId,
+      triggerId,
+      disabled,
+      placeholder,
+    };
+
+    return yield* $.div(
+      { style: { display: "contents" } },
+      provide(SelectCtx, ctx, children),
+    );
+  }) as Element.Element<HTMLDivElement, E, R>;
 
 /**
  * Props for Select.Trigger
@@ -222,59 +226,63 @@ export interface SelectTriggerProps {
  * ])
  * ```
  */
-const Trigger = Component.gen(function* (props: SelectTriggerProps, children) {
-  const ctx = yield* SelectCtx;
+const Trigger = <E = never, R = never>(
+  props: SelectTriggerProps,
+  children: ChildEffect<E, R>,
+): Element.Element<HTMLButtonElement, E, R | SelectCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* SelectCtx;
 
-  const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
-  const ariaExpanded = ctx.isOpen.map((open) => (open ? "true" : "false"));
-  const dataDisabled = ctx.disabled.map((d) => (d ? "" : undefined));
+    const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
+    const ariaExpanded = ctx.isOpen.map((open) => (open ? "true" : "false"));
+    const dataDisabled = ctx.disabled.map((d) => (d ? "" : undefined));
 
-  const handleKeyDown = (event: KeyboardEvent) =>
-    Effect.gen(function* () {
-      if (yield* ctx.disabled.get) return;
+    const handleKeyDown = (event: KeyboardEvent) =>
+      Effect.gen(function* () {
+        if (yield* ctx.disabled.get) return;
 
-      switch (event.key) {
-        case "Enter":
-        case " ":
-        case "ArrowDown":
-        case "ArrowUp":
-          event.preventDefault();
-          yield* ctx.open();
-          break;
-      }
-    });
+        switch (event.key) {
+          case "Enter":
+          case " ":
+          case "ArrowDown":
+          case "ArrowUp":
+            event.preventDefault();
+            yield* ctx.open();
+            break;
+        }
+      });
 
-  const triggerProps = {
-    ref: ctx.triggerRef,
-    id: ctx.triggerId,
-    role: "combobox" as const,
-    "aria-haspopup": "listbox" as const,
-    "aria-expanded": ariaExpanded,
-    "aria-controls": ctx.contentId,
-    "data-state": dataState,
-    "data-disabled": dataDisabled,
-    "data-select-trigger": "",
-    onClick: ctx.toggle,
-    onKeyDown: handleKeyDown,
-  };
+    const triggerProps = {
+      ref: ctx.triggerRef,
+      id: ctx.triggerId,
+      role: "combobox" as const,
+      "aria-haspopup": "listbox" as const,
+      "aria-expanded": ariaExpanded,
+      "aria-controls": ctx.contentId,
+      "data-state": dataState,
+      "data-disabled": dataDisabled,
+      "data-select-trigger": "",
+      onClick: ctx.toggle,
+      onKeyDown: handleKeyDown,
+    };
 
-  if (props.asChild && Effect.isEffect(children)) {
-    return yield* mergeProps(
-      triggerProps,
-      children as Element.Element<never, SelectCtx>,
+    if (props.asChild && Effect.isEffect(children)) {
+      return yield* mergeProps(
+        triggerProps,
+        children as Element.Element<HTMLElement | SVGElement, E, R>,
+      );
+    }
+
+    return yield* $.button(
+      {
+        ...triggerProps,
+        class: props.class,
+        type: "button",
+        disabled: ctx.disabled,
+      },
+      children,
     );
-  }
-
-  return yield* $.button(
-    {
-      ...triggerProps,
-      class: props.class,
-      type: "button",
-      disabled: ctx.disabled,
-    },
-    children ?? [],
-  );
-});
+  }) as Element.Element<HTMLButtonElement, E, R | SelectCtx>;
 
 /**
  * Props for Select.Value
@@ -294,33 +302,36 @@ export interface SelectValueProps {
  * Select.Value({ placeholder: "Choose..." })
  * ```
  */
-const Value = Component.gen(function* (props: SelectValueProps) {
-  const ctx = yield* SelectCtx;
+const Value = (
+  props: SelectValueProps,
+): Element.Element<HTMLSpanElement, never, SelectCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* SelectCtx;
 
-  // Normalize placeholder prop, falling back to context placeholder
-  const placeholderProp = props.placeholder
-    ? Readable.of(props.placeholder)
-    : ctx.placeholder;
+    // Normalize placeholder prop, falling back to context placeholder
+    const placeholderProp = props.placeholder
+      ? Readable.of(props.placeholder)
+      : ctx.placeholder;
 
-  // Combine value, valueLabels, and placeholder to get display text
-  const displayText = yield* Derived.sync(
-    [ctx.value, ctx.valueLabels.readable, placeholderProp] as const,
-    ([v, labels, placeholder]) => {
-      if (!v) return placeholder;
-      return labels.get(v) ?? v;
-    },
-  );
-  const isPlaceholder = ctx.value.map((v) => !v);
+    // Combine value, valueLabels, and placeholder to get display text
+    const displayText = yield* Derived.sync(
+      [ctx.value, ctx.valueLabels.readable, placeholderProp] as const,
+      ([v, labels, placeholder]) => {
+        if (!v) return placeholder;
+        return labels.get(v) ?? v;
+      },
+    );
+    const isPlaceholder = ctx.value.map((v) => !v);
 
-  return yield* $.span(
-    {
-      class: props.class,
-      "data-select-value": "",
-      "data-placeholder": isPlaceholder,
-    },
-    displayText,
-  );
-});
+    return yield* $.span(
+      {
+        class: props.class,
+        "data-select-value": "",
+        "data-placeholder": isPlaceholder,
+      },
+      $.of(displayText),
+    );
+  }) as Element.Element<HTMLSpanElement, never, SelectCtx>;
 
 /**
  * Props for Select.Content
@@ -349,138 +360,144 @@ export interface SelectContentProps {
  * ])
  * ```
  */
-const Content = Component.gen(function* (props: SelectContentProps, children) {
-  const ctx = yield* SelectCtx;
+const Content = <E = never, R = never>(
+  props: SelectContentProps,
+  children: ChildEffect<E, R>,
+): Element.Element<HTMLDivElement, E, R | SelectCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* SelectCtx;
 
-  // Normalize positioning props
-  const side = Readable.of(props.side ?? "bottom");
-  const align = Readable.of(props.align ?? "start");
-  const sideOffset = Readable.of(props.sideOffset ?? 4);
+    // Normalize positioning props
+    const side = Readable.of(props.side ?? "bottom");
+    const align = Readable.of(props.align ?? "start");
+    const sideOffset = Readable.of(props.sideOffset ?? 4);
 
-  const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
+    const dataState = ctx.isOpen.map((open) => (open ? "open" : "closed"));
 
-  // Click outside handler
-  yield* onClickOutside([ctx.triggerRef, ctx.contentRef], () => ctx.close());
+    // Click outside handler
+    yield* onClickOutside([ctx.triggerRef, ctx.contentRef], () => ctx.close());
 
-  // Keyboard navigation - created at component level
-  const keyboardNav = yield* createKeyboardNav({
-    selector: "[data-select-item]:not([data-disabled])",
-    orientation: "vertical",
-    loop: true,
-    onActivate: (el) =>
-      el.pipe(
-        Element.getData("value"),
-        Effect.flatMap(ctx.selectValue),
-        Effect.ignore,
-      ),
-    onEscape: () =>
-      ctx
-        .close()
-        .pipe(
-          Effect.andThen(ctx.triggerRef.pipe(Element.focus, Effect.ignore)),
+    // Keyboard navigation - created at component level
+    const keyboardNav = yield* createKeyboardNav({
+      selector: "[data-select-item]:not([data-disabled])",
+      orientation: "vertical",
+      loop: true,
+      onActivate: (el) =>
+        el.pipe(
+          Element.getData("value"),
+          Effect.flatMap(ctx.selectValue),
+          Effect.ignore,
         ),
-  });
-
-  const handleKeyDown = (event: KeyboardEvent) =>
-    Effect.gen(function* () {
-      // Tab closes select without preventing default
-      if (event.key === "Tab") {
-        yield* ctx.close();
-        return;
-      }
-      yield* keyboardNav(event);
+      onEscape: () =>
+        ctx
+          .close()
+          .pipe(
+            Effect.andThen(ctx.triggerRef.pipe(Element.focus, Effect.ignore)),
+          ),
     });
 
-  // Helper to position the content relative to trigger
-  const setPosition = <E, R>(el: Effect.Effect<HTMLElement, E, R>) =>
-    Effect.gen(function* () {
-      const currentSide = yield* side.get;
-      const currentAlign = yield* align.get;
-      const currentSideOffset = yield* sideOffset.get;
+    const handleKeyDown = (event: KeyboardEvent) =>
+      Effect.gen(function* () {
+        // Tab closes select without preventing default
+        if (event.key === "Tab") {
+          yield* ctx.close();
+          return;
+        }
+        yield* keyboardNav(event);
+      });
 
-      const contentRect = yield* el.pipe(Element.getBoundingClientRect);
-      const anchorRect = yield* ctx.triggerRef.pipe(
-        Element.getBoundingClientRect,
-      );
+    // Helper to position the content relative to trigger
+    const setPosition = (
+      el: Effect.Effect<HTMLElement | SVGElement, never, never>,
+    ) =>
+      Effect.gen(function* () {
+        const currentSide = yield* side.get;
+        const currentAlign = yield* align.get;
+        const currentSideOffset = yield* sideOffset.get;
 
-      const { top, left } = calculatePosition(
-        anchorRect,
-        currentSide,
-        currentAlign,
-        currentSideOffset,
-        0,
-        contentRect.width,
-        contentRect.height,
-      );
+        const contentRect = yield* el.pipe(Element.getBoundingClientRect);
+        const anchorRect = yield* ctx.triggerRef.pipe(
+          Element.getBoundingClientRect,
+        );
 
-      const positionStyle = {
-        top: `${top}px`,
-        left: `${left}px`,
-        minWidth: `${anchorRect.width}px`,
-        opacity: "",
-        animation: "none",
-      };
+        const { top, left } = calculatePosition(
+          anchorRect,
+          currentSide,
+          currentAlign,
+          currentSideOffset,
+          0,
+          contentRect.width,
+          contentRect.height,
+        );
 
-      return yield* el.pipe(Element.setStyles(positionStyle));
-    });
+        const positionStyle = {
+          top: `${top}px`,
+          left: `${left}px`,
+          minWidth: `${anchorRect.width}px`,
+          opacity: "",
+          animation: "none",
+        };
 
-  return yield* Portal(() =>
-    when(ctx.isOpen, {
-      onTrue: () =>
-        $.div(
-          {
-            ref: ctx.contentRef,
-            id: ctx.contentId,
-            class: props.class,
-            role: "listbox",
-            "aria-labelledby": ctx.triggerId,
-            "data-state": dataState,
-            "data-side": side,
-            "data-select-content": "",
-            tabIndex: -1,
-            style: {
-              position: "fixed",
-              opacity: 0,
+        return yield* el.pipe(Element.setStyles(positionStyle));
+      });
+
+    return yield* Portal(() =>
+      when(ctx.isOpen, {
+        onTrue: () =>
+          $.div(
+            {
+              ref: ctx.contentRef,
+              id: ctx.contentId,
+              class: props.class,
+              role: "listbox",
+              "aria-labelledby": ctx.triggerId,
+              "data-state": dataState,
+              "data-side": side,
+              "data-select-content": "",
+              tabIndex: -1,
+              style: {
+                position: "fixed",
+                opacity: 0,
+              },
+              onKeyDown: handleKeyDown,
             },
-            onKeyDown: handleKeyDown,
-          },
-          children ?? [],
-        ),
-      // Render children hidden so ItemText can register display values
-      onFalse: () => $.div({ style: { display: "none" } }, children ?? []),
-      animate: props.animate
-        ? {
-            ...props.animate,
-            onBeforeEnter: (el) =>
-              el.pipe(
-                setPosition,
-                Element.tapEffect(
-                  () => props.animate?.onBeforeEnter?.(el) ?? Effect.void,
+            children,
+          ),
+        // Render children hidden so ItemText can register display values
+        onFalse: () => $.div({ style: { display: "none" } }, children),
+        animate: props.animate
+          ? {
+              ...props.animate,
+              onBeforeEnter: (el) =>
+                el.pipe(
+                  setPosition,
+                  Element.tapEffect(
+                    () => props.animate?.onBeforeEnter?.(el) ?? Effect.void,
+                  ),
+                  Effect.ignore,
                 ),
-                Effect.ignore,
-              ),
-            onEnter: (el) =>
-              el.pipe(
-                Element.setStyles({ animation: "" }),
-                Element.focus,
-                Element.tapEffect(
-                  () => props.animate?.onEnter?.(el) ?? Effect.void,
+              onEnter: (el) =>
+                el.pipe(
+                  Element.setStyles({ animation: "" }),
+                  Element.focus,
+                  Element.tapEffect(
+                    () => props.animate?.onEnter?.(el) ?? Effect.void,
+                  ),
+                  Effect.ignore,
                 ),
-                Effect.ignore,
-              ),
-          }
-        : {
-            onBeforeEnter: (el) => el.pipe(setPosition, Effect.ignore),
-            onEnter: (el) =>
-              el.pipe(
-                Element.setStyles({ animation: "" }),
-                Element.focus,
-                Effect.ignore,
-              ),
-          },
-    }),
-  );
-});
+            }
+          : {
+              onBeforeEnter: (el) => el.pipe(setPosition, Effect.ignore),
+              onEnter: (el) =>
+                el.pipe(
+                  Element.setStyles({ animation: "" }),
+                  Element.focus,
+                  Effect.ignore,
+                ),
+            },
+      }),
+    );
+  }) as Element.Element<HTMLDivElement, E, R | SelectCtx>;
 
 /**
  * Props for Select.Item
@@ -514,56 +531,60 @@ export interface SelectItemProps {
  * ])
  * ```
  */
-const Item = Component.gen(function* (props: SelectItemProps, children) {
-  const ctx = yield* SelectCtx;
+const Item = <E = never, R = never>(
+  props: SelectItemProps,
+  children: ChildEffect<E, R | SelectItemCtx>,
+): Element.Element<HTMLDivElement, E, R | SelectCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* SelectCtx;
 
-  // Register textValue if explicitly provided (as fallback for complex ItemText content).
-  // For simple string children in ItemText, it will register automatically.
-  if (props.textValue) {
-    yield* ctx.registerItem(props.value, props.textValue);
-  }
+    // Register textValue if explicitly provided (as fallback for complex ItemText content).
+    // For simple string children in ItemText, it will register automatically.
+    if (props.textValue) {
+      yield* ctx.registerItem(props.value, props.textValue);
+    }
 
-  // Normalize disabled prop
-  const disabled = Readable.of(props.disabled ?? false);
+    // Normalize disabled prop
+    const disabled = Readable.of(props.disabled ?? false);
 
-  const isSelected = ctx.value.map((v) => v === props.value);
-  const dataState = isSelected.map((selected) =>
-    selected ? "checked" : "unchecked",
-  );
-  const dataDisabled = disabled.map((d) => (d ? "" : undefined));
-  const tabIndex = disabled.map((d) => (d ? -1 : 0));
+    const isSelected = ctx.value.map((v) => v === props.value);
+    const dataState = isSelected.map((selected) =>
+      selected ? "checked" : "unchecked",
+    );
+    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+    const tabIndex = disabled.map((d) => (d ? -1 : 0));
 
-  // Create function for ItemText to register string children
-  const setTextValue = (text: string) => ctx.registerItem(props.value, text);
+    // Create function for ItemText to register string children
+    const setTextValue = (text: string) => ctx.registerItem(props.value, text);
 
-  const itemCtx: SelectItemContext = {
-    itemValue: props.value,
-    isSelected,
-    disabled,
-    setTextValue,
-  };
+    const itemCtx: SelectItemContext = {
+      itemValue: props.value,
+      isSelected,
+      disabled,
+      setTextValue,
+    };
 
-  const handleClick = () =>
-    Effect.gen(function* () {
-      if (yield* disabled.get) return;
-      yield* ctx.selectValue(props.value);
-    });
+    const handleClick = () =>
+      Effect.gen(function* () {
+        if (yield* disabled.get) return;
+        yield* ctx.selectValue(props.value);
+      });
 
-  return yield* $.div(
-    {
-      class: props.class,
-      role: "option",
-      "aria-selected": isSelected.map((s) => (s ? "true" : "false")),
-      "data-state": dataState,
-      "data-disabled": dataDisabled,
-      "data-select-item": "",
-      "data-value": props.value,
-      tabIndex,
-      onClick: handleClick,
-    },
-    provide(SelectItemCtx, itemCtx, Component.normalizeChildren(children)),
-  );
-});
+    return yield* $.div(
+      {
+        class: props.class,
+        role: "option",
+        "aria-selected": isSelected.map((s) => (s ? "true" : "false")),
+        "data-state": dataState,
+        "data-disabled": dataDisabled,
+        "data-select-item": "",
+        "data-value": props.value,
+        tabIndex,
+        onClick: handleClick,
+      },
+      provide(SelectItemCtx, itemCtx, children),
+    );
+  }) as Element.Element<HTMLDivElement, E, R | SelectCtx>;
 
 /**
  * Props for Select.ItemText
@@ -582,26 +603,27 @@ export interface SelectItemTextProps {
  * Select.ItemText({ class: "item-text" }, "Apple")
  * ```
  */
-const ItemText = Component.gen(function* (
+const ItemText = <E = never, R = never>(
   props: SelectItemTextProps,
-  children,
-) {
-  const itemCtx = yield* SelectItemCtx;
+  children: ChildEffect<E, R>,
+): Element.Element<HTMLSpanElement, E, R | SelectItemCtx> =>
+  Effect.gen(function* () {
+    const itemCtx = yield* SelectItemCtx;
 
-  // If children is a simple string, register it as the display text
-  // This allows Select.Value to show the label without needing textValue prop
-  if (typeof children === "string") {
-    yield* itemCtx.setTextValue(children);
-  }
+    // If children is a simple string, register it as the display text
+    // This allows Select.Value to show the label without needing textValue prop
+    if (typeof children === "string") {
+      yield* itemCtx.setTextValue(children);
+    }
 
-  return yield* $.span(
-    {
-      class: props.class,
-      "data-select-item-text": "",
-    },
-    children ?? [],
-  );
-});
+    return yield* $.span(
+      {
+        class: props.class,
+        "data-select-item-text": "",
+      },
+      children,
+    );
+  }) as Element.Element<HTMLSpanElement, E, R | SelectItemCtx>;
 
 /**
  * Props for Select.Group
@@ -622,16 +644,20 @@ export interface SelectGroupProps {
  * ])
  * ```
  */
-const Group = Component.gen(function* (props: SelectGroupProps, children) {
-  return yield* $.div(
-    {
-      class: props.class,
-      role: "group",
-      "data-select-group": "",
-    },
-    children ?? [],
-  );
-});
+const Group = <E = never, R = never>(
+  props: SelectGroupProps,
+  children: ChildEffect<E, R>,
+): Element.Element<HTMLDivElement, E, R> =>
+  Effect.gen(function* () {
+    return yield* $.div(
+      {
+        class: props.class,
+        role: "group",
+        "data-select-group": "",
+      },
+      children,
+    );
+  }) as Element.Element<HTMLDivElement, E, R>;
 
 /**
  * Props for Select.Label
@@ -649,15 +675,19 @@ export interface SelectLabelProps {
  * Select.Label({}, "Category Name")
  * ```
  */
-const Label = Component.gen(function* (props: SelectLabelProps, children) {
-  return yield* $.div(
-    {
-      class: props.class,
-      "data-select-label": "",
-    },
-    children ?? [],
-  );
-});
+const Label = <E = never, R = never>(
+  props: SelectLabelProps,
+  children: ChildEffect<E, R>,
+): Element.Element<HTMLDivElement, E, R> =>
+  Effect.gen(function* () {
+    return yield* $.div(
+      {
+        class: props.class,
+        "data-select-label": "",
+      },
+      children,
+    );
+  }) as Element.Element<HTMLDivElement, E, R>;
 
 /**
  * Props for Select.Separator
@@ -675,13 +705,16 @@ export interface SelectSeparatorProps {
  * Select.Separator({})
  * ```
  */
-const Separator = Component.gen(function* (props: SelectSeparatorProps) {
-  return yield* $.div({
-    class: props.class,
-    role: "separator",
-    "data-select-separator": "",
-  });
-});
+const Separator = (
+  props: SelectSeparatorProps,
+): Element.Element<HTMLDivElement, never, never> =>
+  Effect.gen(function* () {
+    return yield* $.div({
+      class: props.class,
+      role: "separator",
+      "data-select-separator": "",
+    });
+  }) as Element.Element<HTMLDivElement, never, never>;
 
 /**
  * Headless Select primitive for building accessible dropdown selects.

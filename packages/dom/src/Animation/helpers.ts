@@ -23,7 +23,10 @@ const parseClasses = (classes: string): string[] =>
 /**
  * Add CSS classes to an element
  */
-export const addClasses = (element: HTMLElement, classes: string): void => {
+export const addClasses = (
+  element: HTMLElement | SVGElement,
+  classes: string,
+): void => {
   const parsed = parseClasses(classes);
   if (parsed.length > 0) {
     element.classList.add(...parsed);
@@ -33,7 +36,10 @@ export const addClasses = (element: HTMLElement, classes: string): void => {
 /**
  * Remove CSS classes from an element
  */
-export const removeClasses = (element: HTMLElement, classes: string): void => {
+export const removeClasses = (
+  element: HTMLElement | SVGElement,
+  classes: string,
+): void => {
   const parsed = parseClasses(classes);
   if (parsed.length > 0) {
     element.classList.remove(...parsed);
@@ -43,7 +49,7 @@ export const removeClasses = (element: HTMLElement, classes: string): void => {
 /**
  * Check if element has any active CSS animations or transitions
  */
-const hasActiveAnimations = (element: HTMLElement): boolean => {
+const hasActiveAnimations = (element: HTMLElement | SVGElement): boolean => {
   const style = getComputedStyle(element);
 
   // Check for CSS animations
@@ -66,7 +72,7 @@ const hasActiveAnimations = (element: HTMLElement): boolean => {
  * Returns immediately if no animation/transition is detected.
  */
 export const waitForAnimationEvent = (
-  element: HTMLElement,
+  element: HTMLElement | SVGElement,
   timeout: number = DEFAULT_TIMEOUT,
 ): Effect.Effect<AnimationEndResult> =>
   Effect.async<AnimationEndResult>((resume) => {
@@ -119,7 +125,7 @@ export const waitForAnimationEvent = (
  */
 export const runHook = (
   hook: AnimationHook | undefined,
-  element: HTMLElement,
+  element: HTMLElement | SVGElement,
 ): Effect.Effect<void> => {
   if (!hook) return Effect.void;
 
@@ -130,7 +136,9 @@ export const runHook = (
 /**
  * Force a browser reflow to ensure CSS changes take effect before animation starts
  */
-export const forceReflow = (element: HTMLElement): void => {
+export const forceReflow = (element: HTMLElement | SVGElement): void => {
   // Reading offsetHeight forces the browser to calculate layout
-  void element.offsetHeight;
+  if (Object.hasOwn(element, "offsetHeight")) {
+    void (element as HTMLElement).offsetHeight;
+  }
 };

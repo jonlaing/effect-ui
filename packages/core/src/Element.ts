@@ -13,20 +13,22 @@ import type { RendererContext } from "./Renderer";
  *
  * @example
  * ```ts
- * // DOM element
- * const myButton: Element<HTMLElement> = button({ className: "primary" }, ["Click me"])
+ * // DOM element (using @effex/dom)
+ * const myButton: Element<HTMLButtonElement> = button({ class: "primary" }, $.of("Click me"))
  *
- * // Component that can fail
- * const UserProfile: Element<HTMLElement, UserNotFoundError> = Effect.gen(function* () {
- *   const user = yield* fetchUser(userId)
- *   return yield* div([user.name])
- * })
+ * // Function that can fail
+ * const UserProfile = () =>
+ *   Effect.gen(function* () {
+ *     const user = yield* fetchUser(userId)
+ *     return yield* div({}, $.of(user.name))
+ *   })
  *
- * // Component with additional requirements
- * const NavLink: Element<HTMLElement, never, RouterContext> = Effect.gen(function* () {
- *   const router = yield* RouterContext
- *   return yield* button({ onClick: () => router.push("/") }, "Home")
- * })
+ * // Function with context requirements
+ * const NavLink = () =>
+ *   Effect.gen(function* () {
+ *     const router = yield* RouterContext
+ *     return yield* button({ onClick: () => router.push("/") }, $.of("Home"))
+ *   })
  * ```
  */
 export type Element<N = unknown, E = never, R = never> = Effect.Effect<

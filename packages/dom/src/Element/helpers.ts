@@ -3,24 +3,25 @@ import { Array, Context, Effect, Option, Scope, Stream } from "effect";
 import { Readable, type RendererInterface } from "@effex/core";
 
 import type {
-  Child,
+  ChildEffect,
   ClassItem,
   ClassValue,
   Element,
   EventHandler,
-  InferChildArray,
   StyleValue,
 } from "./types";
 
-export const isElement = (value: unknown): value is Element<unknown, unknown> =>
+export const isElement = (
+  value: unknown,
+): value is Element<HTMLElement | SVGElement, unknown, unknown> =>
   Effect.isEffect(value);
 
-export const flattenChildren = <C extends readonly Child<any, any>[]>(
-  children: C,
-): InferChildArray<C> =>
-  Array.flatMap(children, (child) =>
-    globalThis.Array.isArray(child) ? flattenChildren(child) : [child],
-  ) as unknown as InferChildArray<C>;
+export const flattenChildren = <E = never, R = never>(
+  children: ChildEffect<E, R>,
+) =>
+  children.pipe(
+    Effect.map((elements) => (Array.isArray(elements) ? elements : [elements])),
+  );
 
 export const subscribeToReadable = <A>(
   readable: Readable<A>,
@@ -190,153 +191,4 @@ export const applyInputValueWithRenderer = (
     });
   }
   return renderer.setInputValue(element, String(value));
-};
-
-// ============================================================
-// Legacy helper functions (for backwards compatibility with tests)
-// These use direct DOM manipulation without a renderer
-// ============================================================
-
-export const applyClass = (
-  element: HTMLElement,
-  value: ClassValue,
-): Effect.Effect<void, never, Scope.Scope> => {
-  // Single reactive value (string or string[])
-  if (Readable.isReadable(value)) {
-    return subscribeToReadable(
-      value as Readable<string | readonly string[]>,
-      (v) => {
-        element.className = classValueToString(v);
-      },
-    );
-  }
-
-  // Plain string
-  if (typeof value === "string") {
-    element.className = value;
-    return Effect.void;
-  }
-
-  // Array of class items - check if any are reactive
-  if (!hasReactiveItems(value)) {
-    // All static strings - just join them
-    element.className = (value as readonly string[]).join(" ");
-    return Effect.void;
-  }
-
-  // Mixed array with some reactive items - need to subscribe to each
-  return Effect.gen(function* () {
-    const currentValues: string[] = new globalThis.Array(value.length).fill("");
-
-    const updateClassName = () => {
-      element.className = currentValues.filter((s) => s.length > 0).join(" ");
-    };
-
-    yield* Effect.forEach(
-      value,
-      (item, index) => {
-        if (Readable.isReadable(item)) {
-          return subscribeToReadable(item as Readable<string>, (v) => {
-            currentValues[index] = v;
-            updateClassName();
-          });
-        }
-        currentValues[index] = item as string;
-        return Effect.void;
-      },
-      { discard: true },
-    );
-
-    updateClassName();
-  });
-};
-
-export const applyStyle = (
-  element: HTMLElement,
-  value: Record<string, StyleValue> | Readable<Record<string, string>>,
-): Effect.Effect<void, never, Scope.Scope> => {
-  if (Readable.isReadable(value)) {
-    return subscribeToReadable(value, (styles) => {
-      for (const [prop, val] of Object.entries(styles)) {
-        element.style.setProperty(prop, val);
-      }
-    });
-  }
-  return Effect.forEach(
-    Object.entries(value),
-    ([prop, styleVal]) => {
-      if (Readable.isReadable(styleVal)) {
-        return subscribeToReadable(
-          styleVal as Readable<string | number>,
-          (v) => {
-            element.style.setProperty(prop, String(v));
-          },
-        );
-      }
-      element.style.setProperty(prop, String(styleVal));
-      return Effect.void;
-    },
-    { discard: true },
-  );
-};
-
-export const applyEventHandler = (
-  element: HTMLElement,
-  key: string,
-  handler: EventHandler<Event>,
-): void => {
-  const eventName = key.slice(2).toLowerCase();
-  element.addEventListener(eventName, (event) => {
-    const result = handler(event);
-    if (Effect.isEffect(result)) {
-      Effect.runPromise(result as Effect.Effect<void>);
-    }
-  });
-};
-
-export const setBooleanOrStringAttribute = (
-  element: HTMLElement,
-  key: string,
-  value: unknown,
-): void => {
-  if (typeof value === "boolean") {
-    if (value) {
-      element.setAttribute(key, "");
-    } else {
-      element.removeAttribute(key);
-    }
-  } else {
-    element.setAttribute(key, String(value));
-  }
-};
-
-export const applyGenericAttribute = (
-  element: HTMLElement,
-  key: string,
-  value: unknown,
-): Effect.Effect<void, never, Scope.Scope> => {
-  if (Readable.isReadable(value)) {
-    return subscribeToReadable(value as Readable<unknown>, (v) => {
-      setBooleanOrStringAttribute(element, key, v);
-    });
-  }
-  setBooleanOrStringAttribute(element, key, value);
-  return Effect.void;
-};
-
-export const applyInputValue = (
-  element: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement,
-  value: unknown,
-): Effect.Effect<void, never, Scope.Scope> => {
-  if (Readable.isReadable(value)) {
-    return subscribeToReadable(value as Readable<unknown>, (v) => {
-      const stringValue = String(v);
-      // Only update if different - prevents cursor position reset
-      if (element.value !== stringValue) {
-        element.value = stringValue;
-      }
-    });
-  }
-  element.value = String(value);
-  return Effect.void;
 };

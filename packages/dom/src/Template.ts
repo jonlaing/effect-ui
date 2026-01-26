@@ -5,6 +5,8 @@ import { mapReadable, Readable } from "@effex/core";
 /**
  * Tagged template literal for creating reactive strings.
  * Interpolated Readable values will automatically update the string when they change.
+ * Returns an Effect<Readable<string>> so it can be used directly as element children
+ * (since Readable<string> is a valid ChildNode type).
  *
  * @example
  * ```ts
@@ -12,16 +14,14 @@ import { mapReadable, Readable } from "@effex/core";
  * const count = yield* Signal.make(0)
  *
  * // Static parts stay static, reactive parts update
- * const message = t`Hello, ${name}! Count: ${count}`
- *
- * // Use in elements
- * div([message])  // Updates when name or count changes
+ * // Use directly in elements - no $.of() needed
+ * div({}, t`Hello, ${name}! Count: ${count}`)
  * ```
  */
 export const t = (
   strings: TemplateStringsArray,
   ...values: readonly (Readable<unknown> | unknown)[]
-): Readable<string> => {
+): Effect.Effect<Readable<string>, never, never> => {
   const readables: Readable<unknown>[] = [];
 
   values.forEach((value) => {
@@ -43,7 +43,7 @@ export const t = (
       values: Stream.make(staticResult),
       map: (f) => mapReadable(readable, f),
     };
-    return readable;
+    return Effect.succeed(readable);
   }
 
   const buildStringWithCurrentValues = (currentValues: unknown[]): string => {
@@ -111,5 +111,5 @@ export const t = (
     map: (f) => mapReadable(readable, f),
   };
 
-  return readable;
+  return Effect.succeed(readable);
 };

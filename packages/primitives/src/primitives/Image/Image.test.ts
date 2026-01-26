@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { DOMRendererLive, Signal } from "@effex/dom";
+import { $, collect, DOMRendererLive, Signal } from "@effex/dom";
 
 import { Image } from "./Image";
 
@@ -21,7 +21,7 @@ describe("Image", () => {
     it("should render a span element", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Image.Root({}, []);
+          const el = yield* Image.Root({}, collect());
 
           expect(el.tagName).toBe("SPAN");
         }),
@@ -31,7 +31,7 @@ describe("Image", () => {
     it("should have data-image-root attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Image.Root({}, []);
+          const el = yield* Image.Root({}, collect());
 
           expect(el.getAttribute("data-image-root")).toBe("");
         }),
@@ -41,7 +41,7 @@ describe("Image", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Image.Root({ class: "my-image" }, []);
+          const el = yield* Image.Root({ class: "my-image" }, collect());
 
           expect(el.className).toBe("my-image");
         }),
@@ -51,7 +51,7 @@ describe("Image", () => {
     it("should start with idle status", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Image.Root({}, []);
+          const el = yield* Image.Root({}, collect());
 
           expect(el.getAttribute("data-state")).toBe("idle");
         }),
@@ -63,9 +63,10 @@ describe("Image", () => {
     it("should render an img element", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Image.Root({}, [
-            Image.Img({ src: "test.jpg", alt: "Test image" }),
-          ]);
+          const el = yield* Image.Root(
+            {},
+            collect(Image.Img({ src: "test.jpg", alt: "Test image" })),
+          );
 
           const img = el.querySelector("img");
           expect(img).not.toBeNull();
@@ -77,9 +78,10 @@ describe("Image", () => {
     it("should have data-image-img attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Image.Root({}, [
-            Image.Img({ src: "test.jpg", alt: "Test" }),
-          ]);
+          const el = yield* Image.Root(
+            {},
+            collect(Image.Img({ src: "test.jpg", alt: "Test" })),
+          );
 
           const img = el.querySelector("[data-image-img]");
           expect(img).not.toBeNull();
@@ -90,9 +92,12 @@ describe("Image", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Image.Root({}, [
-            Image.Img({ src: "test.jpg", alt: "Test", class: "my-img" }),
-          ]);
+          const el = yield* Image.Root(
+            {},
+            collect(
+              Image.Img({ src: "test.jpg", alt: "Test", class: "my-img" }),
+            ),
+          );
 
           const img = el.querySelector("img");
           expect(img?.className).toBe("my-img");
@@ -103,9 +108,10 @@ describe("Image", () => {
     it("should set loading status when src is provided", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Image.Root({}, [
-            Image.Img({ src: "test.jpg", alt: "Test" }),
-          ]);
+          const el = yield* Image.Root(
+            {},
+            collect(Image.Img({ src: "test.jpg", alt: "Test" })),
+          );
 
           yield* Effect.sleep("10 millis");
           expect(el.getAttribute("data-state")).toBe("loading");
@@ -116,9 +122,10 @@ describe("Image", () => {
     it("should set loaded status when image loads", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Image.Root({}, [
-            Image.Img({ src: "test.jpg", alt: "Test" }),
-          ]);
+          const el = yield* Image.Root(
+            {},
+            collect(Image.Img({ src: "test.jpg", alt: "Test" })),
+          );
 
           const img = el.querySelector("img") as HTMLImageElement;
           yield* Effect.sleep("10 millis");
@@ -135,9 +142,10 @@ describe("Image", () => {
     it("should set error status when image fails to load", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Image.Root({}, [
-            Image.Img({ src: "invalid.jpg", alt: "Test" }),
-          ]);
+          const el = yield* Image.Root(
+            {},
+            collect(Image.Img({ src: "invalid.jpg", alt: "Test" })),
+          );
 
           const img = el.querySelector("img") as HTMLImageElement;
           yield* Effect.sleep("10 millis");
@@ -154,9 +162,10 @@ describe("Image", () => {
     it("should hide image until loaded", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Image.Root({}, [
-            Image.Img({ src: "test.jpg", alt: "Test" }),
-          ]);
+          const el = yield* Image.Root(
+            {},
+            collect(Image.Img({ src: "test.jpg", alt: "Test" })),
+          );
 
           const img = el.querySelector("img") as HTMLImageElement;
           yield* Effect.sleep("10 millis");
@@ -179,7 +188,10 @@ describe("Image", () => {
       await runTest(
         Effect.gen(function* () {
           const src = yield* Signal.make("first.jpg");
-          const el = yield* Image.Root({}, [Image.Img({ src, alt: "Test" })]);
+          const el = yield* Image.Root(
+            {},
+            collect(Image.Img({ src, alt: "Test" })),
+          );
 
           const img = el.querySelector("img") as HTMLImageElement;
           yield* Effect.sleep("10 millis");
@@ -204,10 +216,13 @@ describe("Image", () => {
     it("should render a span element", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Image.Root({}, [
-            Image.Img({ src: "test.jpg", alt: "Test" }),
-            Image.Fallback({}, "FB"),
-          ]);
+          const el = yield* Image.Root(
+            {},
+            collect(
+              Image.Img({ src: "test.jpg", alt: "Test" }),
+              Image.Fallback({}, $.of("FB")),
+            ),
+          );
 
           const fallback = el.querySelector("[data-image-fallback]");
           expect(fallback).not.toBeNull();
@@ -219,10 +234,13 @@ describe("Image", () => {
     it("should have data-image-fallback attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Image.Root({}, [
-            Image.Img({ src: "test.jpg", alt: "Test" }),
-            Image.Fallback({}, "FB"),
-          ]);
+          const el = yield* Image.Root(
+            {},
+            collect(
+              Image.Img({ src: "test.jpg", alt: "Test" }),
+              Image.Fallback({}, $.of("FB")),
+            ),
+          );
 
           const fallback = el.querySelector("[data-image-fallback]");
           expect(fallback).not.toBeNull();
@@ -233,10 +251,13 @@ describe("Image", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Image.Root({}, [
-            Image.Img({ src: "test.jpg", alt: "Test" }),
-            Image.Fallback({ class: "my-fallback" }, "FB"),
-          ]);
+          const el = yield* Image.Root(
+            {},
+            collect(
+              Image.Img({ src: "test.jpg", alt: "Test" }),
+              Image.Fallback({ class: "my-fallback" }, $.of("FB")),
+            ),
+          );
 
           const fallback = el.querySelector("[data-image-fallback]");
           expect(fallback?.className).toBe("my-fallback");
@@ -247,10 +268,13 @@ describe("Image", () => {
     it("should render children", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Image.Root({}, [
-            Image.Img({ src: "test.jpg", alt: "Test" }),
-            Image.Fallback({}, "JD"),
-          ]);
+          const el = yield* Image.Root(
+            {},
+            collect(
+              Image.Img({ src: "test.jpg", alt: "Test" }),
+              Image.Fallback({}, $.of("JD")),
+            ),
+          );
 
           const fallback = el.querySelector("[data-image-fallback]");
           expect(fallback?.textContent).toBe("JD");
@@ -261,10 +285,13 @@ describe("Image", () => {
     it("should be visible when loading", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Image.Root({}, [
-            Image.Img({ src: "test.jpg", alt: "Test" }),
-            Image.Fallback({}, "FB"),
-          ]);
+          const el = yield* Image.Root(
+            {},
+            collect(
+              Image.Img({ src: "test.jpg", alt: "Test" }),
+              Image.Fallback({}, $.of("FB")),
+            ),
+          );
 
           yield* Effect.sleep("10 millis");
 
@@ -277,10 +304,13 @@ describe("Image", () => {
     it("should be hidden when image loads", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Image.Root({}, [
-            Image.Img({ src: "test.jpg", alt: "Test" }),
-            Image.Fallback({}, "FB"),
-          ]);
+          const el = yield* Image.Root(
+            {},
+            collect(
+              Image.Img({ src: "test.jpg", alt: "Test" }),
+              Image.Fallback({}, $.of("FB")),
+            ),
+          );
 
           const img = el.querySelector("img") as HTMLImageElement;
           yield* Effect.sleep("10 millis");
@@ -298,10 +328,13 @@ describe("Image", () => {
     it("should remain visible on error", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Image.Root({}, [
-            Image.Img({ src: "invalid.jpg", alt: "Test" }),
-            Image.Fallback({}, "FB"),
-          ]);
+          const el = yield* Image.Root(
+            {},
+            collect(
+              Image.Img({ src: "invalid.jpg", alt: "Test" }),
+              Image.Fallback({}, $.of("FB")),
+            ),
+          );
 
           const img = el.querySelector("img") as HTMLImageElement;
           yield* Effect.sleep("10 millis");
@@ -320,10 +353,13 @@ describe("Image", () => {
       it("should not show fallback before delay", async () => {
         await runTest(
           Effect.gen(function* () {
-            const el = yield* Image.Root({}, [
-              Image.Img({ src: "test.jpg", alt: "Test" }),
-              Image.Fallback({ delayMs: 100 }, "FB"),
-            ]);
+            const el = yield* Image.Root(
+              {},
+              collect(
+                Image.Img({ src: "test.jpg", alt: "Test" }),
+                Image.Fallback({ delayMs: 100 }, $.of("FB")),
+              ),
+            );
 
             yield* Effect.sleep("10 millis");
 
@@ -336,10 +372,13 @@ describe("Image", () => {
       it("should show fallback after delay", async () => {
         await runTest(
           Effect.gen(function* () {
-            const el = yield* Image.Root({}, [
-              Image.Img({ src: "test.jpg", alt: "Test" }),
-              Image.Fallback({ delayMs: 50 }, "FB"),
-            ]);
+            const el = yield* Image.Root(
+              {},
+              collect(
+                Image.Img({ src: "test.jpg", alt: "Test" }),
+                Image.Fallback({ delayMs: 50 }, $.of("FB")),
+              ),
+            );
 
             yield* Effect.sleep("100 millis");
 
@@ -352,10 +391,13 @@ describe("Image", () => {
       it("should not show fallback if image loads before delay", async () => {
         await runTest(
           Effect.gen(function* () {
-            const el = yield* Image.Root({}, [
-              Image.Img({ src: "test.jpg", alt: "Test" }),
-              Image.Fallback({ delayMs: 200 }, "FB"),
-            ]);
+            const el = yield* Image.Root(
+              {},
+              collect(
+                Image.Img({ src: "test.jpg", alt: "Test" }),
+                Image.Fallback({ delayMs: 200 }, $.of("FB")),
+              ),
+            );
 
             const img = el.querySelector("img") as HTMLImageElement;
             yield* Effect.sleep("10 millis");

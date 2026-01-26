@@ -1,12 +1,7 @@
 export type {
   BaseAttributes,
-  Child,
-  InferError,
-  InferRequirements,
-  InferChildren,
-  InferChildArray,
-  InferChildError,
-  InferChildRequirements,
+  ChildEffect,
+  ChildNode,
   ClassValue,
   ElementFactory,
   EventAttributes,
@@ -30,6 +25,7 @@ export {
 export {
   $,
   MergePropsCtx,
+  of,
   // HTML elements - Document structure
   div,
   span,

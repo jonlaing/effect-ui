@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { $, DOMRendererLive, Signal } from "@effex/dom";
+import { $, collect, DOMRendererLive, Signal } from "@effex/dom";
 
 import { Splitter } from "./Splitter";
 
@@ -21,11 +21,14 @@ describe("Splitter", () => {
     it("should render with data-splitter-root", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({}, [
-            Splitter.Panel({}, [$.div({}, "Panel 1")]),
-            Splitter.Handle({}),
-            Splitter.Panel({}, [$.div({}, "Panel 2")]),
-          ]);
+          const el = yield* Splitter.Root(
+            {},
+            collect(
+              Splitter.Panel({}, collect($.div({}, $.of("Panel 1")))),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect($.div({}, $.of("Panel 2")))),
+            ),
+          );
 
           expect(el.hasAttribute("data-splitter-root")).toBe(true);
         }),
@@ -35,11 +38,14 @@ describe("Splitter", () => {
     it("should set data-orientation to horizontal by default", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({}, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            {},
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           expect(el.getAttribute("data-orientation")).toBe("horizontal");
         }),
@@ -49,11 +55,14 @@ describe("Splitter", () => {
     it("should set data-orientation to vertical when specified", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({ orientation: "vertical" }, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            { orientation: "vertical" },
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           expect(el.getAttribute("data-orientation")).toBe("vertical");
         }),
@@ -65,11 +74,11 @@ describe("Splitter", () => {
         Effect.gen(function* () {
           const el = yield* Splitter.Root(
             { "aria-label": "Resizable layout" },
-            [
-              Splitter.Panel({}, []),
+            collect(
+              Splitter.Panel({}, collect()),
               Splitter.Handle({}),
-              Splitter.Panel({}, []),
-            ],
+              Splitter.Panel({}, collect()),
+            ),
           );
 
           expect(el.getAttribute("aria-label")).toBe("Resizable layout");
@@ -80,11 +89,14 @@ describe("Splitter", () => {
     it("should use flex layout", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({}, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            {},
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           expect(el.style.display).toBe("flex");
           expect(el.style.flexDirection).toBe("row");
@@ -95,11 +107,14 @@ describe("Splitter", () => {
     it("should use column flex direction for vertical", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({ orientation: "vertical" }, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            { orientation: "vertical" },
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           expect(el.style.flexDirection).toBe("column");
         }),
@@ -111,11 +126,14 @@ describe("Splitter", () => {
     it("should render with data-splitter-panel", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({}, [
-            Splitter.Panel({}, [$.div({}, "Content")]),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            {},
+            collect(
+              Splitter.Panel({}, collect($.div({}, $.of("Content")))),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           const panels = el.querySelectorAll("[data-splitter-panel]");
           expect(panels.length).toBe(2);
@@ -126,11 +144,14 @@ describe("Splitter", () => {
     it("should have unique IDs", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({}, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            {},
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           const panels = el.querySelectorAll("[data-splitter-panel]");
           const id1 = panels[0]?.getAttribute("id");
@@ -146,11 +167,14 @@ describe("Splitter", () => {
     it("should apply default sizes", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({ defaultSizes: [30, 70] }, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            { defaultSizes: [30, 70] },
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           // Wait for reactive style updates
           yield* Effect.sleep("10 millis");
@@ -168,11 +192,14 @@ describe("Splitter", () => {
     it("should apply flex properties to prevent reflow", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({}, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            {},
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           // Wait for reactive style updates
           yield* Effect.sleep("10 millis");
@@ -190,13 +217,16 @@ describe("Splitter", () => {
     it("should have data-panel-index", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({}, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            {},
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           const panels = el.querySelectorAll("[data-splitter-panel]");
           expect(panels[0]?.getAttribute("data-panel-index")).toBe("0");
@@ -211,11 +241,14 @@ describe("Splitter", () => {
     it("should render with role=separator", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({}, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            {},
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           const handle = el.querySelector("[role='separator']");
           expect(handle).not.toBeNull();
@@ -226,11 +259,14 @@ describe("Splitter", () => {
     it("should have aria-valuenow", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({ defaultSizes: [30, 70] }, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            { defaultSizes: [30, 70] },
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           // Wait for derived to compute
           yield* Effect.sleep("10 millis");
@@ -244,11 +280,14 @@ describe("Splitter", () => {
     it("should have aria-valuemin and aria-valuemax", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({}, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            {},
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           const handle = el.querySelector("[role='separator']");
           expect(handle?.getAttribute("aria-valuemin")).toBe("0");
@@ -260,11 +299,14 @@ describe("Splitter", () => {
     it("should have aria-controls pointing to first panel", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({}, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            {},
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           const handle = el.querySelector("[role='separator']");
           const panel = el.querySelector("[data-splitter-panel]");
@@ -277,11 +319,14 @@ describe("Splitter", () => {
     it("should have aria-orientation matching root", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({ orientation: "vertical" }, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            { orientation: "vertical" },
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           const handle = el.querySelector("[role='separator']");
           expect(handle?.getAttribute("aria-orientation")).toBe("vertical");
@@ -292,11 +337,14 @@ describe("Splitter", () => {
     it("should have data-splitter-handle", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({}, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            {},
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           const handle = el.querySelector("[data-splitter-handle]");
           expect(handle).not.toBeNull();
@@ -307,11 +355,14 @@ describe("Splitter", () => {
     it("should have appropriate cursor style", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({}, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            {},
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           const handle = el.querySelector(
             "[data-splitter-handle]",
@@ -324,11 +375,14 @@ describe("Splitter", () => {
     it("should have row-resize cursor for vertical", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({ orientation: "vertical" }, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            { orientation: "vertical" },
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           const handle = el.querySelector(
             "[data-splitter-handle]",
@@ -341,11 +395,14 @@ describe("Splitter", () => {
     it("should be focusable", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({}, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            {},
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           const handle = el.querySelector(
             "[data-splitter-handle]",
@@ -358,11 +415,14 @@ describe("Splitter", () => {
     it("should set aria-label when provided", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({}, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({ "aria-label": "Resize sidebar" }),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            {},
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({ "aria-label": "Resize sidebar" }),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           const handle = el.querySelector("[role='separator']");
           expect(handle?.getAttribute("aria-label")).toBe("Resize sidebar");
@@ -375,11 +435,14 @@ describe("Splitter", () => {
     it("should set data-disabled on root when disabled", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({ disabled: true }, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            { disabled: true },
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           expect(el.hasAttribute("data-disabled")).toBe(true);
         }),
@@ -389,11 +452,14 @@ describe("Splitter", () => {
     it("should set data-disabled on handle when root is disabled", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({ disabled: true }, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            { disabled: true },
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           const handle = el.querySelector("[data-splitter-handle]");
           expect(handle?.hasAttribute("data-disabled")).toBe(true);
@@ -404,11 +470,14 @@ describe("Splitter", () => {
     it("should not be focusable when disabled", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({ disabled: true }, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            { disabled: true },
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           const handle = el.querySelector(
             "[data-splitter-handle]",
@@ -425,11 +494,14 @@ describe("Splitter", () => {
         Effect.gen(function* () {
           const sizes = yield* Signal.make<number[]>([40, 60]);
 
-          const el = yield* Splitter.Root({ sizes }, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            { sizes },
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           // Wait for reactive style updates
           yield* Effect.sleep("10 millis");
@@ -455,13 +527,16 @@ describe("Splitter", () => {
     it("should support three panels with two handles", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({ defaultSizes: [25, 50, 25] }, [
-            Splitter.Panel({}, [$.div({}, "Left")]),
-            Splitter.Handle({}),
-            Splitter.Panel({}, [$.div({}, "Center")]),
-            Splitter.Handle({}),
-            Splitter.Panel({}, [$.div({}, "Right")]),
-          ]);
+          const el = yield* Splitter.Root(
+            { defaultSizes: [25, 50, 25] },
+            collect(
+              Splitter.Panel({}, collect($.div({}, $.of("Left")))),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect($.div({}, $.of("Center")))),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect($.div({}, $.of("Right")))),
+            ),
+          );
 
           const panels = el.querySelectorAll("[data-splitter-panel]");
           const handles = el.querySelectorAll("[role='separator']");
@@ -475,13 +550,16 @@ describe("Splitter", () => {
     it("should have correct aria-valuenow for each handle", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Splitter.Root({ defaultSizes: [25, 50, 25] }, [
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-            Splitter.Handle({}),
-            Splitter.Panel({}, []),
-          ]);
+          const el = yield* Splitter.Root(
+            { defaultSizes: [25, 50, 25] },
+            collect(
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+              Splitter.Handle({}),
+              Splitter.Panel({}, collect()),
+            ),
+          );
 
           yield* Effect.sleep("10 millis");
 

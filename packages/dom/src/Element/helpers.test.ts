@@ -3,16 +3,16 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { isReadable, Signal } from "@effex/core";
 
+import { DOMRenderer } from "../DOMRenderer";
 import { $ } from "./Element";
 import {
-  applyClass,
-  applyEventHandler,
-  applyGenericAttribute,
-  applyInputValue,
-  applyStyle,
+  applyClassWithRenderer,
+  applyEventHandlerWithRenderer,
+  applyGenericAttributeWithRenderer,
+  applyInputValueWithRenderer,
+  applyStyleWithRenderer,
   flattenChildren,
   isElement,
-  setBooleanOrStringAttribute,
   subscribeToReadable,
 } from "./helpers";
 
@@ -51,7 +51,7 @@ describe("isReadable", () => {
 
 describe("isElement", () => {
   it("should return true for Element (Effect)", async () => {
-    const element = $.div("hello");
+    const element = $.div({}, $.of("hello"));
     expect(isElement(element)).toBe(true);
   });
 
@@ -64,19 +64,21 @@ describe("isElement", () => {
 });
 
 describe("flattenChildren", () => {
-  it("should flatten nested arrays", () => {
-    const children = ["a", ["b", "c"], ["d", ["e", "f"]]];
-    const result = flattenChildren(children as never[]);
-    expect(result).toEqual(["a", "b", "c", "d", "e", "f"]);
+  it("should normalize single ChildNode to array", async () => {
+    const children = Effect.succeed("a" as const);
+    const result = await Effect.runPromise(flattenChildren(children));
+    expect(result).toEqual(["a"]);
   });
 
-  it("should handle empty arrays", () => {
-    expect(flattenChildren([])).toEqual([]);
+  it("should handle empty arrays", async () => {
+    const children = Effect.succeed([] as string[]);
+    const result = await Effect.runPromise(flattenChildren(children));
+    expect(result).toEqual([]);
   });
 
-  it("should handle single-level array", () => {
-    const children = ["a", "b", "c"];
-    const result = flattenChildren(children as never[]);
+  it("should pass through arrays unchanged", async () => {
+    const children = Effect.succeed(["a", "b", "c"]);
+    const result = await Effect.runPromise(flattenChildren(children));
     expect(result).toEqual(["a", "b", "c"]);
   });
 });
@@ -124,7 +126,7 @@ describe("subscribeToReadable", () => {
   });
 });
 
-describe("applyClass", () => {
+describe("applyClassWithRenderer", () => {
   let element: HTMLDivElement;
 
   beforeEach(() => {
@@ -133,14 +135,22 @@ describe("applyClass", () => {
 
   it("should apply string class", async () => {
     await Effect.runPromise(
-      Effect.scoped(applyClass(element, "my-class another-class")),
+      Effect.scoped(
+        applyClassWithRenderer(DOMRenderer, element, "my-class another-class"),
+      ),
     );
     expect(element.className).toBe("my-class another-class");
   });
 
   it("should apply array of classes", async () => {
     await Effect.runPromise(
-      Effect.scoped(applyClass(element, ["class-a", "class-b", "class-c"])),
+      Effect.scoped(
+        applyClassWithRenderer(DOMRenderer, element, [
+          "class-a",
+          "class-b",
+          "class-c",
+        ]),
+      ),
     );
     expect(element.className).toBe("class-a class-b class-c");
   });
@@ -150,7 +160,7 @@ describe("applyClass", () => {
       Effect.scoped(
         Effect.gen(function* () {
           const className = yield* Signal.make("initial");
-          yield* applyClass(element, className);
+          yield* applyClassWithRenderer(DOMRenderer, element, className);
           expect(element.className).toBe("initial");
 
           yield* className.set("updated");
@@ -166,7 +176,10 @@ describe("applyClass", () => {
       Effect.scoped(
         Effect.gen(function* () {
           const dynamicClass = yield* Signal.make("dynamic");
-          yield* applyClass(element, ["static", dynamicClass]);
+          yield* applyClassWithRenderer(DOMRenderer, element, [
+            "static",
+            dynamicClass,
+          ]);
           expect(element.className).toBe("static dynamic");
 
           yield* dynamicClass.set("changed");
@@ -182,7 +195,10 @@ describe("applyClass", () => {
       Effect.scoped(
         Effect.gen(function* () {
           const maybeClass = yield* Signal.make("");
-          yield* applyClass(element, ["always", maybeClass]);
+          yield* applyClassWithRenderer(DOMRenderer, element, [
+            "always",
+            maybeClass,
+          ]);
           expect(element.className).toBe("always");
 
           yield* maybeClass.set("now-present");
@@ -194,7 +210,7 @@ describe("applyClass", () => {
   });
 });
 
-describe("applyStyle", () => {
+describe("applyStyleWithRenderer", () => {
   let element: HTMLDivElement;
 
   beforeEach(() => {
@@ -204,7 +220,7 @@ describe("applyStyle", () => {
   it("should apply static style properties", async () => {
     await Effect.runPromise(
       Effect.scoped(
-        applyStyle(element, {
+        applyStyleWithRenderer(DOMRenderer, element, {
           color: "red",
           "font-size": "16px",
         }),
@@ -219,7 +235,7 @@ describe("applyStyle", () => {
       Effect.scoped(
         Effect.gen(function* () {
           const color = yield* Signal.make("blue");
-          yield* applyStyle(element, { color });
+          yield* applyStyleWithRenderer(DOMRenderer, element, { color });
           expect(element.style.color).toBe("blue");
 
           yield* color.set("green");
@@ -237,7 +253,7 @@ describe("applyStyle", () => {
           const styles = yield* Signal.make<Record<string, string>>({
             color: "red",
           });
-          yield* applyStyle(element, styles);
+          yield* applyStyleWithRenderer(DOMRenderer, element, styles);
           expect(element.style.color).toBe("red");
 
           yield* styles.set({ color: "blue", "font-weight": "bold" });
@@ -251,37 +267,43 @@ describe("applyStyle", () => {
 
   it("should handle numeric style values", async () => {
     await Effect.runPromise(
-      Effect.scoped(applyStyle(element, { "z-index": 100 })),
+      Effect.scoped(
+        applyStyleWithRenderer(DOMRenderer, element, { "z-index": 100 }),
+      ),
     );
     expect(element.style.zIndex).toBe("100");
   });
 });
 
-describe("applyEventHandler", () => {
+describe("applyEventHandlerWithRenderer", () => {
   let element: HTMLButtonElement;
 
   beforeEach(() => {
     element = document.createElement("button");
   });
 
-  it("should add event listener for onClick", () => {
+  it("should add event listener for onClick", async () => {
     let clicked = false;
-    applyEventHandler(element, "onClick", () =>
-      Effect.sync(() => {
-        clicked = true;
-      }),
+    await Effect.runPromise(
+      applyEventHandlerWithRenderer(DOMRenderer, element, "onClick", () =>
+        Effect.sync(() => {
+          clicked = true;
+        }),
+      ),
     );
 
     element.click();
     expect(clicked).toBe(true);
   });
 
-  it("should handle onMouseEnter event", () => {
+  it("should handle onMouseEnter event", async () => {
     let entered = false;
-    applyEventHandler(element, "onMouseEnter", () =>
-      Effect.sync(() => {
-        entered = true;
-      }),
+    await Effect.runPromise(
+      applyEventHandlerWithRenderer(DOMRenderer, element, "onMouseEnter", () =>
+        Effect.sync(() => {
+          entered = true;
+        }),
+      ),
     );
 
     const event = new MouseEvent("mouseenter");
@@ -289,12 +311,18 @@ describe("applyEventHandler", () => {
     expect(entered).toBe(true);
   });
 
-  it("should pass event to handler", () => {
+  it("should pass event to handler", async () => {
     let receivedEvent: Event | null = null;
-    applyEventHandler(element, "onClick", (e) =>
-      Effect.sync(() => {
-        receivedEvent = e;
-      }),
+    await Effect.runPromise(
+      applyEventHandlerWithRenderer(
+        DOMRenderer,
+        element,
+        "onClick",
+        (e: Event) =>
+          Effect.sync(() => {
+            receivedEvent = e;
+          }),
+      ),
     );
 
     element.click();
@@ -303,10 +331,12 @@ describe("applyEventHandler", () => {
 
   it("should handle Effect-returning handlers", async () => {
     let effectRan = false;
-    applyEventHandler(element, "onClick", () =>
-      Effect.sync(() => {
-        effectRan = true;
-      }),
+    await Effect.runPromise(
+      applyEventHandlerWithRenderer(DOMRenderer, element, "onClick", () =>
+        Effect.sync(() => {
+          effectRan = true;
+        }),
+      ),
     );
 
     element.click();
@@ -315,37 +345,7 @@ describe("applyEventHandler", () => {
   });
 });
 
-describe("setBooleanOrStringAttribute", () => {
-  let element: HTMLInputElement;
-
-  beforeEach(() => {
-    element = document.createElement("input");
-  });
-
-  it("should set boolean true as empty string attribute", () => {
-    setBooleanOrStringAttribute(element, "disabled", true);
-    expect(element.hasAttribute("disabled")).toBe(true);
-    expect(element.getAttribute("disabled")).toBe("");
-  });
-
-  it("should remove attribute for boolean false", () => {
-    element.setAttribute("disabled", "");
-    setBooleanOrStringAttribute(element, "disabled", false);
-    expect(element.hasAttribute("disabled")).toBe(false);
-  });
-
-  it("should set string attribute", () => {
-    setBooleanOrStringAttribute(element, "type", "email");
-    expect(element.getAttribute("type")).toBe("email");
-  });
-
-  it("should convert numbers to strings", () => {
-    setBooleanOrStringAttribute(element, "tabindex", 5);
-    expect(element.getAttribute("tabindex")).toBe("5");
-  });
-});
-
-describe("applyGenericAttribute", () => {
+describe("applyGenericAttributeWithRenderer", () => {
   let element: HTMLDivElement;
 
   beforeEach(() => {
@@ -354,7 +354,14 @@ describe("applyGenericAttribute", () => {
 
   it("should apply static attribute", async () => {
     await Effect.runPromise(
-      Effect.scoped(applyGenericAttribute(element, "data-id", "123")),
+      Effect.scoped(
+        applyGenericAttributeWithRenderer(
+          DOMRenderer,
+          element,
+          "data-id",
+          "123",
+        ),
+      ),
     );
     expect(element.getAttribute("data-id")).toBe("123");
   });
@@ -364,7 +371,12 @@ describe("applyGenericAttribute", () => {
       Effect.scoped(
         Effect.gen(function* () {
           const value = yield* Signal.make("initial");
-          yield* applyGenericAttribute(element, "data-value", value);
+          yield* applyGenericAttributeWithRenderer(
+            DOMRenderer,
+            element,
+            "data-value",
+            value,
+          );
           expect(element.getAttribute("data-value")).toBe("initial");
 
           yield* value.set("updated");
@@ -380,7 +392,12 @@ describe("applyGenericAttribute", () => {
       Effect.scoped(
         Effect.gen(function* () {
           const hidden = yield* Signal.make(true);
-          yield* applyGenericAttribute(element, "hidden", hidden);
+          yield* applyGenericAttributeWithRenderer(
+            DOMRenderer,
+            element,
+            "hidden",
+            hidden,
+          );
           expect(element.hasAttribute("hidden")).toBe(true);
 
           yield* hidden.set(false);
@@ -392,7 +409,7 @@ describe("applyGenericAttribute", () => {
   });
 });
 
-describe("applyInputValue", () => {
+describe("applyInputValueWithRenderer", () => {
   let input: HTMLInputElement;
 
   beforeEach(() => {
@@ -401,7 +418,9 @@ describe("applyInputValue", () => {
 
   it("should set static input value", async () => {
     await Effect.runPromise(
-      Effect.scoped(applyInputValue(input, "hello world")),
+      Effect.scoped(
+        applyInputValueWithRenderer(DOMRenderer, input, "hello world"),
+      ),
     );
     expect(input.value).toBe("hello world");
   });
@@ -411,7 +430,7 @@ describe("applyInputValue", () => {
       Effect.scoped(
         Effect.gen(function* () {
           const value = yield* Signal.make("initial");
-          yield* applyInputValue(input, value);
+          yield* applyInputValueWithRenderer(DOMRenderer, input, value);
           expect(input.value).toBe("initial");
 
           yield* value.set("updated");
@@ -427,7 +446,7 @@ describe("applyInputValue", () => {
       Effect.scoped(
         Effect.gen(function* () {
           const value = yield* Signal.make("test");
-          yield* applyInputValue(input, value);
+          yield* applyInputValueWithRenderer(DOMRenderer, input, value);
 
           // Manually set input value to same thing
           input.value = "test";
@@ -442,14 +461,18 @@ describe("applyInputValue", () => {
   });
 
   it("should convert numbers to strings", async () => {
-    await Effect.runPromise(Effect.scoped(applyInputValue(input, 42)));
+    await Effect.runPromise(
+      Effect.scoped(applyInputValueWithRenderer(DOMRenderer, input, 42)),
+    );
     expect(input.value).toBe("42");
   });
 
   it("should work with textarea", async () => {
     const textarea = document.createElement("textarea");
     await Effect.runPromise(
-      Effect.scoped(applyInputValue(textarea, "multiline\ntext")),
+      Effect.scoped(
+        applyInputValueWithRenderer(DOMRenderer, textarea, "multiline\ntext"),
+      ),
     );
     expect(textarea.value).toBe("multiline\ntext");
   });
@@ -458,7 +481,9 @@ describe("applyInputValue", () => {
     const select = document.createElement("select");
     select.innerHTML =
       '<option value="a">A</option><option value="b">B</option>';
-    await Effect.runPromise(Effect.scoped(applyInputValue(select, "b")));
+    await Effect.runPromise(
+      Effect.scoped(applyInputValueWithRenderer(DOMRenderer, select, "b")),
+    );
     expect(select.value).toBe("b");
   });
 });

@@ -131,7 +131,7 @@ export interface RenderResult {
  * ```
  */
 export const render = async (
-  element: Element.Element<never, RendererContext>,
+  element: Element.Element<HTMLElement | SVGElement, never, RendererContext>,
   options: RenderOptions,
 ): Promise<RenderResult> => {
   const platformContext = makeServerPlatformContext(options.request);

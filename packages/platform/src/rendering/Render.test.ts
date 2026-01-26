@@ -1,15 +1,18 @@
 import { describe, expect, it } from "vitest";
 
-import { div, span } from "@effex/dom";
+import { $, collect, div, span } from "@effex/dom";
 
 import { render, renderToDocument } from "./Render";
 
 describe("render", () => {
   describe("render function", () => {
     it("should render a simple element to HTML", async () => {
-      const result = await render(div({ class: "container" }, "Hello World"), {
-        request: new Request("https://example.com/"),
-      });
+      const result = await render(
+        div({ class: "container" }, $.of("Hello World")),
+        {
+          request: new Request("https://example.com/"),
+        },
+      );
 
       expect(result.html).toContain("<div");
       expect(result.html).toContain('class="container"');
@@ -19,10 +22,13 @@ describe("render", () => {
 
     it("should render nested elements", async () => {
       const result = await render(
-        div({ class: "parent" }, [
-          span({ class: "child" }, "First"),
-          span({ class: "child" }, "Second"),
-        ]),
+        div(
+          { class: "parent" },
+          collect(
+            span({ class: "child" }, $.of("First")),
+            span({ class: "child" }, $.of("Second")),
+          ),
+        ),
         { request: new Request("https://example.com/") },
       );
 
@@ -35,7 +41,7 @@ describe("render", () => {
     // Cross-package Effect type resolution issues prevent testing here.
 
     it("should return empty loader data when no loaders run", async () => {
-      const result = await render(div("Simple"), {
+      const result = await render(div($.of("Simple")), {
         request: new Request("https://example.com/"),
       });
 
@@ -43,7 +49,7 @@ describe("render", () => {
     });
 
     it("should return HTML-safe loader data script", async () => {
-      const result = await render(div("Test"), {
+      const result = await render(div($.of("Test")), {
         request: new Request("https://example.com/"),
       });
 
@@ -54,7 +60,7 @@ describe("render", () => {
     });
 
     it("should return response headers", async () => {
-      const result = await render(div("Test"), {
+      const result = await render(div($.of("Test")), {
         request: new Request("https://example.com/"),
       });
 
@@ -62,7 +68,7 @@ describe("render", () => {
     });
 
     it("should return platform context", async () => {
-      const result = await render(div("Test"), {
+      const result = await render(div($.of("Test")), {
         request: new Request("https://example.com/"),
       });
 
@@ -71,7 +77,7 @@ describe("render", () => {
     });
 
     it("should escape HTML in text content", async () => {
-      const result = await render(div("<script>alert('xss')</script>"), {
+      const result = await render(div($.of("<script>alert('xss')</script>")), {
         request: new Request("https://example.com/"),
       });
 
@@ -82,7 +88,7 @@ describe("render", () => {
 
   describe("renderToDocument", () => {
     it("should generate a complete HTML document", async () => {
-      const result = await render(div("Content"), {
+      const result = await render(div($.of("Content")), {
         request: new Request("https://example.com/"),
       });
 
@@ -98,7 +104,7 @@ describe("render", () => {
     });
 
     it("should use default title", async () => {
-      const result = await render(div("Content"), {
+      const result = await render(div($.of("Content")), {
         request: new Request("https://example.com/"),
       });
 
@@ -108,7 +114,7 @@ describe("render", () => {
     });
 
     it("should use custom title", async () => {
-      const result = await render(div("Content"), {
+      const result = await render(div($.of("Content")), {
         request: new Request("https://example.com/"),
       });
 
@@ -118,7 +124,7 @@ describe("render", () => {
     });
 
     it("should escape HTML in title", async () => {
-      const result = await render(div("Content"), {
+      const result = await render(div($.of("Content")), {
         request: new Request("https://example.com/"),
       });
 
@@ -131,7 +137,7 @@ describe("render", () => {
     });
 
     it("should include stylesheet links", async () => {
-      const result = await render(div("Content"), {
+      const result = await render(div($.of("Content")), {
         request: new Request("https://example.com/"),
       });
 
@@ -144,7 +150,7 @@ describe("render", () => {
     });
 
     it("should include script tags", async () => {
-      const result = await render(div("Content"), {
+      const result = await render(div($.of("Content")), {
         request: new Request("https://example.com/"),
       });
 
@@ -157,7 +163,7 @@ describe("render", () => {
     });
 
     it("should include custom head content", async () => {
-      const result = await render(div("Content"), {
+      const result = await render(div($.of("Content")), {
         request: new Request("https://example.com/"),
       });
 
@@ -169,7 +175,7 @@ describe("render", () => {
     });
 
     it("should include body attributes", async () => {
-      const result = await render(div("Content"), {
+      const result = await render(div($.of("Content")), {
         request: new Request("https://example.com/"),
       });
 
@@ -181,7 +187,7 @@ describe("render", () => {
     });
 
     it("should use default root ID", async () => {
-      const result = await render(div("Content"), {
+      const result = await render(div($.of("Content")), {
         request: new Request("https://example.com/"),
       });
 
@@ -191,7 +197,7 @@ describe("render", () => {
     });
 
     it("should use custom root ID", async () => {
-      const result = await render(div("Content"), {
+      const result = await render(div($.of("Content")), {
         request: new Request("https://example.com/"),
       });
 
@@ -201,7 +207,7 @@ describe("render", () => {
     });
 
     it("should include loader data script", async () => {
-      const result = await render(div("Content"), {
+      const result = await render(div($.of("Content")), {
         request: new Request("https://example.com/"),
       });
 
@@ -211,7 +217,7 @@ describe("render", () => {
     });
 
     it("should include viewport meta tag", async () => {
-      const result = await render(div("Content"), {
+      const result = await render(div($.of("Content")), {
         request: new Request("https://example.com/"),
       });
 
@@ -223,7 +229,7 @@ describe("render", () => {
     });
 
     it("should include charset meta tag", async () => {
-      const result = await render(div("Content"), {
+      const result = await render(div($.of("Content")), {
         request: new Request("https://example.com/"),
       });
 
@@ -233,7 +239,7 @@ describe("render", () => {
     });
 
     it("should escape HTML in script and style paths", async () => {
-      const result = await render(div("Content"), {
+      const result = await render(div($.of("Content")), {
         request: new Request("https://example.com/"),
       });
 

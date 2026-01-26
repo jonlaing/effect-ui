@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Signal } from "@effex/core";
 
 import { DOMRendererLive } from "../DOMRenderer";
-import { div } from "../Element";
+import { $, div } from "../Element";
 import {
   calculateItemOffset,
   calculateScrollToPosition,
@@ -179,7 +179,7 @@ describe("VirtualList", () => {
             key: (item) => item.id,
             itemHeight: 50,
             height: 300,
-            render: (item) => div(item.map((i) => i.text)),
+            render: (item) => div({}, $.of(item.map((i) => i.text))),
           });
 
           expect(el.style.overflow).toBe("auto");
@@ -196,7 +196,7 @@ describe("VirtualList", () => {
             key: (item) => item.id,
             itemHeight: 50,
             height: 300,
-            render: (item) => div(item.map((i) => i.text)),
+            render: (item) => div({}, $.of(item.map((i) => i.text))),
           });
 
           const inner = el.firstElementChild as HTMLElement;
@@ -215,7 +215,7 @@ describe("VirtualList", () => {
             itemHeight: 50,
             height: 300,
             overscan: 3,
-            render: (item) => div(item.map((i) => i.text)),
+            render: (item) => div({}, $.of(item.map((i) => i.text))),
           });
 
           // Should only render visible items + overscan
@@ -236,7 +236,7 @@ describe("VirtualList", () => {
             key: (item) => item.id,
             itemHeight: 50,
             height: 300,
-            render: (item) => div(item.map((i) => i.text)),
+            render: (item) => div({}, $.of(item.map((i) => i.text))),
           });
 
           const inner = el.firstElementChild as HTMLElement;
@@ -252,7 +252,7 @@ describe("VirtualList", () => {
       const badOptions = {
         key: (item: TestItem) => item.id,
         render: (item: { map: <T>(fn: (i: TestItem) => T) => T }) =>
-          div(item.map((i) => i.text)),
+          div({}, $.of(item.map((i) => i.text))),
       };
 
       await expect(
@@ -279,7 +279,7 @@ describe("VirtualList", () => {
             itemHeight: 50,
             height: 300,
             ref,
-            render: (item) => div(item.map((i) => i.text)),
+            render: (item) => div({}, $.of(item.map((i) => i.text))),
           });
 
           expect(ref.current).not.toBeNull();
@@ -302,7 +302,7 @@ describe("VirtualList", () => {
             itemHeight: 50,
             height: 300,
             ref,
-            render: (item) => div(item.map((i) => i.text)),
+            render: (item) => div({}, $.of(item.map((i) => i.text))),
           });
 
           const control = yield* ref.ready;

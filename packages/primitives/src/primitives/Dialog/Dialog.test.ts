@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { DOMRendererLive, Signal } from "@effex/dom";
+import { $, collect, DOMRendererLive, Signal } from "@effex/dom";
 
 import { Dialog } from "./Dialog";
 
@@ -21,7 +21,10 @@ describe("Dialog", () => {
     it("should render children", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Dialog.Root({}, [Dialog.Trigger({}, "Open")]);
+          const el = yield* Dialog.Root(
+            {},
+            collect(Dialog.Trigger({}, $.of("Open"))),
+          );
 
           expect(el.tagName).toBe("DIV");
           expect(el.querySelector("button")).not.toBeNull();
@@ -32,7 +35,10 @@ describe("Dialog", () => {
     it("should be closed by default", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Dialog.Root({}, [Dialog.Trigger({}, "Open")]);
+          const el = yield* Dialog.Root(
+            {},
+            collect(Dialog.Trigger({}, $.of("Open"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("data-state")).toBe("closed");
@@ -43,9 +49,10 @@ describe("Dialog", () => {
     it("should respect defaultOpen=true", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Dialog.Root({ defaultOpen: true }, [
-            Dialog.Trigger({}, "Open"),
-          ]);
+          const el = yield* Dialog.Root(
+            { defaultOpen: true },
+            collect(Dialog.Trigger({}, $.of("Open"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("data-state")).toBe("open");
@@ -58,9 +65,10 @@ describe("Dialog", () => {
     it("should render as button", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Dialog.Root({}, [
-            Dialog.Trigger({}, "Open Dialog"),
-          ]);
+          const el = yield* Dialog.Root(
+            {},
+            collect(Dialog.Trigger({}, $.of("Open Dialog"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger).not.toBeNull();
@@ -72,7 +80,10 @@ describe("Dialog", () => {
     it("should have aria-haspopup=dialog", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Dialog.Root({}, [Dialog.Trigger({}, "Open")]);
+          const el = yield* Dialog.Root(
+            {},
+            collect(Dialog.Trigger({}, $.of("Open"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("aria-haspopup")).toBe("dialog");
@@ -83,7 +94,10 @@ describe("Dialog", () => {
     it("should have aria-expanded attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Dialog.Root({}, [Dialog.Trigger({}, "Open")]);
+          const el = yield* Dialog.Root(
+            {},
+            collect(Dialog.Trigger({}, $.of("Open"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("aria-expanded")).toBe("false");
@@ -94,9 +108,10 @@ describe("Dialog", () => {
     it("should update aria-expanded when open", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Dialog.Root({ defaultOpen: true }, [
-            Dialog.Trigger({}, "Open"),
-          ]);
+          const el = yield* Dialog.Root(
+            { defaultOpen: true },
+            collect(Dialog.Trigger({}, $.of("Open"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("aria-expanded")).toBe("true");
@@ -107,9 +122,10 @@ describe("Dialog", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Dialog.Root({}, [
-            Dialog.Trigger({ class: "my-trigger" }, "Open"),
-          ]);
+          const el = yield* Dialog.Root(
+            {},
+            collect(Dialog.Trigger({ class: "my-trigger" }, $.of("Open"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.className).toBe("my-trigger");
@@ -120,7 +136,10 @@ describe("Dialog", () => {
     it("should open dialog on click", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Dialog.Root({}, [Dialog.Trigger({}, "Open")]);
+          const el = yield* Dialog.Root(
+            {},
+            collect(Dialog.Trigger({}, $.of("Open"))),
+          );
 
           const trigger = el.querySelector("button") as HTMLButtonElement;
           expect(trigger.getAttribute("data-state")).toBe("closed");
@@ -138,7 +157,10 @@ describe("Dialog", () => {
     it("should render as button with close data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Dialog.Root({}, [Dialog.Close({}, "Close")]);
+          const el = yield* Dialog.Root(
+            {},
+            collect(Dialog.Close({}, $.of("Close"))),
+          );
 
           const close = el.querySelector("[data-dialog-close]");
           expect(close).not.toBeNull();
@@ -151,9 +173,10 @@ describe("Dialog", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Dialog.Root({}, [
-            Dialog.Close({ class: "my-close" }, "Close"),
-          ]);
+          const el = yield* Dialog.Root(
+            {},
+            collect(Dialog.Close({ class: "my-close" }, $.of("Close"))),
+          );
 
           const close = el.querySelector("[data-dialog-close]");
           expect(close?.className).toBe("my-close");
@@ -164,10 +187,13 @@ describe("Dialog", () => {
     it("should close dialog on click", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Dialog.Root({ defaultOpen: true }, [
-            Dialog.Trigger({}, "Open"),
-            Dialog.Close({}, "Close"),
-          ]);
+          const el = yield* Dialog.Root(
+            { defaultOpen: true },
+            collect(
+              Dialog.Trigger({}, $.of("Open")),
+              Dialog.Close({}, $.of("Close")),
+            ),
+          );
 
           const trigger = el.querySelector("button:not([data-dialog-close])");
           expect(trigger?.getAttribute("data-state")).toBe("open");
@@ -188,7 +214,10 @@ describe("Dialog", () => {
     it("should render as h2 with title data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Dialog.Root({}, [Dialog.Title({}, "Edit Profile")]);
+          const el = yield* Dialog.Root(
+            {},
+            collect(Dialog.Title({}, $.of("Edit Profile"))),
+          );
 
           const title = el.querySelector("[data-dialog-title]");
           expect(title).not.toBeNull();
@@ -201,7 +230,10 @@ describe("Dialog", () => {
     it("should have unique id for aria-labelledby", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Dialog.Root({}, [Dialog.Title({}, "Edit Profile")]);
+          const el = yield* Dialog.Root(
+            {},
+            collect(Dialog.Title({}, $.of("Edit Profile"))),
+          );
 
           const title = el.querySelector("[data-dialog-title]");
           expect(title?.id).toMatch(/dialog-title-/);
@@ -212,9 +244,10 @@ describe("Dialog", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Dialog.Root({}, [
-            Dialog.Title({ class: "my-title" }, "Edit Profile"),
-          ]);
+          const el = yield* Dialog.Root(
+            {},
+            collect(Dialog.Title({ class: "my-title" }, $.of("Edit Profile"))),
+          );
 
           const title = el.querySelector("[data-dialog-title]");
           expect(title?.className).toBe("my-title");
@@ -227,9 +260,12 @@ describe("Dialog", () => {
     it("should render as p with description data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Dialog.Root({}, [
-            Dialog.Description({}, "Make changes to your profile."),
-          ]);
+          const el = yield* Dialog.Root(
+            {},
+            collect(
+              Dialog.Description({}, $.of("Make changes to your profile.")),
+            ),
+          );
 
           const desc = el.querySelector("[data-dialog-description]");
           expect(desc).not.toBeNull();
@@ -242,9 +278,12 @@ describe("Dialog", () => {
     it("should have unique id for aria-describedby", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Dialog.Root({}, [
-            Dialog.Description({}, "Make changes to your profile."),
-          ]);
+          const el = yield* Dialog.Root(
+            {},
+            collect(
+              Dialog.Description({}, $.of("Make changes to your profile.")),
+            ),
+          );
 
           const desc = el.querySelector("[data-dialog-description]");
           expect(desc?.id).toMatch(/dialog-description-/);
@@ -255,12 +294,15 @@ describe("Dialog", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Dialog.Root({}, [
-            Dialog.Description(
-              { class: "my-desc" },
-              "Make changes to your profile.",
+          const el = yield* Dialog.Root(
+            {},
+            collect(
+              Dialog.Description(
+                { class: "my-desc" },
+                $.of("Make changes to your profile."),
+              ),
             ),
-          ]);
+          );
 
           const desc = el.querySelector("[data-dialog-description]");
           expect(desc?.className).toBe("my-desc");
@@ -275,7 +317,10 @@ describe("Dialog", () => {
         Effect.gen(function* () {
           const open = yield* Signal.make(false);
 
-          const el = yield* Dialog.Root({ open }, [Dialog.Trigger({}, "Open")]);
+          const el = yield* Dialog.Root(
+            { open },
+            collect(Dialog.Trigger({}, $.of("Open"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("data-state")).toBe("closed");
@@ -302,7 +347,7 @@ describe("Dialog", () => {
                   changes.push(open);
                 }),
             },
-            [Dialog.Trigger({}, "Open")],
+            collect(Dialog.Trigger({}, $.of("Open"))),
           );
 
           const trigger = el.querySelector("button") as HTMLButtonElement;
@@ -327,7 +372,7 @@ describe("Dialog", () => {
                   changes.push(open);
                 }),
             },
-            [Dialog.Close({}, "Close")],
+            collect(Dialog.Close({}, $.of("Close"))),
           );
 
           const close = el.querySelector(

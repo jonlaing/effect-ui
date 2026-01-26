@@ -75,7 +75,7 @@ export interface SSRResult {
  */
 export const performSSR = <LE = never, LR = never, AE = never, AR = never>(
   request: Request,
-  element: Element.Element<never, RendererContext>,
+  element: Element.Element<HTMLElement | SVGElement, never, RendererContext>,
   router: SSRRouter<LE, LR, AE, AR> | undefined,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   providedLayer: Layer.Layer<any, never, never> | undefined,

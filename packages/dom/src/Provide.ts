@@ -1,7 +1,6 @@
 import { Context, Effect } from "effect";
 
-import type { Child } from "./Element";
-import { flattenChildren, isElement } from "./Element/helpers.js";
+import type { ChildEffect } from "./Element/types.js";
 
 /**
  * Provide a context value to children elements.
@@ -12,7 +11,7 @@ import { flattenChildren, isElement } from "./Element/helpers.js";
  *
  * @param tag - The Effect Context tag
  * @param value - The value to provide
- * @param children - Elements that require this context (and possibly others)
+ * @param children - Child effects that require this context (and possibly others)
  * @returns The children with context provided, requiring only remaining contexts
  *
  * @example
@@ -23,10 +22,10 @@ import { flattenChildren, isElement } from "./Element/helpers.js";
  * // Provide it to children
  * $.div(
  *   { class: "app" },
- *   provide(ThemeCtx, { color: "blue" }, [
+ *   provide(ThemeCtx, { color: "blue" }, collect(
  *     ThemedButton({}),
- *     ThemedText({}, "Hello"),
- *   ])
+ *     ThemedText({}, $.of("Hello")),
+ *   ))
  * )
  * ```
  *
@@ -34,39 +33,12 @@ import { flattenChildren, isElement } from "./Element/helpers.js";
  * ```ts
  * // Nested contexts - children require AccordionCtx | AccordionItemCtx
  * // After providing AccordionItemCtx, they only require AccordionCtx
- * provide(AccordionItemCtx, itemCtx, children)
+ * provide(AccordionItemCtx, itemCtx, ThemedButton({}))
  * ```
  */
-export const provide = <
-  I,
-  S,
-  C extends Child<any, any> | readonly Child<any, any>[],
->(
+export const provide = <I, S, E, R>(
   tag: Context.Tag<I, S>,
   value: S,
-  children?: C,
-) => {
-  type ChildType = C extends Child<any, any>[]
-    ? readonly Child<
-        C[number] extends Child<infer E, infer _R> ? E : never,
-        C[number] extends Child<infer _E, infer R> ? Exclude<R, I> : never
-      >[]
-    : C extends Child<infer E, infer R>
-      ? readonly Child<E, Exclude<R, I>>[]
-      : readonly Child<never, never>[];
-
-  if (!children) {
-    return [] as unknown as ChildType;
-  }
-
-  const childArray = Array.isArray(children)
-    ? flattenChildren(children)
-    : [children];
-  return childArray.map((child) => {
-    if (isElement(child)) {
-      return child.pipe(Effect.provideService(tag, value));
-    }
-    // Strings, numbers, and Readables don't need context - pass through unchanged
-    return child;
-  }) as unknown as ChildType;
-};
+  children: ChildEffect<E, R>,
+): ChildEffect<E, Exclude<R, I>> =>
+  children.pipe(Effect.provideService(tag, value));

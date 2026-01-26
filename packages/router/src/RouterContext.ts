@@ -1,7 +1,7 @@
 import { Context, Effect, Layer } from "effect";
 
 import type { Readable } from "@effex/core";
-import { a, Component } from "@effex/dom";
+import { $, type ChildEffect, type Element } from "@effex/dom";
 
 import type { ActionState, BaseRouter } from "./types";
 
@@ -105,46 +105,50 @@ export interface LinkProps {
  * @example
  * ```ts
  * // Basic link with children as second argument
- * Link({ href: "/users" }, "Users")
+ * Link({ href: "/users" }, $.of("Users"))
  *
  * // With custom class (adds "active" when route matches)
- * Link({ href: "/", class: "nav-link" }, "Home")
+ * Link({ href: "/", class: "nav-link" }, $.of("Home"))
  *
  * // With multiple children
- * Link({ href: "/about" }, ["About ", "Us"])
+ * Link({ href: "/about" }, collect($.of("About "), $.of("Us")))
  *
  * // Replace instead of push
- * Link({ href: "/login", replace: true }, "Login")
+ * Link({ href: "/login", replace: true }, $.of("Login"))
  * ```
  */
-export const Link = Component.gen(function* (props: LinkProps, children) {
-  const router = yield* RouterContext;
+export const Link = <E = never, R = never>(
+  props: LinkProps,
+  children: ChildEffect<E, R>,
+): Element.Element<HTMLAnchorElement, E, R | RouterContext> =>
+  Effect.gen(function* () {
+    const router = yield* RouterContext;
 
-  const isActive = router.pathname.map((p) => p === props.href);
+    const isActive = router.pathname.map((p) => p === props.href);
 
-  const baseClass = props.class ?? "link";
-  const classValue = isActive.map((active) =>
-    active ? `${baseClass} active` : baseClass,
-  );
+    const baseClass = props.class ?? "link";
+    const classValue = isActive.map((active) =>
+      active ? `${baseClass} active` : baseClass,
+    );
 
-  return yield* a(
-    {
-      href: props.href,
-      class: classValue,
-      onClick: (e) => {
-        // Allow ctrl/cmd+click and middle-click to work normally
-        if (e.ctrlKey || e.metaKey || e.button === 1) {
-          return Effect.void;
-        }
-        e.preventDefault();
-        return props.replace
-          ? router.replace(props.href)
-          : router.push(props.href);
+    return yield* $.a(
+      {
+        href: props.href,
+        class: classValue,
+        onClick: (e) => {
+          // Allow ctrl/cmd+click and middle-click to work normally
+          if (e.ctrlKey || e.metaKey || e.button === 1) {
+            return Effect.void;
+          }
+          e.preventDefault();
+          return props.replace
+            ? router.replace(props.href)
+            : router.push(props.href);
+        },
       },
-    },
-    children ?? [],
-  );
-});
+      children,
+    );
+  });
 
 /**
  * Access the current action state from the router.
@@ -155,14 +159,16 @@ export const Link = Component.gen(function* (props: LinkProps, children) {
  * const MyComponent = Effect.gen(function* () {
  *   const actionState = yield* getActionState()
  *
- *   return div([
- *     when(actionState.map(s => s.isSubmitting), () =>
- *       span("Submitting...")
- *     ),
- *     when(actionState.map(s => s.error !== null), () =>
- *       span({ class: "error" }, "Submission failed")
- *     ),
- *   ])
+ *   return yield* div({}, collect(
+ *     when(actionState.map(s => s.isSubmitting), {
+ *       onTrue: () => span({}, $.of("Submitting...")),
+ *       onFalse: () => span({}),
+ *     }),
+ *     when(actionState.map(s => s.error !== null), {
+ *       onTrue: () => span({ class: "error" }, $.of("Submission failed")),
+ *       onFalse: () => span({}),
+ *     }),
+ *   ))
  * })
  * ```
  */

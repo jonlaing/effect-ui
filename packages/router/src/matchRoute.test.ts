@@ -62,10 +62,10 @@ const createMockRouter = (options?: {
 };
 
 // Sample page components for testing
-const HomePage = () => $.div({ id: "home" }, ["Home Page"]);
-const AboutPage = () => $.div({ id: "about" }, ["About Page"]);
-const UserPage = () => $.div({ id: "user" }, ["User Page"]);
-const NotFoundPage = () => $.div({ id: "not-found" }, ["404 - Not Found"]);
+const HomePage = () => $.div({ id: "home" }, $.of("Home Page"));
+const AboutPage = () => $.div({ id: "about" }, $.of("About Page"));
+const UserPage = () => $.div({ id: "user" }, $.of("User Page"));
+const NotFoundPage = () => $.div({ id: "not-found" }, $.of("404 - Not Found"));
 
 describe("matchRoute", () => {
   it("should render the matched route", async () => {

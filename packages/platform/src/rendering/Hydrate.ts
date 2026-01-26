@@ -83,7 +83,7 @@ export interface HydrateOptions {
  * ```
  */
 export const hydrateApp = async (
-  element: Element.Element<never, RendererContext>,
+  element: Element.Element<HTMLElement | SVGElement, never, RendererContext>,
   container: HTMLElement,
   options: HydrateOptions = {},
 ): Promise<void> => {

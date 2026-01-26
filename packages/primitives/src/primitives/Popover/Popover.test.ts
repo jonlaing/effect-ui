@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { DOMRendererLive, Signal } from "@effex/dom";
+import { $, collect, DOMRendererLive, Signal } from "@effex/dom";
 
 import { Popover } from "./Popover";
 
@@ -21,7 +21,10 @@ describe("Popover", () => {
     it("should render children", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Popover.Root({}, [Popover.Trigger({}, "Open")]);
+          const el = yield* Popover.Root(
+            {},
+            collect(Popover.Trigger({}, $.of("Open"))),
+          );
 
           expect(el.tagName).toBe("DIV");
           expect(el.querySelector("button")).not.toBeNull();
@@ -32,7 +35,10 @@ describe("Popover", () => {
     it("should be closed by default", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Popover.Root({}, [Popover.Trigger({}, "Open")]);
+          const el = yield* Popover.Root(
+            {},
+            collect(Popover.Trigger({}, $.of("Open"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("data-state")).toBe("closed");
@@ -43,9 +49,10 @@ describe("Popover", () => {
     it("should respect defaultOpen=true", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Popover.Root({ defaultOpen: true }, [
-            Popover.Trigger({}, "Open"),
-          ]);
+          const el = yield* Popover.Root(
+            { defaultOpen: true },
+            collect(Popover.Trigger({}, $.of("Open"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("data-state")).toBe("open");
@@ -58,9 +65,10 @@ describe("Popover", () => {
     it("should render as button with popover-trigger data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Popover.Root({}, [
-            Popover.Trigger({}, "Open Popover"),
-          ]);
+          const el = yield* Popover.Root(
+            {},
+            collect(Popover.Trigger({}, $.of("Open Popover"))),
+          );
 
           const trigger = el.querySelector("[data-popover-trigger]");
           expect(trigger).not.toBeNull();
@@ -73,7 +81,10 @@ describe("Popover", () => {
     it("should have aria-haspopup=dialog", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Popover.Root({}, [Popover.Trigger({}, "Open")]);
+          const el = yield* Popover.Root(
+            {},
+            collect(Popover.Trigger({}, $.of("Open"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("aria-haspopup")).toBe("dialog");
@@ -84,7 +95,10 @@ describe("Popover", () => {
     it("should have aria-expanded attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Popover.Root({}, [Popover.Trigger({}, "Open")]);
+          const el = yield* Popover.Root(
+            {},
+            collect(Popover.Trigger({}, $.of("Open"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("aria-expanded")).toBe("false");
@@ -95,9 +109,10 @@ describe("Popover", () => {
     it("should update aria-expanded when open", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Popover.Root({ defaultOpen: true }, [
-            Popover.Trigger({}, "Open"),
-          ]);
+          const el = yield* Popover.Root(
+            { defaultOpen: true },
+            collect(Popover.Trigger({}, $.of("Open"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("aria-expanded")).toBe("true");
@@ -108,9 +123,10 @@ describe("Popover", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Popover.Root({}, [
-            Popover.Trigger({ class: "my-trigger" }, "Open"),
-          ]);
+          const el = yield* Popover.Root(
+            {},
+            collect(Popover.Trigger({ class: "my-trigger" }, $.of("Open"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.className).toBe("my-trigger");
@@ -121,7 +137,10 @@ describe("Popover", () => {
     it("should toggle popover on click", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Popover.Root({}, [Popover.Trigger({}, "Open")]);
+          const el = yield* Popover.Root(
+            {},
+            collect(Popover.Trigger({}, $.of("Open"))),
+          );
 
           const trigger = el.querySelector("button") as HTMLButtonElement;
           expect(trigger.getAttribute("data-state")).toBe("closed");
@@ -144,9 +163,10 @@ describe("Popover", () => {
     it("should render with anchor data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Popover.Root({}, [
-            Popover.Anchor({}, "Anchor point"),
-          ]);
+          const el = yield* Popover.Root(
+            {},
+            collect(Popover.Anchor({}, $.of("Anchor point"))),
+          );
 
           const anchor = el.querySelector("[data-popover-anchor]");
           expect(anchor).not.toBeNull();
@@ -158,9 +178,10 @@ describe("Popover", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Popover.Root({}, [
-            Popover.Anchor({ class: "my-anchor" }, "Anchor"),
-          ]);
+          const el = yield* Popover.Root(
+            {},
+            collect(Popover.Anchor({ class: "my-anchor" }, $.of("Anchor"))),
+          );
 
           const anchor = el.querySelector("[data-popover-anchor]");
           expect(anchor?.className).toBe("my-anchor");
@@ -173,7 +194,10 @@ describe("Popover", () => {
     it("should render as button with close data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Popover.Root({}, [Popover.Close({}, "Close")]);
+          const el = yield* Popover.Root(
+            {},
+            collect(Popover.Close({}, $.of("Close"))),
+          );
 
           const close = el.querySelector("[data-popover-close]");
           expect(close).not.toBeNull();
@@ -186,9 +210,10 @@ describe("Popover", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Popover.Root({}, [
-            Popover.Close({ class: "my-close" }, "Close"),
-          ]);
+          const el = yield* Popover.Root(
+            {},
+            collect(Popover.Close({ class: "my-close" }, $.of("Close"))),
+          );
 
           const close = el.querySelector("[data-popover-close]");
           expect(close?.className).toBe("my-close");
@@ -199,10 +224,13 @@ describe("Popover", () => {
     it("should close popover on click", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Popover.Root({ defaultOpen: true }, [
-            Popover.Trigger({}, "Open"),
-            Popover.Close({}, "Close"),
-          ]);
+          const el = yield* Popover.Root(
+            { defaultOpen: true },
+            collect(
+              Popover.Trigger({}, $.of("Open")),
+              Popover.Close({}, $.of("Close")),
+            ),
+          );
 
           const trigger = el.querySelector("[data-popover-trigger]");
           expect(trigger?.getAttribute("data-state")).toBe("open");
@@ -225,9 +253,10 @@ describe("Popover", () => {
         Effect.gen(function* () {
           const open = yield* Signal.make(false);
 
-          const el = yield* Popover.Root({ open }, [
-            Popover.Trigger({}, "Open"),
-          ]);
+          const el = yield* Popover.Root(
+            { open },
+            collect(Popover.Trigger({}, $.of("Open"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("data-state")).toBe("closed");
@@ -254,7 +283,7 @@ describe("Popover", () => {
                   changes.push(open);
                 }),
             },
-            [Popover.Trigger({}, "Open")],
+            collect(Popover.Trigger({}, $.of("Open"))),
           );
 
           const trigger = el.querySelector("button") as HTMLButtonElement;

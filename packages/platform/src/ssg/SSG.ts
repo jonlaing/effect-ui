@@ -90,7 +90,7 @@ export interface SSGBuildOptions<R = never> {
    */
   readonly components: Record<
     string,
-    () => Element.Element<never, RendererContext>
+    () => Element.Element<HTMLElement | SVGElement, never, RendererContext>
   >;
 
   /**
@@ -102,9 +102,14 @@ export interface SSGBuildOptions<R = never> {
    * @returns The full application element
    */
   readonly createApp: (
-    routeElement: Element.Element<never, RendererContext>,
+    routeElement: Element.Element<
+      HTMLElement | SVGElement,
+      never,
+      RendererContext
+    >,
+
     routeName: string,
-  ) => Element.Element<never, RendererContext>;
+  ) => Element.Element<HTMLElement | SVGElement, never, RendererContext>;
 
   /**
    * Output directory for generated HTML files.
@@ -260,11 +265,19 @@ const renderStaticPage = async <R = never>(options: {
   path: string;
   params: Record<string, string>;
   routeDef: RouteDefinition;
-  component: () => Element.Element<never, RendererContext>;
+  component: () => Element.Element<
+    HTMLElement | SVGElement,
+    never,
+    RendererContext
+  >;
   createApp: (
-    routeElement: Element.Element<never, RendererContext>,
+    routeElement: Element.Element<
+      HTMLElement | SVGElement,
+      never,
+      RendererContext
+    >,
     routeName: string,
-  ) => Element.Element<never, RendererContext>;
+  ) => Element.Element<HTMLElement | SVGElement, never, RendererContext>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   layer?: Layer.Layer<R, never, never>;
   revalidate: number | undefined;

@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { $, DOMRendererLive } from "@effex/dom";
+import { $, collect, DOMRendererLive } from "@effex/dom";
 
 import { ScrollArea } from "./ScrollArea";
 
@@ -30,7 +30,10 @@ describe("ScrollArea", () => {
     it("should render with scrollarea-root data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ScrollArea.Root({}, [ScrollArea.Viewport({}, [])]);
+          const el = yield* ScrollArea.Root(
+            {},
+            collect(ScrollArea.Viewport({}, collect())),
+          );
 
           expect(el.getAttribute("data-scrollarea-root")).toBe("");
         }),
@@ -40,7 +43,7 @@ describe("ScrollArea", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ScrollArea.Root({ class: "my-scroll" }, []);
+          const el = yield* ScrollArea.Root({ class: "my-scroll" }, collect());
 
           expect(el.className).toBe("my-scroll");
         }),
@@ -50,7 +53,7 @@ describe("ScrollArea", () => {
     it("should have relative positioning", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ScrollArea.Root({}, []);
+          const el = yield* ScrollArea.Root({}, collect());
 
           expect(el.style.position).toBe("relative");
         }),
@@ -60,7 +63,7 @@ describe("ScrollArea", () => {
     it("should have overflow hidden", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ScrollArea.Root({}, []);
+          const el = yield* ScrollArea.Root({}, collect());
 
           expect(el.style.overflow).toBe("hidden");
         }),
@@ -72,7 +75,10 @@ describe("ScrollArea", () => {
     it("should render with viewport data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ScrollArea.Root({}, [ScrollArea.Viewport({}, [])]);
+          const el = yield* ScrollArea.Root(
+            {},
+            collect(ScrollArea.Viewport({}, collect())),
+          );
 
           const viewport = el.querySelector("[data-scrollarea-viewport]");
           expect(viewport).not.toBeNull();
@@ -83,9 +89,10 @@ describe("ScrollArea", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ScrollArea.Root({}, [
-            ScrollArea.Viewport({ class: "my-viewport" }, []),
-          ]);
+          const el = yield* ScrollArea.Root(
+            {},
+            collect(ScrollArea.Viewport({ class: "my-viewport" }, collect())),
+          );
 
           const viewport = el.querySelector("[data-scrollarea-viewport]");
           expect(viewport?.className).toBe("my-viewport");
@@ -96,11 +103,15 @@ describe("ScrollArea", () => {
     it("should render children", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ScrollArea.Root({}, [
-            ScrollArea.Viewport({}, [
-              $.div({ "data-test-content": "" }, "Content"),
-            ]),
-          ]);
+          const el = yield* ScrollArea.Root(
+            {},
+            collect(
+              ScrollArea.Viewport(
+                {},
+                collect($.div({ "data-test-content": "" }, $.of("Content"))),
+              ),
+            ),
+          );
 
           const content = el.querySelector("[data-test-content]");
           expect(content).not.toBeNull();
@@ -114,10 +125,13 @@ describe("ScrollArea", () => {
     it("should render with scrollbar data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ScrollArea.Root({}, [
-            ScrollArea.Viewport({}, []),
-            ScrollArea.Scrollbar({ orientation: "vertical" }, []),
-          ]);
+          const el = yield* ScrollArea.Root(
+            {},
+            collect(
+              ScrollArea.Viewport({}, collect()),
+              ScrollArea.Scrollbar({ orientation: "vertical" }, collect()),
+            ),
+          );
 
           const scrollbar = el.querySelector("[data-scrollarea-scrollbar]");
           expect(scrollbar).not.toBeNull();
@@ -128,9 +142,12 @@ describe("ScrollArea", () => {
     it("should set data-orientation to vertical", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ScrollArea.Root({}, [
-            ScrollArea.Scrollbar({ orientation: "vertical" }, []),
-          ]);
+          const el = yield* ScrollArea.Root(
+            {},
+            collect(
+              ScrollArea.Scrollbar({ orientation: "vertical" }, collect()),
+            ),
+          );
 
           const scrollbar = el.querySelector("[data-scrollarea-scrollbar]");
           expect(scrollbar?.getAttribute("data-orientation")).toBe("vertical");
@@ -141,9 +158,12 @@ describe("ScrollArea", () => {
     it("should set data-orientation to horizontal", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ScrollArea.Root({}, [
-            ScrollArea.Scrollbar({ orientation: "horizontal" }, []),
-          ]);
+          const el = yield* ScrollArea.Root(
+            {},
+            collect(
+              ScrollArea.Scrollbar({ orientation: "horizontal" }, collect()),
+            ),
+          );
 
           const scrollbar = el.querySelector("[data-scrollarea-scrollbar]");
           expect(scrollbar?.getAttribute("data-orientation")).toBe(
@@ -156,12 +176,15 @@ describe("ScrollArea", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ScrollArea.Root({}, [
-            ScrollArea.Scrollbar(
-              { orientation: "vertical", class: "my-scrollbar" },
-              [],
+          const el = yield* ScrollArea.Root(
+            {},
+            collect(
+              ScrollArea.Scrollbar(
+                { orientation: "vertical", class: "my-scrollbar" },
+                collect(),
+              ),
             ),
-          ]);
+          );
 
           const scrollbar = el.querySelector("[data-scrollarea-scrollbar]");
           expect(scrollbar?.className).toBe("my-scrollbar");
@@ -174,11 +197,15 @@ describe("ScrollArea", () => {
     it("should render with thumb data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ScrollArea.Root({}, [
-            ScrollArea.Scrollbar({ orientation: "vertical" }, [
-              ScrollArea.Thumb({}),
-            ]),
-          ]);
+          const el = yield* ScrollArea.Root(
+            {},
+            collect(
+              ScrollArea.Scrollbar(
+                { orientation: "vertical" },
+                collect(ScrollArea.Thumb({})),
+              ),
+            ),
+          );
 
           const thumb = el.querySelector("[data-scrollarea-thumb]");
           expect(thumb).not.toBeNull();
@@ -189,11 +216,15 @@ describe("ScrollArea", () => {
     it("should have data-orientation matching parent scrollbar", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ScrollArea.Root({}, [
-            ScrollArea.Scrollbar({ orientation: "vertical" }, [
-              ScrollArea.Thumb({}),
-            ]),
-          ]);
+          const el = yield* ScrollArea.Root(
+            {},
+            collect(
+              ScrollArea.Scrollbar(
+                { orientation: "vertical" },
+                collect(ScrollArea.Thumb({})),
+              ),
+            ),
+          );
 
           const thumb = el.querySelector("[data-scrollarea-thumb]");
           expect(thumb?.getAttribute("data-orientation")).toBe("vertical");
@@ -204,11 +235,15 @@ describe("ScrollArea", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ScrollArea.Root({}, [
-            ScrollArea.Scrollbar({ orientation: "vertical" }, [
-              ScrollArea.Thumb({ class: "my-thumb" }),
-            ]),
-          ]);
+          const el = yield* ScrollArea.Root(
+            {},
+            collect(
+              ScrollArea.Scrollbar(
+                { orientation: "vertical" },
+                collect(ScrollArea.Thumb({ class: "my-thumb" })),
+              ),
+            ),
+          );
 
           const thumb = el.querySelector("[data-scrollarea-thumb]");
           expect(thumb?.className).toBe("my-thumb");
@@ -221,7 +256,7 @@ describe("ScrollArea", () => {
     it("should render with corner data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ScrollArea.Root({}, [ScrollArea.Corner({})]);
+          const el = yield* ScrollArea.Root({}, collect(ScrollArea.Corner({})));
 
           const corner = el.querySelector("[data-scrollarea-corner]");
           expect(corner).not.toBeNull();
@@ -232,9 +267,10 @@ describe("ScrollArea", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ScrollArea.Root({}, [
-            ScrollArea.Corner({ class: "my-corner" }),
-          ]);
+          const el = yield* ScrollArea.Root(
+            {},
+            collect(ScrollArea.Corner({ class: "my-corner" })),
+          );
 
           const corner = el.querySelector("[data-scrollarea-corner]");
           expect(corner?.className).toBe("my-corner");
@@ -247,7 +283,7 @@ describe("ScrollArea", () => {
     it("should accept type=hover", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ScrollArea.Root({ type: "hover" }, []);
+          const el = yield* ScrollArea.Root({ type: "hover" }, collect());
 
           expect(el.getAttribute("data-scrollarea-root")).toBe("");
         }),
@@ -257,7 +293,7 @@ describe("ScrollArea", () => {
     it("should accept type=always", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ScrollArea.Root({ type: "always" }, []);
+          const el = yield* ScrollArea.Root({ type: "always" }, collect());
 
           expect(el.getAttribute("data-scrollarea-root")).toBe("");
         }),
@@ -267,7 +303,7 @@ describe("ScrollArea", () => {
     it("should accept type=scroll", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ScrollArea.Root({ type: "scroll" }, []);
+          const el = yield* ScrollArea.Root({ type: "scroll" }, collect());
 
           expect(el.getAttribute("data-scrollarea-root")).toBe("");
         }),
@@ -277,7 +313,7 @@ describe("ScrollArea", () => {
     it("should accept type=auto", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* ScrollArea.Root({ type: "auto" }, []);
+          const el = yield* ScrollArea.Root({ type: "auto" }, collect());
 
           expect(el.getAttribute("data-scrollarea-root")).toBe("");
         }),

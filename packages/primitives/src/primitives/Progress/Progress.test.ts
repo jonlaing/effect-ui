@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { DOMRendererLive, Signal } from "@effex/dom";
+import { $, collect, DOMRendererLive, Signal } from "@effex/dom";
 
 import { Progress } from "./Progress";
 
@@ -21,7 +21,7 @@ describe("Progress", () => {
     it("should render with progressbar role", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Progress.Root({ value: 50 }, []);
+          const el = yield* Progress.Root({ value: 50 }, collect());
 
           expect(el.tagName).toBe("DIV");
           expect(el.getAttribute("role")).toBe("progressbar");
@@ -32,7 +32,7 @@ describe("Progress", () => {
     it("should have data-progress-root attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Progress.Root({ value: 50 }, []);
+          const el = yield* Progress.Root({ value: 50 }, collect());
 
           expect(el.getAttribute("data-progress-root")).toBe("");
         }),
@@ -44,7 +44,7 @@ describe("Progress", () => {
         Effect.gen(function* () {
           const el = yield* Progress.Root(
             { value: 50, class: "my-progress" },
-            [],
+            collect(),
           );
 
           expect(el.className).toBe("my-progress");
@@ -56,7 +56,7 @@ describe("Progress", () => {
       it("should set aria-valuenow for determinate progress", async () => {
         await runTest(
           Effect.gen(function* () {
-            const el = yield* Progress.Root({ value: 50 }, []);
+            const el = yield* Progress.Root({ value: 50 }, collect());
 
             expect(el.getAttribute("aria-valuenow")).toBe("50");
           }),
@@ -66,7 +66,7 @@ describe("Progress", () => {
       it("should not set aria-valuenow for indeterminate progress", async () => {
         await runTest(
           Effect.gen(function* () {
-            const el = yield* Progress.Root({ value: null }, []);
+            const el = yield* Progress.Root({ value: null }, collect());
 
             expect(el.getAttribute("aria-valuenow")).toBeNull();
           }),
@@ -76,7 +76,7 @@ describe("Progress", () => {
       it("should set aria-valuemin to 0", async () => {
         await runTest(
           Effect.gen(function* () {
-            const el = yield* Progress.Root({ value: 50 }, []);
+            const el = yield* Progress.Root({ value: 50 }, collect());
 
             expect(el.getAttribute("aria-valuemin")).toBe("0");
           }),
@@ -86,7 +86,7 @@ describe("Progress", () => {
       it("should set aria-valuemax to max value", async () => {
         await runTest(
           Effect.gen(function* () {
-            const el = yield* Progress.Root({ value: 50, max: 200 }, []);
+            const el = yield* Progress.Root({ value: 50, max: 200 }, collect());
 
             expect(el.getAttribute("aria-valuemax")).toBe("200");
           }),
@@ -96,7 +96,7 @@ describe("Progress", () => {
       it("should default max to 100", async () => {
         await runTest(
           Effect.gen(function* () {
-            const el = yield* Progress.Root({ value: 50 }, []);
+            const el = yield* Progress.Root({ value: 50 }, collect());
 
             expect(el.getAttribute("aria-valuemax")).toBe("100");
           }),
@@ -106,7 +106,7 @@ describe("Progress", () => {
       it("should set aria-valuetext with percentage", async () => {
         await runTest(
           Effect.gen(function* () {
-            const el = yield* Progress.Root({ value: 50 }, []);
+            const el = yield* Progress.Root({ value: 50 }, collect());
 
             expect(el.getAttribute("aria-valuetext")).toBe("50%");
           }),
@@ -123,7 +123,7 @@ describe("Progress", () => {
                 getValueLabel: (value, max) =>
                   `${value} of ${max} items complete`,
               },
-              [],
+              collect(),
             );
 
             expect(el.getAttribute("aria-valuetext")).toBe(
@@ -138,7 +138,7 @@ describe("Progress", () => {
       it("should be 'loading' when value < max", async () => {
         await runTest(
           Effect.gen(function* () {
-            const el = yield* Progress.Root({ value: 50 }, []);
+            const el = yield* Progress.Root({ value: 50 }, collect());
 
             expect(el.getAttribute("data-state")).toBe("loading");
           }),
@@ -148,7 +148,7 @@ describe("Progress", () => {
       it("should be 'complete' when value >= max", async () => {
         await runTest(
           Effect.gen(function* () {
-            const el = yield* Progress.Root({ value: 100 }, []);
+            const el = yield* Progress.Root({ value: 100 }, collect());
 
             expect(el.getAttribute("data-state")).toBe("complete");
           }),
@@ -158,7 +158,7 @@ describe("Progress", () => {
       it("should be 'indeterminate' when value is null", async () => {
         await runTest(
           Effect.gen(function* () {
-            const el = yield* Progress.Root({ value: null }, []);
+            const el = yield* Progress.Root({ value: null }, collect());
 
             expect(el.getAttribute("data-state")).toBe("indeterminate");
           }),
@@ -170,7 +170,7 @@ describe("Progress", () => {
       it("should set data-value for determinate progress", async () => {
         await runTest(
           Effect.gen(function* () {
-            const el = yield* Progress.Root({ value: 75 }, []);
+            const el = yield* Progress.Root({ value: 75 }, collect());
 
             expect(el.getAttribute("data-value")).toBe("75");
           }),
@@ -180,7 +180,7 @@ describe("Progress", () => {
       it("should not set data-value for indeterminate progress", async () => {
         await runTest(
           Effect.gen(function* () {
-            const el = yield* Progress.Root({ value: null }, []);
+            const el = yield* Progress.Root({ value: null }, collect());
 
             expect(el.getAttribute("data-value")).toBeNull();
           }),
@@ -193,7 +193,7 @@ describe("Progress", () => {
         await runTest(
           Effect.gen(function* () {
             const value = yield* Signal.make<number | null>(25);
-            const el = yield* Progress.Root({ value }, []);
+            const el = yield* Progress.Root({ value }, collect());
 
             expect(el.getAttribute("aria-valuenow")).toBe("25");
             expect(el.getAttribute("data-state")).toBe("loading");
@@ -219,9 +219,10 @@ describe("Progress", () => {
     it("should render with data-progress-indicator attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Progress.Root({ value: 50 }, [
-            Progress.Indicator({}),
-          ]);
+          const el = yield* Progress.Root(
+            { value: 50 },
+            collect(Progress.Indicator({})),
+          );
 
           const indicator = el.querySelector("[data-progress-indicator]");
           expect(indicator).not.toBeNull();
@@ -233,9 +234,10 @@ describe("Progress", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Progress.Root({ value: 50 }, [
-            Progress.Indicator({ class: "my-indicator" }),
-          ]);
+          const el = yield* Progress.Root(
+            { value: 50 },
+            collect(Progress.Indicator({ class: "my-indicator" })),
+          );
 
           const indicator = el.querySelector("[data-progress-indicator]");
           expect(indicator?.className).toBe("my-indicator");
@@ -246,9 +248,10 @@ describe("Progress", () => {
     it("should have transform style based on percentage", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Progress.Root({ value: 50 }, [
-            Progress.Indicator({}),
-          ]);
+          const el = yield* Progress.Root(
+            { value: 50 },
+            collect(Progress.Indicator({})),
+          );
 
           const indicator = el.querySelector(
             "[data-progress-indicator]",
@@ -262,7 +265,10 @@ describe("Progress", () => {
       await runTest(
         Effect.gen(function* () {
           const value = yield* Signal.make<number | null>(25);
-          const el = yield* Progress.Root({ value }, [Progress.Indicator({})]);
+          const el = yield* Progress.Root(
+            { value },
+            collect(Progress.Indicator({})),
+          );
 
           const indicator = el.querySelector(
             "[data-progress-indicator]",

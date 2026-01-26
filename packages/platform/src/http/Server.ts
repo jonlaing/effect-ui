@@ -39,7 +39,7 @@ export interface EffexAppOptions<R = never> {
    */
   readonly app: (
     request: Request,
-  ) => Element.Element<never, RendererContext | R>;
+  ) => Element.Element<HTMLElement | SVGElement, never, RendererContext>;
 
   /**
    * Optional router instance for executing loaders and actions.
@@ -139,7 +139,11 @@ export const makeHttpApp = <R = never>(
     // Perform SSR - cast to handle the generic R constraint
     const result = yield* performSSR(
       webRequest,
-      element as Element.Element<never, RendererContext>,
+      element as Effect.Effect<
+        HTMLElement | SVGElement,
+        never,
+        RendererContext
+      >,
       options.router,
       options.provide,
     );
@@ -243,7 +247,11 @@ export interface RenderRequestOptions<R = never> {
   /**
    * The Effex application element to render.
    */
-  readonly app: Element.Element<never, RendererContext | R>;
+  readonly app: Element.Element<
+    HTMLElement | SVGElement,
+    never,
+    RendererContext
+  >;
 
   /**
    * Optional router instance for executing loaders and actions.
@@ -299,12 +307,9 @@ export const renderRequest = <R = never>(
   request: Request,
   options: RenderRequestOptions<R>,
 ): Effect.Effect<string, unknown, R> =>
-  performSSR(
-    request,
-    options.app as Element.Element<never, RendererContext>,
-    options.router,
-    options.provide,
-  ).pipe(Effect.map((result) => generateDocument(result, options.document)));
+  performSSR(request, options.app, options.router, options.provide).pipe(
+    Effect.map((result) => generateDocument(result, options.document)),
+  );
 
 /**
  * Effex server utilities for @effect/platform integration.

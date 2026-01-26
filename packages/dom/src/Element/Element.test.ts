@@ -3,8 +3,9 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { Signal } from "@effex/core";
 
+import { collect } from "../Collect";
 import { DOMRendererLive } from "../DOMRenderer";
-import { button, div, h1, input, li, p, span, ul } from "./Element";
+import { $, button, div, h1, input, li, p, span, ul } from "./Element";
 
 const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
   Effect.runPromise(
@@ -26,22 +27,26 @@ describe("Element", () => {
     });
 
     it("should create element with string child", async () => {
-      const element = await runTest(span("Hello"));
+      const element = await runTest(span({}, $.of("Hello")));
       expect(element.textContent).toBe("Hello");
     });
 
     it("should create element with number child", async () => {
-      const element = await runTest(span(42));
+      const element = await runTest(span({}, $.of(42)));
       expect(element.textContent).toBe("42");
     });
 
     it("should create element with array of children", async () => {
-      const element = await runTest(div(["Hello", " ", "World"]));
+      const element = await runTest(
+        div({}, collect($.of("Hello"), $.of(" "), $.of("World"))),
+      );
       expect(element.textContent).toBe("Hello World");
     });
 
     it("should create nested elements", async () => {
-      const element = await runTest(div([h1("Title"), p("Content")]));
+      const element = await runTest(
+        div({}, collect(h1({}, $.of("Title")), p({}, $.of("Content")))),
+      );
       expect(element.children.length).toBe(2);
       expect(element.children[0].tagName).toBe("H1");
       expect(element.children[0].textContent).toBe("Title");
@@ -76,14 +81,14 @@ describe("Element", () => {
 
     it("should apply attributes with children", async () => {
       const element = await runTest(
-        div({ class: "wrapper" }, [span("content")]),
+        div({ class: "wrapper" }, span({}, $.of("content"))),
       );
       expect(element.className).toBe("wrapper");
       expect(element.children.length).toBe(1);
     });
 
     it("should apply attributes with single child", async () => {
-      const element = await runTest(button({ class: "btn" }, "Click"));
+      const element = await runTest(button({ class: "btn" }, $.of("Click")));
       expect(element.className).toBe("btn");
       expect(element.textContent).toBe("Click");
     });
@@ -136,7 +141,7 @@ describe("Element", () => {
       await runTest(
         Effect.gen(function* () {
           const count = yield* Signal.make(0);
-          const el = yield* span(count);
+          const el = yield* span({}, $.of(count));
 
           expect(el.textContent).toBe("0");
 
@@ -152,7 +157,7 @@ describe("Element", () => {
       await runTest(
         Effect.gen(function* () {
           const count = yield* Signal.make(0);
-          const el = yield* span(count.map((n) => `Count: ${n}`));
+          const el = yield* span({}, $.of(count.map((n) => `Count: ${n}`)));
 
           expect(el.textContent).toBe("Count: 0");
 
@@ -168,7 +173,10 @@ describe("Element", () => {
       await runTest(
         Effect.gen(function* () {
           const count = yield* Signal.make(0);
-          const el = yield* div(["Count: ", count, " items"]);
+          const el = yield* div(
+            {},
+            collect($.of("Count: "), $.of(count), $.of(" items")),
+          );
 
           expect(el.textContent).toBe("Count: 0 items");
 
@@ -193,7 +201,7 @@ describe("Element", () => {
                 clicked = true;
               }),
           },
-          "Click me",
+          $.of("Click me"),
         ),
       );
 
@@ -212,7 +220,7 @@ describe("Element", () => {
                 effectRan = true;
               }),
           },
-          "Click me",
+          $.of("Click me"),
         ),
       );
 

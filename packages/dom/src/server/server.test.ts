@@ -4,15 +4,16 @@ import { describe, expect, it } from "vitest";
 import { Signal } from "@effex/core";
 
 import { Boundary } from "../Boundary";
+import { collect } from "../Collect";
 import { each, match, when } from "../Control";
-import { div, li, span, ul } from "../Element";
+import { $, div, li, span, ul } from "../Element";
 import { renderToString } from "./index";
 
 describe("SSR", () => {
   describe("renderToString", () => {
     it("should render a simple element to HTML", async () => {
       const html = await Effect.runPromise(
-        renderToString(div({ class: "container" }, "Hello World")),
+        renderToString(div({ class: "container" }, $.of("Hello World"))),
       );
 
       expect(html).toContain("<div");
@@ -24,10 +25,13 @@ describe("SSR", () => {
     it("should render nested elements", async () => {
       const html = await Effect.runPromise(
         renderToString(
-          div({ class: "parent" }, [
-            span({ class: "child" }, "First"),
-            span({ class: "child" }, "Second"),
-          ]),
+          div(
+            { class: "parent" },
+            collect(
+              span({ class: "child" }, $.of("First")),
+              span({ class: "child" }, $.of("Second")),
+            ),
+          ),
         ),
       );
 
@@ -38,7 +42,7 @@ describe("SSR", () => {
 
     it("should escape HTML in text content", async () => {
       const html = await Effect.runPromise(
-        renderToString(div("<script>alert('xss')</script>")),
+        renderToString(div({}, $.of("<script>alert('xss')</script>"))),
       );
 
       expect(html).not.toContain("<script>");
@@ -63,8 +67,8 @@ describe("SSR", () => {
             const condition = yield* Signal.make(true);
             return yield* renderToString(
               when(condition, {
-                onTrue: () => div("Visible"),
-                onFalse: () => div("Hidden"),
+                onTrue: () => div({}, $.of("Visible")),
+                onFalse: () => div({}, $.of("Hidden")),
               }),
             );
           }),
@@ -85,8 +89,8 @@ describe("SSR", () => {
             const condition = yield* Signal.make(false);
             return yield* renderToString(
               when(condition, {
-                onTrue: () => div("Visible"),
-                onFalse: () => div("Hidden"),
+                onTrue: () => div({}, $.of("Visible")),
+                onFalse: () => div({}, $.of("Hidden")),
               }),
             );
           }),
@@ -110,9 +114,12 @@ describe("SSR", () => {
             return yield* renderToString(
               match(status, {
                 cases: [
-                  { pattern: "loading", render: () => div("Loading...") },
-                  { pattern: "success", render: () => div("Done!") },
-                  { pattern: "error", render: () => div("Failed") },
+                  {
+                    pattern: "loading",
+                    render: () => div({}, $.of("Loading...")),
+                  },
+                  { pattern: "success", render: () => div({}, $.of("Done!")) },
+                  { pattern: "error", render: () => div({}, $.of("Failed")) },
                 ],
               }),
             );
@@ -134,10 +141,10 @@ describe("SSR", () => {
             return yield* renderToString(
               match(value, {
                 cases: [
-                  { pattern: 1, render: () => div("One") },
-                  { pattern: 2, render: () => div("Two") },
+                  { pattern: 1, render: () => div({}, $.of("One")) },
+                  { pattern: 2, render: () => div({}, $.of("Two")) },
                 ],
-                fallback: () => div("Unknown"),
+                fallback: () => div({}, $.of("Unknown")),
               }),
             );
           }),
@@ -161,7 +168,7 @@ describe("SSR", () => {
               each(items, {
                 container: () => ul({ class: "list" }),
                 key: (item) => item.id,
-                render: (item) => li(item.map((i) => i.name)),
+                render: (item) => li({}, $.of(item.map((i) => i.name))),
               }),
             );
           }),
@@ -188,7 +195,7 @@ describe("SSR", () => {
             return yield* renderToString(
               each(items, {
                 key: (item) => item.id,
-                render: (item) => li(item.map((i) => i.name)),
+                render: (item) => li({}, $.of(item.map((i) => i.name))),
               }),
             );
           }),
@@ -207,7 +214,9 @@ describe("SSR", () => {
         Effect.scoped(
           Effect.gen(function* () {
             const count = yield* Signal.make(42);
-            return yield* renderToString(div(["Count: ", count]));
+            return yield* renderToString(
+              div({}, collect($.of("Count: "), $.of(count))),
+            );
           }),
         ),
       );
@@ -240,9 +249,9 @@ describe("SSR", () => {
             render: () =>
               Effect.gen(function* () {
                 yield* Effect.sleep(100);
-                return yield* div("Loaded content");
+                return yield* div({}, $.of("Loaded content"));
               }),
-            fallback: () => div("Loading..."),
+            fallback: () => div({}, $.of("Loading...")),
           }),
         ),
       );
@@ -262,10 +271,10 @@ describe("SSR", () => {
             render: () =>
               Effect.gen(function* () {
                 yield* Effect.sleep(100);
-                return yield* div("Success");
+                return yield* div({}, $.of("Success"));
               }),
-            fallback: () => div("Loading..."),
-            catch: () => div("Error occurred"),
+            fallback: () => div({}, $.of("Loading...")),
+            catch: () => div({}, $.of("Error occurred")),
           }),
         ),
       );

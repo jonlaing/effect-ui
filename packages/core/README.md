@@ -322,13 +322,13 @@ $.button(
     onClick: () => Effect.runPromise(status.to("loading")),
     disabled: status.canTransitionTo("loading").map(can => !can),
   },
-  "Start"
+  $.of("Start")
 )
 ```
 
 ## Reactive Props
 
-Many components accept props that can be either static values or reactive `Readable` values. This is expressed using the `Readable.Reactive<T>` type:
+Many functions accept props that can be either static values or reactive `Readable` values. This is expressed using the `Readable.Reactive<T>` type:
 
 ```ts
 import { Readable } from "@effex/core";
@@ -340,39 +340,43 @@ interface ButtonProps {
 }
 ```
 
-When implementing a component with reactive props, use `Readable.of()` to normalize the prop to a `Readable<T>`:
+When implementing a function with reactive props, use `Readable.of()` to normalize the prop to a `Readable<T>`:
 
 ```ts
-const Button = Component.gen(function* (props: ButtonProps, children) {
-  // Normalize props - works whether they're static or reactive
-  const disabled = Readable.of(props.disabled ?? false);
-  const className = Readable.of(props.class ?? "");
+import { $, collect } from "@effex/dom";
+import type { ChildEffect } from "@effex/dom";
 
-  // Use .map() for derived attributes
-  const ariaDisabled = disabled.map((d) => (d ? "true" : undefined));
-  const tabIndex = disabled.map((d) => (d ? -1 : 0));
+const Button = <E, R>(props: ButtonProps, children: ChildEffect<E, R>) =>
+  Effect.gen(function* () {
+    // Normalize props - works whether they're static or reactive
+    const disabled = Readable.of(props.disabled ?? false);
+    const className = Readable.of(props.class ?? "");
 
-  return yield* $.button(
-    {
-      class: className,
-      disabled: disabled,
-      "aria-disabled": ariaDisabled,
-      tabIndex: tabIndex,
-    },
-    children ?? [],
-  );
-});
+    // Use .map() for derived attributes
+    const ariaDisabled = disabled.map((d) => (d ? "true" : undefined));
+    const tabIndex = disabled.map((d) => (d ? -1 : 0));
+
+    return yield* $.button(
+      {
+        class: className,
+        disabled: disabled,
+        "aria-disabled": ariaDisabled,
+        tabIndex: tabIndex,
+      },
+      children,
+    );
+  });
 ```
 
 This pattern lets consumers pass either static or reactive values:
 
 ```ts
 // Static value - button is always disabled
-Button({ disabled: true }, "Click me");
+Button({ disabled: true }, $.of("Click me"));
 
 // Reactive value - button disabled state follows signal
 const isLoading = yield* Signal.make(false);
-Button({ disabled: isLoading }, "Submit");
+Button({ disabled: isLoading }, $.of("Submit"));
 ```
 
 ## Lifting Functions
@@ -429,7 +433,7 @@ const className = reactiveClsx({ btn: true, "btn-active": isActive });
 The `t` tagged template literal creates reactive strings that update when any interpolated Signal changes:
 
 ```ts
-import { t } from "@effex/core";
+import { t } from "@effex/dom";
 
 const name = yield* Signal.make("World");
 const count = yield* Signal.make(0);
@@ -437,19 +441,16 @@ const count = yield* Signal.make(0);
 // Creates a Readable<string> that updates automatically
 const message = t`Hello, ${name}! Count: ${count}`;
 
-// Use directly as element children
-yield* $.div(message);
-yield* $.p(t`You have ${count} items`);
+// Use directly as element children via $.of()
+yield* $.div({}, $.of(message));
+yield* $.p({}, $.of(t`You have ${count} items`));
 ```
 
-This is cleaner than array concatenation for text with multiple reactive values:
+This is cleaner than string concatenation for text with multiple reactive values:
 
 ```ts
 // With t`` template
-$.p(t`${count} items remaining (${completed} done)`);
-
-// vs array concatenation
-$.p([count, " items remaining (", completed, " done)"]);
+$.p({}, $.of(t`${count} items remaining (${completed} done)`));
 ```
 
 ## API Reference
@@ -500,23 +501,39 @@ The result of `Derived.async()`:
 
 ### Element Types
 
-Generic types for renderer-agnostic element and component definitions. Renderers (like `@effex/dom`) re-export these with their node type fixed.
+Generic types for renderer-agnostic element definitions. Renderers (like `@effex/dom`) re-export these with their node type fixed.
 
 - `Element<N, E, R>` - An element Effect: `Effect<N, E, Scope | RendererContext | R>`
 - `Child<N, E, R>` - Valid children: string, number, Element, Readable, or arrays
-- `Children<N, E, R>` - Alias for `Child | readonly Child[]`
 
-### Component.gen
+### Defining Components
 
-The primary way to define components. Wraps `Effect.gen` but returns a `Component.Node` type with automatic inference of context requirements and error types from yielded effects.
+Components are just functions that return Effects. Use `Effect.gen` to define them:
 
 ```ts
-// In @effex/dom - provides Component.gen and Component.Node for HTMLElement
-const MyComponent = Component.gen(function* (props: MyProps, children) {
-  const ctx = yield* MyContext;  // Context requirements inferred
-  return yield* $.div(...);
-});
-```
+// Using @effex/dom
+import { $, collect } from "@effex/dom";
+import type { ChildEffect } from "@effex/dom";
 
-- `Component.gen(fn)` - Define a component with automatic type inference
-- `Component.Node<Props, ChildReqs, ComponentReqs, ChildError, ComponentError>` - Type for component functions
+// Simple function
+const Greeting = (props: { name: string }) =>
+  Effect.gen(function* () {
+    return yield* $.h1({}, $.of(`Hello, ${props.name}!`));
+  });
+
+// With children - generic over E and R to propagate types
+const Card = <E, R>(props: { title: string }, children: ChildEffect<E, R>) =>
+  Effect.gen(function* () {
+    return yield* $.div({ class: "card" }, collect(
+      $.h2({}, $.of(props.title)),
+      children,
+    ));
+  });
+
+// With context requirements
+const UserBadge = (props: { userId: string }) =>
+  Effect.gen(function* () {
+    const auth = yield* AuthContext;  // Adds AuthContext to requirements
+    return yield* $.span({}, $.of(`User: ${props.userId}`));
+  });
+```

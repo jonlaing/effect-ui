@@ -2,14 +2,15 @@ import { Context, Effect } from "effect";
 
 import {
   $,
-  Component,
   Derived,
   provide,
   Readable,
   Signal,
   when,
   type AnimationOptions,
+  type ChildEffect,
   type ClassValue,
+  type Element,
   type SignalSet,
 } from "@effex/dom";
 
@@ -117,204 +118,205 @@ export interface TreeViewRootProps {
 /**
  * Root container for a TreeView. Manages expanded/selected state for all items.
  */
-const Root = Component.gen(function* (props: TreeViewRootProps, children) {
-  const selectionMode = props.selectionMode ?? "none";
+const Root = <E = never, R = never>(
+  props: TreeViewRootProps,
+  children: ChildEffect<E, R | TreeViewCtx | TreeViewLevelCtx>,
+): Element.Element<HTMLDivElement, E, R> =>
+  Effect.gen(function* () {
+    const selectionMode = props.selectionMode ?? "none";
 
-  // Handle controlled vs uncontrolled state for expanded
-  const expanded: SignalSet<string> = props.expanded
-    ? props.expanded
-    : yield* Signal.Set.make<string>(props.defaultExpanded ?? []);
+    // Handle controlled vs uncontrolled state for expanded
+    const expanded: SignalSet<string> = props.expanded
+      ? props.expanded
+      : yield* Signal.Set.make<string>(props.defaultExpanded ?? []);
 
-  // Handle controlled vs uncontrolled state for selected
-  const selected: SignalSet<string> = props.selected
-    ? props.selected
-    : yield* Signal.Set.make<string>(props.defaultSelected ?? []);
+    // Handle controlled vs uncontrolled state for selected
+    const selected: SignalSet<string> = props.selected
+      ? props.selected
+      : yield* Signal.Set.make<string>(props.defaultSelected ?? []);
 
-  const disabled: Readable.Readable<boolean> = Readable.of(
-    props.disabled ?? false,
-  );
+    const disabled: Readable.Readable<boolean> = Readable.of(
+      props.disabled ?? false,
+    );
 
-  const toggleExpanded = (id: string) =>
-    Effect.gen(function* () {
-      const isDisabled = yield* disabled.get;
-      if (isDisabled) return;
+    const toggleExpanded = (id: string) =>
+      Effect.gen(function* () {
+        const isDisabled = yield* disabled.get;
+        if (isDisabled) return;
 
-      yield* expanded.toggle(id);
+        yield* expanded.toggle(id);
 
-      if (props.onExpandedChange) {
-        const currentExpanded = yield* expanded.readable.get;
-        yield* props.onExpandedChange(new Set(currentExpanded));
-      }
-    });
-
-  const select = (id: string) =>
-    Effect.gen(function* () {
-      const isDisabled = yield* disabled.get;
-      if (isDisabled) return;
-
-      if (selectionMode === "none") return;
-
-      if (selectionMode === "single") {
-        // Replace selection with just this item
-        yield* selected.replace([id]);
-      } else {
-        // Multiple mode: toggle selection
-        yield* selected.toggle(id);
-      }
-
-      if (props.onSelectedChange) {
-        const currentSelected = yield* selected.readable.get;
-        yield* props.onSelectedChange(new Set(currentSelected));
-      }
-    });
-
-  const getIsExpanded = (id: string): Readable.Readable<boolean> =>
-    expanded.readable.map((set) => set.has(id));
-
-  const getIsSelected = (id: string): Readable.Readable<boolean> =>
-    selected.readable.map((set) => set.has(id));
-
-  const ctxValue: TreeViewContext = {
-    expanded,
-    selected,
-    selectionMode,
-    disabled,
-    toggleExpanded,
-    select,
-    getIsExpanded,
-    getIsSelected,
-    onExpandedChange: props.onExpandedChange,
-    onSelectedChange: props.onSelectedChange,
-  };
-
-  const levelCtx: TreeViewLevelContext = {
-    level: 1,
-    parentId: null,
-  };
-
-  const dataDisabled = disabled.map((d) => (d ? "" : undefined));
-
-  // Keyboard navigation handler
-  const handleKeyDown = (e: KeyboardEvent) =>
-    Effect.gen(function* () {
-      const target = e.target as HTMLElement;
-      if (!target.hasAttribute("data-tree-label")) return;
-
-      const items = Array.from(
-        document.querySelectorAll("[data-tree-item]:not([data-hidden])"),
-      ) as HTMLElement[];
-
-      const labels = items
-        .map((item) => item.querySelector("[data-tree-label]") as HTMLElement)
-        .filter(Boolean);
-
-      const currentIndex = labels.indexOf(target);
-      if (currentIndex === -1) return;
-
-      const currentItem = items[currentIndex];
-      const itemId = currentItem.getAttribute("data-tree-item-id");
-
-      e.preventDefault();
-
-      switch (e.key) {
-        case "ArrowDown": {
-          const nextIndex = Math.min(currentIndex + 1, labels.length - 1);
-          labels[nextIndex]?.focus({ preventScroll: true });
-          break;
+        if (props.onExpandedChange) {
+          const currentExpanded = yield* expanded.readable.get;
+          yield* props.onExpandedChange(new Set(currentExpanded));
         }
-        case "ArrowUp": {
-          const prevIndex = Math.max(currentIndex - 1, 0);
-          labels[prevIndex]?.focus({ preventScroll: true });
-          break;
+      });
+
+    const select = (id: string) =>
+      Effect.gen(function* () {
+        const isDisabled = yield* disabled.get;
+        if (isDisabled) return;
+
+        if (selectionMode === "none") return;
+
+        if (selectionMode === "single") {
+          // Replace selection with just this item
+          yield* selected.replace([id]);
+        } else {
+          // Multiple mode: toggle selection
+          yield* selected.toggle(id);
         }
-        case "ArrowRight": {
-          if (!itemId) return;
 
-          const isCurrentlyExpanded = yield* expanded.hasEffect(itemId);
-          const hasChildItems = currentItem.querySelector("[role='group']");
+        if (props.onSelectedChange) {
+          const currentSelected = yield* selected.readable.get;
+          yield* props.onSelectedChange(new Set(currentSelected));
+        }
+      });
 
-          if (hasChildItems && !isCurrentlyExpanded) {
-            // Expand the node
-            yield* toggleExpanded(itemId);
-            return;
+    const getIsExpanded = (id: string): Readable.Readable<boolean> =>
+      expanded.readable.map((set) => set.has(id));
+
+    const getIsSelected = (id: string): Readable.Readable<boolean> =>
+      selected.readable.map((set) => set.has(id));
+
+    const ctxValue: TreeViewContext = {
+      expanded,
+      selected,
+      selectionMode,
+      disabled,
+      toggleExpanded,
+      select,
+      getIsExpanded,
+      getIsSelected,
+      onExpandedChange: props.onExpandedChange,
+      onSelectedChange: props.onSelectedChange,
+    };
+
+    const levelCtx: TreeViewLevelContext = {
+      level: 1,
+      parentId: null,
+    };
+
+    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+
+    // Keyboard navigation handler
+    const handleKeyDown = (e: KeyboardEvent) =>
+      Effect.gen(function* () {
+        const target = e.target as HTMLElement;
+        if (!target.hasAttribute("data-tree-label")) return;
+
+        const items = Array.from(
+          document.querySelectorAll("[data-tree-item]:not([data-hidden])"),
+        ) as HTMLElement[];
+
+        const labels = items
+          .map((item) => item.querySelector("[data-tree-label]") as HTMLElement)
+          .filter(Boolean);
+
+        const currentIndex = labels.indexOf(target);
+        if (currentIndex === -1) return;
+
+        const currentItem = items[currentIndex];
+        const itemId = currentItem.getAttribute("data-tree-item-id");
+
+        e.preventDefault();
+
+        switch (e.key) {
+          case "ArrowDown": {
+            const nextIndex = Math.min(currentIndex + 1, labels.length - 1);
+            labels[nextIndex]?.focus({ preventScroll: true });
+            break;
           }
-          if (isCurrentlyExpanded) {
-            // Move to first child
-            const nextIndex = currentIndex + 1;
-            if (nextIndex < labels.length) {
-              labels[nextIndex]?.focus({ preventScroll: true });
+          case "ArrowUp": {
+            const prevIndex = Math.max(currentIndex - 1, 0);
+            labels[prevIndex]?.focus({ preventScroll: true });
+            break;
+          }
+          case "ArrowRight": {
+            if (!itemId) return;
+
+            const isCurrentlyExpanded = yield* expanded.hasEffect(itemId);
+            const hasChildItems = currentItem.querySelector("[role='group']");
+
+            if (hasChildItems && !isCurrentlyExpanded) {
+              // Expand the node
+              yield* toggleExpanded(itemId);
+              return;
             }
+            if (isCurrentlyExpanded) {
+              // Move to first child
+              const nextIndex = currentIndex + 1;
+              if (nextIndex < labels.length) {
+                labels[nextIndex]?.focus({ preventScroll: true });
+              }
+            }
+            break;
           }
-          break;
-        }
-        case "ArrowLeft": {
-          if (!itemId) return;
+          case "ArrowLeft": {
+            if (!itemId) return;
 
-          const isCurrentlyExpanded = yield* expanded.hasEffect(itemId);
-          if (isCurrentlyExpanded) {
-            // Collapse the node
-            yield* toggleExpanded(itemId);
-            return;
+            const isCurrentlyExpanded = yield* expanded.hasEffect(itemId);
+            if (isCurrentlyExpanded) {
+              // Collapse the node
+              yield* toggleExpanded(itemId);
+              return;
+            }
+            // Move to parent
+            const parentId = currentItem.getAttribute("data-tree-parent-id");
+            if (parentId) {
+              const parentItem = document.querySelector(
+                `[data-tree-item-id="${parentId}"]`,
+              );
+              const parentLabel = parentItem?.querySelector(
+                "[data-tree-label]",
+              ) as HTMLElement;
+              parentLabel?.focus({ preventScroll: true });
+            }
+            break;
           }
-          // Move to parent
-          const parentId = currentItem.getAttribute("data-tree-parent-id");
-          if (parentId) {
-            const parentItem = document.querySelector(
-              `[data-tree-item-id="${parentId}"]`,
-            );
-            const parentLabel = parentItem?.querySelector(
-              "[data-tree-label]",
-            ) as HTMLElement;
-            parentLabel?.focus({ preventScroll: true });
+          case "Home": {
+            labels[0]?.focus({ preventScroll: true });
+            break;
           }
-          break;
-        }
-        case "Home": {
-          labels[0]?.focus({ preventScroll: true });
-          break;
-        }
-        case "End": {
-          labels[labels.length - 1]?.focus({ preventScroll: true });
-          break;
-        }
-        case "Enter": {
-          if (!itemId) return;
+          case "End": {
+            labels[labels.length - 1]?.focus({ preventScroll: true });
+            break;
+          }
+          case "Enter": {
+            if (!itemId) return;
 
-          const hasChildItems = currentItem.querySelector("[role='group']");
-          if (hasChildItems) {
-            yield* toggleExpanded(itemId);
+            const hasChildItems = currentItem.querySelector("[role='group']");
+            if (hasChildItems) {
+              yield* toggleExpanded(itemId);
+            }
+            break;
           }
-          break;
-        }
-        case " ": {
-          if (itemId && selectionMode !== "none") {
-            yield* select(itemId);
+          case " ": {
+            if (itemId && selectionMode !== "none") {
+              yield* select(itemId);
+            }
+            break;
           }
-          break;
         }
-      }
-    });
+      });
 
-  return yield* $.div(
-    {
-      role: "tree",
-      "aria-label": props["aria-label"],
-      "aria-multiselectable": selectionMode === "multiple" ? "true" : undefined,
-      "data-disabled": dataDisabled,
-      class: props.class,
-      onKeyDown: handleKeyDown,
-    },
-    provide(
-      TreeViewCtx,
-      ctxValue,
+    return yield* $.div(
+      {
+        role: "tree",
+        "aria-label": props["aria-label"],
+        "aria-multiselectable":
+          selectionMode === "multiple" ? "true" : undefined,
+        "data-disabled": dataDisabled,
+        class: props.class,
+        onKeyDown: handleKeyDown,
+      },
       provide(
-        TreeViewLevelCtx,
-        levelCtx,
-        Component.normalizeChildren(children),
+        TreeViewCtx,
+        ctxValue,
+        provide(TreeViewLevelCtx, levelCtx, children),
       ),
-    ),
-  );
-});
+    );
+  }) as Element.Element<HTMLDivElement, E, R>;
 
 /**
  * Props for TreeView.Item
@@ -331,72 +333,76 @@ export interface TreeViewItemProps {
 /**
  * Individual tree item container. Can contain nested items.
  */
-const Item = Component.gen(function* (props: TreeViewItemProps, children) {
-  const treeCtx = yield* TreeViewCtx;
-  const levelCtx = yield* TreeViewLevelCtx;
+const Item = <E = never, R = never>(
+  props: TreeViewItemProps,
+  children: ChildEffect<E, R | TreeViewItemCtx>,
+): Element.Element<HTMLDivElement, E, R | TreeViewCtx | TreeViewLevelCtx> =>
+  Effect.gen(function* () {
+    const treeCtx = yield* TreeViewCtx;
+    const levelCtx = yield* TreeViewLevelCtx;
 
-  const hasChildren: Signal<boolean> = yield* Signal.make(false);
+    const hasChildren: Signal<boolean> = yield* Signal.make(false);
 
-  const isExpanded = treeCtx.getIsExpanded(props.id);
-  const isSelected = treeCtx.getIsSelected(props.id);
+    const isExpanded = treeCtx.getIsExpanded(props.id);
+    const isSelected = treeCtx.getIsSelected(props.id);
 
-  // Item can be disabled by itself or by parent tree
-  const itemDisabled = Readable.of(props.disabled ?? false);
-  const disabled: Readable.Readable<boolean> = yield* Derived.sync(
-    [treeCtx.disabled, itemDisabled],
-    ([treeDisabled, propDisabled]) => treeDisabled || propDisabled,
-  );
+    // Item can be disabled by itself or by parent tree
+    const itemDisabled = Readable.of(props.disabled ?? false);
+    const disabled: Readable.Readable<boolean> = yield* Derived.sync(
+      [treeCtx.disabled, itemDisabled],
+      ([treeDisabled, propDisabled]) => treeDisabled || propDisabled,
+    );
 
-  const itemCtx: TreeViewItemContext = {
-    id: props.id,
-    level: levelCtx.level,
-    parentId: levelCtx.parentId,
-    isExpanded,
-    isSelected,
-    disabled,
-    hasChildren,
-  };
+    const itemCtx: TreeViewItemContext = {
+      id: props.id,
+      level: levelCtx.level,
+      parentId: levelCtx.parentId,
+      isExpanded,
+      isSelected,
+      disabled,
+      hasChildren,
+    };
 
-  const dataState = isExpanded.map((expanded) =>
-    expanded ? "open" : "closed",
-  );
-  const dataSelected = isSelected.map((selected) =>
-    selected ? "true" : undefined,
-  );
-  const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+    const dataState = isExpanded.map((expanded) =>
+      expanded ? "open" : "closed",
+    );
+    const dataSelected = isSelected.map((selected) =>
+      selected ? "true" : undefined,
+    );
+    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
 
-  // aria-expanded should only be present if item has children
-  const ariaExpanded: Readable.Readable<string | undefined> =
-    yield* Derived.sync([hasChildren, isExpanded], ([has, exp]) => {
-      if (!has) return undefined;
-      return exp ? "true" : "false";
-    });
+    // aria-expanded should only be present if item has children
+    const ariaExpanded: Readable.Readable<string | undefined> =
+      yield* Derived.sync([hasChildren, isExpanded], ([has, exp]) => {
+        if (!has) return undefined;
+        return exp ? "true" : "false";
+      });
 
-  // Determine visibility based on parent expanded state
-  const isVisible = levelCtx.parentId
-    ? treeCtx.getIsExpanded(levelCtx.parentId)
-    : Readable.of(true);
+    // Determine visibility based on parent expanded state
+    const isVisible = levelCtx.parentId
+      ? treeCtx.getIsExpanded(levelCtx.parentId)
+      : Readable.of(true);
 
-  const dataHidden = isVisible.map((visible) => (visible ? undefined : ""));
+    const dataHidden = isVisible.map((visible) => (visible ? undefined : ""));
 
-  return yield* $.div(
-    {
-      role: "treeitem",
-      "aria-expanded": ariaExpanded,
-      "aria-selected": dataSelected,
-      "aria-level": String(levelCtx.level),
-      "data-state": dataState,
-      "data-selected": dataSelected,
-      "data-disabled": dataDisabled,
-      "data-hidden": dataHidden,
-      "data-tree-item": "",
-      "data-tree-item-id": props.id,
-      "data-tree-parent-id": levelCtx.parentId ?? undefined,
-      class: props.class,
-    },
-    provide(TreeViewItemCtx, itemCtx, children),
-  );
-});
+    return yield* $.div(
+      {
+        role: "treeitem",
+        "aria-expanded": ariaExpanded,
+        "aria-selected": dataSelected,
+        "aria-level": String(levelCtx.level),
+        "data-state": dataState,
+        "data-selected": dataSelected,
+        "data-disabled": dataDisabled,
+        "data-hidden": dataHidden,
+        "data-tree-item": "",
+        "data-tree-item-id": props.id,
+        "data-tree-parent-id": levelCtx.parentId ?? undefined,
+        class: props.class,
+      },
+      provide(TreeViewItemCtx, itemCtx, children),
+    );
+  }) as Element.Element<HTMLDivElement, E, R | TreeViewCtx | TreeViewLevelCtx>;
 
 /**
  * Props for TreeView.ItemLabel
@@ -409,53 +415,54 @@ export interface TreeViewItemLabelProps {
 /**
  * The clickable/focusable label for a tree item.
  */
-const ItemLabel = Component.gen(function* (
+const ItemLabel = <E = never, R = never>(
   props: TreeViewItemLabelProps,
-  children,
-) {
-  const treeCtx = yield* TreeViewCtx;
-  const itemCtx = yield* TreeViewItemCtx;
+  children: ChildEffect<E, R>,
+): Element.Element<HTMLDivElement, E, R | TreeViewCtx | TreeViewItemCtx> =>
+  Effect.gen(function* () {
+    const treeCtx = yield* TreeViewCtx;
+    const itemCtx = yield* TreeViewItemCtx;
 
-  const handleClick = () =>
-    Effect.gen(function* () {
-      const isDisabled = yield* itemCtx.disabled.get;
-      if (isDisabled) return;
+    const handleClick = () =>
+      Effect.gen(function* () {
+        const isDisabled = yield* itemCtx.disabled.get;
+        if (isDisabled) return;
 
-      const hasKids = yield* itemCtx.hasChildren.get;
-      if (hasKids) {
-        yield* treeCtx.toggleExpanded(itemCtx.id);
-      }
+        const hasKids = yield* itemCtx.hasChildren.get;
+        if (hasKids) {
+          yield* treeCtx.toggleExpanded(itemCtx.id);
+        }
 
-      if (treeCtx.selectionMode !== "none") {
-        yield* treeCtx.select(itemCtx.id);
-      }
-    });
+        if (treeCtx.selectionMode !== "none") {
+          yield* treeCtx.select(itemCtx.id);
+        }
+      });
 
-  const dataState = itemCtx.isExpanded.map((expanded) =>
-    expanded ? "open" : "closed",
-  );
-  const dataSelected = itemCtx.isSelected.map((selected) =>
-    selected ? "true" : undefined,
-  );
-  const dataDisabled = itemCtx.disabled.map((d) => (d ? "" : undefined));
+    const dataState = itemCtx.isExpanded.map((expanded) =>
+      expanded ? "open" : "closed",
+    );
+    const dataSelected = itemCtx.isSelected.map((selected) =>
+      selected ? "true" : undefined,
+    );
+    const dataDisabled = itemCtx.disabled.map((d) => (d ? "" : undefined));
 
-  // Roving tabindex - first item gets tabIndex 0, others get -1
-  // This is a simplified version; a full implementation would track active item
-  const tabIndex = itemCtx.level === 1 && itemCtx.parentId === null ? 0 : -1;
+    // Roving tabindex - first item gets tabIndex 0, others get -1
+    // This is a simplified version; a full implementation would track active item
+    const tabIndex = itemCtx.level === 1 && itemCtx.parentId === null ? 0 : -1;
 
-  return yield* $.div(
-    {
-      tabIndex,
-      "data-state": dataState,
-      "data-selected": dataSelected,
-      "data-disabled": dataDisabled,
-      "data-tree-label": "",
-      class: props.class,
-      onClick: handleClick,
-    },
-    children ?? [],
-  );
-});
+    return yield* $.div(
+      {
+        tabIndex,
+        "data-state": dataState,
+        "data-selected": dataSelected,
+        "data-disabled": dataDisabled,
+        "data-tree-label": "",
+        class: props.class,
+        onClick: handleClick,
+      },
+      children,
+    );
+  }) as Element.Element<HTMLDivElement, E, R | TreeViewCtx | TreeViewItemCtx>;
 
 /**
  * Props for TreeView.ItemContent
@@ -470,46 +477,47 @@ export interface TreeViewItemContentProps {
 /**
  * Container for nested child items. Sets hasChildren on parent.
  */
-const ItemContent = Component.gen(function* (
+const ItemContent = <E = never, R = never>(
   props: TreeViewItemContentProps,
-  children,
-) {
-  const itemCtx = yield* TreeViewItemCtx;
-  const levelCtx = yield* TreeViewLevelCtx;
+  children: ChildEffect<E, R | TreeViewLevelCtx>,
+): Element.Element<HTMLDivElement, E, R | TreeViewItemCtx | TreeViewLevelCtx> =>
+  Effect.gen(function* () {
+    const itemCtx = yield* TreeViewItemCtx;
+    const levelCtx = yield* TreeViewLevelCtx;
 
-  // Mark parent as having children
-  yield* itemCtx.hasChildren.set(true);
+    // Mark parent as having children
+    yield* itemCtx.hasChildren.set(true);
 
-  // New level context for nested items
-  const newLevelCtx: TreeViewLevelContext = {
-    level: levelCtx.level + 1,
-    parentId: itemCtx.id,
-  };
+    // New level context for nested items
+    const newLevelCtx: TreeViewLevelContext = {
+      level: levelCtx.level + 1,
+      parentId: itemCtx.id,
+    };
 
-  const dataState = itemCtx.isExpanded.map((expanded) =>
-    expanded ? "open" : "closed",
-  );
+    const dataState = itemCtx.isExpanded.map((expanded) =>
+      expanded ? "open" : "closed",
+    );
 
-  const contentChildren = provide(
-    TreeViewLevelCtx,
-    newLevelCtx,
-    children ?? [],
-  );
+    const contentChildren = provide(TreeViewLevelCtx, newLevelCtx, children);
 
-  return yield* when(itemCtx.isExpanded, {
-    onTrue: () =>
-      $.div(
-        {
-          role: "group",
-          "data-state": dataState,
-          class: props.class,
-        },
-        contentChildren,
-      ),
-    onFalse: () => $.div({ style: { display: "none" } }),
-    animate: props.animate,
-  });
-});
+    return yield* when(itemCtx.isExpanded, {
+      onTrue: () =>
+        $.div(
+          {
+            role: "group",
+            "data-state": dataState,
+            class: props.class,
+          },
+          contentChildren,
+        ),
+      onFalse: () => $.div({ style: { display: "none" } }),
+      animate: props.animate,
+    });
+  }) as Element.Element<
+    HTMLDivElement,
+    E,
+    R | TreeViewItemCtx | TreeViewLevelCtx
+  >;
 
 /**
  * Headless TreeView primitive for building accessible

@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { DOMRendererLive, Signal } from "@effex/dom";
+import { $, collect, DOMRendererLive, Signal } from "@effex/dom";
 
 import { DropdownMenu } from "./DropdownMenu";
 
@@ -21,9 +21,10 @@ describe("DropdownMenu", () => {
     it("should render children", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.Trigger({}, "Open Menu"),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.Trigger({}, $.of("Open Menu"))),
+          );
 
           expect(el.tagName).toBe("DIV");
           expect(el.querySelector("button")).not.toBeNull();
@@ -34,9 +35,10 @@ describe("DropdownMenu", () => {
     it("should be closed by default", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.Trigger({}, "Open"),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.Trigger({}, $.of("Open"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("data-state")).toBe("closed");
@@ -47,9 +49,10 @@ describe("DropdownMenu", () => {
     it("should respect defaultOpen=true", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({ defaultOpen: true }, [
-            DropdownMenu.Trigger({}, "Open"),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            { defaultOpen: true },
+            collect(DropdownMenu.Trigger({}, $.of("Open"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("data-state")).toBe("open");
@@ -62,9 +65,10 @@ describe("DropdownMenu", () => {
     it("should render as button with menu-trigger data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.Trigger({}, "Actions"),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.Trigger({}, $.of("Actions"))),
+          );
 
           const trigger = el.querySelector("[data-menu-trigger]");
           expect(trigger).not.toBeNull();
@@ -76,9 +80,10 @@ describe("DropdownMenu", () => {
     it("should have aria-haspopup=menu", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.Trigger({}, "Actions"),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.Trigger({}, $.of("Actions"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("aria-haspopup")).toBe("menu");
@@ -89,9 +94,10 @@ describe("DropdownMenu", () => {
     it("should have aria-expanded attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.Trigger({}, "Actions"),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.Trigger({}, $.of("Actions"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("aria-expanded")).toBe("false");
@@ -102,9 +108,10 @@ describe("DropdownMenu", () => {
     it("should update aria-expanded when open", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({ defaultOpen: true }, [
-            DropdownMenu.Trigger({}, "Actions"),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            { defaultOpen: true },
+            collect(DropdownMenu.Trigger({}, $.of("Actions"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("aria-expanded")).toBe("true");
@@ -115,9 +122,12 @@ describe("DropdownMenu", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.Trigger({ class: "my-trigger" }, "Actions"),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(
+              DropdownMenu.Trigger({ class: "my-trigger" }, $.of("Actions")),
+            ),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.className).toBe("my-trigger");
@@ -128,9 +138,10 @@ describe("DropdownMenu", () => {
     it("should toggle menu on click", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.Trigger({}, "Actions"),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.Trigger({}, $.of("Actions"))),
+          );
 
           const trigger = el.querySelector("button") as HTMLButtonElement;
           expect(trigger.getAttribute("data-state")).toBe("closed");
@@ -146,9 +157,10 @@ describe("DropdownMenu", () => {
     it("should be disabled when disabled prop is true", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.Trigger({ disabled: true }, "Actions"),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.Trigger({ disabled: true }, $.of("Actions"))),
+          );
 
           const trigger = el.querySelector("button") as HTMLButtonElement;
           expect(trigger.disabled).toBe(true);
@@ -161,9 +173,10 @@ describe("DropdownMenu", () => {
     it("should render with menu-item data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.Item({}, "Edit"),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.Item({}, $.of("Edit"))),
+          );
 
           const item = el.querySelector("[data-menu-item]");
           expect(item).not.toBeNull();
@@ -174,9 +187,10 @@ describe("DropdownMenu", () => {
     it("should have role=menuitem", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.Item({}, "Edit"),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.Item({}, $.of("Edit"))),
+          );
 
           const item = el.querySelector("[data-menu-item]");
           expect(item?.getAttribute("role")).toBe("menuitem");
@@ -187,9 +201,10 @@ describe("DropdownMenu", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.Item({ class: "my-item" }, "Edit"),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.Item({ class: "my-item" }, $.of("Edit"))),
+          );
 
           const item = el.querySelector("[data-menu-item]");
           expect(item?.className).toBe("my-item");
@@ -200,9 +215,10 @@ describe("DropdownMenu", () => {
     it("should have data-disabled when disabled", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.Item({ disabled: true }, "Edit"),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.Item({ disabled: true }, $.of("Edit"))),
+          );
 
           const item = el.querySelector("[data-menu-item]");
           expect(item?.getAttribute("data-disabled")).toBe("");
@@ -215,9 +231,15 @@ describe("DropdownMenu", () => {
     it("should render with menu-group data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.Group({}, [DropdownMenu.Item({}, "Item")]),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(
+              DropdownMenu.Group(
+                {},
+                collect(DropdownMenu.Item({}, $.of("Item"))),
+              ),
+            ),
+          );
 
           const group = el.querySelector("[data-menu-group]");
           expect(group).not.toBeNull();
@@ -228,9 +250,15 @@ describe("DropdownMenu", () => {
     it("should have role=group", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.Group({}, [DropdownMenu.Item({}, "Item")]),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(
+              DropdownMenu.Group(
+                {},
+                collect(DropdownMenu.Item({}, $.of("Item"))),
+              ),
+            ),
+          );
 
           const group = el.querySelector("[data-menu-group]");
           expect(group?.getAttribute("role")).toBe("group");
@@ -241,9 +269,10 @@ describe("DropdownMenu", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.Group({ class: "my-group" }, []),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.Group({ class: "my-group" }, collect())),
+          );
 
           const group = el.querySelector("[data-menu-group]");
           expect(group?.className).toBe("my-group");
@@ -256,9 +285,10 @@ describe("DropdownMenu", () => {
     it("should render with menu-label data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.Label({}, "Actions"),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.Label({}, $.of("Actions"))),
+          );
 
           const label = el.querySelector("[data-menu-label]");
           expect(label).not.toBeNull();
@@ -270,9 +300,10 @@ describe("DropdownMenu", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.Label({ class: "my-label" }, "Label"),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.Label({ class: "my-label" }, $.of("Label"))),
+          );
 
           const label = el.querySelector("[data-menu-label]");
           expect(label?.className).toBe("my-label");
@@ -285,7 +316,10 @@ describe("DropdownMenu", () => {
     it("should render with menu-separator data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [DropdownMenu.Separator({})]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.Separator({})),
+          );
 
           const separator = el.querySelector("[data-menu-separator]");
           expect(separator).not.toBeNull();
@@ -296,7 +330,10 @@ describe("DropdownMenu", () => {
     it("should have role=separator", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [DropdownMenu.Separator({})]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.Separator({})),
+          );
 
           const separator = el.querySelector("[data-menu-separator]");
           expect(separator?.getAttribute("role")).toBe("separator");
@@ -307,9 +344,10 @@ describe("DropdownMenu", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.Separator({ class: "my-separator" }),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.Separator({ class: "my-separator" })),
+          );
 
           const separator = el.querySelector("[data-menu-separator]");
           expect(separator?.className).toBe("my-separator");
@@ -322,9 +360,10 @@ describe("DropdownMenu", () => {
     it("should render with checkbox-item data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.CheckboxItem({}, "Show Grid"),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.CheckboxItem({}, $.of("Show Grid"))),
+          );
 
           const item = el.querySelector("[data-menu-checkbox-item]");
           expect(item).not.toBeNull();
@@ -335,9 +374,10 @@ describe("DropdownMenu", () => {
     it("should have role=menuitemcheckbox", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.CheckboxItem({}, "Show Grid"),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.CheckboxItem({}, $.of("Show Grid"))),
+          );
 
           const item = el.querySelector("[data-menu-checkbox-item]");
           expect(item?.getAttribute("role")).toBe("menuitemcheckbox");
@@ -348,9 +388,10 @@ describe("DropdownMenu", () => {
     it("should default to unchecked", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.CheckboxItem({}, "Show Grid"),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.CheckboxItem({}, $.of("Show Grid"))),
+          );
 
           const item = el.querySelector("[data-menu-checkbox-item]");
           expect(item?.getAttribute("data-state")).toBe("unchecked");
@@ -362,9 +403,15 @@ describe("DropdownMenu", () => {
     it("should reflect defaultChecked=true", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.CheckboxItem({ defaultChecked: true }, "Show Grid"),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(
+              DropdownMenu.CheckboxItem(
+                { defaultChecked: true },
+                $.of("Show Grid"),
+              ),
+            ),
+          );
 
           const item = el.querySelector("[data-menu-checkbox-item]");
           expect(item?.getAttribute("data-state")).toBe("checked");
@@ -378,9 +425,10 @@ describe("DropdownMenu", () => {
         Effect.gen(function* () {
           const checked = yield* Signal.make(true);
 
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.CheckboxItem({ checked }, "Show Grid"),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.CheckboxItem({ checked }, $.of("Show Grid"))),
+          );
 
           const item = el.querySelector("[data-menu-checkbox-item]");
           expect(item?.getAttribute("data-state")).toBe("checked");
@@ -398,9 +446,10 @@ describe("DropdownMenu", () => {
     it("should render with radio-group data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.RadioGroup({}, []),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.RadioGroup({}, collect())),
+          );
 
           const group = el.querySelector("[data-menu-radio-group]");
           expect(group).not.toBeNull();
@@ -411,9 +460,10 @@ describe("DropdownMenu", () => {
     it("should have role=group", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.RadioGroup({}, []),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(DropdownMenu.RadioGroup({}, collect())),
+          );
 
           const group = el.querySelector("[data-menu-radio-group]");
           expect(group?.getAttribute("role")).toBe("group");
@@ -426,11 +476,17 @@ describe("DropdownMenu", () => {
     it("should render with radio-item data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.RadioGroup({}, [
-              DropdownMenu.RadioItem({ value: "name" }, "Name"),
-            ]),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(
+              DropdownMenu.RadioGroup(
+                {},
+                collect(
+                  DropdownMenu.RadioItem({ value: "name" }, $.of("Name")),
+                ),
+              ),
+            ),
+          );
 
           const item = el.querySelector("[data-menu-radio-item]");
           expect(item).not.toBeNull();
@@ -441,11 +497,17 @@ describe("DropdownMenu", () => {
     it("should have role=menuitemradio", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.RadioGroup({}, [
-              DropdownMenu.RadioItem({ value: "name" }, "Name"),
-            ]),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(
+              DropdownMenu.RadioGroup(
+                {},
+                collect(
+                  DropdownMenu.RadioItem({ value: "name" }, $.of("Name")),
+                ),
+              ),
+            ),
+          );
 
           const item = el.querySelector("[data-menu-radio-item]");
           expect(item?.getAttribute("role")).toBe("menuitemradio");
@@ -456,12 +518,18 @@ describe("DropdownMenu", () => {
     it("should reflect defaultValue selection", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* DropdownMenu.Root({}, [
-            DropdownMenu.RadioGroup({ defaultValue: "date" }, [
-              DropdownMenu.RadioItem({ value: "name" }, "Name"),
-              DropdownMenu.RadioItem({ value: "date" }, "Date"),
-            ]),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            {},
+            collect(
+              DropdownMenu.RadioGroup(
+                { defaultValue: "date" },
+                collect(
+                  DropdownMenu.RadioItem({ value: "name" }, $.of("Name")),
+                  DropdownMenu.RadioItem({ value: "date" }, $.of("Date")),
+                ),
+              ),
+            ),
+          );
 
           const items = el.querySelectorAll("[data-menu-radio-item]");
           expect(items[0]?.getAttribute("data-state")).toBe("unchecked");
@@ -477,9 +545,10 @@ describe("DropdownMenu", () => {
         Effect.gen(function* () {
           const open = yield* Signal.make(false);
 
-          const el = yield* DropdownMenu.Root({ open }, [
-            DropdownMenu.Trigger({}, "Open"),
-          ]);
+          const el = yield* DropdownMenu.Root(
+            { open },
+            collect(DropdownMenu.Trigger({}, $.of("Open"))),
+          );
 
           const trigger = el.querySelector("button");
           expect(trigger?.getAttribute("data-state")).toBe("closed");
@@ -506,7 +575,7 @@ describe("DropdownMenu", () => {
                   changes.push(isOpen);
                 }),
             },
-            [DropdownMenu.Trigger({}, "Open")],
+            collect(DropdownMenu.Trigger({}, $.of("Open"))),
           );
 
           const trigger = el.querySelector("button") as HTMLButtonElement;

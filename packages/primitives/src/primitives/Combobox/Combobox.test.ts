@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { DOMRendererLive, Signal } from "@effex/dom";
+import { $, collect, DOMRendererLive, Signal } from "@effex/dom";
 
 import { Combobox } from "./Combobox";
 
@@ -21,7 +21,7 @@ describe("Combobox", () => {
     it("should render children", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({}, [Combobox.Input({})]);
+          const el = yield* Combobox.Root({}, collect(Combobox.Input({})));
 
           expect(el.tagName).toBe("DIV");
           expect(el.querySelector("[data-combobox-input]")).not.toBeNull();
@@ -32,7 +32,7 @@ describe("Combobox", () => {
     it("should be closed by default", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({}, [Combobox.Input({})]);
+          const el = yield* Combobox.Root({}, collect(Combobox.Input({})));
 
           const input = el.querySelector("[data-combobox-input]");
           expect(input?.getAttribute("data-state")).toBe("closed");
@@ -43,9 +43,10 @@ describe("Combobox", () => {
     it("should respect defaultOpen=true", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({ defaultOpen: true }, [
-            Combobox.Input({}),
-          ]);
+          const el = yield* Combobox.Root(
+            { defaultOpen: true },
+            collect(Combobox.Input({})),
+          );
 
           const input = el.querySelector("[data-combobox-input]");
           expect(input?.getAttribute("data-state")).toBe("open");
@@ -58,7 +59,7 @@ describe("Combobox", () => {
     it("should render as input with combobox-input data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({}, [Combobox.Input({})]);
+          const el = yield* Combobox.Root({}, collect(Combobox.Input({})));
 
           const input = el.querySelector("[data-combobox-input]");
           expect(input).not.toBeNull();
@@ -70,7 +71,7 @@ describe("Combobox", () => {
     it("should have role=combobox", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({}, [Combobox.Input({})]);
+          const el = yield* Combobox.Root({}, collect(Combobox.Input({})));
 
           const input = el.querySelector("[data-combobox-input]");
           expect(input?.getAttribute("role")).toBe("combobox");
@@ -81,7 +82,7 @@ describe("Combobox", () => {
     it("should have aria-haspopup=listbox", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({}, [Combobox.Input({})]);
+          const el = yield* Combobox.Root({}, collect(Combobox.Input({})));
 
           const input = el.querySelector("[data-combobox-input]");
           expect(input?.getAttribute("aria-haspopup")).toBe("listbox");
@@ -92,7 +93,7 @@ describe("Combobox", () => {
     it("should have aria-autocomplete=list", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({}, [Combobox.Input({})]);
+          const el = yield* Combobox.Root({}, collect(Combobox.Input({})));
 
           const input = el.querySelector("[data-combobox-input]");
           expect(input?.getAttribute("aria-autocomplete")).toBe("list");
@@ -103,7 +104,7 @@ describe("Combobox", () => {
     it("should have aria-expanded=false when closed", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({}, [Combobox.Input({})]);
+          const el = yield* Combobox.Root({}, collect(Combobox.Input({})));
 
           const input = el.querySelector("[data-combobox-input]");
           expect(input?.getAttribute("aria-expanded")).toBe("false");
@@ -114,9 +115,10 @@ describe("Combobox", () => {
     it("should have aria-expanded=true when open", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({ defaultOpen: true }, [
-            Combobox.Input({}),
-          ]);
+          const el = yield* Combobox.Root(
+            { defaultOpen: true },
+            collect(Combobox.Input({})),
+          );
 
           const input = el.querySelector("[data-combobox-input]");
           expect(input?.getAttribute("aria-expanded")).toBe("true");
@@ -127,9 +129,10 @@ describe("Combobox", () => {
     it("should apply placeholder", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({}, [
-            Combobox.Input({ placeholder: "Search..." }),
-          ]);
+          const el = yield* Combobox.Root(
+            {},
+            collect(Combobox.Input({ placeholder: "Search..." })),
+          );
 
           const input = el.querySelector(
             "[data-combobox-input]",
@@ -142,9 +145,10 @@ describe("Combobox", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({}, [
-            Combobox.Input({ class: "my-input" }),
-          ]);
+          const el = yield* Combobox.Root(
+            {},
+            collect(Combobox.Input({ class: "my-input" })),
+          );
 
           const input = el.querySelector("[data-combobox-input]");
           expect(input?.className).toBe("my-input");
@@ -155,9 +159,10 @@ describe("Combobox", () => {
     it("should have data-disabled when disabled", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Combobox.Root({ disabled: true }, [
-            Combobox.Input({}),
-          ]);
+          const el = yield* Combobox.Root(
+            { disabled: true },
+            collect(Combobox.Input({})),
+          );
 
           const input = el.querySelector("[data-combobox-input]");
           expect(input?.getAttribute("data-disabled")).toBe("");
@@ -170,10 +175,10 @@ describe("Combobox", () => {
     it("should render with combobox-content data attribute when open", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Combobox.Root({ defaultOpen: true }, [
-            Combobox.Input({}),
-            Combobox.Content({}, []),
-          ]);
+          yield* Combobox.Root(
+            { defaultOpen: true },
+            collect(Combobox.Input({}), Combobox.Content({}, collect())),
+          );
 
           yield* Effect.sleep("50 millis");
           const content = document.querySelector("[data-combobox-content]");
@@ -185,10 +190,10 @@ describe("Combobox", () => {
     it("should have role=listbox", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Combobox.Root({ defaultOpen: true }, [
-            Combobox.Input({}),
-            Combobox.Content({}, []),
-          ]);
+          yield* Combobox.Root(
+            { defaultOpen: true },
+            collect(Combobox.Input({}), Combobox.Content({}, collect())),
+          );
 
           yield* Effect.sleep("50 millis");
           const content = document.querySelector("[data-combobox-content]");
@@ -200,10 +205,13 @@ describe("Combobox", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Combobox.Root({ defaultOpen: true }, [
-            Combobox.Input({}),
-            Combobox.Content({ class: "my-content" }, []),
-          ]);
+          yield* Combobox.Root(
+            { defaultOpen: true },
+            collect(
+              Combobox.Input({}),
+              Combobox.Content({ class: "my-content" }, collect()),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const content = document.querySelector("[data-combobox-content]");
@@ -215,10 +223,10 @@ describe("Combobox", () => {
     it("should have data-state=open when open", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Combobox.Root({ defaultOpen: true }, [
-            Combobox.Input({}),
-            Combobox.Content({}, []),
-          ]);
+          yield* Combobox.Root(
+            { defaultOpen: true },
+            collect(Combobox.Input({}), Combobox.Content({}, collect())),
+          );
 
           yield* Effect.sleep("50 millis");
           const content = document.querySelector("[data-combobox-content]");
@@ -232,14 +240,21 @@ describe("Combobox", () => {
     it("should render with combobox-item data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Combobox.Root({ defaultOpen: true }, [
-            Combobox.Input({}),
-            Combobox.Content({}, [
-              Combobox.Item({ value: "apple" }, [
-                Combobox.ItemText({}, "Apple"),
-              ]),
-            ]),
-          ]);
+          yield* Combobox.Root(
+            { defaultOpen: true },
+            collect(
+              Combobox.Input({}),
+              Combobox.Content(
+                {},
+                collect(
+                  Combobox.Item(
+                    { value: "apple" },
+                    collect(Combobox.ItemText({}, $.of("Apple"))),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const item = document.querySelector("[data-combobox-item]");
@@ -251,14 +266,21 @@ describe("Combobox", () => {
     it("should have role=option", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Combobox.Root({ defaultOpen: true }, [
-            Combobox.Input({}),
-            Combobox.Content({}, [
-              Combobox.Item({ value: "apple" }, [
-                Combobox.ItemText({}, "Apple"),
-              ]),
-            ]),
-          ]);
+          yield* Combobox.Root(
+            { defaultOpen: true },
+            collect(
+              Combobox.Input({}),
+              Combobox.Content(
+                {},
+                collect(
+                  Combobox.Item(
+                    { value: "apple" },
+                    collect(Combobox.ItemText({}, $.of("Apple"))),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const item = document.querySelector("[data-combobox-item]");
@@ -270,14 +292,21 @@ describe("Combobox", () => {
     it("should have data-value attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Combobox.Root({ defaultOpen: true }, [
-            Combobox.Input({}),
-            Combobox.Content({}, [
-              Combobox.Item({ value: "apple" }, [
-                Combobox.ItemText({}, "Apple"),
-              ]),
-            ]),
-          ]);
+          yield* Combobox.Root(
+            { defaultOpen: true },
+            collect(
+              Combobox.Input({}),
+              Combobox.Content(
+                {},
+                collect(
+                  Combobox.Item(
+                    { value: "apple" },
+                    collect(Combobox.ItemText({}, $.of("Apple"))),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const item = document.querySelector("[data-combobox-item]");
@@ -289,14 +318,21 @@ describe("Combobox", () => {
     it("should have data-state=unchecked by default", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Combobox.Root({ defaultOpen: true }, [
-            Combobox.Input({}),
-            Combobox.Content({}, [
-              Combobox.Item({ value: "apple" }, [
-                Combobox.ItemText({}, "Apple"),
-              ]),
-            ]),
-          ]);
+          yield* Combobox.Root(
+            { defaultOpen: true },
+            collect(
+              Combobox.Input({}),
+              Combobox.Content(
+                {},
+                collect(
+                  Combobox.Item(
+                    { value: "apple" },
+                    collect(Combobox.ItemText({}, $.of("Apple"))),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const item = document.querySelector("[data-combobox-item]");
@@ -313,14 +349,18 @@ describe("Combobox", () => {
               defaultOpen: true,
               defaultValue: "apple",
             },
-            [
+            collect(
               Combobox.Input({}),
-              Combobox.Content({}, [
-                Combobox.Item({ value: "apple" }, [
-                  Combobox.ItemText({}, "Apple"),
-                ]),
-              ]),
-            ],
+              Combobox.Content(
+                {},
+                collect(
+                  Combobox.Item(
+                    { value: "apple" },
+                    collect(Combobox.ItemText({}, $.of("Apple"))),
+                  ),
+                ),
+              ),
+            ),
           );
 
           yield* Effect.sleep("50 millis");
@@ -334,14 +374,21 @@ describe("Combobox", () => {
     it("should have data-disabled when disabled", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Combobox.Root({ defaultOpen: true }, [
-            Combobox.Input({}),
-            Combobox.Content({}, [
-              Combobox.Item({ value: "apple", disabled: true }, [
-                Combobox.ItemText({}, "Apple"),
-              ]),
-            ]),
-          ]);
+          yield* Combobox.Root(
+            { defaultOpen: true },
+            collect(
+              Combobox.Input({}),
+              Combobox.Content(
+                {},
+                collect(
+                  Combobox.Item(
+                    { value: "apple", disabled: true },
+                    collect(Combobox.ItemText({}, $.of("Apple"))),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const item = document.querySelector("[data-combobox-item]");
@@ -353,14 +400,21 @@ describe("Combobox", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Combobox.Root({ defaultOpen: true }, [
-            Combobox.Input({}),
-            Combobox.Content({}, [
-              Combobox.Item({ value: "apple", class: "my-item" }, [
-                Combobox.ItemText({}, "Apple"),
-              ]),
-            ]),
-          ]);
+          yield* Combobox.Root(
+            { defaultOpen: true },
+            collect(
+              Combobox.Input({}),
+              Combobox.Content(
+                {},
+                collect(
+                  Combobox.Item(
+                    { value: "apple", class: "my-item" },
+                    collect(Combobox.ItemText({}, $.of("Apple"))),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const item = document.querySelector("[data-combobox-item]");
@@ -374,14 +428,21 @@ describe("Combobox", () => {
     it("should render with combobox-item-text data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Combobox.Root({ defaultOpen: true }, [
-            Combobox.Input({}),
-            Combobox.Content({}, [
-              Combobox.Item({ value: "apple" }, [
-                Combobox.ItemText({}, "Apple"),
-              ]),
-            ]),
-          ]);
+          yield* Combobox.Root(
+            { defaultOpen: true },
+            collect(
+              Combobox.Input({}),
+              Combobox.Content(
+                {},
+                collect(
+                  Combobox.Item(
+                    { value: "apple" },
+                    collect(Combobox.ItemText({}, $.of("Apple"))),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const itemText = document.querySelector("[data-combobox-item-text]");
@@ -394,14 +455,23 @@ describe("Combobox", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Combobox.Root({ defaultOpen: true }, [
-            Combobox.Input({}),
-            Combobox.Content({}, [
-              Combobox.Item({ value: "apple" }, [
-                Combobox.ItemText({ class: "my-text" }, "Apple"),
-              ]),
-            ]),
-          ]);
+          yield* Combobox.Root(
+            { defaultOpen: true },
+            collect(
+              Combobox.Input({}),
+              Combobox.Content(
+                {},
+                collect(
+                  Combobox.Item(
+                    { value: "apple" },
+                    collect(
+                      Combobox.ItemText({ class: "my-text" }, $.of("Apple")),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const itemText = document.querySelector("[data-combobox-item-text]");
@@ -415,10 +485,13 @@ describe("Combobox", () => {
     it("should render with combobox-group data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Combobox.Root({ defaultOpen: true }, [
-            Combobox.Input({}),
-            Combobox.Content({}, [Combobox.Group({}, [])]),
-          ]);
+          yield* Combobox.Root(
+            { defaultOpen: true },
+            collect(
+              Combobox.Input({}),
+              Combobox.Content({}, collect(Combobox.Group({}, collect()))),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const group = document.querySelector("[data-combobox-group]");
@@ -430,10 +503,13 @@ describe("Combobox", () => {
     it("should have role=group", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Combobox.Root({ defaultOpen: true }, [
-            Combobox.Input({}),
-            Combobox.Content({}, [Combobox.Group({}, [])]),
-          ]);
+          yield* Combobox.Root(
+            { defaultOpen: true },
+            collect(
+              Combobox.Input({}),
+              Combobox.Content({}, collect(Combobox.Group({}, collect()))),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const group = document.querySelector("[data-combobox-group]");
@@ -445,10 +521,16 @@ describe("Combobox", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Combobox.Root({ defaultOpen: true }, [
-            Combobox.Input({}),
-            Combobox.Content({}, [Combobox.Group({ class: "my-group" }, [])]),
-          ]);
+          yield* Combobox.Root(
+            { defaultOpen: true },
+            collect(
+              Combobox.Input({}),
+              Combobox.Content(
+                {},
+                collect(Combobox.Group({ class: "my-group" }, collect())),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const group = document.querySelector("[data-combobox-group]");
@@ -462,10 +544,16 @@ describe("Combobox", () => {
     it("should render with combobox-label data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Combobox.Root({ defaultOpen: true }, [
-            Combobox.Input({}),
-            Combobox.Content({}, [Combobox.Label({}, "Category")]),
-          ]);
+          yield* Combobox.Root(
+            { defaultOpen: true },
+            collect(
+              Combobox.Input({}),
+              Combobox.Content(
+                {},
+                collect(Combobox.Label({}, $.of("Category"))),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const label = document.querySelector("[data-combobox-label]");
@@ -478,12 +566,16 @@ describe("Combobox", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Combobox.Root({ defaultOpen: true }, [
-            Combobox.Input({}),
-            Combobox.Content({}, [
-              Combobox.Label({ class: "my-label" }, "Label"),
-            ]),
-          ]);
+          yield* Combobox.Root(
+            { defaultOpen: true },
+            collect(
+              Combobox.Input({}),
+              Combobox.Content(
+                {},
+                collect(Combobox.Label({ class: "my-label" }, $.of("Label"))),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const label = document.querySelector("[data-combobox-label]");
@@ -499,7 +591,10 @@ describe("Combobox", () => {
         Effect.gen(function* () {
           const open = yield* Signal.make(false);
 
-          const el = yield* Combobox.Root({ open }, [Combobox.Input({})]);
+          const el = yield* Combobox.Root(
+            { open },
+            collect(Combobox.Input({})),
+          );
 
           const input = el.querySelector("[data-combobox-input]");
           expect(input?.getAttribute("data-state")).toBe("closed");
@@ -517,7 +612,10 @@ describe("Combobox", () => {
         Effect.gen(function* () {
           const inputValue = yield* Signal.make("test");
 
-          const el = yield* Combobox.Root({ inputValue }, [Combobox.Input({})]);
+          const el = yield* Combobox.Root(
+            { inputValue },
+            collect(Combobox.Input({})),
+          );
 
           const input = el.querySelector(
             "[data-combobox-input]",
@@ -547,14 +645,18 @@ describe("Combobox", () => {
                   changes.push(val);
                 }),
             },
-            [
+            collect(
               Combobox.Input({}),
-              Combobox.Content({}, [
-                Combobox.Item({ value: "apple" }, [
-                  Combobox.ItemText({}, "Apple"),
-                ]),
-              ]),
-            ],
+              Combobox.Content(
+                {},
+                collect(
+                  Combobox.Item(
+                    { value: "apple" },
+                    collect(Combobox.ItemText({}, $.of("Apple"))),
+                  ),
+                ),
+              ),
+            ),
           );
 
           yield* Effect.sleep("50 millis");
@@ -584,7 +686,7 @@ describe("Combobox", () => {
                   changes.push(isOpen);
                 }),
             },
-            [Combobox.Input({})],
+            collect(Combobox.Input({})),
           );
 
           const input = el.querySelector(
@@ -607,10 +709,16 @@ describe("Combobox", () => {
         Effect.gen(function* () {
           const isLoading = yield* Signal.make(true);
 
-          yield* Combobox.Root({ defaultOpen: true, isLoading }, [
-            Combobox.Input({}),
-            Combobox.Content({}, [Combobox.Loading({}, "Loading...")]),
-          ]);
+          yield* Combobox.Root(
+            { defaultOpen: true, isLoading },
+            collect(
+              Combobox.Input({}),
+              Combobox.Content(
+                {},
+                collect(Combobox.Loading({}, $.of("Loading..."))),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const loading = document.querySelector("[data-combobox-loading]");
@@ -625,12 +733,18 @@ describe("Combobox", () => {
         Effect.gen(function* () {
           const isLoading = yield* Signal.make(true);
 
-          yield* Combobox.Root({ defaultOpen: true, isLoading }, [
-            Combobox.Input({}),
-            Combobox.Content({}, [
-              Combobox.Loading({ class: "my-loading" }, "Loading..."),
-            ]),
-          ]);
+          yield* Combobox.Root(
+            { defaultOpen: true, isLoading },
+            collect(
+              Combobox.Input({}),
+              Combobox.Content(
+                {},
+                collect(
+                  Combobox.Loading({ class: "my-loading" }, $.of("Loading...")),
+                ),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const loading = document.querySelector("[data-combobox-loading]");

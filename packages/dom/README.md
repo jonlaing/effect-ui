@@ -12,37 +12,41 @@ pnpm add @effex/dom effect
 
 ## Basic Usage
 
-### Simple Components
+### Simple Functions
 
-Use `Component.gen` for all components. For simple components that just render static or prop-based content:
+Components are just functions that return Effects. Use `Effect.gen` for all components:
 
 ```ts
-import { $, Component } from "@effex/dom";
+import { Effect } from "effect";
+import { $, collect } from "@effex/dom";
 
-const Greeting = Component.gen(function* (props: { name: string }) {
-  return yield* $.div({ class: "greeting" }, [
-    $.h1(`Hello, ${props.name}!`),
-    $.p("Welcome to Effex"),
-  ]);
-});
+const Greeting = (props: { name: string }) =>
+  Effect.gen(function* () {
+    return yield* $.div({ class: "greeting" }, collect(
+      $.h1({}, $.of(`Hello, ${props.name}!`)),
+      $.p({}, $.of("Welcome to Effex")),
+    ));
+  });
 ```
 
-### Stateful Components
+### Stateful Functions
 
-Components that need to create signals, derived values, or access context use the same pattern:
+Functions that need to create signals, derived values, or access context use the same pattern:
 
 ```ts
-import { $, Component, Signal } from "@effex/dom";
+import { Effect } from "effect";
+import { $, collect, Signal } from "@effex/dom";
 
-const Counter = Component.gen(function* () {
-  const count = yield* Signal.make(0);
+const Counter = () =>
+  Effect.gen(function* () {
+    const count = yield* Signal.make(0);
 
-  return yield* $.div([
-    $.button({ onClick: () => count.update((n) => n - 1) }, "-"),
-    $.span(count),
-    $.button({ onClick: () => count.update((n) => n + 1) }, "+"),
-  ]);
-});
+    return yield* $.div({}, collect(
+      $.button({ onClick: () => count.update((n) => n - 1) }, $.of("-")),
+      $.span({}, $.of(count)),
+      $.button({ onClick: () => count.update((n) => n + 1) }, $.of("+")),
+    ));
+  });
 ```
 
 ### Running Your App
@@ -65,83 +69,97 @@ runApp(
 The `$` namespace contains all HTML element factories (`$.div`, `$.span`, `$.button`, etc.). Elements are Effects that must be yielded:
 
 ```ts
-yield* $.div({ class: "container", style: { color: "red" } }, [
-  $.h1(["Hello, ", name]),
-  $.p(t`${count} items`),
-]);
+yield* $.div({ class: "container", style: { color: "red" } }, collect(
+  $.h1({}, $.of(name)),
+  $.p({}, $.of(t`${count} items`)),
+));
 ```
 
-Single children don't need to be wrapped in arrays:
+Use `$.of()` to lift primitives and Readables into children, and `collect()` to combine multiple children:
 
 ```ts
-yield* $.h1("Hello World");
-yield* $.button({ onClick: handleClick }, "Click me");
+// Single child
+yield* $.h1({}, $.of("Hello World"));
+yield* $.button({ onClick: handleClick }, $.of("Click me"));
+
+// Multiple children
+yield* $.div({}, collect(
+  $.of("Hello"),
+  $.span({}, $.of("World")),
+));
 ```
 
 You can also import elements individually:
 
 ```ts
-import { div, span, button } from "@effex/dom";
+import { div, span, button, of, collect } from "@effex/dom";
 ```
 
-## Component.gen
+## Defining Components
 
-Use `Component.gen` to define all components. It wraps `Effect.gen` but returns a `Component.Node` type with proper type inference:
+Components are just functions that return Effects. Use `Effect.gen` to define them:
 
-### Components Without Props
+### Functions Without Props
 
 ```ts
-const Counter = Component.gen(function* () {
-  const count = yield* Signal.make(0);
-  return yield* $.div([
-    $.button({ onClick: () => count.update((n) => n - 1) }, "-"),
-    $.span(count),
-    $.button({ onClick: () => count.update((n) => n + 1) }, "+"),
-  ]);
-});
+const Counter = () =>
+  Effect.gen(function* () {
+    const count = yield* Signal.make(0);
+    return yield* $.div({}, collect(
+      $.button({ onClick: () => count.update((n) => n - 1) }, $.of("-")),
+      $.span({}, $.of(count)),
+      $.button({ onClick: () => count.update((n) => n + 1) }, $.of("+")),
+    ));
+  });
 ```
 
-### Components With Props
+### Functions With Props
 
 ```ts
 interface GreetingProps {
   name: string;
 }
 
-const Greeting = Component.gen(function* (props: GreetingProps) {
-  return yield* $.h1(`Hello, ${props.name}!`);
-});
+const Greeting = (props: GreetingProps) =>
+  Effect.gen(function* () {
+    return yield* $.h1({}, $.of(`Hello, ${props.name}!`));
+  });
 
-// With context requirements - automatically inferred
-const UserBadge = Component.gen(function* (props: { userId: string }) {
-  const auth = yield* AuthContext;
-  return yield* $.span(`User: ${props.userId}`);
-});
+// With context requirements - automatically inferred from yielded effects
+const UserBadge = (props: { userId: string }) =>
+  Effect.gen(function* () {
+    const auth = yield* AuthContext;
+    return yield* $.span({}, $.of(`User: ${props.userId}`));
+  });
 ```
 
-### Components With Children
+### Functions With Children
+
+To accept children and propagate their error/context types, make the function generic over `E` and `R`:
 
 ```ts
+import type { ChildEffect } from "@effex/dom";
+
 interface CardProps {
   title: string;
   class?: string;
 }
 
-const Card = Component.gen(function* (props: CardProps, children) {
-  return yield* $.div({ class: props.class ?? "card" }, [
-    $.h2(props.title),
-    ...(children ?? []),
-  ]);
-});
+const Card = <E, R>(props: CardProps, children: ChildEffect<E, R>) =>
+  Effect.gen(function* () {
+    return yield* $.div({ class: props.class ?? "card" }, collect(
+      $.h2({}, $.of(props.title)),
+      children,
+    ));
+  });
 
 // Usage
-Card({ title: "Hello" }, [$.p("Content here")]);
-Card({ title: "Empty" }); // children optional
+Card({ title: "Hello" }, $.p({}, $.of("Content here")));
 ```
 
 ### Context Providers
 
-Components that provide context to children:
+Functions that provide context to children:
 
 ```ts
 const MenuContext = Context.Tag<MenuContext, MenuState>();
@@ -150,19 +168,20 @@ interface MenuProps {
   orientation: "horizontal" | "vertical";
 }
 
-const Menu = Component.gen(function* (props: MenuProps, children) {
-  const state = yield* createMenuState(props);
-  return yield* $.div(
-    { class: "menu", role: "menu" },
-    provide(MenuContext, state, children ?? []),
-  );
-});
+const Menu = <E, R>(props: MenuProps, children: ChildEffect<E, R>) =>
+  Effect.gen(function* () {
+    const state = yield* createMenuState(props);
+    return yield* $.div(
+      { class: "menu", role: "menu" },
+      provide(MenuContext, state, children),
+    );
+  });
 
 // Usage
-Menu({ orientation: "vertical" }, [
-  MenuItem({ value: "cut" }, "Cut"),
-  MenuItem({ value: "copy" }, "Copy"),
-]);
+Menu({ orientation: "vertical" }, collect(
+  MenuItem({ value: "cut" }, $.of("Cut")),
+  MenuItem({ value: "copy" }, $.of("Copy")),
+));
 ```
 
 ## Control Flow
@@ -176,8 +195,8 @@ import { when } from "@effex/dom";
 
 when(isLoggedIn, {
   container: () => $.div({ class: "login-status" }), // optional
-  onTrue: () => $.div("Welcome back!"),
-  onFalse: () => $.div("Please log in"),
+  onTrue: () => $.div({}, $.of("Welcome back!")),
+  onFalse: () => $.div({}, $.of("Please log in")),
 });
 ```
 
@@ -208,7 +227,7 @@ import { each } from "@effex/dom";
 each(todos, {
   container: () => $.ul({ class: "todo-list" }), // optional
   key: (todo) => todo.id,
-  render: (todo) => $.li(todo.map((t) => t.text)),
+  render: (todo) => $.li({}, $.of(todo.map((t) => t.text))),
 });
 ```
 
@@ -221,8 +240,8 @@ import { matchOption } from "@effex/dom";
 
 // userData.value is Readable<Option<User>>
 matchOption(userData.value, {
-  onSome: (user) => $.div(user.map((u) => u.name)), // user is Readable<User>
-  onNone: () => $.div("No user loaded"),
+  onSome: (user) => $.div({}, $.of(user.map((u) => u.name))), // user is Readable<User>
+  onNone: () => $.div({}, $.of("No user loaded")),
 });
 ```
 
@@ -231,15 +250,15 @@ This is much cleaner than using `when` with manual Option unwrapping:
 ```ts
 // Without matchOption (verbose)
 when(userData.value.map(Option.isSome), {
-  onTrue: () => $.div(userData.value.map((opt) =>
-    Option.isSome(opt) ? opt.value.name : "")),
-  onFalse: () => $.div("No user loaded"),
+  onTrue: () => $.div({}, $.of(userData.value.map((opt) =>
+    Option.isSome(opt) ? opt.value.name : ""))),
+  onFalse: () => $.div({}, $.of("No user loaded")),
 });
 
 // With matchOption (clean)
 matchOption(userData.value, {
-  onSome: (user) => $.div(user.map((u) => u.name)),
-  onNone: () => $.div("No user loaded"),
+  onSome: (user) => $.div({}, $.of(user.map((u) => u.name))),
+  onNone: () => $.div({}, $.of("No user loaded")),
 });
 ```
 
@@ -251,8 +270,8 @@ Match on an Either value, receiving unwrapped `Readable` values in both branches
 import { matchEither } from "@effex/dom";
 
 matchEither(validationResult, {
-  onRight: (value) => $.div(value.map((v) => v.formatted)),
-  onLeft: (error) => $.span({ class: "error" }, error.map((e) => e.message)),
+  onRight: (value) => $.div({}, $.of(value.map((v) => v.formatted))),
+  onLeft: (error) => $.span({ class: "error" }, $.of(error.map((e) => e.message))),
 });
 ```
 
@@ -271,8 +290,8 @@ Boundary.suspense({
       const user = yield* fetchUser(id);
       return yield* UserProfile({ user });
     }),
-  fallback: () => $.div("Loading..."),
-  catch: (error) => $.div(`Error: ${error.message}`),
+  fallback: () => $.div({}, $.of("Loading...")),
+  catch: (error) => $.div({}, $.of(`Error: ${error.message}`)),
   delay: "200 millis", // Avoid loading flash
 });
 ```
@@ -285,12 +304,12 @@ Options:
 
 ### Error Boundary
 
-Handle errors in component subtrees:
+Handle errors in render subtrees:
 
 ```ts
 Boundary.error(
   () => RiskyComponent(),
-  (error) => $.div(`Failed: ${error.message}`),
+  (error) => $.div({}, $.of(`Failed: ${error.message}`)),
 );
 ```
 
@@ -300,7 +319,7 @@ Effex uses Effect's Context system for dependency injection:
 
 ```ts
 import { Context, Effect } from "effect";
-import { $, Component, provide } from "@effex/dom";
+import { $, provide } from "@effex/dom";
 
 // Define a context
 interface Theme {
@@ -311,24 +330,25 @@ interface Theme {
 class ThemeContext extends Context.Tag("ThemeContext")<ThemeContext, Theme>() {}
 
 // Consume context
-const ThemedButton = Component.gen(function* (props: { label: string }) {
-  const theme = yield* ThemeContext;
-  return yield* $.button(
-    { style: { backgroundColor: theme.primary } },
-    props.label,
-  );
-});
+const ThemedButton = (props: { label: string }) =>
+  Effect.gen(function* () {
+    const theme = yield* ThemeContext;
+    return yield* $.button(
+      { style: { backgroundColor: theme.primary } },
+      $.of(props.label),
+    );
+  });
 
 // Provide context to children
-const App = Component.gen(function* () {
-  const theme: Theme = { primary: "#007bff", secondary: "#6c757d" };
+const App = () =>
+  Effect.gen(function* () {
+    const theme: Theme = { primary: "#007bff", secondary: "#6c757d" };
 
-  return yield* $.div(
-    provide(ThemeContext, theme, [
-      ThemedButton({ label: "Click me" }),
-    ]),
-  );
-});
+    return yield* $.div(
+      {},
+      provide(ThemeContext, theme, ThemedButton({ label: "Click me" })),
+    );
+  });
 ```
 
 ## Animation
@@ -424,26 +444,28 @@ yield* parallel(anim1, anim2, anim3);
 For one-off animations triggered by user actions, use `Element.animate` which wraps the Web Animations API:
 
 ```ts
+import { Effect } from "effect";
 import { Element, $ } from "@effex/dom";
 
-const SubmitButton = Component.gen(function* () {
-  const buttonRef = yield* Element.ref<HTMLButtonElement>();
+const SubmitButton = () =>
+  Effect.gen(function* () {
+    const buttonRef = yield* Element.ref<HTMLButtonElement>();
 
-  const handleClick = () =>
-    buttonRef.pipe(
-      // Pulse animation - resolves when complete
-      Element.animate(
-        [
-          { transform: "scale(1)" },
-          { transform: "scale(1.1)" },
-          { transform: "scale(1)" },
-        ],
-        { duration: 200, easing: "ease-out" },
-      ),
-    );
+    const handleClick = () =>
+      buttonRef.pipe(
+        // Pulse animation - resolves when complete
+        Element.animate(
+          [
+            { transform: "scale(1)" },
+            { transform: "scale(1.1)" },
+            { transform: "scale(1)" },
+          ],
+          { duration: 200, easing: "ease-out" },
+        ),
+      );
 
-  return yield* $.button({ ref: buttonRef, onClick: handleClick }, "Submit");
-});
+    return yield* $.button({ ref: buttonRef, onClick: handleClick }, $.of("Submit"));
+  });
 
 // Chain actions after animation completes
 inputRef.pipe(
@@ -476,17 +498,17 @@ inputRef.pipe(
 Render children into a different DOM node:
 
 ```ts
-import { Portal, $ } from "@effex/dom";
+import { Portal, $, collect } from "@effex/dom";
 
 // Render to document.body (default)
 Portal(() => Modal({ title: "Hello" }));
 
 // Render to a specific element
 Portal({ target: "#modal-root" }, () =>
-  $.div({ class: "dropdown" }, [
-    $.button("Option 1"),
-    $.button("Option 2"),
-  ]),
+  $.div({ class: "dropdown" }, collect(
+    $.button({}, $.of("Option 1")),
+    $.button({}, $.of("Option 2")),
+  )),
 );
 
 // Render to an element reference
@@ -531,8 +553,8 @@ runApp(
 ### Elements
 
 - `$.<element>(attrs?, children?)` - Create an HTML element
-- `Component.gen(fn)` - Define a component with automatic type inference
-- `Component.Node<Props>` - Type for component functions (used for explicit typing if needed)
+- `$.of(value)` - Lift a primitive or Readable into a ChildEffect
+- `collect(...children)` - Combine multiple child effects into one
 
 ### Control Flow
 
@@ -572,22 +594,22 @@ The `Element` namespace provides pipeable DOM manipulation helpers for use with 
 ### Creating Element Refs
 
 ```ts
-import { Element, $, Component } from "@effex/dom";
+import { Effect } from "effect";
+import { Element, $ } from "@effex/dom";
 
-const MyComponent = Component.gen(function* () {
-  const buttonRef = yield* Element.ref<HTMLButtonElement>();
+const MyComponent = () =>
+  Effect.gen(function* () {
+    const buttonRef = yield* Element.ref<HTMLButtonElement>();
 
-  const handleFocus = () =>
-    buttonRef.pipe(
-      Element.setStyles({ outline: "2px solid blue" }),
-      Element.focus,
-      Effect.runPromise,
-    );
+    const handleFocus = () =>
+      buttonRef.pipe(
+        Element.setStyles({ outline: "2px solid blue" }),
+        Element.focus,
+        Effect.runPromise,
+      );
 
-  return yield* $.div([
-    $.button({ ref: buttonRef, onClick: handleFocus }, "Click me"),
-  ]);
-});
+    return yield* $.div({}, $.button({ ref: buttonRef, onClick: handleFocus }, $.of("Click me")));
+  });
 ```
 
 ### Usage with Animation Hooks

@@ -84,7 +84,7 @@ export { HydrationMismatchError } from "./errors";
 export const when = <E1 = never, R1 = never, E2 = never, R2 = never>(
   condition: Readable<boolean>,
   config: WhenConfig<E1, R1, E2, R2>,
-): Element.Element<E1 | E2, R1 | R2> =>
+): Element.Element<HTMLElement | SVGElement, E1 | E2, R1 | R2> =>
   Effect.gen(function* () {
     // Check SSR mode
     const ssrContext = yield* Effect.serviceOption(SSRContext);
@@ -146,7 +146,7 @@ export const when = <E1 = never, R1 = never, E2 = never, R2 = never>(
 export const match = <A, E = never, R = never, E2 = never, R2 = never>(
   value: Readable<A>,
   config: MatchConfig<A, E, R, E2, R2>,
-): Element.Element<E | E2, R | R2> =>
+): Element.Element<HTMLElement | SVGElement, E | E2, R | R2> =>
   Effect.gen(function* () {
     // Check SSR mode
     const ssrContext = yield* Effect.serviceOption(SSRContext);
@@ -204,7 +204,7 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
 export const each = <A, E = never, R = never>(
   items: Readable<readonly A[]>,
   config: EachConfig<A, E, R>,
-): Element.Element<E, R> =>
+): Element.Element<HTMLElement | SVGElement, E, R> =>
   Effect.gen(function* () {
     // Check SSR mode
     const ssrContext = yield* Effect.serviceOption(SSRContext);
@@ -262,7 +262,7 @@ export const each = <A, E = never, R = never>(
 export const matchOption = <A, E1 = never, R1 = never, E2 = never, R2 = never>(
   option: Readable<Option.Option<A>>,
   config: MatchOptionConfig<A, E1, R1, E2, R2>,
-): Element.Element<E1 | E2, R1 | R2> => {
+): Element.Element<HTMLElement | SVGElement, E1 | E2, R1 | R2> => {
   // Create condition Readable
   const isSome = option.map(Option.isSome);
 
@@ -289,7 +289,7 @@ export const matchOption = <A, E1 = never, R1 = never, E2 = never, R2 = never>(
  *
  * matchEither(result, {
  *   onRight: (validated) => $.div(validated.map(v => v.formatted)),
- *   onLeft: (error) => $.span({ class: "error" }, error.map(e => e.message)),
+ *   onLeft: (error) => $.span({ class: "error" }, $.of(error.map(e => e.message))),
  * })
  * ```
  */
@@ -303,7 +303,7 @@ export const matchEither = <
 >(
   either: Readable<Either.Either<A, E>>,
   config: MatchEitherConfig<A, E, E1, R1, E2, R2>,
-): Element.Element<E1 | E2, R1 | R2> => {
+): Element.Element<HTMLElement | SVGElement, E1 | E2, R1 | R2> => {
   // Create condition Readable
   const isRight = either.map(Either.isRight);
 

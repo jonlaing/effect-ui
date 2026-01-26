@@ -29,7 +29,7 @@ export const ssrWhen = <E1, R1, E2, R2>(
   ctx: SSRContextService,
   condition: Readable<boolean>,
   config: WhenConfig<E1, R1, E2, R2>,
-): Element.Element<E1 | E2, R1 | R2> =>
+): Element.Element<HTMLElement | SVGElement, E1 | E2, R1 | R2> =>
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
     const hydrationId = yield* ctx.generateId;
@@ -43,9 +43,15 @@ export const ssrWhen = <E1, R1, E2, R2>(
       condition: String(initialValue),
     });
 
-    const element = initialValue
-      ? yield* config.onTrue()
-      : yield* config.onFalse();
+    const element = yield* Effect.suspend(() =>
+      initialValue
+        ? (config.onTrue() as Element.Element<
+            HTMLElement | SVGElement,
+            E1 | E2,
+            R1 | R2
+          >)
+        : config.onFalse(),
+    );
 
     yield* renderer.appendChild(container, element);
     return container;
@@ -59,7 +65,7 @@ export const ssrMatch = <A, E, R, E2, R2>(
   ctx: SSRContextService,
   value: Readable<A>,
   config: MatchConfig<A, E, R, E2, R2>,
-): Element.Element<E | E2, R | R2> =>
+): Element.Element<HTMLElement | SVGElement, E | E2, R | R2> =>
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
     const hydrationId = yield* ctx.generateId;
@@ -100,7 +106,7 @@ export const ssrEach = <A, E, R>(
   ctx: SSRContextService,
   items: Readable<readonly A[]>,
   config: EachConfig<A, E, R>,
-): Element.Element<E, R> =>
+): Element.Element<HTMLElement | SVGElement, E, R> =>
   Effect.gen(function* () {
     const renderer = (yield* RendererContext) as RendererInterface<Node>;
     const hydrationId = yield* ctx.generateId;

@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { DOMRendererLive, Signal } from "@effex/dom";
+import { $, collect, DOMRendererLive, Signal } from "@effex/dom";
 
 import { Select } from "./Select";
 
@@ -21,9 +21,10 @@ describe("Select", () => {
     it("should render children", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({}, [
-            Select.Trigger({}, [Select.Value({})]),
-          ]);
+          const el = yield* Select.Root(
+            {},
+            collect(Select.Trigger({}, collect(Select.Value({})))),
+          );
 
           expect(el.tagName).toBe("DIV");
           expect(el.querySelector("[data-select-trigger]")).not.toBeNull();
@@ -34,7 +35,10 @@ describe("Select", () => {
     it("should be closed by default", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({}, [Select.Trigger({}, [])]);
+          const el = yield* Select.Root(
+            {},
+            collect(Select.Trigger({}, collect())),
+          );
 
           const trigger = el.querySelector("[data-select-trigger]");
           expect(trigger?.getAttribute("data-state")).toBe("closed");
@@ -45,9 +49,10 @@ describe("Select", () => {
     it("should respect defaultOpen=true", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ defaultOpen: true }, [
-            Select.Trigger({}, []),
-          ]);
+          const el = yield* Select.Root(
+            { defaultOpen: true },
+            collect(Select.Trigger({}, collect())),
+          );
 
           const trigger = el.querySelector("[data-select-trigger]");
           expect(trigger?.getAttribute("data-state")).toBe("open");
@@ -60,7 +65,10 @@ describe("Select", () => {
     it("should render as button with select-trigger data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({}, [Select.Trigger({}, [])]);
+          const el = yield* Select.Root(
+            {},
+            collect(Select.Trigger({}, collect())),
+          );
 
           const trigger = el.querySelector("[data-select-trigger]");
           expect(trigger).not.toBeNull();
@@ -72,7 +80,10 @@ describe("Select", () => {
     it("should have role=combobox", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({}, [Select.Trigger({}, [])]);
+          const el = yield* Select.Root(
+            {},
+            collect(Select.Trigger({}, collect())),
+          );
 
           const trigger = el.querySelector("[data-select-trigger]");
           expect(trigger?.getAttribute("role")).toBe("combobox");
@@ -83,7 +94,10 @@ describe("Select", () => {
     it("should have aria-haspopup=listbox", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({}, [Select.Trigger({}, [])]);
+          const el = yield* Select.Root(
+            {},
+            collect(Select.Trigger({}, collect())),
+          );
 
           const trigger = el.querySelector("[data-select-trigger]");
           expect(trigger?.getAttribute("aria-haspopup")).toBe("listbox");
@@ -94,7 +108,10 @@ describe("Select", () => {
     it("should have aria-expanded=false when closed", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({}, [Select.Trigger({}, [])]);
+          const el = yield* Select.Root(
+            {},
+            collect(Select.Trigger({}, collect())),
+          );
 
           const trigger = el.querySelector("[data-select-trigger]");
           expect(trigger?.getAttribute("aria-expanded")).toBe("false");
@@ -105,9 +122,10 @@ describe("Select", () => {
     it("should have aria-expanded=true when open", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ defaultOpen: true }, [
-            Select.Trigger({}, []),
-          ]);
+          const el = yield* Select.Root(
+            { defaultOpen: true },
+            collect(Select.Trigger({}, collect())),
+          );
 
           const trigger = el.querySelector("[data-select-trigger]");
           expect(trigger?.getAttribute("aria-expanded")).toBe("true");
@@ -118,7 +136,10 @@ describe("Select", () => {
     it("should toggle on click", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({}, [Select.Trigger({}, [])]);
+          const el = yield* Select.Root(
+            {},
+            collect(Select.Trigger({}, collect())),
+          );
 
           const trigger = el.querySelector(
             "[data-select-trigger]",
@@ -136,9 +157,10 @@ describe("Select", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({}, [
-            Select.Trigger({ class: "my-trigger" }, []),
-          ]);
+          const el = yield* Select.Root(
+            {},
+            collect(Select.Trigger({ class: "my-trigger" }, collect())),
+          );
 
           const trigger = el.querySelector("[data-select-trigger]");
           expect(trigger?.className).toBe("my-trigger");
@@ -149,9 +171,10 @@ describe("Select", () => {
     it("should have data-disabled when disabled", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ disabled: true }, [
-            Select.Trigger({}, []),
-          ]);
+          const el = yield* Select.Root(
+            { disabled: true },
+            collect(Select.Trigger({}, collect())),
+          );
 
           const trigger = el.querySelector("[data-select-trigger]");
           expect(trigger?.getAttribute("data-disabled")).toBe("");
@@ -164,9 +187,10 @@ describe("Select", () => {
     it("should render with select-value data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({}, [
-            Select.Trigger({}, [Select.Value({})]),
-          ]);
+          const el = yield* Select.Root(
+            {},
+            collect(Select.Trigger({}, collect(Select.Value({})))),
+          );
 
           const value = el.querySelector("[data-select-value]");
           expect(value).not.toBeNull();
@@ -178,9 +202,10 @@ describe("Select", () => {
     it("should show placeholder when no value", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({ placeholder: "Pick one" }, [
-            Select.Trigger({}, [Select.Value({})]),
-          ]);
+          const el = yield* Select.Root(
+            { placeholder: "Pick one" },
+            collect(Select.Trigger({}, collect(Select.Value({})))),
+          );
 
           const value = el.querySelector("[data-select-value]");
           expect(value?.textContent).toBe("Pick one");
@@ -191,9 +216,10 @@ describe("Select", () => {
     it("should have data-placeholder when showing placeholder", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({}, [
-            Select.Trigger({}, [Select.Value({})]),
-          ]);
+          const el = yield* Select.Root(
+            {},
+            collect(Select.Trigger({}, collect(Select.Value({})))),
+          );
 
           const value = el.querySelector("[data-select-value]");
           // Boolean true is serialized as empty string in data attribute
@@ -205,9 +231,12 @@ describe("Select", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Select.Root({}, [
-            Select.Trigger({}, [Select.Value({ class: "my-value" })]),
-          ]);
+          const el = yield* Select.Root(
+            {},
+            collect(
+              Select.Trigger({}, collect(Select.Value({ class: "my-value" }))),
+            ),
+          );
 
           const value = el.querySelector("[data-select-value]");
           expect(value?.className).toBe("my-value");
@@ -220,12 +249,21 @@ describe("Select", () => {
     it("should render with select-item data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Select.Root({ defaultOpen: true }, [
-            Select.Trigger({}, []),
-            Select.Content({}, [
-              Select.Item({ value: "apple" }, [Select.ItemText({}, "Apple")]),
-            ]),
-          ]);
+          yield* Select.Root(
+            { defaultOpen: true },
+            collect(
+              Select.Trigger({}, collect()),
+              Select.Content(
+                {},
+                collect(
+                  Select.Item(
+                    { value: "apple" },
+                    collect(Select.ItemText({}, $.of("Apple"))),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const item = document.querySelector("[data-select-item]");
@@ -237,12 +275,21 @@ describe("Select", () => {
     it("should have role=option", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Select.Root({ defaultOpen: true }, [
-            Select.Trigger({}, []),
-            Select.Content({}, [
-              Select.Item({ value: "apple" }, [Select.ItemText({}, "Apple")]),
-            ]),
-          ]);
+          yield* Select.Root(
+            { defaultOpen: true },
+            collect(
+              Select.Trigger({}, collect()),
+              Select.Content(
+                {},
+                collect(
+                  Select.Item(
+                    { value: "apple" },
+                    collect(Select.ItemText({}, $.of("Apple"))),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const item = document.querySelector("[data-select-item]");
@@ -254,12 +301,21 @@ describe("Select", () => {
     it("should have data-value attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Select.Root({ defaultOpen: true }, [
-            Select.Trigger({}, []),
-            Select.Content({}, [
-              Select.Item({ value: "apple" }, [Select.ItemText({}, "Apple")]),
-            ]),
-          ]);
+          yield* Select.Root(
+            { defaultOpen: true },
+            collect(
+              Select.Trigger({}, collect()),
+              Select.Content(
+                {},
+                collect(
+                  Select.Item(
+                    { value: "apple" },
+                    collect(Select.ItemText({}, $.of("Apple"))),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const item = document.querySelector("[data-select-item]");
@@ -271,12 +327,21 @@ describe("Select", () => {
     it("should have data-state=unchecked by default", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Select.Root({ defaultOpen: true }, [
-            Select.Trigger({}, []),
-            Select.Content({}, [
-              Select.Item({ value: "apple" }, [Select.ItemText({}, "Apple")]),
-            ]),
-          ]);
+          yield* Select.Root(
+            { defaultOpen: true },
+            collect(
+              Select.Trigger({}, collect()),
+              Select.Content(
+                {},
+                collect(
+                  Select.Item(
+                    { value: "apple" },
+                    collect(Select.ItemText({}, $.of("Apple"))),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const item = document.querySelector("[data-select-item]");
@@ -293,12 +358,18 @@ describe("Select", () => {
               defaultOpen: true,
               defaultValue: "apple",
             },
-            [
-              Select.Trigger({}, []),
-              Select.Content({}, [
-                Select.Item({ value: "apple" }, [Select.ItemText({}, "Apple")]),
-              ]),
-            ],
+            collect(
+              Select.Trigger({}, collect()),
+              Select.Content(
+                {},
+                collect(
+                  Select.Item(
+                    { value: "apple" },
+                    collect(Select.ItemText({}, $.of("Apple"))),
+                  ),
+                ),
+              ),
+            ),
           );
 
           yield* Effect.sleep("50 millis");
@@ -312,14 +383,21 @@ describe("Select", () => {
     it("should have data-disabled when disabled", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Select.Root({ defaultOpen: true }, [
-            Select.Trigger({}, []),
-            Select.Content({}, [
-              Select.Item({ value: "apple", disabled: true }, [
-                Select.ItemText({}, "Apple"),
-              ]),
-            ]),
-          ]);
+          yield* Select.Root(
+            { defaultOpen: true },
+            collect(
+              Select.Trigger({}, collect()),
+              Select.Content(
+                {},
+                collect(
+                  Select.Item(
+                    { value: "apple", disabled: true },
+                    collect(Select.ItemText({}, $.of("Apple"))),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const item = document.querySelector("[data-select-item]");
@@ -331,14 +409,21 @@ describe("Select", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Select.Root({ defaultOpen: true }, [
-            Select.Trigger({}, []),
-            Select.Content({}, [
-              Select.Item({ value: "apple", class: "my-item" }, [
-                Select.ItemText({}, "Apple"),
-              ]),
-            ]),
-          ]);
+          yield* Select.Root(
+            { defaultOpen: true },
+            collect(
+              Select.Trigger({}, collect()),
+              Select.Content(
+                {},
+                collect(
+                  Select.Item(
+                    { value: "apple", class: "my-item" },
+                    collect(Select.ItemText({}, $.of("Apple"))),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const item = document.querySelector("[data-select-item]");
@@ -352,12 +437,21 @@ describe("Select", () => {
     it("should render with select-item-text data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Select.Root({ defaultOpen: true }, [
-            Select.Trigger({}, []),
-            Select.Content({}, [
-              Select.Item({ value: "apple" }, [Select.ItemText({}, "Apple")]),
-            ]),
-          ]);
+          yield* Select.Root(
+            { defaultOpen: true },
+            collect(
+              Select.Trigger({}, collect()),
+              Select.Content(
+                {},
+                collect(
+                  Select.Item(
+                    { value: "apple" },
+                    collect(Select.ItemText({}, $.of("Apple"))),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const itemText = document.querySelector("[data-select-item-text]");
@@ -370,14 +464,23 @@ describe("Select", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Select.Root({ defaultOpen: true }, [
-            Select.Trigger({}, []),
-            Select.Content({}, [
-              Select.Item({ value: "apple" }, [
-                Select.ItemText({ class: "my-text" }, "Apple"),
-              ]),
-            ]),
-          ]);
+          yield* Select.Root(
+            { defaultOpen: true },
+            collect(
+              Select.Trigger({}, collect()),
+              Select.Content(
+                {},
+                collect(
+                  Select.Item(
+                    { value: "apple" },
+                    collect(
+                      Select.ItemText({ class: "my-text" }, $.of("Apple")),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const itemText = document.querySelector("[data-select-item-text]");
@@ -391,10 +494,13 @@ describe("Select", () => {
     it("should render with select-content data attribute when open", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Select.Root({ defaultOpen: true }, [
-            Select.Trigger({}, []),
-            Select.Content({}, []),
-          ]);
+          yield* Select.Root(
+            { defaultOpen: true },
+            collect(
+              Select.Trigger({}, collect()),
+              Select.Content({}, collect()),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const content = document.querySelector("[data-select-content]");
@@ -406,10 +512,13 @@ describe("Select", () => {
     it("should have role=listbox", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Select.Root({ defaultOpen: true }, [
-            Select.Trigger({}, []),
-            Select.Content({}, []),
-          ]);
+          yield* Select.Root(
+            { defaultOpen: true },
+            collect(
+              Select.Trigger({}, collect()),
+              Select.Content({}, collect()),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const content = document.querySelector("[data-select-content]");
@@ -421,10 +530,13 @@ describe("Select", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Select.Root({ defaultOpen: true }, [
-            Select.Trigger({}, []),
-            Select.Content({ class: "my-content" }, []),
-          ]);
+          yield* Select.Root(
+            { defaultOpen: true },
+            collect(
+              Select.Trigger({}, collect()),
+              Select.Content({ class: "my-content" }, collect()),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const content = document.querySelector("[data-select-content]");
@@ -438,10 +550,13 @@ describe("Select", () => {
     it("should render with select-group data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Select.Root({ defaultOpen: true }, [
-            Select.Trigger({}, []),
-            Select.Content({}, [Select.Group({}, [])]),
-          ]);
+          yield* Select.Root(
+            { defaultOpen: true },
+            collect(
+              Select.Trigger({}, collect()),
+              Select.Content({}, collect(Select.Group({}, collect()))),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const group = document.querySelector("[data-select-group]");
@@ -453,10 +568,13 @@ describe("Select", () => {
     it("should have role=group", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Select.Root({ defaultOpen: true }, [
-            Select.Trigger({}, []),
-            Select.Content({}, [Select.Group({}, [])]),
-          ]);
+          yield* Select.Root(
+            { defaultOpen: true },
+            collect(
+              Select.Trigger({}, collect()),
+              Select.Content({}, collect(Select.Group({}, collect()))),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const group = document.querySelector("[data-select-group]");
@@ -468,10 +586,16 @@ describe("Select", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Select.Root({ defaultOpen: true }, [
-            Select.Trigger({}, []),
-            Select.Content({}, [Select.Group({ class: "my-group" }, [])]),
-          ]);
+          yield* Select.Root(
+            { defaultOpen: true },
+            collect(
+              Select.Trigger({}, collect()),
+              Select.Content(
+                {},
+                collect(Select.Group({ class: "my-group" }, collect())),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const group = document.querySelector("[data-select-group]");
@@ -485,10 +609,13 @@ describe("Select", () => {
     it("should render with select-label data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Select.Root({ defaultOpen: true }, [
-            Select.Trigger({}, []),
-            Select.Content({}, [Select.Label({}, "Category")]),
-          ]);
+          yield* Select.Root(
+            { defaultOpen: true },
+            collect(
+              Select.Trigger({}, collect()),
+              Select.Content({}, collect(Select.Label({}, $.of("Category")))),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const label = document.querySelector("[data-select-label]");
@@ -501,10 +628,16 @@ describe("Select", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Select.Root({ defaultOpen: true }, [
-            Select.Trigger({}, []),
-            Select.Content({}, [Select.Label({ class: "my-label" }, "Label")]),
-          ]);
+          yield* Select.Root(
+            { defaultOpen: true },
+            collect(
+              Select.Trigger({}, collect()),
+              Select.Content(
+                {},
+                collect(Select.Label({ class: "my-label" }, $.of("Label"))),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const label = document.querySelector("[data-select-label]");
@@ -518,10 +651,13 @@ describe("Select", () => {
     it("should render with select-separator data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Select.Root({ defaultOpen: true }, [
-            Select.Trigger({}, []),
-            Select.Content({}, [Select.Separator({})]),
-          ]);
+          yield* Select.Root(
+            { defaultOpen: true },
+            collect(
+              Select.Trigger({}, collect()),
+              Select.Content({}, collect(Select.Separator({}))),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const separator = document.querySelector("[data-select-separator]");
@@ -533,10 +669,13 @@ describe("Select", () => {
     it("should have role=separator", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Select.Root({ defaultOpen: true }, [
-            Select.Trigger({}, []),
-            Select.Content({}, [Select.Separator({})]),
-          ]);
+          yield* Select.Root(
+            { defaultOpen: true },
+            collect(
+              Select.Trigger({}, collect()),
+              Select.Content({}, collect(Select.Separator({}))),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const separator = document.querySelector("[data-select-separator]");
@@ -548,10 +687,16 @@ describe("Select", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          yield* Select.Root({ defaultOpen: true }, [
-            Select.Trigger({}, []),
-            Select.Content({}, [Select.Separator({ class: "my-separator" })]),
-          ]);
+          yield* Select.Root(
+            { defaultOpen: true },
+            collect(
+              Select.Trigger({}, collect()),
+              Select.Content(
+                {},
+                collect(Select.Separator({ class: "my-separator" })),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
           const separator = document.querySelector("[data-select-separator]");
@@ -567,7 +712,10 @@ describe("Select", () => {
         Effect.gen(function* () {
           const open = yield* Signal.make(false);
 
-          const el = yield* Select.Root({ open }, [Select.Trigger({}, [])]);
+          const el = yield* Select.Root(
+            { open },
+            collect(Select.Trigger({}, collect())),
+          );
 
           const trigger = el.querySelector("[data-select-trigger]");
           expect(trigger?.getAttribute("data-state")).toBe("closed");
@@ -585,13 +733,25 @@ describe("Select", () => {
         Effect.gen(function* () {
           const value = yield* Signal.make("");
 
-          const el = yield* Select.Root({ value, defaultOpen: true }, [
-            Select.Trigger({}, [Select.Value({})]),
-            Select.Content({}, [
-              Select.Item({ value: "apple" }, [Select.ItemText({}, "Apple")]),
-              Select.Item({ value: "banana" }, [Select.ItemText({}, "Banana")]),
-            ]),
-          ]);
+          const el = yield* Select.Root(
+            { value, defaultOpen: true },
+            collect(
+              Select.Trigger({}, collect(Select.Value({}))),
+              Select.Content(
+                {},
+                collect(
+                  Select.Item(
+                    { value: "apple" },
+                    collect(Select.ItemText({}, $.of("Apple"))),
+                  ),
+                  Select.Item(
+                    { value: "banana" },
+                    collect(Select.ItemText({}, $.of("Banana"))),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           yield* Effect.sleep("50 millis");
 
@@ -619,12 +779,18 @@ describe("Select", () => {
                   changes.push(val);
                 }),
             },
-            [
-              Select.Trigger({}, []),
-              Select.Content({}, [
-                Select.Item({ value: "apple" }, [Select.ItemText({}, "Apple")]),
-              ]),
-            ],
+            collect(
+              Select.Trigger({}, collect()),
+              Select.Content(
+                {},
+                collect(
+                  Select.Item(
+                    { value: "apple" },
+                    collect(Select.ItemText({}, $.of("Apple"))),
+                  ),
+                ),
+              ),
+            ),
           );
 
           yield* Effect.sleep("50 millis");
@@ -654,7 +820,7 @@ describe("Select", () => {
                   changes.push(isOpen);
                 }),
             },
-            [Select.Trigger({}, [])],
+            collect(Select.Trigger({}, collect())),
           );
 
           const trigger = el.querySelector(

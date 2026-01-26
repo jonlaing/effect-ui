@@ -5,7 +5,7 @@ import { Signal } from "@effex/core";
 
 import { each, match, when } from ".";
 import { DOMRendererLive } from "../DOMRenderer";
-import { div, li } from "../Element";
+import { $, div, li } from "../Element";
 
 const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
   Effect.runPromise(
@@ -25,8 +25,8 @@ describe("Control", () => {
         Effect.gen(function* () {
           const isVisible = yield* Signal.make(true);
           const el = yield* when(isVisible, {
-            onTrue: () => div("Visible"),
-            onFalse: () => div("Hidden"),
+            onTrue: () => div({}, $.of("Visible")),
+            onFalse: () => div({}, $.of("Hidden")),
           });
 
           expect(el.textContent).toBe("Visible");
@@ -39,8 +39,8 @@ describe("Control", () => {
         Effect.gen(function* () {
           const isVisible = yield* Signal.make(false);
           const el = yield* when(isVisible, {
-            onTrue: () => div("Visible"),
-            onFalse: () => div("Hidden"),
+            onTrue: () => div({}, $.of("Visible")),
+            onFalse: () => div({}, $.of("Hidden")),
           });
 
           expect(el.textContent).toBe("Hidden");
@@ -53,8 +53,8 @@ describe("Control", () => {
         Effect.gen(function* () {
           const isVisible = yield* Signal.make(true);
           const el = yield* when(isVisible, {
-            onTrue: () => div("Visible"),
-            onFalse: () => div("Hidden"),
+            onTrue: () => div({}, $.of("Visible")),
+            onFalse: () => div({}, $.of("Hidden")),
           });
 
           expect(el.textContent).toBe("Visible");
@@ -81,9 +81,9 @@ describe("Control", () => {
           yield* when(isVisible, {
             onTrue: () => {
               renderCount++;
-              return div("Visible");
+              return div({}, $.of("Visible"));
             },
-            onFalse: () => div("Hidden"),
+            onFalse: () => div({}, $.of("Hidden")),
           });
 
           expect(renderCount).toBe(1);
@@ -107,9 +107,9 @@ describe("Control", () => {
           );
           const el = yield* match(status, {
             cases: [
-              { pattern: "loading", render: () => div("Loading...") },
-              { pattern: "success", render: () => div("Done!") },
-              { pattern: "error", render: () => div("Failed") },
+              { pattern: "loading", render: () => div({}, $.of("Loading...")) },
+              { pattern: "success", render: () => div({}, $.of("Done!")) },
+              { pattern: "error", render: () => div({}, $.of("Failed")) },
             ],
           });
 
@@ -126,9 +126,9 @@ describe("Control", () => {
           );
           const el = yield* match(status, {
             cases: [
-              { pattern: "loading", render: () => div("Loading...") },
-              { pattern: "success", render: () => div("Done!") },
-              { pattern: "error", render: () => div("Failed") },
+              { pattern: "loading", render: () => div({}, $.of("Loading...")) },
+              { pattern: "success", render: () => div({}, $.of("Done!")) },
+              { pattern: "error", render: () => div({}, $.of("Failed")) },
             ],
           });
 
@@ -153,10 +153,10 @@ describe("Control", () => {
           const value = yield* Signal.make(999);
           const el = yield* match(value, {
             cases: [
-              { pattern: 1, render: () => div("One") },
-              { pattern: 2, render: () => div("Two") },
+              { pattern: 1, render: () => div({}, $.of("One")) },
+              { pattern: 2, render: () => div({}, $.of("Two")) },
             ],
-            fallback: () => div("Unknown"),
+            fallback: () => div({}, $.of("Unknown")),
           });
 
           expect(el.textContent).toBe("Unknown");
@@ -177,7 +177,7 @@ describe("Control", () => {
 
           const el = yield* each(items, {
             key: (item) => item.id,
-            render: (item, _index) => li(item.map((i) => i.name)),
+            render: (item, _index) => li({}, $.of(item.map((i) => i.name))),
           });
 
           expect(el.children.length).toBe(3);
@@ -195,7 +195,7 @@ describe("Control", () => {
 
           const el = yield* each(items, {
             key: (item) => item.id,
-            render: (item, _index) => li(item.map((i) => i.name)),
+            render: (item, _index) => li({}, $.of(item.map((i) => i.name))),
           });
 
           expect(el.children.length).toBe(1);
@@ -219,7 +219,7 @@ describe("Control", () => {
 
           const el = yield* each(items, {
             key: (item) => item.id,
-            render: (item, _index) => li(item.map((i) => i.name)),
+            render: (item, _index) => li({}, $.of(item.map((i) => i.name))),
           });
 
           expect(el.children.length).toBe(2);
@@ -240,7 +240,7 @@ describe("Control", () => {
 
           const el = yield* each(items, {
             key: (item) => item.id,
-            render: (item, _index) => li(item.map((i) => i.name)),
+            render: (item, _index) => li({}, $.of(item.map((i) => i.name))),
           });
 
           expect(el.children[0].textContent).toBe("Alice");
@@ -266,7 +266,7 @@ describe("Control", () => {
 
           const el = yield* each(items, {
             key: (item) => item.id,
-            render: (item, _index) => li(item.map((i) => i.name)),
+            render: (item, _index) => li({}, $.of(item.map((i) => i.name))),
           });
 
           expect(el.children[0].textContent).toBe("Alice");
@@ -292,7 +292,7 @@ describe("Control", () => {
 
           const el = yield* each(items, {
             key: (item) => item.id,
-            render: (item, _index) => li(item.map((i) => i.name)),
+            render: (item, _index) => li({}, $.of(item.map((i) => i.name))),
           });
 
           expect(el.children.length).toBe(0);

@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { $, Component, Readable, Signal, type ClassValue } from "@effex/dom";
+import { $, Readable, Signal, type ClassValue, type Element } from "@effex/dom";
 
 /**
  * Checkbox state - can be checked, unchecked, or indeterminate.
@@ -81,55 +81,58 @@ export interface CheckboxProps {
  * Checkbox({ name: "terms", required: true })
  * ```
  */
-export const Checkbox = Component.gen(function* (props: CheckboxProps) {
-  const checked = yield* Signal.fromReactive(
-    props.checked,
-    props.defaultChecked ?? false,
-  );
+export const Checkbox = (
+  props: CheckboxProps,
+): Element.Element<HTMLButtonElement> =>
+  Effect.gen(function* () {
+    const checked = yield* Signal.fromReactive(
+      props.checked,
+      props.defaultChecked ?? false,
+    );
 
-  // Normalize props to Readables
-  const disabled = Readable.of(props.disabled ?? false);
-  const required = Readable.of(props.required ?? false);
+    // Normalize props to Readables
+    const disabled = Readable.of(props.disabled ?? false);
+    const required = Readable.of(props.required ?? false);
 
-  const handleClick = () =>
-    Effect.gen(function* () {
-      if (yield* disabled.get) return;
+    const handleClick = () =>
+      Effect.gen(function* () {
+        if (yield* disabled.get) return;
 
-      const current = yield* checked.get;
-      // Clicking always toggles to checked or unchecked (never to indeterminate)
-      const newChecked = current === true ? false : true;
-      yield* props.onCheckedChange?.(newChecked) ?? Effect.void;
-      yield* checked.set(newChecked);
+        const current = yield* checked.get;
+        // Clicking always toggles to checked or unchecked (never to indeterminate)
+        const newChecked = current === true ? false : true;
+        yield* props.onCheckedChange?.(newChecked) ?? Effect.void;
+        yield* checked.set(newChecked);
+      });
+
+    const dataState = checked.map((c) => {
+      if (c === "indeterminate") return "indeterminate";
+      return c ? "checked" : "unchecked";
     });
 
-  const dataState = checked.map((c) => {
-    if (c === "indeterminate") return "indeterminate";
-    return c ? "checked" : "unchecked";
+    const ariaChecked = checked.map((c) => {
+      if (c === "indeterminate") return "mixed";
+      return c ? "true" : "false";
+    });
+
+    const dataDisabled = disabled.map((d) => (d ? "" : undefined));
+    const ariaRequired = required.map((r) => (r ? "true" : undefined));
+
+    return yield* $.button(
+      {
+        type: "button",
+        role: "checkbox",
+        id: props.id,
+        class: props.class,
+        disabled,
+        "aria-checked": ariaChecked,
+        "aria-required": ariaRequired,
+        "data-state": dataState,
+        "data-disabled": dataDisabled,
+        name: props.name,
+        value: props.value ?? "on",
+        onClick: handleClick,
+      },
+      $.span({ "data-checkbox-indicator": "" }),
+    );
   });
-
-  const ariaChecked = checked.map((c) => {
-    if (c === "indeterminate") return "mixed";
-    return c ? "true" : "false";
-  });
-
-  const dataDisabled = disabled.map((d) => (d ? "" : undefined));
-  const ariaRequired = required.map((r) => (r ? "true" : undefined));
-
-  return yield* $.button(
-    {
-      type: "button",
-      role: "checkbox",
-      id: props.id,
-      class: props.class,
-      disabled,
-      "aria-checked": ariaChecked,
-      "aria-required": ariaRequired,
-      "data-state": dataState,
-      "data-disabled": dataDisabled,
-      name: props.name,
-      value: props.value ?? "on",
-      onClick: handleClick,
-    },
-    $.span({ "data-checkbox-indicator": "" }),
-  );
-});

@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { DOMRendererLive, Signal } from "@effex/dom";
+import { $, collect, DOMRendererLive, Signal } from "@effex/dom";
 
 import { TreeView } from "./TreeView";
 
@@ -21,9 +21,15 @@ describe("TreeView", () => {
     it("should render with role=tree", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* TreeView.Root({}, [
-            TreeView.Item({ id: "item-1" }, [TreeView.ItemLabel({}, "Item 1")]),
-          ]);
+          const el = yield* TreeView.Root(
+            {},
+            collect(
+              TreeView.Item(
+                { id: "item-1" },
+                collect(TreeView.ItemLabel({}, $.of("Item 1"))),
+              ),
+            ),
+          );
 
           expect(el.getAttribute("role")).toBe("tree");
         }),
@@ -33,7 +39,10 @@ describe("TreeView", () => {
     it("should set aria-label when provided", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* TreeView.Root({ "aria-label": "File browser" }, []);
+          const el = yield* TreeView.Root(
+            { "aria-label": "File browser" },
+            collect(),
+          );
 
           expect(el.getAttribute("aria-label")).toBe("File browser");
         }),
@@ -43,7 +52,10 @@ describe("TreeView", () => {
     it("should set aria-multiselectable for multiple selection mode", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* TreeView.Root({ selectionMode: "multiple" }, []);
+          const el = yield* TreeView.Root(
+            { selectionMode: "multiple" },
+            collect(),
+          );
 
           expect(el.getAttribute("aria-multiselectable")).toBe("true");
         }),
@@ -53,7 +65,10 @@ describe("TreeView", () => {
     it("should not set aria-multiselectable for single selection mode", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* TreeView.Root({ selectionMode: "single" }, []);
+          const el = yield* TreeView.Root(
+            { selectionMode: "single" },
+            collect(),
+          );
 
           expect(el.getAttribute("aria-multiselectable")).toBeNull();
         }),
@@ -65,9 +80,15 @@ describe("TreeView", () => {
     it("should render with role=treeitem", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* TreeView.Root({}, [
-            TreeView.Item({ id: "item-1" }, [TreeView.ItemLabel({}, "Item 1")]),
-          ]);
+          const el = yield* TreeView.Root(
+            {},
+            collect(
+              TreeView.Item(
+                { id: "item-1" },
+                collect(TreeView.ItemLabel({}, $.of("Item 1"))),
+              ),
+            ),
+          );
 
           const item = el.querySelector("[role='treeitem']");
           expect(item).not.toBeNull();
@@ -79,16 +100,26 @@ describe("TreeView", () => {
       await runTest(
         Effect.gen(function* () {
           // Need to expand parent to render nested items
-          const el = yield* TreeView.Root({ defaultExpanded: ["folder-1"] }, [
-            TreeView.Item({ id: "folder-1" }, [
-              TreeView.ItemLabel({}, "Folder 1"),
-              TreeView.ItemContent({}, [
-                TreeView.Item({ id: "file-1" }, [
-                  TreeView.ItemLabel({}, "File 1"),
-                ]),
-              ]),
-            ]),
-          ]);
+          const el = yield* TreeView.Root(
+            { defaultExpanded: ["folder-1"] },
+            collect(
+              TreeView.Item(
+                { id: "folder-1" },
+                collect(
+                  TreeView.ItemLabel({}, $.of("Folder 1")),
+                  TreeView.ItemContent(
+                    {},
+                    collect(
+                      TreeView.Item(
+                        { id: "file-1" },
+                        collect(TreeView.ItemLabel({}, $.of("File 1"))),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const items = el.querySelectorAll("[role='treeitem']");
           expect(items[0]?.getAttribute("aria-level")).toBe("1");
@@ -100,16 +131,26 @@ describe("TreeView", () => {
     it("should have data-state=closed by default", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* TreeView.Root({}, [
-            TreeView.Item({ id: "folder-1" }, [
-              TreeView.ItemLabel({}, "Folder 1"),
-              TreeView.ItemContent({}, [
-                TreeView.Item({ id: "file-1" }, [
-                  TreeView.ItemLabel({}, "File 1"),
-                ]),
-              ]),
-            ]),
-          ]);
+          const el = yield* TreeView.Root(
+            {},
+            collect(
+              TreeView.Item(
+                { id: "folder-1" },
+                collect(
+                  TreeView.ItemLabel({}, $.of("Folder 1")),
+                  TreeView.ItemContent(
+                    {},
+                    collect(
+                      TreeView.Item(
+                        { id: "file-1" },
+                        collect(TreeView.ItemLabel({}, $.of("File 1"))),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const item = el.querySelector("[role='treeitem']");
           expect(item?.getAttribute("data-state")).toBe("closed");
@@ -120,16 +161,26 @@ describe("TreeView", () => {
     it("should have data-state=open when expanded", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* TreeView.Root({ defaultExpanded: ["folder-1"] }, [
-            TreeView.Item({ id: "folder-1" }, [
-              TreeView.ItemLabel({}, "Folder 1"),
-              TreeView.ItemContent({}, [
-                TreeView.Item({ id: "file-1" }, [
-                  TreeView.ItemLabel({}, "File 1"),
-                ]),
-              ]),
-            ]),
-          ]);
+          const el = yield* TreeView.Root(
+            { defaultExpanded: ["folder-1"] },
+            collect(
+              TreeView.Item(
+                { id: "folder-1" },
+                collect(
+                  TreeView.ItemLabel({}, $.of("Folder 1")),
+                  TreeView.ItemContent(
+                    {},
+                    collect(
+                      TreeView.Item(
+                        { id: "file-1" },
+                        collect(TreeView.ItemLabel({}, $.of("File 1"))),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const item = el.querySelector("[role='treeitem']");
           expect(item?.getAttribute("data-state")).toBe("open");
@@ -141,16 +192,28 @@ describe("TreeView", () => {
       await runTest(
         Effect.gen(function* () {
           // Need to expand parent to render nested items
-          const el = yield* TreeView.Root({ defaultExpanded: ["folder-1"] }, [
-            TreeView.Item({ id: "folder-1" }, [
-              TreeView.ItemLabel({}, "Folder (has children)"),
-              TreeView.ItemContent({}, [
-                TreeView.Item({ id: "file-1" }, [
-                  TreeView.ItemLabel({}, "File (no children)"),
-                ]),
-              ]),
-            ]),
-          ]);
+          const el = yield* TreeView.Root(
+            { defaultExpanded: ["folder-1"] },
+            collect(
+              TreeView.Item(
+                { id: "folder-1" },
+                collect(
+                  TreeView.ItemLabel({}, $.of("Folder (has children)")),
+                  TreeView.ItemContent(
+                    {},
+                    collect(
+                      TreeView.Item(
+                        { id: "file-1" },
+                        collect(
+                          TreeView.ItemLabel({}, $.of("File (no children)")),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           // Wait for hasChildren signal to propagate
           yield* Effect.sleep("10 millis");
@@ -170,16 +233,26 @@ describe("TreeView", () => {
       await runTest(
         Effect.gen(function* () {
           // Group is only rendered when parent is expanded
-          const el = yield* TreeView.Root({ defaultExpanded: ["folder-1"] }, [
-            TreeView.Item({ id: "folder-1" }, [
-              TreeView.ItemLabel({}, "Folder 1"),
-              TreeView.ItemContent({}, [
-                TreeView.Item({ id: "file-1" }, [
-                  TreeView.ItemLabel({}, "File 1"),
-                ]),
-              ]),
-            ]),
-          ]);
+          const el = yield* TreeView.Root(
+            { defaultExpanded: ["folder-1"] },
+            collect(
+              TreeView.Item(
+                { id: "folder-1" },
+                collect(
+                  TreeView.ItemLabel({}, $.of("Folder 1")),
+                  TreeView.ItemContent(
+                    {},
+                    collect(
+                      TreeView.Item(
+                        { id: "file-1" },
+                        collect(TreeView.ItemLabel({}, $.of("File 1"))),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const group = el.querySelector("[role='group']");
           expect(group).toBeTruthy();
@@ -191,16 +264,26 @@ describe("TreeView", () => {
       await runTest(
         Effect.gen(function* () {
           // When collapsed, ItemContent renders a hidden placeholder, not the group
-          const el = yield* TreeView.Root({}, [
-            TreeView.Item({ id: "folder-1" }, [
-              TreeView.ItemLabel({}, "Folder 1"),
-              TreeView.ItemContent({}, [
-                TreeView.Item({ id: "file-1" }, [
-                  TreeView.ItemLabel({}, "File 1"),
-                ]),
-              ]),
-            ]),
-          ]);
+          const el = yield* TreeView.Root(
+            {},
+            collect(
+              TreeView.Item(
+                { id: "folder-1" },
+                collect(
+                  TreeView.ItemLabel({}, $.of("Folder 1")),
+                  TreeView.ItemContent(
+                    {},
+                    collect(
+                      TreeView.Item(
+                        { id: "file-1" },
+                        collect(TreeView.ItemLabel({}, $.of("File 1"))),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const group = el.querySelector("[role='group']");
           expect(group).toBeNull();
@@ -211,16 +294,26 @@ describe("TreeView", () => {
     it("should have data-state=open when parent is expanded", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* TreeView.Root({ defaultExpanded: ["folder-1"] }, [
-            TreeView.Item({ id: "folder-1" }, [
-              TreeView.ItemLabel({}, "Folder 1"),
-              TreeView.ItemContent({}, [
-                TreeView.Item({ id: "file-1" }, [
-                  TreeView.ItemLabel({}, "File 1"),
-                ]),
-              ]),
-            ]),
-          ]);
+          const el = yield* TreeView.Root(
+            { defaultExpanded: ["folder-1"] },
+            collect(
+              TreeView.Item(
+                { id: "folder-1" },
+                collect(
+                  TreeView.ItemLabel({}, $.of("Folder 1")),
+                  TreeView.ItemContent(
+                    {},
+                    collect(
+                      TreeView.Item(
+                        { id: "file-1" },
+                        collect(TreeView.ItemLabel({}, $.of("File 1"))),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const group = el.querySelector("[role='group']");
           expect(group?.getAttribute("data-state")).toBe("open");
@@ -233,16 +326,26 @@ describe("TreeView", () => {
     it("should toggle expanded state on click", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* TreeView.Root({}, [
-            TreeView.Item({ id: "folder-1" }, [
-              TreeView.ItemLabel({}, "Folder 1"),
-              TreeView.ItemContent({}, [
-                TreeView.Item({ id: "file-1" }, [
-                  TreeView.ItemLabel({}, "File 1"),
-                ]),
-              ]),
-            ]),
-          ]);
+          const el = yield* TreeView.Root(
+            {},
+            collect(
+              TreeView.Item(
+                { id: "folder-1" },
+                collect(
+                  TreeView.ItemLabel({}, $.of("Folder 1")),
+                  TreeView.ItemContent(
+                    {},
+                    collect(
+                      TreeView.Item(
+                        { id: "file-1" },
+                        collect(TreeView.ItemLabel({}, $.of("File 1"))),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const label = el.querySelector("[data-tree-label]") as HTMLElement;
           const item = el.querySelector("[role='treeitem']");
@@ -277,16 +380,23 @@ describe("TreeView", () => {
                   changes.push(expanded);
                 }),
             },
-            [
-              TreeView.Item({ id: "folder-1" }, [
-                TreeView.ItemLabel({}, "Folder 1"),
-                TreeView.ItemContent({}, [
-                  TreeView.Item({ id: "file-1" }, [
-                    TreeView.ItemLabel({}, "File 1"),
-                  ]),
-                ]),
-              ]),
-            ],
+            collect(
+              TreeView.Item(
+                { id: "folder-1" },
+                collect(
+                  TreeView.ItemLabel({}, $.of("Folder 1")),
+                  TreeView.ItemContent(
+                    {},
+                    collect(
+                      TreeView.Item(
+                        { id: "file-1" },
+                        collect(TreeView.ItemLabel({}, $.of("File 1"))),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           );
 
           const label = el.querySelector("[data-tree-label]") as HTMLElement;
@@ -306,11 +416,15 @@ describe("TreeView", () => {
       it("should not select items on click", async () => {
         await runTest(
           Effect.gen(function* () {
-            const el = yield* TreeView.Root({}, [
-              TreeView.Item({ id: "item-1" }, [
-                TreeView.ItemLabel({}, "Item 1"),
-              ]),
-            ]);
+            const el = yield* TreeView.Root(
+              {},
+              collect(
+                TreeView.Item(
+                  { id: "item-1" },
+                  collect(TreeView.ItemLabel({}, $.of("Item 1"))),
+                ),
+              ),
+            );
 
             const label = el.querySelector("[data-tree-label]") as HTMLElement;
             const item = el.querySelector("[role='treeitem']");
@@ -328,14 +442,19 @@ describe("TreeView", () => {
       it("should select item on click", async () => {
         await runTest(
           Effect.gen(function* () {
-            const el = yield* TreeView.Root({ selectionMode: "single" }, [
-              TreeView.Item({ id: "item-1" }, [
-                TreeView.ItemLabel({}, "Item 1"),
-              ]),
-              TreeView.Item({ id: "item-2" }, [
-                TreeView.ItemLabel({}, "Item 2"),
-              ]),
-            ]);
+            const el = yield* TreeView.Root(
+              { selectionMode: "single" },
+              collect(
+                TreeView.Item(
+                  { id: "item-1" },
+                  collect(TreeView.ItemLabel({}, $.of("Item 1"))),
+                ),
+                TreeView.Item(
+                  { id: "item-2" },
+                  collect(TreeView.ItemLabel({}, $.of("Item 2"))),
+                ),
+              ),
+            );
 
             const labels = el.querySelectorAll("[data-tree-label]");
             const items = el.querySelectorAll("[role='treeitem']");
@@ -354,14 +473,16 @@ describe("TreeView", () => {
           Effect.gen(function* () {
             const el = yield* TreeView.Root(
               { selectionMode: "single", defaultSelected: ["item-1"] },
-              [
-                TreeView.Item({ id: "item-1" }, [
-                  TreeView.ItemLabel({}, "Item 1"),
-                ]),
-                TreeView.Item({ id: "item-2" }, [
-                  TreeView.ItemLabel({}, "Item 2"),
-                ]),
-              ],
+              collect(
+                TreeView.Item(
+                  { id: "item-1" },
+                  collect(TreeView.ItemLabel({}, $.of("Item 1"))),
+                ),
+                TreeView.Item(
+                  { id: "item-2" },
+                  collect(TreeView.ItemLabel({}, $.of("Item 2"))),
+                ),
+              ),
             );
 
             const labels = el.querySelectorAll("[data-tree-label]");
@@ -383,14 +504,16 @@ describe("TreeView", () => {
           Effect.gen(function* () {
             const el = yield* TreeView.Root(
               { selectionMode: "multiple", defaultSelected: ["item-1"] },
-              [
-                TreeView.Item({ id: "item-1" }, [
-                  TreeView.ItemLabel({}, "Item 1"),
-                ]),
-                TreeView.Item({ id: "item-2" }, [
-                  TreeView.ItemLabel({}, "Item 2"),
-                ]),
-              ],
+              collect(
+                TreeView.Item(
+                  { id: "item-1" },
+                  collect(TreeView.ItemLabel({}, $.of("Item 1"))),
+                ),
+                TreeView.Item(
+                  { id: "item-2" },
+                  collect(TreeView.ItemLabel({}, $.of("Item 2"))),
+                ),
+              ),
             );
 
             const labels = el.querySelectorAll("[data-tree-label]");
@@ -410,11 +533,12 @@ describe("TreeView", () => {
           Effect.gen(function* () {
             const el = yield* TreeView.Root(
               { selectionMode: "multiple", defaultSelected: ["item-1"] },
-              [
-                TreeView.Item({ id: "item-1" }, [
-                  TreeView.ItemLabel({}, "Item 1"),
-                ]),
-              ],
+              collect(
+                TreeView.Item(
+                  { id: "item-1" },
+                  collect(TreeView.ItemLabel({}, $.of("Item 1"))),
+                ),
+              ),
             );
 
             const label = el.querySelector("[data-tree-label]") as HTMLElement;
@@ -443,11 +567,12 @@ describe("TreeView", () => {
                   changes.push(selected);
                 }),
             },
-            [
-              TreeView.Item({ id: "item-1" }, [
-                TreeView.ItemLabel({}, "Item 1"),
-              ]),
-            ],
+            collect(
+              TreeView.Item(
+                { id: "item-1" },
+                collect(TreeView.ItemLabel({}, $.of("Item 1"))),
+              ),
+            ),
           );
 
           const label = el.querySelector("[data-tree-label]") as HTMLElement;
@@ -466,7 +591,7 @@ describe("TreeView", () => {
     it("should set data-disabled on root when disabled", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* TreeView.Root({ disabled: true }, []);
+          const el = yield* TreeView.Root({ disabled: true }, collect());
 
           expect(el.hasAttribute("data-disabled")).toBe(true);
         }),
@@ -476,16 +601,26 @@ describe("TreeView", () => {
     it("should prevent expand when root is disabled", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* TreeView.Root({ disabled: true }, [
-            TreeView.Item({ id: "folder-1" }, [
-              TreeView.ItemLabel({}, "Folder 1"),
-              TreeView.ItemContent({}, [
-                TreeView.Item({ id: "file-1" }, [
-                  TreeView.ItemLabel({}, "File 1"),
-                ]),
-              ]),
-            ]),
-          ]);
+          const el = yield* TreeView.Root(
+            { disabled: true },
+            collect(
+              TreeView.Item(
+                { id: "folder-1" },
+                collect(
+                  TreeView.ItemLabel({}, $.of("Folder 1")),
+                  TreeView.ItemContent(
+                    {},
+                    collect(
+                      TreeView.Item(
+                        { id: "file-1" },
+                        collect(TreeView.ItemLabel({}, $.of("File 1"))),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const label = el.querySelector("[data-tree-label]") as HTMLElement;
           const item = el.querySelector("[role='treeitem']");
@@ -501,12 +636,19 @@ describe("TreeView", () => {
     it("should disable individual items", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* TreeView.Root({ selectionMode: "single" }, [
-            TreeView.Item({ id: "item-1" }, [TreeView.ItemLabel({}, "Item 1")]),
-            TreeView.Item({ id: "item-2", disabled: true }, [
-              TreeView.ItemLabel({}, "Item 2"),
-            ]),
-          ]);
+          const el = yield* TreeView.Root(
+            { selectionMode: "single" },
+            collect(
+              TreeView.Item(
+                { id: "item-1" },
+                collect(TreeView.ItemLabel({}, $.of("Item 1"))),
+              ),
+              TreeView.Item(
+                { id: "item-2", disabled: true },
+                collect(TreeView.ItemLabel({}, $.of("Item 2"))),
+              ),
+            ),
+          );
 
           const labels = el.querySelectorAll("[data-tree-label]");
           const items = el.querySelectorAll("[role='treeitem']");
@@ -529,16 +671,26 @@ describe("TreeView", () => {
         Effect.gen(function* () {
           const expanded = yield* Signal.Set.make<string>(["folder-1"]);
 
-          const el = yield* TreeView.Root({ expanded }, [
-            TreeView.Item({ id: "folder-1" }, [
-              TreeView.ItemLabel({}, "Folder 1"),
-              TreeView.ItemContent({}, [
-                TreeView.Item({ id: "file-1" }, [
-                  TreeView.ItemLabel({}, "File 1"),
-                ]),
-              ]),
-            ]),
-          ]);
+          const el = yield* TreeView.Root(
+            { expanded },
+            collect(
+              TreeView.Item(
+                { id: "folder-1" },
+                collect(
+                  TreeView.ItemLabel({}, $.of("Folder 1")),
+                  TreeView.ItemContent(
+                    {},
+                    collect(
+                      TreeView.Item(
+                        { id: "file-1" },
+                        collect(TreeView.ItemLabel({}, $.of("File 1"))),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const item = el.querySelector("[role='treeitem']");
           expect(item?.getAttribute("data-state")).toBe("open");
@@ -558,14 +710,16 @@ describe("TreeView", () => {
 
           const el = yield* TreeView.Root(
             { selectionMode: "single", selected },
-            [
-              TreeView.Item({ id: "item-1" }, [
-                TreeView.ItemLabel({}, "Item 1"),
-              ]),
-              TreeView.Item({ id: "item-2" }, [
-                TreeView.ItemLabel({}, "Item 2"),
-              ]),
-            ],
+            collect(
+              TreeView.Item(
+                { id: "item-1" },
+                collect(TreeView.ItemLabel({}, $.of("Item 1"))),
+              ),
+              TreeView.Item(
+                { id: "item-2" },
+                collect(TreeView.ItemLabel({}, $.of("Item 2"))),
+              ),
+            ),
           );
 
           const items = el.querySelectorAll("[role='treeitem']");
@@ -586,21 +740,39 @@ describe("TreeView", () => {
     it("should render 3+ levels of nesting correctly", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* TreeView.Root({ defaultExpanded: ["l1", "l2"] }, [
-            TreeView.Item({ id: "l1" }, [
-              TreeView.ItemLabel({}, "Level 1"),
-              TreeView.ItemContent({}, [
-                TreeView.Item({ id: "l2" }, [
-                  TreeView.ItemLabel({}, "Level 2"),
-                  TreeView.ItemContent({}, [
-                    TreeView.Item({ id: "l3" }, [
-                      TreeView.ItemLabel({}, "Level 3"),
-                    ]),
-                  ]),
-                ]),
-              ]),
-            ]),
-          ]);
+          const el = yield* TreeView.Root(
+            { defaultExpanded: ["l1", "l2"] },
+            collect(
+              TreeView.Item(
+                { id: "l1" },
+                collect(
+                  TreeView.ItemLabel({}, $.of("Level 1")),
+                  TreeView.ItemContent(
+                    {},
+                    collect(
+                      TreeView.Item(
+                        { id: "l2" },
+                        collect(
+                          TreeView.ItemLabel({}, $.of("Level 2")),
+                          TreeView.ItemContent(
+                            {},
+                            collect(
+                              TreeView.Item(
+                                { id: "l3" },
+                                collect(
+                                  TreeView.ItemLabel({}, $.of("Level 3")),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
 
           const items = el.querySelectorAll("[role='treeitem']");
           expect(items.length).toBe(3);

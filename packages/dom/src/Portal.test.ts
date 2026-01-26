@@ -1,6 +1,7 @@
 import { Effect, Exit, Scope } from "effect";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { collect } from "./Collect";
 import { DOMRendererLive } from "./DOMRenderer";
 import { $ } from "./Element";
 import { Portal } from "./Portal";
@@ -25,7 +26,7 @@ describe("Portal", () => {
 
     const program = Effect.gen(function* () {
       const placeholder = yield* Portal(() =>
-        $.div({ id: "portal-content" }, "Hello from portal"),
+        $.div({ id: "portal-content" }, $.of("Hello from portal")),
       );
       return placeholder;
     });
@@ -57,7 +58,7 @@ describe("Portal", () => {
 
     const program = Effect.gen(function* () {
       const placeholder = yield* Portal({ target: portalRoot }, () =>
-        $.div({ id: "portal-content" }, "Hello from portal"),
+        $.div({ id: "portal-content" }, $.of("Hello from portal")),
       );
       return placeholder;
     });
@@ -83,7 +84,7 @@ describe("Portal", () => {
 
     const program = Effect.gen(function* () {
       const placeholder = yield* Portal({ target: "#portal-root" }, () =>
-        $.div({ id: "portal-content" }, "Hello from portal"),
+        $.div({ id: "portal-content" }, $.of("Hello from portal")),
       );
       return placeholder;
     });
@@ -109,7 +110,7 @@ describe("Portal", () => {
 
     const program = Effect.gen(function* () {
       yield* Portal({ target: portalRoot }, () =>
-        $.div({ id: "portal-content" }, "Hello from portal"),
+        $.div({ id: "portal-content" }, $.of("Hello from portal")),
       );
     });
 
@@ -135,7 +136,7 @@ describe("Portal", () => {
 
     const program = Effect.gen(function* () {
       const placeholder = yield* Portal({ target: "#non-existent" }, () =>
-        $.div({ id: "portal-content" }, "Hello"),
+        $.div({ id: "portal-content" }, $.of("Hello")),
       );
       return placeholder;
     });
@@ -164,14 +165,17 @@ describe("Portal", () => {
 
     const program = Effect.gen(function* () {
       yield* Portal({ target: portalRoot }, () =>
-        $.div({ id: "modal" }, [
-          $.div({ class: "modal-header" }, "Title"),
-          $.div({ class: "modal-body" }, "Content"),
-          $.div({ class: "modal-footer" }, [
-            $.button("Cancel"),
-            $.button("OK"),
-          ]),
-        ]),
+        $.div(
+          { id: "modal" },
+          collect(
+            $.div({ class: "modal-header" }, $.of("Title")),
+            $.div({ class: "modal-body" }, $.of("Content")),
+            $.div(
+              { class: "modal-footer" },
+              collect($.button({}, $.of("Cancel")), $.button({}, $.of("OK"))),
+            ),
+          ),
+        ),
       );
     });
 

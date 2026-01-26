@@ -2,16 +2,14 @@ import { Context, Effect, MutableRef } from "effect";
 
 import {
   $,
-  Component,
   each,
   Element,
-  InferChildError,
   mergeProps,
   Portal,
   provide,
   Signal,
+  type ChildEffect,
   type ClassValue,
-  type InferChildRequirements,
   type ListAnimationOptions,
   type Readable,
 } from "@effex/dom";
@@ -124,67 +122,71 @@ export interface ToastProviderProps {
  * Toast provider that manages toast state and provides context.
  * Wrap your app with this component.
  */
-const Provider = Component.gen(function* (props: ToastProviderProps, children) {
-  const position = props.position ?? "bottom-right";
-  const maxVisible = props.maxVisible ?? 5;
-  const defaultDuration = props.defaultDuration ?? 5000;
-  const swipeThreshold = props.swipeThreshold ?? 50;
-  const swipeDirection = props.swipeDirection ?? getSwipeDirection(position);
+const Provider = <E = never, R = never>(
+  props: ToastProviderProps,
+  children: ChildEffect<E, R | ToastCtx>,
+): Element.Element<HTMLDivElement, E, R> =>
+  Effect.gen(function* () {
+    const position = props.position ?? "bottom-right";
+    const maxVisible = props.maxVisible ?? 5;
+    const defaultDuration = props.defaultDuration ?? 5000;
+    const swipeThreshold = props.swipeThreshold ?? 50;
+    const swipeDirection = props.swipeDirection ?? getSwipeDirection(position);
 
-  // Toast state
-  const toasts = yield* Signal.Array.make<ToastData>([]);
+    // Toast state
+    const toasts = yield* Signal.Array.make<ToastData>([]);
 
-  // Add a new toast
-  const add = (options: ToastOptions): Effect.Effect<string> =>
-    Effect.gen(function* () {
-      const id = generateToastId();
-      const toast: ToastData = {
-        ...options,
-        id,
-        type: options.type ?? "default",
-      };
-      yield* toasts.push(toast);
-      return id;
-    });
+    // Add a new toast
+    const add = (options: ToastOptions): Effect.Effect<string> =>
+      Effect.gen(function* () {
+        const id = generateToastId();
+        const toast: ToastData = {
+          ...options,
+          id,
+          type: options.type ?? "default",
+        };
+        yield* toasts.push(toast);
+        return id;
+      });
 
-  // Dismiss a toast
-  const dismiss = (id: string): Effect.Effect<void> =>
-    Effect.gen(function* () {
-      const current = yield* toasts.get;
-      const toast = current.find((t) => t.id === id);
-      if (toast?.onDismiss) {
-        yield* toast.onDismiss();
-      }
-      yield* toasts.update((items) => items.filter((t) => t.id !== id));
-    });
+    // Dismiss a toast
+    const dismiss = (id: string): Effect.Effect<void> =>
+      Effect.gen(function* () {
+        const current = yield* toasts.get;
+        const toast = current.find((t) => t.id === id);
+        if (toast?.onDismiss) {
+          yield* toast.onDismiss();
+        }
+        yield* toasts.update((items) => items.filter((t) => t.id !== id));
+      });
 
-  // Dismiss all toasts
-  const dismissAll = (): Effect.Effect<void> =>
-    Effect.gen(function* () {
-      const current = yield* toasts.get;
-      for (const toast of current) {
-        yield* toast.onDismiss?.() ?? Effect.void;
-      }
-      yield* toasts.clear();
-    });
+    // Dismiss all toasts
+    const dismissAll = (): Effect.Effect<void> =>
+      Effect.gen(function* () {
+        const current = yield* toasts.get;
+        for (const toast of current) {
+          yield* toast.onDismiss?.() ?? Effect.void;
+        }
+        yield* toasts.clear();
+      });
 
-  const ctx: ToastContext = {
-    toasts,
-    add,
-    dismiss,
-    dismissAll,
-    position,
-    maxVisible,
-    defaultDuration,
-    swipeThreshold,
-    swipeDirection,
-  };
+    const ctx: ToastContext = {
+      toasts,
+      add,
+      dismiss,
+      dismissAll,
+      position,
+      maxVisible,
+      defaultDuration,
+      swipeThreshold,
+      swipeDirection,
+    };
 
-  return yield* $.div(
-    { style: { display: "contents" } },
-    provide(ToastCtx, ctx, children),
-  );
-});
+    return yield* $.div(
+      { style: { display: "contents" } },
+      provide(ToastCtx, ctx, children),
+    );
+  }) as Element.Element<HTMLDivElement, E, R>;
 
 /**
  * Props for Toast.Viewport
@@ -205,51 +207,45 @@ export interface ToastViewportProps {
  * Children are used as a template that's rendered for each toast with ToastItemCtx.
  * When no children are provided, uses a default template.
  */
-const Viewport = Component.gen(function* (props: ToastViewportProps, children) {
-  const ctx = yield* ToastCtx;
-  const viewportRef = yield* Element.ref<HTMLOListElement>();
+const Viewport = <E = never, R = never>(
+  props: ToastViewportProps,
+  children: ChildEffect<E, R | ToastItemCtx>,
+): Element.Element<HTMLDivElement, E, R | ToastCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* ToastCtx;
+    const viewportRef = yield* Element.ref<HTMLOListElement>();
 
-  const label = props.label ?? "Notifications";
-  const hotkey = props.hotkey ?? ["altKey", "KeyT"];
+    const label = props.label ?? "Notifications";
+    const hotkey = props.hotkey ?? ["altKey", "KeyT"];
 
-  // Keyboard shortcut to focus viewport
-  const handleKeyDown = (e: KeyboardEvent) => {
-    const modifierMatch = hotkey.every((key) => {
-      if (key === "altKey") return e.altKey;
-      if (key === "ctrlKey") return e.ctrlKey;
-      if (key === "shiftKey") return e.shiftKey;
-      if (key === "metaKey") return e.metaKey;
-      return e.code === key;
-    });
+    // Keyboard shortcut to focus viewport
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const modifierMatch = hotkey.every((key) => {
+        if (key === "altKey") return e.altKey;
+        if (key === "ctrlKey") return e.ctrlKey;
+        if (key === "shiftKey") return e.shiftKey;
+        if (key === "metaKey") return e.metaKey;
+        return e.code === key;
+      });
 
-    if (modifierMatch) {
-      e.preventDefault();
-      Effect.runPromise(viewportRef.pipe(Element.focus, Effect.ignore));
-    }
-  };
+      if (modifierMatch) {
+        e.preventDefault();
+        Effect.runPromise(viewportRef.pipe(Element.focus, Effect.ignore));
+      }
+    };
 
-  document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
 
-  yield* Effect.addFinalizer(() =>
-    Effect.sync(() => {
-      document.removeEventListener("keydown", handleKeyDown);
-    }),
-  );
+    yield* Effect.addFinalizer(() =>
+      Effect.sync(() => {
+        document.removeEventListener("keydown", handleKeyDown);
+      }),
+    );
 
-  const viewportStyle = getViewportStyle(ctx.position);
-  const providedChildren = Component.normalizeChildren(children);
+    const viewportStyle = getViewportStyle(ctx.position);
 
-  // Default template when no children provided
-  const defaultTemplate = [
-    Root({}, [Title({}), Description({}), Action({}), Close({})]),
-  ];
-
-  const template =
-    providedChildren.length > 0 ? providedChildren : defaultTemplate;
-
-  // Render toasts using the template
-  const toastElements = [
-    each(
+    // Render toasts using the template
+    const toastElements = each(
       ctx.toasts.map((toasts) => toasts.slice(-ctx.maxVisible)),
       {
         container: () =>
@@ -264,7 +260,7 @@ const Viewport = Component.gen(function* (props: ToastViewportProps, children) {
             "data-position": ctx.position,
           }),
         key: (toast: ToastData) => toast.id,
-        render: (toastReadable: Readable<ToastData>) =>
+        render: (toastReadable: Readable.Readable<ToastData>) =>
           Effect.gen(function* () {
             const toast = yield* toastReadable.get;
 
@@ -275,15 +271,14 @@ const Viewport = Component.gen(function* (props: ToastViewportProps, children) {
               resumeTimer: () => undefined,
             };
 
-            return yield* $.li(provide(ToastItemCtx, itemCtx, template));
+            return yield* $.li(provide(ToastItemCtx, itemCtx, children));
           }),
         animate: props.animate,
       },
-    ),
-  ];
+    );
 
-  return yield* Portal({}, () => $.div(toastElements));
-});
+    return yield* Portal({}, () => $.div(toastElements));
+  }) as Element.Element<HTMLDivElement, E, R | ToastCtx>;
 
 /**
  * Props for Toast.Root
@@ -296,175 +291,179 @@ export interface ToastRootProps {
 /**
  * Individual toast container with auto-dismiss and swipe support.
  */
-const Root = Component.gen(function* (props: ToastRootProps, children) {
-  const ctx = yield* ToastCtx;
-  // Get toast from props or from item context (when used as template)
-  const parentCtx = yield* ToastItemCtx;
-  const toast: ToastData = parentCtx.toast;
-  const toastRef = yield* Element.ref<HTMLDivElement>();
+const Root = <E = never, R = never>(
+  props: ToastRootProps,
+  children: ChildEffect<E, R>,
+): Element.Element<HTMLDivElement, E, R | ToastCtx | ToastItemCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* ToastCtx;
+    // Get toast from props or from item context (when used as template)
+    const parentCtx = yield* ToastItemCtx;
+    const toast: ToastData = parentCtx.toast;
+    const toastRef = yield* Element.ref<HTMLDivElement>();
 
-  // Timer state
-  const duration = toast.duration ?? ctx.defaultDuration;
-  const timeoutRef = MutableRef.make<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-  const remainingRef = MutableRef.make(duration);
-  const startTimeRef = MutableRef.make(Date.now());
+    // Timer state
+    const duration = toast.duration ?? ctx.defaultDuration;
+    const timeoutRef = MutableRef.make<ReturnType<typeof setTimeout> | null>(
+      null,
+    );
+    const remainingRef = MutableRef.make(duration);
+    const startTimeRef = MutableRef.make(Date.now());
 
-  // Swipe state
-  const swipeState = MutableRef.make<SwipeState>(createInitialSwipeState());
-  const isSwiping = yield* Signal.make(false);
+    // Swipe state
+    const swipeState = MutableRef.make<SwipeState>(createInitialSwipeState());
+    const isSwiping = yield* Signal.make(false);
 
-  // Dismiss this toast
-  const dismiss = (): Effect.Effect<void> => ctx.dismiss(toast.id);
+    // Dismiss this toast
+    const dismiss = (): Effect.Effect<void> => ctx.dismiss(toast.id);
 
-  // Timer functions
-  const startTimer = () => {
-    const remaining = MutableRef.get(remainingRef);
-    if (remaining <= 0) return; // duration 0 means no auto-dismiss
+    // Timer functions
+    const startTimer = () => {
+      const remaining = MutableRef.get(remainingRef);
+      if (remaining <= 0) return; // duration 0 means no auto-dismiss
 
-    MutableRef.set(startTimeRef, Date.now());
-    const id = setTimeout(() => {
-      Effect.runPromise(dismiss());
-    }, remaining);
-    MutableRef.set(timeoutRef, id);
-  };
+      MutableRef.set(startTimeRef, Date.now());
+      const id = setTimeout(() => {
+        Effect.runPromise(dismiss());
+      }, remaining);
+      MutableRef.set(timeoutRef, id);
+    };
 
-  const pauseTimer = () => {
-    const timeout = MutableRef.get(timeoutRef);
-    if (timeout) {
-      clearTimeout(timeout);
-      MutableRef.set(timeoutRef, null);
-      const elapsed = Date.now() - MutableRef.get(startTimeRef);
-      MutableRef.update(remainingRef, (r) => Math.max(0, r - elapsed));
-    }
-  };
-
-  const resumeTimer = () => {
-    startTimer();
-  };
-
-  // Start timer on mount
-  if (duration > 0) {
-    startTimer();
-  }
-
-  // Cleanup timer on unmount
-  yield* Effect.addFinalizer(() =>
-    Effect.sync(() => {
+    const pauseTimer = () => {
       const timeout = MutableRef.get(timeoutRef);
       if (timeout) {
         clearTimeout(timeout);
+        MutableRef.set(timeoutRef, null);
+        const elapsed = Date.now() - MutableRef.get(startTimeRef);
+        MutableRef.update(remainingRef, (r) => Math.max(0, r - elapsed));
       }
-    }),
-  );
+    };
 
-  // Swipe handlers
-  const handlePointerDown = (e: PointerEvent) =>
-    Effect.sync(() => {
-      const state = MutableRef.get(swipeState);
-      MutableRef.set(swipeState, {
-        ...state,
-        startX: e.clientX,
-        startY: e.clientY,
-        deltaX: 0,
-        deltaY: 0,
-        swiping: true,
+    const resumeTimer = () => {
+      startTimer();
+    };
+
+    // Start timer on mount
+    if (duration > 0) {
+      startTimer();
+    }
+
+    // Cleanup timer on unmount
+    yield* Effect.addFinalizer(() =>
+      Effect.sync(() => {
+        const timeout = MutableRef.get(timeoutRef);
+        if (timeout) {
+          clearTimeout(timeout);
+        }
+      }),
+    );
+
+    // Swipe handlers
+    const handlePointerDown = (e: PointerEvent) =>
+      Effect.sync(() => {
+        const state = MutableRef.get(swipeState);
+        MutableRef.set(swipeState, {
+          ...state,
+          startX: e.clientX,
+          startY: e.clientY,
+          deltaX: 0,
+          deltaY: 0,
+          swiping: true,
+        });
+        Effect.runSync(isSwiping.set(true));
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
       });
-      Effect.runSync(isSwiping.set(true));
-      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    });
 
-  const handlePointerMove = (e: PointerEvent) =>
-    Effect.sync(() => {
-      const state = MutableRef.get(swipeState);
-      if (!state.swiping) return;
+    const handlePointerMove = (e: PointerEvent) =>
+      Effect.sync(() => {
+        const state = MutableRef.get(swipeState);
+        if (!state.swiping) return;
 
-      const deltaX = e.clientX - state.startX;
-      const deltaY = e.clientY - state.startY;
-      MutableRef.set(swipeState, { ...state, deltaX, deltaY });
+        const deltaX = e.clientX - state.startX;
+        const deltaY = e.clientY - state.startY;
+        MutableRef.set(swipeState, { ...state, deltaX, deltaY });
 
-      // Apply transform for visual feedback
-      const el = Element.getUnsafe(toastRef);
-      if (el) {
-        const transform = getSwipeTransform(
-          MutableRef.get(swipeState),
-          ctx.swipeDirection,
-        );
-        const opacity = getSwipeOpacity(
-          MutableRef.get(swipeState),
+        // Apply transform for visual feedback
+        const el = Element.getUnsafe(toastRef);
+        if (el) {
+          const transform = getSwipeTransform(
+            MutableRef.get(swipeState),
+            ctx.swipeDirection,
+          );
+          const opacity = getSwipeOpacity(
+            MutableRef.get(swipeState),
+            ctx.swipeDirection,
+            ctx.swipeThreshold,
+          );
+          el.style.transform = transform;
+          el.style.opacity = String(opacity);
+        }
+      });
+
+    const handlePointerUp = (e: PointerEvent) =>
+      Effect.gen(function* () {
+        const state = MutableRef.get(swipeState);
+        if (!state.swiping) return;
+
+        const shouldDismiss = isSwipeComplete(
+          state,
           ctx.swipeDirection,
           ctx.swipeThreshold,
         );
-        el.style.transform = transform;
-        el.style.opacity = String(opacity);
-      }
-    });
 
-  const handlePointerUp = (e: PointerEvent) =>
-    Effect.gen(function* () {
-      const state = MutableRef.get(swipeState);
-      if (!state.swiping) return;
-
-      const shouldDismiss = isSwipeComplete(
-        state,
-        ctx.swipeDirection,
-        ctx.swipeThreshold,
-      );
-
-      if (shouldDismiss) {
-        yield* dismiss();
-      } else {
-        // Snap back
-        const el = Element.getUnsafe(toastRef);
-        if (el) {
-          el.style.transform = "";
-          el.style.opacity = "";
+        if (shouldDismiss) {
+          yield* dismiss();
+        } else {
+          // Snap back
+          const el = Element.getUnsafe(toastRef);
+          if (el) {
+            el.style.transform = "";
+            el.style.opacity = "";
+          }
         }
-      }
 
-      MutableRef.set(swipeState, createInitialSwipeState());
-      yield* isSwiping.set(false);
-      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-    });
+        MutableRef.set(swipeState, createInitialSwipeState());
+        yield* isSwiping.set(false);
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      });
 
-  // Hover handlers for pause/resume
-  const handleMouseEnter = () =>
-    Effect.sync(() => {
-      pauseTimer();
-    });
+    // Hover handlers for pause/resume
+    const handleMouseEnter = () =>
+      Effect.sync(() => {
+        pauseTimer();
+      });
 
-  const handleMouseLeave = () =>
-    Effect.sync(() => {
-      if (duration > 0) {
-        resumeTimer();
-      }
-    });
+    const handleMouseLeave = () =>
+      Effect.sync(() => {
+        if (duration > 0) {
+          resumeTimer();
+        }
+      });
 
-  // Determine aria-live based on type
-  const ariaLive = toast.type === "error" ? "assertive" : "polite";
+    // Determine aria-live based on type
+    const ariaLive = toast.type === "error" ? "assertive" : "polite";
 
-  return yield* $.div(
-    {
-      ref: toastRef,
-      class: props.class,
-      role: "status",
-      "aria-live": ariaLive,
-      "aria-atomic": "true",
-      "data-toast-root": "",
-      "data-type": toast.type,
-      "data-swipe-direction": ctx.swipeDirection,
-      "data-swiping": isSwiping.map((s) => (s ? "" : undefined)),
-      style: { pointerEvents: "auto" },
-      onPointerDown: handlePointerDown,
-      onPointerMove: handlePointerMove,
-      onPointerUp: handlePointerUp,
-      onMouseEnter: handleMouseEnter,
-      onMouseLeave: handleMouseLeave,
-    },
-    Component.normalizeChildren(children),
-  );
-});
+    return yield* $.div(
+      {
+        ref: toastRef,
+        class: props.class,
+        role: "status",
+        "aria-live": ariaLive,
+        "aria-atomic": "true",
+        "data-toast-root": "",
+        "data-type": toast.type,
+        "data-swipe-direction": ctx.swipeDirection,
+        "data-swiping": isSwiping.map((s) => (s ? "" : undefined)),
+        style: { pointerEvents: "auto" },
+        onPointerDown: handlePointerDown,
+        onPointerMove: handlePointerMove,
+        onPointerUp: handlePointerUp,
+        onMouseEnter: handleMouseEnter,
+        onMouseLeave: handleMouseLeave,
+      },
+      children,
+    );
+  }) as Element.Element<HTMLDivElement, E, R | ToastCtx | ToastItemCtx>;
 
 /**
  * Props for Toast.Title
@@ -477,17 +476,21 @@ export interface ToastTitleProps {
 /**
  * Toast title text. Renders from itemCtx.toast.title if no children provided.
  */
-const Title = Component.gen(function* (props: ToastTitleProps, children) {
-  const itemCtx = yield* ToastItemCtx;
-  const content = children ?? itemCtx.toast.title ?? "";
-  return yield* $.div(
-    {
-      class: props.class,
-      "data-toast-title": "",
-    },
-    content,
-  );
-});
+const Title = <E = never, R = never>(
+  props: ToastTitleProps,
+  children?: ChildEffect<E, R>,
+): Element.Element<HTMLDivElement, E, R | ToastItemCtx> =>
+  Effect.gen(function* () {
+    const itemCtx = yield* ToastItemCtx;
+    const content = children ?? Effect.succeed(itemCtx.toast.title ?? "");
+    return yield* $.div(
+      {
+        class: props.class,
+        "data-toast-title": "",
+      },
+      content as ChildEffect<E, R>,
+    );
+  }) as Element.Element<HTMLDivElement, E, R | ToastItemCtx>;
 
 /**
  * Props for Toast.Description
@@ -500,20 +503,21 @@ export interface ToastDescriptionProps {
 /**
  * Toast description text. Renders from itemCtx.toast.description if no children provided.
  */
-const Description = Component.gen(function* (
+const Description = <E = never, R = never>(
   props: ToastDescriptionProps,
-  children,
-) {
-  const itemCtx = yield* ToastItemCtx;
-  const content = children ?? itemCtx.toast.description ?? "";
-  return yield* $.div(
-    {
-      class: props.class,
-      "data-toast-description": "",
-    },
-    content,
-  );
-});
+  children?: ChildEffect<E, R>,
+): Element.Element<HTMLDivElement, E, R | ToastItemCtx> =>
+  Effect.gen(function* () {
+    const itemCtx = yield* ToastItemCtx;
+    const content = children ?? Effect.succeed(itemCtx.toast.description ?? "");
+    return yield* $.div(
+      {
+        class: props.class,
+        "data-toast-description": "",
+      },
+      content as ChildEffect<E, R>,
+    );
+  }) as Element.Element<HTMLDivElement, E, R | ToastItemCtx>;
 
 /**
  * Props for Toast.Action
@@ -529,40 +533,50 @@ export interface ToastActionProps {
  * Toast action button. Renders from itemCtx.toast.action if no children provided.
  * Renders nothing if no action exists and no children provided.
  */
-const Action = Component.gen(function* (props: ToastActionProps, children) {
-  const ctx = yield* ToastItemCtx;
-  const content = children ?? ctx.toast.action?.label;
+const Action = <E = never, R = never>(
+  props: ToastActionProps,
+  children?: ChildEffect<E, R>,
+): Element.Element<HTMLButtonElement | HTMLSpanElement, E, R | ToastItemCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* ToastItemCtx;
+    const actionLabel = ctx.toast.action?.label;
 
-  // If no content (no children and no action), render nothing
-  if (!content) {
-    return yield* $.span({ style: { display: "none" } }, []);
-  }
+    // If no content (no children and no action), render nothing
+    if (!children && !actionLabel) {
+      return yield* $.span({ style: { display: "none" } });
+    }
 
-  // Stop propagation to prevent swipe handler from capturing pointer
-  const handlePointerDown = (e: PointerEvent) =>
-    Effect.sync(() => {
-      e.stopPropagation();
-    });
+    const content = children ?? Effect.succeed(actionLabel ?? "");
 
-  const handleClick = () =>
-    Effect.gen(function* () {
-      if (ctx.toast.action?.onClick) {
-        yield* ctx.toast.action.onClick();
-      }
-      yield* ctx.dismiss();
-    });
+    // Stop propagation to prevent swipe handler from capturing pointer
+    const handlePointerDown = (e: PointerEvent) =>
+      Effect.sync(() => {
+        e.stopPropagation();
+      });
 
-  return yield* $.button(
-    {
-      class: props.class,
-      type: "button",
-      "data-toast-action": "",
-      onPointerDown: handlePointerDown,
-      onClick: handleClick,
-    },
-    content,
-  );
-});
+    const handleClick = () =>
+      Effect.gen(function* () {
+        if (ctx.toast.action?.onClick) {
+          yield* ctx.toast.action.onClick();
+        }
+        yield* ctx.dismiss();
+      });
+
+    return yield* $.button(
+      {
+        class: props.class,
+        type: "button",
+        "data-toast-action": "",
+        onPointerDown: handlePointerDown,
+        onClick: handleClick,
+      },
+      content as ChildEffect<E, R>,
+    );
+  }) as Element.Element<
+    HTMLButtonElement | HTMLSpanElement,
+    E,
+    R | ToastItemCtx
+  >;
 
 /**
  * Props for Toast.Close
@@ -579,31 +593,40 @@ export interface ToastCloseProps {
 /**
  * Toast close/dismiss button. Renders "×" if no children provided.
  */
-const Close = Component.gen(function* (props: ToastCloseProps, children) {
-  const ctx = yield* ToastItemCtx;
+const Close = <E = never, R = never>(
+  props: ToastCloseProps,
+  children?: ChildEffect<E, R>,
+): Element.Element<HTMLButtonElement, E, R | ToastItemCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* ToastItemCtx;
 
-  // Stop propagation to prevent swipe handler from capturing pointer
-  const handlePointerDown = (e: PointerEvent) =>
-    Effect.sync(() => {
-      e.stopPropagation();
-    });
+    // Stop propagation to prevent swipe handler from capturing pointer
+    const handlePointerDown = (e: PointerEvent) =>
+      Effect.sync(() => {
+        e.stopPropagation();
+      });
 
-  const closeProps = {
-    "aria-label": props["aria-label"] ?? "Close",
-    "data-toast-close": "",
-    onPointerDown: handlePointerDown,
-    onClick: ctx.dismiss,
-  };
+    const closeProps = {
+      "aria-label": props["aria-label"] ?? "Close",
+      "data-toast-close": "",
+      onPointerDown: handlePointerDown,
+      onClick: ctx.dismiss,
+    };
 
-  if (props.asChild && Effect.isEffect(children)) {
-    return yield* mergeProps(closeProps, children);
-  }
+    if (props.asChild && Effect.isEffect(children)) {
+      return yield* mergeProps(
+        closeProps,
+        children as Element.Element<HTMLElement | SVGElement, E, R>,
+      );
+    }
 
-  return yield* $.button(
-    { ...closeProps, type: "button", class: props.class },
-    children ?? "\u00d7",
-  );
-});
+    const content = children ?? Effect.succeed("\u00d7");
+
+    return yield* $.button(
+      { ...closeProps, type: "button", class: props.class },
+      content as ChildEffect<E, R>,
+    );
+  }) as Element.Element<HTMLButtonElement, E, R | ToastItemCtx>;
 
 // ============================================================================
 // Export

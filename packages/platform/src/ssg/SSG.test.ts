@@ -129,7 +129,7 @@ describe("SSG", () => {
       };
 
       const components = {
-        index: () => $.div("Hello, World!"),
+        index: () => $.div($.of("Hello, World!")),
       };
 
       const result = await buildStaticPages({
@@ -168,7 +168,7 @@ describe("SSG", () => {
       };
 
       const components = {
-        about: () => $.div("About page"),
+        about: () => $.div($.of("About page")),
       };
 
       await buildStaticPages({
@@ -205,7 +205,7 @@ describe("SSG", () => {
       };
 
       const components = {
-        index: () => $.div("With loader"),
+        index: () => $.div($.of("With loader")),
       };
 
       const result = await buildStaticPages({
@@ -232,7 +232,7 @@ describe("SSG", () => {
       };
 
       const components = {
-        index: () => $.div("Content"),
+        index: () => $.div($.of("Content")),
       };
 
       const customGenerator = vi.fn((page) => `<custom>${page.html}</custom>`);
@@ -268,7 +268,7 @@ describe("SSG", () => {
       };
 
       const components = {
-        blog_slug: () => $.div("Blog post"),
+        blog_slug: () => $.div($.of("Blog post")),
       };
 
       const result = await buildStaticPages({
@@ -296,7 +296,7 @@ describe("SSG", () => {
       };
 
       const components = {
-        index: () => $.div("ISR page"),
+        index: () => $.div($.of("ISR page")),
       };
 
       const result = await buildStaticPages({
@@ -322,8 +322,8 @@ describe("SSG", () => {
       };
 
       const components = {
-        index: () => $.div("Index"),
-        dynamic: () => $.div("Dynamic"),
+        index: () => $.div($.of("Index")),
+        dynamic: () => $.div($.of("Dynamic")),
       };
 
       const result = await buildStaticPages({

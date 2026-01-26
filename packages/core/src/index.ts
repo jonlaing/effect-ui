@@ -46,10 +46,6 @@ export { Renderer, RendererContext } from "./Renderer";
 // Element
 export type { Element, Child } from "./Element";
 
-// Component
-export type { Children } from "./Component";
-export { Component } from "./Component";
-
 // Boundary
 export type { SuspenseOptions, BoundarySuspenseOptions } from "./Boundary";
 export { Boundary, suspense, error } from "./Boundary";

@@ -21,9 +21,11 @@ import { Element } from "./Element";
  *
  * @example
  * ```ts
- * const app = div([
- *   h1(["Hello, Effex!"])
- * ])
+ * import { $, collect, mount } from "@effex/dom"
+ *
+ * const app = $.div({}, collect(
+ *   $.h1({}, $.of("Hello, Effex!"))
+ * ))
  *
  * // Mount the app and run it
  * Effect.runPromise(
@@ -36,12 +38,12 @@ import { Element } from "./Element";
  * @example
  * ```ts
  * // Handle errors before mounting
- * const riskyApp = fetchAndRenderData() // Element<FetchError>
+ * const riskyApp = fetchAndRenderData() // Element<..., FetchError, ...>
  *
  * const safeApp = Boundary.error(
  *   () => riskyApp,
- *   (error) => div(["Failed to load: ", String(error)])
- * ) // Element<never>
+ *   (error) => $.div({}, $.of(`Failed to load: ${String(error)}`))
+ * ) // Element<..., never, ...>
  *
  * Effect.runPromise(
  *   Effect.scoped(
@@ -53,7 +55,7 @@ import { Element } from "./Element";
  * @example
  * ```ts
  * // Provide context before mounting
- * const appWithRouter = Link({ href: "/home", children: "Home" }) // Element<never, RouterContext>
+ * const appWithRouter = Link({ href: "/home" }, $.of("Home")) // Element<..., never, RouterContext>
  *
  * Effect.runPromise(
  *   Effect.scoped(
@@ -66,7 +68,7 @@ import { Element } from "./Element";
  * ```
  */
 export const mount = (
-  element: Element.Element<never, RendererContext>,
+  element: Element.Element<HTMLElement, never, RendererContext>,
   container: HTMLElement,
 ): Effect.Effect<void, never, Scope.Scope> =>
   Effect.gen(function* () {

@@ -4,8 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Signal } from "@effex/core";
 
 import { Boundary } from "../Boundary";
+import { collect } from "../Collect";
 import { match, when } from "../Control";
-import { div, span } from "../Element";
+import { $, div, span } from "../Element";
 import { renderToString } from "../server";
 import { hydrate } from "./index";
 
@@ -25,12 +26,12 @@ describe("Hydration", () => {
     it("should hydrate a simple element", async () => {
       // SSR
       const html = await Effect.runPromise(
-        renderToString(div({ class: "test" }, "Hello")),
+        renderToString(div({ class: "test" }, $.of("Hello"))),
       );
       container.innerHTML = html;
 
       // Hydrate
-      await hydrate(div({ class: "test" }, "Hello"), container);
+      await hydrate(div({ class: "test" }, $.of("Hello")), container);
 
       expect(container.querySelector(".test")).toBeTruthy();
       expect(container.textContent).toContain("Hello");
@@ -41,13 +42,13 @@ describe("Hydration", () => {
 
       // SSR - note: events don't render to HTML
       const html = await Effect.runPromise(
-        renderToString(div({ class: "clickable" }, "Click me")),
+        renderToString(div({ class: "clickable" }, $.of("Click me"))),
       );
       container.innerHTML = html;
 
       // Hydrate with event handler
       await hydrate(
-        div({ class: "clickable", onClick }, "Click me"),
+        div({ class: "clickable", onClick }, $.of("Click me")),
         container,
       );
 
@@ -68,8 +69,8 @@ describe("Hydration", () => {
         Effect.gen(function* () {
           conditionSignal = yield* Signal.make(true);
           return yield* when(conditionSignal, {
-            onTrue: () => div({ class: "visible" }, "Visible"),
-            onFalse: () => div({ class: "hidden" }, "Hidden"),
+            onTrue: () => div({ class: "visible" }, $.of("Visible")),
+            onFalse: () => div({ class: "hidden" }, $.of("Hidden")),
           });
         });
 
@@ -97,9 +98,12 @@ describe("Hydration", () => {
           );
           return yield* match(statusSignal, {
             cases: [
-              { pattern: "loading", render: () => div("Loading...") },
-              { pattern: "success", render: () => div("Success!") },
-              { pattern: "error", render: () => div("Error!") },
+              {
+                pattern: "loading",
+                render: () => div({}, $.of("Loading...")),
+              },
+              { pattern: "success", render: () => div({}, $.of("Success!")) },
+              { pattern: "error", render: () => div({}, $.of("Error!")) },
             ],
           });
         });
@@ -127,9 +131,9 @@ describe("Hydration", () => {
             Effect.gen(function* () {
               yield* Effect.sleep(10);
               resolved = true;
-              return yield* div({ class: "loaded" }, "Loaded content");
+              return yield* div({ class: "loaded" }, $.of("Loaded content"));
             }),
-          fallback: () => div({ class: "loading" }, "Loading..."),
+          fallback: () => div({ class: "loading" }, $.of("Loading...")),
         });
 
       // SSR - renders fallback
@@ -163,8 +167,8 @@ describe("Hydration", () => {
               yield* Effect.sleep(10);
               return yield* Effect.fail("Something went wrong");
             }),
-          fallback: () => div({ class: "loading" }, "Loading..."),
-          catch: (error) => div({ class: "error" }, `Error: ${error}`),
+          fallback: () => div({ class: "loading" }, $.of("Loading...")),
+          catch: (error) => div({ class: "error" }, $.of(`Error: ${error}`)),
         });
 
       // SSR - renders fallback
@@ -197,11 +201,11 @@ describe("Hydration", () => {
               Effect.gen(function* () {
                 yield* Effect.sleep(10);
                 return yield* when(conditionSignal, {
-                  onTrue: () => div({ class: "true-branch" }, "True"),
-                  onFalse: () => div({ class: "false-branch" }, "False"),
+                  onTrue: () => div({ class: "true-branch" }, $.of("True")),
+                  onFalse: () => div({ class: "false-branch" }, $.of("False")),
                 });
               }),
-            fallback: () => div({ class: "loading" }, "Loading..."),
+            fallback: () => div({ class: "loading" }, $.of("Loading...")),
           });
         });
 
@@ -231,24 +235,27 @@ describe("Hydration", () => {
           const show1 = yield* Signal.make(true);
           const show2 = yield* Signal.make(false);
 
-          return yield* div([
-            when(show1, {
-              onTrue: () => span("First visible"),
-              onFalse: () => span("First hidden"),
-            }),
-            Boundary.suspense({
-              render: () =>
-                Effect.gen(function* () {
-                  yield* Effect.sleep(10);
-                  return yield* div("Async content");
-                }),
-              fallback: () => div("Loading..."),
-            }),
-            when(show2, {
-              onTrue: () => span("Second visible"),
-              onFalse: () => span("Second hidden"),
-            }),
-          ]);
+          return yield* div(
+            {},
+            collect(
+              when(show1, {
+                onTrue: () => span({}, $.of("First visible")),
+                onFalse: () => span({}, $.of("First hidden")),
+              }),
+              Boundary.suspense({
+                render: () =>
+                  Effect.gen(function* () {
+                    yield* Effect.sleep(10);
+                    return yield* div({}, $.of("Async content"));
+                  }),
+                fallback: () => div({}, $.of("Loading...")),
+              }),
+              when(show2, {
+                onTrue: () => span({}, $.of("Second visible")),
+                onFalse: () => span({}, $.of("Second hidden")),
+              }),
+            ),
+          );
         });
 
       // SSR

@@ -3,7 +3,6 @@ export {
   Readable,
   type Reactive,
   isReadable,
-  of,
   makeReadable,
   mapReadable,
   fromStream,
@@ -34,19 +33,14 @@ export { DOMRenderer, DOMRendererLive } from "./DOMRenderer";
 
 // Element
 export type {
-  Child,
-  InferError,
-  InferRequirements,
-  InferChildren,
-  InferChildArray,
-  InferChildError,
-  InferChildRequirements,
   ClassValue,
   EventHandler,
   BaseAttributes,
   EventAttributes,
   HTMLAttributes,
   ElementFactory,
+  ChildEffect,
+  ChildNode,
 } from "./Element";
 export {
   Element,
@@ -59,6 +53,7 @@ export {
 } from "./Element";
 export {
   $,
+  of,
   // Document structure
   div,
   span,
@@ -198,6 +193,8 @@ export type { SuspenseOptions, BoundarySuspenseOptions } from "./Boundary";
 // Context provision
 export { provide } from "./Provide";
 
+export { collect } from "./Collect";
+
 // Animation
 export type {
   AnimationEndResult,
@@ -218,9 +215,6 @@ export {
   parallel,
   calculateStaggerDelay,
 } from "./Animation/index.js";
-
-// Components
-export { Component } from "./Component";
 
 // Mounting
 export { mount, runApp } from "./Mount";

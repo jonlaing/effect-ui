@@ -1,4 +1,4 @@
-import { Effect, Layer, Option, type Duration, type Scope } from "effect";
+import { Effect, Layer, Option, type Duration } from "effect";
 
 import {
   error as coreError,
@@ -16,25 +16,27 @@ import { SSRContext } from "./SSRContext";
 /**
  * Options for the suspense boundary (DOM-specialized version).
  */
-export interface SuspenseOptions<E, R1, EF> {
+export interface SuspenseOptions<E, R1, RF, RC> {
   /**
    * Async function that returns the final element.
    * Can fail with error type E if `catch` is provided.
    */
-  readonly render: () => Effect.Effect<HTMLElement, E, Scope.Scope | R1>;
+  readonly render: () => Element.Element<HTMLElement | SVGElement, E, R1>;
 
   /**
    * Function to render the loading/fallback state.
    * Must have no requirements (will be rendered in detached context if delay > 0).
    */
-  readonly fallback: () => Element.Element<EF, never>;
+  readonly fallback: () => Element.Element<HTMLElement | SVGElement, never, RF>;
 
   /**
    * Optional error handler. If provided, errors from render are caught
    * and this function is called to render an error state.
    * Must have no requirements.
    */
-  readonly catch?: (error: E) => Element.Element<never, never>;
+  readonly catch?: (
+    error: E,
+  ) => Element.Element<HTMLElement | SVGElement, never, RC>;
 
   /**
    * Delay before showing the fallback.
@@ -57,7 +59,7 @@ export interface SuspenseOptions<E, R1, EF> {
  * // Simple - show fallback immediately
  * Boundary.suspense({
  *   render: () => fetchAndRenderUser(userId),
- *   fallback: () => div("Loading..."),
+ *   fallback: () => $.div({}, $.of("Loading...")),
  * })
  * ```
  *
@@ -69,7 +71,7 @@ export interface SuspenseOptions<E, R1, EF> {
  *     const user = yield* fetchUser(userId)
  *     return yield* UserPage({ user })
  *   }),
- *   fallback: () => div("Loading user..."),
+ *   fallback: () => $.div({}, $.of("Loading user...")),
  *   delay: "200 millis",
  * })
  * ```
@@ -82,27 +84,27 @@ export interface SuspenseOptions<E, R1, EF> {
  *     const user = yield* fetchUser(userId)
  *     return yield* UserPage({ user })
  *   }),
- *   fallback: () => div("Loading..."),
- *   catch: (error) => div(["Error: ", String(error)]),
+ *   fallback: () => $.div({}, $.of("Loading...")),
+ *   catch: (error) => $.div({}, $.of(`Error: ${String(error)}`)),
  *   delay: "200 millis",
  * })
  * ```
  */
 export const suspense: {
   // Overload 1: No catch, render cannot fail
-  <R1 = never, EF = never>(
-    options: SuspenseOptions<never, R1, EF> & { catch?: never },
-  ): Element.Element<EF, R1>;
+  <R1 = never, RF = never>(
+    options: SuspenseOptions<never, R1, RF, never> & { catch?: never },
+  ): Element.Element<HTMLElement | SVGElement, never, R1 | RF>;
 
   // Overload 2: With catch, render can fail
-  <E, R1 = never, EF = never>(
-    options: SuspenseOptions<E, R1, EF> & {
-      catch: (error: E) => Element.Element<never, never>;
+  <E, R1 = never, RF = never, RC = never>(
+    options: SuspenseOptions<E, R1, RF, RC> & {
+      catch: (error: E) => Element.Element<HTMLElement | SVGElement, never, RC>;
     },
-  ): Element.Element<EF, R1>;
-} = <E, R1 = never, EF = never>(
-  options: SuspenseOptions<E, R1, EF>,
-): Element.Element<EF, R1> =>
+  ): Element.Element<HTMLElement | SVGElement, never, R1 | RF | RC>;
+} = <E, R1 = never, RF = never, RC = never>(
+  options: SuspenseOptions<E, R1, RF, RC>,
+): Element.Element<HTMLElement | SVGElement, never, R1 | RF | RC> =>
   Effect.gen(function* () {
     const ssrContext = yield* Effect.serviceOption(SSRContext);
 
@@ -112,7 +114,7 @@ export const suspense: {
       const hydrationId = yield* ssrContext.value.generateId;
 
       // Create container with hydration markers
-      const container = yield* renderer.createNode("div");
+      const container = (yield* renderer.createNode("div")) as HTMLElement;
       yield* renderer.setStyleProperty(container, "display", "contents");
       yield* renderer.setAttribute(container, "data-effex-id", hydrationId);
       yield* renderer.setAttribute(container, "data-effex-type", "suspense");
@@ -126,7 +128,7 @@ export const suspense: {
       const fallback = yield* options.fallback();
       yield* renderer.appendChild(container, fallback);
 
-      return container as HTMLElement;
+      return container;
     }
 
     // Check for hydration mode
@@ -206,8 +208,10 @@ export const suspense: {
     // Client-side (fresh render): use the core implementation
     // Cast to any to bypass the strict type checking on overloads
     // The runtime behavior is correct because coreSuspense handles all cases
-    return yield* (coreSuspense as any)(options);
-  }) as Element.Element<EF, R1>;
+    return yield* coreSuspense(
+      options as Required<SuspenseOptions<E, R1, RF, RC>>,
+    );
+  });
 
 /**
  * Error boundary that catches errors from a render function and displays a fallback element.
@@ -219,15 +223,17 @@ export const suspense: {
  * ```ts
  * Boundary.error(
  *   () => riskyComponent(),
- *   (error) => div(["Something went wrong: ", String(error)])
+ *   (error) => $.div({}, $.of(`Something went wrong: ${String(error)}`))
  * )
  * ```
  */
-export const error = <E, R1 = never, E2 = never, R2 = never>(
-  tryRender: () => Effect.Effect<HTMLElement, E, Scope.Scope | R1>,
-  catchRender: (error: E) => Element.Element<E2, R2>,
-): Element.Element<E2, R1 | R2> => {
-  return coreError(tryRender, catchRender) as Element.Element<E2, R1 | R2>;
+export const error = <E, R1 = never, R2 = never>(
+  tryRender: () => Element.Element<HTMLElement | SVGElement, E, R1>,
+  catchRender: (
+    error: E,
+  ) => Element.Element<HTMLElement | SVGElement, never, R2>,
+) => {
+  return coreError(tryRender, catchRender);
 };
 
 /**
@@ -238,15 +244,15 @@ export const error = <E, R1 = never, E2 = never, R2 = never>(
  * // Suspense boundary for async loading
  * Boundary.suspense({
  *   render: () => fetchAndRenderData(),
- *   fallback: () => $.div("Loading..."),
- *   catch: (err) => $.div(`Error: ${err}`),
+ *   fallback: () => $.div({}, $.of("Loading...")),
+ *   catch: (err) => $.div({}, $.of(`Error: ${err}`)),
  *   delay: "200 millis",
  * })
  *
  * // Error boundary for catching render errors
  * Boundary.error(
  *   () => riskyComponent(),
- *   (err) => $.div(`Oops: ${err}`)
+ *   (err) => $.div({}, $.of(`Oops: ${err}`))
  * )
  * ```
  */

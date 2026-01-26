@@ -10,10 +10,10 @@ import { RouterContext } from "./RouterContext.js";
  * The special `_` key is the fallback when no route matches.
  */
 export type RouteCases<E = never, R = never> = {
-  readonly [K: string]: () => Element.Element<E, R>;
+  readonly [K: string]: () => Element.Element<HTMLElement | SVGElement, E, R>;
 } & {
   /** Fallback to render when no route matches or router is not available */
-  readonly _: () => Element.Element<E, R>;
+  readonly _: () => Element.Element<HTMLElement | SVGElement, E, R>;
 };
 
 /**
@@ -58,7 +58,7 @@ export type RouteCases<E = never, R = never> = {
  */
 export const matchRoute = <E = never, R = never>(
   cases: RouteCases<E, R>,
-): Element.Element<E, R> =>
+): Element.Element<HTMLElement | SVGElement, E, R> =>
   Effect.gen(function* () {
     const routerOption = yield* Effect.serviceOption(RouterContext);
 
@@ -89,4 +89,4 @@ export const matchRoute = <E = never, R = never>(
       cases: matchCases,
       fallback: _,
     });
-  }) as Element.Element<E, R>;
+  }) as Element.Element<HTMLElement | SVGElement, E, R>;

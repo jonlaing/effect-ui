@@ -63,7 +63,7 @@ export interface VirtualEachOptions<A, E = never, R = never> {
   readonly render: (
     item: Readable<A>,
     index: Readable<number>,
-  ) => Element.Element<E, R>;
+  ) => Element.Element<HTMLElement | SVGElement, E, R>;
 
   /**
    * Fixed height for all items in pixels.

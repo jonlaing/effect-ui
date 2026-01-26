@@ -20,7 +20,11 @@ export type RouteLayoutsMap = {
 /**
  * A component function that returns an Element.
  */
-export type RouteComponent<E = never, R = never> = () => Element.Element<E, R>;
+export type RouteComponent<E = never, R = never> = () => Element.Element<
+  HTMLElement | SVGElement,
+  E,
+  R
+>;
 
 /**
  * Map of route names to their component functions.
@@ -34,14 +38,18 @@ export type ComponentsMap = {
  * Extracts the union of all error types from a components map.
  */
 export type ComponentsError<T extends ComponentsMap> = {
-  [K in keyof T]: T[K] extends () => Element.Element<infer E, any> ? E : never;
+  [K in keyof T]: T[K] extends () => Element.Element<any, infer E, any>
+    ? E
+    : never;
 }[keyof T];
 
 /**
  * Extracts the union of all requirement types from a components map.
  */
 export type ComponentsRequirements<T extends ComponentsMap> = {
-  [K in keyof T]: T[K] extends () => Element.Element<any, infer R> ? R : never;
+  [K in keyof T]: T[K] extends () => Element.Element<any, any, infer R>
+    ? R
+    : never;
 }[keyof T];
 
 /**
@@ -135,6 +143,7 @@ const RoutesImpl = <
 >(
   props: RoutesProps<T, L>,
 ): Element.Element<
+  HTMLElement | SVGElement,
   ComponentsError<T>,
   ComponentsRequirements<T> | RouterContext
 > =>
@@ -313,7 +322,7 @@ const RoutesImpl = <
     // Default fallback renders empty div with display:contents
     // Note: Fallback is NOT wrapped with layouts - it renders standalone
     const fallback =
-      props.fallback ?? (() => $.div({ style: { display: "contents" } }, []));
+      props.fallback ?? (() => $.div({ style: { display: "contents" } }));
 
     // Use match control flow to render the active route's component
     // routeWithPath includes the pathname for change detection (e.g., params changes)
@@ -325,6 +334,7 @@ const RoutesImpl = <
       extractPattern: extractRouteName,
     });
   }) as Element.Element<
+    HTMLElement | SVGElement,
     ComponentsError<T>,
     ComponentsRequirements<T> | RouterContext
   >;

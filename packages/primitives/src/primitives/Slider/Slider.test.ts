@@ -1,7 +1,13 @@
 import { Effect, type Scope } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { DOMRendererLive, Signal, type RendererContext } from "@effex/dom";
+import {
+  $,
+  collect,
+  DOMRendererLive,
+  Signal,
+  type RendererContext,
+} from "@effex/dom";
 
 import { Slider, type SliderValue } from "./Slider";
 
@@ -21,7 +27,7 @@ describe("Slider", () => {
     it("should render with slider data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Slider.Root({ defaultValue: 50 }, []);
+          const el = yield* Slider.Root({ defaultValue: 50 });
 
           expect(el.tagName).toBe("DIV");
           expect(el.getAttribute("data-slider-root")).toBe("");
@@ -32,7 +38,7 @@ describe("Slider", () => {
     it("should set data-orientation to horizontal by default", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Slider.Root({ defaultValue: 50 }, []);
+          const el = yield* Slider.Root({ defaultValue: 50 });
 
           expect(el.getAttribute("data-orientation")).toBe("horizontal");
         }),
@@ -42,10 +48,10 @@ describe("Slider", () => {
     it("should set data-orientation to vertical", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Slider.Root(
-            { defaultValue: 50, orientation: "vertical" },
-            [],
-          );
+          const el = yield* Slider.Root({
+            defaultValue: 50,
+            orientation: "vertical",
+          });
 
           expect(el.getAttribute("data-orientation")).toBe("vertical");
         }),
@@ -55,10 +61,10 @@ describe("Slider", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Slider.Root(
-            { defaultValue: 50, class: "my-slider" },
-            [],
-          );
+          const el = yield* Slider.Root({
+            defaultValue: 50,
+            class: "my-slider",
+          });
 
           expect(el.className).toBe("my-slider");
         }),
@@ -68,10 +74,10 @@ describe("Slider", () => {
     it("should set aria-label", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Slider.Root(
-            { defaultValue: 50, "aria-label": "Volume" },
-            [],
-          );
+          const el = yield* Slider.Root({
+            defaultValue: 50,
+            "aria-label": "Volume",
+          });
 
           expect(el.getAttribute("aria-label")).toBe("Volume");
         }),
@@ -81,10 +87,10 @@ describe("Slider", () => {
     it("should create hidden input when name is provided", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Slider.Root(
-            { defaultValue: 50, name: "volume" },
-            [],
-          );
+          const el = yield* Slider.Root({
+            defaultValue: 50,
+            name: "volume",
+          });
 
           const input = el.querySelector(
             "input[type='hidden']",
@@ -101,9 +107,7 @@ describe("Slider", () => {
     it("should render with track data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Slider.Root({ defaultValue: 50 }, [
-            Slider.Track({}),
-          ]);
+          const el = yield* Slider.Root({ defaultValue: 50 }, Slider.Track({}));
 
           const track = el.querySelector("[data-slider-track]");
           expect(track).not.toBeNull();
@@ -114,9 +118,10 @@ describe("Slider", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Slider.Root({ defaultValue: 50 }, [
+          const el = yield* Slider.Root(
+            { defaultValue: 50 },
             Slider.Track({ class: "my-track" }),
-          ]);
+          );
 
           const track = el.querySelector("[data-slider-track]");
           expect(track?.className).toBe("my-track");
@@ -129,9 +134,10 @@ describe("Slider", () => {
     it("should render with range data attribute", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Slider.Root({ defaultValue: 50 }, [
-            Slider.Track({}, [Slider.Range({})]),
-          ]);
+          const el = yield* Slider.Root(
+            { defaultValue: 50 },
+            Slider.Track({}, Slider.Range({})),
+          );
 
           const range = el.querySelector("[data-slider-range]");
           expect(range).not.toBeNull();
@@ -142,9 +148,10 @@ describe("Slider", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Slider.Root({ defaultValue: 50 }, [
-            Slider.Track({}, [Slider.Range({ class: "my-range" })]),
-          ]);
+          const el = yield* Slider.Root(
+            { defaultValue: 50 },
+            Slider.Track({}, Slider.Range({ class: "my-range" })),
+          );
 
           const range = el.querySelector("[data-slider-range]");
           expect(range?.className).toBe("my-range");
@@ -157,9 +164,7 @@ describe("Slider", () => {
     it("should render with slider role", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Slider.Root({ defaultValue: 50 }, [
-            Slider.Thumb({}),
-          ]);
+          const el = yield* Slider.Root({ defaultValue: 50 }, Slider.Thumb({}));
 
           const thumb = el.querySelector("[role='slider']");
           expect(thumb).not.toBeNull();
@@ -170,9 +175,7 @@ describe("Slider", () => {
     it("should have aria-valuenow", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Slider.Root({ defaultValue: 50 }, [
-            Slider.Thumb({}),
-          ]);
+          const el = yield* Slider.Root({ defaultValue: 50 }, Slider.Thumb({}));
 
           const thumb = el.querySelector("[role='slider']");
           expect(thumb?.getAttribute("aria-valuenow")).toBe("50");
@@ -185,7 +188,7 @@ describe("Slider", () => {
         Effect.gen(function* () {
           const el = yield* Slider.Root(
             { defaultValue: 50, min: 0, max: 100 },
-            [Slider.Thumb({})],
+            Slider.Thumb({}),
           );
 
           const thumb = el.querySelector("[role='slider']");
@@ -198,9 +201,7 @@ describe("Slider", () => {
     it("should have aria-orientation", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Slider.Root({ defaultValue: 50 }, [
-            Slider.Thumb({}),
-          ]);
+          const el = yield* Slider.Root({ defaultValue: 50 }, Slider.Thumb({}));
 
           const thumb = el.querySelector("[role='slider']");
           expect(thumb?.getAttribute("aria-orientation")).toBe("horizontal");
@@ -211,9 +212,10 @@ describe("Slider", () => {
     it("should apply custom class", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Slider.Root({ defaultValue: 50 }, [
+          const el = yield* Slider.Root(
+            { defaultValue: 50 },
             Slider.Thumb({ class: "my-thumb" }),
-          ]);
+          );
 
           const thumb = el.querySelector("[role='slider']");
           expect(thumb?.className).toBe("my-thumb");
@@ -224,9 +226,10 @@ describe("Slider", () => {
     it("should set aria-label", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Slider.Root({ defaultValue: 50 }, [
+          const el = yield* Slider.Root(
+            { defaultValue: 50 },
             Slider.Thumb({ "aria-label": "Volume control" }),
-          ]);
+          );
 
           const thumb = el.querySelector("[role='slider']");
           expect(thumb?.getAttribute("aria-label")).toBe("Volume control");
@@ -237,9 +240,7 @@ describe("Slider", () => {
     it("should have role=slider", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Slider.Root({ defaultValue: 50 }, [
-            Slider.Thumb({}),
-          ]);
+          const el = yield* Slider.Root({ defaultValue: 50 }, Slider.Thumb({}));
 
           const thumb = el.querySelector("[role='slider']");
           expect(thumb?.getAttribute("role")).toBe("slider");
@@ -252,10 +253,13 @@ describe("Slider", () => {
     it("should support range values", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Slider.Root({ defaultValue: [25, 75] }, [
-            Slider.Thumb({ "aria-label": "Min" }),
-            Slider.Thumb({ "aria-label": "Max" }),
-          ]);
+          const el = yield* Slider.Root(
+            { defaultValue: [25, 75] },
+            collect(
+              Slider.Thumb({ "aria-label": "Min" }),
+              Slider.Thumb({ "aria-label": "Max" }),
+            ),
+          );
 
           const thumbs = el.querySelectorAll("[role='slider']");
           expect(thumbs.length).toBe(2);
@@ -268,10 +272,10 @@ describe("Slider", () => {
     it("should format range value for hidden input", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Slider.Root(
-            { defaultValue: [25, 75], name: "price-range" },
-            [],
-          );
+          const el = yield* Slider.Root({
+            defaultValue: [25, 75],
+            name: "price-range",
+          });
 
           const input = el.querySelector(
             "input[type='hidden']",
@@ -288,7 +292,7 @@ describe("Slider", () => {
         Effect.gen(function* () {
           const value = yield* Signal.make<SliderValue>(30);
 
-          const el = yield* Slider.Root({ value }, [Slider.Thumb({})]);
+          const el = yield* Slider.Root({ value }, Slider.Thumb({}));
 
           const thumb = el.querySelector("[role='slider']");
           expect(thumb?.getAttribute("aria-valuenow")).toBe("30");
@@ -309,7 +313,7 @@ describe("Slider", () => {
           // defaultValue is not clamped, but displayed as-is
           const el = yield* Slider.Root(
             { defaultValue: -10, min: 0, max: 100 },
-            [Slider.Thumb({})],
+            Slider.Thumb({}),
           );
 
           const thumb = el.querySelector("[role='slider']");
@@ -324,7 +328,7 @@ describe("Slider", () => {
         Effect.gen(function* () {
           const el = yield* Slider.Root(
             { defaultValue: 500, min: 100, max: 1000 },
-            [Slider.Thumb({})],
+            Slider.Thumb({}),
           );
 
           const thumb = el.querySelector("[role='slider']");
@@ -339,9 +343,10 @@ describe("Slider", () => {
     it("should set aria-disabled on thumb", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Slider.Root({ defaultValue: 50, disabled: true }, [
+          const el = yield* Slider.Root(
+            { defaultValue: 50, disabled: true },
             Slider.Thumb({}),
-          ]);
+          );
 
           const thumb = el.querySelector("[role='slider']");
           expect(thumb?.getAttribute("aria-disabled")).toBe("true");
@@ -352,9 +357,10 @@ describe("Slider", () => {
     it("should set data-disabled on thumb", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Slider.Root({ defaultValue: 50, disabled: true }, [
+          const el = yield* Slider.Root(
+            { defaultValue: 50, disabled: true },
             Slider.Thumb({}),
-          ]);
+          );
 
           const thumb = el.querySelector("[role='slider']");
           expect(thumb?.getAttribute("data-disabled")).toBe("");
@@ -365,9 +371,10 @@ describe("Slider", () => {
     it("should not be focusable when disabled", async () => {
       await runTest(
         Effect.gen(function* () {
-          const el = yield* Slider.Root({ defaultValue: 50, disabled: true }, [
+          const el = yield* Slider.Root(
+            { defaultValue: 50, disabled: true },
             Slider.Thumb({}),
-          ]);
+          );
 
           const thumb = el.querySelector("[role='slider']");
           expect(thumb?.getAttribute("tabindex")).toBe("-1");

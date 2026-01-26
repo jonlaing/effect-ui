@@ -61,8 +61,8 @@ export interface RenderToStringOptions {
  * });
  * ```
  */
-export const renderToString = (
-  element: Element.Element<never, RendererContext>,
+export const renderToString = <A extends HTMLElement | SVGElement>(
+  element: Element.Element<A, never, RendererContext>,
   _options: RenderToStringOptions = {},
 ) => {
   const StringRendererLayer = Layer.succeed(

@@ -1,7 +1,7 @@
 import { Effect, Option } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { div } from "@effex/dom";
+import { $, collect, div } from "@effex/dom";
 
 import { performSSR, type SSRResult, type SSRRouter } from "./SSR";
 
@@ -36,9 +36,10 @@ const createMockSSRRouter = (options?: {
   };
 };
 
-const TestComponent = () => div({ id: "test" }, ["Hello, SSR!"]);
+const TestComponent = () => div({ id: "test" }, $.of("Hello, SSR!"));
 
-const ComponentWithClass = () => div({ class: "my-class" }, ["Styled content"]);
+const ComponentWithClass = () =>
+  div({ class: "my-class" }, $.of("Styled content"));
 
 describe("ssr", () => {
   describe("performSSR", () => {
@@ -180,10 +181,13 @@ describe("ssr", () => {
 
     it("should handle components with children", async () => {
       const ParentComponent = () =>
-        div({ id: "parent" }, [
-          div({ id: "child1" }, ["Child 1"]),
-          div({ id: "child2" }, ["Child 2"]),
-        ]);
+        div(
+          { id: "parent" },
+          collect(
+            div({ id: "child1" }, $.of("Child 1")),
+            div({ id: "child2" }, $.of("Child 2")),
+          ),
+        );
 
       const request = new Request("http://localhost/");
       const element = ParentComponent();
