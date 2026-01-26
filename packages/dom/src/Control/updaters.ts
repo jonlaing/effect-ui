@@ -173,7 +173,7 @@ export const createWhenUpdater = <E1, R1, E2, R2>(
         // Run exit animation only when CLOSING (true → false)
         // This animates the visible content out before removal
         if (previousElement && animate && !newValue) {
-          yield* runExitAnimation(previousElement, animate);
+          yield* runExitAnimation(previousElement as HTMLElement, animate);
         }
 
         // Close the previous scope after exit animation
@@ -192,7 +192,7 @@ export const createWhenUpdater = <E1, R1, E2, R2>(
         // Run enter animation only when OPENING (false → true)
         // This animates the visible content in after insertion
         if (animate && newValue) {
-          yield* runEnterAnimation(newElement, animate);
+          yield* runEnterAnimation(newElement as HTMLElement, animate);
         }
       }),
 
@@ -262,7 +262,7 @@ export const createMatchUpdater = <A, E, R, E2, R2>(
 
         // Run exit animation on previous element
         if (previousElement && animate) {
-          yield* runExitAnimation(previousElement, animate);
+          yield* runExitAnimation(previousElement as HTMLElement, animate);
         }
 
         // Close the previous scope after exit animation
@@ -280,7 +280,7 @@ export const createMatchUpdater = <A, E, R, E2, R2>(
 
         // Run enter animation on new element
         if (animate) {
-          yield* runEnterAnimation(newElement, animate);
+          yield* runEnterAnimation(newElement as HTMLElement, animate);
         }
       }),
 
@@ -353,7 +353,7 @@ export const createEachUpdater = <A, E, R>(
                 if (delayMs > 0) {
                   yield* Effect.sleep(delayMs);
                 }
-                yield* runExitAnimation(element, animate);
+                yield* runExitAnimation(element as HTMLElement, animate);
               }),
             ),
             { concurrency: "unbounded" },
@@ -429,7 +429,7 @@ export const createEachUpdater = <A, E, R>(
                 if (delayMs > 0) {
                   yield* Effect.sleep(delayMs);
                 }
-                yield* runEnterAnimation(element, animate);
+                yield* runEnterAnimation(element as HTMLElement, animate);
               }),
             ),
             { concurrency: "unbounded" },

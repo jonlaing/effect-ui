@@ -29,7 +29,7 @@ export type AnimationEndResult =
  * ```
  */
 export type AnimationHook = (
-  element: Effect.Effect<HTMLElement | SVGElement>,
+  element: Effect.Effect<HTMLElement>,
 ) => Effect.Effect<unknown>;
 
 /**

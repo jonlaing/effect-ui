@@ -42,7 +42,7 @@ interface AnimationConfig {
  * Core animation runner that handles the common animation lifecycle.
  */
 const runAnimation = (
-  element: HTMLElement | SVGElement,
+  element: HTMLElement,
   config: AnimationConfig,
 ): Effect.Effect<void> =>
   Effect.gen(function* () {
@@ -115,7 +115,7 @@ const runAnimation = (
  * 9. Call onEnter hook
  */
 export const runEnterAnimation = (
-  element: HTMLElement | SVGElement,
+  element: HTMLElement,
   options: AnimationOptions,
 ): Effect.Effect<void> => {
   const {
@@ -158,7 +158,7 @@ export const runEnterAnimation = (
  * The caller is responsible for DOM removal after this completes.
  */
 export const runExitAnimation = (
-  element: HTMLElement | SVGElement,
+  element: HTMLElement,
   options: AnimationOptions,
 ): Effect.Effect<void> => {
   const {

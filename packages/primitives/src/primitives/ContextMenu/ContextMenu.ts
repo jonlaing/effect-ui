@@ -323,7 +323,7 @@ const Content = <E = never, R = never>(
           ? {
               ...props.animate,
               onEnter: (el) =>
-                (el as Effect.Effect<HTMLElement>).pipe(
+                el.pipe(
                   setPosition,
                   Element.focusFirst("[data-menu-item]:not([data-disabled])"),
                   Element.tapEffect(
@@ -333,7 +333,7 @@ const Content = <E = never, R = never>(
             }
           : {
               onEnter: (el) =>
-                (el as Effect.Effect<HTMLElement>).pipe(
+                el.pipe(
                   setPosition,
                   Element.focusFirst("[data-menu-item]:not([data-disabled])"),
                 ),
@@ -1059,7 +1059,7 @@ const SubContent = <E = never, R = never>(
           ? {
               ...props.animate,
               onEnter: (el) =>
-                (el as Effect.Effect<HTMLElement>).pipe(
+                el.pipe(
                   setPosition,
                   Element.focusFirst("[data-menu-item]:not([data-disabled])"),
                   Element.tapEffect(
@@ -1071,7 +1071,7 @@ const SubContent = <E = never, R = never>(
           : {
               // Focus first item on open
               onEnter: (el) =>
-                (el as Effect.Effect<HTMLElement>).pipe(
+                el.pipe(
                   setPosition,
                   Element.focusFirst("[data-menu-item]:not([data-disabled])"),
                   Effect.ignore,

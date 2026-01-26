@@ -405,10 +405,10 @@ const Content = <E = never, R = never>(
     const animateConfig = props.animate
       ? {
           ...props.animate,
-          onBeforeEnter: (el: Effect.Effect<HTMLElement | SVGElement>) =>
-            (el as Effect.Effect<HTMLElement>).pipe(setPosition, Effect.ignore),
-          onEnter: (el: Effect.Effect<HTMLElement | SVGElement>) =>
-            (el as Effect.Effect<HTMLElement>).pipe(
+          onBeforeEnter: (el: Effect.Effect<HTMLElement>) =>
+            el.pipe(setPosition, Effect.ignore),
+          onEnter: (el: Effect.Effect<HTMLElement>) =>
+            el.pipe(
               Element.setStyles({ animation: "" }),
               Element.focusFirst("[data-menu-item]:not([data-disabled])"),
               Element.tapEffect(
@@ -418,10 +418,10 @@ const Content = <E = never, R = never>(
             ),
         }
       : {
-          onBeforeEnter: (el: Effect.Effect<HTMLElement | SVGElement>) =>
-            (el as Effect.Effect<HTMLElement>).pipe(setPosition, Effect.ignore),
-          onEnter: (el: Effect.Effect<HTMLElement | SVGElement>) =>
-            (el as Effect.Effect<HTMLElement>).pipe(
+          onBeforeEnter: (el: Effect.Effect<HTMLElement>) =>
+            el.pipe(setPosition, Effect.ignore),
+          onEnter: (el: Effect.Effect<HTMLElement>) =>
+            el.pipe(
               Element.setStyles({ animation: "" }),
               Element.focusFirst("[data-menu-item]:not([data-disabled])"),
               Effect.ignore,
