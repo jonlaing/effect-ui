@@ -106,11 +106,12 @@ export interface RoutesProps<
  * import { Routes } from "@effex/platform";
  * import { components } from "./generated/routes";
  *
- * const App = Component.gen(function* () {
- *   return yield* div([
- *     Routes({ components }),
- *   ]);
- * });
+ * const App = (): Element.Element<HTMLDivElement> =>
+ *   Effect.gen(function* () {
+ *     return yield* div([
+ *       Routes({ components }),
+ *     ]);
+ *   });
  * ```
  *
  * @example
@@ -119,13 +120,14 @@ export interface RoutesProps<
  * import { Routes } from "@effex/platform";
  * import { components, layoutComponents, routeLayouts } from "./generated/routes";
  *
- * const App = Component.gen(function* () {
- *   return yield* Routes({
- *     components,
- *     layoutComponents,
- *     routeLayouts,
+ * const App = (): Element.Element<HTMLDivElement> =>
+ *   Effect.gen(function* () {
+ *     return yield* Routes({
+ *       components,
+ *       layoutComponents,
+ *       routeLayouts,
+ *     });
  *   });
- * });
  * ```
  *
  * @example

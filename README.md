@@ -35,11 +35,12 @@ TypeScript tells you at build time which components can fail and forces you to h
 Effex uses signals for reactive state. When a signal updates, only the DOM nodes that actually depend on that signal update. No virtual DOM, no diffing, no wasted work:
 
 ```ts
-const Counter = Component.gen(function* () {
-  const count = yield* Signal.make(0);
-  console.log("setup"); // Logs once, on mount
-  return yield* $.div(count); // count changes update only this text node
-});
+const Counter = () =>
+  Effect.gen(function* () {
+    const count = yield* Signal.make(0);
+    console.log("setup"); // Logs once, on mount
+    return yield* $.div({}, $.of(count)); // count changes update only this text node
+  });
 ```
 
 ### Automatic Resource Cleanup
@@ -87,22 +88,59 @@ pnpm add @effex/platform effect
 
 ```ts
 import { Effect } from "effect";
-import { $, Component, Signal, mount, runApp } from "@effex/dom";
+import { $, collect, Signal, mount, runApp } from "@effex/dom";
 
-const Counter = Component.gen(function* () {
-  const count = yield* Signal.make(0);
+const Counter = () =>
+  Effect.gen(function* () {
+    const count = yield* Signal.make(0);
 
-  return yield* $.div([
-    $.button({ onClick: () => count.update((n) => n - 1) }, "-"),
-    $.span(count),
-    $.button({ onClick: () => count.update((n) => n + 1) }, "+"),
-  ]);
-});
+    return yield* $.div(
+      {},
+      collect(
+        $.button({ onClick: () => count.update((n) => n - 1) }, $.of("-")),
+        $.span({}, $.of(count)),
+        $.button({ onClick: () => count.update((n) => n + 1) }, $.of("+")),
+      ),
+    );
+  });
 
 runApp(
   Effect.gen(function* () {
     yield* mount(Counter(), document.getElementById("root")!);
   }),
+);
+```
+
+### Components with Children
+
+Components that accept children use a generic `ChildEffect<E, R>` parameter:
+
+```ts
+import { $, collect, ChildEffect } from "@effex/dom";
+import { Effect } from "effect";
+
+// A reusable Card component that accepts children
+const Card = <E, R>(props: { title: string }, children: ChildEffect<E, R>) =>
+  Effect.gen(function* () {
+    return yield* $.div(
+      { class: "card" },
+      collect(
+        $.h2({}, $.of(props.title)),
+        $.div({ class: "card-body" }, children),
+      ),
+    );
+  });
+
+// Usage
+$.div(
+  {},
+  Card(
+    { title: "Welcome" },
+    collect(
+      $.p({}, $.of("This is the card content.")),
+      $.button({}, $.of("Click me")),
+    ),
+  ),
 );
 ```
 
@@ -113,7 +151,7 @@ For production apps, `@effex/platform` provides everything you need: SSR, hydrat
 ```ts
 // src/routes/users.$id.ts
 import { Effect, Schema } from "effect";
-import { $, Component, Route } from "@effex/platform";
+import { $, collect, Route } from "@effex/platform";
 
 // Define route with typed params, loader, and action
 export const route = Route.define({
@@ -127,17 +165,24 @@ export const route = Route.define({
 });
 
 // Component with type-safe access to loader data
-const UserPage = Component.gen(function* () {
-  const user = yield* route.loaderData(); // User type inferred from loader
+const UserPage = () =>
+  Effect.gen(function* () {
+    const user = yield* route.loaderData(); // User type inferred from loader
 
-  return yield* $.div([
-    $.h1(user.name),
-    $.form({ method: "post" }, [
-      $.input({ name: "email", value: user.email }),
-      $.button({ type: "submit" }, "Save"),
-    ]),
-  ]);
-});
+    return yield* $.div(
+      {},
+      collect(
+        $.h1({}, $.of(user.name)),
+        $.form(
+          { method: "post" },
+          collect(
+            $.input({ name: "email", value: user.email }),
+            $.button({ type: "submit" }, $.of("Save")),
+          ),
+        ),
+      ),
+    );
+  });
 
 export default UserPage;
 ```

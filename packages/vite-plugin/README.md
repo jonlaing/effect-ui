@@ -112,16 +112,20 @@ Each route file should export a `route` definition and default component:
 // src/routes/about.ts
 import { Effect } from "effect";
 import { Route } from "@effex/router";
-import { $, Component } from "@effex/dom";
+import { $, collect } from "@effex/dom";
 
 export const route = Route.define();
 
-const AboutPage = Component.gen(function* () {
-  return yield* $.div({ class: "page" }, [
-    $.h1(["About Us"]),
-    $.p(["Welcome to our site."]),
-  ]);
-});
+const AboutPage = () =>
+  Effect.gen(function* () {
+    return yield* $.div(
+      { class: "page" },
+      collect(
+        $.h1({}, $.of("About Us")),
+        $.p({}, $.of("Welcome to our site.")),
+      ),
+    );
+  });
 
 export default AboutPage;
 ```
@@ -133,7 +137,7 @@ Define loaders for server-side data fetching:
 ```ts
 // src/routes/users/$id.ts
 import { Effect, Schema } from "effect";
-import { $, Component, Route } from "@effex/platform";
+import { $, collect, Route } from "@effex/platform";
 
 export const route = Route.define({
   params: Schema.Struct({ id: Schema.String }),
@@ -143,18 +147,22 @@ export const route = Route.define({
     }),
 });
 
-const UserPage = Component.gen(function* () {
-  // Type-safe access to params
-  const params = yield* route.params();
+const UserPage = () =>
+  Effect.gen(function* () {
+    // Type-safe access to params
+    const params = yield* route.params();
 
-  // Type-safe access to loader data
-  const user = yield* route.loaderData<User>();
+    // Type-safe access to loader data
+    const user = yield* route.loaderData<User>();
 
-  return yield* $.div([
-    $.h1([user.name]),
-    $.p([user.email]),
-  ]);
-});
+    return yield* $.div(
+      {},
+      collect(
+        $.h1({}, $.of(user.name)),
+        $.p({}, $.of(user.email)),
+      ),
+    );
+  });
 
 export default UserPage;
 ```
@@ -166,7 +174,7 @@ Define actions for form submissions:
 ```ts
 // src/routes/contact.ts
 import { Effect } from "effect";
-import { $, Component, Route } from "@effex/platform";
+import { $, collect, Route } from "@effex/platform";
 
 export const route = Route.define({
   action: ({ formData }) =>
@@ -180,13 +188,17 @@ export const route = Route.define({
     }),
 });
 
-const ContactPage = Component.gen(function* () {
-  return yield* $.form({ method: "post" }, [
-    $.input({ name: "name" }),
-    $.textarea({ name: "message" }),
-    $.button({ type: "submit" }, ["Send"]),
-  ]);
-});
+const ContactPage = () =>
+  Effect.gen(function* () {
+    return yield* $.form(
+      { method: "post" },
+      collect(
+        $.input({ name: "name" }),
+        $.textarea({ name: "message" }),
+        $.button({ type: "submit" }, $.of("Send")),
+      ),
+    );
+  });
 
 export default ContactPage;
 ```

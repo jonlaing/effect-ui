@@ -43,11 +43,12 @@ function Counter() {
 }
 
 // Effex: Only the text node updates
-const Counter = Component.gen(function* () {
-  const count = yield* Signal.make(0)
-  console.log("render")  // Logs once, on mount
-  return yield* $.div(count)  // count changes update only this text
-})
+const Counter = () =>
+  Effect.gen(function* () {
+    const count = yield* Signal.make(0)
+    console.log("render")  // Logs once, on mount
+    return yield* $.div({}, $.of(count))  // count changes update only this text
+  })
 ```
 
 ### No Rules of Hooks
@@ -107,10 +108,11 @@ function Parent() {
 }
 
 // Effex: Parent signal doesn't affect unrelated children
-const Parent = Component.gen(function* () {
-  const count = yield* Signal.make(0)  // Child doesn't care
-  return yield* $.div([Child()])  // Child never "re-renders"
-})
+const Parent = () =>
+  Effect.gen(function* () {
+    const count = yield* Signal.make(0)  // Child doesn't care
+    return yield* $.div({}, Child())  // Child never "re-renders"
+  })
 ```
 
 ### Better Async
@@ -162,13 +164,14 @@ function Counter() {
 }
 
 // Effex
-const Counter = Component.gen(function* () {
-  const count = yield* Signal.make(0);
-  return yield* $.button(
-    { onClick: () => count.update((c) => c + 1) },
-    count,
-  );
-});
+const Counter = () =>
+  Effect.gen(function* () {
+    const count = yield* Signal.make(0);
+    return yield* $.button(
+      { onClick: () => count.update((c) => c + 1) },
+      $.of(count),
+    );
+  });
 ```
 
 ### Derived State
@@ -184,12 +187,13 @@ function Cart({ items }) {
 }
 
 // Effex
-const Cart = Component.gen(function* (props: { items: Readable<Item[]> }) {
-  const total = yield* Derived.sync([props.items], ([items]) =>
-    items.reduce((sum, i) => sum + i.price, 0),
-  );
-  return yield* $.div(t`Total: $${total}`);
-});
+const Cart = (props: { items: Readable<Item[]> }) =>
+  Effect.gen(function* () {
+    const total = yield* Derived.sync([props.items], ([items]) =>
+      items.reduce((sum, i) => sum + i.price, 0),
+    );
+    return yield* $.div({}, t`Total: $${total}`);
+  });
 ```
 
 ### Conditional Rendering
@@ -255,25 +259,29 @@ const UserProfile = (props: { id: string }) =>
   });
 
 // Effex - Option 2: Derived.async (reactive, refetches when deps change)
-const UserProfileAsync = Component.gen(function* (props: { userId: Readable<string> }) {
-  const userData = yield* Derived.async([props.userId], ([id]) => fetchUser(id));
+const UserProfileAsync = (props: { userId: Readable<string> }) =>
+  Effect.gen(function* () {
+    const userData = yield* Derived.async([props.userId], ([id]) => fetchUser(id));
 
-  // AsyncState has separate Readables for each piece of state
-  return yield* $.div([
-    when(userData.isLoading, {
-      onTrue: () => $.div("Loading..."),
-      onFalse: () => $.span(),
-    }),
-    matchOption(userData.error, {
-      onSome: (err) => $.div({ class: "error" }, err.map((e) => e.message)),
-      onNone: () => $.span(),
-    }),
-    matchOption(userData.value, {
-      onSome: (user) => $.div(user.map((u) => u.name)), // user is Readable<User>
-      onNone: () => $.span(),
-    }),
-  ]);
-});
+    // AsyncState has separate Readables for each piece of state
+    return yield* $.div(
+      {},
+      collect(
+        when(userData.isLoading, {
+          onTrue: () => $.div({}, $.of("Loading...")),
+          onFalse: () => $.span(),
+        }),
+        matchOption(userData.error, {
+          onSome: (err) => $.div({ class: "error" }, $.of(err.map((e) => e.message))),
+          onNone: () => $.span(),
+        }),
+        matchOption(userData.value, {
+          onSome: (user) => $.div({}, $.of(user.map((u) => u.name))), // user is Readable<User>
+          onNone: () => $.span(),
+        }),
+      ),
+    );
+  });
 ```
 
 ### Context / Services
@@ -296,10 +304,11 @@ function Page() {
 // Effex
 class ThemeService extends Context.Tag("Theme")<ThemeService, string>() {}
 
-const Page = Component.gen(function* () {
-  const theme = yield* ThemeService;
-  return yield* $.div({ class: theme }, "...");
-});
+const Page = () =>
+  Effect.gen(function* () {
+    const theme = yield* ThemeService;
+    return yield* $.div({ class: theme }, $.of("..."));
+  });
 
 // Provide at mount (like wrapping the root)
 runApp(mount(Page().pipe(Effect.provideService(ThemeService, "dark")), root));
@@ -331,21 +340,22 @@ function DocumentTitle({ title, unreadCount }) {
 }
 
 // Effex
-const DocumentTitle = Component.gen(function* (props: { title: Readable<string>; unreadCount: Readable<number> }) {
-  // Runs whenever title or unreadCount changes
-  yield* Reaction.make([props.title, props.unreadCount], ([title, count]) =>
-    Effect.sync(() => {
-      document.title = count > 0 ? `(${count}) ${title}` : title;
-    }),
-  );
+const DocumentTitle = (props: { title: Readable<string>; unreadCount: Readable<number> }) =>
+  Effect.gen(function* () {
+    // Runs whenever title or unreadCount changes
+    yield* Reaction.make([props.title, props.unreadCount], ([title, count]) =>
+      Effect.sync(() => {
+        document.title = count > 0 ? `(${count}) ${title}` : title;
+      }),
+    );
 
-  // Runs whenever title changes
-  yield* Reaction.make([props.title], ([title]) =>
-    Effect.sync(() => localStorage.setItem("lastTitle", title)),
-  );
+    // Runs whenever title changes
+    yield* Reaction.make([props.title], ([title]) =>
+      Effect.sync(() => localStorage.setItem("lastTitle", title)),
+    );
 
-  return yield* $.h1(props.title);
-});
+    return yield* $.h1({}, $.of(props.title));
+  });
 ```
 
 Key differences:
@@ -406,19 +416,20 @@ In Effex, the `Element` namespace provides pipeable helpers for DOM manipulation
 
 ```ts
 // Effex
-const FocusInput = Component.gen(function* () {
-  const inputRef = yield* Element.ref<HTMLInputElement>();
+const FocusInput = () =>
+  Effect.gen(function* () {
+    const inputRef = yield* Element.ref<HTMLInputElement>();
 
-  const handleFocus = () =>
-    inputRef.pipe(
-      Element.focus,
-      Element.scrollIntoView({ behavior: "smooth" }),
-      Element.addClass("focused"),
-      Effect.runPromise,
-    );
+    const handleFocus = () =>
+      inputRef.pipe(
+        Element.focus,
+        Element.scrollIntoView({ behavior: "smooth" }),
+        Element.addClass("focused"),
+        Effect.runPromise,
+      );
 
-  return yield* $.input({ ref: inputRef, onClick: handleFocus });
-});
+    return yield* $.input({ ref: inputRef, onClick: handleFocus });
+  });
 ```
 
 ### Common React DOM Patterns

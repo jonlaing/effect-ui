@@ -5,6 +5,7 @@ import { Signal } from "@effex/core";
 
 import { collect } from "../Collect";
 import { DOMRendererLive } from "../DOMRenderer";
+import { t } from "../Template";
 import { $, button, div, h1, input, li, p, span, ul } from "./Element";
 
 const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
@@ -157,7 +158,7 @@ describe("Element", () => {
       await runTest(
         Effect.gen(function* () {
           const count = yield* Signal.make(0);
-          const el = yield* span({}, $.of(count.map((n) => `Count: ${n}`)));
+          const el = yield* span({}, t`Count: ${count}`);
 
           expect(el.textContent).toBe("Count: 0");
 

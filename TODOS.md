@@ -126,7 +126,7 @@ Dialog, DropdownMenu, Select, Combobox, Popover, Tooltip, Tabs, Accordion, Toggl
   Teach Effect concepts as they become relevant:
   1. **Elements** - "Returns an Effect. Think of it like a Promise that hasn't run yet. The E and R types give you compile-time safety."
   2. **Event handlers** - "Handlers return Effects. Use Effect.gen + yield* like async/await."
-  3. **Components** - "Component.gen is just Effect.gen that returns an Element."
+  3. **Components** - "Components are functions that return Effects. Use Effect.gen for the implementation."
   4. **Context** - "Remember the R channel? That's for dependencies."
 
   #### Concept Docs (ordered by learning progression)

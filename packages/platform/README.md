@@ -45,18 +45,22 @@ export const route = Route.define({
 });
 
 // Component with type-safe access
-const UserPage = Component.gen(function* () {
-  // Type-safe params
-  const params = yield* route.params();
+const UserPage = () =>
+  Effect.gen(function* () {
+    // Type-safe params
+    const params = yield* route.params();
 
-  // Type-safe loader data
-  const user = yield* route.loaderData<User>();
+    // Type-safe loader data
+    const user = yield* route.loaderData<User>();
 
-  return yield* $.div([
-    $.h1([user.name]),
-    $.p([user.email]),
-  ]);
-});
+    return yield* $.div(
+      {},
+      collect(
+        $.h1({}, $.of(user.name)),
+        $.p({}, $.of(user.email)),
+      ),
+    );
+  });
 
 export default UserPage;
 ```
@@ -140,14 +144,18 @@ export const route = Route.define({
     }),
 });
 
-const UserPage = Component.gen(function* () {
-  const user = yield* route.loaderData<User>();
+const UserPage = () =>
+  Effect.gen(function* () {
+    const user = yield* route.loaderData<User>();
 
-  return yield* $.div([
-    $.h1([user.name]),
-    $.p([user.email]),
-  ]);
-});
+    return yield* $.div(
+      {},
+      collect(
+        $.h1({}, $.of(user.name)),
+        $.p({}, $.of(user.email)),
+      ),
+    );
+  });
 
 export default UserPage;
 ```
@@ -159,7 +167,7 @@ Handle form submissions on the server:
 ```ts
 // src/routes/contact.ts
 import { Effect } from "effect";
-import { $, Component, Route, Form, when, RouterContext } from "@effex/platform";
+import { $, collect, Route, when, RouterContext } from "@effex/platform";
 
 export const route = Route.define({
   action: ({ formData }) =>
@@ -173,19 +181,23 @@ export const route = Route.define({
     }),
 });
 
-const ContactForm = Component.gen(function* () {
-  const router = yield* RouterContext;
-  const actionState = router.actionState;
+const ContactForm = () =>
+  Effect.gen(function* () {
+    const router = yield* RouterContext;
+    const actionState = router.actionState;
 
-  return yield* $.form({ method: "post" }, [
-    $.input({ name: "name", placeholder: "Name" }),
-    $.textarea({ name: "message", placeholder: "Message" }),
-    $.button({ type: "submit" }, ["Send"]),
-    when(actionState.map((s) => s.data?.success), {
-        onTrue: () => $.p({ class: "success" }, ["Message sent!"]),
-        onFalse: () => $.span(),
-      }),
-    ]);
+    return yield* $.form(
+      { method: "post" },
+      collect(
+        $.input({ name: "name", placeholder: "Name" }),
+        $.textarea({ name: "message", placeholder: "Message" }),
+        $.button({ type: "submit" }, $.of("Send")),
+        when(actionState.map((s) => s.data?.success), {
+          onTrue: () => $.p({ class: "success" }, $.of("Message sent!")),
+          onFalse: () => $.span(),
+        }),
+      ),
+    );
   });
 
 export default ContactForm;
@@ -247,18 +259,23 @@ const restored = deserializeSync(json);
 Render the current route:
 
 ```ts
-import { Routes, Component } from "@effex/platform";
+import { $, collect, Routes } from "@effex/platform";
+import { Effect } from "effect";
 
-const App = Component.gen(function* () {
-  return yield* $.div([
-    Header(),
-    Routes({
-      components,
-      fallback: () => NotFoundPage(),
-    }),
-    Footer(),
-  ]);
-});
+const App = () =>
+  Effect.gen(function* () {
+    return yield* $.div(
+      {},
+      collect(
+        Header(),
+        Routes({
+          components,
+          fallback: () => NotFoundPage(),
+        }),
+        Footer(),
+      ),
+    );
+  });
 ```
 
 ## Integrating with Effect HttpApi

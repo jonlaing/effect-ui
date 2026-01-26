@@ -13,9 +13,10 @@ describe("parseRouteExportsFromContent", () => {
         loader: (params) => Effect.succeed({ name: "test" }),
       });
 
-      const UserPage = Component.gen(function* () {
-        return yield* div([]);
-      });
+      const UserPage = (): Element.Element<HTMLDivElement> =>
+        Effect.gen(function* () {
+          return yield* div([]);
+        });
       export default UserPage;
     `;
 
@@ -27,9 +28,10 @@ describe("parseRouteExportsFromContent", () => {
 
   it("should detect default export", () => {
     const content = `
-      const MyComponent = Component.gen(function* () {
-        return yield* div([]);
-      });
+      const MyComponent = (): Element.Element<HTMLDivElement> =>
+        Effect.gen(function* () {
+          return yield* div([]);
+        });
       export default MyComponent;
     `;
 
@@ -41,9 +43,10 @@ describe("parseRouteExportsFromContent", () => {
 
   it("should detect inline default export", () => {
     const content = `
-      const MyComponent = Component.gen(function* () {
-        return yield* div([]);
-      });
+      const MyComponent = (): Element.Element<HTMLDivElement> =>
+        Effect.gen(function* () {
+          return yield* div([]);
+        });
       export default MyComponent;
     `;
 
@@ -54,9 +57,10 @@ describe("parseRouteExportsFromContent", () => {
 
   it("should detect re-exports with as default", () => {
     const content = `
-      const MyPage = Component.gen(function* () {
-        return yield* div([]);
-      });
+      const MyPage = (): Element.Element<HTMLDivElement> =>
+        Effect.gen(function* () {
+          return yield* div([]);
+        });
       export { MyPage as default };
     `;
 
@@ -67,11 +71,13 @@ describe("parseRouteExportsFromContent", () => {
 
   it("should handle file with only component (no Route.define)", () => {
     const content = `
-      import { Component, div } from "@effex/dom";
+      import { Effect } from "effect";
+      import { Element, div } from "@effex/dom";
 
-      const AboutPage = Component.gen(function* () {
-        return yield* div(["About us"]);
-      });
+      const AboutPage = (): Element.Element<HTMLDivElement> =>
+        Effect.gen(function* () {
+          return yield* div(["About us"]);
+        });
 
       export default AboutPage;
     `;
@@ -98,7 +104,7 @@ describe("parseRouteExportsFromContent", () => {
   it("should handle complete route file with Route.define", () => {
     const content = `
       import { Effect, Schema } from "effect";
-      import { Component, div, h1 } from "@effex/dom";
+      import { Element, div, h1 } from "@effex/dom";
       import { Route } from "@effex/router";
 
       export const route = Route.define({
@@ -107,9 +113,10 @@ describe("parseRouteExportsFromContent", () => {
         action: ({ formData }) => Effect.succeed({ success: true }),
       });
 
-      const UserPage = Component.gen(function* () {
-        return yield* div([h1(["User"])]);
-      });
+      const UserPage = (): Element.Element<HTMLDivElement> =>
+        Effect.gen(function* () {
+          return yield* div([h1(["User"])]);
+        });
 
       export default UserPage;
     `;

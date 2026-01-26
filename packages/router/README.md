@@ -53,22 +53,26 @@ export const route = Route.define({
     }),
 });
 
-const UserPage = Component.gen(function* () {
-  // Type-safe access to params
-  const params = yield* route.params();
-  // params is typed as { id: string } | null
+const UserPage = () =>
+  Effect.gen(function* () {
+    // Type-safe access to params
+    const params = yield* route.params();
+    // params is typed as { id: string } | null
 
-  // Type-safe access to loader data
-  const user = yield* route.loaderData<User>();
+    // Type-safe access to loader data
+    const user = yield* route.loaderData<User>();
 
-  // Check if this route is active
-  const isActive = route.isActive();
+    // Check if this route is active
+    const isActive = route.isActive();
 
-  return yield* $.div([
-    $.h1(["User ", params?.id ?? "Unknown"]),
-    $.p([user.name]),
-  ]);
-});
+    return yield* $.div(
+      {},
+      collect(
+        $.h1({}, t`User ${params?.id ?? "Unknown"}`),
+        $.p({}, $.of(user.name)),
+      ),
+    );
+  });
 
 export default UserPage;
 ```
@@ -108,15 +112,17 @@ const routes = {
 Access params in your components:
 
 ```ts
-const UserPage = Component.gen(function* () {
-  const router = yield* RouterContext;
-  const params = yield* router.routes.user.params.get;
-  // params is typed as { id: string } | null
+const UserPage = () =>
+  Effect.gen(function* () {
+    const router = yield* RouterContext;
+    const params = yield* router.routes.user.params.get;
+    // params is typed as { id: string } | null
 
-  return yield* $.div([
-    $.h1(["User ", params?.id ?? "Unknown"]),
-  ]);
-});
+    return yield* $.div(
+      {},
+      $.h1({}, t`User ${params?.id ?? "Unknown"}`),
+    );
+  });
 ```
 
 ## Router Layer

@@ -32,10 +32,11 @@
  *     return yield* UserService.getById(params.id);
  *   });
  *
- * const UserPage = Component.gen(function* () {
- *   const user = yield* RouteLoader.loaderData();
- *   return yield* div([h1([user.name])]);
- * });
+ * const UserPage = (): Element.Element<HTMLDivElement> =>
+ *   Effect.gen(function* () {
+ *     const user = yield* RouteLoader.loaderData();
+ *     return yield* div([h1([user.name])]);
+ *   });
  *
  * export default UserPage;
  * ```

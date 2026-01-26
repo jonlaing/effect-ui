@@ -186,13 +186,14 @@ yield* eventSource.pipe(
 
 ```ts
 // Effex
-const Counter = Component.gen(function* () {
-  const count = yield* Signal.make(0);
-  return yield* $.button(
-    { onClick: () => count.update((c) => c + 1) },
-    count,
-  );
-});
+const Counter = () =>
+  Effect.gen(function* () {
+    const count = yield* Signal.make(0);
+    return yield* $.button(
+      { onClick: () => count.update((c) => c + 1) },
+      $.of(count),
+    );
+  });
 ```
 
 ### Derived State
@@ -217,12 +218,13 @@ const Counter = Component.gen(function* () {
 
 ```ts
 // Effex
-const Cart = Component.gen(function* (props: { items: Readable<Item[]> }) {
-  const total = yield* Derived.sync([props.items], ([items]) =>
-    items.reduce((sum, i) => sum + i.price, 0),
-  );
-  return yield* $.div(total.map((t) => `Total: $${t}`));
-});
+const Cart = (props: { items: Readable<Item[]> }) =>
+  Effect.gen(function* () {
+    const total = yield* Derived.sync([props.items], ([items]) =>
+      items.reduce((sum, i) => sum + i.price, 0),
+    );
+    return yield* $.div({}, t`Total: $${total}`);
+  });
 ```
 
 ### Conditional Rendering
@@ -307,21 +309,22 @@ const TodoList = (props: { todos: Readable<Todo[]> }) =>
 
 ```ts
 // Effex
-const DocumentTitle = Component.gen(function* (props: { title: Readable<string>; unreadCount: Readable<number> }) {
-  // Runs whenever title or unreadCount changes
-  yield* Reaction.make([props.title, props.unreadCount], ([title, count]) =>
-    Effect.sync(() => {
-      document.title = count > 0 ? `(${count}) ${title}` : title;
-    }),
-  );
+const DocumentTitle = (props: { title: Readable<string>; unreadCount: Readable<number> }) =>
+  Effect.gen(function* () {
+    // Runs whenever title or unreadCount changes
+    yield* Reaction.make([props.title, props.unreadCount], ([title, count]) =>
+      Effect.sync(() => {
+        document.title = count > 0 ? `(${count}) ${title}` : title;
+      }),
+    );
 
-  // Runs whenever title changes
-  yield* Reaction.make([props.title], ([title]) =>
-    Effect.sync(() => localStorage.setItem("lastTitle", title)),
-  );
+    // Runs whenever title changes
+    yield* Reaction.make([props.title], ([title]) =>
+      Effect.sync(() => localStorage.setItem("lastTitle", title)),
+    );
 
-  return yield* $.h1(props.title);
-});
+    return yield* $.h1({}, $.of(props.title));
+  });
 ```
 
 ### Context (Services)
@@ -346,10 +349,11 @@ const DocumentTitle = Component.gen(function* (props: { title: Readable<string>;
 // Effex
 class ThemeService extends Context.Tag("Theme")<ThemeService, string>() {}
 
-const Page = Component.gen(function* () {
-  const theme = yield* ThemeService;
-  return yield* $.div({ class: theme }, "...");
-});
+const Page = () =>
+  Effect.gen(function* () {
+    const theme = yield* ThemeService;
+    return yield* $.div({ class: theme }, $.of("..."));
+  });
 
 // Provide at mount (like wrapping the root)
 runApp(mount(Page().pipe(Effect.provideService(ThemeService, "dark")), root));
@@ -378,16 +382,20 @@ $.div(
 
 ```ts
 // Effex
-const TextInput = Component.gen(function* () {
-  const text = yield* Signal.make("");
-  return yield* $.div([
-    $.input({
-      value: text,
-      onInput: (e) => text.set((e.target as HTMLInputElement).value),
-    }),
-    $.p(t`You typed: ${text}`),
-  ]);
-});
+const TextInput = () =>
+  Effect.gen(function* () {
+    const text = yield* Signal.make("");
+    return yield* $.div(
+      {},
+      collect(
+        $.input({
+          value: text,
+          onInput: (e) => text.set((e.target as HTMLInputElement).value),
+        }),
+        $.p({}, t`You typed: ${text}`),
+      ),
+    );
+  });
 ```
 
 ### Stores (Svelte 4)
@@ -407,15 +415,19 @@ const TextInput = Component.gen(function* () {
 
 ```ts
 // Effex
-const Counter = Component.gen(function* () {
-  const count = yield* Signal.make(0);
-  const doubled = yield* Derived.sync([count], ([c]) => c * 2);
+const Counter = () =>
+  Effect.gen(function* () {
+    const count = yield* Signal.make(0);
+    const doubled = yield* Derived.sync([count], ([c]) => c * 2);
 
-  return yield* $.div([
-    $.button({ onClick: () => count.update((c) => c + 1) }, count),
-    $.p(t`Doubled: ${doubled}`),
-  ]);
-});
+    return yield* $.div(
+      {},
+      collect(
+        $.button({ onClick: () => count.update((c) => c + 1) }, $.of(count)),
+        $.p({}, t`Doubled: ${doubled}`),
+      ),
+    );
+  });
 ```
 
 ### Slots / Children
@@ -572,19 +584,20 @@ In Effex, the `Element` namespace provides pipeable helpers for DOM manipulation
 
 ```ts
 // Effex
-const FocusInput = Component.gen(function* () {
-  const inputRef = yield* Element.ref<HTMLInputElement>();
+const FocusInput = () =>
+  Effect.gen(function* () {
+    const inputRef = yield* Element.ref<HTMLInputElement>();
 
-  const handleFocus = () =>
-    inputRef.pipe(
-      Element.focus,
-      Element.scrollIntoView({ behavior: "smooth" }),
-      Element.addClass("focused"),
-      Effect.runPromise,
-    );
+    const handleFocus = () =>
+      inputRef.pipe(
+        Element.focus,
+        Element.scrollIntoView({ behavior: "smooth" }),
+        Element.addClass("focused"),
+        Effect.runPromise,
+      );
 
-  return yield* $.input({ ref: inputRef, onClick: handleFocus });
-});
+    return yield* $.input({ ref: inputRef, onClick: handleFocus });
+  });
 ```
 
 ### Common Svelte DOM Patterns
