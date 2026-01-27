@@ -1,10 +1,6 @@
 import { Effect, Layer } from "effect";
 
-import {
-  RendererContext,
-  type RendererInterface,
-  type Slot,
-} from "@effex/core";
+import { RendererContext, type Renderer, type Slot } from "@effex/core";
 
 import { toKebabCase } from "./helpers/index.js";
 
@@ -12,7 +8,7 @@ import { toKebabCase } from "./helpers/index.js";
  * DOM implementation of the Renderer interface.
  * Uses browser DOM APIs to create and manipulate elements.
  */
-export const DOMRenderer: RendererInterface<Node> = {
+export const DOMRenderer: Renderer<Node> = {
   createNode: (type: string, namespace?: string) =>
     Effect.sync(() =>
       namespace
@@ -72,6 +68,16 @@ export const DOMRenderer: RendererInterface<Node> = {
   setStyleProperty: (node: Node, property: string, value: string) =>
     Effect.sync(() => {
       (node as HTMLElement).style.setProperty(toKebabCase(property), value);
+    }),
+
+  removeStyleProperty: (node: Node, property: string) =>
+    Effect.sync(() => {
+      (node as HTMLElement).style.removeProperty(toKebabCase(property));
+    }),
+
+  toggleClass: (node: Node, className: string, force?: boolean) =>
+    Effect.sync(() => {
+      (node as HTMLElement).classList.toggle(className, force);
     }),
 
   setTextContent: (node: Node, text: string) =>
@@ -150,5 +156,5 @@ export const DOMRenderer: RendererInterface<Node> = {
  */
 export const DOMRendererLive = Layer.succeed(
   RendererContext,
-  DOMRenderer as RendererInterface<unknown>,
+  DOMRenderer as Renderer<unknown>,
 );

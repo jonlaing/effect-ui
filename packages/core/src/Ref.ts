@@ -1,4 +1,7 @@
-import { Deferred, Effect, Scope } from "effect";
+import { Deferred, Effect, Predicate, Scope } from "effect";
+
+export const TypeId = Symbol.for("@effex/Ref");
+export type TypeId = typeof TypeId;
 
 /**
  * A mutable reference that may not have a value yet.
@@ -6,6 +9,7 @@ import { Deferred, Effect, Scope } from "effect";
  * @template A - The type of value held by the ref
  */
 export interface Ref<A> {
+  [TypeId]: TypeId;
   /** The current value, or null if not yet set */
   current: A | null;
   /** Effect that resolves when the value is available */
@@ -13,6 +17,9 @@ export interface Ref<A> {
   /** Set the value (also completes the deferred) */
   readonly set: (value: A) => void;
 }
+
+export const isRef = (value: unknown): value is Ref<unknown> =>
+  Predicate.hasProperty(value, TypeId);
 
 /**
  * Create a Ref to hold a mutable reference to a value.
@@ -39,6 +46,7 @@ export const make = <A>(): Effect.Effect<Ref<A>, never, Scope.Scope> =>
     let _resolved = false;
 
     const ref: Ref<A> = {
+      [TypeId]: TypeId,
       get current() {
         return _current;
       },

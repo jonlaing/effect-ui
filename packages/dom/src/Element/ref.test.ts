@@ -1,9 +1,9 @@
 import { Effect, Fiber, Scope, Stream } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { Reaction } from "@effex/core";
+import { Readable } from "@effex/core";
 
-import { bindElementToRef, makeElementRef } from "./ref";
+import { bindElementToRef, make } from "./ref";
 
 const runTest = <A>(effect: Effect.Effect<A, never, Scope.Scope>): Promise<A> =>
   Effect.runPromise(Effect.scoped(effect));
@@ -13,7 +13,7 @@ describe("ElementRef", () => {
     it("should return false when element is not bound", () =>
       runTest(
         Effect.gen(function* () {
-          const ref = yield* makeElementRef<HTMLDivElement>();
+          const ref = yield* make<HTMLDivElement>();
           const connected = yield* ref.isConnected.get;
           expect(connected).toBe(false);
         }),
@@ -22,7 +22,7 @@ describe("ElementRef", () => {
     it("should return false when element is bound but not connected", () =>
       runTest(
         Effect.gen(function* () {
-          const ref = yield* makeElementRef<HTMLDivElement>();
+          const ref = yield* make<HTMLDivElement>();
 
           const mockElement = {
             isConnected: false,
@@ -37,7 +37,7 @@ describe("ElementRef", () => {
     it("should return true when element is connected", () =>
       runTest(
         Effect.gen(function* () {
-          const ref = yield* makeElementRef<HTMLDivElement>();
+          const ref = yield* make<HTMLDivElement>();
 
           const mockElement = {
             isConnected: true,
@@ -52,7 +52,7 @@ describe("ElementRef", () => {
     it("should emit changes when connection state changes", () =>
       runTest(
         Effect.gen(function* () {
-          const ref = yield* makeElementRef<HTMLDivElement>();
+          const ref = yield* make<HTMLDivElement>();
           const mockElement = {
             isConnected: false,
           } as unknown as HTMLDivElement;
@@ -87,10 +87,10 @@ describe("ElementRef", () => {
         }),
       ));
 
-    it("should work with Reaction.make", () =>
+    it("should work with Readable.tap", () =>
       runTest(
         Effect.gen(function* () {
-          const ref = yield* makeElementRef<HTMLDivElement>();
+          const ref = yield* make<HTMLDivElement>();
           const mockElement = {
             isConnected: false,
           } as unknown as HTMLDivElement;
@@ -98,11 +98,14 @@ describe("ElementRef", () => {
 
           const emissions: boolean[] = [];
 
-          // Use Reaction.make like user would
-          yield* Reaction.make([ref.isConnected], ([connected]) => {
-            emissions.push(connected);
-            return Effect.void;
-          });
+          // Use Readable.tap like user would
+          yield* ref.isConnected.pipe(
+            Readable.tap((connected) => {
+              emissions.push(connected);
+              return Effect.void;
+            }),
+            Effect.fork,
+          );
 
           // Initial value should have been emitted
           yield* Effect.sleep(10);
@@ -118,18 +121,21 @@ describe("ElementRef", () => {
         }),
       ));
 
-    it("should work when Reaction is set up before element is bound", () =>
+    it("should work when tap is set up before element is bound", () =>
       runTest(
         Effect.gen(function* () {
-          const ref = yield* makeElementRef<HTMLDivElement>();
+          const ref = yield* make<HTMLDivElement>();
 
           const emissions: boolean[] = [];
 
-          // Set up Reaction BEFORE element is bound (like in real component)
-          yield* Reaction.make([ref.isConnected], ([connected]) => {
-            emissions.push(connected);
-            return Effect.void;
-          });
+          // Set up tap BEFORE element is bound (like in real component)
+          yield* ref.isConnected.pipe(
+            Readable.tap((connected) => {
+              emissions.push(connected);
+              return Effect.void;
+            }),
+            Effect.fork,
+          );
 
           // Initial value (false - no element) should have been emitted
           yield* Effect.sleep(10);

@@ -26,7 +26,7 @@ export type { Slot } from "./Renderer";
 export { Renderer, RendererContext } from "./Renderer";
 
 // Element
-export type { Element, Child } from "./Element";
+export type { Element } from "./Element";
 
 // Boundary
 export type { SuspenseOptions, BoundarySuspenseOptions } from "./Boundary";

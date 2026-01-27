@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Stream } from "effect";
 import { describe, expect, it } from "vitest";
 
 import { Readable } from "./Readable";
@@ -113,6 +113,268 @@ describe("Signal.fromReactive", () => {
       ),
     );
     expect(result).toBe(20);
+  });
+});
+
+describe("Signal reactivity", () => {
+  it("should emit values on the values stream after set", async () => {
+    await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const sig = yield* Signal.make(0);
+
+          const emissions: number[] = [];
+          yield* Stream.runForEach(sig.values, (val) =>
+            Effect.sync(() => {
+              emissions.push(val);
+            }),
+          ).pipe(Effect.fork);
+
+          yield* Effect.sleep("20 millis");
+
+          yield* sig.set(1);
+          yield* Effect.sleep("20 millis");
+
+          yield* sig.set(2);
+          yield* Effect.sleep("20 millis");
+
+          yield* sig.set(3);
+          yield* Effect.sleep("20 millis");
+
+          expect(emissions).toEqual([0, 1, 2, 3]);
+        }),
+      ),
+    );
+  });
+
+  it("should emit on the changes stream (includes current value on subscription)", async () => {
+    // Note: Signal.changes includes the current value when subscribed due to SubscriptionRef semantics.
+    // This provides "catch-up" behavior - if you subscribe after a change, you get the current value.
+    await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const sig = yield* Signal.make(0);
+
+          const emissions: number[] = [];
+          yield* Stream.runForEach(sig.changes, (val) =>
+            Effect.sync(() => {
+              emissions.push(val);
+            }),
+          ).pipe(Effect.fork);
+
+          yield* Effect.sleep("20 millis");
+
+          yield* sig.set(1);
+          yield* Effect.sleep("20 millis");
+
+          yield* sig.set(2);
+          yield* Effect.sleep("20 millis");
+
+          // changes includes current value (0) on subscription, then future changes
+          expect(emissions).toEqual([0, 1, 2]);
+        }),
+      ),
+    );
+  });
+
+  it("should support multiple subscribers", async () => {
+    await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const sig = yield* Signal.make(0);
+
+          const emissions1: number[] = [];
+          const emissions2: number[] = [];
+
+          yield* Stream.runForEach(sig.values, (val) =>
+            Effect.sync(() => {
+              emissions1.push(val);
+            }),
+          ).pipe(Effect.fork);
+
+          yield* Stream.runForEach(sig.values, (val) =>
+            Effect.sync(() => {
+              emissions2.push(val);
+            }),
+          ).pipe(Effect.fork);
+
+          yield* Effect.sleep("20 millis");
+
+          yield* sig.set(1);
+          yield* Effect.sleep("20 millis");
+
+          yield* sig.set(2);
+          yield* Effect.sleep("20 millis");
+
+          expect(emissions1).toEqual([0, 1, 2]);
+          expect(emissions2).toEqual([0, 1, 2]);
+        }),
+      ),
+    );
+  });
+
+  it("should handle rapid sequential updates", async () => {
+    await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const sig = yield* Signal.make(0);
+
+          const emissions: number[] = [];
+          yield* Stream.runForEach(sig.values, (val) =>
+            Effect.sync(() => {
+              emissions.push(val);
+            }),
+          ).pipe(Effect.fork);
+
+          yield* Effect.sleep("10 millis");
+
+          // Rapid updates
+          for (let i = 1; i <= 10; i++) {
+            yield* sig.set(i);
+          }
+
+          yield* Effect.sleep("50 millis");
+
+          // Should have initial + all 10 updates
+          expect(emissions.length).toBe(11);
+          expect(emissions[0]).toBe(0);
+          expect(emissions[10]).toBe(10);
+        }),
+      ),
+    );
+  });
+
+  it("should properly clean up subscriptions when scope closes", async () => {
+    let emissionsAfterScopeClose = 0;
+    const sig = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const sig = yield* Signal.make(0);
+
+          yield* Stream.runForEach(sig.values, (val) =>
+            Effect.sync(() => {
+              emissionsAfterScopeClose++;
+            }),
+          ).pipe(Effect.fork);
+
+          yield* Effect.sleep("10 millis");
+          yield* sig.set(1);
+          yield* Effect.sleep("10 millis");
+
+          // Return the ref (not the signal since it's scope-bound)
+          return sig;
+        }),
+      ),
+    );
+
+    // Scope closed, subscription should be cleaned up
+    const countBeforeSet = emissionsAfterScopeClose;
+
+    // This set should NOT trigger the subscription (it was cleaned up)
+    await Effect.runPromise(sig.set(99));
+    await new Promise((r) => setTimeout(r, 50));
+
+    // The subscription should NOT have received the value after scope closed
+    // Note: This tests that forked fibers are properly interrupted on scope close
+    expect(emissionsAfterScopeClose).toBe(countBeforeSet);
+  });
+});
+
+describe("Signal memory stress tests", () => {
+  it("should handle many signals in sequence without memory issues", async () => {
+    // Create and destroy many signals in sequence
+    for (let i = 0; i < 50; i++) {
+      await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const sig = yield* Signal.make(i);
+            const emissions: number[] = [];
+
+            yield* Stream.runForEach(sig.values, (val) =>
+              Effect.sync(() => {
+                emissions.push(val);
+              }),
+            ).pipe(Effect.fork);
+
+            yield* Effect.sleep("5 millis");
+            yield* sig.set(i + 1);
+            yield* Effect.sleep("5 millis");
+
+            expect(emissions).toEqual([i, i + 1]);
+          }),
+        ),
+      );
+    }
+    // If we get here without heap overflow, the test passes
+    expect(true).toBe(true);
+  });
+
+  it("should handle many subscriptions without memory issues", async () => {
+    await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const sig = yield* Signal.make(0);
+          const allEmissions: number[][] = [];
+
+          // Create 20 subscribers
+          for (let i = 0; i < 20; i++) {
+            const emissions: number[] = [];
+            allEmissions.push(emissions);
+
+            yield* Stream.runForEach(sig.values, (val) =>
+              Effect.sync(() => {
+                emissions.push(val);
+              }),
+            ).pipe(Effect.fork);
+          }
+
+          yield* Effect.sleep("20 millis");
+
+          // Update the signal
+          yield* sig.set(1);
+          yield* Effect.sleep("20 millis");
+
+          yield* sig.set(2);
+          yield* Effect.sleep("20 millis");
+
+          // All subscribers should have received the values
+          for (const emissions of allEmissions) {
+            expect(emissions).toEqual([0, 1, 2]);
+          }
+        }),
+      ),
+    );
+  });
+
+  it("should handle many updates without memory issues", async () => {
+    await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const sig = yield* Signal.make(0);
+          const emissions: number[] = [];
+
+          yield* Stream.runForEach(sig.values, (val) =>
+            Effect.sync(() => {
+              emissions.push(val);
+            }),
+          ).pipe(Effect.fork);
+
+          yield* Effect.sleep("10 millis");
+
+          // Many updates
+          for (let i = 1; i <= 100; i++) {
+            yield* sig.set(i);
+          }
+
+          yield* Effect.sleep("50 millis");
+
+          // Should have initial + 100 updates
+          expect(emissions.length).toBe(101);
+          expect(emissions[0]).toBe(0);
+          expect(emissions[100]).toBe(100);
+        }),
+      ),
+    );
   });
 });
 

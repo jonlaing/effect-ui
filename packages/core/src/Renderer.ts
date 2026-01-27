@@ -108,6 +108,24 @@ export interface Renderer<Node> {
   ) => Effect.Effect<void>;
 
   /**
+   * Remove a CSS style property from a node.
+   */
+  readonly removeStyleProperty: (
+    node: Node,
+    property: string,
+  ) => Effect.Effect<void>;
+
+  /**
+   * Toggle a CSS class on a node.
+   * @param force - If true, adds the class; if false, removes it; if undefined, toggles
+   */
+  readonly toggleClass: (
+    node: Node,
+    className: string,
+    force?: boolean,
+  ) => Effect.Effect<void>;
+
+  /**
    * Set the text content of a node.
    */
   readonly setTextContent: (node: Node, text: string) => Effect.Effect<void>;

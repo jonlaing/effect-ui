@@ -93,7 +93,12 @@ export const make = <A>(
       return getChanges();
     },
     get values() {
-      return Stream.concat(Stream.fromEffect(get), getChanges());
+      // Use Stream.changes to dedupe consecutive identical values.
+      // This handles the case where getChanges() emits current value on subscription
+      // (like SubscriptionRef.changes does), avoiding duplicate initial values.
+      return Stream.concat(Stream.fromEffect(get), getChanges()).pipe(
+        Stream.changes,
+      );
     },
     pipe() {
       // eslint-disable-next-line prefer-rest-params

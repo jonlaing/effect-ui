@@ -7,7 +7,7 @@ import {
   AttributeNotFound,
   DataAttributeNotFound,
   getUnsafe,
-  makeElementRef,
+  make as makeRef,
 } from "./ref.js";
 import type { Element as ElementType } from "./types.js";
 
@@ -63,7 +63,7 @@ export declare namespace Element {
  * Effect chain for further piping.
  */
 export const Element = {
-  ref: makeElementRef,
+  ref: makeRef,
   getUnsafe,
 
   // ===========================================================================

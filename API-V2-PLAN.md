@@ -104,19 +104,68 @@ All tests and type checks must pass before proceeding.
 4. Keep `$.div`, `$.span`, etc. as user-facing sugar
 5. Update tests as we go
 
-### 5.1 Update Element internals
+### 5.1 Refactor ElementRef
 
-Refactor to use `Element.make`, `Element.setAttribute`, `Element.bindAttribute`, `Element.addChildren`, etc.
+Add TypeId pattern to ElementRef (like Readable/Signal):
 
-### 5.2 Update Control flow (`when`, `match`, `each`)
+```ts
+export const ElementRefTypeId: unique symbol = Symbol.for("effex/dom/ElementRef")
+export type ElementRefTypeId = typeof ElementRefTypeId
+
+export interface ElementRef<T extends Element = HTMLElement | SVGElement> extends Effect.Effect<T, NoSuchElementException> {
+  readonly [ElementRefTypeId]: ElementRefTypeId
+  readonly isConnected: Readable<boolean>
+}
+
+export const isElementRef = (value: unknown): value is ElementRef =>
+  Predicate.hasProperty(value, ElementRefTypeId)
+```
+
+**Note:** The current `isConnected` Readable has an inline `.map` method that is never used. Remove it and use standard `Readable.make()` constructor instead.
+
+### 5.2 Update Element internals
+
+Refactor to use `Element.make`, `Element.setAttribute`, `Element.bindAttribute`, `Element.appendChild`, etc.
+
+Each pipeable function follows the pattern (using Renderer, NOT direct DOM manipulation):
+```ts
+const setAttribute = (name: string, value: string) => <A extends HTMLElement | SVGElement, E, R>(
+  self: Element<A, E, R>
+): Element<A, E, R> =>
+  Effect.gen(function* () {
+    const el = yield* self
+    const renderer = yield* RendererContext
+    yield* renderer.setAttribute(el, name, value)
+    return el
+  })
+```
+
+**Important:** All DOM operations must go through the Renderer interface to support SSR, SSG, and hydration.
+
+### 5.3 Create DOMElements.ts for factory functions
+
+Move `$.div`, `$.span`, etc. to a dedicated `DOMElements.ts` file.
+
+These factories:
+- Use the new Element API internally (`Element.make`, `Element.setAttribute`, etc.)
+- Handle reactive children (`Child` can contain `Readable<string | number>`)
+- Support the props + children signature: `$.div({ class: "foo" }, children)`
+
+Export as `$` namespace at the top level:
+```ts
+// index.ts
+export { $ } from "./DOMElements.js"
+```
+
+### 5.4 Update Control flow (`when`, `match`, `each`)
 
 These consume Readables - update to new patterns.
 
-### 5.3 Update remaining dom modules
+### 5.5 Update remaining dom modules
 
 Mount, Template, Animation, etc.
 
-### 5.4 Verify dom tests pass
+### 5.6 Verify dom tests pass
 
 ```bash
 cd packages/dom
@@ -366,77 +415,424 @@ export const flatMap: {
 
 **Note:** Element creation requires a Renderer Context to be in scope.
 
+Also, we're avoiding pluralized functions like setAttributes or setStyles for now, as
+they complicate type inferrence. We can come back to them later using composition.
+
 ```ts
-// TypeId (for Element refs, not the Effect itself)
-export const ElementTypeId: unique symbol = Symbol.for("effex/Element")
+import { Element as CoreElement } from "@effex/core"
+
+// core Element type  is alias for Effect.Effect<A, E, R | Scope.Scope | Renderer>
+// we alias it again in dom to narrow the success channel to HTMLElement | SVGElement
+export type Element<A extends HTMLElement | SVGElement, E = never, R = never> = CoreElement<A ,E, R>
+
+export type ChildNode = string | number | Readable<string | number> | HTMLElement | SVGElement
+
+export type Child<E = never, R = never> = Effect.Effect<ChildNode | ChildNode[], E, R>
 
 // Core creation (requires Renderer Context)
 export const make: <K extends keyof HTMLElementTagNameMap>(
   tagName: K
-) => Effect.Effect<HTMLElementTagNameMap[K], never, Scope.Scope | Renderer>
+) => Element<HTMLElementTagNameMap[K], never, never>
 
 export const makeSVG: <K extends keyof SVGElementTagNameMap>(
   tagName: K
-) => Effect.Effect<SVGElementTagNameMap[K], never, Scope.Scope | Renderer>
+) => Element<SVGElementTagNameMap[K], never, never>
 
-export const of: (value: string | number | Readable<string | number>) => ChildEffect<never, Renderer>
+export const of: (value: string | number | Readable<string | number>) => Child<never, never>
 
-export const empty: ChildEffect<never, never>
+export const empty: Child<never, never>
 
-// Static attributes (set once)
+// =============================================================================
+// Attributes
+// =============================================================================
+
 export const setAttribute: {
-  (name: string, value: string | number | boolean): <A extends HTMLElement | SVGElement, E, R>(self: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>
-  <A extends HTMLElement | SVGElement, E, R>(self: Effect.Effect<A, E, R>, name: string, value: string | number | boolean): Effect.Effect<A, E, R>
+  (name: string, value: string | number | boolean): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, name: string, value: string | number | boolean): Element<A, E, R>
 }
+
+export const getAttribute: {
+  (name: string): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Effect.Effect<string, AttributeNotFound | E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, name: string): Effect.Effect<string, AttributeNotFound | E, R>
+}
+
+export const hasAttribute: {
+  (name: string): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Effect.Effect<boolean, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, name: string): Effect.Effect<boolean, E, R>
+}
+
+export const removeAttribute: {
+  (name: string): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, name: string): Element<A, E, R>
+}
+
+export const toggleAttribute: {
+  (name: string, force?: boolean): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, name: string, force?: boolean): Element<A, E, R>
+}
+
+// =============================================================================
+// Classes
+// =============================================================================
 
 export const setClass: {
-  (className: string): <A extends HTMLElement | SVGElement, E, R>(self: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>
-  <A extends HTMLElement | SVGElement, E, R>(self: Effect.Effect<A, E, R>, className: string): Effect.Effect<A, E, R>
+  (className: string): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, className: string): Element<A, E, R>
 }
+
+export const addClass: {
+  (...classes: string[]): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, ...classes: string[]): Element<A, E, R>
+}
+
+export const removeClass: {
+  (...classes: string[]): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, ...classes: string[]): Element<A, E, R>
+}
+
+export const toggleClass: {
+  (className: string, force?: boolean): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, className: string, force?: boolean): Element<A, E, R>
+}
+
+export const replaceClass: {
+  (oldClass: string, newClass: string): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, oldClass: string, newClass: string): Element<A, E, R>
+}
+
+// =============================================================================
+// Styles
+// =============================================================================
 
 export const setStyle: {
-  (property: string, value: string): <A extends HTMLElement | SVGElement, E, R>(self: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>
-  <A extends HTMLElement | SVGElement, E, R>(self: Effect.Effect<A, E, R>, property: string, value: string): Effect.Effect<A, E, R>
+  (property: string, value: string): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, property: string, value: string): Element<A, E, R>
 }
 
-// Reactive bindings (subscribe to Readable changes)
+export const removeStyle: {
+  (property: string): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, property: string): Element<A, E, R>
+}
+
+// =============================================================================
+// Data Attributes
+// =============================================================================
+
+export const setData: {
+  (key: string, value: string): <A extends HTMLElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement, E, R>(self: Element<A, E, R>, key: string, value: string): Element<A, E, R>
+}
+
+export const getData: {
+  (key: string): <A extends HTMLElement, E, R>(self: Element<A, E, R>) => Effect.Effect<string, DataAttributeNotFound | E, R>
+  <A extends HTMLElement, E, R>(self: Element<A, E, R>, key: string): Effect.Effect<string, DataAttributeNotFound | E, R>
+}
+
+export const removeData: {
+  (key: string): <A extends HTMLElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement, E, R>(self: Element<A, E, R>, key: string): Element<A, E, R>
+}
+
+// =============================================================================
+// Reactive Bindings (subscribe to Readable changes)
+// =============================================================================
+
 export const bindAttribute: {
-  <V>(name: string, readable: Readable<V>): <A extends HTMLElement | SVGElement, E, R>(self: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R | Scope.Scope>
-  <A extends HTMLElement | SVGElement, E, R, V>(self: Effect.Effect<A, E, R>, name: string, readable: Readable<V>): Effect.Effect<A, E, R | Scope.Scope>
+  <V>(name: string, readable: Readable<V>): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R | Scope.Scope>
+  <A extends HTMLElement | SVGElement, E, R, V>(self: Element<A, E, R>, name: string, readable: Readable<V>): Element<A, E, R | Scope.Scope>
 }
 
 export const bindClass: {
-  (className: string, readable: Readable<boolean>): <A extends HTMLElement | SVGElement, E, R>(self: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R | Scope.Scope>
-  <A extends HTMLElement | SVGElement, E, R>(self: Effect.Effect<A, E, R>, className: string, readable: Readable<boolean>): Effect.Effect<A, E, R | Scope.Scope>
+  (className: string, readable: Readable<boolean>): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R | Scope.Scope>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, className: string, readable: Readable<boolean>): Element<A, E, R | Scope.Scope>
 }
 
 export const bindStyle: {
-  (property: string, readable: Readable<string>): <A extends HTMLElement | SVGElement, E, R>(self: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R | Scope.Scope>
-  <A extends HTMLElement | SVGElement, E, R>(self: Effect.Effect<A, E, R>, property: string, readable: Readable<string>): Effect.Effect<A, E, R | Scope.Scope>
+  (property: string, readable: Readable<string>): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R | Scope.Scope>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, property: string, readable: Readable<string>): Element<A, E, R | Scope.Scope>
 }
 
+export const bindData: {
+  (key: string, readable: Readable<string>): <A extends HTMLElement, E, R>(self: Element<A, E, R>) => Element<A, E, R | Scope.Scope>
+  <A extends HTMLElement, E, R>(self: Element<A, E, R>, key: string, readable: Readable<string>): Element<A, E, R | Scope.Scope>
+}
+
+export const bindTextContent: {
+  (readable: Readable<string>): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R | Scope.Scope>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, readable: Readable<string>): Element<A, E, R | Scope.Scope>
+}
+
+export const bindToggleClass: {
+  (className: string, readable: Readable<boolean>): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R | Scope.Scope>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, className: string, readable: Readable<boolean>): Element<A, E, R | Scope.Scope>
+}
+
+// =============================================================================
+// Element Reference
+// =============================================================================
+
+export const setRef: {
+  <A extends HTMLElement | SVGElement>(ref: ElementRef<A>): <E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, ref: ElementRef<A>): Element<A, E, R>
+}
+
+// =============================================================================
+// Content
+// =============================================================================
+
+export const setTextContent: {
+  (text: string): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, text: string): Element<A, E, R>
+}
+
+export const setInnerHTML: {
+  (html: string): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, html: string): Element<A, E, R>
+}
+
+// =============================================================================
 // Children
-export const addChild: {
-  <E2, R2>(child: ChildEffect<E2, R2>): <A extends HTMLElement | SVGElement, E, R>(self: Effect.Effect<A, E, R>) => Effect.Effect<A, E | E2, R | R2>
-  <A extends HTMLElement | SVGElement, E, R, E2, R2>(self: Effect.Effect<A, E, R>, child: ChildEffect<E2, R2>): Effect.Effect<A, E | E2, R | R2>
+// =============================================================================
+
+export const appendChild: {
+  <E2, R2>(child: Child<E2, R2>): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E | E2, R | R2>
+  <A extends HTMLElement | SVGElement, E, R, E2, R2>(self: Element<A, E, R>, child: Child<E2, R2>): Element<A, E | E2, R | R2>
 }
 
-export const addChildren: {
-  <E2, R2>(...children: ChildEffect<E2, R2>[]): <A extends HTMLElement | SVGElement, E, R>(self: Effect.Effect<A, E, R>) => Effect.Effect<A, E | E2, R | R2>
-  <A extends HTMLElement | SVGElement, E, R, E2, R2>(self: Effect.Effect<A, E, R>, ...children: ChildEffect<E2, R2>[]): Effect.Effect<A, E | E2, R | R2>
+export const prependChild: {
+  <E2, R2>(child: Child<E2, R2>): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E | E2, R | R2>
+  <A extends HTMLElement | SVGElement, E, R, E2, R2>(self: Element<A, E, R>, child: Child<E2, R2>): Element<A, E | E2, R | R2>
 }
 
+export const insertBefore: {
+  <E2, R2>(newChild: Child<E2, R2>, refChild: Node | null): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E | E2, R | R2>
+  <A extends HTMLElement | SVGElement, E, R, E2, R2>(self: Element<A, E, R>, newChild: Child<E2, R2>, refChild: Node | null): Element<A, E | E2, R | R2>
+}
+
+export const removeChild: {
+  (child: Node): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, child: Node): Element<A, E, R>
+}
+
+export const replaceChild: {
+  <E2, R2>(oldChild: Node, newChild: Child<E2, R2>): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E | E2, R | R2>
+  <A extends HTMLElement | SVGElement, E, R, E2, R2>(self: Element<A, E, R>, oldChild: Node, newChild: Child<E2, R2>): Element<A, E | E2, R | R2>
+}
+
+export const clearChildren: <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+
+// =============================================================================
+// Traversal & Querying
+// =============================================================================
+
+export const getId: <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Effect.Effect<string, E, R>
+
+export const getParent: <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Effect.Effect<HTMLElement | SVGElement, NoSuchElementException | E, R>
+
+export const querySelector: {
+  (selector: string): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Effect.Effect<HTMLElement | SVGElement, NoSuchElementException | E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, selector: string): Effect.Effect<HTMLElement | SVGElement, NoSuchElementException | E, R>
+}
+
+export const querySelectorAll: {
+  (selector: string): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Effect.Effect<(HTMLElement | SVGElement)[], E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, selector: string): Effect.Effect<(HTMLElement | SVGElement)[], E, R>
+}
+
+export const closest: {
+  (selector: string): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Effect.Effect<HTMLElement | SVGElement, NoSuchElementException | E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, selector: string): Effect.Effect<HTMLElement | SVGElement, NoSuchElementException | E, R>
+}
+
+export const matches: {
+  (selector: string): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Effect.Effect<boolean, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, selector: string): Effect.Effect<boolean, E, R>
+}
+
+export const contains: {
+  (element: Node | null): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Effect.Effect<boolean, NoSuchElementException | E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, element: Node | null): Effect.Effect<boolean, NoSuchElementException | E, R>
+}
+
+// =============================================================================
+// Dimensions & Position
+// =============================================================================
+
+export const getBoundingClientRect: <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Effect.Effect<DOMRect, E, R>
+export const getClientRects: <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Effect.Effect<DOMRectList, E, R>
+export const getOffsetHeight: <A extends HTMLElement, E, R>(self: Element<A, E, R>) => Effect.Effect<number, E, R>
+export const getOffsetWidth: <A extends HTMLElement, E, R>(self: Element<A, E, R>) => Effect.Effect<number, E, R>
+export const getScrollHeight: <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Effect.Effect<number, E, R>
+export const getScrollWidth: <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Effect.Effect<number, E, R>
+
+// =============================================================================
+// Focus
+// =============================================================================
+
+export const focus: <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+
+export const focusWithOptions: {
+  (options: FocusOptions): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, options: FocusOptions): Element<A, E, R>
+}
+
+export const blur: <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+
+export const focusFirst: {
+  (selector: string): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, selector: string): Element<A, E, R>
+}
+
+export const focusLast: {
+  (selector: string): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, selector: string): Element<A, E, R>
+}
+
+// =============================================================================
+// Scrolling
+// =============================================================================
+
+export const scrollIntoView: {
+  (options?: ScrollIntoViewOptions): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, options?: ScrollIntoViewOptions): Element<A, E, R>
+}
+
+export const scrollTo: {
+  (options: ScrollToOptions): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, options: ScrollToOptions): Element<A, E, R>
+}
+
+export const scrollBy: {
+  (options: ScrollToOptions): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, options: ScrollToOptions): Element<A, E, R>
+}
+
+// =============================================================================
 // Events
+// =============================================================================
+
 export const on: {
   <K extends keyof HTMLElementEventMap>(
     event: K,
     handler: (e: HTMLElementEventMap[K]) => Effect.Effect<void, never, never>
-  ): <A extends HTMLElement, E, R>(self: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R | Scope.Scope>
-  // ... data-first overload
+  ): <A extends HTMLElement, E, R>(self: Element<A, E, R>) => Element<A, E, R | Scope.Scope>
+  <A extends HTMLElement, E, R, K extends keyof HTMLElementEventMap>(
+    self: Element<A, E, R>,
+    event: K,
+    handler: (e: HTMLElementEventMap[K]) => Effect.Effect<void, never, never>
+  ): Element<A, E, R | Scope.Scope>
 }
 
-// Existing helpers remain (focus, setStyles, addClass, etc.)
-// ... all the helpers from namespace.ts
+export const once: {
+  <K extends keyof HTMLElementEventMap>(
+    event: K,
+    handler: (e: HTMLElementEventMap[K]) => Effect.Effect<void, never, never>
+  ): <A extends HTMLElement, E, R>(self: Element<A, E, R>) => Element<A, E, R | Scope.Scope>
+  <A extends HTMLElement, E, R, K extends keyof HTMLElementEventMap>(
+    self: Element<A, E, R>,
+    event: K,
+    handler: (e: HTMLElementEventMap[K]) => Effect.Effect<void, never, never>
+  ): Element<A, E, R | Scope.Scope>
+}
+
+export const click: <A extends HTMLElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+
+export const dispatchEvent: {
+  (event: Event): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, event: Event): Element<A, E, R>
+}
+
+// =============================================================================
+// Animation
+// =============================================================================
+
+export const animate: {
+  (keyframes: Keyframe[] | PropertyIndexedKeyframes, options?: number | KeyframeAnimationOptions): <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, keyframes: Keyframe[] | PropertyIndexedKeyframes, options?: number | KeyframeAnimationOptions): Element<A, E, R>
+}
+
+// =============================================================================
+// Input-specific
+// =============================================================================
+
+export const select: <A extends HTMLInputElement | HTMLTextAreaElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+
+export const setSelectionRange: {
+  (start: number, end: number, direction?: "forward" | "backward" | "none"): <A extends HTMLInputElement | HTMLTextAreaElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLInputElement | HTMLTextAreaElement, E, R>(self: Element<A, E, R>, start: number, end: number, direction?: "forward" | "backward" | "none"): Element<A, E, R>
+}
+
+// =============================================================================
+// Custom Taps
+// =============================================================================
+
+export const tap: {
+  <A extends HTMLElement | SVGElement>(fn: (el: A) => void): <E, R>(self: Element<A, E, R>) => Element<A, E, R>
+  <A extends HTMLElement | SVGElement, E, R>(self: Element<A, E, R>, fn: (el: A) => void): Element<A, E, R>
+}
+
+export const tapEffect: {
+  <A extends HTMLElement | SVGElement, E2, R2>(fn: (el: A) => Effect.Effect<unknown, E2, R2>): <E, R>(self: Element<A, E, R>) => Element<A, E | E2, R | R2>
+  <A extends HTMLElement | SVGElement, E, R, E2, R2>(self: Element<A, E, R>, fn: (el: A) => Effect.Effect<unknown, E2, R2>): Element<A, E | E2, R | R2>
+}
+
+// =============================================================================
+// Convenience: $ namespace provides tag-specific constructors
+// $.div(...), $.span(...), $.button(...), etc.
+// These are sugar over Element.make that accept props and children directly
+// =============================================================================
+```
+
+## ElementRef (dom package)
+
+```ts
+// TypeId
+export const ElementRefTypeId: unique symbol = Symbol.for("effex/dom/ElementRef")
+export type ElementRefTypeId = typeof ElementRefTypeId
+
+// Type guard
+export const isElementRef: (value: unknown) => value is ElementRef
+
+// Interface - extends Effect so it can be yielded to get the element
+export interface ElementRef<T extends Element = HTMLElement | SVGElement>
+  extends Effect.Effect<T, NoSuchElementException> {
+  readonly [ElementRefTypeId]: ElementRefTypeId
+  /** Readable that tracks whether the element is connected to the DOM */
+  readonly isConnected: Readable<boolean>
+}
+
+// Constructor
+export const ref: <T extends Element = HTMLElement | SVGElement>() => Effect.Effect<ElementRef<T>>
+
+// Synchronous access (returns null if not mounted)
+export const getUnsafe: <T extends Element>(ref: ElementRef<T>) => T | null
+
+// Internal binding (used by element creation)
+export const bindElementToRef: <T extends Element>(ref: ElementRef<T>, element: T) => void
+export const unbindElementFromRef: <T extends Element>(ref: ElementRef<T>) => void
+```
+
+**Usage:**
+```ts
+const buttonRef = yield* Element.ref<HTMLButtonElement>()
+
+// Yield to get element in Effect context
+const handleClick = () =>
+  buttonRef.pipe(
+    Element.addClass("clicked"),
+    Element.focus,
+    Effect.asVoid
+  )
+
+// Pass to element via setRef
+yield* Element.make("button").pipe(
+  Element.setRef(buttonRef),
+  Element.on("click", handleClick),
+  Element.appendChild(Element.of("Click me"))
+)
+
+// Or via $.button factory
+yield* $.button({ ref: buttonRef, onClick: handleClick }, "Click me")
 ```
 
 ---

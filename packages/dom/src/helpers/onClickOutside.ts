@@ -1,6 +1,6 @@
 import { Effect, Scope } from "effect";
 
-import { getElementFromRef, type ElementRef } from "../Element/ref.js";
+import { getUnsafe, type ElementRef } from "../Element/ref.js";
 
 /**
  * An element reference - can be:
@@ -22,7 +22,7 @@ const getElement = (ref: ElementRefLike): HTMLElement | null => {
   // Check if it's a raw HTMLElement
   if (ref instanceof HTMLElement) return ref;
   // It's an ElementRef (Effect-based)
-  return getElementFromRef(ref);
+  return getUnsafe(ref);
 };
 
 /**

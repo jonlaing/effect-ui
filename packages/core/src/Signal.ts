@@ -128,7 +128,8 @@ export const make = <A>(
 
     const ref = yield* SubscriptionRef.make(initial);
 
-    // Use ref.changes to get a stream that receives all future updates
+    // SubscriptionRef.changes emits current value on subscription, then all future changes
+    // This is the correct semantic for Signal.changes
     const getChanges = () => ref.changes;
 
     const readable = Readable.make(SubscriptionRef.get(ref), getChanges);

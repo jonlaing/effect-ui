@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { bindElementToRef, makeElementRef } from "../Element/ref";
+import { bindElementToRef, make as makeRef } from "../Element/ref";
 import { onClickOutside } from "./onClickOutside";
 
 const runTest = <A>(effect: Effect.Effect<A, never, never>) =>
@@ -18,7 +18,7 @@ describe("onClickOutside", () => {
     await runTest(
       Effect.scoped(
         Effect.gen(function* () {
-          const ref = yield* makeElementRef<HTMLDivElement>();
+          const ref = yield* makeRef<HTMLDivElement>();
 
           // Create and attach element
           const element = document.createElement("div");
@@ -54,7 +54,7 @@ describe("onClickOutside", () => {
     await runTest(
       Effect.scoped(
         Effect.gen(function* () {
-          const ref = yield* makeElementRef<HTMLDivElement>();
+          const ref = yield* makeRef<HTMLDivElement>();
 
           // Create and attach element
           const element = document.createElement("div");
@@ -85,7 +85,7 @@ describe("onClickOutside", () => {
     await runTest(
       Effect.scoped(
         Effect.gen(function* () {
-          const ref = yield* makeElementRef<HTMLDivElement>();
+          const ref = yield* makeRef<HTMLDivElement>();
 
           // Create parent and child
           const parent = document.createElement("div");
@@ -117,8 +117,8 @@ describe("onClickOutside", () => {
     await runTest(
       Effect.scoped(
         Effect.gen(function* () {
-          const ref1 = yield* makeElementRef<HTMLDivElement>();
-          const ref2 = yield* makeElementRef<HTMLDivElement>();
+          const ref1 = yield* makeRef<HTMLDivElement>();
+          const ref2 = yield* makeRef<HTMLDivElement>();
 
           // Create both elements
           const element1 = document.createElement("div");
@@ -202,7 +202,7 @@ describe("onClickOutside", () => {
     await runTest(
       Effect.scoped(
         Effect.gen(function* () {
-          const ref = yield* makeElementRef<HTMLDivElement>();
+          const ref = yield* makeRef<HTMLDivElement>();
           const refElement = document.createElement("div");
           document.body.appendChild(refElement);
           bindElementToRef(ref, refElement);
@@ -252,7 +252,7 @@ describe("onClickOutside", () => {
     await runTest(
       Effect.scoped(
         Effect.gen(function* () {
-          const ref = yield* makeElementRef<HTMLDivElement>();
+          const ref = yield* makeRef<HTMLDivElement>();
 
           const element = document.createElement("div");
           document.body.appendChild(element);

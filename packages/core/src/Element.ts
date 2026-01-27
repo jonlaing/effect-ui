@@ -1,6 +1,5 @@
 import type { Effect, Scope } from "effect";
 
-import type { Readable } from "./Readable";
 import type { RendererContext } from "./Renderer";
 
 /**
@@ -36,19 +35,3 @@ export type Element<N = unknown, E = never, R = never> = Effect.Effect<
   E,
   Scope.Scope | RendererContext | R
 >;
-
-/**
- * Valid child types for an element: strings, numbers, elements, reactive values, or arrays thereof.
- * This is the generic version for use with any renderer.
- *
- * @template N - The node type
- * @template E - The error type for child elements
- * @template R - The requirements/context type for child elements
- */
-export type Child<N = unknown, E = never, R = never> =
-  | string
-  | number
-  | Element<N, E, R>
-  | Readable<string>
-  | Readable<number>
-  | readonly Child<N, E, R>[];
