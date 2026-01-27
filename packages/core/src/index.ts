@@ -1,13 +1,24 @@
 // Readable - exports both the interface type and namespace (declaration merging)
 export {
   Readable,
+  TypeId as ReadableTypeId,
   type Reactive,
   isReadable,
   of,
+  id,
+  normalize,
   make as makeReadable,
   map as mapReadable,
-  fromStream,
+  flatMap as flatMapReadable,
+  zip as zipReadable,
+  zipWith as zipWithReadable,
+  zipAll,
   combine,
+  tap as tapReadable,
+  filter as filterReadable,
+  dedupe,
+  dedupeWith,
+  fromStream,
   lift,
 } from "./Readable";
 

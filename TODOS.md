@@ -194,6 +194,225 @@ Dialog, DropdownMenu, Select, Combobox, Popover, Tooltip, Tabs, Accordion, Toggl
 
 ---
 
+## Effex API v2 Ideas
+
+Make APIs more Effect-like: fewer bespoke APIs, more composition of Effect primitives. Use pipeable patterns like HttpRouter instead of options bags and callback arrays.
+
+### Signal
+
+**Current:**
+```ts
+const count = yield* Signal.make(0, { equals: (a, b) => a.id === b.id });
+```
+
+**Proposed:** Pipeable configuration
+```ts
+const count = yield* Signal.make(0).pipe(
+  Signal.equals((a, b) => a.id === b.id)
+);
+```
+
+### Derived → Readable.zip + Readable.map
+
+**Current:**
+```ts
+const sum = yield* Derived.sync([a, b], ([x, y]) => x + y);
+```
+
+**Proposed:** Derived is just composed Readables
+```ts
+const sum = Readable.zip(a, b).pipe(
+  Readable.map(([x, y]) => x + y)
+);
+```
+
+- `Readable.zip` combines multiple Readables
+- `.map()` already exists on Readable for single-signal derivation
+- May obviate `Derived.sync` entirely
+
+### Reaction → Readable.forEach
+
+**Current:**
+```ts
+yield* Reaction.make([dep1, dep2], ([v1, v2]) => Effect.log(...));
+```
+
+**Proposed:** Just use Readable combinators
+```ts
+yield* Readable.zip(dep1, dep2).pipe(
+  Readable.forEach(([v1, v2]) => Effect.log(...))
+);
+```
+
+May make Reaction unnecessary as a separate concept.
+
+### AsyncReadable (new)
+
+For async data fetching with loading/error/value state. Product type because states can coexist (loading while showing stale data, error while preserving last value).
+
+```ts
+interface AsyncReadable<A, E> {
+  isLoading: Readable<boolean>;
+  value: Readable<Option<A>>;
+  error: Readable<Option<E>>;
+  refetch(): Effect<void>;
+}
+```
+
+**API:**
+```ts
+// No dependencies - one-shot fetch
+AsyncReadable.make(() => fetchData())           // () => Effect<A, E>
+AsyncReadable.promise(() => fetchData())        // () => Promise<A>
+
+// With dependencies - refetches when Readable changes
+AsyncReadable.fromReadable(
+  Readable.zip(userId, orgId),
+  ([uId, oId]) => fetchUser(uId, oId)
+);
+```
+
+### Mutation (new)
+
+For triggering async operations (POST, PUT, DELETE). Different from AsyncReadable: manually triggered, takes input at call time.
+
+```ts
+interface Mutation<I, O, E> {
+  isLoading: Readable<boolean>;
+  data: Readable<Option<O>>;
+  error: Readable<Option<E>>;
+  run(input: I): Effect<O, E>;
+}
+```
+
+**API:**
+```ts
+const createUser = yield* Mutation.make((input: CreateUserInput) =>
+  postUser(input).pipe(
+    Effect.tap(() => userList.refetch()),
+  )
+);
+
+yield* createUser.run({ name: "Alice", email: "alice@example.com" });
+```
+
+Compose success/error handling with standard Effect combinators (tap, tapError, catchAll) instead of callbacks.
+
+### Cross-component invalidation
+
+For sibling/child components that need to refetch after a mutation, use Effect Context patterns:
+- Lift AsyncReadable to common ancestor, share via Context
+- Use a shared invalidation Signal
+- Use Effect's PubSub for decoupled invalidation events
+
+Document these patterns rather than building a query cache registry.
+
+### Router
+
+**Current:** TanStack-inspired object building
+```ts
+const router = yield* Router.make(routes, { initialPath, ... });
+```
+
+**Proposed:** HttpRouter-style pipeable pattern
+```ts
+const router = Router.empty.pipe(
+  Router.route("/", HomePage),
+  Router.route("/users/:id", UserPage, {
+    params: Schema.Struct({ id: Schema.String }),
+    loader: (params) => fetchUser(params.id),
+  }),
+);
+```
+
+File-based routing via Vite plugin would generate this code.
+
+### Naming considerations
+
+| Sync | Async |
+|------|-------|
+| Readable | AsyncReadable |
+| Signal (read+write) | Mutation (trigger+read) |
+
+Mutation doesn't fit a strict "AsyncWritable" pattern because input and output are different types. Keep "Mutation" as the name since it describes intent (mutating server state).
+
+### Element API (dom package)
+
+Refactor DOM element creation to use pipeable builder pattern. Currently `$.div()` etc. have complex internal logic handling argument parsing, reactive subscriptions, children, etc. A compositional approach decomposes this into focused, testable pieces.
+
+**Core creation:**
+```ts
+Element.make('div')                          // Effect<HTMLDivElement, never, Scope>
+Element.of("Hello!")                         // Text node, or reactive text from Readable
+Element.empty                                // No-op/placeholder
+```
+
+**Properties (handles static + reactive values):**
+```ts
+Element.setProperties({ class: 'abc', 'data-state': someReadable })
+Element.setProperty('class', 'abc')
+```
+
+**Children:**
+```ts
+Element.addChild(child)                      // Single child Effect
+Element.addChildren(child1, child2, ...)     // Multiple children
+Element.addChildren(collect(...))            // Accepts ChildEffect
+```
+
+**Events:**
+```ts
+Element.on('click', handler)
+Element.onMany({ click: handler1, focus: handler2 })
+```
+
+**Reactive bindings (subscriptions managed by Scope):**
+```ts
+Element.bindAttribute('aria-expanded', isOpenReadable)
+Element.bindClass('active', isActiveReadable)
+Element.bindStyle('opacity', opacityReadable)
+```
+
+**Full example:**
+```ts
+Element.make('div').pipe(
+  Element.setProperties({ class: 'card' }),
+  Element.bindClass('active', isActiveReadable),
+  Element.on('click', handleClick),
+  Element.addChildren(
+    Element.of("Hello!"),
+    Element.make('button').pipe(
+      Element.setProperties({ type: 'submit' }),
+      Element.addChild(Element.of("Click me")),
+    ),
+  ),
+)
+```
+
+**$.div becomes thin sugar:**
+```ts
+export const div = (props?, children?) =>
+  Element.make('div').pipe(
+    props ? Element.setProperties(props) : identity,
+    children ? Element.addChildren(children) : identity,
+  )
+```
+
+**Benefits:**
+- Cleaner internals - each operation is isolated, testable
+- Power users can bypass `$.div` for fine control
+- Consistency with existing Element helpers (focus, setStyles, etc.)
+- Easy to extend without touching core logic
+- Aligns with API v2 pipeable patterns
+
+**Implementation notes:**
+- Reactive subscriptions need Scope - `Element.make` already requires Scope, pipe operations tap into that
+- Children are Effects - `Element.addChild` uses flatMap to run child Effect and append result
+- Existing `$.div`, `$.span`, etc. remain as the primary user-facing API
+- Element namespace helpers (focus, setStyles, addClass, etc.) already follow this pattern
+
+---
+
 ## Marketing / Value Propositions
 
 **Tagline:** "A type-safe reactive UI framework that never throws"
