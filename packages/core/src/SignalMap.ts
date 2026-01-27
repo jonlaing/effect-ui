@@ -1,6 +1,36 @@
-import { Effect, Option, Scope, SubscriptionRef } from "effect";
+import {
+  Effect,
+  Option,
+  Pipeable,
+  Predicate,
+  Scope,
+  SubscriptionRef,
+} from "effect";
 
-import { Readable as ReadableNS, type Readable } from "./Readable.js";
+import { Readable, TypeId as ReadableTypeId } from "./Readable.js";
+
+// -----------------------------------------------------------------------------
+// TypeId
+// -----------------------------------------------------------------------------
+
+export const SignalMapTypeId: unique symbol = Symbol.for("effex/SignalMap");
+export type SignalMapTypeId = typeof SignalMapTypeId;
+
+// -----------------------------------------------------------------------------
+// Type Guards
+// -----------------------------------------------------------------------------
+
+/**
+ * Check if a value is a SignalMap.
+ */
+export const isSignalMap = (
+  value: unknown,
+): value is SignalMap<unknown, unknown> =>
+  Predicate.hasProperty(value, SignalMapTypeId);
+
+// -----------------------------------------------------------------------------
+// Models
+// -----------------------------------------------------------------------------
 
 /**
  * A reactive Map with mutation methods that trigger updates.
@@ -30,7 +60,9 @@ import { Readable as ReadableNS, type Readable } from "./Readable.js";
  * users.entries   // Readable<readonly [K, V][]>
  * ```
  */
-export interface SignalMap<K, V> {
+export interface SignalMap<K, V> extends Readable.Readable<ReadonlyMap<K, V>> {
+  readonly [SignalMapTypeId]: SignalMapTypeId;
+
   /**
    * Set a value for a key.
    */
@@ -40,25 +72,25 @@ export interface SignalMap<K, V> {
    * Get a reactive value for a key, returning Option.none() if not found.
    * Use this for reactive UI bindings.
    */
-  readonly get: (key: K) => Readable<Option.Option<V>>;
+  readonly at: (key: K) => Readable.Readable<Option.Option<V>>;
 
   /**
    * Get a reactive value for a key with a fallback if not found.
    * Use this for reactive UI bindings when you have a default value.
    */
-  readonly getOrElse: (key: K, fallback: V) => Readable<V>;
+  readonly atOrElse: (key: K, fallback: V) => Readable.Readable<V>;
 
   /**
    * Get the value for a key as an Effect, returning Option.none() if not found.
    * Use this for one-time reads in imperative code.
    */
-  readonly getEffect: (key: K) => Effect.Effect<Option.Option<V>>;
+  readonly atEffect: (key: K) => Effect.Effect<Option.Option<V>>;
 
   /**
    * Check if a key exists (reactive).
    * Use this for reactive UI bindings.
    */
-  readonly has: (key: K) => Readable<boolean>;
+  readonly has: (key: K) => Readable.Readable<boolean>;
 
   /**
    * Check if a key exists as an Effect.
@@ -95,27 +127,22 @@ export interface SignalMap<K, V> {
   /**
    * Reactive size of the map.
    */
-  readonly size: Readable<number>;
+  readonly size: Readable.Readable<number>;
 
   /**
    * Reactive array of entries.
    */
-  readonly entries: Readable<readonly (readonly [K, V])[]>;
+  readonly entries: Readable.Readable<readonly (readonly [K, V])[]>;
 
   /**
    * Reactive array of keys.
    */
-  readonly keys: Readable<readonly K[]>;
+  readonly keys: Readable.Readable<readonly K[]>;
 
   /**
    * Reactive array of values.
    */
-  readonly values: Readable<readonly V[]>;
-
-  /**
-   * The underlying readable for use with Readable.combine(), etc.
-   */
-  readonly readable: Readable<ReadonlyMap<K, V>>;
+  readonly valuesArray: Readable.Readable<readonly V[]>;
 }
 
 /**
@@ -141,12 +168,27 @@ export const make = <K, V>(
     });
 
     // Build the base Readable
-    const readable = ReadableNS.make(
+    const readable = Readable.make(
       Effect.map(SubscriptionRef.get(ref), (map) => map as ReadonlyMap<K, V>),
       () => getChanges(),
     );
 
     const signalMap: SignalMap<K, V> = {
+      // TypeIds
+      [ReadableTypeId]: ReadableTypeId,
+      [SignalMapTypeId]: SignalMapTypeId,
+
+      // Pipeable
+      pipe() {
+        return Pipeable.pipeArguments(this, arguments);
+      },
+
+      // Readable interface
+      get: readable.get,
+      changes: readable.changes,
+      values: readable.values,
+
+      // SignalMap mutations
       set: (key, value) =>
         Effect.gen(function* () {
           const map = yield* SubscriptionRef.get(ref);
@@ -154,18 +196,19 @@ export const make = <K, V>(
           yield* notify;
         }),
 
-      get: (key) => readable.map((map) => Option.fromNullable(map.get(key))),
+      at: (key) =>
+        readable.pipe(Readable.map((map) => Option.fromNullable(map.get(key)))),
 
-      getOrElse: (key, fallback) =>
-        readable.map((map) => map.get(key) ?? fallback),
+      atOrElse: (key, fallback) =>
+        readable.pipe(Readable.map((map) => map.get(key) ?? fallback)),
 
-      getEffect: (key) =>
+      atEffect: (key) =>
         Effect.gen(function* () {
           const map = yield* SubscriptionRef.get(ref);
           return Option.fromNullable(map.get(key));
         }),
 
-      has: (key) => readable.map((map) => map.has(key)),
+      has: (key) => readable.pipe(Readable.map((map) => map.has(key))),
 
       hasEffect: (key) =>
         Effect.gen(function* () {
@@ -205,12 +248,10 @@ export const make = <K, V>(
         }),
 
       // Derived readables
-      size: readable.map((map) => map.size),
-      entries: readable.map((map) => [...map.entries()]),
-      keys: readable.map((map) => [...map.keys()]),
-      values: readable.map((map) => [...map.values()]),
-
-      readable,
+      size: readable.pipe(Readable.map((map) => map.size)),
+      entries: readable.pipe(Readable.map((map) => [...map.entries()])),
+      keys: readable.pipe(Readable.map((map) => [...map.keys()])),
+      valuesArray: readable.pipe(Readable.map((map) => [...map.values()])),
     };
 
     return signalMap;
@@ -220,5 +261,7 @@ export const make = <K, V>(
  * SignalMap namespace.
  */
 export const SignalMap = {
+  SignalMapTypeId,
+  isSignalMap,
   make,
 };

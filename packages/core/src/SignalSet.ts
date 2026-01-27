@@ -1,6 +1,23 @@
-import { Effect, Scope, SubscriptionRef } from "effect";
+import { Effect, Pipeable, Predicate, Scope, SubscriptionRef } from "effect";
 
-import { Readable as ReadableNS, type Readable } from "./Readable.js";
+import { Readable, TypeId as ReadableTypeId } from "./Readable.js";
+
+// -----------------------------------------------------------------------------
+// TypeId
+// -----------------------------------------------------------------------------
+
+export const SignalSetTypeId: unique symbol = Symbol.for("effex/SignalSet");
+export type SignalSetTypeId = typeof SignalSetTypeId;
+
+// -----------------------------------------------------------------------------
+// Type Guards
+// -----------------------------------------------------------------------------
+
+/**
+ * Check if a value is a SignalSet.
+ */
+export const isSignalSet = (value: unknown): value is SignalSet<unknown> =>
+  Predicate.hasProperty(value, SignalSetTypeId);
 
 /**
  * A reactive Set with mutation methods that trigger updates.
@@ -28,7 +45,9 @@ import { Readable as ReadableNS, type Readable } from "./Readable.js";
  * tags.values  // Readable<readonly T[]>
  * ```
  */
-export interface SignalSet<T> {
+export interface SignalSet<T> extends Readable.Readable<ReadonlySet<T>> {
+  readonly [SignalSetTypeId]: SignalSetTypeId;
+
   /**
    * Add a value to the set.
    */
@@ -38,7 +57,7 @@ export interface SignalSet<T> {
    * Check if a value exists (reactive).
    * Use this for reactive UI bindings.
    */
-  readonly has: (value: T) => Readable<boolean>;
+  readonly has: (value: T) => Readable.Readable<boolean>;
 
   /**
    * Check if a value exists as an Effect.
@@ -77,17 +96,12 @@ export interface SignalSet<T> {
   /**
    * Reactive size of the set.
    */
-  readonly size: Readable<number>;
+  readonly size: Readable.Readable<number>;
 
   /**
    * Reactive array of values.
    */
-  readonly values: Readable<readonly T[]>;
-
-  /**
-   * The underlying readable for use with Readable.combine(), etc.
-   */
-  readonly readable: Readable<ReadonlySet<T>>;
+  readonly valuesArray: Readable.Readable<readonly T[]>;
 }
 
 /**
@@ -111,12 +125,27 @@ export const make = <T>(
     });
 
     // Build the base Readable
-    const readable = ReadableNS.make(
+    const readable = Readable.make(
       Effect.map(SubscriptionRef.get(ref), (set) => set as ReadonlySet<T>),
       () => getChanges(),
     );
 
     const signalSet: SignalSet<T> = {
+      // TypeIds
+      [ReadableTypeId]: ReadableTypeId,
+      [SignalSetTypeId]: SignalSetTypeId,
+
+      // Pipeable
+      pipe() {
+        return Pipeable.pipeArguments(this, arguments);
+      },
+
+      // Readable interface
+      get: readable.get,
+      changes: readable.changes,
+      values: readable.values,
+
+      // SignalSet mutations
       add: (value) =>
         Effect.gen(function* () {
           const set = yield* SubscriptionRef.get(ref);
@@ -127,7 +156,7 @@ export const make = <T>(
           }
         }),
 
-      has: (value) => readable.map((set) => set.has(value)),
+      has: (value) => readable.pipe(Readable.map((set) => set.has(value))),
 
       hasEffect: (value) =>
         Effect.gen(function* () {
@@ -181,10 +210,8 @@ export const make = <T>(
         }),
 
       // Derived readables
-      size: readable.map((set) => set.size),
-      values: readable.map((set) => [...set]),
-
-      readable,
+      size: readable.pipe(Readable.map((set) => set.size)),
+      valuesArray: readable.pipe(Readable.map((set) => [...set])),
     };
 
     return signalSet;
@@ -194,5 +221,7 @@ export const make = <T>(
  * SignalSet namespace.
  */
 export const SignalSet = {
+  SignalSetTypeId,
+  isSignalSet,
   make,
 };

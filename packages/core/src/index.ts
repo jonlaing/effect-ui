@@ -25,9 +25,14 @@ export {
 // Signal - exports both the interface type and namespace (declaration merging)
 export {
   Signal,
+  SignalTypeId,
+  isSignal,
+  equals as equalsSignal,
   type SignalOptions,
   SignalRegistry,
   make as makeSignal,
+  fromNullable,
+  fromReactive,
   type SignalArray,
   type SignalMap,
   type SignalSet,

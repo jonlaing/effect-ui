@@ -1,7 +1,15 @@
-import { Context, Effect, Layer, Scope, SubscriptionRef } from "effect";
+import {
+  Context,
+  Effect,
+  FiberRef,
+  Function as Fn,
+  Layer,
+  Predicate,
+  Scope,
+  SubscriptionRef,
+} from "effect";
 
-import { defaultEquals } from "./Derived/helpers.js";
-import { Readable as ReadableNS, type Readable } from "./Readable.js";
+import { Readable, TypeId as ReadableTypeId } from "./Readable.js";
 import {
   SignalArray,
   type SignalArray as SignalArrayType,
@@ -9,11 +17,23 @@ import {
 import { SignalMap, type SignalMap as SignalMapType } from "./SignalMap.js";
 import { SignalSet, type SignalSet as SignalSetType } from "./SignalSet.js";
 
+// -----------------------------------------------------------------------------
+// TypeId
+// -----------------------------------------------------------------------------
+
+export const SignalTypeId: unique symbol = Symbol.for("effex/Signal");
+export type SignalTypeId = typeof SignalTypeId;
+
+// -----------------------------------------------------------------------------
+// Models
+// -----------------------------------------------------------------------------
+
 /**
  * A mutable reactive value that extends Readable with write capabilities.
  * @template A - The type of the value
  */
-export interface Signal<A> extends Readable<A> {
+export interface Signal<A> extends Readable.Readable<A> {
+  readonly [SignalTypeId]: SignalTypeId;
   /** Set the signal to a new value */
   readonly set: (a: A) => Effect.Effect<void>;
   /** Update the signal value using a function */
@@ -28,7 +48,8 @@ export declare namespace Signal {
    * A mutable reactive value that extends Readable with write capabilities.
    * @template A - The type of the value
    */
-  export interface Signal<A> extends Readable<A> {
+  export interface Signal<A> extends Readable.Readable<A> {
+    readonly [SignalTypeId]: SignalTypeId;
     /** Set the signal to a new value */
     readonly set: (a: A) => Effect.Effect<void>;
     /** Update the signal value using a function */
@@ -48,33 +69,73 @@ export declare namespace Signal {
 /**
  * Options for creating a Signal.
  * @template A - The type of the value
+ * @deprecated Use `Signal.make(value).pipe(Signal.equals(fn))` instead
  */
 export interface SignalOptions<A> {
   /** Custom equality function to determine if the value has changed */
   readonly equals?: (a: A, b: A) => boolean;
 }
 
+// -----------------------------------------------------------------------------
+// Type Guards
+// -----------------------------------------------------------------------------
+
+/**
+ * Check if a value is a Signal.
+ */
+export const isSignal = (value: unknown): value is Signal<unknown> =>
+  Predicate.hasProperty(value, SignalTypeId);
+
+// -----------------------------------------------------------------------------
+// FiberRef for pipeable configuration
+// -----------------------------------------------------------------------------
+
+/**
+ * FiberRef used to pass the equals function to Signal.make via the pipeable pattern.
+ * @internal
+ */
+const EqualsRef = FiberRef.unsafeMake<
+  ((a: unknown, b: unknown) => boolean) | undefined
+>(undefined);
+
+// -----------------------------------------------------------------------------
+// Constructors
+// -----------------------------------------------------------------------------
+
 /**
  * Create a new Signal with an initial value.
+ *
+ * @example
+ * ```ts
+ * // Basic usage
+ * const counter = yield* Signal.make(0);
+ *
+ * // With custom equality (pipeable)
+ * const user = yield* Signal.make({ id: 1, name: "John" }).pipe(
+ *   Signal.equals((a, b) => a.id === b.id)
+ * );
+ * ```
+ *
  * @param initial - The initial value
- * @param options - Optional configuration
  */
 export const make = <A>(
   initial: A,
-  options?: SignalOptions<A>,
-): Effect.Effect<Signal<A>, never, Scope.Scope> => {
-  const equals = options?.equals ?? defaultEquals;
+): Effect.Effect<Signal<A>, never, Scope.Scope> =>
+  Effect.gen(function* () {
+    // Read equals function from FiberRef (set via Signal.equals combinator)
+    const equalsFn = yield* FiberRef.get(EqualsRef);
+    const equals = (equalsFn ?? ((a, b) => a === b)) as (a: A, b: A) => boolean;
 
-  return Effect.gen(function* () {
     const ref = yield* SubscriptionRef.make(initial);
 
     // Use ref.changes to get a stream that receives all future updates
     const getChanges = () => ref.changes;
 
-    const readable = ReadableNS.make(SubscriptionRef.get(ref), getChanges);
+    const readable = Readable.make(SubscriptionRef.get(ref), getChanges);
 
     const signal: Signal<A> = {
       ...readable,
+      [SignalTypeId]: SignalTypeId,
       set: (a) =>
         Effect.gen(function* () {
           const current = yield* SubscriptionRef.get(ref);
@@ -94,7 +155,44 @@ export const make = <A>(
 
     return signal;
   });
-};
+
+// -----------------------------------------------------------------------------
+// Combinators
+// -----------------------------------------------------------------------------
+
+/**
+ * Configure a custom equality function for a Signal.
+ * The equality function determines when updates are skipped (if values are "equal").
+ *
+ * @example
+ * ```ts
+ * // Compare users by id only
+ * const user = yield* Signal.make({ id: 1, name: "John" }).pipe(
+ *   Signal.equals((a, b) => a.id === b.id)
+ * );
+ *
+ * // This won't trigger an update (same id)
+ * yield* user.set({ id: 1, name: "Johnny" });
+ * ```
+ */
+export const equals: {
+  <A>(
+    f: (a: A, b: A) => boolean,
+  ): (
+    self: Effect.Effect<Signal<A>, never, Scope.Scope>,
+  ) => Effect.Effect<Signal<A>, never, Scope.Scope>;
+  <A>(
+    self: Effect.Effect<Signal<A>, never, Scope.Scope>,
+    f: (a: A, b: A) => boolean,
+  ): Effect.Effect<Signal<A>, never, Scope.Scope>;
+} = Fn.dual(
+  2,
+  <A>(
+    self: Effect.Effect<Signal<A>, never, Scope.Scope>,
+    f: (a: A, b: A) => boolean,
+  ): Effect.Effect<Signal<A>, never, Scope.Scope> =>
+    Effect.locally(self, EqualsRef, f as (a: unknown, b: unknown) => boolean),
+);
 
 /**
  * Use an existing Signal if provided, otherwise create a new one with the default value.
@@ -102,7 +200,6 @@ export const make = <A>(
  *
  * @param existing - An optional Signal to use if provided
  * @param defaultValue - The default value to use when creating a new Signal
- * @param options - Optional configuration for the new Signal
  *
  * @example
  * ```ts
@@ -111,16 +208,18 @@ export const make = <A>(
  *
  * // If props.value is a Signal, it will be used directly
  * // If props.value is undefined, a new Signal is created with defaultValue
+ *
+ * // With custom equality:
+ * const value = yield* Signal.fromNullable(props.value, defaultUser).pipe(
+ *   Signal.equals((a, b) => a.id === b.id)
+ * );
  * ```
  */
 export const fromNullable = <A>(
   existing: Signal<A> | undefined,
   defaultValue: A,
-  options?: SignalOptions<A>,
 ): Effect.Effect<Signal<A>, never, Scope.Scope> =>
-  existing !== undefined
-    ? Effect.succeed(existing)
-    : make(defaultValue, options);
+  existing !== undefined ? Effect.succeed(existing) : make(defaultValue);
 
 /**
  * Create a Signal from a reactive value (Signal, Readable, or plain value).
@@ -134,7 +233,6 @@ export const fromNullable = <A>(
  *
  * @param value - A Signal, Readable, or plain value
  * @param defaultValue - Default value to use if the input value is undefined
- * @param options - Optional configuration for the new Signal
  *
  * @example
  * ```ts
@@ -151,44 +249,37 @@ export const fromNullable = <A>(
  *       props.checked,
  *       props.defaultChecked ?? false
  *     );
+ *
+ *     // With custom equality:
+ *     const user = yield* Signal.fromReactive(props.user, defaultUser).pipe(
+ *       Signal.equals((a, b) => a.id === b.id)
+ *     );
  *   });
  * ```
  */
 export const fromReactive = <A>(
-  value: Signal<A> | Readable<A> | A | undefined,
+  value: Signal<A> | Readable.Readable<A> | A | undefined,
   defaultValue: A,
-  options?: SignalOptions<A>,
 ): Effect.Effect<Signal<A>, never, Scope.Scope> =>
   Effect.gen(function* () {
     // Handle undefined - use default value
     if (value === undefined) {
-      return yield* make(defaultValue, options);
+      return yield* make(defaultValue);
     }
 
-    // Check if it's a Signal (has both get and set)
-    if (
-      typeof value === "object" &&
-      value !== null &&
-      "get" in value &&
-      "set" in value
-    ) {
+    // Check if it's a Signal (has SignalTypeId)
+    if (isSignal(value)) {
       return value as Signal<A>;
     }
 
-    // Check if it's a Readable (has get but not set)
-    if (
-      typeof value === "object" &&
-      value !== null &&
-      "get" in value &&
-      !("set" in value)
-    ) {
-      const readable = value as Readable<A>;
-      const currentValue = yield* readable.get;
-      return yield* make(currentValue ?? defaultValue, options);
+    // Check if it's a Readable (has ReadableTypeId but not SignalTypeId)
+    if (Readable.isReadable(value)) {
+      const currentValue = yield* (value as Readable.Readable<A>).get;
+      return yield* make(currentValue ?? defaultValue);
     }
 
     // Otherwise, it's a plain value
-    return yield* make(value as A, options);
+    return yield* make(value as A);
   });
 
 /**
@@ -199,7 +290,6 @@ export class SignalRegistry extends Context.Tag("effex/SignalRegistry")<
   {
     readonly make: <A>(
       initial: A,
-      options?: SignalOptions<A>,
     ) => Effect.Effect<Signal<A>, never, Scope.Scope>;
     readonly scoped: <A, E, R>(
       effect: Effect.Effect<A, E, R>,
@@ -207,13 +297,20 @@ export class SignalRegistry extends Context.Tag("effex/SignalRegistry")<
   }
 >() {
   static Live = Layer.succeed(SignalRegistry, {
-    make: (initial, options) => make(initial, options),
+    make: (initial) => make(initial),
     scoped: (effect) => Effect.scoped(effect),
   });
 }
 
+// -----------------------------------------------------------------------------
+// Namespace Export
+// -----------------------------------------------------------------------------
+
 export const Signal = {
+  SignalTypeId,
+  isSignal,
   make,
+  equals,
   fromNullable,
   fromReactive,
   SignalRegistry,
@@ -238,3 +335,6 @@ export const Signal = {
 export type { SignalArrayType as SignalArray };
 export type { SignalMapType as SignalMap };
 export type { SignalSetType as SignalSet };
+
+// Re-export ReadableTypeId for reference
+export { ReadableTypeId };

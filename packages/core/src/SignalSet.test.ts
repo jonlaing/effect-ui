@@ -55,7 +55,7 @@ describe("Signal.Set", () => {
           const set = yield* Signal.Set.make<string>();
           const changes: number[] = [];
 
-          const fiber = yield* set.readable.changes.pipe(
+          const fiber = yield* set.changes.pipe(
             Stream.take(1),
             Stream.runForEach((s) => Effect.sync(() => changes.push(s.size))),
             Effect.fork,
@@ -229,7 +229,7 @@ describe("Signal.Set", () => {
           const set = yield* Signal.Set.make(["old"]);
           yield* set.replace(["new1", "new2"]);
 
-          const values = yield* set.values.get;
+          const values = yield* set.valuesArray.get;
           expect(values).toEqual(["new1", "new2"]);
         }),
       ));
@@ -242,7 +242,7 @@ describe("Signal.Set", () => {
           const set = yield* Signal.Set.make([1, 2, 3, 4, 5]);
           yield* set.update((s) => new Set([...s].filter((n) => n > 2)));
 
-          const values = yield* set.values.get;
+          const values = yield* set.valuesArray.get;
           expect([...values].sort()).toEqual([3, 4, 5]);
         }),
       ));
@@ -268,12 +268,12 @@ describe("Signal.Set", () => {
       ));
   });
 
-  describe("values", () => {
+  describe("valuesArray", () => {
     it("should return values as array", () =>
       runTest(
         Effect.gen(function* () {
           const set = yield* Signal.Set.make(["a", "b", "c"]);
-          const values = yield* set.values.get;
+          const values = yield* set.valuesArray.get;
           expect([...values].sort()).toEqual(["a", "b", "c"]);
         }),
       ));
@@ -283,20 +283,20 @@ describe("Signal.Set", () => {
         Effect.gen(function* () {
           const set = yield* Signal.Set.make(["a"]);
           yield* set.add("b");
-          const values = yield* set.values.get;
+          const values = yield* set.valuesArray.get;
           expect([...values].sort()).toEqual(["a", "b"]);
         }),
       ));
   });
 
-  describe("readable", () => {
+  describe("Readable interface", () => {
     it("should be usable with Readable.combine", () =>
       runTest(
         Effect.gen(function* () {
           const set = yield* Signal.Set.make(["tag1", "tag2"]);
           const count = yield* Signal.make(10);
 
-          const combined = combine([set.readable, count] as const);
+          const combined = combine([set, count] as const);
 
           const [s, c] = yield* combined.get;
           expect(s.has("tag1")).toBe(true);

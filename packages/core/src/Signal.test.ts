@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
 
+import { Readable } from "./Readable";
 import { Signal } from "./Signal";
 
 describe("Signal.fromNullable", () => {
@@ -29,16 +30,12 @@ describe("Signal.fromNullable", () => {
     expect(result).toBe(42);
   });
 
-  it("should pass options to new signal", async () => {
+  it("should work with pipeable equals", async () => {
     const result = await Effect.runPromise(
       Effect.scoped(
         Effect.gen(function* () {
-          const signal = yield* Signal.fromNullable(
-            undefined,
-            { id: 1 },
-            {
-              equals: (a, b) => a.id === b.id,
-            },
+          const signal = yield* Signal.fromNullable(undefined, { id: 1 }).pipe(
+            Signal.equals((a, b) => a.id === b.id),
           );
           // Same id, should not update
           yield* signal.set({ id: 1 });
@@ -69,15 +66,9 @@ describe("Signal.fromReactive", () => {
     const result = await Effect.runPromise(
       Effect.scoped(
         Effect.gen(function* () {
-          const readable = yield* Signal.make(42);
-          // Cast to remove set method to simulate a pure Readable
-          const readableOnly = {
-            get: readable.get,
-            changes: readable.changes,
-            values: readable.values,
-            map: readable.map,
-          };
-          const signal = yield* Signal.fromReactive(readableOnly, 0);
+          // Create a pure Readable using Readable.of
+          const readable = Readable.of(42);
+          const signal = yield* Signal.fromReactive(readable, 0);
           return yield* signal.get;
         }),
       ),
@@ -113,14 +104,9 @@ describe("Signal.fromReactive", () => {
     const result = await Effect.runPromise(
       Effect.scoped(
         Effect.gen(function* () {
-          const readable = yield* Signal.make(10);
-          const readableOnly = {
-            get: readable.get,
-            changes: readable.changes,
-            values: readable.values,
-            map: readable.map,
-          };
-          const signal = yield* Signal.fromReactive(readableOnly, 0);
+          // Create a pure Readable using Readable.of
+          const readable = Readable.of(10);
+          const signal = yield* Signal.fromReactive(readable, 0);
           yield* signal.set(20);
           return yield* signal.get;
         }),
@@ -192,9 +178,8 @@ describe("Signal", () => {
     const result = await Effect.runPromise(
       Effect.scoped(
         Effect.gen(function* () {
-          const user = yield* Signal.make<User>(
-            { id: 1, name: "Alice" },
-            { equals: (a, b) => a.id === b.id },
+          const user = yield* Signal.make<User>({ id: 1, name: "Alice" }).pipe(
+            Signal.equals((a: User, b: User) => a.id === b.id),
           );
           // Same id, different name - should NOT update (considered equal)
           yield* user.set({ id: 1, name: "Alice Updated" });
@@ -211,7 +196,7 @@ describe("Signal", () => {
       Effect.scoped(
         Effect.gen(function* () {
           const count = yield* Signal.make(5);
-          const doubled = count.map((n) => n * 2);
+          const doubled = count.pipe(Readable.map((n) => n * 2));
           return yield* doubled.get;
         }),
       ),
@@ -232,5 +217,35 @@ describe("Signal", () => {
       ),
     );
     expect(result).toBe(3);
+  });
+
+  it("should be recognized by isSignal", async () => {
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const signal = yield* Signal.make(0);
+          return Signal.isSignal(signal);
+        }),
+      ),
+    );
+    expect(result).toBe(true);
+  });
+
+  it("should be recognized by isReadable", async () => {
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const signal = yield* Signal.make(0);
+          return Readable.isReadable(signal);
+        }),
+      ),
+    );
+    expect(result).toBe(true);
+  });
+
+  it("plain Readable should not be recognized as Signal", () => {
+    const readable = Readable.of(42);
+    expect(Signal.isSignal(readable)).toBe(false);
+    expect(Readable.isReadable(readable)).toBe(true);
   });
 });
