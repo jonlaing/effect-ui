@@ -134,6 +134,9 @@ describe("Template (t)", () => {
               readable.changes.pipe(Stream.take(1), Stream.runCollect),
             );
 
+            // Yield to allow fiber to start and subscribe to the stream
+            yield* Effect.yieldNow();
+
             // Update the signal
             yield* count.set(42);
 

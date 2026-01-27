@@ -1003,10 +1003,29 @@ export const on: {
   ): Element<A, E, R> =>
     Effect.gen(function* () {
       const el = yield* self;
-      const renderer = yield* RendererContext;
-      yield* renderer.addEventListener(el, event, (e) =>
-        Effect.runPromise(handler(e as HTMLElementEventMap[K])),
+
+      // Track if scope is still active to prevent stale handler calls
+      let isActive = true;
+
+      const wrappedHandler = (e: Event) => {
+        if (isActive) {
+          const effect = handler(e as HTMLElementEventMap[K]);
+          if (effect && Effect.isEffect(effect)) {
+            Effect.runPromise(effect);
+          }
+        }
+      };
+
+      el.addEventListener(event, wrappedHandler);
+
+      // Clean up on scope finalization
+      yield* Effect.addFinalizer(() =>
+        Effect.sync(() => {
+          isActive = false;
+          el.removeEventListener(event, wrappedHandler);
+        }),
       );
+
       return el;
     }) as Element<A, E, R>,
 );
@@ -1034,16 +1053,27 @@ export const once: {
     Effect.gen(function* () {
       const el = yield* self;
 
+      // Track if scope is still active to prevent stale handler calls
+      let isActive = true;
+
       const wrappedHandler = (e: Event) => {
-        el.removeEventListener(event, wrappedHandler);
-        Effect.runPromise(handler(e as HTMLElementEventMap[K]));
+        if (isActive) {
+          el.removeEventListener(event, wrappedHandler);
+          const effect = handler(e as HTMLElementEventMap[K]);
+          if (effect && Effect.isEffect(effect)) {
+            Effect.runPromise(effect);
+          }
+        }
       };
 
       el.addEventListener(event, wrappedHandler);
 
       // Clean up on scope finalization
       yield* Effect.addFinalizer(() =>
-        Effect.sync(() => el.removeEventListener(event, wrappedHandler)),
+        Effect.sync(() => {
+          isActive = false;
+          el.removeEventListener(event, wrappedHandler);
+        }),
       );
 
       return el;

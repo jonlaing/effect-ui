@@ -6,6 +6,9 @@ export { DOMRenderer, DOMRendererLive } from "./DOMRenderer";
 
 export * as Element from "./Element";
 
+// Re-export commonly used items from Element for convenience
+export { $, bindElementToRef, ref } from "./Element";
+
 // Control flow
 export {
   when,

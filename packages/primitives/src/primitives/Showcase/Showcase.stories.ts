@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/html-vite";
 import { Effect } from "effect";
 
-import { $, Boundary, button, input, label, Signal } from "@effex/dom";
+import { $, Boundary, Signal } from "@effex/dom";
 import {
   Accordion,
   AlertDialog,
@@ -82,7 +82,7 @@ export const SettingsDashboard: Story = {
             Tooltip.Root({ delayDuration: 300 }, [
               Tooltip.Trigger(
                 {},
-                button({ class: "btn btn-ghost btn-sm" }, "⌂ Home"),
+                $.button({ class: "btn btn-ghost btn-sm" }, "⌂ Home"),
               ),
               Tooltip.Content(
                 {
@@ -96,7 +96,7 @@ export const SettingsDashboard: Story = {
             Tooltip.Root({ delayDuration: 300 }, [
               Tooltip.Trigger(
                 {},
-                button({ class: "btn btn-ghost btn-sm" }, "☰ Docs"),
+                $.button({ class: "btn btn-ghost btn-sm" }, "☰ Docs"),
               ),
               Tooltip.Content(
                 {
@@ -212,7 +212,7 @@ export const SettingsDashboard: Story = {
                             { class: "flex justify-between items-center" },
                             [
                               $.div({}, [
-                                $.label(
+                                $.$.label(
                                   { class: "font-medium" },
                                   "Email Notifications",
                                 ),
@@ -245,7 +245,7 @@ export const SettingsDashboard: Story = {
                                 class: "flex justify-between items-center mb-2",
                               },
                               [
-                                $.label(
+                                $.$.label(
                                   { class: "font-medium" },
                                   "Notification Volume",
                                 ),
@@ -286,7 +286,7 @@ export const SettingsDashboard: Story = {
 
                           // Language select
                           $.div({ class: "form-control mt-4" }, [
-                            $.label({ class: "label" }, [
+                            $.$.label({ class: "label" }, [
                               $.span(
                                 { class: "label-text font-medium" },
                                 "Language",
@@ -480,7 +480,7 @@ export const SettingsDashboard: Story = {
                   // Dark mode toggle
                   $.div({ class: "flex justify-between items-center" }, [
                     $.div({}, [
-                      $.label({ class: "font-medium" }, "Dark Mode"),
+                      $.$.label({ class: "font-medium" }, "Dark Mode"),
                       $.p(
                         { class: "text-sm text-base-content/70" },
                         "Toggle dark theme",
@@ -499,7 +499,7 @@ export const SettingsDashboard: Story = {
 
                   // Theme radio group
                   $.div({ class: "form-control mt-6" }, [
-                    $.label({ class: "label" }, [
+                    $.$.label({ class: "label" }, [
                       $.span(
                         { class: "label-text font-medium" },
                         "Color Theme",
@@ -518,21 +518,21 @@ export const SettingsDashboard: Story = {
                             value: "light",
                             class: "radio radio-primary",
                           }),
-                          label({}, "Light"),
+                          $.label({}, "Light"),
                         ]),
                         $.div({ class: "flex items-center gap-2" }, [
                           RadioGroup.Item({
                             value: "dark",
                             class: "radio radio-primary",
                           }),
-                          label({}, "Dark"),
+                          $.label({}, "Dark"),
                         ]),
                         $.div({ class: "flex items-center gap-2" }, [
                           RadioGroup.Item({
                             value: "system",
                             class: "radio radio-primary",
                           }),
-                          label({}, "System"),
+                          $.label({}, "System"),
                         ]),
                       ],
                     ),
@@ -540,7 +540,7 @@ export const SettingsDashboard: Story = {
 
                   // Font size select
                   $.div({ class: "form-control mt-6" }, [
-                    $.label({ class: "label" }, [
+                    $.$.label({ class: "label" }, [
                       $.span({ class: "label-text font-medium" }, "Font Size"),
                     ]),
                     Select.Root(
@@ -616,7 +616,7 @@ export const SettingsDashboard: Story = {
                           onCheckedChange: (checked) =>
                             privacySettings.set("analytics", checked === true),
                         }),
-                        label({}, "Allow analytics cookies"),
+                        $.label({}, "Allow analytics cookies"),
                       ]),
                       $.div({ class: "flex items-center gap-3" }, [
                         Checkbox({
@@ -628,7 +628,7 @@ export const SettingsDashboard: Story = {
                           onCheckedChange: (checked) =>
                             privacySettings.set("shareData", checked === true),
                         }),
-                        label({}, "Share usage data with partners"),
+                        $.label({}, "Share usage data with partners"),
                       ]),
                       $.div({ class: "flex items-center gap-3" }, [
                         Checkbox({
@@ -643,7 +643,7 @@ export const SettingsDashboard: Story = {
                               checked === true,
                             ),
                         }),
-                        label({}, "Show online status"),
+                        $.label({}, "Show online status"),
                       ]),
                     ]),
 
@@ -737,7 +737,7 @@ export const SettingsDashboard: Story = {
 
                     // Upload progress
                     $.div({ class: "form-control" }, [
-                      $.label({ class: "label" }, [
+                      $.$.label({ class: "label" }, [
                         $.span(
                           { class: "label-text font-medium" },
                           "Storage Usage",
@@ -760,7 +760,7 @@ export const SettingsDashboard: Story = {
 
                     // Dialog for editing
                     $.div({ class: "form-control mt-6" }, [
-                      $.label({ class: "label" }, [
+                      $.$.label({ class: "label" }, [
                         $.span(
                           { class: "label-text font-medium" },
                           "API Configuration",
@@ -791,23 +791,23 @@ export const SettingsDashboard: Story = {
                               ),
                               $.div({ class: "space-y-4 mt-4" }, [
                                 $.div({ class: "form-control" }, [
-                                  label({ class: "label" }, [
+                                  $.label({ class: "label" }, [
                                     $.span({ class: "label-text" }, "API Key"),
                                   ]),
-                                  input({
+                                  $.input({
                                     type: "text",
                                     class: "input input-bordered",
                                     placeholder: "sk-...",
                                   }),
                                 ]),
                                 $.div({ class: "form-control" }, [
-                                  label({ class: "label" }, [
+                                  $.label({ class: "label" }, [
                                     $.span(
                                       { class: "label-text" },
                                       "Endpoint URL",
                                     ),
                                   ]),
-                                  input({
+                                  $.input({
                                     type: "url",
                                     class: "input input-bordered",
                                     placeholder: "https://api.example.com",
@@ -846,11 +846,11 @@ export const SettingsDashboard: Story = {
 
       // Footer
       const footer = $.footer({ class: "mt-6 flex justify-end gap-3" }, [
-        button(
+        $.button(
           { type: "button", class: "btn btn-ghost", onClick: showErrorToast },
           "Reset to Defaults",
         ),
-        button(
+        $.button(
           {
             type: "button",
             class: "btn btn-primary",

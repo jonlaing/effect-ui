@@ -2,7 +2,7 @@ import { Effect, Option, Stream } from "effect";
 import { describe, expect, it } from "vitest";
 
 import type { Readable } from "@effex/core";
-import { $, div } from "@effex/dom";
+import { $ } from "@effex/dom";
 import { makeRouterLayer, type BaseRouter } from "@effex/router";
 
 import type { SSRRouter } from "../rendering/SSR";
@@ -75,7 +75,7 @@ const createMockSSRRouter = (): SSRRouter<never, never, never, never> => ({
 // Simple test component
 const TestApp = () =>
   Effect.gen(function* () {
-    return yield* div({ id: "app" }, $.of("Hello, World!"));
+    return yield* $.div({ id: "app" }, $.of("Hello, World!"));
   });
 
 describe("EffexServer", () => {

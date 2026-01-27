@@ -374,7 +374,7 @@ export const createKeyboardNav = (
       hierarchy,
     } = options;
 
-    const orientationReadable = Readable.of(orientation);
+    const orientationReadable = Readable.normalize(orientation);
     const typeaheadTimeout = typeahead?.timeout ?? 500;
 
     // Typeahead state using Effect Refs (persists across handler calls)

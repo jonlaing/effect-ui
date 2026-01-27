@@ -1,8 +1,7 @@
 import { Effect, Layer, Option, type Duration } from "effect";
 
 import {
-  error as coreError,
-  suspense as coreSuspense,
+  Boundary as CoreBoundary,
   RendererContext,
   type Renderer,
   type RendererInterface,
@@ -207,8 +206,8 @@ export const suspense: {
 
     // Client-side (fresh render): use the core implementation
     // Cast to any to bypass the strict type checking on overloads
-    // The runtime behavior is correct because coreSuspense handles all cases
-    return yield* coreSuspense(
+    // The runtime behavior is correct because CoreBoundary.suspense handles all cases
+    return yield* CoreBoundary.suspense(
       options as Required<SuspenseOptions<E, R1, RF, RC>>,
     );
   });
@@ -233,7 +232,7 @@ export const error = <E, R1 = never, R2 = never>(
     error: E,
   ) => Element.Element<HTMLElement | SVGElement, never, R2>,
 ) => {
-  return coreError(tryRender, catchRender);
+  return CoreBoundary.error(tryRender, catchRender);
 };
 
 /**

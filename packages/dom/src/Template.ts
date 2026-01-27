@@ -1,6 +1,6 @@
 import { Effect, Stream } from "effect";
 
-import { mapReadable, Readable } from "@effex/core";
+import { Readable } from "@effex/core";
 
 /**
  * Tagged template literal for creating reactive strings.
@@ -41,7 +41,7 @@ export const t = (
       get: Effect.succeed(staticResult),
       changes: Stream.empty,
       values: Stream.make(staticResult),
-      map: (f) => mapReadable(readable, f),
+      map: (f) => Readable.map(readable, f),
     };
     return Effect.succeed(readable);
   }
@@ -108,7 +108,7 @@ export const t = (
     get: Effect.map(getCurrentValues(), buildStringWithCurrentValues),
     changes: combineValuesWithData().pipe(Stream.drop(1)),
     values: combineValuesWithData(),
-    map: (f) => mapReadable(readable, f),
+    map: (f) => Readable.map(readable, f),
   };
 
   return Effect.succeed(readable);

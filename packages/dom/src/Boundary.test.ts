@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { Boundary } from "./Boundary";
 import { DOMRendererLive } from "./DOMRenderer";
-import { $, div } from "./Element";
+import { $ } from "./Element";
 
 const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
   Effect.runPromise(
@@ -21,8 +21,8 @@ describe("Boundary", () => {
     it("should render content when no error", async () => {
       const el = await runTest(
         Boundary.error(
-          () => div({}, $.of("Success")),
-          () => div({}, $.of("Error occurred")),
+          () => $.div({}, $.of("Success")),
+          () => $.div({}, $.of("Error occurred")),
         ),
       );
 
@@ -45,9 +45,9 @@ describe("Boundary", () => {
           () =>
             Effect.gen(function* () {
               yield* Effect.fail(makeTestError("oops"));
-              return yield* div({}, $.of("Never reached"));
+              return yield* $.div({}, $.of("Never reached"));
             }),
-          (error) => div({}, $.of(`Caught: ${error.message}`)),
+          (error) => $.div({}, $.of(`Caught: ${error.message}`)),
         ),
       );
 
@@ -60,16 +60,16 @@ describe("Boundary", () => {
       const el = await runTest(
         Effect.gen(function* () {
           // Create a parent container to hold the slot
-          const parent = yield* div({});
+          const parent = yield* $.div({});
           document.body.appendChild(parent);
 
           const marker = yield* Boundary.suspense({
             render: () =>
               Effect.gen(function* () {
                 yield* Effect.sleep(20);
-                return yield* div({}, $.of("Loaded!"));
+                return yield* $.div({}, $.of("Loaded!"));
               }),
-            fallback: () => div({}, $.of("Loading...")),
+            fallback: () => $.div({}, $.of("Loading...")),
           });
 
           // Append the marker to the parent

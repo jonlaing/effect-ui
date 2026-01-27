@@ -1,12 +1,6 @@
 import { Effect, Exit, Scope, Stream } from "effect";
 
-import {
-  Derived,
-  mapReadable,
-  RendererContext,
-  Signal,
-  type Readable,
-} from "@effex/core";
+import { Readable, RendererContext, Signal } from "@effex/core";
 
 import { createItemReadable } from "../Control/updaters";
 import { Element } from "../Element";
@@ -54,8 +48,8 @@ const createIndexReadable = (initialIndex: number) => {
     get values(): Stream.Stream<number> {
       return Stream.concat(Stream.make(currentIndex), this.changes);
     },
-    map: function <B>(f: (n: number) => B): Readable<B> {
-      return mapReadable(this as Readable<number>, f);
+    map: function <B>(f: (n: number) => B): Readable.Readable<B> {
+      return Readable.map(this as Readable.Readable<number>, f);
     },
     _update: (index: number) => {
       if (currentIndex !== index) {
@@ -144,22 +138,27 @@ export const virtualEach = <A, E = never, R = never>(
     const itemsArray = yield* Signal.make<readonly A[]>([]);
 
     // Derive total items count
-    const totalItems: Readable<number> = yield* Derived.sync(
-      [itemsArray],
-      (values) => values[0].length,
+    const totalItems: Readable.Readable<number> = Readable.map(
+      itemsArray,
+      (arr) => arr.length,
     );
 
     // Derive visible range
-    const visibleRange: Readable<VisibleRange> = yield* Derived.sync(
-      [scrollTop, viewportHeight, totalItems],
-      (values): VisibleRange =>
-        calculateVisibleRange(
-          values[0],
-          values[1],
-          itemHeight,
-          values[2],
-          overscan,
-        ),
+    const visibleRange: Readable.Readable<VisibleRange> = Readable.zipAll([
+      scrollTop,
+      viewportHeight,
+      totalItems,
+    ]).pipe(
+      Readable.map(
+        ([scrollTopVal, viewportHeightVal, totalItemsVal]): VisibleRange =>
+          calculateVisibleRange(
+            scrollTopVal,
+            viewportHeightVal,
+            itemHeight,
+            totalItemsVal,
+            overscan,
+          ),
+      ),
     );
 
     // Track rendered items
