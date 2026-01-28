@@ -3,13 +3,14 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { Readable, Signal } from "@effex/core";
 
-import { each, match, when } from ".";
+import { ClientControlCtx, each, match, when } from ".";
 import { DOMRendererLive } from "../DOMRenderer";
 import { $ } from "../Element";
 
 const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
   Effect.runPromise(
     Effect.scoped(effect).pipe(
+      Effect.provide(ClientControlCtx),
       Effect.provide(DOMRendererLive),
     ) as Effect.Effect<A, never, never>,
   );

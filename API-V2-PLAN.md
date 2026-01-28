@@ -157,9 +157,223 @@ Export as `$` namespace at the top level:
 export { $ } from "./DOMElements.js"
 ```
 
-### 5.4 Update Control flow (`when`, `match`, `each`)
+### 5.4 Refactor Control flow (`when`, `match`, `each`)
 
-These consume Readables - update to new patterns.
+#### Key Insight: Keyed Slot Reconciliation
+
+All control flow functions are variations of the same pattern:
+- `when` = 0-1 slots, key is `"true"` or `"false"`
+- `matchOption` = 0-1 slots, key is `"some"` or `"none"`
+- `matchEither` = 0-1 slots, key is `"left"` or `"right"`
+- `match` = 0-1 slots, key is matched pattern string
+- `each` = 0-N slots, key from `keyFn`
+
+They're ALL keyed slot reconciliation. The differences are just configuration.
+
+#### ControlCtx Interface
+
+Single service that abstracts SSR/Hydration/Client differences.
+
+**Package split:**
+- `packages/core`: `IControlCtx<A>`, `SlotEntry<A>`, `ControlCtx` tag, `reconcile`, all thin wrappers (`when`, `match`, `each`, etc.)
+- `packages/dom`: Live implementations (`ClientControlCtx`, `HydrationControlCtx`, `SSRControlCtx`)
+
+The interface is generic over the element type `A` so core stays DOM-agnostic:
+
+```ts
+// Defined in packages/core
+export interface SlotEntry<A> {
+  readonly key: string;
+  readonly element: A;
+  readonly scope: Scope.CloseableScope;
+  readonly item?: Signal.Signal<unknown>;   // For `each`
+  readonly index?: Signal.Signal<number>;   // For `each`
+}
+
+// Defined in packages/core - generic over element type A
+export interface IControlCtx<A> {
+  // Default container - provided by each environment's live implementation
+  // e.g., DOM uses $.div({ style: "display: contents" })
+  readonly defaultContainer: Element<A, never, never>;
+
+  // Container
+  // - SSR: calls create(), adds hydration markers to result
+  // - Hydration: finds existing container by hydration ID, ignores create (falls back if not found)
+  // - Client: calls create()
+  // Uses defaultContainer if create is not provided
+  readonly getContainer: <E, R>(
+    create?: () => Element<A, E, R>
+  ) => Element<A, E, R>;
+
+  // Slot management - all environment differences are internal
+  // addSlot creates signals internally and passes them to the render callback
+  readonly addSlot: <E, R>(
+    key: string,
+    render: (ctx: { item: Signal.Signal<unknown>; index: Signal.Signal<number> }) =>
+      Element<A, E, R>,
+    options?: { atIndex?: number; initialItem?: unknown; initialIndex?: number },
+  ) => Effect.Effect<SlotEntry<A>, E, R>;  // Handles enter animations in client
+  readonly removeSlot: (key: string) => Effect.Effect<void>;      // Noop in SSR, handles exit animations in client
+  readonly getSlot: (key: string) => Effect.Effect<SlotEntry<A> | undefined>;
+  readonly getSlotKeys: () => Effect.Effect<readonly string[]>;   // Reads DOM in hydration
+  readonly moveSlot: (key: string, toIndex: number) => Effect.Effect<void>;  // Noop in SSR
+
+  // Reactivity - noop in SSR, forks stream subscription in client/hydration
+  readonly subscribe: <A, E, R>(
+    readable: Readable.Readable<A>,
+    handler: (value: A) => Effect.Effect<void, E, R>,
+  ) => Effect.Effect<void, E, R>;
+}
+
+// Defined in packages/core - uses unknown as base type
+// Live implementations in packages/dom narrow to HTMLElement | SVGElement
+export class ControlCtx extends Context.Tag("@effex/core/ControlCtx")<
+  ControlCtx,
+  IControlCtx<unknown>
+>() {}
+
+// In packages/dom - narrowed type for DOM implementations
+export type DOMControlCtx = IControlCtx<HTMLElement | SVGElement>;
+```
+
+#### Core Reconcile Function
+
+```ts
+// Defined in packages/core
+interface ReconcileConfig<A, E = never, R = never> {
+  readonly container?: () => Element<unknown, E, R>;
+  readonly getTargetKeys: (value: A) => readonly string[];
+  readonly renderSlot: (
+    key: string,
+    value: A,
+    ctx: { item: Signal.Signal<unknown>; index: Signal.Signal<number> },
+  ) => Element<unknown, E, R>;
+  readonly getItemForKey?: (key: string, value: A) => unknown;
+  readonly ordered?: boolean;  // true for `each`
+}
+
+// Defined in packages/core
+const reconcile = <A, E, R>(
+  readable: Readable.Readable<A>,
+  config: ReconcileConfig<A>,
+): Element<unknown, E, R | ControlCtx> =>
+  Effect.gen(function* () {
+    const ctx = yield* ControlCtx;
+    // getContainer uses ctx.defaultContainer if config.container is not provided
+    const container = yield* ctx.getContainer(config.container);
+
+    const sync = (value: A) => Effect.gen(function* () {
+      const currentKeys = yield* ctx.getSlotKeys();
+      const targetKeys = config.getTargetKeys(value);
+      const targetSet = new Set(targetKeys);
+
+      // Step 1: Remove slots not in target
+      for (const key of currentKeys) {
+        if (!targetSet.has(key)) {
+          yield* ctx.removeSlot(key);
+        }
+      }
+
+      // Step 2: Add/update slots in target order
+      // `i` is the TARGET position where this key should end up
+      for (let i = 0; i < targetKeys.length; i++) {
+        const key = targetKeys[i];
+        const existing = yield* ctx.getSlot(key);
+
+        if (existing) {
+          // Update existing slot's reactive values
+          if (existing.item && config.getItemForKey) {
+            yield* existing.item.set(config.getItemForKey(key, value));
+          }
+          if (existing.index) {
+            yield* existing.index.set(i);
+          }
+          // Reorder DOM if needed
+          if (config.ordered) {
+            yield* ctx.moveSlot(key, i);
+          }
+        } else {
+          // Create new slot
+          const itemValue = config.getItemForKey?.(key, value);
+          yield* ctx.addSlot(
+            key,
+            ({ item, index }) => config.renderSlot(key, value, { item, index }),
+            { atIndex: i, initialItem: itemValue, initialIndex: i }
+          );
+        }
+      }
+    });
+
+    // Initial sync
+    yield* sync(yield* readable.get);
+
+    // Subscribe to future changes
+    yield* ctx.subscribe(readable, sync);
+
+    return container;
+  });
+```
+
+#### Performance Notes
+
+The old `each` implementation had memory issues around 500+ items, likely due to:
+- Creating heavy custom mutable readables per item (now using lightweight Signals)
+- Improper scope cleanup on removal (now each slot has explicit scope lifecycle)
+- O(n²) diffing (now O(n) with Set lookups)
+
+This design should handle 500+ items better, but for truly large lists (1000+),
+`virtualEach` remains the right choice since it only renders visible items.
+
+Potential optimizations if needed:
+- Maintain internal Set instead of recreating each sync
+- Batch DOM operations with `requestAnimationFrame`
+- Skip `moveSlot` calls when position unchanged (check before calling)
+
+#### Thin Wrappers
+
+All control functions become configuration:
+
+```ts
+// all of these functions defined in packages/core
+export const when = (condition, { onTrue, onFalse, container }) =>
+  reconcile(condition, {
+    container,
+    getTargetKeys: (v) => v ? (onTrue ? ["true"] : []) : (onFalse ? ["false"] : []),
+    renderSlot: (key) => key === "true" ? onTrue!() : onFalse!(),
+  });
+
+export const matchOption = (option, { onSome, onNone, container }) =>
+  reconcile(option, {
+    container,
+    getTargetKeys: (opt) => [Option.isSome(opt) ? "some" : "none"],
+    renderSlot: (key, opt) => key === "some" ? onSome(opt.value) : onNone(),
+  });
+
+// additionally matchEither and match follow similar patterns
+
+export const each = (items, { key: keyFn, render, container }) =>
+  reconcile(items, {
+    container,
+    getTargetKeys: (arr) => arr.map(keyFn),
+    renderSlot: (_, __, ctx) => render(ctx.item, ctx.index),
+    getItemForKey: (key, arr) => arr.find(item => keyFn(item) === key),
+    ordered: true,
+  });
+
+// Example: rendering a list with custom container
+each(todos, {
+  key: (todo) => todo.id,
+  render: (todo, index) => $.li({}, todo.map(t => t.text)),
+  container: () => $.ul({ class: "todo-list" }),
+})
+```
+
+#### Migration Notes
+
+- Replace `createItemReadable` / `createIndexReadable` with `Signal.make()`
+- Remove SSR/Hydration/Client branching from each function - use `ControlCtx` layer
+- All reconciliation logic lives in `@effex/core` (environment-agnostic)
+- Live `ControlCtx` implementations live in `@effex/dom` and are provided at mount/hydrate/renderToString entry points
 
 ### 5.5 Update remaining dom modules
 

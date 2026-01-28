@@ -1,0 +1,209 @@
+/**
+ * Hydration ControlCtx Layer implementation.
+ * Finds existing DOM and attaches handlers, then subscribes like client mode.
+ */
+
+import { Context, Effect, Exit, Layer, Option, Scope, Stream } from "effect";
+
+import {
+  ControlCtx,
+  RendererContext,
+  Signal,
+  type IControlCtx,
+  type Readable,
+  type Renderer,
+  type SlotEntry,
+} from "@effex/core";
+
+import { runEnterAnimation, runExitAnimation } from "../Animation/index.js";
+import { DOMRenderer } from "../DOMRenderer.js";
+import * as Element from "../Element";
+import { AnimationConfigCtx } from "./AnimationConfigCtx.js";
+
+type DOMElement = HTMLElement | SVGElement;
+
+interface DOMSlotEntry extends SlotEntry<DOMElement> {
+  readonly item: Signal.Signal<unknown>;
+  readonly index: Signal.Signal<number>;
+}
+
+/**
+ * Context for providing the hydration root element.
+ */
+export class HydrationRootCtx extends Context.Tag(
+  "@effex/dom/HydrationRootCtx",
+)<HydrationRootCtx, DOMElement>() {}
+
+/**
+ * Hydration ControlCtx implementation.
+ * Finds existing DOM and attaches handlers, then subscribes like client mode.
+ */
+export const HydrationControlCtx: Layer.Layer<
+  ControlCtx,
+  never,
+  HydrationRootCtx
+> = Layer.effect(
+  ControlCtx,
+  Effect.gen(function* () {
+    const containerElement = yield* HydrationRootCtx;
+    const animationConfigOption =
+      yield* Effect.serviceOption(AnimationConfigCtx);
+    const animationConfig = Option.getOrUndefined(animationConfigOption);
+
+    const slots = new Map<string, DOMSlotEntry>();
+
+    // Parse existing slots from DOM
+    const children = Array.from(containerElement.children) as DOMElement[];
+    for (const child of children) {
+      const key = child.getAttribute("data-effex-key");
+      if (key) {
+        slots.set(key, {
+          key,
+          element: child,
+          scope: null as unknown as Scope.CloseableScope,
+          item: null as unknown as Signal.Signal<unknown>,
+          index: null as unknown as Signal.Signal<number>,
+        });
+      }
+    }
+
+    const defaultContainer: Element.Element<DOMElement, never, never> =
+      Effect.succeed(containerElement);
+
+    const ctx: IControlCtx<DOMElement> = {
+      defaultContainer,
+
+      getContainer: <E, R>(
+        _create?: () => Element.Element<DOMElement, E, R>,
+      ): Element.Element<DOMElement, E, R> =>
+        Effect.succeed(containerElement) as Element.Element<DOMElement, E, R>,
+
+      addSlot: <E, R>(
+        key: string,
+        render: (ctx: {
+          item: Signal.Signal<unknown>;
+          index: Signal.Signal<number>;
+        }) => Element.Element<DOMElement, E, R>,
+        addOptions?: {
+          atIndex?: number;
+          initialItem?: unknown;
+          initialIndex?: number;
+        },
+      ): Effect.Effect<DOMSlotEntry, E, R> =>
+        Effect.gen(function* () {
+          const existing = slots.get(key);
+          if (existing && existing.element) {
+            const slotScope = yield* Scope.make();
+            const item = yield* Signal.make(addOptions?.initialItem).pipe(
+              Effect.provideService(Scope.Scope, slotScope),
+            );
+            const index = yield* Signal.make(
+              addOptions?.initialIndex ?? 0,
+            ).pipe(Effect.provideService(Scope.Scope, slotScope));
+
+            const entry: DOMSlotEntry = {
+              key,
+              element: existing.element,
+              scope: slotScope,
+              item,
+              index,
+            };
+            slots.set(key, entry);
+            return entry;
+          }
+
+          // No existing element, create new one (client fallback)
+          const slotScope = yield* Scope.make();
+          const item = yield* Signal.make(addOptions?.initialItem).pipe(
+            Effect.provideService(Scope.Scope, slotScope),
+          );
+          const index = yield* Signal.make(addOptions?.initialIndex ?? 0).pipe(
+            Effect.provideService(Scope.Scope, slotScope),
+          );
+
+          const element = (yield* render({ item, index }).pipe(
+            Effect.provideService(Scope.Scope, slotScope),
+            Effect.provideService(
+              RendererContext,
+              DOMRenderer as unknown as Renderer<unknown>,
+            ),
+          )) as DOMElement;
+
+          const children = Array.from(containerElement.children);
+          const targetIndex = addOptions?.atIndex ?? children.length;
+          const refChild = children[targetIndex] ?? null;
+          containerElement.insertBefore(element, refChild);
+
+          const entry: DOMSlotEntry = {
+            key,
+            element,
+            scope: slotScope,
+            item,
+            index,
+          };
+          slots.set(key, entry);
+
+          const animate = animationConfig?.list ?? animationConfig?.single;
+          if (animate && element instanceof HTMLElement) {
+            yield* runEnterAnimation(Effect.succeed(element), animate);
+          }
+
+          return entry;
+        }) as Effect.Effect<DOMSlotEntry, E, R>,
+
+      removeSlot: (key: string): Effect.Effect<void> =>
+        Effect.gen(function* () {
+          const entry = slots.get(key);
+          if (!entry) return;
+
+          const animate = animationConfig?.list ?? animationConfig?.single;
+          if (animate && entry.element instanceof HTMLElement) {
+            yield* runExitAnimation(Effect.succeed(entry.element), animate);
+          }
+
+          if (entry.element.parentNode === containerElement) {
+            containerElement.removeChild(entry.element);
+          }
+
+          if (entry.scope) {
+            yield* Scope.close(entry.scope, Exit.void);
+          }
+          slots.delete(key);
+        }),
+
+      getSlot: (key: string): Effect.Effect<DOMSlotEntry | undefined> =>
+        Effect.sync(() => slots.get(key)),
+
+      getSlotKeys: (): Effect.Effect<readonly string[]> =>
+        Effect.sync(() => Array.from(slots.keys())),
+
+      moveSlot: (key: string, toIndex: number): Effect.Effect<void> =>
+        Effect.sync(() => {
+          const entry = slots.get(key);
+          if (!entry) return;
+
+          const children = Array.from(containerElement.children);
+          const currentIndex = children.indexOf(entry.element);
+
+          if (currentIndex === toIndex) return;
+
+          const refChild = children[toIndex] ?? null;
+          containerElement.insertBefore(entry.element, refChild);
+        }),
+
+      subscribe: <V, E, R>(
+        readable: Readable.Readable<V>,
+        handler: (value: V) => Effect.Effect<void, E, R>,
+      ): Effect.Effect<void, E, R> =>
+        Effect.gen(function* () {
+          const scope = yield* Effect.scope;
+          yield* readable.changes.pipe(
+            Stream.runForEach(handler),
+            Effect.forkIn(scope),
+          );
+        }) as Effect.Effect<void, E, R>,
+    };
+
+    return ctx as IControlCtx<unknown>;
+  }),
+);

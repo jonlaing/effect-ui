@@ -1081,6 +1081,66 @@ export const once: {
 );
 
 /**
+ * Add an event listener to the element (low-level).
+ * Unlike `on`, this doesn't automatically clean up - you must call removeEventListener.
+ * Useful for manual event management in Effect.async patterns.
+ */
+export const addEventListener: {
+  <K extends keyof HTMLElementEventMap>(
+    event: K,
+    handler: (e: HTMLElementEventMap[K]) => void,
+    options?: AddEventListenerOptions,
+  ): <A extends HTMLElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>;
+  <A extends HTMLElement, E, R, K extends keyof HTMLElementEventMap>(
+    self: Element<A, E, R>,
+    event: K,
+    handler: (e: HTMLElementEventMap[K]) => void,
+    options?: AddEventListenerOptions,
+  ): Element<A, E, R>;
+} = dual(
+  (args) => Effect.isEffect(args[0]),
+  <A extends HTMLElement, E, R, K extends keyof HTMLElementEventMap>(
+    self: Element<A, E, R>,
+    event: K,
+    handler: (e: HTMLElementEventMap[K]) => void,
+    options?: AddEventListenerOptions,
+  ): Element<A, E, R> =>
+    Effect.tap(self, (el) =>
+      Effect.sync(() =>
+        el.addEventListener(event, handler as EventListener, options),
+      ),
+    ) as Element<A, E, R>,
+);
+
+/**
+ * Remove an event listener from the element.
+ * Use with addEventListener for manual event management.
+ */
+export const removeEventListener: {
+  <K extends keyof HTMLElementEventMap>(
+    event: K,
+    handler: (e: HTMLElementEventMap[K]) => void,
+  ): <A extends HTMLElement, E, R>(self: Element<A, E, R>) => Element<A, E, R>;
+  <A extends HTMLElement, E, R, K extends keyof HTMLElementEventMap>(
+    self: Element<A, E, R>,
+    event: K,
+    handler: (e: HTMLElementEventMap[K]) => void,
+  ): Element<A, E, R>;
+} = dual(
+  (args) => Effect.isEffect(args[0]),
+  <A extends HTMLElement, E, R, K extends keyof HTMLElementEventMap>(
+    self: Element<A, E, R>,
+    event: K,
+    handler: (e: HTMLElementEventMap[K]) => void,
+  ): Element<A, E, R> =>
+    Effect.tap(self, (el) =>
+      Effect.sync(() =>
+        el.removeEventListener(event, handler as EventListener),
+      ),
+    ) as Element<A, E, R>,
+);
+
+/**
  * Programmatically click the element.
  */
 export const click: <A extends HTMLElement, E, R>(

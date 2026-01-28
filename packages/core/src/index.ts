@@ -40,3 +40,26 @@ export type {
   GuardOptions,
 } from "./Transition";
 export { Transition, InvalidTransition } from "./Transition";
+
+// ControlCtx
+export type { SlotEntry, IControlCtx } from "./ControlCtx";
+export { ControlCtx } from "./ControlCtx";
+
+// Control
+export type {
+  ReconcileConfig,
+  WhenConfig,
+  MatchCase,
+  MatchConfig,
+  MatchOptionConfig,
+  MatchEitherConfig,
+  EachConfig,
+} from "./Control";
+export {
+  reconcile,
+  when,
+  match,
+  matchOption,
+  matchEither,
+  each,
+} from "./Control";

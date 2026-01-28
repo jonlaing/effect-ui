@@ -15,7 +15,12 @@ export type {
 export { runEnterAnimation, runExitAnimation } from "./core";
 
 // Re-export helpers that might be useful
-export { prefersReducedMotion } from "./helpers";
+export {
+  prefersReducedMotion,
+  waitForAnimationEvent,
+  waitForAnimationEnd,
+  forceReflow,
+} from "./helpers";
 
 // --- Stagger Utilities ---
 

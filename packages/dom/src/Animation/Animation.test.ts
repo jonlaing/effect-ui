@@ -37,7 +37,7 @@ describe("Animation", () => {
       const element = document.createElement("div");
 
       await Effect.runPromise(
-        runEnterAnimation(element, {
+        runEnterAnimation(Effect.succeed(element), {
           enter: "fade-in",
           timeout: 10,
         }),
@@ -51,7 +51,7 @@ describe("Animation", () => {
       const element = document.createElement("div");
 
       await Effect.runPromise(
-        runEnterAnimation(element, {
+        runEnterAnimation(Effect.succeed(element), {
           enterFrom: "opacity-0",
           enterTo: "opacity-100",
           timeout: 10,
@@ -71,7 +71,7 @@ describe("Animation", () => {
       const onEnter = vi.fn((el) => el);
 
       await Effect.runPromise(
-        runEnterAnimation(element, {
+        runEnterAnimation(Effect.succeed(element), {
           enter: "fade-in",
           enterTo: "visible",
           onBeforeEnter,
@@ -92,7 +92,7 @@ describe("Animation", () => {
       let enterEl: HTMLElement | null = null;
 
       await Effect.runPromise(
-        runEnterAnimation(element, {
+        runEnterAnimation(Effect.succeed(element), {
           enter: "fade-in",
           timeout: 10,
           onBeforeEnter: (el) =>
@@ -119,7 +119,7 @@ describe("Animation", () => {
       let effectRan = false;
 
       await Effect.runPromise(
-        runEnterAnimation(element, {
+        runEnterAnimation(Effect.succeed(element), {
           enter: "fade-in",
           timeout: 10,
           onEnter: (el) =>
@@ -138,7 +138,7 @@ describe("Animation", () => {
       const element = document.createElement("div");
 
       await Effect.runPromise(
-        runEnterAnimation(element, {
+        runEnterAnimation(Effect.succeed(element), {
           enterTo: "visible",
         }),
       );
@@ -154,7 +154,7 @@ describe("Animation", () => {
       // Start exit animation but check classes during animation
       // Since we're mocking and there's no real animation, check immediately
       const promise = Effect.runPromise(
-        runExitAnimation(element, {
+        runExitAnimation(Effect.succeed(element), {
           exit: "fade-out",
           timeout: 10,
         }),
@@ -170,7 +170,7 @@ describe("Animation", () => {
       const element = document.createElement("div");
 
       await Effect.runPromise(
-        runExitAnimation(element, {
+        runExitAnimation(Effect.succeed(element), {
           exit: "fade-out",
           exitTo: "hidden",
           timeout: 10,
@@ -189,7 +189,7 @@ describe("Animation", () => {
       const onExit = vi.fn((el) => el);
 
       await Effect.runPromise(
-        runExitAnimation(element, {
+        runExitAnimation(Effect.succeed(element), {
           exit: "fade-out",
           onBeforeExit,
           onExit,
@@ -207,7 +207,7 @@ describe("Animation", () => {
       let exitEl: HTMLElement | null = null;
 
       await Effect.runPromise(
-        runExitAnimation(element, {
+        runExitAnimation(Effect.succeed(element), {
           exit: "fade-out",
           timeout: 10,
           onBeforeExit: (el) =>
@@ -316,7 +316,7 @@ describe("Animation", () => {
       const element = document.createElement("div");
 
       await Effect.runPromise(
-        runEnterAnimation(element, {
+        runEnterAnimation(Effect.succeed(element), {
           enter: "fade-in slide-up",
           timeout: 10,
         }),
@@ -331,7 +331,7 @@ describe("Animation", () => {
       const element = document.createElement("div");
 
       await Effect.runPromise(
-        runEnterAnimation(element, {
+        runEnterAnimation(Effect.succeed(element), {
           enterFrom: "opacity-0 scale-95",
           enterTo: "opacity-100 scale-100",
           timeout: 10,
