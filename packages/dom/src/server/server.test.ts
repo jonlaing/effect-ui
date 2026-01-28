@@ -76,8 +76,7 @@ describe("SSR", () => {
       );
 
       expect(html).toContain("data-effex-id=");
-      expect(html).toContain('data-effex-type="when"');
-      expect(html).toContain('data-effex-condition="true"');
+      expect(html).toContain('data-effex-key="true"');
       expect(html).toContain("Visible");
       expect(html).not.toContain("Hidden");
     });
@@ -97,7 +96,7 @@ describe("SSR", () => {
         ),
       );
 
-      expect(html).toContain('data-effex-condition="false"');
+      expect(html).toContain('data-effex-key="false"');
       expect(html).toContain("Hidden");
       expect(html).not.toContain("Visible");
     });
@@ -131,8 +130,7 @@ describe("SSR", () => {
       );
 
       expect(html).toContain("data-effex-id=");
-      expect(html).toContain('data-effex-type="match"');
-      expect(html).toContain('data-effex-pattern="');
+      expect(html).toContain('data-effex-key="loading"');
       expect(html).toContain("Loading...");
     });
 
@@ -180,7 +178,6 @@ describe("SSR", () => {
       );
 
       expect(html).toContain("data-effex-id=");
-      expect(html).toContain('data-effex-type="each"');
       expect(html).toContain('data-effex-key="1"');
       expect(html).toContain('data-effex-key="2"');
       expect(html).toContain("<ul");
@@ -208,7 +205,6 @@ describe("SSR", () => {
       );
 
       expect(html).toContain("data-effex-id=");
-      expect(html).toContain('data-effex-type="each"');
       expect(html).not.toContain("<li");
     });
   });

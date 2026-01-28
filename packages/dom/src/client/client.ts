@@ -1,13 +1,28 @@
+/**
+ * Client-side mounting for Effex applications.
+ *
+ * @example
+ * ```ts
+ * import { mount, runApp } from "@effex/dom/client";
+ * import { App } from "./App";
+ *
+ * runApp(
+ *   Effect.gen(function* () {
+ *     yield* mount(App(), document.getElementById("root")!)
+ *   })
+ * )
+ * ```
+ *
+ * @module
+ */
+
 import { Effect, Layer, Scope } from "effect";
 
-import {
-  RendererContext,
-  SignalRegistry,
-  type RendererInterface,
-} from "@effex/core";
+import { RendererContext, SignalRegistry, type Renderer } from "@effex/core";
 
-import { DOMRenderer } from "./DOMRenderer";
-import { Element } from "./Element";
+import { ClientControlCtx } from "../Control/ClientControlCtx.js";
+import { DOMRenderer } from "../DOMRenderer.js";
+import * as Element from "../Element";
 
 /**
  * Mount an Element into a DOM container. Automatically cleans up when the scope closes.
@@ -73,10 +88,8 @@ export const mount = (
 ): Effect.Effect<void, never, Scope.Scope> =>
   Effect.gen(function* () {
     const el = yield* element.pipe(
-      Effect.provideService(
-        RendererContext,
-        DOMRenderer as RendererInterface<unknown>,
-      ),
+      Effect.provideService(RendererContext, DOMRenderer as Renderer<unknown>),
+      Effect.provide(ClientControlCtx),
     );
     container.appendChild(el);
 

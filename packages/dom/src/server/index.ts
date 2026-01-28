@@ -28,7 +28,8 @@ import { Effect, Layer } from "effect";
 
 import { RendererContext, type Renderer } from "@effex/core";
 
-import { Element } from "../Element";
+import { SSRControlCtx } from "../Control/SSRControlCtx.js";
+import * as Element from "../Element";
 import { vnodeToString } from "./renderToString";
 import { withSSRContext } from "./SSRContext";
 import { StringRenderer } from "./StringRenderer";
@@ -78,6 +79,7 @@ export const renderToString = <A extends HTMLElement | SVGElement>(
 
   return Effect.scoped(program).pipe(
     Effect.provide(StringRendererLayer),
+    Effect.provide(SSRControlCtx),
     withSSRContext,
   );
 };

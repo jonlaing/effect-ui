@@ -52,6 +52,9 @@ describe("Hydration", () => {
         container,
       );
 
+      // Wait a tick for the forked fiber to complete hydration
+      await new Promise((r) => setTimeout(r, 0));
+
       // Simulate click
       const element = container.querySelector(".clickable") as HTMLElement;
       element?.click();
@@ -263,10 +266,11 @@ describe("Hydration", () => {
       const html = await Effect.runPromise(renderToString(App()));
       container.innerHTML = html;
 
-      // Should have h1 for first when, h2 for suspense, h3 for second when
-      expect(container.innerHTML).toContain('data-effex-id="h1"');
-      expect(container.innerHTML).toContain('data-effex-id="h2"');
-      expect(container.innerHTML).toContain('data-effex-id="h3"');
+      // Should have effex-id markers for control flow containers
+      expect(container.innerHTML).toContain("data-effex-id=");
+      // Should have keys for the rendered slots
+      expect(container.innerHTML).toContain('data-effex-key="true"');
+      expect(container.innerHTML).toContain('data-effex-key="false"');
 
       // Hydrate
       await hydrate(App(), container);

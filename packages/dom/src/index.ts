@@ -58,7 +58,7 @@ export {
 } from "./Animation/index.js";
 
 // Mounting
-export { mount, runApp } from "./Mount";
+export { mount, runApp } from "./client";
 
 // Template helpers
 export { t } from "./Template";

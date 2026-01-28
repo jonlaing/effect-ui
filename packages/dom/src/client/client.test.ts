@@ -1,10 +1,10 @@
 import { Effect, Fiber } from "effect";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { collect } from "./Collect";
-import { DOMRendererLive } from "./DOMRenderer";
-import { $ } from "./Element";
-import { mount } from "./Mount";
+import { collect } from "../Collect";
+import { DOMRendererLive } from "../DOMRenderer";
+import { $ } from "../Element";
+import { mount } from "./client";
 
 describe("mount", () => {
   let container: HTMLElement;

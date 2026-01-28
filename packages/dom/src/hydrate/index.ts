@@ -16,7 +16,11 @@ import { Effect, Layer } from "effect";
 
 import { RendererContext, SignalRegistry, type Renderer } from "@effex/core";
 
-import { Element } from "../Element";
+import {
+  HydrationControlCtx,
+  HydrationRootCtx,
+} from "../Control/HydrationControlCtx.js";
+import * as Element from "../Element";
 import { makeHydrationContext } from "../HydrationContext";
 import { createHydrationRenderer } from "./HydrationRenderer";
 
@@ -65,14 +69,18 @@ export const hydrate = <A extends HTMLElement | SVGElement>(
     renderer as Renderer<unknown>,
   );
 
+  // Create the HydrationRootCtx layer that HydrationControlCtx needs
+  const HydrationRootLayer = Layer.succeed(HydrationRootCtx, container);
+  const ControlLayer = Layer.provide(HydrationControlCtx, HydrationRootLayer);
+
   const program = Effect.gen(function* () {
     // Create hydration context with ID counter matching SSR order
     const hydrationContextLayer = yield* makeHydrationContext(container);
 
     // Build the layers to provide to the element
-    let elementLayers = hydrationContextLayer;
+    let elementLayers = Layer.merge(hydrationContextLayer, ControlLayer);
     if (options.layers) {
-      elementLayers = Layer.merge(hydrationContextLayer, options.layers);
+      elementLayers = Layer.merge(elementLayers, options.layers);
     }
 
     yield* Effect.provide(element, elementLayers);
