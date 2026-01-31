@@ -61,6 +61,9 @@ const getFocusableElements = (container: HTMLElement): HTMLElement[] => {
 export const FocusTrap = {
   make: (options: FocusTrapOptions): Effect.Effect<void, never, Scope.Scope> =>
     Effect.gen(function* () {
+      // SSR safety - focus trapping only makes sense in browser
+      if (typeof document === "undefined") return;
+
       const { container, initialFocus, returnFocus } = options;
       const previouslyFocused =
         returnFocus ?? (document.activeElement as HTMLElement | null);

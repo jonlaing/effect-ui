@@ -48,6 +48,11 @@ export function Portal<A extends HTMLElement | SVGElement, E, R>(
       : maybeChildren!;
 
   return Effect.gen(function* () {
+    // SSR safety - render children inline without portaling
+    if (typeof document === "undefined") {
+      return (yield* children()) as HTMLElement;
+    }
+
     // Resolve target element
     let target: HTMLElement;
     if (options.target === undefined) {

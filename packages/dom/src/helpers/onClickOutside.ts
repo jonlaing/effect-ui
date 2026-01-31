@@ -51,6 +51,9 @@ export const onClickOutside = (
   callback: () => Effect.Effect<void>,
 ): Effect.Effect<void, never, Scope.Scope> =>
   Effect.gen(function* () {
+    // SSR safety - click detection only makes sense in browser
+    if (typeof document === "undefined") return;
+
     const handleClick = (e: MouseEvent) => {
       const target = e.target as Node;
       const isInside = refs.some((ref) => {
