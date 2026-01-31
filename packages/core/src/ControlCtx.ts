@@ -41,6 +41,13 @@ export interface SlotEntry<A> {
  */
 export interface IControlCtx<A> {
   /**
+   * Create a child context with isolated state.
+   * Each control function (when, match, each) calls this to get its own
+   * container and slots, preventing conflicts when nested or used with collect.
+   */
+  readonly fork: () => Effect.Effect<IControlCtx<A>>;
+
+  /**
    * Default container element.
    * Each environment provides its own implementation.
    * e.g., DOM uses `$.div({ style: "display: contents" })`

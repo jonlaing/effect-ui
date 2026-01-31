@@ -18,11 +18,18 @@
 
 import { Effect, Layer, Scope } from "effect";
 
-import { RendererContext, SignalRegistry, type Renderer } from "@effex/core";
+import {
+  RendererContext,
+  SignalRegistry,
+  type ControlCtx,
+  type Renderer,
+  type SuspenseBoundaryCtx,
+} from "@effex/core";
 
 import { ClientControlCtx } from "../Control/ClientControlCtx.js";
 import { DOMRenderer } from "../DOMRenderer.js";
 import * as Element from "../Element";
+import { ClientSuspenseBoundaryCtx } from "../SuspenseBoundary/ClientSuspenseBoundaryCtx.js";
 
 /**
  * Mount an Element into a DOM container. Automatically cleans up when the scope closes.
@@ -83,13 +90,28 @@ import * as Element from "../Element";
  * ```
  */
 export const mount = (
-  element: Element.Element<HTMLElement, never, RendererContext>,
+  element: Element.Element<
+    HTMLElement,
+    never,
+    RendererContext | ControlCtx | SuspenseBoundaryCtx
+  >,
   container: HTMLElement,
 ): Effect.Effect<void, never, Scope.Scope> =>
   Effect.gen(function* () {
+    // Build the layers for client-side rendering
+    const rendererLayer = Layer.succeed(
+      RendererContext,
+      DOMRenderer as Renderer<unknown>,
+    );
+    const suspenseLayer = Layer.provide(
+      ClientSuspenseBoundaryCtx,
+      rendererLayer,
+    );
+
     const el = yield* element.pipe(
-      Effect.provideService(RendererContext, DOMRenderer as Renderer<unknown>),
+      Effect.provide(rendererLayer),
       Effect.provide(ClientControlCtx),
+      Effect.provide(suspenseLayer),
     );
     container.appendChild(el);
 

@@ -1,16 +1,22 @@
-import { Effect, Layer, Option, type Duration } from "effect";
+/**
+ * DOM-specific boundary components for async and error handling.
+ *
+ * The suspense boundary now uses SuspenseBoundaryCtx which is provided
+ * by the rendering entry points (mount, hydrate, renderToString).
+ * This allows the same code to work across client, SSR, and hydration modes.
+ */
+
+import type { Duration } from "effect";
 
 import {
   Boundary as CoreBoundary,
-  RendererContext,
-  type Renderer,
-  type RendererInterface,
+  SuspenseBoundaryCtx,
+  type BoundarySuspenseOptions as CoreSuspenseOptions,
 } from "@effex/core";
 
-import { DOMRenderer } from "./DOMRenderer";
-import { Element } from "./Element";
-import { HydrationContext } from "./HydrationContext";
-import { SSRContext } from "./SSRContext";
+import * as Element from "./Element";
+
+type DOMElement = HTMLElement | SVGElement;
 
 /**
  * Options for the suspense boundary (DOM-specialized version).
@@ -20,22 +26,20 @@ export interface SuspenseOptions<E, R1, RF, RC> {
    * Async function that returns the final element.
    * Can fail with error type E if `catch` is provided.
    */
-  readonly render: () => Element.Element<HTMLElement | SVGElement, E, R1>;
+  readonly render: () => Element.Element<DOMElement, E, R1>;
 
   /**
    * Function to render the loading/fallback state.
    * Must have no requirements (will be rendered in detached context if delay > 0).
    */
-  readonly fallback: () => Element.Element<HTMLElement | SVGElement, never, RF>;
+  readonly fallback: () => Element.Element<DOMElement, never, RF>;
 
   /**
    * Optional error handler. If provided, errors from render are caught
    * and this function is called to render an error state.
    * Must have no requirements.
    */
-  readonly catch?: (
-    error: E,
-  ) => Element.Element<HTMLElement | SVGElement, never, RC>;
+  readonly catch?: (error: E) => Element.Element<DOMElement, never, RC>;
 
   /**
    * Delay before showing the fallback.
@@ -52,6 +56,9 @@ export interface SuspenseOptions<E, R1, RF, RC> {
  * Renders the fallback while waiting for the async render to complete.
  * Optionally delays showing the fallback to avoid loading flashes on fast responses.
  * Optionally catches errors and renders an error state.
+ *
+ * The appropriate SuspenseBoundaryCtx layer (Client, SSR, Hydration) is provided
+ * automatically by mount(), hydrate(), or renderToString().
  *
  * @example
  * ```ts
@@ -93,124 +100,33 @@ export const suspense: {
   // Overload 1: No catch, render cannot fail
   <R1 = never, RF = never>(
     options: SuspenseOptions<never, R1, RF, never> & { catch?: never },
-  ): Element.Element<HTMLElement | SVGElement, never, R1 | RF>;
+  ): Element.Element<DOMElement, never, R1 | RF | SuspenseBoundaryCtx>;
 
   // Overload 2: With catch, render can fail
   <E, R1 = never, RF = never, RC = never>(
     options: SuspenseOptions<E, R1, RF, RC> & {
-      catch: (error: E) => Element.Element<HTMLElement | SVGElement, never, RC>;
+      catch: (error: E) => Element.Element<DOMElement, never, RC>;
     },
-  ): Element.Element<HTMLElement | SVGElement, never, R1 | RF | RC>;
+  ): Element.Element<DOMElement, never, R1 | RF | RC | SuspenseBoundaryCtx>;
 } = <E, R1 = never, RF = never, RC = never>(
   options: SuspenseOptions<E, R1, RF, RC>,
-): Element.Element<HTMLElement | SVGElement, never, R1 | RF | RC> =>
-  Effect.gen(function* () {
-    const ssrContext = yield* Effect.serviceOption(SSRContext);
+): Element.Element<DOMElement, never, R1 | RF | RC | SuspenseBoundaryCtx> => {
+  // Delegate to core - the context handles environment-specific behavior
+  // Use intermediate cast to avoid overload resolution issues
+  const coreSuspense = CoreBoundary.suspense as <
+    N extends HTMLElement | SVGElement,
+    E2,
+    R1_2,
+    RF2,
+    RC2,
+  >(
+    opts: CoreSuspenseOptions<N, E2, R1_2, RF2, RC2>,
+  ) => Element.Element<N, never, R1_2 | RF2 | RC2 | SuspenseBoundaryCtx>;
 
-    // SSR mode: render fallback with hydration markers
-    if (Option.isSome(ssrContext)) {
-      const renderer = (yield* RendererContext) as RendererInterface<Node>;
-      const hydrationId = yield* ssrContext.value.generateId;
-
-      // Create container with hydration markers
-      const container = (yield* renderer.createNode("div")) as HTMLElement;
-      yield* renderer.setStyleProperty(container, "display", "contents");
-      yield* renderer.setAttribute(container, "data-effex-id", hydrationId);
-      yield* renderer.setAttribute(container, "data-effex-type", "suspense");
-      yield* renderer.setAttribute(
-        container,
-        "data-effex-suspense-state",
-        "loading",
-      );
-
-      // Render the fallback
-      const fallback = yield* options.fallback();
-      yield* renderer.appendChild(container, fallback);
-
-      return container;
-    }
-
-    // Check for hydration mode
-    const hydrationContext = yield* Effect.serviceOption(HydrationContext);
-
-    // Hydration mode: find existing container and trigger async load
-    if (Option.isSome(hydrationContext)) {
-      const hydrationId = yield* hydrationContext.value.generateId;
-
-      // Find the existing suspense container
-      const suspenseInfo =
-        yield* hydrationContext.value.findSuspense(hydrationId);
-
-      if (suspenseInfo && suspenseInfo.state === "loading") {
-        const { container, fallback } = suspenseInfo;
-
-        // Use DOMRenderer for creating new async content (not HydrationRenderer)
-        // since this content doesn't exist in the DOM yet
-        const domRendererLayer = Layer.succeed(
-          RendererContext,
-          DOMRenderer as Renderer<unknown>,
-        );
-
-        // Run the async render - when it completes, replace the fallback
-        // Fork and await the fiber to ensure we wait for completion
-        const fiber = yield* options.render().pipe(
-          // Provide DOMRenderer for creating new elements
-          Effect.provide(domRendererLayer),
-          Effect.tap((element) =>
-            Effect.sync(() => {
-              // Update state attribute
-              container.setAttribute("data-effex-suspense-state", "loaded");
-
-              // Replace fallback with actual content
-              if (fallback) {
-                container.replaceChild(element, fallback);
-              } else {
-                container.appendChild(element);
-              }
-            }),
-          ),
-          Effect.catchAll((error) => {
-            // If there's a catch handler, use it
-            if (options.catch) {
-              return options.catch!(error).pipe(
-                Effect.provide(domRendererLayer),
-                Effect.tap((errorElement) =>
-                  Effect.sync(() => {
-                    container.setAttribute(
-                      "data-effex-suspense-state",
-                      "error",
-                    );
-                    if (fallback) {
-                      container.replaceChild(errorElement, fallback);
-                    } else {
-                      container.appendChild(errorElement);
-                    }
-                  }),
-                ),
-              );
-            }
-            // Re-throw if no catch handler
-            return Effect.fail(error);
-          }),
-          Effect.fork,
-        );
-
-        // Add finalizer to await the fiber when scope closes
-        yield* Effect.addFinalizer(() => fiber.await.pipe(Effect.ignore));
-
-        return container as HTMLElement;
-      }
-
-      // If container not found or already loaded, fall through to normal render
-    }
-
-    // Client-side (fresh render): use the core implementation
-    // Cast to any to bypass the strict type checking on overloads
-    // The runtime behavior is correct because CoreBoundary.suspense handles all cases
-    return yield* CoreBoundary.suspense(
-      options as Required<SuspenseOptions<E, R1, RF, RC>>,
-    );
-  });
+  return coreSuspense(
+    options as unknown as CoreSuspenseOptions<DOMElement, E, R1, RF, RC>,
+  );
+};
 
 /**
  * Error boundary that catches errors from a render function and displays a fallback element.
@@ -227,13 +143,10 @@ export const suspense: {
  * ```
  */
 export const error = <E, R1 = never, R2 = never>(
-  tryRender: () => Element.Element<HTMLElement | SVGElement, E, R1>,
-  catchRender: (
-    error: E,
-  ) => Element.Element<HTMLElement | SVGElement, never, R2>,
-) => {
-  return CoreBoundary.error(tryRender, catchRender);
-};
+  tryRender: () => Element.Element<DOMElement, E, R1>,
+  catchRender: (error: E) => Element.Element<DOMElement, never, R2>,
+): Element.Element<DOMElement, never, R1 | R2> =>
+  CoreBoundary.error(tryRender, catchRender);
 
 /**
  * Boundary namespace for error and async handling.

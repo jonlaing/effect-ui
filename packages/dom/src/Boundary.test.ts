@@ -1,15 +1,24 @@
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { Boundary } from "./Boundary";
 import { DOMRendererLive } from "./DOMRenderer";
 import { $ } from "./Element";
+import { ClientSuspenseBoundaryCtx } from "./SuspenseBoundary";
+
+// ClientSuspenseBoundaryCtx depends on DOMRendererLive
+const TestLayer = Layer.provideMerge(
+  ClientSuspenseBoundaryCtx,
+  DOMRendererLive,
+);
 
 const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
   Effect.runPromise(
-    Effect.scoped(effect).pipe(
-      Effect.provide(DOMRendererLive),
-    ) as Effect.Effect<A, never, never>,
+    Effect.scoped(effect).pipe(Effect.provide(TestLayer)) as Effect.Effect<
+      A,
+      never,
+      never
+    >,
   );
 
 describe("Boundary", () => {
@@ -89,6 +98,98 @@ describe("Boundary", () => {
       );
 
       expect(el).toBeTruthy();
+    });
+
+    it("should handle nested suspense boundaries correctly", async () => {
+      await runTest(
+        Effect.gen(function* () {
+          // Create a parent container to hold the slots
+          const parent = yield* $.div({});
+          document.body.appendChild(parent);
+
+          const outerMarker = yield* Boundary.suspense({
+            render: () =>
+              Effect.gen(function* () {
+                yield* Effect.sleep(30);
+
+                // Nested suspense inside the outer render
+                const innerMarker = yield* Boundary.suspense({
+                  render: () =>
+                    Effect.gen(function* () {
+                      yield* Effect.sleep(100); // Longer delay for inner
+                      return yield* $.span({}, $.of("Inner Content"));
+                    }),
+                  fallback: () => $.span({}, $.of("Inner Loading...")),
+                });
+
+                // Return a div containing the inner suspense
+                const container = yield* $.div({}, $.of("Outer: "));
+                container.appendChild(innerMarker);
+                return container;
+              }),
+            fallback: () => $.div({}, $.of("Outer Loading...")),
+          });
+
+          parent.appendChild(outerMarker);
+
+          // Initially should show outer fallback
+          expect(parent.textContent).toBe("Outer Loading...");
+
+          // Wait for outer to resolve (inner starts loading)
+          yield* Effect.sleep(50);
+
+          // Outer resolved, inner should show its fallback
+          expect(parent.textContent).toBe("Outer: Inner Loading...");
+
+          // Wait for inner to resolve
+          yield* Effect.sleep(150);
+
+          // Both should be resolved now
+          expect(parent.textContent).toBe("Outer: Inner Content");
+        }),
+      );
+    });
+
+    it("should handle sibling suspense boundaries independently", async () => {
+      await runTest(
+        Effect.gen(function* () {
+          const parent = yield* $.div({});
+          document.body.appendChild(parent);
+
+          // Create two sibling suspense boundaries with different timings
+          const marker1 = yield* Boundary.suspense({
+            render: () =>
+              Effect.gen(function* () {
+                yield* Effect.sleep(30);
+                return yield* $.span({}, $.of("[First]"));
+              }),
+            fallback: () => $.span({}, $.of("[Loading1]")),
+          });
+
+          const marker2 = yield* Boundary.suspense({
+            render: () =>
+              Effect.gen(function* () {
+                yield* Effect.sleep(60);
+                return yield* $.span({}, $.of("[Second]"));
+              }),
+            fallback: () => $.span({}, $.of("[Loading2]")),
+          });
+
+          parent.appendChild(marker1);
+          parent.appendChild(marker2);
+
+          // Both should show fallbacks initially
+          expect(parent.textContent).toBe("[Loading1][Loading2]");
+
+          // Wait for first to resolve
+          yield* Effect.sleep(50);
+          expect(parent.textContent).toBe("[First][Loading2]");
+
+          // Wait for second to resolve
+          yield* Effect.sleep(50);
+          expect(parent.textContent).toBe("[First][Second]");
+        }),
+      );
     });
   });
 });

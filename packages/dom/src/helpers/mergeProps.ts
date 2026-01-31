@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 
-import { Element, MergePropsCtx } from "../Element";
+import * as Element from "../Element";
+import { MergePropsCtx } from "../Element";
 
 /**
  * Merge props into a child element via MergePropsCtx.

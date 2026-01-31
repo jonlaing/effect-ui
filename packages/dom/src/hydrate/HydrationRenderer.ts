@@ -203,6 +203,20 @@ export const createHydrationRenderer = (
         (node as HTMLElement).style.setProperty(cssProperty, value);
       }),
 
+    removeStyleProperty: (node: Node, property: string) =>
+      Effect.sync(() => {
+        const cssProperty = property.replace(
+          /[A-Z]/g,
+          (m) => `-${m.toLowerCase()}`,
+        );
+        (node as HTMLElement).style.removeProperty(cssProperty);
+      }),
+
+    toggleClass: (node: Node, className: string, force?: boolean) =>
+      Effect.sync(() => {
+        (node as HTMLElement).classList.toggle(className, force);
+      }),
+
     setTextContent: (node: Node, text: string) =>
       Effect.sync(() => {
         node.textContent = text;

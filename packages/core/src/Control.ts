@@ -49,7 +49,9 @@ export const reconcile = <A, E, R>(
   config: ReconcileConfig<A, E, R>,
 ): Element<unknown, E, R | ControlCtx> =>
   Effect.gen(function* () {
-    const ctx = yield* ControlCtx;
+    const parentCtx = yield* ControlCtx;
+    // Fork to get isolated state (own container and slots)
+    const ctx = yield* parentCtx.fork();
 
     // Get container (uses defaultContainer if not provided)
     const container = yield* ctx.getContainer(config.container);

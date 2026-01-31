@@ -32,6 +32,10 @@ export type { Element } from "./Element";
 export type { SuspenseOptions, BoundarySuspenseOptions } from "./Boundary";
 export { Boundary } from "./Boundary";
 
+// SuspenseBoundaryCtx
+export type { ISuspenseBoundaryCtx } from "./SuspenseBoundaryCtx";
+export { SuspenseBoundaryCtx } from "./SuspenseBoundaryCtx";
+
 // Transition
 export type {
   TransitionConfig,

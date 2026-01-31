@@ -100,7 +100,7 @@ describe("Mutation", () => {
 
           // Second run succeeds
           shouldFail = false;
-          yield* mutation.run(2);
+          yield* Effect.either(mutation.run(2));
 
           const error2 = yield* mutation.error.get;
           expect(Option.isNone(error2)).toBe(true);

@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { Element } from "./Element";
+import * as Element from "./Element";
 
 /**
  * Options for Portal rendering.

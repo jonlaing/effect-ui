@@ -26,12 +26,18 @@
 
 import { Effect, Layer } from "effect";
 
-import { RendererContext, type Renderer } from "@effex/core";
+import {
+  RendererContext,
+  type ControlCtx,
+  type Renderer,
+  type SuspenseBoundaryCtx,
+} from "@effex/core";
 
 import { SSRControlCtx } from "../Control/SSRControlCtx.js";
 import * as Element from "../Element";
+import { SSRSuspenseBoundaryCtx } from "../SuspenseBoundary/SSRSuspenseBoundaryCtx.js";
 import { vnodeToString } from "./renderToString";
-import { withSSRContext } from "./SSRContext";
+import { SSRContext, withSSRContext } from "./SSRContext";
 import { StringRenderer } from "./StringRenderer";
 import type { VNode } from "./VNode";
 
@@ -63,7 +69,11 @@ export interface RenderToStringOptions {
  * ```
  */
 export const renderToString = <A extends HTMLElement | SVGElement>(
-  element: Element.Element<A, never, RendererContext>,
+  element: Element.Element<
+    A,
+    never,
+    RendererContext | ControlCtx | SuspenseBoundaryCtx
+  >,
   _options: RenderToStringOptions = {},
 ) => {
   const StringRendererLayer = Layer.succeed(
@@ -72,7 +82,17 @@ export const renderToString = <A extends HTMLElement | SVGElement>(
   );
 
   const program = Effect.gen(function* () {
-    const vnode = yield* element;
+    // Get SSRContext to provide to SSRSuspenseBoundaryCtx
+    const ssrContext = yield* SSRContext;
+    const ssrContextLayer = Layer.succeed(SSRContext, ssrContext);
+
+    // Build the suspense layer with its dependencies
+    const suspenseLayer = Layer.provide(
+      Layer.provide(SSRSuspenseBoundaryCtx, StringRendererLayer),
+      ssrContextLayer,
+    );
+
+    const vnode = yield* element.pipe(Effect.provide(suspenseLayer));
     const result = vnodeToString(vnode as unknown as VNode);
     return result;
   });

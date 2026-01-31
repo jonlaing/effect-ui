@@ -2,8 +2,7 @@ import { Effect, Exit, Scope, Stream } from "effect";
 
 import { Readable, RendererContext, Signal } from "@effex/core";
 
-import { createItemReadable } from "../Control/updaters";
-import { Element } from "../Element";
+import * as Element from "../Element";
 import {
   calculateItemOffset,
   calculateScrollToPosition,
@@ -13,6 +12,7 @@ import {
   rangesEqual,
 } from "./helpers";
 import type {
+  MutableReadable,
   VirtualEachOptions,
   VirtualItemEntry,
   VirtualListControl,
@@ -20,46 +20,73 @@ import type {
 } from "./types";
 
 /**
+ * Create an item readable for tracking item values.
+ */
+const createItemReadable = <A>(initialValue: A): MutableReadable<A> => {
+  let currentValue = initialValue;
+  const subscribers = new Set<(value: A) => void>();
+
+  const getChanges = (): Stream.Stream<A> =>
+    Stream.async<A>((emit) => {
+      const handler = (value: A) => emit.single(value);
+      subscribers.add(handler);
+      return Effect.sync(() => {
+        subscribers.delete(handler);
+      });
+    });
+
+  const readable = Readable.make(
+    Effect.sync(() => currentValue),
+    getChanges,
+  ) as MutableReadable<A>;
+
+  // Add the _update method
+  (readable as { _update: (value: A) => void })._update = (value: A) => {
+    if (currentValue !== value) {
+      currentValue = value;
+      for (const handler of subscribers) {
+        handler(value);
+      }
+    }
+  };
+
+  return readable;
+};
+
+/**
  * Create an index readable for tracking item indices.
  */
-const createIndexReadable = (initialIndex: number) => {
+const createIndexReadable = (initialIndex: number): MutableReadable<number> => {
   let currentIndex = initialIndex;
   const subscribers = new Set<(value: number) => void>();
 
-  let cachedChanges: Stream.Stream<number> | null = null;
-  const getChanges = (): Stream.Stream<number> => {
-    if (!cachedChanges) {
-      cachedChanges = Stream.async<number>((emit) => {
-        const handler = (value: number) => emit.single(value);
-        subscribers.add(handler);
-        return Effect.sync(() => {
-          subscribers.delete(handler);
-        });
+  const getChanges = (): Stream.Stream<number> =>
+    Stream.async<number>((emit) => {
+      const handler = (value: number) => emit.single(value);
+      subscribers.add(handler);
+      return Effect.sync(() => {
+        subscribers.delete(handler);
       });
+    });
+
+  const readable = Readable.make(
+    Effect.sync(() => currentIndex),
+    getChanges,
+  ) as MutableReadable<number>;
+
+  // Add the _update method
+  (readable as { _update: (value: number) => void })._update = (
+    index: number,
+  ) => {
+    if (currentIndex !== index) {
+      currentIndex = index;
+      for (const handler of subscribers) {
+        handler(index);
+      }
     }
-    return cachedChanges;
   };
 
-  return {
-    get: Effect.sync(() => currentIndex),
-    get changes(): Stream.Stream<number> {
-      return getChanges();
-    },
-    get values(): Stream.Stream<number> {
-      return Stream.concat(Stream.make(currentIndex), this.changes);
-    },
-    map: function <B>(f: (n: number) => B): Readable.Readable<B> {
-      return Readable.map(this as Readable.Readable<number>, f);
-    },
-    _update: (index: number) => {
-      if (currentIndex !== index) {
-        currentIndex = index;
-        for (const handler of subscribers) {
-          handler(index);
-        }
-      }
-    },
-  };
+  return readable;
 };
 
 /**

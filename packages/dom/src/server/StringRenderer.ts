@@ -124,6 +124,51 @@ export const StringRenderer: Renderer<VNode> = {
       }
     }),
 
+  removeStyleProperty: (node: VNode, property: string) =>
+    Effect.sync(() => {
+      if (node._tag === "VElement" && node.attributes.style) {
+        // Convert camelCase to kebab-case for CSS
+        const cssProperty = property.replace(
+          /[A-Z]/g,
+          (m) => `-${m.toLowerCase()}`,
+        );
+        // Simple implementation: remove the property from the style string
+        const styles = node.attributes.style
+          .split(";")
+          .map((s) => s.trim())
+          .filter((s) => !s.startsWith(`${cssProperty}:`));
+        if (styles.length === 0) {
+          delete node.attributes.style;
+        } else {
+          node.attributes.style = styles.join("; ");
+        }
+      }
+    }),
+
+  toggleClass: (node: VNode, className: string, force?: boolean) =>
+    Effect.sync(() => {
+      if (node._tag === "VElement") {
+        const current = node.attributes.class ?? "";
+        const classes = current.split(/\s+/).filter(Boolean);
+        const hasClass = classes.includes(className);
+
+        const shouldAdd = force !== undefined ? force : !hasClass;
+
+        if (shouldAdd && !hasClass) {
+          classes.push(className);
+        } else if (!shouldAdd && hasClass) {
+          const index = classes.indexOf(className);
+          classes.splice(index, 1);
+        }
+
+        if (classes.length === 0) {
+          delete node.attributes.class;
+        } else {
+          node.attributes.class = classes.join(" ");
+        }
+      }
+    }),
+
   setTextContent: (node: VNode, text: string) =>
     Effect.sync(() => {
       if (node._tag === "VElement") {

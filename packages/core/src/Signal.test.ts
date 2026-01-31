@@ -251,7 +251,7 @@ describe("Signal reactivity", () => {
         Effect.gen(function* () {
           const sig = yield* Signal.make(0);
 
-          yield* Stream.runForEach(sig.values, (val) =>
+          yield* Stream.runForEach(sig.values, (_val) =>
             Effect.sync(() => {
               emissionsAfterScopeClose++;
             }),

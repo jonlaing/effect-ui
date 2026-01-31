@@ -72,8 +72,9 @@ export const makeSVG = <K extends keyof SVGElementTagNameMap>(
 /**
  * Lift a value into a Child effect.
  */
-export const of = <A extends ChildNode>(value: A): Child<never, never> =>
-  Effect.succeed(value);
+export const of = <A extends ChildNode>(
+  value: A,
+): Effect.Effect<A, never, never> => Effect.succeed(value);
 
 /**
  * An empty child (produces empty array).

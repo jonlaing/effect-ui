@@ -14,7 +14,13 @@
 
 import { Effect, Layer } from "effect";
 
-import { RendererContext, SignalRegistry, type Renderer } from "@effex/core";
+import {
+  RendererContext,
+  SignalRegistry,
+  type ControlCtx,
+  type Renderer,
+  type SuspenseBoundaryCtx,
+} from "@effex/core";
 
 import {
   HydrationControlCtx,
@@ -22,6 +28,7 @@ import {
 } from "../Control/HydrationControlCtx.js";
 import * as Element from "../Element";
 import { makeHydrationContext } from "../HydrationContext";
+import { HydrationSuspenseBoundaryCtx } from "../SuspenseBoundary/HydrationSuspenseBoundaryCtx.js";
 import { createHydrationRenderer } from "./HydrationRenderer";
 
 export interface HydrateOptions {
@@ -58,7 +65,11 @@ export interface HydrateOptions {
  * ```
  */
 export const hydrate = <A extends HTMLElement | SVGElement>(
-  element: Element.Element<A, never, RendererContext>,
+  element: Element.Element<
+    A,
+    never,
+    RendererContext | ControlCtx | SuspenseBoundaryCtx
+  >,
   container: HTMLElement,
   options: HydrateOptions = {},
 ): Promise<void> => {
@@ -77,8 +88,15 @@ export const hydrate = <A extends HTMLElement | SVGElement>(
     // Create hydration context with ID counter matching SSR order
     const hydrationContextLayer = yield* makeHydrationContext(container);
 
+    // Build the suspense layer with its HydrationContext dependency
+    const suspenseLayer = Layer.provide(
+      HydrationSuspenseBoundaryCtx,
+      hydrationContextLayer,
+    );
+
     // Build the layers to provide to the element
     let elementLayers = Layer.merge(hydrationContextLayer, ControlLayer);
+    elementLayers = Layer.merge(elementLayers, suspenseLayer);
     if (options.layers) {
       elementLayers = Layer.merge(elementLayers, options.layers);
     }
@@ -91,11 +109,12 @@ export const hydrate = <A extends HTMLElement | SVGElement>(
   });
 
   // Run without awaiting completion - the Effect.never keeps it alive
+  // Type assertion needed because TypeScript can't fully trace the layer dependencies
   Effect.runFork(
     Effect.scoped(program).pipe(
       Effect.provide(HydrationRendererLayer),
       Effect.provide(SignalRegistry.Live),
-    ),
+    ) as Effect.Effect<never>,
   );
 
   // Return immediately - hydration setup is synchronous, subscriptions are async

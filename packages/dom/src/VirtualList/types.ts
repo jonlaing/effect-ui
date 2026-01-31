@@ -3,7 +3,7 @@ import type { Deferred, Effect, Scope } from "effect";
 import type { Readable } from "@effex/core";
 
 import type { ListAnimationOptions } from "../Animation";
-import { Element } from "../Element";
+import type * as Element from "../Element";
 
 /**
  * Visible range of items in the virtual list.
@@ -113,24 +113,20 @@ export interface VirtualEachOptions<A, E = never, R = never> {
 }
 
 /**
+ * A mutable Readable with an _update method for internal use.
+ * TODO: Replace with Signal - this is essentially reimplementing Signal.
+ */
+export interface MutableReadable<A> extends Readable<A> {
+  readonly _update: (value: A) => void;
+}
+
+/**
  * Internal state for a rendered item.
  */
 export interface VirtualItemEntry<A> {
   readonly element: HTMLElement;
   readonly scope: Scope.CloseableScope;
-  readonly readable: {
-    readonly get: Effect.Effect<A>;
-    readonly changes: import("effect").Stream.Stream<A>;
-    readonly values: import("effect").Stream.Stream<A>;
-    readonly map: <B>(f: (a: A) => B) => Readable<B>;
-    readonly _update: (value: A) => void;
-  };
-  readonly indexReadable: {
-    readonly get: Effect.Effect<number>;
-    readonly changes: import("effect").Stream.Stream<number>;
-    readonly values: import("effect").Stream.Stream<number>;
-    readonly map: <B>(f: (n: number) => B) => Readable<B>;
-    readonly _update: (index: number) => void;
-  };
+  readonly readable: MutableReadable<A>;
+  readonly indexReadable: MutableReadable<number>;
   index: number;
 }

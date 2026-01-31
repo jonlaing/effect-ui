@@ -1,7 +1,7 @@
-import { Duration, Effect, Either, Fiber, pipe } from "effect";
+import { Duration, Effect, Either, Option } from "effect";
 
 import type { Element } from "./Element";
-import { RendererContext, type Renderer, type Slot } from "./Renderer";
+import { SuspenseBoundaryCtx } from "./SuspenseBoundaryCtx.js";
 
 /**
  * Options for the suspense boundary.
@@ -36,45 +36,6 @@ export interface SuspenseOptions<N, E, R1, RF, RC> {
 }
 
 // ============================================================================
-// Composable building blocks
-// ============================================================================
-
-/**
- * Handle the result of an async render, updating the slot with either
- * the success value or an error element (if catch handler is provided).
- */
-const handleRenderResult =
-  <N, E, R1, RC>(
-    slot: Slot<N>,
-    catchRender?: (error: E) => Element<N, never, RC>,
-  ) =>
-  (element: Element<N, E, R1>): Element<void, E, R1 | RC> =>
-    pipe(
-      element,
-      Effect.flatMap((e) => slot.setContent(e)),
-      Effect.catchAll((error) =>
-        catchRender
-          ? pipe(
-              catchRender(error),
-              Effect.flatMap((el) => slot.setContent(el)),
-            )
-          : Effect.void,
-      ), // No catch handler means E = never, so this branch is unreachable
-    );
-
-/**
- * Create a fallback display effect that shows the fallback in a slot.
- */
-const createFallbackEffect = <N, RF>(
-  fallbackRender: () => Element<N, never, RF>,
-  slot: Slot<N>,
-) =>
-  pipe(
-    fallbackRender(),
-    Effect.flatMap((el) => slot.setContent(el)),
-  );
-
-// ============================================================================
 // Main suspense implementation
 // ============================================================================
 
@@ -84,6 +45,9 @@ const createFallbackEffect = <N, RF>(
  * Renders the fallback while waiting for the async render to complete.
  * Optionally delays showing the fallback to avoid loading flashes on fast responses.
  * Optionally catches errors and renders an error state.
+ *
+ * The appropriate SuspenseBoundaryCtx layer (Client, SSR, Hydration) should be
+ * provided at the rendering entry point (mount, hydrate, renderToString).
  *
  * @example
  * ```ts
@@ -111,52 +75,29 @@ export const suspense: {
   // Overload 1: No catch, render cannot fail
   <N, R1 = never, RF = never>(
     options: SuspenseOptions<N, never, R1, RF, never> & { catch?: never },
-  ): Element<N, never, R1 | RF>;
+  ): Element<N, never, R1 | RF | SuspenseBoundaryCtx>;
 
   // Overload 2: With catch, render can fail
   <N, E, R1 = never, RF = never, RC = never>(
     options: SuspenseOptions<N, E, R1, RF, RC> & {
       catch: (error: E) => Element<N, never, RC>;
     },
-  ): Element<N, never, R1 | RF | RC>;
+  ): Element<N, never, R1 | RF | RC | SuspenseBoundaryCtx>;
 } = <N, E, R1 = never, RF = never, RC = never>(
   options: SuspenseOptions<N, E, R1, RF, RC>,
-): Element<N, never, R1 | RF | RC> =>
+): Element<N, never, R1 | RF | RC | SuspenseBoundaryCtx> =>
   Effect.gen(function* () {
-    const renderer = (yield* RendererContext) as Renderer<N>;
-    const scope = yield* Effect.scope;
-    const slot = yield* renderer.createSlot();
+    const ctx = yield* SuspenseBoundaryCtx;
+    const resultElement = yield* ctx.createSuspensionPoint();
+    const fallbackElement = yield* options.fallback();
 
-    const delayMs =
-      options.delay !== undefined ? Duration.toMillis(options.delay) : 0;
+    const delay = options.delay
+      ? Option.some(Duration.decode(options.delay))
+      : Option.none();
+    const fallbackFiber = yield* ctx.showFallback(fallbackElement, delay);
+    yield* ctx.forkRender(options.render, options.catch, fallbackFiber);
 
-    // Show fallback: immediately if no delay, otherwise fork with delay
-    const fallbackFiber =
-      delayMs > 0
-        ? yield* pipe(
-            createFallbackEffect(options.fallback, slot),
-            Effect.delay(Duration.millis(delayMs)),
-            Effect.interruptible,
-            Effect.forkIn(scope),
-          )
-        : null;
-
-    // If no delay, show fallback synchronously before forking render
-    if (fallbackFiber === null) {
-      yield* createFallbackEffect(options.fallback, slot);
-    }
-
-    // Fork main render: interrupt fallback timer (if any), then handle result
-    yield* pipe(
-      options.render(),
-      Effect.tap(() =>
-        fallbackFiber ? Fiber.interrupt(fallbackFiber) : Effect.void,
-      ),
-      handleRenderResult(slot, options.catch),
-      Effect.forkIn(scope),
-    );
-
-    return slot.marker;
+    return resultElement as N;
   });
 
 /**

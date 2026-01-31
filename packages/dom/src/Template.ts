@@ -37,13 +37,7 @@ export const t = (
       "",
     );
 
-    const readable: Readable<string> = {
-      get: Effect.succeed(staticResult),
-      changes: Stream.empty,
-      values: Stream.make(staticResult),
-      map: (f) => Readable.map(readable, f),
-    };
-    return Effect.succeed(readable);
+    return Effect.succeed(Readable.of(staticResult));
   }
 
   const buildStringWithCurrentValues = (currentValues: unknown[]): string => {
@@ -104,12 +98,10 @@ export const t = (
       );
   }
 
-  const readable: Readable<string> = {
-    get: Effect.map(getCurrentValues(), buildStringWithCurrentValues),
-    changes: combineValuesWithData().pipe(Stream.drop(1)),
-    values: combineValuesWithData(),
-    map: (f) => Readable.map(readable, f),
-  };
+  const readable = Readable.make(
+    Effect.map(getCurrentValues(), buildStringWithCurrentValues),
+    () => combineValuesWithData().pipe(Stream.drop(1)),
+  );
 
   return Effect.succeed(readable);
 };

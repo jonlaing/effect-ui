@@ -345,7 +345,7 @@ describe("DOMElements", () => {
           const el = yield* div({ ref: myRef, id: "ref-test" });
           const refEl = getRef(myRef);
           expect(refEl).toBe(el);
-          expect(refEl.id).toBe("ref-test");
+          expect(refEl!.id).toBe("ref-test");
         }),
       );
     });
