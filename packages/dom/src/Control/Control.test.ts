@@ -5,8 +5,8 @@ import { Readable, Signal } from "@effex/core";
 
 import { ClientControlCtx, each, match, when } from ".";
 import { collect } from "../Collect";
-import { DOMRendererLive } from "../DOMRenderer";
 import { $ } from "../Element";
+import { DOMRendererLive } from "../Render/DOMRenderer";
 
 const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
   Effect.runPromise(

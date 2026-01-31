@@ -1,9 +1,9 @@
 import { Effect, Fiber } from "effect";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { collect } from "../Collect";
+import { collect } from "../../Collect";
+import { $ } from "../../Element";
 import { DOMRendererLive } from "../DOMRenderer";
-import { $ } from "../Element";
 import { mount } from "./client";
 
 describe("mount", () => {

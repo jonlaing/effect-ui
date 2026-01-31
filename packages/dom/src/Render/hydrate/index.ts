@@ -25,10 +25,10 @@ import {
 import {
   HydrationControlCtx,
   HydrationRootCtx,
-} from "../Control/HydrationControlCtx.js";
-import * as Element from "../Element";
-import { makeHydrationContext } from "../HydrationContext";
-import { HydrationSuspenseBoundaryCtx } from "../SuspenseBoundary/HydrationSuspenseBoundaryCtx.js";
+} from "../../Control/HydrationControlCtx.js";
+import * as Element from "../../Element";
+import { HydrationSuspenseBoundaryCtx } from "../../SuspenseBoundaryCtx/HydrationSuspenseBoundaryCtx.js";
+import { makeHydrationContext } from "./HydrationContext";
 import { createHydrationRenderer } from "./HydrationRenderer";
 
 export interface HydrateOptions {
@@ -126,4 +126,4 @@ export { createHydrationRenderer } from "./HydrationRenderer";
 export {
   HydrationContext,
   type HydrationContextService,
-} from "../HydrationContext";
+} from "./HydrationContext";

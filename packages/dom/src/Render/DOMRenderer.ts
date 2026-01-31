@@ -2,7 +2,7 @@ import { Effect, Layer } from "effect";
 
 import { RendererContext, type Renderer, type Slot } from "@effex/core";
 
-import { toKebabCase } from "./helpers/index.js";
+import { toKebabCase } from "../helpers/index.js";
 
 /**
  * DOM implementation of the Renderer interface.

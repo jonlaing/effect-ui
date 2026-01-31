@@ -3,10 +3,10 @@ import { describe, expect, it } from "vitest";
 
 import { Readable, Signal } from "@effex/core";
 
-import { Boundary } from "../Boundary";
-import { collect } from "../Collect";
-import { each, match, when } from "../Control";
-import { $ } from "../Element";
+import { Boundary } from "../../Boundary";
+import { collect } from "../../Collect";
+import { each, match, when } from "../../Control";
+import { $ } from "../../Element";
 import { renderToString } from "./index";
 
 describe("SSR", () => {

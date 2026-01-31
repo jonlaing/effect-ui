@@ -2,9 +2,9 @@ import { Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { Boundary } from "./Boundary";
-import { DOMRendererLive } from "./DOMRenderer";
 import { $ } from "./Element";
-import { ClientSuspenseBoundaryCtx } from "./SuspenseBoundary";
+import { DOMRendererLive } from "./Render/DOMRenderer";
+import { ClientSuspenseBoundaryCtx } from "./SuspenseBoundaryCtx";
 
 // ClientSuspenseBoundaryCtx depends on DOMRendererLive
 const TestLayer = Layer.provideMerge(

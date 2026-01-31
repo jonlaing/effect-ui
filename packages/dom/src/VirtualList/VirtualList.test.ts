@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Readable, Signal } from "@effex/core";
 
-import { DOMRendererLive } from "../DOMRenderer";
 import { $ } from "../Element";
+import { DOMRendererLive } from "../Render/DOMRenderer";
 import {
   calculateItemOffset,
   calculateScrollToPosition,

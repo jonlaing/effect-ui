@@ -12,7 +12,7 @@ import {
   type Renderer,
 } from "@effex/core";
 
-import { SSRContext } from "../server/SSRContext.js";
+import { SSRContext } from "../Render/server/SSRContext.js";
 
 type DOMElement = HTMLElement | SVGElement;
 

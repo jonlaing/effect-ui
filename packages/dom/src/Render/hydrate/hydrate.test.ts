@@ -3,10 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Signal } from "@effex/core";
 
-import { Boundary } from "../Boundary";
-import { collect } from "../Collect";
-import { match, when } from "../Control";
-import { $ } from "../Element";
+import { Boundary } from "../../Boundary";
+import { collect } from "../../Collect";
+import { match, when } from "../../Control";
+import { $ } from "../../Element";
 import { renderToString } from "../server";
 import { hydrate } from "./index";
 

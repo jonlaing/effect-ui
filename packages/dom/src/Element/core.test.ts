@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { RendererContext, Signal } from "@effex/core";
 
-import { DOMRendererLive } from "../DOMRenderer";
+import { DOMRendererLive } from "../Render/DOMRenderer";
 import * as Core from "./core";
 import { make as makeRef } from "./ref";
 

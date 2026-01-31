@@ -2,7 +2,7 @@
 export * from "@effex/core";
 
 // DOM Renderer
-export { DOMRenderer, DOMRendererLive } from "./DOMRenderer";
+export { DOMRenderer, DOMRendererLive } from "./Render/DOMRenderer";
 
 export * as Element from "./Element";
 
@@ -58,7 +58,7 @@ export {
 } from "./Animation/index.js";
 
 // Mounting
-export { mount, runApp } from "./client";
+export { mount, runApp } from "./Render/client";
 
 // Template helpers
 export { t } from "./Template";

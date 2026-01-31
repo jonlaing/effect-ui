@@ -16,8 +16,8 @@ import {
 } from "@effex/core";
 
 import { runEnterAnimation, runExitAnimation } from "../Animation/index.js";
-import { DOMRenderer } from "../DOMRenderer.js";
 import * as Element from "../Element";
+import { DOMRenderer } from "../Render/DOMRenderer.js";
 import { AnimationConfigCtx } from "./AnimationConfigCtx.js";
 
 type DOMElement = HTMLElement | SVGElement;

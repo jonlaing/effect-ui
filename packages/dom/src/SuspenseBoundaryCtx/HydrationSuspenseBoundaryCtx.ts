@@ -12,8 +12,8 @@ import {
   type Renderer,
 } from "@effex/core";
 
-import { DOMRenderer } from "../DOMRenderer.js";
-import { HydrationContext } from "../HydrationContext.js";
+import { DOMRenderer } from "../Render/DOMRenderer.js";
+import { HydrationContext } from "../Render/hydrate/HydrationContext.js";
 
 type DOMElement = HTMLElement | SVGElement;
 

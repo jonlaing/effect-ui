@@ -33,9 +33,9 @@ import {
   type SuspenseBoundaryCtx,
 } from "@effex/core";
 
-import { SSRControlCtx } from "../Control/SSRControlCtx.js";
-import * as Element from "../Element";
-import { SSRSuspenseBoundaryCtx } from "../SuspenseBoundary/SSRSuspenseBoundaryCtx.js";
+import { SSRControlCtx } from "../../Control/SSRControlCtx.js";
+import * as Element from "../../Element";
+import { SSRSuspenseBoundaryCtx } from "../../SuspenseBoundaryCtx/SSRSuspenseBoundaryCtx.js";
 import { vnodeToString } from "./renderToString";
 import { SSRContext, withSSRContext } from "./SSRContext";
 import { StringRenderer } from "./StringRenderer";

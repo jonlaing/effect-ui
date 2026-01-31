@@ -26,10 +26,10 @@ import {
   type SuspenseBoundaryCtx,
 } from "@effex/core";
 
-import { ClientControlCtx } from "../Control/ClientControlCtx.js";
+import { ClientControlCtx } from "../../Control/ClientControlCtx.js";
+import * as Element from "../../Element";
+import { ClientSuspenseBoundaryCtx } from "../../SuspenseBoundaryCtx/ClientSuspenseBoundaryCtx.js";
 import { DOMRenderer } from "../DOMRenderer.js";
-import * as Element from "../Element";
-import { ClientSuspenseBoundaryCtx } from "../SuspenseBoundary/ClientSuspenseBoundaryCtx.js";
 
 /**
  * Mount an Element into a DOM container. Automatically cleans up when the scope closes.
