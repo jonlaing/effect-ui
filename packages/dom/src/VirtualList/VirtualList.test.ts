@@ -13,11 +13,12 @@ import {
   parseHeight,
   rangesEqual,
 } from "./helpers";
-import { virtualEach, VirtualListRef } from "./index";
+import { ClientVirtualListCtx, virtualEach, VirtualListRef } from "./index";
 
 const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
   Effect.runPromise(
     Effect.scoped(effect).pipe(
+      Effect.provide(ClientVirtualListCtx),
       Effect.provide(DOMRendererLive),
     ) as Effect.Effect<A, never, never>,
   );

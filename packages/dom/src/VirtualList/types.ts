@@ -1,6 +1,6 @@
 import type { Deferred, Effect, Scope } from "effect";
 
-import type { Readable } from "@effex/core";
+import type { Readable, Signal } from "@effex/core";
 
 import type { ListAnimationOptions } from "../Animation";
 import type * as Element from "../Element";
@@ -27,9 +27,9 @@ export interface VirtualListControl {
   /** Scroll to the bottom of the list */
   readonly scrollToBottom: (behavior?: ScrollBehavior) => Effect.Effect<void>;
   /** Currently visible range of items */
-  readonly visibleRange: Readable<VisibleRange>;
+  readonly visibleRange: Readable.Readable<VisibleRange>;
   /** Total number of items */
-  readonly totalItems: Readable<number>;
+  readonly totalItems: Readable.Readable<number>;
 }
 
 /**
@@ -58,11 +58,11 @@ export interface VirtualEachOptions<A, E = never, R = never> {
 
   /**
    * Render function for each item.
-   * Receives a Readable for the item data and its index.
+   * Receives a Signal for the item data and its index.
    */
   readonly render: (
-    item: Readable<A>,
-    index: Readable<number>,
+    item: Signal.Signal<A>,
+    index: Signal.Signal<number>,
   ) => Element.Element<HTMLElement | SVGElement, E, R>;
 
   /**
@@ -113,20 +113,13 @@ export interface VirtualEachOptions<A, E = never, R = never> {
 }
 
 /**
- * A mutable Readable with an _update method for internal use.
- * TODO: Replace with Signal - this is essentially reimplementing Signal.
- */
-export interface MutableReadable<A> extends Readable<A> {
-  readonly _update: (value: A) => void;
-}
-
-/**
  * Internal state for a rendered item.
+ * Uses Signals instead of bespoke MutableReadable.
  */
 export interface VirtualItemEntry<A> {
   readonly element: HTMLElement;
   readonly scope: Scope.CloseableScope;
-  readonly readable: MutableReadable<A>;
-  readonly indexReadable: MutableReadable<number>;
-  index: number;
+  readonly item: Signal.Signal<A>;
+  readonly index: Signal.Signal<number>;
+  currentIndex: number;
 }

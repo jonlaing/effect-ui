@@ -1,10 +1,9 @@
-import { Effect, Exit, Scope, Stream } from "effect";
+import { Effect, Exit, Scope } from "effect";
 
 import { Readable, RendererContext, Signal } from "@effex/core";
 
 import * as Element from "../Element";
 import {
-  calculateItemOffset,
   calculateScrollToPosition,
   calculateTotalHeight,
   calculateVisibleRange,
@@ -12,86 +11,31 @@ import {
   rangesEqual,
 } from "./helpers";
 import type {
-  MutableReadable,
   VirtualEachOptions,
-  VirtualItemEntry,
   VirtualListControl,
   VisibleRange,
 } from "./types";
+import { VirtualListCtx } from "./VirtualListCtx";
 
 /**
- * Create an item readable for tracking item values.
+ * Internal state for a rendered item.
  */
-const createItemReadable = <A>(initialValue: A): MutableReadable<A> => {
-  let currentValue = initialValue;
-  const subscribers = new Set<(value: A) => void>();
-
-  const getChanges = (): Stream.Stream<A> =>
-    Stream.async<A>((emit) => {
-      const handler = (value: A) => emit.single(value);
-      subscribers.add(handler);
-      return Effect.sync(() => {
-        subscribers.delete(handler);
-      });
-    });
-
-  const readable = Readable.make(
-    Effect.sync(() => currentValue),
-    getChanges,
-  ) as MutableReadable<A>;
-
-  // Add the _update method
-  (readable as { _update: (value: A) => void })._update = (value: A) => {
-    if (currentValue !== value) {
-      currentValue = value;
-      for (const handler of subscribers) {
-        handler(value);
-      }
-    }
-  };
-
-  return readable;
-};
-
-/**
- * Create an index readable for tracking item indices.
- */
-const createIndexReadable = (initialIndex: number): MutableReadable<number> => {
-  let currentIndex = initialIndex;
-  const subscribers = new Set<(value: number) => void>();
-
-  const getChanges = (): Stream.Stream<number> =>
-    Stream.async<number>((emit) => {
-      const handler = (value: number) => emit.single(value);
-      subscribers.add(handler);
-      return Effect.sync(() => {
-        subscribers.delete(handler);
-      });
-    });
-
-  const readable = Readable.make(
-    Effect.sync(() => currentIndex),
-    getChanges,
-  ) as MutableReadable<number>;
-
-  // Add the _update method
-  (readable as { _update: (value: number) => void })._update = (
-    index: number,
-  ) => {
-    if (currentIndex !== index) {
-      currentIndex = index;
-      for (const handler of subscribers) {
-        handler(index);
-      }
-    }
-  };
-
-  return readable;
-};
+interface VirtualItemEntry<A> {
+  readonly wrapper: HTMLElement;
+  readonly scope: Scope.CloseableScope;
+  readonly item: Signal.Signal<A>;
+  readonly index: Signal.Signal<number>;
+  currentIndex: number;
+}
 
 /**
  * Render a virtualized list of items, only rendering items visible in the viewport.
  * Ideal for large lists (1000+ items) where rendering all items would be too slow.
+ *
+ * Uses VirtualListCtx to abstract environment differences:
+ * - Client: Full virtualization with scroll/resize tracking
+ * - SSR: Renders all items for SEO/accessibility
+ * - Hydration: Attaches to existing DOM, then virtualizes
  *
  * @param items - Reactive array of items
  * @param options - Configuration including key function, render function, and height
@@ -126,18 +70,20 @@ const createIndexReadable = (initialIndex: number): MutableReadable<number> => {
  * ```
  */
 export const virtualEach = <A, E = never, R = never>(
-  items: Readable<readonly A[]>,
+  items: Readable.Readable<readonly A[]>,
   options: VirtualEachOptions<A, E, R>,
-): Element.Element<HTMLDivElement, E, R> =>
+): Element.Element<HTMLDivElement, E, R | RendererContext | VirtualListCtx> =>
   Effect.gen(function* () {
     const scope = yield* Effect.scope;
+    const ctx = yield* VirtualListCtx;
+    const renderer = yield* RendererContext;
 
     // Validate options
     if (
       options.itemHeight === undefined &&
       options.estimatedHeight === undefined
     ) {
-      throw new Error(
+      yield* Effect.dieMessage(
         "virtualEach requires either itemHeight or estimatedHeight option",
       );
     }
@@ -146,23 +92,23 @@ export const virtualEach = <A, E = never, R = never>(
     const overscan = options.overscan ?? 3;
     const keyFn = options.key;
 
+    // Get initial items for total height calculation
+    const initialItems = yield* items.get;
+    const initialTotalHeight = calculateTotalHeight(
+      initialItems.length,
+      itemHeight,
+    );
+
     // Create container structure
-    // Outer: scrollable viewport
-    const viewport = document.createElement("div");
-    viewport.style.overflow = "auto";
-    viewport.style.height = parseHeight(options.height);
-    viewport.style.position = "relative";
+    const { viewport, inner } = yield* ctx.createContainers({
+      height: parseHeight(options.height),
+      totalHeight: initialTotalHeight,
+    });
 
-    // Inner: full-height container for absolute positioning
-    const innerContainer = document.createElement("div");
-    innerContainer.style.position = "relative";
-    innerContainer.style.width = "100%";
-    viewport.appendChild(innerContainer);
-
-    // State
+    // State - using Signal from core
     const scrollTop = yield* Signal.make(0);
     const viewportHeight = yield* Signal.make(0);
-    const itemsArray = yield* Signal.make<readonly A[]>([]);
+    const itemsArray = yield* Signal.make<readonly A[]>(initialItems);
 
     // Derive total items count
     const totalItems: Readable.Readable<number> = Readable.map(
@@ -176,16 +122,22 @@ export const virtualEach = <A, E = never, R = never>(
       viewportHeight,
       totalItems,
     ]).pipe(
-      Readable.map(
-        ([scrollTopVal, viewportHeightVal, totalItemsVal]): VisibleRange =>
-          calculateVisibleRange(
-            scrollTopVal,
-            viewportHeightVal,
-            itemHeight,
-            totalItemsVal,
-            overscan,
-          ),
-      ),
+      Readable.map(([scrollTopVal, viewportHeightVal, totalItemsVal]) => {
+        // If not virtualizing (SSR), return range covering all items
+        if (!ctx.shouldVirtualize) {
+          return {
+            start: 0,
+            end: totalItemsVal > 0 ? totalItemsVal - 1 : -1,
+          };
+        }
+        return calculateVisibleRange(
+          scrollTopVal,
+          viewportHeightVal,
+          itemHeight,
+          totalItemsVal,
+          overscan,
+        );
+      }),
     );
 
     // Track rendered items
@@ -206,50 +158,54 @@ export const virtualEach = <A, E = never, R = never>(
           i <= range.end && i < currentItems.length;
           i++
         ) {
-          const item = currentItems[i];
-          const key = keyFn(item);
+          const itemData = currentItems[i];
+          const key = keyFn(itemData);
           newKeys.add(key);
 
           const existing = itemMap.get(key);
 
           if (existing) {
-            // Update existing item
-            existing.readable._update(item);
-            existing.indexReadable._update(i);
+            // Update existing item using Signal.set
+            yield* existing.item.set(itemData);
+            yield* existing.index.set(i);
 
             // Update position if index changed
-            if (existing.index !== i) {
-              existing.element.style.top = `${calculateItemOffset(i, itemHeight)}px`;
-              existing.index = i;
+            if (existing.currentIndex !== i) {
+              yield* ctx.updateItemPosition(existing.wrapper, i, itemHeight);
+              existing.currentIndex = i;
             }
           } else {
-            // Create new item
+            // Create new item with its own scope
             const itemScope = yield* Scope.make();
-            const readable = createItemReadable(item);
-            const indexReadable = createIndexReadable(i);
 
-            // Create wrapper for absolute positioning
-            const wrapper = document.createElement("div");
-            wrapper.style.position = "absolute";
-            wrapper.style.top = `${calculateItemOffset(i, itemHeight)}px`;
-            wrapper.style.left = "0";
-            wrapper.style.right = "0";
-            wrapper.style.height = `${itemHeight}px`;
+            // Create Signals for item and index
+            const itemSignal = yield* Signal.make(itemData).pipe(
+              Effect.provideService(Scope.Scope, itemScope),
+            );
+            const indexSignal = yield* Signal.make(i).pipe(
+              Effect.provideService(Scope.Scope, itemScope),
+            );
+
+            // Create wrapper for positioning
+            const wrapper = yield* ctx.createItemWrapper({
+              index: i,
+              itemHeight,
+            });
 
             // Render item content
             const content = yield* options
-              .render(readable, indexReadable)
+              .render(itemSignal, indexSignal)
               .pipe(Effect.provideService(Scope.Scope, itemScope));
 
-            wrapper.appendChild(content);
-            innerContainer.appendChild(wrapper);
+            yield* renderer.appendChild(wrapper, content);
+            yield* ctx.appendItem(inner, wrapper);
 
             itemMap.set(key, {
-              element: wrapper,
+              wrapper,
               scope: itemScope,
-              readable,
-              indexReadable,
-              index: i,
+              item: itemSignal,
+              index: indexSignal,
+              currentIndex: i,
             });
           }
         }
@@ -258,7 +214,7 @@ export const virtualEach = <A, E = never, R = never>(
         for (const key of currentKeys) {
           if (!newKeys.has(key)) {
             const entry = itemMap.get(key)!;
-            innerContainer.removeChild(entry.element);
+            yield* ctx.removeItem(inner, entry.wrapper);
             yield* Scope.close(entry.scope, Exit.void);
             itemMap.delete(key);
           }
@@ -269,45 +225,31 @@ export const virtualEach = <A, E = never, R = never>(
           currentItems.length,
           itemHeight,
         );
-        innerContainer.style.height = `${totalHeight}px`;
+        yield* ctx.updateTotalHeight(inner, totalHeight);
       });
 
-    // Scroll handler with requestAnimationFrame throttling
-    let rafId: number | null = null;
-    const handleScroll = () => {
-      if (rafId === null) {
-        rafId = requestAnimationFrame(() => {
-          Effect.runSync(scrollTop.set(viewport.scrollTop));
-          rafId = null;
-        });
-      }
-    };
-
-    viewport.addEventListener("scroll", handleScroll, { passive: true });
-
-    // Cleanup scroll listener
-    yield* Effect.addFinalizer(() =>
-      Effect.sync(() => {
-        viewport.removeEventListener("scroll", handleScroll);
-        if (rafId !== null) {
-          cancelAnimationFrame(rafId);
-        }
-      }),
+    // Set up scroll tracking
+    const initialScrollTop = yield* ctx.setupScrollTracking(
+      viewport,
+      (newScrollTop) => {
+        Effect.runSync(scrollTop.set(newScrollTop));
+      },
+      scope,
     );
+    yield* scrollTop.set(initialScrollTop);
 
-    // ResizeObserver for viewport height
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        Effect.runSync(viewportHeight.set(entry.contentRect.height));
-      }
-    });
-    resizeObserver.observe(viewport);
-
-    yield* Effect.addFinalizer(() =>
-      Effect.sync(() => {
-        resizeObserver.disconnect();
-      }),
+    // Set up resize tracking
+    const initialHeight = yield* ctx.setupResizeTracking(
+      viewport,
+      (newHeight) => {
+        Effect.runSync(viewportHeight.set(newHeight));
+      },
+      scope,
     );
+    yield* viewportHeight.set(initialHeight);
+
+    // Get scroll control
+    const scrollControl = ctx.getScrollControl(viewport);
 
     // Create control interface
     const control: VirtualListControl = {
@@ -321,19 +263,17 @@ export const virtualEach = <A, E = never, R = never>(
             height,
             currentTop,
           );
-          viewport.scrollTo({ top: newTop, behavior });
+          yield* scrollControl.scrollTo(newTop, behavior);
         }),
 
       scrollToTop: (behavior: ScrollBehavior = "auto") =>
-        Effect.sync(() => {
-          viewport.scrollTo({ top: 0, behavior });
-        }),
+        scrollControl.scrollTo(0, behavior),
 
       scrollToBottom: (behavior: ScrollBehavior = "auto") =>
         Effect.gen(function* () {
           const total = yield* totalItems.get;
           const totalHeight = calculateTotalHeight(total, itemHeight);
-          viewport.scrollTo({ top: totalHeight, behavior });
+          yield* scrollControl.scrollTo(totalHeight, behavior);
         }) as Effect.Effect<void>,
 
       visibleRange,
@@ -348,13 +288,14 @@ export const virtualEach = <A, E = never, R = never>(
     // Subscribe to visible range changes
     let lastRange: VisibleRange = { start: 0, end: -1 };
 
-    yield* visibleRange.changes.pipe(
-      Stream.runForEach((range: VisibleRange) =>
+    yield* ctx.subscribe(
+      visibleRange,
+      (range: VisibleRange) =>
         Effect.gen(function* () {
           if (!rangesEqual(range, lastRange)) {
             lastRange = range;
             const currentItems = yield* itemsArray.get;
-            yield* updateVisibleItems(currentItems, range as VisibleRange);
+            yield* updateVisibleItems(currentItems, range);
 
             // Call user callback if provided
             if (options.onVisibleRangeChange) {
@@ -365,34 +306,21 @@ export const virtualEach = <A, E = never, R = never>(
             }
           }
         }),
-      ),
-      Effect.forkIn(scope),
+      scope,
     );
 
     // Subscribe to items changes
-    yield* items.changes.pipe(
-      Stream.runForEach((newItems) =>
+    yield* ctx.subscribe(
+      items,
+      (newItems) =>
         Effect.gen(function* () {
           yield* itemsArray.set(newItems);
           // Range subscription will trigger updateVisibleItems
         }),
-      ),
-      Effect.forkIn(scope),
+      scope,
     );
 
     // Initial render
-    const initialItems = yield* items.get;
-    yield* itemsArray.set(initialItems);
-
-    // Wait a tick for viewport to have dimensions, then do initial render
-    yield* Effect.sync(() => {
-      // Force synchronous layout to get viewport height
-      const height = viewport.clientHeight || viewport.offsetHeight;
-      if (height > 0) {
-        Effect.runSync(viewportHeight.set(height));
-      }
-    });
-
     const initialRange = yield* visibleRange.get;
     yield* updateVisibleItems(initialItems, initialRange);
     lastRange = initialRange;
@@ -407,4 +335,8 @@ export const virtualEach = <A, E = never, R = never>(
     );
 
     return viewport;
-  }) as Element.Element<HTMLDivElement, E, R>;
+  }) as Element.Element<
+    HTMLDivElement,
+    E,
+    R | RendererContext | VirtualListCtx
+  >;
