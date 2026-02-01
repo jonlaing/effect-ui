@@ -1,6 +1,6 @@
 # @effex/router
 
-Type-safe routing for Effex applications with Effect Schema validation for route params.
+Type-safe routing for Effex applications built on Effect.
 
 ## Installation
 
@@ -8,277 +8,463 @@ Type-safe routing for Effex applications with Effect Schema validation for route
 pnpm add @effex/router effect
 ```
 
-## Basic Usage
+## Overview
+
+The router is built around four main concepts:
+
+- **Route** - Define individual routes with paths and render functions
+- **Router** - Compose routes together using a pipeable API
+- **Navigation** - Runtime service for navigation state and methods
+- **Link** - Component for declarative navigation
+
+## Quick Start
 
 ```ts
-import { Effect, Context } from "effect";
-import { $, Component, mount, runApp } from "@effex/dom";
-import { Route, Router, Link } from "@effex/router";
+import { Effect } from "effect";
+import { $, mount } from "@effex/dom";
+import { Route, Router, Navigation, Link } from "@effex/router";
 
 // Define routes
-const routes = {
-  home: Route.make("/"),
-  about: Route.make("/about"),
-};
-
-// Create the router and mount
-runApp(
-  Effect.gen(function* () {
-    const router = yield* Router.make(routes);
-
-    yield* mount(
-      App().pipe(Effect.provide(router.layer)),
-      document.getElementById("root")!,
-    );
-  }),
+const HomeRoute = Route.make("/", () =>
+  $.div({}, Effect.succeed("Welcome home!"))
 );
-```
 
-## Route.define (File-Based Routing)
+const AboutRoute = Route.make("/about", () =>
+  $.div({}, Effect.succeed("About us"))
+);
 
-When using file-based routing with `@effex/vite-plugin`, use `Route.define` to co-locate route configuration with your component:
+// Compose router
+const router = Router.empty.pipe(
+  Router.concat(HomeRoute),
+  Router.concat(AboutRoute),
+);
 
-```ts
-// src/routes/users.$id.ts
-import { Effect, Schema } from "effect";
-import { $, Component } from "@effex/dom";
-import { Route, Link } from "@effex/router";
+// Create navigation layer and run app
+const App = Effect.gen(function* () {
+  const nav = yield* Navigation.Context;
+  const match = yield* nav.currentMatch.get;
 
-// Define route with params, loader, and action
-export const route = Route.define({
-  params: Schema.Struct({ id: Schema.String }),
-  loader: (params) =>
-    Effect.gen(function* () {
-      return yield* fetchUser(params.id);
+  return yield* $.div(
+    {},
+    // Navigation
+    $.nav(
+      {},
+      Link({ href: "/" }, Effect.succeed("Home")),
+      Link({ href: "/about" }, Effect.succeed("About")),
+    ),
+    // Render matched route
+    Option.match(match, {
+      onNone: () => $.div({}, Effect.succeed("Not found")),
+      onSome: ({ route, params }) => route.render(params),
     }),
+  );
 });
 
-const UserPage = () =>
-  Effect.gen(function* () {
-    // Type-safe access to params
-    const params = yield* route.params();
-    // params is typed as { id: string } | null
-
-    // Type-safe access to loader data
-    const user = yield* route.loaderData<User>();
-
-    // Check if this route is active
-    const isActive = route.isActive();
-
-    return yield* $.div(
-      {},
-      collect(
-        $.h1({}, t`User ${params?.id ?? "Unknown"}`),
-        $.p({}, $.of(user.name)),
-      ),
-    );
-  });
-
-export default UserPage;
-```
-
-### Route.define Options
-
-- `params` - Effect Schema for route parameters
-- `loader` - Function that receives params and returns data
-- `action` - Function for handling form submissions
-
-### Route Methods
-
-When you use `Route.define`, the exported `route` object provides type-safe accessor methods:
-
-- `route.params()` - Effect that returns current route params (or null if not on this route)
-- `route.loaderData<T>()` - Effect that returns loader data
-- `route.isActive()` - Readable signal indicating if this route is active
-
-## Route Parameters
-
-Define routes with typed parameters using Effect Schema:
-
-```ts
-import { Schema } from "effect";
-
-const routes = {
-  home: Route.make("/"),
-  user: Route.make("/users/:id", {
-    params: Schema.Struct({ id: Schema.String }),
-  }),
-  post: Route.make("/posts/:slug", {
-    params: Schema.Struct({ slug: Schema.String }),
-  }),
-};
-```
-
-Access params in your components:
-
-```ts
-const UserPage = () =>
-  Effect.gen(function* () {
-    const router = yield* RouterContext;
-    const params = yield* router.routes.user.params.get;
-    // params is typed as { id: string } | null
-
-    return yield* $.div(
-      {},
-      $.h1({}, t`User ${params?.id ?? "Unknown"}`),
-    );
-  });
-```
-
-## Router Layer
-
-Create a router and use its layer to provide context:
-
-```ts
-runApp(
-  Effect.gen(function* () {
-    const router = yield* Router.make(routes);
-
-    yield* mount(
-      App().pipe(Effect.provide(router.layer)),
-      document.getElementById("root")!,
-    );
-  }),
+mount(
+  App.pipe(Effect.provide(Navigation.makeLayer(router))),
+  document.getElementById("root")!,
 );
 ```
 
-### Typed Router Context
+## Route
 
-For full type safety with a custom context tag:
+Routes are defined with a path pattern and a render function.
+
+### Basic Routes
 
 ```ts
-import { Context } from "effect";
-import { type RouterInfer, makeTypedRouterLayer } from "@effex/router";
+import { Route } from "@effex/router";
 
-// Infer the router type from your routes
-type AppRouter = RouterInfer<typeof routes>;
+const HomeRoute = Route.make("/", () =>
+  $.div({}, Effect.succeed("Home"))
+);
 
-// Create a typed context tag
-class AppRouterContext extends Context.Tag("AppRouterContext")<
-  AppRouterContext,
-  AppRouter
->() {}
-
-// Provide the typed layer
-runApp(
-  Effect.gen(function* () {
-    const router = yield* Router.make(routes);
-    const routerLayer = makeTypedRouterLayer(router, AppRouterContext);
-
-    yield* mount(
-      App().pipe(Effect.provide(routerLayer)),
-      document.getElementById("root")!,
-    );
-  }),
+const AboutRoute = Route.make("/about", () =>
+  $.div({}, Effect.succeed("About"))
 );
 ```
 
-## Link Component
+### Routes with Parameters
 
-The `Link` component handles navigation:
+Use `:param` syntax for dynamic segments. Access params via the scoped `Route.Params` context:
+
+```ts
+const UserRoute = Route.make("/users/:id", () =>
+  Effect.gen(function* () {
+    // Type-safe access to route params
+    const { id } = yield* Route.params;
+
+    return yield* $.div({}, Effect.succeed(`User ${id}`));
+  })
+);
+
+const PostRoute = Route.make("/posts/:slug/comments/:commentId", () =>
+  Effect.gen(function* () {
+    const { slug, commentId } = yield* Route.params;
+
+    return yield* $.div(
+      {},
+      Effect.succeed(`Post ${slug}, Comment ${commentId}`),
+    );
+  })
+);
+```
+
+### Search Params
+
+Access search/query parameters via the scoped context:
+
+```ts
+const SearchRoute = Route.make("/search", () =>
+  Effect.gen(function* () {
+    const searchParams = yield* Route.searchParams;
+    const query = searchParams.get("q") ?? "";
+
+    return yield* $.div({}, Effect.succeed(`Searching for: ${query}`));
+  })
+);
+```
+
+### Route Guards
+
+Add guards to protect routes:
+
+```ts
+const ProtectedRoute = Route.make("/dashboard", renderDashboard).pipe(
+  Route.withGuard(() =>
+    Effect.gen(function* () {
+      const user = yield* AuthService;
+      return user.isAuthenticated;
+    })
+  ),
+);
+```
+
+### Lazy Loading
+
+Load route components lazily:
+
+```ts
+const HeavyRoute = Route.lazy("/reports", () =>
+  import("./ReportsPage.js").then((m) => m.default)
+);
+```
+
+## Router
+
+Compose routes using the pipeable Router API.
+
+### Basic Composition
+
+```ts
+import { Router, Route } from "@effex/router";
+
+const router = Router.empty.pipe(
+  Router.concat(HomeRoute),
+  Router.concat(AboutRoute),
+  Router.concat(UserRoute),
+);
+```
+
+### Prefix Routes
+
+Add a common prefix to a group of routes:
+
+```ts
+const apiRoutes = Router.empty.pipe(
+  Router.concat(Route.make("/users", renderUsers)),
+  Router.concat(Route.make("/posts", renderPosts)),
+);
+
+const router = Router.empty.pipe(
+  Router.concat(HomeRoute),
+  Router.concat(Router.prefixAll(apiRoutes, "/api")),
+);
+// Results in: /, /api/users, /api/posts
+```
+
+### Router Guards
+
+Apply a guard to all routes in a router:
+
+```ts
+const adminRoutes = Router.empty.pipe(
+  Router.concat(Route.make("/settings", renderSettings)),
+  Router.concat(Route.make("/users", renderUserAdmin)),
+);
+
+const protectedAdmin = Router.guard(
+  adminRoutes,
+  () => Effect.map(AuthService, (auth) => auth.isAdmin),
+);
+
+const router = Router.empty.pipe(
+  Router.concat(HomeRoute),
+  Router.concat(Router.prefixAll(protectedAdmin, "/admin")),
+);
+```
+
+### Layouts
+
+Wrap routes with a layout component:
+
+```ts
+const dashboardRoutes = Router.empty.pipe(
+  Router.concat(Route.make("/", renderDashboardHome)),
+  Router.concat(Route.make("/analytics", renderAnalytics)),
+);
+
+const withDashboardLayout = Router.layout(
+  dashboardRoutes,
+  (content) => $.div(
+    { class: "dashboard-layout" },
+    $.aside({}, renderSidebar()),
+    $.main({}, content),
+  ),
+);
+
+const router = Router.empty.pipe(
+  Router.concat(HomeRoute),
+  Router.concat(Router.prefixAll(withDashboardLayout, "/dashboard")),
+);
+```
+
+### Finding Matches
+
+```ts
+import { Router } from "@effex/router";
+
+const match = Router.findMatch(router, "/users/123");
+// Option<{ route: Route, params: { id: "123" } }>
+```
+
+## Navigation
+
+The Navigation service provides runtime state and navigation methods.
+
+### Setup
+
+```ts
+import { Navigation } from "@effex/router";
+
+const navLayer = Navigation.makeLayer(router, {
+  initialPath: "/",  // Optional, defaults to window.location
+});
+
+// Provide to your app
+App.pipe(Effect.provide(navLayer));
+```
+
+### Accessing Navigation
+
+```ts
+import { Navigation, NavigationContext } from "@effex/router";
+
+Effect.gen(function* () {
+  const nav = yield* NavigationContext;
+
+  // Current pathname (reactive)
+  const pathname = yield* nav.pathname.get;
+
+  // Current search params (reactive)
+  const searchParams = yield* nav.searchParams.get;
+
+  // Current matched route (reactive)
+  const match = yield* nav.currentMatch.get;
+});
+```
+
+### Programmatic Navigation
+
+```ts
+Effect.gen(function* () {
+  const nav = yield* NavigationContext;
+
+  // Navigate to a path
+  yield* nav.pushPath("/users/123");
+
+  // Replace current history entry
+  yield* nav.replacePath("/login");
+
+  // Type-safe navigation with routes
+  yield* nav.pushRoute(UserRoute, {
+    params: { id: "456" },
+    searchParams: { tab: "posts" },
+  });
+
+  // Browser history
+  yield* nav.back();
+  yield* nav.forward();
+});
+```
+
+### Accessor Effects
+
+Convenience effects for common operations:
+
+```ts
+import { Navigation } from "@effex/router";
+
+// These access NavigationContext internally
+const path = yield* Navigation.pathname;
+const params = yield* Navigation.searchParams;
+const match = yield* Navigation.currentMatch;
+
+yield* Navigation.pushPath("/about");
+yield* Navigation.replacePath("/home");
+yield* Navigation.back;
+yield* Navigation.forward;
+```
+
+## Link
+
+The Link component provides declarative navigation with automatic active state.
+
+### Basic Usage
 
 ```ts
 import { Link } from "@effex/router";
 
-// Basic link
-Link({ href: "/about" }, "About Us");
+// Path-based navigation
+Link({ href: "/about" }, Effect.succeed("About Us"))
 
-// With reactive href
-const userId = yield* Signal.make("123");
-Link({ href: userId.map(id => `/users/${id}`) }, "View User");
-
-// With additional attributes
-Link({ href: "/contact", class: "nav-link" }, "Contact");
+// With CSS class
+Link({ href: "/contact", class: "nav-link" }, Effect.succeed("Contact"))
 ```
 
-## Programmatic Navigation
-
-Navigate programmatically using the router:
+### Type-Safe Route Navigation
 
 ```ts
-const router = yield* RouterContext;
+// Navigate using a Route object for type-safe params
+Link(
+  { to: UserRoute, params: { id: "123" } },
+  Effect.succeed("View User"),
+)
 
-// Navigate to a path
-yield* router.navigate("/users/456");
-
-// Navigate with options
-yield* router.navigate("/search", { replace: true });
-
-// Access current state
-const pathname = yield* router.pathname.get;
-const currentRoute = yield* router.currentRoute.get;
+// With search params
+Link(
+  {
+    to: SearchRoute,
+    searchParams: { q: "effect", page: "1" }
+  },
+  Effect.succeed("Search"),
+)
 ```
 
-## Query Parameters
+### Active State
 
-Access query parameters directly as `URLSearchParams`:
+Links automatically receive data attributes based on the current path:
 
-```ts
-const router = yield* RouterContext;
+- `data-active-exact="true"` - Path matches exactly
+- `data-active-prefix="true"` - Current path starts with link href
 
-// Read search params (already a URLSearchParams object)
-const searchParams = yield* router.searchParams.get;
-const query = searchParams.get("q");
-const page = searchParams.get("page");
-```
+Style active links with CSS:
 
-## Route Matching
-
-Use `matchRoute` to render different components based on the current route:
-
-```ts
-import { matchRoute } from "@effex/router";
-
-matchRoute({
-  home: () => HomePage(),
-  about: () => AboutPage(),
-  users_$id: () => UserPage(),
-  _: () => NotFoundPage(),
-})
-```
-
-The `_` key is the fallback rendered when:
-- No route matches
-- RouterContext is not available
-
-`matchRoute` automatically accesses the router context internally, so you don't need to pass it as an argument.
-
-For more control, you can access the current route directly:
-
-```ts
-const router = yield* RouterContext;
-
-// currentRoute is Option<RouteNames>
-const currentRoute = yield* router.currentRoute.get;
-
-if (Option.isSome(currentRoute)) {
-  console.log("Current route:", currentRoute.value);
+```css
+/* Exact match */
+a[data-active-exact] {
+  font-weight: bold;
 }
+
+/* Prefix match (for parent routes) */
+a[data-active-prefix] {
+  color: blue;
+}
+```
+
+### Replace Navigation
+
+Use `replace` to replace the current history entry instead of pushing:
+
+```ts
+Link(
+  { href: "/login", replace: true },
+  Effect.succeed("Login"),
+)
+```
+
+### External Links
+
+External URLs and `target="_blank"` links work normally without SPA interception:
+
+```ts
+// External link - opens normally
+Link(
+  { href: "https://example.com", target: "_blank", rel: "noopener" },
+  Effect.succeed("External Site"),
+)
+```
+
+## Building Paths
+
+Build path strings from routes with type-safe params:
+
+```ts
+import { Navigation } from "@effex/router";
+
+const path = Navigation.buildPath(
+  UserRoute,
+  { id: "123" },
+  { tab: "posts" },
+);
+// "/users/123?tab=posts"
 ```
 
 ## API Reference
 
 ### Route
 
-- `Route.make(pattern, options?)` - Define a route with optional param schema, loader, action
-- `Route.define(options?)` - Define a route for file-based routing (path injected by vite-plugin)
+| Export | Description |
+|--------|-------------|
+| `Route.make(path, render)` | Create a route |
+| `Route.lazy(path, loader)` | Create a lazily-loaded route |
+| `Route.params` | Effect to access current route params |
+| `Route.searchParams` | Effect to access current search params |
+| `Route.withGuard(route, guard)` | Add a guard to a route |
+| `Route.withAnimation(route, options)` | Add animation config |
 
 ### Router
 
-- `Router.make(routes, options?)` - Create a router instance
-- `router.layer` - Layer providing RouterContext
-- `router.navigate(path, options?)` - Navigate to a path
-- `router.pathname` - Readable of current pathname
-- `router.search` - Readable of current search string
-- `router.currentRoute` - Readable of matched route name (Option)
-- `router.routes.<name>.params` - Readable of route params
+| Export | Description |
+|--------|-------------|
+| `Router.empty` | Empty router to start composition |
+| `Router.concat(router, route)` | Add a route to a router |
+| `Router.prefixAll(router, prefix)` | Add prefix to all routes |
+| `Router.guard(router, guard)` | Add guard to all routes |
+| `Router.layout(router, wrapper)` | Wrap all routes with layout |
+| `Router.findMatch(router, path)` | Find matching route for path |
 
-### Context
+### Navigation
 
-- `RouterContext` - Base router context tag
-- `makeTypedRouterLayer(router, tag)` - Create a layer providing both contexts
+| Export | Description |
+|--------|-------------|
+| `Navigation.make(router, options?)` | Create Navigation service |
+| `Navigation.makeLayer(router, options?)` | Create Navigation layer |
+| `Navigation.buildPath(route, params, searchParams?)` | Build path string |
+| `NavigationContext` | Context tag for Navigation service |
+| `Navigation.pathname` | Effect to get current pathname |
+| `Navigation.searchParams` | Effect to get current search params |
+| `Navigation.currentMatch` | Effect to get current matched route |
+| `Navigation.pushPath(path)` | Effect to navigate to path |
+| `Navigation.replacePath(path)` | Effect to replace current path |
+| `Navigation.back` | Effect to go back in history |
+| `Navigation.forward` | Effect to go forward in history |
 
-### Components
+### Link
 
-- `Link(props, children)` - Navigation link component
-- `matchRoute(cases)` - Render components based on current route (uses `_` key as fallback)
+| Export | Description |
+|--------|-------------|
+| `Link(props, children)` | Navigation link component |
+
+#### LinkProps
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `href` | `string` | Path to navigate to |
+| `to` | `Route` | Route object for type-safe navigation |
+| `params` | `Record<string, unknown>` | Params for route-based navigation |
+| `searchParams` | `Record<string, unknown>` | Search params to append |
+| `replace` | `boolean` | Replace history entry instead of push |
+| `class` | `string \| Readable<string>` | CSS class |
+| `target` | `string` | Link target (`_blank`, etc.) |
+| `rel` | `string` | Link rel attribute |
