@@ -1,0 +1,638 @@
+import { Effect, Option, Schema } from "effect";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import {
+  buildPath,
+  make as makeNavigation,
+  Navigation,
+  NavigationContext,
+} from "./Navigation.js";
+import { Route } from "./Route.js";
+import { concat, empty } from "./Router.js";
+
+// Helper to create a simple render function for tests
+const render = () => Effect.succeed(document.createElement("div"));
+
+// Mock window and history for tests
+let mockPathname = "/";
+let mockSearch = "";
+
+const mockWindow = {
+  location: {
+    get pathname() {
+      return mockPathname;
+    },
+    get search() {
+      return mockSearch;
+    },
+    origin: "http://localhost",
+  },
+  history: {
+    pushState: vi.fn((_state: unknown, _title: string, url: string) => {
+      const urlObj = new URL(url, "http://localhost");
+      mockPathname = urlObj.pathname;
+      mockSearch = urlObj.search;
+    }),
+    replaceState: vi.fn((_state: unknown, _title: string, url: string) => {
+      const urlObj = new URL(url, "http://localhost");
+      mockPathname = urlObj.pathname;
+      mockSearch = urlObj.search;
+    }),
+    back: vi.fn(),
+    forward: vi.fn(),
+  },
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+};
+
+// Replace global window
+vi.stubGlobal("window", mockWindow);
+
+describe("Navigation", () => {
+  beforeEach(() => {
+    mockPathname = "/";
+    mockSearch = "";
+    vi.clearAllMocks();
+  });
+
+  describe("buildPath", () => {
+    it("builds path from route without params", () => {
+      const route = Route.make("/users", render);
+      expect(buildPath(route, {})).toBe("/users");
+    });
+
+    it("replaces param segments with values", () => {
+      const route = Route.make("/users/:id", render);
+      expect(buildPath(route, { id: "123" })).toBe("/users/123");
+    });
+
+    it("replaces multiple params", () => {
+      const route = Route.make("/users/:userId/posts/:postId", render);
+      expect(buildPath(route, { userId: "1", postId: "2" })).toBe(
+        "/users/1/posts/2",
+      );
+    });
+
+    it("appends search params", () => {
+      const route = Route.make("/users", render);
+      expect(buildPath(route, {}, { page: "1", sort: "name" })).toBe(
+        "/users?page=1&sort=name",
+      );
+    });
+
+    it("handles both params and search params", () => {
+      const route = Route.make("/users/:id", render);
+      expect(buildPath(route, { id: "123" }, { tab: "profile" })).toBe(
+        "/users/123?tab=profile",
+      );
+    });
+
+    it("encodes search param values", () => {
+      const route = Route.make("/search", render);
+      expect(buildPath(route, {}, { q: "hello world" })).toBe(
+        "/search?q=hello%20world",
+      );
+    });
+
+    it("skips undefined search params", () => {
+      const route = Route.make("/users", render);
+      expect(
+        buildPath(
+          route,
+          {},
+          { page: "1", sort: undefined as unknown as string },
+        ),
+      ).toBe("/users?page=1");
+    });
+  });
+
+  describe("make", () => {
+    it("creates navigation with initial pathname from options", async () => {
+      const router = empty.pipe(
+        concat(Route.make("/", render)),
+        concat(Route.make("/users", render)),
+      );
+
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const nav = yield* makeNavigation(router, {
+              initialPath: "/users",
+            });
+            return yield* nav.pathname.get;
+          }),
+        ),
+      );
+
+      expect(result).toBe("/users");
+    });
+
+    it("creates navigation with initial search params", async () => {
+      const router = empty.pipe(concat(Route.make("/", render)));
+
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const nav = yield* makeNavigation(router, {
+              initialPath: "/",
+              initialSearch: "?foo=bar&baz=qux",
+            });
+            const params = yield* nav.searchParams.get;
+            return {
+              foo: params.get("foo"),
+              baz: params.get("baz"),
+            };
+          }),
+        ),
+      );
+
+      expect(result.foo).toBe("bar");
+      expect(result.baz).toBe("qux");
+    });
+
+    it("computes currentMatch from pathname", async () => {
+      const HomeRoute = Route.make("/", render);
+      const UsersRoute = Route.make("/users", render);
+
+      const router = empty.pipe(concat(HomeRoute), concat(UsersRoute));
+
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const nav = yield* makeNavigation(router, {
+              initialPath: "/users",
+            });
+            const match = yield* nav.currentMatch.get;
+            return Option.isSome(match) ? match.value.route.path : null;
+          }),
+        ),
+      );
+
+      expect(result).toBe("/users");
+    });
+
+    it("returns none when no route matches", async () => {
+      const router = empty.pipe(concat(Route.make("/", render)));
+
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const nav = yield* makeNavigation(router, {
+              initialPath: "/nonexistent",
+            });
+            return yield* nav.currentMatch.get;
+          }),
+        ),
+      );
+
+      expect(Option.isNone(result)).toBe(true);
+    });
+
+    it("extracts params in currentMatch", async () => {
+      const UserRoute = Route.make("/users/:id", render);
+      const router = empty.pipe(concat(UserRoute));
+
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const nav = yield* makeNavigation(router, {
+              initialPath: "/users/123",
+            });
+            const match = yield* nav.currentMatch.get;
+            return Option.isSome(match) ? match.value.params : null;
+          }),
+        ),
+      );
+
+      expect(result).toEqual({ id: "123" });
+    });
+  });
+
+  describe("pushPath", () => {
+    it("updates pathname state", async () => {
+      const router = empty.pipe(
+        concat(Route.make("/", render)),
+        concat(Route.make("/users", render)),
+      );
+
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const nav = yield* makeNavigation(router, { initialPath: "/" });
+
+            const before = yield* nav.pathname.get;
+            yield* nav.pushPath("/users");
+            const after = yield* nav.pathname.get;
+
+            return { before, after };
+          }),
+        ),
+      );
+
+      expect(result.before).toBe("/");
+      expect(result.after).toBe("/users");
+    });
+
+    it("calls history.pushState", async () => {
+      const router = empty.pipe(concat(Route.make("/", render)));
+
+      await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const nav = yield* makeNavigation(router, { initialPath: "/" });
+            yield* nav.pushPath("/users");
+          }),
+        ),
+      );
+
+      expect(mockWindow.history.pushState).toHaveBeenCalledWith(
+        null,
+        "",
+        "/users",
+      );
+    });
+
+    it("updates searchParams when path includes query string", async () => {
+      const router = empty.pipe(concat(Route.make("/", render)));
+
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const nav = yield* makeNavigation(router, { initialPath: "/" });
+            yield* nav.pushPath("/search?q=test");
+
+            const pathname = yield* nav.pathname.get;
+            const params = yield* nav.searchParams.get;
+
+            return { pathname, q: params.get("q") };
+          }),
+        ),
+      );
+
+      expect(result.pathname).toBe("/search");
+      expect(result.q).toBe("test");
+    });
+  });
+
+  describe("replacePath", () => {
+    it("updates pathname state", async () => {
+      const router = empty.pipe(concat(Route.make("/", render)));
+
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const nav = yield* makeNavigation(router, { initialPath: "/" });
+            yield* nav.replacePath("/users");
+            return yield* nav.pathname.get;
+          }),
+        ),
+      );
+
+      expect(result).toBe("/users");
+    });
+
+    it("calls history.replaceState", async () => {
+      const router = empty.pipe(concat(Route.make("/", render)));
+
+      await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const nav = yield* makeNavigation(router, { initialPath: "/" });
+            yield* nav.replacePath("/users");
+          }),
+        ),
+      );
+
+      expect(mockWindow.history.replaceState).toHaveBeenCalledWith(
+        null,
+        "",
+        "/users",
+      );
+    });
+  });
+
+  describe("pushRoute", () => {
+    it("navigates to route with params", async () => {
+      const UserRoute = Route.make("/users/:id", render).pipe(
+        Route.params(Schema.Struct({ id: Schema.NumberFromString })),
+      );
+
+      const router = empty.pipe(concat(UserRoute));
+
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const nav = yield* makeNavigation(router, { initialPath: "/" });
+            yield* nav.pushRoute(UserRoute, { params: { id: 123 } });
+            return yield* nav.pathname.get;
+          }),
+        ),
+      );
+
+      expect(result).toBe("/users/123");
+    });
+
+    it("navigates to route with search params", async () => {
+      const SearchRoute = Route.make("/search", render).pipe(
+        Route.searchParams(Schema.Struct({ q: Schema.String })),
+      );
+
+      const router = empty.pipe(concat(SearchRoute));
+
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const nav = yield* makeNavigation(router, { initialPath: "/" });
+            yield* nav.pushRoute(SearchRoute, { searchParams: { q: "test" } });
+
+            const pathname = yield* nav.pathname.get;
+            const params = yield* nav.searchParams.get;
+
+            return { pathname, q: params.get("q") };
+          }),
+        ),
+      );
+
+      expect(result.pathname).toBe("/search");
+      expect(result.q).toBe("test");
+    });
+
+    it("navigates to route without options", async () => {
+      const HomeRoute = Route.make("/", render);
+      const router = empty.pipe(concat(HomeRoute));
+
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const nav = yield* makeNavigation(router, {
+              initialPath: "/other",
+            });
+            yield* nav.pushRoute(HomeRoute);
+            return yield* nav.pathname.get;
+          }),
+        ),
+      );
+
+      expect(result).toBe("/");
+    });
+  });
+
+  describe("replaceRoute", () => {
+    it("replaces with route and params", async () => {
+      const UserRoute = Route.make("/users/:id", render);
+      const router = empty.pipe(concat(UserRoute));
+
+      await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const nav = yield* makeNavigation(router, { initialPath: "/" });
+            yield* nav.replaceRoute(UserRoute, { params: { id: "456" } });
+          }),
+        ),
+      );
+
+      expect(mockWindow.history.replaceState).toHaveBeenCalledWith(
+        null,
+        "",
+        "/users/456",
+      );
+    });
+  });
+
+  describe("back and forward", () => {
+    it("calls history.back()", async () => {
+      const router = empty.pipe(concat(Route.make("/", render)));
+
+      await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const nav = yield* makeNavigation(router, { initialPath: "/" });
+            yield* nav.back();
+          }),
+        ),
+      );
+
+      expect(mockWindow.history.back).toHaveBeenCalled();
+    });
+
+    it("calls history.forward()", async () => {
+      const router = empty.pipe(concat(Route.make("/", render)));
+
+      await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const nav = yield* makeNavigation(router, { initialPath: "/" });
+            yield* nav.forward();
+          }),
+        ),
+      );
+
+      expect(mockWindow.history.forward).toHaveBeenCalled();
+    });
+  });
+
+  describe("popstate handling", () => {
+    it("adds popstate listener on creation", async () => {
+      const router = empty.pipe(concat(Route.make("/", render)));
+
+      await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            yield* makeNavigation(router, { initialPath: "/" });
+            expect(mockWindow.addEventListener).toHaveBeenCalledWith(
+              "popstate",
+              expect.any(Function),
+            );
+          }),
+        ),
+      );
+    });
+
+    it("removes popstate listener on scope close", async () => {
+      const router = empty.pipe(concat(Route.make("/", render)));
+
+      await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            yield* makeNavigation(router, { initialPath: "/" });
+          }),
+        ),
+      );
+
+      expect(mockWindow.removeEventListener).toHaveBeenCalledWith(
+        "popstate",
+        expect.any(Function),
+      );
+    });
+  });
+
+  describe("SSR mode", () => {
+    it("works without window when using initialPath", async () => {
+      const originalWindow = globalThis.window;
+      // @ts-expect-error - Intentionally setting window to undefined for SSR test
+      globalThis.window = undefined;
+
+      try {
+        const router = empty.pipe(
+          concat(Route.make("/", render)),
+          concat(Route.make("/users/:id", render)),
+        );
+
+        const result = await Effect.runPromise(
+          Effect.scoped(
+            Effect.gen(function* () {
+              const nav = yield* makeNavigation(router, {
+                initialPath: "/users/123",
+                initialSearch: "?tab=profile",
+              });
+
+              const pathname = yield* nav.pathname.get;
+              const match = yield* nav.currentMatch.get;
+              const params = yield* nav.searchParams.get;
+
+              return {
+                pathname,
+                matchPath: Option.isSome(match) ? match.value.route.path : null,
+                matchParams: Option.isSome(match) ? match.value.params : null,
+                tab: params.get("tab"),
+              };
+            }),
+          ),
+        );
+
+        expect(result.pathname).toBe("/users/123");
+        expect(result.matchPath).toBe("/users/:id");
+        expect(result.matchParams).toEqual({ id: "123" });
+        expect(result.tab).toBe("profile");
+      } finally {
+        globalThis.window = originalWindow;
+      }
+    });
+
+    it("defaults to / when window is undefined and no options", async () => {
+      const originalWindow = globalThis.window;
+      // @ts-expect-error - Intentionally setting window to undefined for SSR test
+      globalThis.window = undefined;
+
+      try {
+        const router = empty.pipe(concat(Route.make("/", render)));
+
+        const result = await Effect.runPromise(
+          Effect.scoped(
+            Effect.gen(function* () {
+              const nav = yield* makeNavigation(router);
+              return yield* nav.pathname.get;
+            }),
+          ),
+        );
+
+        expect(result).toBe("/");
+      } finally {
+        globalThis.window = originalWindow;
+      }
+    });
+
+    it("navigation methods are no-op in SSR mode", async () => {
+      const originalWindow = globalThis.window;
+      // @ts-expect-error - Intentionally setting window to undefined for SSR test
+      globalThis.window = undefined;
+
+      try {
+        const router = empty.pipe(concat(Route.make("/", render)));
+
+        // These should not throw
+        await Effect.runPromise(
+          Effect.scoped(
+            Effect.gen(function* () {
+              const nav = yield* makeNavigation(router, { initialPath: "/" });
+              yield* nav.pushPath("/users");
+              yield* nav.replacePath("/posts");
+              yield* nav.back();
+              yield* nav.forward();
+
+              // But state should still update
+              const pathname = yield* nav.pathname.get;
+              expect(pathname).toBe("/posts");
+            }),
+          ),
+        );
+      } finally {
+        globalThis.window = originalWindow;
+      }
+    });
+  });
+
+  describe("Navigation module exports", () => {
+    it("exports all functions via Navigation namespace", () => {
+      expect(Navigation.buildPath).toBe(buildPath);
+      expect(Navigation.make).toBeDefined();
+      expect(Navigation.makeLayer).toBeDefined();
+      expect(Navigation.Context).toBe(NavigationContext);
+      expect(Navigation.pathname).toBeDefined();
+      expect(Navigation.searchParams).toBeDefined();
+      expect(Navigation.currentMatch).toBeDefined();
+      expect(Navigation.pushPath).toBeDefined();
+      expect(Navigation.replacePath).toBeDefined();
+      expect(Navigation.back).toBeDefined();
+      expect(Navigation.forward).toBeDefined();
+    });
+  });
+
+  describe("accessor effects", () => {
+    it("Navigation.pathname gets current pathname", async () => {
+      const router = empty.pipe(concat(Route.make("/", render)));
+      const layer = Navigation.makeLayer(router, { initialPath: "/test" });
+
+      const result = await Effect.runPromise(
+        Navigation.pathname.pipe(Effect.provide(layer)),
+      );
+
+      expect(result).toBe("/test");
+    });
+
+    it("Navigation.searchParams gets current search params", async () => {
+      const router = empty.pipe(concat(Route.make("/", render)));
+      const layer = Navigation.makeLayer(router, {
+        initialPath: "/",
+        initialSearch: "?foo=bar",
+      });
+
+      const result = await Effect.runPromise(
+        Effect.gen(function* () {
+          const params = yield* Navigation.searchParams;
+          return params.get("foo");
+        }).pipe(Effect.provide(layer)),
+      );
+
+      expect(result).toBe("bar");
+    });
+
+    it("Navigation.currentMatch gets current match", async () => {
+      const UserRoute = Route.make("/users/:id", render);
+      const router = empty.pipe(concat(UserRoute));
+      const layer = Navigation.makeLayer(router, { initialPath: "/users/42" });
+
+      const result = await Effect.runPromise(
+        Effect.gen(function* () {
+          const match = yield* Navigation.currentMatch;
+          return Option.isSome(match) ? match.value.params : null;
+        }).pipe(Effect.provide(layer)),
+      );
+
+      expect(result).toEqual({ id: "42" });
+    });
+
+    it("Navigation.pushPath navigates via context", async () => {
+      const router = empty.pipe(concat(Route.make("/", render)));
+      const layer = Navigation.makeLayer(router, { initialPath: "/" });
+
+      await Effect.runPromise(
+        Effect.gen(function* () {
+          yield* Navigation.pushPath("/users");
+          const pathname = yield* Navigation.pathname;
+          expect(pathname).toBe("/users");
+        }).pipe(Effect.provide(layer)),
+      );
+    });
+  });
+});

@@ -655,14 +655,17 @@ export const bindAttribute: {
       const el = yield* self;
       const renderer = yield* RendererContext;
 
+      // Helper to convert value for setAttribute (preserves null/undefined for removal)
+      const toAttrValue = (v: V): unknown => (v == null ? v : String(v));
+
       // Set initial value
       const initialValue = yield* readable.get;
-      yield* renderer.setAttribute(el, name, String(initialValue));
+      yield* renderer.setAttribute(el, name, toAttrValue(initialValue));
 
       // Subscribe to changes only (not values - we already set initial)
       const scope = yield* Effect.scope;
       yield* Stream.runForEach(readable.changes, (value) =>
-        renderer.setAttribute(el, name, String(value)),
+        renderer.setAttribute(el, name, toAttrValue(value)),
       ).pipe(Effect.forkIn(scope));
 
       return el;

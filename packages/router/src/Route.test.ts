@@ -1,264 +1,268 @@
 import { Effect, Schema } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { Route, routeSpecificity } from "./Route";
+import {
+  isRoute,
+  matchSegments,
+  parsePath,
+  Route,
+  routeSpecificity,
+  type RouteContext,
+} from "./Route.js";
 
-describe("Route", () => {
-  describe("Route.make", () => {
-    it("should create a route with a static path", () => {
-      const route = Route.make("/");
-      expect(route.path).toBe("/");
-      expect(route.segments).toEqual([]);
-    });
+describe("parsePath", () => {
+  it("parses static segments", () => {
+    expect(parsePath("/users")).toEqual([{ type: "static", value: "users" }]);
+    expect(parsePath("/users/list")).toEqual([
+      { type: "static", value: "users" },
+      { type: "static", value: "list" },
+    ]);
+  });
 
-    it("should parse static segments", () => {
-      const route = Route.make("/users/settings");
-      expect(route.segments).toEqual([
-        { type: "static", value: "users" },
-        { type: "static", value: "settings" },
-      ]);
-    });
+  it("parses param segments", () => {
+    expect(parsePath("/users/:id")).toEqual([
+      { type: "static", value: "users" },
+      { type: "param", name: "id" },
+    ]);
+    expect(parsePath("/:org/:repo")).toEqual([
+      { type: "param", name: "org" },
+      { type: "param", name: "repo" },
+    ]);
+  });
 
-    it("should parse param segments", () => {
-      const route = Route.make("/users/:id");
-      expect(route.segments).toEqual([
-        { type: "static", value: "users" },
-        { type: "param", name: "id" },
-      ]);
-    });
+  it("parses catch-all segments", () => {
+    expect(parsePath("/docs/*")).toEqual([
+      { type: "static", value: "docs" },
+      { type: "catchAll" },
+    ]);
+  });
 
-    it("should parse multiple params", () => {
-      const route = Route.make("/posts/:postId/comments/:commentId");
-      expect(route.segments).toEqual([
-        { type: "static", value: "posts" },
-        { type: "param", name: "postId" },
-        { type: "static", value: "comments" },
-        { type: "param", name: "commentId" },
-      ]);
-    });
+  it("handles root path", () => {
+    expect(parsePath("/")).toEqual([]);
+  });
 
-    it("should parse catch-all segment", () => {
-      const route = Route.make("/*");
-      expect(route.segments).toEqual([{ type: "catchAll" }]);
-    });
+  it("strips optional marker from params", () => {
+    expect(parsePath("/users/:id?")).toEqual([
+      { type: "static", value: "users" },
+      { type: "param", name: "id" },
+    ]);
+  });
+});
 
-    it("should parse catch-all after static segments", () => {
-      const route = Route.make("/files/*");
-      expect(route.segments).toEqual([
-        { type: "static", value: "files" },
-        { type: "catchAll" },
-      ]);
+describe("matchSegments", () => {
+  it("matches static paths", () => {
+    const segments = parsePath("/users");
+    expect(matchSegments(segments, "/users")).toEqual({});
+    expect(matchSegments(segments, "/posts")).toBeNull();
+  });
+
+  it("extracts params", () => {
+    const segments = parsePath("/users/:id");
+    expect(matchSegments(segments, "/users/123")).toEqual({ id: "123" });
+    expect(matchSegments(segments, "/users/abc")).toEqual({ id: "abc" });
+    expect(matchSegments(segments, "/users")).toBeNull();
+  });
+
+  it("extracts multiple params", () => {
+    const segments = parsePath("/users/:userId/posts/:postId");
+    expect(matchSegments(segments, "/users/1/posts/2")).toEqual({
+      userId: "1",
+      postId: "2",
     });
   });
 
-  describe("Route.match", () => {
-    it("should match root path", async () => {
-      const route = Route.make("/");
-      const result = await Effect.runPromise(route.match("/"));
-      expect(result).toEqual({});
+  it("handles catch-all", () => {
+    const segments = parsePath("/docs/*");
+    expect(matchSegments(segments, "/docs/getting-started")).toEqual({
+      "*": "getting-started",
     });
-
-    it("should match static path", async () => {
-      const route = Route.make("/users");
-      const result = await Effect.runPromise(route.match("/users"));
-      expect(result).toEqual({});
+    expect(matchSegments(segments, "/docs/api/reference")).toEqual({
+      "*": "api/reference",
     });
-
-    it("should not match different static path", async () => {
-      const route = Route.make("/users");
-      const result = await Effect.runPromise(
-        route.match("/posts").pipe(
-          Effect.map(() => "matched"),
-          Effect.catchAll((e) => Effect.succeed(e._tag)),
-        ),
-      );
-      expect(result).toBe("RouteMatchError");
-    });
-
-    it("should extract param from path", async () => {
-      const route = Route.make("/users/:id");
-      const result = await Effect.runPromise(route.match("/users/123"));
-      expect(result).toEqual({ id: "123" });
-    });
-
-    it("should extract multiple params", async () => {
-      const route = Route.make("/posts/:postId/comments/:commentId");
-      const result = await Effect.runPromise(
-        route.match("/posts/42/comments/99"),
-      );
-      expect(result).toEqual({ postId: "42", commentId: "99" });
-    });
-
-    it("should match catch-all at root", async () => {
-      const route = Route.make("/*");
-      const result = await Effect.runPromise(route.match("/anything/here"));
-      expect(result).toEqual({});
-    });
-
-    it("should match catch-all with prefix", async () => {
-      const route = Route.make("/files/*");
-      const result = await Effect.runPromise(
-        route.match("/files/path/to/file.txt"),
-      );
-      expect(result).toEqual({});
-    });
-
-    it("should not match if path has extra segments", async () => {
-      const route = Route.make("/users");
-      const result = await Effect.runPromise(
-        route.match("/users/123").pipe(
-          Effect.map(() => "matched"),
-          Effect.catchAll((e) => Effect.succeed(e.reason)),
-        ),
-      );
-      expect(result).toBe("no-match");
-    });
-
-    it("should not match if path is missing segments", async () => {
-      const route = Route.make("/users/:id");
-      const result = await Effect.runPromise(
-        route.match("/users").pipe(
-          Effect.map(() => "matched"),
-          Effect.catchAll((e) => Effect.succeed(e.reason)),
-        ),
-      );
-      expect(result).toBe("no-match");
-    });
+    expect(matchSegments(segments, "/docs")).toEqual({ "*": "" });
   });
 
-  describe("Route.match with Schema validation", () => {
-    it("should validate params with Schema", async () => {
-      const route = Route.make("/users/:id", {
-        params: Schema.Struct({ id: Schema.String }),
-      });
-      const result = await Effect.runPromise(route.match("/users/abc"));
-      expect(result).toEqual({ id: "abc" });
-    });
-
-    it("should fail validation with wrong schema", async () => {
-      const route = Route.make("/users/:id", {
-        params: Schema.Struct({ id: Schema.NumberFromString }),
-      });
-      const result = await Effect.runPromise(
-        route.match("/users/not-a-number").pipe(
-          Effect.map(() => "matched"),
-          Effect.catchAll((e) => Effect.succeed(e.reason)),
-        ),
-      );
-      expect(result).toBe("validation-failed");
-    });
-
-    it("should transform params via Schema", async () => {
-      const route = Route.make("/users/:id", {
-        params: Schema.Struct({ id: Schema.NumberFromString }),
-      });
-      const result = await Effect.runPromise(route.match("/users/42"));
-      expect(result).toEqual({ id: 42 });
-    });
+  it("matches root path", () => {
+    const segments = parsePath("/");
+    expect(matchSegments(segments, "/")).toEqual({});
+    expect(matchSegments(segments, "/users")).toBeNull();
   });
 
-  describe("routeSpecificity", () => {
-    it("should give higher score to static segments", () => {
-      const staticRoute = Route.make("/users");
-      const paramRoute = Route.make("/:anything");
+  it("rejects paths with extra segments", () => {
+    const segments = parsePath("/users");
+    expect(matchSegments(segments, "/users/123")).toBeNull();
+  });
+});
 
-      expect(routeSpecificity(staticRoute.segments)).toBeGreaterThan(
-        routeSpecificity(paramRoute.segments),
-      );
-    });
-
-    it("should give higher score to params than catch-all", () => {
-      const paramRoute = Route.make("/:id");
-      const catchAllRoute = Route.make("/*");
-
-      expect(routeSpecificity(paramRoute.segments)).toBeGreaterThan(
-        routeSpecificity(catchAllRoute.segments),
-      );
-    });
-
-    it("should give higher score to longer paths", () => {
-      const shortRoute = Route.make("/users");
-      const longRoute = Route.make("/users/settings");
-
-      expect(routeSpecificity(longRoute.segments)).toBeGreaterThan(
-        routeSpecificity(shortRoute.segments),
-      );
-    });
-
-    it("should prioritize static segments over param segments at same depth", () => {
-      const staticRoute = Route.make("/users/settings");
-      const paramRoute = Route.make("/users/:id");
-
-      expect(routeSpecificity(staticRoute.segments)).toBeGreaterThan(
-        routeSpecificity(paramRoute.segments),
-      );
-    });
+describe("routeSpecificity", () => {
+  it("ranks static higher than params", () => {
+    const staticRoute = parsePath("/users/list");
+    const paramRoute = parsePath("/users/:id");
+    expect(routeSpecificity(staticRoute)).toBeGreaterThan(
+      routeSpecificity(paramRoute),
+    );
   });
 
-  describe("Route with loader", () => {
-    it("should create a route without a loader", () => {
-      const route = Route.make("/users");
-      expect(route.loader).toBeUndefined();
+  it("ranks params higher than catch-all", () => {
+    const paramRoute = parsePath("/docs/:page");
+    const catchAllRoute = parsePath("/docs/*");
+    expect(routeSpecificity(paramRoute)).toBeGreaterThan(
+      routeSpecificity(catchAllRoute),
+    );
+  });
+
+  it("ranks longer paths higher (same segment types)", () => {
+    const longer = parsePath("/users/list/all");
+    const shorter = parsePath("/users/list");
+    expect(routeSpecificity(longer)).toBeGreaterThan(routeSpecificity(shorter));
+  });
+});
+
+describe("Route.make", () => {
+  it("creates a route with path and render function", () => {
+    const render = () => Effect.succeed(document.createElement("div"));
+    const route = Route.make("/users", render);
+
+    expect(route.path).toBe("/users");
+    expect(route.render).toBe(render);
+    expect(route.segments).toEqual([{ type: "static", value: "users" }]);
+    expect(route.paramsSchema).toBeNull();
+    expect(route.guard).toBeNull();
+    expect(route.animation).toBeNull();
+  });
+
+  it("is pipeable", () => {
+    const render = () => Effect.succeed(document.createElement("div"));
+    const route = Route.make("/users/:id", render).pipe(
+      Route.withAnimation({ enter: "fade-in" }),
+    );
+
+    expect(route.animation).toEqual({ enter: "fade-in" });
+  });
+
+  it("creates unique context tag per route", () => {
+    const render = () => Effect.succeed(document.createElement("div"));
+    const route1 = Route.make("/users", render);
+    const route2 = Route.make("/posts", render);
+
+    // Different routes should have different context tags
+    expect(route1.Params.key).not.toBe(route2.Params.key);
+  });
+});
+
+describe("Route.params", () => {
+  it("adds a params schema to the route", () => {
+    const render = () => Effect.succeed(document.createElement("div"));
+    const route = Route.make("/users/:id", render).pipe(
+      Route.params(Schema.Struct({ id: Schema.NumberFromString })),
+    );
+
+    expect(route.paramsSchema).not.toBeNull();
+  });
+
+  it("provides typed params via context", async () => {
+    const render = () => Effect.succeed(document.createElement("div"));
+    const UserRoute = Route.make("/users/:id", render).pipe(
+      Route.params(Schema.Struct({ id: Schema.NumberFromString })),
+    );
+
+    // Simulate providing the context
+    const ctx: RouteContext<{ id: number }, Record<string, string>> = {
+      params: { id: 123 },
+      searchParams: {},
+    };
+
+    const result = await Effect.runPromise(
+      UserRoute.params.pipe(Effect.provideService(UserRoute.Params, ctx)),
+    );
+
+    expect(result).toEqual({ id: 123 });
+  });
+});
+
+describe("Route.searchParams", () => {
+  it("adds a search params schema to the route", () => {
+    const render = () => Effect.succeed(document.createElement("div"));
+    const route = Route.make("/search", render).pipe(
+      Route.searchParams(
+        Schema.Struct({
+          q: Schema.String,
+          page: Schema.optional(Schema.NumberFromString),
+        }),
+      ),
+    );
+
+    expect(route.searchParamsSchema).not.toBeNull();
+  });
+});
+
+describe("Route.rawParams", () => {
+  it("keeps params as raw strings", () => {
+    const render = () => Effect.succeed(document.createElement("div"));
+    const route = Route.make("/users/:id", render).pipe(Route.rawParams);
+
+    expect(route.paramsSchema).toBeNull();
+  });
+});
+
+describe("Route.withGuard", () => {
+  it("adds a guard condition", () => {
+    const render = () => Effect.succeed(document.createElement("div"));
+    const isAuthenticated = { get: Effect.succeed(true) } as any;
+
+    const route = Route.make("/dashboard", render).pipe(
+      Route.withGuard(isAuthenticated, { redirect: "/login" }),
+    );
+
+    expect(route.guard).toBe(isAuthenticated);
+    expect(route.guardOptions).toEqual({ redirect: "/login" });
+  });
+});
+
+describe("Route.withAnimation", () => {
+  it("adds animation options", () => {
+    const render = () => Effect.succeed(document.createElement("div"));
+    const route = Route.make("/modal", render).pipe(
+      Route.withAnimation({
+        enter: "slide-up",
+        exit: "slide-down",
+      }),
+    );
+
+    expect(route.animation).toEqual({
+      enter: "slide-up",
+      exit: "slide-down",
     });
+  });
+});
 
-    it("should create a route with a loader", () => {
-      const route = Route.make("/users/:id", {
-        params: Schema.Struct({ id: Schema.String }),
-        loader: (params) => Effect.succeed({ user: { id: params.id } }),
-      });
-      expect(route.loader).toBeDefined();
-    });
+describe("isRoute", () => {
+  it("returns true for routes", () => {
+    const render = () => Effect.succeed(document.createElement("div"));
+    const route = Route.make("/users", render);
+    expect(isRoute(route)).toBe(true);
+  });
 
-    it("should execute loader with params", async () => {
-      const route = Route.make("/users/:id", {
-        params: Schema.Struct({ id: Schema.String }),
-        loader: (params: { id: string }) =>
-          Effect.succeed({ user: { id: params.id, name: "Test User" } }),
-      });
+  it("returns false for non-routes", () => {
+    expect(isRoute({})).toBe(false);
+    expect(isRoute(null)).toBe(false);
+    expect(isRoute("/users")).toBe(false);
+  });
+});
 
-      const params = await Effect.runPromise(route.match("/users/123"));
-      expect(params).toEqual({ id: "123" });
+describe("Route composition", () => {
+  it("allows chaining multiple combinators", () => {
+    const render = () => Effect.succeed(document.createElement("div"));
+    const isAuth = Effect.succeed(true);
 
-      const data = await Effect.runPromise(
-        route.loader!(params as { id: string }),
-      );
-      expect(data).toEqual({ user: { id: "123", name: "Test User" } });
-    });
+    const route = Route.make("/users/:id", render).pipe(
+      Route.params(Schema.Struct({ id: Schema.NumberFromString })),
+      Route.withGuard(isAuth, { redirect: "/login" }),
+      Route.withAnimation({ enter: "fade-in", exit: "fade-out" }),
+    );
 
-    it("should support async loader", async () => {
-      const route = Route.make("/users/:id", {
-        params: Schema.Struct({ id: Schema.String }),
-        loader: (params: { id: string }) =>
-          Effect.gen(function* () {
-            yield* Effect.sleep("1 millis");
-            return { user: { id: params.id } };
-          }),
-      });
-
-      const params = await Effect.runPromise(route.match("/users/42"));
-      const data = await Effect.runPromise(
-        route.loader!(params as { id: string }),
-      );
-      expect(data).toEqual({ user: { id: "42" } });
-    });
-
-    it("should support loader that can fail", async () => {
-      const route = Route.make("/users/:id", {
-        params: Schema.Struct({ id: Schema.String }),
-        loader: (params: { id: string }) =>
-          params.id === "404"
-            ? Effect.fail(new Error("User not found"))
-            : Effect.succeed({ user: { id: params.id } }),
-      });
-
-      const params = await Effect.runPromise(route.match("/users/404"));
-      const result = await Effect.runPromise(
-        route.loader!(params as { id: string }).pipe(
-          Effect.map(() => "success"),
-          Effect.catchAll(() => Effect.succeed("failed")),
-        ),
-      );
-      expect(result).toBe("failed");
-    });
+    expect(route.paramsSchema).not.toBeNull();
+    expect(route.guard).toBe(isAuth);
+    expect(route.animation).toEqual({ enter: "fade-in", exit: "fade-out" });
   });
 });

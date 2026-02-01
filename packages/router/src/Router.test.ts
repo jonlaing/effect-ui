@@ -1,989 +1,515 @@
 import { Effect, Option, Schema } from "effect";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { Route } from "./Route";
-import { Router } from "./Router";
-import type { ActionResult, LoaderResult } from "./types";
+import { Route } from "./Route.js";
+import {
+  concat,
+  empty,
+  fallback,
+  findMatch,
+  guard,
+  isRouter,
+  layout,
+  parseParams,
+  parseSearchParams,
+  prefixAll,
+  Router,
+} from "./Router.js";
 
-// Mock window and history for tests
-const mockHistory: string[] = [];
-let mockPathname = "/";
-let mockSearch = "";
-
-const mockWindow = {
-  location: {
-    get pathname() {
-      return mockPathname;
-    },
-    get search() {
-      return mockSearch;
-    },
-    origin: "http://localhost",
-  },
-  history: {
-    pushState: vi.fn((_state: unknown, _title: string, url: string) => {
-      const urlObj = new URL(url, "http://localhost");
-      mockPathname = urlObj.pathname;
-      mockSearch = urlObj.search;
-      mockHistory.push(url);
-    }),
-    replaceState: vi.fn((_state: unknown, _title: string, url: string) => {
-      const urlObj = new URL(url, "http://localhost");
-      mockPathname = urlObj.pathname;
-      mockSearch = urlObj.search;
-    }),
-    back: vi.fn(),
-    forward: vi.fn(),
-  },
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
-};
-
-// Replace global window
-vi.stubGlobal("window", mockWindow);
+// Helper to create a simple render function for tests
+const render = () => Effect.succeed(document.createElement("div"));
 
 describe("Router", () => {
-  beforeEach(() => {
-    mockPathname = "/";
-    mockSearch = "";
-    mockHistory.length = 0;
-    vi.clearAllMocks();
-  });
-
-  describe("Router.make", () => {
-    it("should create a router with routes", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make({
-              home: Route.make("/"),
-              users: Route.make("/users"),
-            });
-            return {
-              pathname: yield* router.pathname.get,
-              currentRoute: yield* router.currentRoute.get,
-            };
-          }),
-        ),
-      );
-
-      expect(result.pathname).toBe("/");
-      expect(result.currentRoute).toEqual(Option.some("home"));
+  describe("empty", () => {
+    it("creates an empty router", () => {
+      expect(empty.routes).toEqual([]);
+      expect(empty.fallback).toBeNull();
+      expect(empty.layouts).toEqual([]);
     });
 
-    it("should use initialPath option", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                home: Route.make("/"),
-                users: Route.make("/users"),
-              },
-              { initialPath: "/users" },
-            );
-            return {
-              pathname: yield* router.pathname.get,
-              currentRoute: yield* router.currentRoute.get,
-            };
-          }),
-        ),
-      );
-
-      expect(result.pathname).toBe("/users");
-      expect(result.currentRoute).toEqual(Option.some("users"));
-    });
-
-    it("should use initialSearch option", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                home: Route.make("/"),
-              },
-              { initialPath: "/", initialSearch: "?foo=bar&baz=qux" },
-            );
-
-            const params = yield* router.searchParams.get;
-            return {
-              foo: params.get("foo"),
-              baz: params.get("baz"),
-            };
-          }),
-        ),
-      );
-
-      expect(result.foo).toBe("bar");
-      expect(result.baz).toBe("qux");
-    });
-
-    it("should return null currentRoute when no match", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                home: Route.make("/"),
-                users: Route.make("/users"),
-              },
-              { initialPath: "/nonexistent" },
-            );
-            return yield* router.currentRoute.get;
-          }),
-        ),
-      );
-
-      expect(result).toEqual(Option.none());
+    it("is pipeable", () => {
+      const router = empty.pipe(concat(Route.make("/", render)));
+      expect(router.routes.length).toBe(1);
     });
   });
 
-  describe("Route-specific state", () => {
-    it("should track isActive for each route", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                home: Route.make("/"),
-                users: Route.make("/users"),
-              },
-              { initialPath: "/" },
-            );
-            return {
-              homeActive: yield* router.routes.home.isActive.get,
-              usersActive: yield* router.routes.users.isActive.get,
-            };
-          }),
-        ),
-      );
+  describe("concat", () => {
+    it("adds a single route to a router", () => {
+      const HomeRoute = Route.make("/", render);
+      const router = empty.pipe(concat(HomeRoute));
 
-      expect(result.homeActive).toBe(true);
-      expect(result.usersActive).toBe(false);
+      expect(router.routes.length).toBe(1);
+      expect(router.routes[0].path).toBe("/");
     });
 
-    it("should provide params for matched route", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                home: Route.make("/"),
-                user: Route.make("/users/:id", {
-                  params: Schema.Struct({ id: Schema.String }),
-                }),
-              },
-              { initialPath: "/users/123" },
-            );
-            return yield* router.routes.user.params.get;
-          }),
-        ),
+    it("adds multiple routes", () => {
+      const HomeRoute = Route.make("/", render);
+      const UsersRoute = Route.make("/users", render);
+
+      const router = empty.pipe(concat(HomeRoute), concat(UsersRoute));
+
+      expect(router.routes.length).toBe(2);
+      expect(router.routes[0].path).toBe("/");
+      expect(router.routes[1].path).toBe("/users");
+    });
+
+    it("merges another router", () => {
+      const HomeRoute = Route.make("/", render);
+      const UsersRoute = Route.make("/users", render);
+      const PostsRoute = Route.make("/posts", render);
+
+      const mainRouter = empty.pipe(concat(HomeRoute));
+      const apiRouter = empty.pipe(concat(UsersRoute), concat(PostsRoute));
+
+      const combined = mainRouter.pipe(concat(apiRouter));
+
+      expect(combined.routes.length).toBe(3);
+      expect(combined.routes.map((r) => r.path)).toEqual([
+        "/",
+        "/users",
+        "/posts",
+      ]);
+    });
+
+    it("preserves fallback when merging routers", () => {
+      const fallbackRender = () =>
+        Effect.succeed(document.createElement("span"));
+
+      const router1 = empty.pipe(
+        concat(Route.make("/", render)),
+        fallback(fallbackRender),
       );
 
+      const router2 = empty.pipe(concat(Route.make("/users", render)));
+
+      // router2's fallback is null, so router1's fallback should be preserved
+      const combined = router2.pipe(concat(router1));
+      expect(combined.fallback).toBe(fallbackRender);
+    });
+
+    it("overrides fallback when merging router with fallback", () => {
+      const fallback1 = () => Effect.succeed(document.createElement("span"));
+      const fallback2 = () => Effect.succeed(document.createElement("div"));
+
+      const router1 = empty.pipe(fallback(fallback1));
+      const router2 = empty.pipe(fallback(fallback2));
+
+      const combined = router1.pipe(concat(router2));
+      expect(combined.fallback).toBe(fallback2);
+    });
+
+    it("combines layouts from both routers", () => {
+      const layout1 = (children: any) => children;
+      const layout2 = (children: any) => children;
+
+      const router1 = empty.pipe(layout(layout1));
+      const router2 = empty.pipe(layout(layout2));
+
+      const combined = router1.pipe(concat(router2));
+      expect(combined.layouts.length).toBe(2);
+      expect(combined.layouts[0]).toBe(layout1);
+      expect(combined.layouts[1]).toBe(layout2);
+    });
+  });
+
+  describe("prefixAll", () => {
+    it("adds prefix to all routes", () => {
+      const router = empty.pipe(
+        concat(Route.make("/", render)),
+        concat(Route.make("/users", render)),
+        prefixAll("/admin"),
+      );
+
+      expect(router.routes[0].path).toBe("/admin");
+      expect(router.routes[1].path).toBe("/admin/users");
+    });
+
+    it("handles trailing slash in prefix", () => {
+      const router = empty.pipe(
+        concat(Route.make("/users", render)),
+        prefixAll("/api/"),
+      );
+
+      expect(router.routes[0].path).toBe("/api/users");
+    });
+
+    it("updates segments after prefixing", () => {
+      const router = empty.pipe(
+        concat(Route.make("/users/:id", render)),
+        prefixAll("/api"),
+      );
+
+      expect(router.routes[0].segments).toEqual([
+        { type: "static", value: "api" },
+        { type: "static", value: "users" },
+        { type: "param", name: "id" },
+      ]);
+    });
+  });
+
+  describe("fallback", () => {
+    it("sets the fallback render function", () => {
+      const fallbackRender = () =>
+        Effect.succeed(document.createElement("div"));
+
+      const router = empty.pipe(fallback(fallbackRender));
+
+      expect(router.fallback).toBe(fallbackRender);
+    });
+  });
+
+  describe("guard", () => {
+    it("adds guard to protected routes", () => {
+      const isAuthenticated = Effect.succeed(true);
+      const DashboardRoute = Route.make("/dashboard", render);
+
+      const protectedRouter = empty.pipe(concat(DashboardRoute));
+      const router = empty.pipe(
+        guard(isAuthenticated, protectedRouter, { redirect: "/login" }),
+      );
+
+      expect(router.routes.length).toBe(1);
+      expect(router.routes[0].guard).toBe(isAuthenticated);
+      expect(router.routes[0].guardOptions).toEqual({ redirect: "/login" });
+    });
+
+    it("adds guard with fallback option", () => {
+      const isAuthenticated = Effect.succeed(false);
+      const fallbackRender = () =>
+        Effect.succeed(document.createElement("div"));
+
+      const protectedRouter = empty.pipe(
+        concat(Route.make("/dashboard", render)),
+      );
+
+      const router = empty.pipe(
+        guard(isAuthenticated, protectedRouter, { fallback: fallbackRender }),
+      );
+
+      expect(router.routes[0].guardOptions).toEqual({
+        fallback: fallbackRender,
+      });
+    });
+
+    it("combines public and protected routes", () => {
+      const isAuthenticated = Effect.succeed(true);
+
+      const publicRoutes = empty.pipe(
+        concat(Route.make("/", render)),
+        concat(Route.make("/login", render)),
+      );
+
+      const protectedRoutes = empty.pipe(
+        concat(Route.make("/dashboard", render)),
+        concat(Route.make("/profile", render)),
+      );
+
+      const router = publicRoutes.pipe(
+        guard(isAuthenticated, protectedRoutes, { redirect: "/login" }),
+      );
+
+      expect(router.routes.length).toBe(4);
+      // Public routes should not have guards
+      expect(router.routes[0].guard).toBeNull();
+      expect(router.routes[1].guard).toBeNull();
+      // Protected routes should have guards
+      expect(router.routes[2].guard).toBe(isAuthenticated);
+      expect(router.routes[3].guard).toBe(isAuthenticated);
+    });
+  });
+
+  describe("layout", () => {
+    it("adds a layout wrapper", () => {
+      const wrapper = (children: any) => children;
+
+      const router = empty.pipe(
+        concat(Route.make("/", render)),
+        layout(wrapper),
+      );
+
+      expect(router.layouts.length).toBe(1);
+      expect(router.layouts[0]).toBe(wrapper);
+    });
+
+    it("allows multiple nested layouts", () => {
+      const innerLayout = (children: any) => children;
+      const outerLayout = (children: any) => children;
+
+      const router = empty.pipe(
+        concat(Route.make("/", render)),
+        layout(innerLayout),
+        layout(outerLayout),
+      );
+
+      expect(router.layouts.length).toBe(2);
+      expect(router.layouts[0]).toBe(innerLayout);
+      expect(router.layouts[1]).toBe(outerLayout);
+    });
+  });
+
+  describe("findMatch", () => {
+    it("finds matching route for pathname", () => {
+      const HomeRoute = Route.make("/", render);
+      const UsersRoute = Route.make("/users", render);
+
+      const router = empty.pipe(concat(HomeRoute), concat(UsersRoute));
+
+      const homeMatch = findMatch(router, "/");
+      expect(Option.isSome(homeMatch)).toBe(true);
+      if (Option.isSome(homeMatch)) {
+        expect(homeMatch.value.route.path).toBe("/");
+        expect(homeMatch.value.params).toEqual({});
+      }
+
+      const usersMatch = findMatch(router, "/users");
+      expect(Option.isSome(usersMatch)).toBe(true);
+      if (Option.isSome(usersMatch)) {
+        expect(usersMatch.value.route.path).toBe("/users");
+      }
+    });
+
+    it("extracts params from matching route", () => {
+      const UserRoute = Route.make("/users/:id", render);
+      const router = empty.pipe(concat(UserRoute));
+
+      const match = findMatch(router, "/users/123");
+      expect(Option.isSome(match)).toBe(true);
+      if (Option.isSome(match)) {
+        expect(match.value.params).toEqual({ id: "123" });
+      }
+    });
+
+    it("returns none when no route matches", () => {
+      const router = empty.pipe(concat(Route.make("/", render)));
+
+      const match = findMatch(router, "/nonexistent");
+      expect(Option.isNone(match)).toBe(true);
+    });
+
+    it("matches more specific routes first", () => {
+      const router = empty.pipe(
+        concat(Route.make("/users/:id", render)),
+        concat(Route.make("/users/settings", render)),
+      );
+
+      // Static "settings" should match before param ":id"
+      const match = findMatch(router, "/users/settings");
+      expect(Option.isSome(match)).toBe(true);
+      if (Option.isSome(match)) {
+        expect(match.value.route.path).toBe("/users/settings");
+      }
+    });
+
+    it("falls back to param routes when no static match", () => {
+      const router = empty.pipe(
+        concat(Route.make("/users/:id", render)),
+        concat(Route.make("/users/settings", render)),
+      );
+
+      const match = findMatch(router, "/users/123");
+      expect(Option.isSome(match)).toBe(true);
+      if (Option.isSome(match)) {
+        expect(match.value.route.path).toBe("/users/:id");
+        expect(match.value.params).toEqual({ id: "123" });
+      }
+    });
+
+    it("matches catch-all routes", () => {
+      const router = empty.pipe(
+        concat(Route.make("/", render)),
+        concat(Route.make("/docs/*", render)),
+      );
+
+      const match = findMatch(router, "/docs/api/reference");
+      expect(Option.isSome(match)).toBe(true);
+      if (Option.isSome(match)) {
+        expect(match.value.route.path).toBe("/docs/*");
+        expect(match.value.params).toEqual({ "*": "api/reference" });
+      }
+    });
+
+    it("prefers more specific routes over catch-all", () => {
+      const router = empty.pipe(
+        concat(Route.make("/*", render)),
+        concat(Route.make("/users", render)),
+      );
+
+      const match = findMatch(router, "/users");
+      expect(Option.isSome(match)).toBe(true);
+      if (Option.isSome(match)) {
+        expect(match.value.route.path).toBe("/users");
+      }
+    });
+  });
+
+  describe("parseParams", () => {
+    it("returns raw params when no schema", async () => {
+      const route = Route.make("/users/:id", render);
+      const rawParams = { id: "123" };
+
+      const result = await Effect.runPromise(parseParams(route, rawParams));
       expect(result).toEqual({ id: "123" });
     });
 
-    it("should return null params for non-matched route", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                home: Route.make("/"),
-                user: Route.make("/users/:id"),
-              },
-              { initialPath: "/" },
-            );
-            return yield* router.routes.user.params.get;
-          }),
-        ),
+    it("validates and transforms params with schema", async () => {
+      const route = Route.make("/users/:id", render).pipe(
+        Route.params(Schema.Struct({ id: Schema.NumberFromString })),
       );
+      const rawParams = { id: "123" };
 
-      expect(result).toBe(null);
+      const result = await Effect.runPromise(parseParams(route, rawParams));
+      expect(result).toEqual({ id: 123 });
+    });
+
+    it("fails on invalid params", async () => {
+      const route = Route.make("/users/:id", render).pipe(
+        Route.params(Schema.Struct({ id: Schema.NumberFromString })),
+      );
+      const rawParams = { id: "not-a-number" };
+
+      await expect(
+        Effect.runPromise(parseParams(route, rawParams)),
+      ).rejects.toThrow();
     });
   });
 
-  describe("Route matching priority", () => {
-    it("should match more specific routes first", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                userSettings: Route.make("/users/settings"),
-                user: Route.make("/users/:id"),
-                catchAll: Route.make("/*"),
-              },
-              { initialPath: "/users/settings" },
-            );
-            return yield* router.currentRoute.get;
-          }),
-        ),
-      );
+  describe("parseSearchParams", () => {
+    it("returns raw search params when no schema", async () => {
+      const route = Route.make("/search", render);
+      const searchParams = new URLSearchParams("q=test&page=1");
 
-      // Should match static "settings" before param ":id"
-      expect(result).toEqual(Option.some("userSettings"));
+      const result = await Effect.runPromise(
+        parseSearchParams(route, searchParams),
+      );
+      expect(result).toEqual({ q: "test", page: "1" });
     });
 
-    it("should fall back to param route when no static match", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                userSettings: Route.make("/users/settings"),
-                user: Route.make("/users/:id"),
-                catchAll: Route.make("/*"),
-              },
-              { initialPath: "/users/123" },
-            );
-            return yield* router.currentRoute.get;
+    it("validates and transforms search params with schema", async () => {
+      const route = Route.make("/search", render).pipe(
+        Route.searchParams(
+          Schema.Struct({
+            q: Schema.String,
+            page: Schema.NumberFromString,
           }),
         ),
       );
+      const searchParams = new URLSearchParams("q=test&page=2");
 
-      expect(result).toEqual(Option.some("user"));
-    });
-
-    it("should fall back to catch-all when nothing else matches", async () => {
       const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                home: Route.make("/"),
-                users: Route.make("/users"),
-                catchAll: Route.make("/*"),
-              },
-              { initialPath: "/something/random" },
-            );
-            return yield* router.currentRoute.get;
-          }),
-        ),
+        parseSearchParams(route, searchParams),
       );
-
-      expect(result).toEqual(Option.some("catchAll"));
+      expect(result).toEqual({ q: "test", page: 2 });
     });
   });
 
-  describe("Navigation", () => {
-    it("should push to history", async () => {
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make({
-              home: Route.make("/"),
-              users: Route.make("/users"),
-            });
-
-            yield* router.push("/users");
-
-            const pathname = yield* router.pathname.get;
-            expect(pathname).toBe("/users");
-            expect(mockWindow.history.pushState).toHaveBeenCalled();
-          }),
-        ),
-      );
+  describe("isRouter", () => {
+    it("returns true for routers", () => {
+      expect(isRouter(empty)).toBe(true);
+      expect(isRouter(empty.pipe(concat(Route.make("/", render))))).toBe(true);
     });
 
-    it("should replace history", async () => {
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make({
-              home: Route.make("/"),
-              users: Route.make("/users"),
-            });
-
-            yield* router.replace("/users");
-
-            const pathname = yield* router.pathname.get;
-            expect(pathname).toBe("/users");
-            expect(mockWindow.history.replaceState).toHaveBeenCalled();
-          }),
-        ),
-      );
-    });
-
-    it("should call history.back()", async () => {
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make({
-              home: Route.make("/"),
-            });
-
-            yield* router.back();
-            expect(mockWindow.history.back).toHaveBeenCalled();
-          }),
-        ),
-      );
-    });
-
-    it("should call history.forward()", async () => {
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make({
-              home: Route.make("/"),
-            });
-
-            yield* router.forward();
-            expect(mockWindow.history.forward).toHaveBeenCalled();
-          }),
-        ),
-      );
-    });
-
-    it("should update route state after navigation", async () => {
-      // Note: currentRoute is derived from pathname, so after push the
-      // pathname changes but currentRoute is computed lazily.
-      // We verify the pathname updates correctly instead.
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make({
-              home: Route.make("/"),
-              users: Route.make("/users"),
-            });
-
-            const beforePath = yield* router.pathname.get;
-            yield* router.push("/users");
-            const afterPath = yield* router.pathname.get;
-
-            return { beforePath, afterPath };
-          }),
-        ),
-      );
-
-      expect(result.beforePath).toBe("/");
-      expect(result.afterPath).toBe("/users");
+    it("returns false for non-routers", () => {
+      expect(isRouter({})).toBe(false);
+      expect(isRouter(null)).toBe(false);
+      expect(isRouter(Route.make("/", render))).toBe(false);
     });
   });
 
-  describe("Search params", () => {
-    it("should expose searchParams readable", async () => {
-      mockSearch = "?foo=bar&baz=qux";
-
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make({
-              home: Route.make("/"),
-            });
-
-            const params = yield* router.searchParams.get;
-            return {
-              foo: params.get("foo"),
-              baz: params.get("baz"),
-            };
-          }),
-        ),
-      );
-
-      expect(result.foo).toBe("bar");
-      expect(result.baz).toBe("qux");
-    });
-
-    it("should update searchParams on navigation", async () => {
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make({
-              home: Route.make("/"),
-            });
-
-            yield* router.push("/?test=value");
-
-            const params = yield* router.searchParams.get;
-            expect(params.get("test")).toBe("value");
-          }),
-        ),
-      );
+  describe("Router module export", () => {
+    it("exports all functions via Router namespace", () => {
+      expect(Router.empty).toBe(empty);
+      expect(Router.concat).toBe(concat);
+      expect(Router.prefixAll).toBe(prefixAll);
+      expect(Router.fallback).toBe(fallback);
+      expect(Router.guard).toBe(guard);
+      expect(Router.layout).toBe(layout);
+      expect(Router.findMatch).toBe(findMatch);
+      expect(Router.parseParams).toBe(parseParams);
+      expect(Router.parseSearchParams).toBe(parseSearchParams);
+      expect(Router.isRouter).toBe(isRouter);
     });
   });
 
-  describe("Cleanup", () => {
-    it("should add and remove popstate listener", async () => {
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            yield* Router.make({
-              home: Route.make("/"),
-            });
+  describe("composition examples", () => {
+    it("builds a complete router with all features", () => {
+      const isAuthenticated = Effect.succeed(true);
 
-            expect(mockWindow.addEventListener).toHaveBeenCalledWith(
-              "popstate",
-              expect.any(Function),
-            );
-          }),
-        ),
+      // Public routes
+      const publicRouter = empty.pipe(
+        concat(Route.make("/", render)),
+        concat(Route.make("/login", render)),
+        concat(Route.make("/about", render)),
       );
 
-      // After scope closes, removeEventListener should be called
-      expect(mockWindow.removeEventListener).toHaveBeenCalledWith(
-        "popstate",
-        expect.any(Function),
-      );
-    });
-  });
-
-  describe("SSR mode", () => {
-    it("should work without window when using initialPath and initialSearch", async () => {
-      // Temporarily remove window
-      const originalWindow = globalThis.window;
-      // @ts-expect-error - Intentionally setting window to undefined for SSR test
-      globalThis.window = undefined;
-
-      try {
-        const result = await Effect.runPromise(
-          Effect.scoped(
-            Effect.gen(function* () {
-              const router = yield* Router.make(
-                {
-                  home: Route.make("/"),
-                  users: Route.make("/users/:id", {
-                    params: Schema.Struct({ id: Schema.String }),
-                  }),
-                },
-                { initialPath: "/users/123", initialSearch: "?tab=profile" },
-              );
-
-              return {
-                pathname: yield* router.pathname.get,
-                currentRoute: yield* router.currentRoute.get,
-                params: yield* router.routes.users.params.get,
-                search: (yield* router.searchParams.get).get("tab"),
-              };
-            }),
-          ),
-        );
-
-        expect(result.pathname).toBe("/users/123");
-        expect(result.currentRoute).toEqual(Option.some("users"));
-        expect(result.params).toEqual({ id: "123" });
-        expect(result.search).toBe("profile");
-      } finally {
-        // Restore window
-        globalThis.window = originalWindow;
-      }
-    });
-
-    it("should default to / and empty search when window is undefined and no options", async () => {
-      // Temporarily remove window
-      const originalWindow = globalThis.window;
-      // @ts-expect-error - Intentionally setting window to undefined for SSR test
-      globalThis.window = undefined;
-
-      try {
-        const result = await Effect.runPromise(
-          Effect.scoped(
-            Effect.gen(function* () {
-              const router = yield* Router.make({
-                home: Route.make("/"),
-              });
-
-              return {
-                pathname: yield* router.pathname.get,
-                currentRoute: yield* router.currentRoute.get,
-                searchSize: (yield* router.searchParams.get).size,
-              };
-            }),
-          ),
-        );
-
-        expect(result.pathname).toBe("/");
-        expect(result.currentRoute).toEqual(Option.some("home"));
-        expect(result.searchSize).toBe(0);
-      } finally {
-        // Restore window
-        globalThis.window = originalWindow;
-      }
-    });
-
-    it("should not call push/replace/back/forward in SSR mode", async () => {
-      // Temporarily remove window
-      const originalWindow = globalThis.window;
-      // @ts-expect-error - Intentionally setting window to undefined for SSR test
-      globalThis.window = undefined;
-
-      try {
-        await Effect.runPromise(
-          Effect.scoped(
-            Effect.gen(function* () {
-              const router = yield* Router.make(
-                {
-                  home: Route.make("/"),
-                  users: Route.make("/users"),
-                },
-                { initialPath: "/" },
-              );
-
-              // These should not throw in SSR mode
-              yield* router.push("/users");
-              yield* router.replace("/");
-              yield* router.back();
-              yield* router.forward();
-
-              // Pathname shouldn't change since there's no browser history
-              const pathname = yield* router.pathname.get;
-              expect(pathname).toBe("/");
-            }),
-          ),
-        );
-      } finally {
-        // Restore window
-        globalThis.window = originalWindow;
-      }
-    });
-  });
-
-  describe("executeLoader", () => {
-    it("should return null when no route matches", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                users: Route.make("/users"),
-              },
-              { initialPath: "/nonexistent" },
-            );
-            // Type assertion needed because TypeScript infers unknown requirements
-            return yield* router.executeLoader() as Effect.Effect<LoaderResult | null>;
-          }),
-        ),
+      // Admin routes with layout and prefix
+      const adminRouter = empty.pipe(
+        concat(Route.make("/", render)), // becomes /admin
+        concat(Route.make("/users", render)), // becomes /admin/users
+        concat(Route.make("/settings", render)), // becomes /admin/settings
+        prefixAll("/admin"),
+        layout((children) => children), // AdminLayout
       );
 
-      expect(result).toBeNull();
-    });
-
-    it("should return null when matched route has no loader", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                home: Route.make("/"),
-              },
-              { initialPath: "/" },
-            );
-            // Type assertion needed because TypeScript infers unknown requirements
-            return yield* router.executeLoader() as Effect.Effect<LoaderResult | null>;
-          }),
-        ),
+      // Combine everything
+      const router = publicRouter.pipe(
+        guard(isAuthenticated, adminRouter, { redirect: "/login" }),
+        fallback(() => Effect.succeed(document.createElement("div"))),
       );
 
-      expect(result).toBeNull();
-    });
+      // Verify structure
+      expect(router.routes.length).toBe(6); // 3 public + 3 admin
+      expect(router.fallback).not.toBeNull();
 
-    it("should execute loader and return result", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                user: Route.make("/users/:id", {
-                  params: Schema.Struct({ id: Schema.String }),
-                  loader: (params) =>
-                    Effect.succeed({ user: { id: params.id, name: "Test" } }),
-                }),
-              },
-              { initialPath: "/users/123" },
-            );
-            return yield* router.executeLoader();
-          }),
-        ),
+      // Check admin routes have guards
+      const adminRoutes = router.routes.filter((r) =>
+        r.path.startsWith("/admin"),
       );
+      expect(adminRoutes.length).toBe(3);
+      adminRoutes.forEach((route) => {
+        expect(route.guard).toBe(isAuthenticated);
+      });
 
-      expect(result).toEqual({
-        routeName: "user",
-        params: { id: "123" },
-        data: { user: { id: "123", name: "Test" } },
+      // Check public routes don't have guards
+      const publicRoutes = router.routes.filter(
+        (r) => !r.path.startsWith("/admin"),
+      );
+      expect(publicRoutes.length).toBe(3);
+      publicRoutes.forEach((route) => {
+        expect(route.guard).toBeNull();
       });
     });
 
-    it("should execute async loader", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                user: Route.make("/users/:id", {
-                  params: Schema.Struct({ id: Schema.String }),
-                  loader: (params) =>
-                    Effect.gen(function* () {
-                      yield* Effect.sleep("1 millis");
-                      return { userId: params.id };
-                    }),
-                }),
-              },
-              { initialPath: "/users/456" },
-            );
-            return yield* router.executeLoader();
-          }),
-        ),
+    it("supports nested sub-routers", () => {
+      // API v1 routes
+      const apiV1 = empty.pipe(
+        concat(Route.make("/users", render)),
+        concat(Route.make("/posts", render)),
+        prefixAll("/v1"),
       );
 
-      expect(result).toEqual({
-        routeName: "user",
-        params: { id: "456" },
-        data: { userId: "456" },
-      });
-    });
-
-    it("should propagate loader errors", async () => {
-      // Create route with a loader that conditionally fails
-      const userRoute = Route.make("/users/:id", {
-        params: Schema.Struct({ id: Schema.String }),
-        loader: (params: { id: string }) =>
-          params.id === "fail"
-            ? Effect.fail(new Error("Loader failed"))
-            : Effect.succeed({ id: params.id }),
-      });
-
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              { user: userRoute },
-              { initialPath: "/users/fail" },
-            );
-            return yield* router.executeLoader().pipe(
-              Effect.map(() => "success"),
-              Effect.catchAll((e) =>
-                Effect.succeed(`failed: ${(e as Error).message}`),
-              ),
-            );
-          }),
-        ),
+      // API v2 routes
+      const apiV2 = empty.pipe(
+        concat(Route.make("/users", render)),
+        concat(Route.make("/posts", render)),
+        concat(Route.make("/comments", render)),
+        prefixAll("/v2"),
       );
 
-      expect(result).toBe("failed: Loader failed");
-    });
-
-    it("should expose route definitions", async () => {
-      const userRoute = Route.make("/users/:id", {
-        params: Schema.Struct({ id: Schema.String }),
-        loader: (params) => Effect.succeed({ id: params.id }),
-      });
-
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                home: Route.make("/"),
-                user: userRoute,
-              },
-              { initialPath: "/" },
-            );
-            return {
-              hasHome: "home" in router.definitions,
-              hasUser: "user" in router.definitions,
-              userHasLoader: router.definitions.user.loader !== undefined,
-            };
-          }),
-        ),
+      // Combined API router
+      const apiRouter = empty.pipe(
+        concat(apiV1),
+        concat(apiV2),
+        prefixAll("/api"),
       );
 
-      expect(result).toEqual({
-        hasHome: true,
-        hasUser: true,
-        userHasLoader: true,
-      });
-    });
-  });
-
-  describe("loaderState", () => {
-    it("should have initial empty state", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                home: Route.make("/"),
-              },
-              { initialPath: "/" },
-            );
-            return yield* router.loaderState.get;
-          }),
-        ),
-      );
-
-      expect(result).toEqual({
-        routeName: null,
-        params: {},
-        data: null,
-        isLoading: false,
-        error: null,
-      });
-    });
-
-    it("should be reactive (is a Readable)", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                home: Route.make("/"),
-              },
-              { initialPath: "/" },
-            );
-            // loaderState should have get method (Readable interface)
-            const state = yield* router.loaderState.get;
-            return typeof state === "object" && state !== null;
-          }),
-        ),
-      );
-
-      expect(result).toBe(true);
-    });
-  });
-
-  describe("initializeLoaderData", () => {
-    it("should initialize loader state with provided data", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                user: Route.make("/users/:id", {
-                  params: Schema.Struct({ id: Schema.String }),
-                }),
-              },
-              { initialPath: "/users/123" },
-            );
-
-            // Initialize with SSR data
-            yield* router.initializeLoaderData(
-              "user",
-              { id: "123" },
-              { name: "Alice", email: "alice@example.com" },
-            );
-
-            return yield* router.loaderState.get;
-          }),
-        ),
-      );
-
-      expect(result).toEqual({
-        routeName: "user",
-        params: { id: "123" },
-        data: { name: "Alice", email: "alice@example.com" },
-        isLoading: false,
-        error: null,
-      });
-    });
-
-    it("should allow re-initialization (for hydration)", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                home: Route.make("/"),
-                user: Route.make("/users/:id"),
-              },
-              { initialPath: "/users/456" },
-            );
-
-            // First initialization
-            yield* router.initializeLoaderData(
-              "user",
-              { id: "456" },
-              { name: "Bob" },
-            );
-
-            const first = yield* router.loaderState.get;
-
-            // Re-initialize (simulating a new hydration)
-            yield* router.initializeLoaderData(
-              "user",
-              { id: "456" },
-              { name: "Bob Updated" },
-            );
-
-            const second = yield* router.loaderState.get;
-
-            return { first, second };
-          }),
-        ),
-      );
-
-      expect(result.first.data).toEqual({ name: "Bob" });
-      expect(result.second.data).toEqual({ name: "Bob Updated" });
-    });
-
-    it("should set isLoading to false after initialization", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                home: Route.make("/"),
-              },
-              { initialPath: "/" },
-            );
-
-            yield* router.initializeLoaderData("home", {}, { loaded: true });
-
-            return yield* router.loaderState.get;
-          }),
-        ),
-      );
-
-      expect(result.isLoading).toBe(false);
-    });
-  });
-
-  describe("actionState", () => {
-    it("should have initial empty state", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                home: Route.make("/"),
-              },
-              { initialPath: "/" },
-            );
-            return yield* router.actionState.get;
-          }),
-        ),
-      );
-
-      expect(result).toEqual({
-        isSubmitting: false,
-        data: null,
-        error: null,
-        routeName: null,
-        submissionId: null,
-      });
-    });
-  });
-
-  describe("executeAction", () => {
-    it("should return null when route has no action", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                home: Route.make("/"),
-              },
-              { initialPath: "/" },
-            );
-
-            const formData = new FormData();
-            const request = new Request("http://localhost/", {
-              method: "POST",
-            });
-
-            // Type assertion needed because TypeScript infers unknown requirements
-            return yield* router.executeAction(
-              "home",
-              formData,
-              request,
-            ) as Effect.Effect<ActionResult | null>;
-          }),
-        ),
-      );
-
-      expect(result).toBeNull();
-    });
-
-    it("should execute action and return result", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                contact: Route.make("/contact", {
-                  action: ({ formData }) =>
-                    Effect.succeed({
-                      success: true,
-                      email: formData.get("email"),
-                    }),
-                }),
-              },
-              { initialPath: "/contact" },
-            );
-
-            const formData = new FormData();
-            formData.append("email", "test@example.com");
-            const request = new Request("http://localhost/contact", {
-              method: "POST",
-            });
-
-            return yield* router.executeAction("contact", formData, request);
-          }),
-        ),
-      );
-
-      expect(result).toEqual({
-        routeName: "contact",
-        data: { success: true, email: "test@example.com" },
-      });
-    });
-
-    it("should pass params to action", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                user: Route.make("/users/:id", {
-                  params: Schema.Struct({ id: Schema.String }),
-                  action: ({ params }) => Effect.succeed({ userId: params.id }),
-                }),
-              },
-              { initialPath: "/users/123" },
-            );
-
-            const formData = new FormData();
-            const request = new Request("http://localhost/users/123", {
-              method: "POST",
-            });
-
-            return yield* router.executeAction("user", formData, request);
-          }),
-        ),
-      );
-
-      expect(result).toEqual({
-        routeName: "user",
-        data: { userId: "123" },
-      });
-    });
-  });
-
-  describe("initializeActionData", () => {
-    it("should initialize action state with provided data", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const router = yield* Router.make(
-              {
-                home: Route.make("/"),
-              },
-              { initialPath: "/" },
-            );
-
-            yield* router.initializeActionData("home", { submitted: true });
-
-            return yield* router.actionState.get;
-          }),
-        ),
-      );
-
-      expect(result).toEqual({
-        isSubmitting: false,
-        data: { submitted: true },
-        error: null,
-        routeName: "home",
-        submissionId: null,
-      });
+      expect(apiRouter.routes.length).toBe(5);
+      expect(apiRouter.routes.map((r) => r.path)).toEqual([
+        "/api/v1/users",
+        "/api/v1/posts",
+        "/api/v2/users",
+        "/api/v2/posts",
+        "/api/v2/comments",
+      ]);
     });
   });
 });

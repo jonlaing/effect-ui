@@ -1,20 +1,32 @@
-import { Effect, Schema } from "effect";
+import { Context, Effect, ParseResult, Pipeable, Schema } from "effect";
 
-import { RouterContext } from "./RouterContext";
-import {
-  RouteMatchError,
-  type ActionFn,
-  type LoaderFn,
-  type PathSegment,
-  type RouteOptions,
-  type Route as RouteType,
-} from "./types";
+import { Readable } from "@effex/core";
+import type { Element } from "@effex/dom";
+
+// =============================================================================
+// TypeId
+// =============================================================================
+
+export const TypeId: unique symbol = Symbol.for("@effex/router/Route");
+export type TypeId = typeof TypeId;
+
+// =============================================================================
+// Path Parsing
+// =============================================================================
+
+/**
+ * A path segment in a route pattern.
+ */
+export type PathSegment =
+  | { readonly type: "static"; readonly value: string }
+  | { readonly type: "param"; readonly name: string }
+  | { readonly type: "catchAll" };
 
 /**
  * Parse a path pattern into segments.
  * Handles static segments, :param segments, and * catch-all.
  */
-const parsePath = (path: string): PathSegment[] => {
+export const parsePath = (path: string): PathSegment[] => {
   const segments: PathSegment[] = [];
   const parts = path.split("/").filter((p) => p.length > 0);
 
@@ -22,7 +34,7 @@ const parsePath = (path: string): PathSegment[] => {
     if (part === "*") {
       segments.push({ type: "catchAll" });
     } else if (part.startsWith(":")) {
-      const name = part.slice(1).replace(/\?$/, ""); // Remove optional marker
+      const name = part.slice(1).replace(/\?$/, "");
       segments.push({ type: "param", name });
     } else {
       segments.push({ type: "static", value: part });
@@ -35,7 +47,6 @@ const parsePath = (path: string): PathSegment[] => {
 /**
  * Calculate route specificity for sorting.
  * Higher = more specific.
- * Static segments worth more than params, params worth more than catch-all.
  */
 export const routeSpecificity = (segments: readonly PathSegment[]): number => {
   let score = 0;
@@ -48,7 +59,6 @@ export const routeSpecificity = (segments: readonly PathSegment[]): number => {
       score += 1;
     }
   }
-  // Bonus for length (longer more specific paths)
   score += segments.length * 0.1;
   return score;
 };
@@ -57,7 +67,7 @@ export const routeSpecificity = (segments: readonly PathSegment[]): number => {
  * Try to match a pathname against route segments.
  * Returns extracted params if matched, or null if no match.
  */
-const matchSegments = (
+export const matchSegments = (
   segments: readonly PathSegment[],
   pathname: string,
 ): Record<string, string> | null => {
@@ -71,12 +81,12 @@ const matchSegments = (
     const segment = segments[segmentIndex];
 
     if (segment.type === "catchAll") {
-      // Catch-all matches everything remaining
+      // Capture remaining path
+      params["*"] = parts.slice(partIndex).join("/");
       return params;
     }
 
     if (partIndex >= parts.length) {
-      // No more parts but still have segments - no match
       return null;
     }
 
@@ -94,7 +104,6 @@ const matchSegments = (
     partIndex++;
   }
 
-  // If we have leftover parts and no catch-all, no match
   if (partIndex < parts.length) {
     return null;
   }
@@ -102,318 +111,397 @@ const matchSegments = (
   return params;
 };
 
+// =============================================================================
+// Route Context
+// =============================================================================
+
+/**
+ * Context provided to a route's render function.
+ * Each route has its own unique context type for type-safe param access.
+ */
+export interface RouteContext<Params, SearchParams> {
+  readonly params: Params;
+  readonly searchParams: SearchParams;
+}
+
+// =============================================================================
+// Route Type
+// =============================================================================
+
+/**
+ * Animation options for route transitions.
+ */
+export interface AnimationOptions {
+  readonly enter?: string;
+  readonly exit?: string;
+  readonly enterFrom?: string;
+  readonly enterTo?: string;
+}
+
+/**
+ * Guard options for protected routes.
+ */
+export type GuardOptions =
+  | { readonly redirect: string }
+  | { readonly fallback: () => Element.Element<HTMLElement | SVGElement> };
+
+/**
+ * A route definition with typed parameters.
+ */
+export interface Route<
+  Path extends string = string,
+  Params = Record<string, string>,
+  SearchParams = Record<string, string>,
+  E = never,
+  R = never,
+>
+  extends Pipeable.Pipeable {
+  readonly [TypeId]: TypeId;
+  /** The path pattern */
+  readonly path: Path;
+  /** Parsed path segments */
+  readonly segments: readonly PathSegment[];
+  /** The render function */
+  readonly render: () => Element.Element<HTMLElement | SVGElement, E, R>;
+  /** Schema for params validation (if set) */
+  readonly paramsSchema: Schema.Schema<Params, unknown> | null;
+  /** Schema for search params validation (if set) */
+  readonly searchParamsSchema: Schema.Schema<SearchParams, unknown> | null;
+  /** Guard condition (if set) */
+  readonly guard: Readable.Readable<boolean> | Effect.Effect<boolean> | null;
+  /** Guard options */
+  readonly guardOptions: GuardOptions | null;
+  /** Animation options */
+  readonly animation: AnimationOptions | null;
+  /** Whether this is a lazy-loaded route */
+  readonly lazy: boolean;
+  /**
+   * Context tag for this route's params.
+   * Use `yield* MyRoute.Params` to access typed params.
+   */
+  readonly Params: Context.Tag<
+    RouteContext<Params, SearchParams>,
+    RouteContext<Params, SearchParams>
+  >;
+  /**
+   * Effect that yields the route's typed params.
+   * Only valid when this route is active.
+   */
+  readonly params: Effect.Effect<
+    Params,
+    ParseResult.ParseError,
+    RouteContext<Params, SearchParams>
+  >;
+  /**
+   * Effect that yields the route's typed search params.
+   * Only valid when this route is active.
+   */
+  readonly searchParams: Effect.Effect<
+    SearchParams,
+    ParseResult.ParseError,
+    RouteContext<Params, SearchParams>
+  >;
+}
+
+// =============================================================================
+// Constructors
+// =============================================================================
+
+const RouteProto = {
+  [TypeId]: TypeId,
+  pipe() {
+    // eslint-disable-next-line prefer-rest-params
+    return Pipeable.pipeArguments(this, arguments);
+  },
+};
+
 /**
  * Create a route definition.
  *
  * @param path - The path pattern (e.g., "/users/:id")
- * @param options - Route configuration including params schema, loader, and action
+ * @param render - Function that returns the element to render
  *
  * @example
  * ```ts
- * const UserRoute = Route.make("/users/:id", {
- *   params: Schema.Struct({ id: Schema.String }),
- *   loader: (params) => Effect.gen(function* () {
- *     const userService = yield* UserService;
- *     return yield* userService.getById(params.id);
- *   }),
- *   action: ({ formData, params }) => Effect.gen(function* () {
- *     const userService = yield* UserService;
- *     const name = formData.get("name") as string;
- *     return yield* userService.update(params.id, { name });
- *   }),
- * })
+ * const HomeRoute = Route.make("/", () => HomePage());
  *
- * const HomeRoute = Route.make("/")
- *
- * const CatchAllRoute = Route.make("/*")
+ * const UserRoute = Route.make("/users/:id", () => UserPage()).pipe(
+ *   Route.params(Schema.Struct({ id: Schema.NumberFromString }))
+ * );
  * ```
  */
-export const make = <
-  Path extends string,
-  P extends Schema.Schema.AnyNoContext = Schema.Schema.AnyNoContext,
-  LA = unknown,
-  LE = never,
-  LR = never,
-  AA = unknown,
-  AE = never,
-  AR = never,
->(
+export const make = <Path extends string, E, R>(
   path: Path,
-  options?: RouteOptions<P, LA, LE, LR, AA, AE, AR>,
-): RouteType<Path, P, LA, LE, LR, AA, AE, AR> => {
+  render: () => Element.Element<HTMLElement | SVGElement, E, R>,
+): Route<Path, Record<string, string>, Record<string, string>, E, R> => {
   const segments = parsePath(path);
-  const paramsSchema = options?.params;
-  const loader = options?.loader;
-  const action = options?.action;
 
-  const route: RouteType<Path, P, LA, LE, LR, AA, AE, AR> = {
+  // Create a unique context tag for this route
+  const ParamsTag = Context.GenericTag<
+    RouteContext<Record<string, string>, Record<string, string>>
+  >(`@effex/router/Route(${path})`);
+
+  const route: Route<
+    Path,
+    Record<string, string>,
+    Record<string, string>,
+    E,
+    R
+  > = Object.assign(Object.create(RouteProto), {
     path,
     segments,
-    paramsSchema,
-    loader,
-    action,
-    match: (pathname: string) =>
-      Effect.gen(function* () {
-        const rawParams = matchSegments(segments, pathname);
-
-        if (rawParams === null) {
-          return yield* Effect.fail(RouteMatchError(pathname, "no-match"));
-        }
-
-        if (paramsSchema) {
-          const decode = Schema.decodeUnknown(paramsSchema);
-          const result = yield* decode(rawParams).pipe(
-            Effect.mapError((e) =>
-              RouteMatchError(pathname, "validation-failed", String(e)),
-            ),
-          );
-          return result as Schema.Schema.Type<P>;
-        }
-
-        return rawParams as Schema.Schema.Type<P>;
-      }),
-  };
+    render,
+    paramsSchema: null,
+    searchParamsSchema: null,
+    guard: null,
+    guardOptions: null,
+    animation: null,
+    lazy: false,
+    Params: ParamsTag,
+    params: Effect.map(ParamsTag, (ctx) => ctx.params),
+    searchParams: Effect.map(ParamsTag, (ctx) => ctx.searchParams),
+  });
 
   return route;
 };
 
-// ============================================================================
-// Route.define - Co-located route definition with accessor methods
-// ============================================================================
+// =============================================================================
+// Combinators
+// =============================================================================
 
 /**
- * Options for defining a route with co-located configuration.
- * The path is injected by the vite-plugin based on file location.
- */
-export interface DefineOptions<
-  P extends Schema.Schema.AnyNoContext = Schema.Schema.AnyNoContext,
-  LA = unknown,
-  LE = never,
-  LR = never,
-  AA = unknown,
-  AE = never,
-  AR = never,
-> {
-  /** Schema for validating and typing path parameters */
-  readonly params?: P;
-  /** Loader function to fetch data for this route */
-  readonly loader?: LoaderFn<Schema.Schema.Type<P>, LA, LE, LR>;
-  /** Action function to handle form submissions for this route */
-  readonly action?: ActionFn<AA, AE, AR>;
-  /**
-   * Mark this route for static site generation.
-   * When true, this route will be pre-rendered at build time.
-   *
-   * For dynamic routes (with params), you must also export a `staticPaths` function
-   * that returns all paths to pre-render.
-   *
-   * @example
-   * ```ts
-   * // Static page (no params)
-   * export const route = Route.define({ static: true });
-   *
-   * // Dynamic static page (with params)
-   * export const route = Route.define({
-   *   static: true,
-   *   params: Schema.Struct({ slug: Schema.String }),
-   * });
-   *
-   * // Must also export staticPaths for dynamic routes:
-   * export const staticPaths = async () => [
-   *   { slug: "hello-world" },
-   *   { slug: "about-us" },
-   * ];
-   * ```
-   */
-  readonly static?: boolean;
-  /**
-   * Time in seconds after which a statically generated page should be regenerated.
-   * Only applies when `static: true`.
-   *
-   * This enables Incremental Static Regeneration (ISR) on platforms that support it.
-   * - `undefined` (default): Page is generated once at build time
-   * - `0`: Page is regenerated on every request (SSR)
-   * - `> 0`: Page is regenerated after the specified number of seconds
-   *
-   * @example
-   * ```ts
-   * export const route = Route.define({
-   *   static: true,
-   *   revalidate: 60, // Regenerate every 60 seconds
-   * });
-   * ```
-   */
-  readonly revalidate?: number;
-  /**
-   * @internal Injected by vite-plugin - do not set manually
-   */
-  readonly __path?: string;
-}
-
-/**
- * A defined route with accessor methods for use in components.
- * Created by Route.define() and used within page components.
- */
-export interface DefinedRoute<
-  P extends Schema.Schema.AnyNoContext = Schema.Schema.AnyNoContext,
-  LA = unknown,
-  LE = never,
-  LR = never,
-  AA = unknown,
-  AE = never,
-  AR = never,
-> {
-  /**
-   * Get the current route params (type-safe based on params schema).
-   * Only valid when this route is active.
-   *
-   * @example
-   * ```ts
-   * const { id } = yield* route.params()
-   * ```
-   */
-  readonly params: () => Effect.Effect<
-    Schema.Schema.Type<P>,
-    RouteMatchError,
-    RouterContext
-  >;
-
-  /**
-   * Get the loader data for this route (type-safe based on loader return type).
-   * Only valid when this route is active and has a loader.
-   *
-   * @example
-   * ```ts
-   * const user = yield* route.loaderData()
-   * ```
-   */
-  readonly loaderData: () => Effect.Effect<LA, never, RouterContext>;
-
-  /**
-   * Check if this route is currently active.
-   *
-   * @example
-   * ```ts
-   * const active = yield* route.isActive()
-   * ```
-   */
-  readonly isActive: () => Effect.Effect<boolean, never, RouterContext>;
-
-  // Internal properties for the router to use
-  /** @internal */
-  readonly _config: {
-    readonly paramsSchema: P | undefined;
-    readonly loader: LoaderFn<Schema.Schema.Type<P>, LA, LE, LR> | undefined;
-    readonly action: ActionFn<AA, AE, AR> | undefined;
-    readonly static: boolean;
-    readonly revalidate: number | undefined;
-  };
-  /** @internal */
-  readonly _path: string;
-  /** @internal */
-  readonly _segments: readonly PathSegment[];
-}
-
-/**
- * Define a route with co-located configuration.
- * Use this in page files to define routes alongside components.
- *
- * The path is automatically injected by the vite-plugin based on the file location.
+ * Add a schema for route params.
+ * The schema transforms raw string params to typed values.
  *
  * @example
  * ```ts
- * // routes/users.$id.ts
- * import { Route } from "@effex/router";
- * import { Schema, Effect } from "effect";
+ * const UserRoute = Route.make("/users/:id", () => UserPage()).pipe(
+ *   Route.params(Schema.Struct({ id: Schema.NumberFromString }))
+ * );
  *
- * export const route = Route.define({
- *   params: Schema.Struct({ id: Schema.String }),
- *   loader: (params) => Effect.gen(function* () {
- *     return yield* fetchUser(params.id);
- *   }),
- * });
+ * // In UserPage:
+ * const { id } = yield* UserRoute.params;  // id is number
+ * ```
+ */
+export const params =
+  <P, I>(schema: Schema.Schema<P, I>) =>
+  <Path extends string, OldP, SP, E, R>(
+    route: Route<Path, OldP, SP, E, R>,
+  ): Route<Path, P, SP, E | ParseResult.ParseError, R> => {
+    // Create a new context tag with the updated params type
+    const ParamsTag = Context.GenericTag<RouteContext<P, SP>>(
+      `@effex/router/Route(${route.path})`,
+    );
+
+    return Object.assign(Object.create(RouteProto), {
+      ...route,
+      paramsSchema: schema,
+      Params: ParamsTag,
+      params: Effect.flatMap(ParamsTag, (ctx) => Effect.succeed(ctx.params)),
+      searchParams: Effect.map(ParamsTag, (ctx) => ctx.searchParams),
+    }) as Route<Path, P, SP, E | ParseResult.ParseError, R>;
+  };
+
+/**
+ * Add a schema for search params (query string).
  *
- * export default component("UserPage", () =>
- *   Effect.gen(function* () {
- *     const { id } = yield* route.params();
- *     const user = yield* route.loaderData();
- *     // ...
+ * @example
+ * ```ts
+ * const SearchRoute = Route.make("/search", () => SearchPage()).pipe(
+ *   Route.searchParams(Schema.Struct({
+ *     q: Schema.String,
+ *     page: Schema.optional(Schema.NumberFromString).pipe(
+ *       Schema.withDefault(() => 1)
+ *     ),
+ *   }))
+ * );
+ *
+ * // In SearchPage:
+ * const { q, page } = yield* SearchRoute.searchParams;
+ * ```
+ */
+export const searchParams =
+  <SP, I>(schema: Schema.Schema<SP, I>) =>
+  <Path extends string, P, OldSP, E, R>(
+    route: Route<Path, P, OldSP, E, R>,
+  ): Route<Path, P, SP, E | ParseResult.ParseError, R> => {
+    const ParamsTag = Context.GenericTag<RouteContext<P, SP>>(
+      `@effex/router/Route(${route.path})`,
+    );
+
+    return Object.assign(Object.create(RouteProto), {
+      ...route,
+      searchParamsSchema: schema,
+      Params: ParamsTag,
+      params: Effect.map(ParamsTag, (ctx) => ctx.params),
+      searchParams: Effect.flatMap(ParamsTag, (ctx) =>
+        Effect.succeed(ctx.searchParams),
+      ),
+    }) as Route<Path, P, SP, E | ParseResult.ParseError, R>;
+  };
+
+/**
+ * Keep raw string params without schema validation.
+ * Useful when you want to handle params manually.
+ *
+ * @example
+ * ```ts
+ * const ProfileRoute = Route.make("/profile/:username", () => ProfilePage()).pipe(
+ *   Route.rawParams
+ * );
+ *
+ * // In ProfilePage:
+ * const { username } = yield* ProfileRoute.params;  // string
+ * ```
+ */
+export const rawParams = <Path extends string, OldP, SP, E, R>(
+  route: Route<Path, OldP, SP, E, R>,
+): Route<Path, Record<string, string>, SP, E, R> => {
+  const ParamsTag = Context.GenericTag<
+    RouteContext<Record<string, string>, SP>
+  >(`@effex/router/Route(${route.path})`);
+
+  return Object.assign(Object.create(RouteProto), {
+    ...route,
+    paramsSchema: null,
+    Params: ParamsTag,
+    params: Effect.map(ParamsTag, (ctx) => ctx.params),
+    searchParams: Effect.map(ParamsTag, (ctx) => ctx.searchParams),
+  }) as Route<Path, Record<string, string>, SP, E, R>;
+};
+
+/**
+ * Add a guard to the route.
+ * The route will only render if the guard condition is true.
+ *
+ * @example
+ * ```ts
+ * const DashboardRoute = Route.make("/dashboard", () => Dashboard()).pipe(
+ *   Route.withGuard(isAuthenticated, { redirect: "/login" })
+ * );
+ * ```
+ */
+export const withGuard =
+  (
+    condition: Readable.Readable<boolean> | Effect.Effect<boolean>,
+    options: GuardOptions,
+  ) =>
+  <Path extends string, P, SP, E, R>(
+    route: Route<Path, P, SP, E, R>,
+  ): Route<Path, P, SP, E, R> => {
+    return Object.assign(Object.create(RouteProto), {
+      ...route,
+      guard: condition,
+      guardOptions: options,
+    });
+  };
+
+/**
+ * Add animation options to the route.
+ *
+ * @example
+ * ```ts
+ * const ModalRoute = Route.make("/modal/:id", () => Modal()).pipe(
+ *   Route.withAnimation({
+ *     enter: "slide-up",
+ *     exit: "slide-down",
  *   })
  * );
  * ```
  */
-export const define = <
-  P extends Schema.Schema.AnyNoContext = Schema.Schema.AnyNoContext,
-  LA = unknown,
-  LE = never,
-  LR = never,
-  AA = unknown,
-  AE = never,
-  AR = never,
->(
-  options: DefineOptions<P, LA, LE, LR, AA, AE, AR> = {},
-): DefinedRoute<P, LA, LE, LR, AA, AE, AR> => {
-  // Path is injected by vite-plugin, default to "/" if not set
-  const path = options.__path ?? "/";
-  const segments = parsePath(path);
-  const paramsSchema = options.params;
-
-  const definedRoute: DefinedRoute<P, LA, LE, LR, AA, AE, AR> = {
-    params: () =>
-      Effect.gen(function* () {
-        const router = yield* RouterContext;
-        const pathname = yield* router.pathname.get;
-        const rawParams = matchSegments(segments, pathname);
-
-        if (rawParams === null) {
-          return yield* Effect.fail(RouteMatchError(pathname, "no-match"));
-        }
-
-        if (paramsSchema) {
-          const decode = Schema.decodeUnknown(paramsSchema);
-          const result = yield* decode(rawParams).pipe(
-            Effect.mapError((e) =>
-              RouteMatchError(pathname, "validation-failed", String(e)),
-            ),
-          );
-          return result as Schema.Schema.Type<P>;
-        }
-
-        return rawParams as Schema.Schema.Type<P>;
-      }),
-
-    loaderData: () =>
-      Effect.gen(function* () {
-        const router = yield* RouterContext;
-        const state = yield* router.loaderState.get;
-        return state.data as LA;
-      }),
-
-    isActive: () =>
-      Effect.gen(function* () {
-        const router = yield* RouterContext;
-        const pathname = yield* router.pathname.get;
-        return matchSegments(segments, pathname) !== null;
-      }),
-
-    _config: {
-      paramsSchema: options.params,
-      loader: options.loader,
-      action: options.action,
-      static: options.static ?? false,
-      revalidate: options.revalidate,
-    },
-    _path: path,
-    _segments: segments,
+export const withAnimation =
+  (options: AnimationOptions) =>
+  <Path extends string, P, SP, E, R>(
+    route: Route<Path, P, SP, E, R>,
+  ): Route<Path, P, SP, E, R> => {
+    return Object.assign(Object.create(RouteProto), {
+      ...route,
+      animation: options,
+    });
   };
 
-  return definedRoute;
+/**
+ * Create a lazy-loaded route.
+ *
+ * @example
+ * ```ts
+ * const AdminRoute = Route.lazy("/admin", () => import("./admin/AdminPage"));
+ * ```
+ */
+export const lazy = <Path extends string>(
+  path: Path,
+  load: () => Promise<{
+    default: Route<Path, unknown, unknown, unknown, unknown>;
+  }>,
+  options?: { fallback?: () => Element.Element<HTMLElement | SVGElement> },
+): Route<Path, unknown, unknown, never, never> => {
+  // Create a placeholder route that will be replaced when loaded
+  const segments = parsePath(path);
+  const ParamsTag = Context.GenericTag<RouteContext<unknown, unknown>>(
+    `@effex/router/Route(${path})`,
+  );
+
+  const route: Route<Path, unknown, unknown, never, never> = Object.assign(
+    Object.create(RouteProto),
+    {
+      path,
+      segments,
+      render:
+        options?.fallback ??
+        (() => {
+          throw new Error(`Lazy route ${path} not yet loaded`);
+        }),
+      paramsSchema: null,
+      searchParamsSchema: null,
+      guard: null,
+      guardOptions: null,
+      animation: null,
+      lazy: true,
+      Params: ParamsTag,
+      params: Effect.map(ParamsTag, (ctx) => ctx.params),
+      searchParams: Effect.map(ParamsTag, (ctx) => ctx.searchParams),
+      // Store the loader for the router to use
+      _load: load,
+    },
+  );
+
+  return route;
+};
+
+// =============================================================================
+// Utilities
+// =============================================================================
+
+/**
+ * Check if a value is a Route.
+ */
+export const isRoute = (value: unknown): value is Route => {
+  return typeof value === "object" && value !== null && TypeId in value;
 };
 
 /**
- * Route module namespace.
+ * Extract the params type from a Route.
  */
+export type RouteParams<R> =
+  R extends Route<string, infer P, unknown, unknown, unknown> ? P : never;
+
+/**
+ * Extract the search params type from a Route.
+ */
+export type RouteSearchParams<R> =
+  R extends Route<string, unknown, infer SP, unknown, unknown> ? SP : never;
+
+// =============================================================================
+// Module
+// =============================================================================
+
 export const Route = {
   make,
-  define,
+  params,
+  searchParams,
+  rawParams,
+  withGuard,
+  withAnimation,
+  lazy,
+  isRoute,
 };
