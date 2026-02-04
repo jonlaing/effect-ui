@@ -3,10 +3,10 @@
  * Provides convenient $.div, $.span, etc. syntax for creating elements.
  */
 
-import { Context, Effect, Option, Stream } from "effect";
+import { Effect, Option, Stream } from "effect";
 import { isEffect } from "effect/Effect";
 
-import { Readable, RendererContext } from "@effex/core";
+import { MergePropsCtx, Readable, RendererContext } from "@effex/core";
 
 import * as Core from "./core.js";
 import type { ElementRef } from "./ref.js";
@@ -240,14 +240,9 @@ export type SVGElementFactory<K extends keyof SVGElementTagNameMap> = {
 // Context for asChild pattern
 // =============================================================================
 
-/**
- * Context for merging props into child elements.
- * Used by primitives with `asChild` to inject their props into user-provided elements.
- */
-export class MergePropsCtx extends Context.Tag("MergePropsCtx")<
-  MergePropsCtx,
-  Record<string, unknown>
->() {}
+// MergePropsCtx is imported from @effex/core
+// Re-export it for backwards compatibility
+export { MergePropsCtx } from "@effex/core";
 
 // =============================================================================
 // Attribute Application using Core functions

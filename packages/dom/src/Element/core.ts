@@ -383,6 +383,39 @@ export const removeStyle: {
     }) as Element<A, E, R>,
 );
 
+/**
+ * Set multiple style properties on the element at once.
+ * Values can be static strings or Readable<string> for reactive bindings.
+ */
+export const setStyles: {
+  (
+    styles: Record<string, string | Readable.Readable<string>>,
+  ): <A extends HTMLElement | SVGElement, E, R>(
+    self: Element<A, E, R>,
+  ) => Element<A, E, R>;
+  <A extends HTMLElement | SVGElement, E, R>(
+    self: Element<A, E, R>,
+    styles: Record<string, string | Readable.Readable<string>>,
+  ): Element<A, E, R>;
+} = dual(
+  2,
+  <A extends HTMLElement | SVGElement, E, R>(
+    self: Element<A, E, R>,
+    styles: Record<string, string | Readable.Readable<string>>,
+  ): Element<A, E, R> =>
+    Effect.gen(function* () {
+      const el = yield* self;
+      for (const [property, value] of Object.entries(styles)) {
+        if (Readable.isReadable(value)) {
+          yield* bindStyle(Effect.succeed(el), property, value);
+        } else {
+          yield* setStyle(Effect.succeed(el), property, value);
+        }
+      }
+      return el;
+    }) as Element<A, E, R>,
+);
+
 // =============================================================================
 // Data Attributes
 // =============================================================================
@@ -438,6 +471,29 @@ export const removeData: {
       yield* renderer.removeAttribute(el, `data-${key}`);
       return el;
     }) as Element<A, E, R>,
+);
+
+/**
+ * Get a data attribute from the element.
+ * Works with any Effect that produces an element.
+ */
+export const getData: {
+  (
+    key: string,
+  ): <A extends HTMLElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+  ) => Effect.Effect<string | undefined, E, R>;
+  <A extends HTMLElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+    key: string,
+  ): Effect.Effect<string | undefined, E, R>;
+} = dual(
+  2,
+  <A extends HTMLElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+    key: string,
+  ): Effect.Effect<string | undefined, E, R> =>
+    Effect.map(self, (el) => el.dataset[key]),
 );
 
 // =============================================================================
@@ -1196,4 +1252,140 @@ export const tapEffect: {
     fn: (el: A) => Effect.Effect<unknown, E2, R2>,
   ): Element<A, E | E2, R | R2> =>
     Effect.tap(self, fn) as Element<A, E | E2, R | R2>,
+);
+
+// =============================================================================
+// Element Queries
+// =============================================================================
+
+/**
+ * Get the bounding client rect of the element.
+ * Works with any Effect that produces an element.
+ */
+export const getBoundingClientRect: <A extends HTMLElement | SVGElement, E, R>(
+  self: Effect.Effect<A, E, R>,
+) => Effect.Effect<DOMRect, E, R> = <A extends HTMLElement | SVGElement, E, R>(
+  self: Effect.Effect<A, E, R>,
+): Effect.Effect<DOMRect, E, R> =>
+  Effect.flatMap(self, (el) => Effect.sync(() => el.getBoundingClientRect()));
+
+/**
+ * Get the element's ID attribute.
+ * Works with any Effect that produces an element.
+ */
+export const getId: <A extends HTMLElement | SVGElement, E, R>(
+  self: Effect.Effect<A, E, R>,
+) => Effect.Effect<string, E, R> = <A extends HTMLElement | SVGElement, E, R>(
+  self: Effect.Effect<A, E, R>,
+): Effect.Effect<string, E, R> => Effect.map(self, (el) => el.id);
+
+/**
+ * Check if the element has a specific attribute.
+ * Works with any Effect that produces an element.
+ */
+export const hasAttribute: {
+  (
+    name: string,
+  ): <A extends HTMLElement | SVGElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+  ) => Effect.Effect<boolean, E, R>;
+  <A extends HTMLElement | SVGElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+    name: string,
+  ): Effect.Effect<boolean, E, R>;
+} = dual(
+  2,
+  <A extends HTMLElement | SVGElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+    name: string,
+  ): Effect.Effect<boolean, E, R> =>
+    Effect.map(self, (el) => el.hasAttribute(name)),
+);
+
+/**
+ * Check if an element contains another node.
+ * Works with any Effect that produces an element.
+ */
+export const contains: {
+  (
+    node: Node,
+  ): <A extends HTMLElement | SVGElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+  ) => Effect.Effect<boolean, E, R>;
+  <A extends HTMLElement | SVGElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+    node: Node,
+  ): Effect.Effect<boolean, E, R>;
+} = dual(
+  2,
+  <A extends HTMLElement | SVGElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+    node: Node,
+  ): Effect.Effect<boolean, E, R> =>
+    Effect.map(self, (el) => el.contains(node)),
+);
+
+// =============================================================================
+// Focus Utilities
+// =============================================================================
+
+/**
+ * Focus the first element within that matches the selector.
+ * Works with any Effect that produces an element.
+ */
+export const focusFirst: {
+  (
+    selector: string,
+  ): <A extends HTMLElement | SVGElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+  ) => Effect.Effect<A, E, R>;
+  <A extends HTMLElement | SVGElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+    selector: string,
+  ): Effect.Effect<A, E, R>;
+} = dual(
+  2,
+  <A extends HTMLElement | SVGElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+    selector: string,
+  ): Effect.Effect<A, E, R> =>
+    Effect.tap(self, (el) =>
+      Effect.sync(() => {
+        const first = el.querySelector<HTMLElement>(selector);
+        if (first) {
+          first.focus({ preventScroll: true });
+        }
+      }),
+    ),
+);
+
+/**
+ * Focus the last element within that matches the selector.
+ * Works with any Effect that produces an element.
+ */
+export const focusLast: {
+  (
+    selector: string,
+  ): <A extends HTMLElement | SVGElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+  ) => Effect.Effect<A, E, R>;
+  <A extends HTMLElement | SVGElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+    selector: string,
+  ): Effect.Effect<A, E, R>;
+} = dual(
+  2,
+  <A extends HTMLElement | SVGElement, E, R>(
+    self: Effect.Effect<A, E, R>,
+    selector: string,
+  ): Effect.Effect<A, E, R> =>
+    Effect.tap(self, (el) =>
+      Effect.sync(() => {
+        const all = el.querySelectorAll<HTMLElement>(selector);
+        const last = all[all.length - 1];
+        if (last) {
+          last.focus({ preventScroll: true });
+        }
+      }),
+    ),
 );

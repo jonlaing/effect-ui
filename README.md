@@ -304,7 +304,9 @@ Effex stands on the shoulders of giants:
 
 - **[Solid](https://www.solidjs.com/)** - Our fine-grained reactivity system draws direct inspiration from Solid's brilliant reactive primitives.
 
-- **[TanStack](https://tanstack.com/)** - The router and form APIs are inspired by TanStack Router and TanStack Form.
+- **[TanStack](https://tanstack.com/)** - The router API is inspired by TanStack Router.
+
+- **[effect-form](https://github.com/lucas-barake/effect-form)** - The form package's schema-first, context-based architecture was inspired by this excellent Effect-based form library.
 
 - **[Radix](https://www.radix-ui.com/)** - Our headless UI primitives follow patterns established by Radix.
 

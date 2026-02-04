@@ -1,582 +1,699 @@
-import { Effect, Schema } from "effect";
+import { Effect, Schema, Scope } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { Reaction } from "@effex/dom";
+import { Field } from "./Field";
+import { Form, FormTypeId, isForm, make as makeForm } from "./Form";
 
-import { Form } from "./Form";
+// Helper to run form effects in tests
+const runFormTest = <A>(
+  effect: Effect.Effect<A, never, Scope.Scope>,
+): Promise<A> => Effect.runPromise(Effect.scoped(effect));
 
-describe("Form", () => {
-  describe("Form.make", () => {
-    it("should create a form with initial values", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const form = yield* Form.make({
-              schema: Schema.Struct({
-                email: Schema.String,
-                password: Schema.String,
-              }),
-              initial: { email: "test@example.com", password: "secret123" },
-            });
-
-            const values = yield* form.getValues();
-            return values;
-          }),
-        ),
-      );
-
-      expect(result).toEqual({
-        email: "test@example.com",
-        password: "secret123",
-      });
+describe("Form.make", () => {
+  it("should create a form definition", () => {
+    const form = makeForm({
+      name: Field.make(Schema.String),
+      email: Field.make(Schema.String),
     });
 
-    it("should provide field access with correct initial values", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const form = yield* Form.make({
-              schema: Schema.Struct({
-                name: Schema.String,
-                age: Schema.Number,
-              }),
-              initial: { name: "Alice", age: 30 },
-            });
-
-            const name = yield* form.fields.name.value.get;
-            const age = yield* form.fields.age.value.get;
-            return { name, age };
-          }),
-        ),
-      );
-
-      expect(result).toEqual({ name: "Alice", age: 30 });
-    });
-
-    it("should track touched state per field", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const form = yield* Form.make({
-              schema: Schema.Struct({
-                email: Schema.String,
-                password: Schema.String,
-              }),
-              initial: { email: "", password: "" },
-            });
-
-            const beforeTouch = yield* form.fields.email.touched.get;
-            yield* form.fields.email.touch();
-            const afterTouch = yield* form.fields.email.touched.get;
-            const passwordTouched = yield* form.fields.password.touched.get;
-
-            return { beforeTouch, afterTouch, passwordTouched };
-          }),
-        ),
-      );
-
-      expect(result.beforeTouch).toBe(false);
-      expect(result.afterTouch).toBe(true);
-      expect(result.passwordTouched).toBe(false);
-    });
-
-    it("should track dirty state when field value changes", async () => {
-      const lastDirty = { value: false };
-
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const form = yield* Form.make({
-              schema: Schema.Struct({
-                name: Schema.String,
-              }),
-              initial: { name: "Initial" },
-            });
-
-            // Create a reaction to consume the dirty stream
-            yield* Reaction.make([form.fields.name.dirty], ([d]) =>
-              Effect.sync(() => {
-                lastDirty.value = d;
-              }),
-            );
-
-            // Wait for initial reaction to run
-            yield* Effect.sleep(10);
-            expect(lastDirty.value).toBe(false);
-
-            // Change value
-            yield* form.fields.name.value.set("Changed");
-            yield* Effect.sleep(10);
-          }),
-        ),
-      );
-
-      expect(lastDirty.value).toBe(true);
-    });
-
-    it("should update field values", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const form = yield* Form.make({
-              schema: Schema.Struct({
-                email: Schema.String,
-              }),
-              initial: { email: "" },
-            });
-
-            yield* form.fields.email.value.set("new@example.com");
-            const newValue = yield* form.fields.email.value.get;
-
-            return newValue;
-          }),
-        ),
-      );
-
-      expect(result).toBe("new@example.com");
-    });
-
-    it("should reset form to initial values", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const form = yield* Form.make({
-              schema: Schema.Struct({
-                email: Schema.String,
-                password: Schema.String,
-              }),
-              initial: { email: "initial@example.com", password: "initial" },
-            });
-
-            // Modify values
-            yield* form.fields.email.value.set("changed@example.com");
-            yield* form.fields.password.value.set("changed");
-            yield* form.fields.email.touch();
-
-            // Reset
-            yield* form.reset();
-
-            const values = yield* form.getValues();
-            const emailTouched = yield* form.fields.email.touched.get;
-
-            return { values, emailTouched };
-          }),
-        ),
-      );
-
-      expect(result.values).toEqual({
-        email: "initial@example.com",
-        password: "initial",
-      });
-      expect(result.emailTouched).toBe(false);
-    });
-
-    it("should track form-level isTouched", async () => {
-      const lastTouched = { value: false };
-
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const form = yield* Form.make({
-              schema: Schema.Struct({
-                a: Schema.String,
-                b: Schema.String,
-              }),
-              initial: { a: "", b: "" },
-            });
-
-            // Create a reaction to consume the isTouched stream
-            yield* Reaction.make([form.isTouched], ([t]) =>
-              Effect.sync(() => {
-                lastTouched.value = t;
-              }),
-            );
-
-            yield* Effect.sleep(10);
-            expect(lastTouched.value).toBe(false);
-
-            yield* form.fields.a.touch();
-            yield* Effect.sleep(10);
-          }),
-        ),
-      );
-
-      expect(lastTouched.value).toBe(true);
-    });
-
-    it("should track form-level isDirty", async () => {
-      const lastDirty = { value: false };
-
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const form = yield* Form.make({
-              schema: Schema.Struct({
-                a: Schema.String,
-                b: Schema.String,
-              }),
-              initial: { a: "", b: "" },
-            });
-
-            // Create a reaction to consume the isDirty stream
-            yield* Reaction.make([form.isDirty], ([d]) =>
-              Effect.sync(() => {
-                lastDirty.value = d;
-              }),
-            );
-
-            yield* Effect.sleep(10);
-            expect(lastDirty.value).toBe(false);
-
-            yield* form.fields.a.value.set("changed");
-            yield* Effect.sleep(10);
-          }),
-        ),
-      );
-
-      expect(lastDirty.value).toBe(true);
-    });
-
-    it("should set external errors via setErrors", async () => {
-      const lastErrors = { value: [] as readonly string[] };
-
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const form = yield* Form.make({
-              schema: Schema.Struct({
-                email: Schema.String,
-              }),
-              initial: { email: "" },
-            });
-
-            // Create a reaction to consume the errors stream
-            yield* Reaction.make([form.fields.email.errors], ([e]) =>
-              Effect.sync(() => {
-                lastErrors.value = e;
-              }),
-            );
-
-            yield* Effect.sleep(10);
-
-            yield* form.setErrors({
-              email: ["Email already exists"],
-            });
-
-            yield* Effect.sleep(10);
-          }),
-        ),
-      );
-
-      expect(lastErrors.value).toContain("Email already exists");
-    });
+    expect(form[FormTypeId]).toBe(FormTypeId);
+    expect(form._fields).toBeDefined();
+    expect(form.fields).toBeDefined();
+    expect(form.form).toBeDefined();
+    expect(form.provide).toBeDefined();
   });
 
-  describe("Form validation", () => {
-    it("should validate with submit timing only on submit", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const form = yield* Form.make({
-              schema: Schema.Struct({
-                email: Schema.String.pipe(Schema.nonEmptyString()),
-              }),
-              initial: { email: "" },
-              validation: "submit",
-            });
-
-            // Touch the field - should not trigger validation
-            yield* form.fields.email.touch();
-            const errorsBeforeSubmit = yield* form.fields.email.errors.get;
-
-            // Explicitly validate
-            const validationResult = yield* form.validate();
-
-            return { errorsBeforeSubmit, validationResult };
-          }),
-        ),
-      );
-
-      // With submit timing, errors should be empty until explicit validation
-      expect(result.errorsBeforeSubmit).toHaveLength(0);
-      // The validation result should have errors for the empty field
-      expect(Object.keys(result.validationResult).length).toBeGreaterThan(0);
+  it("should create field accessors for each field", () => {
+    const form = makeForm({
+      name: Field.make(Schema.String),
+      age: Field.make(Schema.Number),
     });
 
-    it("should validate entire form", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const form = yield* Form.make({
-              schema: Schema.Struct({
-                email: Schema.String.pipe(Schema.nonEmptyString()),
-                password: Schema.String.pipe(Schema.minLength(8)),
-              }),
-              initial: { email: "", password: "short" },
-            });
-
-            const errors = yield* form.validate();
-            return errors;
-          }),
-        ),
-      );
-
-      // Both fields should have errors
-      expect(Object.keys(result)).toContain("email");
-    });
-
-    it("should track isValid state", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const form = yield* Form.make({
-              schema: Schema.Struct({
-                name: Schema.String,
-              }),
-              initial: { name: "Valid" },
-            });
-
-            // Form should start valid with valid initial data
-            const isValid = yield* form.isValid.get;
-            return isValid;
-          }),
-        ),
-      );
-
-      expect(result).toBe(true);
-    });
+    expect(form.fields.name).toBeDefined();
+    expect(form.fields.age).toBeDefined();
   });
 
-  describe("Form submission", () => {
-    it("should call submit handler with form values", async () => {
-      let submittedValues: { email: string; password: string } | null = null;
+  it("should accept form-level config", () => {
+    const form = makeForm(
+      {
+        name: Field.make(Schema.String),
+      },
+      {
+        validateOn: "change",
+        debounce: 300,
+      },
+    );
 
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const form = yield* Form.make({
-              schema: Schema.Struct({
-                email: Schema.String,
-                password: Schema.String,
-              }),
-              initial: { email: "test@example.com", password: "password123" },
-            });
+    expect(form[FormTypeId]).toBe(FormTypeId);
+  });
+});
 
-            yield* form.submit((values) =>
-              Effect.sync(() => {
-                submittedValues = values;
-              }),
-            );
-          }),
-        ),
-      );
-
-      expect(submittedValues).toEqual({
-        email: "test@example.com",
-        password: "password123",
-      });
+describe("Form.provide", () => {
+  it("should provide field state to children", async () => {
+    const TestForm = makeForm({
+      name: Field.make(Schema.String),
     });
 
-    it("should track isSubmitting state during submission", async () => {
-      const states: boolean[] = [];
+    const result = await runFormTest(
+      TestForm.provide(
+        { defaults: { name: "John" } },
+        Effect.gen(function* () {
+          const nameField = yield* TestForm.fields.name;
+          const value = yield* nameField.value.get;
+          return value;
+        }),
+      ),
+    );
 
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const form = yield* Form.make({
-              schema: Schema.Struct({
-                name: Schema.String,
-              }),
-              initial: { name: "Test" },
-            });
-
-            const before = yield* form.isSubmitting.get;
-            states.push(before);
-
-            yield* form.submit(() =>
-              Effect.gen(function* () {
-                const during = yield* form.isSubmitting.get;
-                states.push(during);
-              }),
-            );
-
-            const after = yield* form.isSubmitting.get;
-            states.push(after);
-          }),
-        ),
-      );
-
-      expect(states).toEqual([false, true, false]);
-    });
-
-    it("should not call submit handler when validation fails", async () => {
-      let handlerCalled = false;
-
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const form = yield* Form.make({
-              schema: Schema.Struct({
-                email: Schema.String.pipe(Schema.nonEmptyString()),
-              }),
-              initial: { email: "" },
-            });
-
-            yield* form.submit(() =>
-              Effect.sync(() => {
-                handlerCalled = true;
-              }),
-            );
-          }),
-        ),
-      );
-
-      expect(handlerCalled).toBe(false);
-    });
-
-    it("should touch all fields on submit attempt", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const form = yield* Form.make({
-              schema: Schema.Struct({
-                a: Schema.String.pipe(Schema.nonEmptyString()),
-                b: Schema.String.pipe(Schema.nonEmptyString()),
-              }),
-              initial: { a: "", b: "" },
-            });
-
-            yield* form.submit(() => Effect.void);
-
-            const aTouched = yield* form.fields.a.touched.get;
-            const bTouched = yield* form.fields.b.touched.get;
-
-            return { aTouched, bTouched };
-          }),
-        ),
-      );
-
-      expect(result.aTouched).toBe(true);
-      expect(result.bTouched).toBe(true);
-    });
+    expect(result).toBe("John");
   });
 
-  describe("Field-level operations", () => {
-    it("should set field-level errors", async () => {
-      const lastErrors = { value: [] as readonly string[] };
-
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const form = yield* Form.make({
-              schema: Schema.Struct({
-                email: Schema.String,
-              }),
-              initial: { email: "" },
-            });
-
-            // Create a reaction to consume the errors stream
-            yield* Reaction.make([form.fields.email.errors], ([e]) =>
-              Effect.sync(() => {
-                lastErrors.value = e;
-              }),
-            );
-
-            yield* Effect.sleep(10);
-
-            yield* form.fields.email.setErrors(["Custom error"]);
-            yield* Effect.sleep(10);
-          }),
-        ),
-      );
-
-      expect(lastErrors.value).toContain("Custom error");
+  it("should provide form state to children", async () => {
+    const TestForm = makeForm({
+      name: Field.make(Schema.String),
     });
 
-    it("should reset individual field", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const form = yield* Form.make({
-              schema: Schema.Struct({
-                email: Schema.String,
-              }),
-              initial: { email: "initial@example.com" },
-            });
+    const result = await runFormTest(
+      TestForm.provide(
+        { defaults: { name: "" } },
+        Effect.gen(function* () {
+          const formState = yield* TestForm.form;
+          return yield* formState.isValid.get;
+        }),
+      ),
+    );
 
-            yield* form.fields.email.value.set("changed@example.com");
-            yield* form.fields.email.touch();
-            yield* form.fields.email.setErrors(["Some error"]);
+    // Empty string is valid for Schema.String (no additional constraints)
+    expect(result).toBe(true);
+  });
+});
 
-            yield* form.fields.email.reset();
-
-            const value = yield* form.fields.email.value.get;
-            const touched = yield* form.fields.email.touched.get;
-
-            return { value, touched };
-          }),
-        ),
-      );
-
-      expect(result.value).toBe("initial@example.com");
-      expect(result.touched).toBe(false);
+describe("Field state", () => {
+  it("should track field value", async () => {
+    const TestForm = makeForm({
+      name: Field.make(Schema.String),
     });
 
-    it("should validate individual field", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const form = yield* Form.make({
-              schema: Schema.Struct({
-                email: Schema.String.pipe(Schema.nonEmptyString()),
-              }),
-              initial: { email: "" },
-            });
+    const result = await runFormTest(
+      TestForm.provide(
+        { defaults: { name: "initial" } },
+        Effect.gen(function* () {
+          const nameField = yield* TestForm.fields.name;
 
-            const errors = yield* form.fields.email.validate();
-            return errors;
-          }),
-        ),
-      );
+          // Check initial value
+          const initial = yield* nameField.value.get;
 
-      expect(result.length).toBeGreaterThan(0);
-    });
+          // Update value
+          yield* nameField.set("updated");
+          const updated = yield* nameField.value.get;
+
+          return { initial, updated };
+        }),
+      ),
+    );
+
+    expect(result.initial).toBe("initial");
+    expect(result.updated).toBe("updated");
   });
 
-  describe("Form errors aggregation", () => {
-    it("should aggregate errors from all fields", async () => {
-      const lastErrors = { value: {} as Record<string, readonly string[]> };
-
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const form = yield* Form.make({
-              schema: Schema.Struct({
-                a: Schema.String,
-                b: Schema.String,
-              }),
-              initial: { a: "", b: "" },
-            });
-
-            // Create a reaction to consume the errors stream
-            yield* Reaction.make([form.errors], ([e]) =>
-              Effect.sync(() => {
-                lastErrors.value = e;
-              }),
-            );
-
-            yield* Effect.sleep(10);
-
-            yield* form.fields.a.setErrors(["Error A"]);
-            yield* form.fields.b.setErrors(["Error B"]);
-
-            yield* Effect.sleep(10);
-          }),
-        ),
-      );
-
-      expect(lastErrors.value.a).toContain("Error A");
-      expect(lastErrors.value.b).toContain("Error B");
+  it("should track touched state", async () => {
+    const TestForm = makeForm({
+      name: Field.make(Schema.String),
     });
+
+    const result = await runFormTest(
+      TestForm.provide(
+        { defaults: { name: "" } },
+        Effect.gen(function* () {
+          const nameField = yield* TestForm.fields.name;
+
+          const beforeBlur = yield* nameField.touched.get;
+          yield* nameField.blur();
+          const afterBlur = yield* nameField.touched.get;
+
+          return { beforeBlur, afterBlur };
+        }),
+      ),
+    );
+
+    expect(result.beforeBlur).toBe(false);
+    expect(result.afterBlur).toBe(true);
+  });
+
+  it("should track dirty state", async () => {
+    const TestForm = makeForm({
+      name: Field.make(Schema.String),
+    });
+
+    const result = await runFormTest(
+      TestForm.provide(
+        { defaults: { name: "initial" } },
+        Effect.gen(function* () {
+          const nameField = yield* TestForm.fields.name;
+
+          const beforeChange = yield* nameField.dirty.get;
+          yield* nameField.set("changed");
+          const afterChange = yield* nameField.dirty.get;
+
+          return { beforeChange, afterChange };
+        }),
+      ),
+    );
+
+    expect(result.beforeChange).toBe(false);
+    expect(result.afterChange).toBe(true);
+  });
+
+  it("should reset field to initial value", async () => {
+    const TestForm = makeForm({
+      name: Field.make(Schema.String),
+    });
+
+    const result = await runFormTest(
+      TestForm.provide(
+        { defaults: { name: "initial" } },
+        Effect.gen(function* () {
+          const nameField = yield* TestForm.fields.name;
+
+          yield* nameField.set("changed");
+          yield* nameField.blur();
+
+          const beforeReset = {
+            value: yield* nameField.value.get,
+            touched: yield* nameField.touched.get,
+          };
+
+          yield* nameField.reset();
+
+          const afterReset = {
+            value: yield* nameField.value.get,
+            touched: yield* nameField.touched.get,
+          };
+
+          return { beforeReset, afterReset };
+        }),
+      ),
+    );
+
+    expect(result.beforeReset.value).toBe("changed");
+    expect(result.beforeReset.touched).toBe(true);
+    expect(result.afterReset.value).toBe("initial");
+    expect(result.afterReset.touched).toBe(false);
+  });
+
+  it("should update field value with function", async () => {
+    const TestForm = makeForm({
+      count: Field.make(Schema.Number),
+    });
+
+    const result = await runFormTest(
+      TestForm.provide(
+        { defaults: { count: 5 } },
+        Effect.gen(function* () {
+          const countField = yield* TestForm.fields.count;
+
+          yield* countField.update((n) => n + 1);
+          const value = yield* countField.value.get;
+
+          return value;
+        }),
+      ),
+    );
+
+    expect(result).toBe(6);
+  });
+});
+
+describe("Field validation", () => {
+  it("should validate on blur when validateOn is blur", async () => {
+    const TestForm = makeForm(
+      {
+        email: Field.make(Schema.String.pipe(Schema.minLength(5)), {
+          validateOn: "blur",
+        }),
+      },
+      { validateOn: "blur" },
+    );
+
+    const result = await runFormTest(
+      TestForm.provide(
+        { defaults: { email: "ab" } },
+        Effect.gen(function* () {
+          const emailField = yield* TestForm.fields.email;
+
+          // Before blur, no errors should show
+          const errorsBeforeBlur = yield* emailField.errors.get;
+
+          yield* emailField.blur();
+
+          // After blur, errors should appear
+          const errorsAfterBlur = yield* emailField.errors.get;
+
+          return {
+            beforeBlur: errorsBeforeBlur.length,
+            afterBlur: errorsAfterBlur.length,
+          };
+        }),
+      ),
+    );
+
+    expect(result.beforeBlur).toBe(0);
+    expect(result.afterBlur).toBeGreaterThan(0);
+  });
+
+  it("should validate on change when validateOn is change", async () => {
+    const TestForm = makeForm({
+      email: Field.make(Schema.String.pipe(Schema.minLength(5)), {
+        validateOn: "change",
+      }),
+    });
+
+    const result = await runFormTest(
+      TestForm.provide(
+        { defaults: { email: "ab" } },
+        Effect.gen(function* () {
+          const emailField = yield* TestForm.fields.email;
+
+          // With validateOn: change, errors show immediately
+          const errors = yield* emailField.errors.get;
+
+          return errors.length;
+        }),
+      ),
+    );
+
+    expect(result).toBeGreaterThan(0);
+  });
+
+  it("should not auto-validate when validateOn is submit", async () => {
+    const TestForm = makeForm({
+      email: Field.make(Schema.String.pipe(Schema.minLength(5)), {
+        validateOn: "submit",
+      }),
+    });
+
+    const result = await runFormTest(
+      TestForm.provide(
+        { defaults: { email: "ab" } },
+        Effect.gen(function* () {
+          const emailField = yield* TestForm.fields.email;
+
+          yield* emailField.blur();
+          const errors = yield* emailField.errors.get;
+
+          return errors.length;
+        }),
+      ),
+    );
+
+    expect(result).toBe(0);
+  });
+});
+
+describe("Form state", () => {
+  it("should track isValid across all fields", async () => {
+    const TestForm = makeForm({
+      name: Field.make(Schema.String.pipe(Schema.minLength(1)), {
+        validateOn: "change",
+      }),
+      email: Field.make(Schema.String.pipe(Schema.minLength(1)), {
+        validateOn: "change",
+      }),
+    });
+
+    const result = await runFormTest(
+      TestForm.provide(
+        { defaults: { name: "", email: "" } },
+        Effect.gen(function* () {
+          const formState = yield* TestForm.form;
+
+          const invalidBoth = yield* formState.isValid.get;
+
+          const nameField = yield* TestForm.fields.name;
+          yield* nameField.set("John");
+
+          const invalidOne = yield* formState.isValid.get;
+
+          const emailField = yield* TestForm.fields.email;
+          yield* emailField.set("john@example.com");
+
+          const validAll = yield* formState.isValid.get;
+
+          return { invalidBoth, invalidOne, validAll };
+        }),
+      ),
+    );
+
+    expect(result.invalidBoth).toBe(false);
+    expect(result.invalidOne).toBe(false);
+    expect(result.validAll).toBe(true);
+  });
+
+  it("should track isTouched across all fields", async () => {
+    const TestForm = makeForm({
+      name: Field.make(Schema.String),
+      email: Field.make(Schema.String),
+    });
+
+    const result = await runFormTest(
+      TestForm.provide(
+        { defaults: { name: "", email: "" } },
+        Effect.gen(function* () {
+          const formState = yield* TestForm.form;
+
+          const initial = yield* formState.isTouched.get;
+
+          const nameField = yield* TestForm.fields.name;
+          yield* nameField.blur();
+
+          const afterOneTouch = yield* formState.isTouched.get;
+
+          return { initial, afterOneTouch };
+        }),
+      ),
+    );
+
+    expect(result.initial).toBe(false);
+    expect(result.afterOneTouch).toBe(true);
+  });
+
+  it("should track isDirty across all fields", async () => {
+    const TestForm = makeForm({
+      name: Field.make(Schema.String),
+      email: Field.make(Schema.String),
+    });
+
+    const result = await runFormTest(
+      TestForm.provide(
+        { defaults: { name: "initial", email: "initial" } },
+        Effect.gen(function* () {
+          const formState = yield* TestForm.form;
+
+          const initial = yield* formState.isDirty.get;
+
+          const nameField = yield* TestForm.fields.name;
+          yield* nameField.set("changed");
+
+          const afterOneChange = yield* formState.isDirty.get;
+
+          return { initial, afterOneChange };
+        }),
+      ),
+    );
+
+    expect(result.initial).toBe(false);
+    expect(result.afterOneChange).toBe(true);
+  });
+
+  it("should get encoded values", async () => {
+    const TestForm = makeForm({
+      name: Field.make(Schema.String),
+      age: Field.make(Schema.Number),
+    });
+
+    const result = await runFormTest(
+      TestForm.provide(
+        { defaults: { name: "John", age: 30 } },
+        Effect.gen(function* () {
+          const formState = yield* TestForm.form;
+          return yield* formState.getEncoded();
+        }),
+      ),
+    );
+
+    expect(result).toEqual({ name: "John", age: 30 });
+  });
+
+  it("should get decoded values when valid", async () => {
+    const TestForm = makeForm({
+      name: Field.make(Schema.String),
+      age: Field.make(Schema.Number),
+    });
+
+    const result = await runFormTest(
+      TestForm.provide(
+        { defaults: { name: "John", age: 30 } },
+        Effect.gen(function* () {
+          const formState = yield* TestForm.form;
+          // Use Effect.orDie since we know these values are valid
+          return yield* Effect.orDie(formState.getDecoded());
+        }),
+      ),
+    );
+
+    expect(result).toEqual({ name: "John", age: 30 });
+  });
+
+  it("should fail getDecoded when invalid", async () => {
+    const TestForm = makeForm({
+      name: Field.make(Schema.String.pipe(Schema.minLength(5))),
+    });
+
+    const result = await runFormTest(
+      TestForm.provide(
+        { defaults: { name: "ab" } },
+        Effect.gen(function* () {
+          const formState = yield* TestForm.form;
+          const decoded = yield* Effect.either(formState.getDecoded());
+          return decoded._tag;
+        }),
+      ),
+    );
+
+    expect(result).toBe("Left");
+  });
+
+  it("should validate all fields", async () => {
+    const TestForm = makeForm({
+      name: Field.make(Schema.String.pipe(Schema.minLength(1)), {
+        validateOn: "blur",
+      }),
+      email: Field.make(Schema.String.pipe(Schema.minLength(1)), {
+        validateOn: "blur",
+      }),
+    });
+
+    const result = await runFormTest(
+      TestForm.provide(
+        { defaults: { name: "", email: "" } },
+        Effect.gen(function* () {
+          const formState = yield* TestForm.form;
+          const nameField = yield* TestForm.fields.name;
+          const emailField = yield* TestForm.fields.email;
+
+          // Before validate, fields are not touched
+          const touchedBefore = {
+            name: yield* nameField.touched.get,
+            email: yield* emailField.touched.get,
+          };
+
+          const isValid = yield* formState.validate();
+
+          // After validate, all fields should be touched
+          const touchedAfter = {
+            name: yield* nameField.touched.get,
+            email: yield* emailField.touched.get,
+          };
+
+          return { touchedBefore, touchedAfter, isValid };
+        }),
+      ),
+    );
+
+    expect(result.touchedBefore.name).toBe(false);
+    expect(result.touchedBefore.email).toBe(false);
+    expect(result.touchedAfter.name).toBe(true);
+    expect(result.touchedAfter.email).toBe(true);
+    expect(result.isValid).toBe(false);
+  });
+
+  it("should reset all fields", async () => {
+    const TestForm = makeForm({
+      name: Field.make(Schema.String),
+      email: Field.make(Schema.String),
+    });
+
+    const result = await runFormTest(
+      TestForm.provide(
+        { defaults: { name: "initial", email: "initial" } },
+        Effect.gen(function* () {
+          const formState = yield* TestForm.form;
+          const nameField = yield* TestForm.fields.name;
+          const emailField = yield* TestForm.fields.email;
+
+          // Change values
+          yield* nameField.set("changed");
+          yield* emailField.set("changed");
+          yield* nameField.blur();
+          yield* emailField.blur();
+
+          const beforeReset = {
+            name: yield* nameField.value.get,
+            email: yield* emailField.value.get,
+            isDirty: yield* formState.isDirty.get,
+          };
+
+          yield* formState.reset();
+
+          const afterReset = {
+            name: yield* nameField.value.get,
+            email: yield* emailField.value.get,
+            isDirty: yield* formState.isDirty.get,
+          };
+
+          return { beforeReset, afterReset };
+        }),
+      ),
+    );
+
+    expect(result.beforeReset.name).toBe("changed");
+    expect(result.beforeReset.email).toBe("changed");
+    expect(result.beforeReset.isDirty).toBe(true);
+    expect(result.afterReset.name).toBe("initial");
+    expect(result.afterReset.email).toBe("initial");
+    expect(result.afterReset.isDirty).toBe(false);
+  });
+});
+
+describe("Form submission", () => {
+  it("should track isSubmitting state", async () => {
+    const TestForm = makeForm({
+      name: Field.make(Schema.String),
+    });
+
+    const result = await runFormTest(
+      TestForm.provide(
+        { defaults: { name: "John" } },
+        Effect.gen(function* () {
+          const formState = yield* TestForm.form;
+
+          const initial = yield* formState.isSubmitting.get;
+
+          return { initial };
+        }),
+      ),
+    );
+
+    expect(result.initial).toBe(false);
+  });
+
+  it("should call onSubmit handler with valid form", async () => {
+    let submitCalled = false;
+    let submittedValues: unknown = null;
+
+    const TestForm = makeForm(
+      {
+        name: Field.make(Schema.String),
+      },
+      {
+        onSubmit: (ctx) =>
+          Effect.sync(() => {
+            submitCalled = true;
+            submittedValues = ctx.decoded;
+          }),
+      },
+    );
+
+    await runFormTest(
+      TestForm.provide(
+        { defaults: { name: "John" } },
+        Effect.gen(function* () {
+          const formState = yield* TestForm.form;
+          yield* formState.submit();
+        }),
+      ),
+    );
+
+    expect(submitCalled).toBe(true);
+    expect(submittedValues).toEqual({ name: "John" });
+  });
+
+  it("should not call onSubmit when form is invalid", async () => {
+    let submitCalled = false;
+
+    const TestForm = makeForm(
+      {
+        name: Field.make(Schema.String.pipe(Schema.minLength(5)), {
+          validateOn: "submit",
+        }),
+      },
+      {
+        onSubmit: () =>
+          Effect.sync(() => {
+            submitCalled = true;
+          }),
+      },
+    );
+
+    await runFormTest(
+      TestForm.provide(
+        { defaults: { name: "ab" } },
+        Effect.gen(function* () {
+          const formState = yield* TestForm.form;
+          yield* formState.submit();
+        }),
+      ),
+    );
+
+    expect(submitCalled).toBe(false);
+  });
+
+  it("should call both form-level and instance-level onSubmit", async () => {
+    const calls: string[] = [];
+
+    const TestForm = makeForm(
+      {
+        name: Field.make(Schema.String),
+      },
+      {
+        onSubmit: () =>
+          Effect.sync(() => {
+            calls.push("form-level");
+          }),
+      },
+    );
+
+    await runFormTest(
+      TestForm.provide(
+        {
+          defaults: { name: "John" },
+          onSubmit: () =>
+            Effect.sync(() => {
+              calls.push("instance-level");
+            }),
+        },
+        Effect.gen(function* () {
+          const formState = yield* TestForm.form;
+          yield* formState.submit();
+        }),
+      ),
+    );
+
+    expect(calls).toEqual(["form-level", "instance-level"]);
+  });
+});
+
+describe("Type guards", () => {
+  it("isForm should return true for forms", () => {
+    const form = makeForm({
+      name: Field.make(Schema.String),
+    });
+
+    expect(isForm(form)).toBe(true);
+  });
+
+  it("isForm should return false for non-forms", () => {
+    expect(isForm(null)).toBe(false);
+    expect(isForm(undefined)).toBe(false);
+    expect(isForm({})).toBe(false);
+    expect(isForm({ [FormTypeId]: "wrong" })).toBe(false);
+  });
+});
+
+describe("Form namespace export", () => {
+  it("should expose all functions", () => {
+    expect(Form.make).toBe(makeForm);
+    expect(Form.isForm).toBe(isForm);
+    expect(Form.FormTypeId).toBe(FormTypeId);
   });
 });

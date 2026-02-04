@@ -1,4 +1,6 @@
-import type { Effect } from "effect";
+import type { Effect, Scope } from "effect";
+
+import type { RendererContext } from "@effex/core";
 
 /**
  * Result of waiting for an animation to complete
@@ -12,6 +14,9 @@ export type AnimationEndResult =
 /**
  * Lifecycle hook that receives an Effect-wrapped HTMLElement for piping.
  * The element is wrapped in Effect.succeed() so Element helpers can be piped.
+ *
+ * The hook can return an Effect that requires Scope and RendererContext,
+ * which are available during component lifecycle.
  *
  * @example
  * ```ts
@@ -30,7 +35,7 @@ export type AnimationEndResult =
  */
 export type AnimationHook = (
   element: Effect.Effect<HTMLElement>,
-) => Effect.Effect<unknown>;
+) => Effect.Effect<unknown, unknown, Scope.Scope | RendererContext>;
 
 /**
  * Options for enter/exit animations on a single element

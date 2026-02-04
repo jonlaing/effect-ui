@@ -1,4 +1,4 @@
-import type { Effect, Scope } from "effect";
+import { Context, type Effect, type Scope } from "effect";
 
 import type { RendererContext } from "./Renderer";
 
@@ -35,3 +35,24 @@ export type Element<N = unknown, E = never, R = never> = Effect.Effect<
   E,
   Scope.Scope | RendererContext | R
 >;
+
+/**
+ * Context for injecting props into child elements.
+ * Used by primitives implementing the `asChild` pattern and by Form.provide
+ * to inject handlers like onSubmit.
+ *
+ * The first element created within this context will receive the merged props,
+ * with its own explicit props taking precedence over the injected ones.
+ *
+ * @example
+ * ```ts
+ * // Inject onSubmit into the first child element
+ * Effect.provideService(children, MergePropsCtx, {
+ *   onSubmit: (e) => { e.preventDefault(); return handleSubmit(); }
+ * })
+ * ```
+ */
+export class MergePropsCtx extends Context.Tag("MergePropsCtx")<
+  MergePropsCtx,
+  Record<string, unknown>
+>() {}

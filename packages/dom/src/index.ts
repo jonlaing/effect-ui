@@ -4,6 +4,7 @@ export * from "@effex/core";
 // DOM Renderer
 export { DOMRenderer, DOMRendererLive } from "./Render/DOMRenderer";
 
+// Export Element as a namespace and also re-export common types directly
 export * as Element from "./Element";
 
 // Re-export commonly used items from Element for convenience

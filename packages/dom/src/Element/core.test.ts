@@ -347,6 +347,77 @@ describe("Element Core", () => {
     });
   });
 
+  describe("setStyles", () => {
+    it("should set multiple style properties at once", async () => {
+      await runTest(
+        Effect.gen(function* () {
+          const el = yield* Core.make("div").pipe(
+            Core.setStyles({
+              color: "red",
+              backgroundColor: "blue",
+              fontSize: "16px",
+            }),
+          );
+          expect(el.style.color).toBe("red");
+          expect(el.style.backgroundColor).toBe("blue");
+          expect(el.style.fontSize).toBe("16px");
+        }),
+      );
+    });
+
+    it("should handle empty styles object", async () => {
+      await runTest(
+        Effect.gen(function* () {
+          const el = yield* Core.make("div").pipe(Core.setStyles({}));
+          expect(el.style.cssText).toBe("");
+        }),
+      );
+    });
+
+    it("should handle Readable values for reactive bindings", async () => {
+      await runTest(
+        Effect.gen(function* () {
+          const colorSignal = yield* Signal.make("red");
+
+          const el = yield* Core.make("div").pipe(
+            Core.setStyles({
+              color: colorSignal,
+              fontSize: "16px",
+            }),
+          );
+
+          // Initial values are set correctly
+          expect(el.style.color).toBe("red");
+          expect(el.style.fontSize).toBe("16px");
+        }),
+      );
+    });
+
+    it("should handle mixed static and Readable values", async () => {
+      await runTest(
+        Effect.gen(function* () {
+          const bgSignal = yield* Signal.make("white");
+          const opacitySignal = yield* Signal.make("1");
+
+          const el = yield* Core.make("div").pipe(
+            Core.setStyles({
+              color: "red",
+              backgroundColor: bgSignal,
+              opacity: opacitySignal,
+              fontSize: "14px",
+            }),
+          );
+
+          // Initial values are set correctly
+          expect(el.style.color).toBe("red");
+          expect(el.style.backgroundColor).toBe("white");
+          expect(el.style.opacity).toBe("1");
+          expect(el.style.fontSize).toBe("14px");
+        }),
+      );
+    });
+  });
+
   // ===========================================================================
   // Data Attributes
   // ===========================================================================
@@ -685,6 +756,181 @@ describe("Element Core", () => {
           );
           expect(tapped).toBe(true);
           expect(el).toBeInstanceOf(HTMLDivElement);
+        }),
+      );
+    });
+  });
+
+  // ===========================================================================
+  // Element Queries
+  // ===========================================================================
+
+  describe("getBoundingClientRect", () => {
+    it("should return the bounding client rect", async () => {
+      await runTest(
+        Effect.gen(function* () {
+          const el = yield* Core.make("div");
+          // In JSDOM, getBoundingClientRect returns an object with DOMRect properties
+          const rect = yield* Core.getBoundingClientRect(Effect.succeed(el));
+          expect(typeof rect.x).toBe("number");
+          expect(typeof rect.y).toBe("number");
+          expect(typeof rect.width).toBe("number");
+          expect(typeof rect.height).toBe("number");
+          expect(typeof rect.top).toBe("number");
+          expect(typeof rect.bottom).toBe("number");
+          expect(typeof rect.left).toBe("number");
+          expect(typeof rect.right).toBe("number");
+        }),
+      );
+    });
+  });
+
+  describe("getId", () => {
+    it("should return the element id", async () => {
+      await runTest(
+        Effect.gen(function* () {
+          const el = yield* Core.make("div").pipe(
+            Core.setAttribute("id", "test-id"),
+          );
+          const id = yield* Core.getId(Effect.succeed(el));
+          expect(id).toBe("test-id");
+        }),
+      );
+    });
+
+    it("should return empty string when no id is set", async () => {
+      await runTest(
+        Effect.gen(function* () {
+          const el = yield* Core.make("div");
+          const id = yield* Core.getId(Effect.succeed(el));
+          expect(id).toBe("");
+        }),
+      );
+    });
+  });
+
+  describe("hasAttribute", () => {
+    it("should return true when attribute exists", async () => {
+      await runTest(
+        Effect.gen(function* () {
+          const el = yield* Core.make("div").pipe(
+            Core.setAttribute("data-test", "value"),
+          );
+          const has = yield* Core.hasAttribute(Effect.succeed(el), "data-test");
+          expect(has).toBe(true);
+        }),
+      );
+    });
+
+    it("should return false when attribute does not exist", async () => {
+      await runTest(
+        Effect.gen(function* () {
+          const el = yield* Core.make("div");
+          const has = yield* Core.hasAttribute(Effect.succeed(el), "data-test");
+          expect(has).toBe(false);
+        }),
+      );
+    });
+  });
+
+  describe("contains", () => {
+    it("should return true when element contains the node", async () => {
+      await runTest(
+        Effect.gen(function* () {
+          const parent = yield* Core.make("div");
+          const child = yield* Core.make("span");
+          parent.appendChild(child);
+
+          const result = yield* Core.contains(Effect.succeed(parent), child);
+          expect(result).toBe(true);
+        }),
+      );
+    });
+
+    it("should return false when element does not contain the node", async () => {
+      await runTest(
+        Effect.gen(function* () {
+          const div1 = yield* Core.make("div");
+          const div2 = yield* Core.make("div");
+
+          const result = yield* Core.contains(Effect.succeed(div1), div2);
+          expect(result).toBe(false);
+        }),
+      );
+    });
+  });
+
+  // ===========================================================================
+  // Focus Utilities
+  // ===========================================================================
+
+  describe("focusFirst", () => {
+    it("should focus the first matching element", async () => {
+      await runTest(
+        Effect.gen(function* () {
+          const container = yield* Core.make("div");
+          const btn1 = document.createElement("button");
+          btn1.setAttribute("data-item", "");
+          const btn2 = document.createElement("button");
+          btn2.setAttribute("data-item", "");
+          container.appendChild(btn1);
+          container.appendChild(btn2);
+          document.body.appendChild(container);
+
+          yield* Core.focusFirst("[data-item]")(Effect.succeed(container));
+
+          expect(document.activeElement).toBe(btn1);
+          document.body.removeChild(container);
+        }),
+      );
+    });
+
+    it("should do nothing if no matching element", async () => {
+      await runTest(
+        Effect.gen(function* () {
+          const container = yield* Core.make("div");
+          document.body.appendChild(container);
+
+          yield* Core.focusFirst("[data-item]")(Effect.succeed(container));
+
+          expect(document.activeElement).not.toBe(container);
+          document.body.removeChild(container);
+        }),
+      );
+    });
+  });
+
+  describe("focusLast", () => {
+    it("should focus the last matching element", async () => {
+      await runTest(
+        Effect.gen(function* () {
+          const container = yield* Core.make("div");
+          const btn1 = document.createElement("button");
+          btn1.setAttribute("data-item", "");
+          const btn2 = document.createElement("button");
+          btn2.setAttribute("data-item", "");
+          container.appendChild(btn1);
+          container.appendChild(btn2);
+          document.body.appendChild(container);
+
+          yield* Core.focusLast("[data-item]")(Effect.succeed(container));
+
+          expect(document.activeElement).toBe(btn2);
+          document.body.removeChild(container);
+        }),
+      );
+    });
+
+    it("should do nothing if no matching element", async () => {
+      await runTest(
+        Effect.gen(function* () {
+          const container = yield* Core.make("div");
+          document.body.appendChild(container);
+
+          yield* Core.focusLast("[data-item]")(Effect.succeed(container));
+
+          expect(document.activeElement).not.toBe(container);
+          document.body.removeChild(container);
         }),
       );
     });

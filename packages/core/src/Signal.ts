@@ -16,6 +16,10 @@ import {
 } from "./SignalArray.js";
 import { SignalMap, type SignalMap as SignalMapType } from "./SignalMap.js";
 import { SignalSet, type SignalSet as SignalSetType } from "./SignalSet.js";
+import {
+  SignalStruct,
+  type SignalStruct as SignalStructType,
+} from "./SignalStruct.js";
 
 // -----------------------------------------------------------------------------
 // TypeId
@@ -330,12 +334,18 @@ export const Signal = {
    * @see SignalSet
    */
   Set: SignalSet,
+  /**
+   * Create a reactive struct with fixed keys, where each key is accessible as a Signal.
+   * @see SignalStruct
+   */
+  Struct: SignalStruct,
 };
 
 // Re-export types for convenience
 export type { SignalArrayType as SignalArray };
 export type { SignalMapType as SignalMap };
 export type { SignalSetType as SignalSet };
+export type { SignalStructType as SignalStruct };
 
 // Re-export ReadableTypeId for reference
 export { ReadableTypeId };

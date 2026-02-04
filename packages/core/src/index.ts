@@ -10,6 +10,7 @@ export {
   type SignalArray,
   type SignalMap,
   type SignalSet,
+  type SignalStruct,
 } from "./Signal";
 
 // AsyncReadable
@@ -27,6 +28,7 @@ export { Renderer, RendererContext } from "./Renderer";
 
 // Element
 export type { Element } from "./Element";
+export { MergePropsCtx } from "./Element";
 
 // Boundary
 export type { SuspenseOptions, BoundarySuspenseOptions } from "./Boundary";
