@@ -207,7 +207,6 @@ Effex is organized into focused packages. Use what you need:
 | [`@effex/dom`](./packages/dom) | DOM rendering, elements, control flow, components, animation |
 | [`@effex/router`](./packages/router) | Type-safe routing with Effect Schema validation |
 | [`@effex/form`](./packages/form) | Form handling with Effect Schema validation |
-| [`@effex/primitives`](./packages/primitives) | Headless UI components (Dialog, Dropdown, Tabs, etc.) |
 | [`@effex/platform`](./packages/platform) | Full-stack meta-framework: SSR, hydration, loaders, actions |
 | [`@effex/cli`](./packages/cli) | Dev server and build tooling |
 | [`@effex/vite-plugin`](./packages/vite-plugin) | Vite plugin for file-based routing |
@@ -307,8 +306,6 @@ Effex stands on the shoulders of giants:
 - **[TanStack](https://tanstack.com/)** - The router API is inspired by TanStack Router.
 
 - **[effect-form](https://github.com/lucas-barake/effect-form)** - The form package's schema-first, context-based architecture was inspired by this excellent Effect-based form library.
-
-- **[Radix](https://www.radix-ui.com/)** - Our headless UI primitives follow patterns established by Radix.
 
 ## License
 

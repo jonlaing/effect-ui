@@ -388,35 +388,6 @@ yield* ScrollLock.lock;
 // Body scroll is locked until scope closes
 ```
 
-### onClickOutside
-
-Detect clicks outside elements:
-
-```ts
-import { onClickOutside } from "@effex/dom";
-
-yield* onClickOutside([triggerRef, contentRef], () => closeDropdown());
-```
-
-### createKeyboardNav
-
-Create keyboard navigation handlers:
-
-```ts
-import { createKeyboardNav } from "@effex/dom";
-
-const handleKeyDown = yield* createKeyboardNav({
-  selector: "[data-item]:not([data-disabled])",
-  orientation: "vertical",
-  loop: true,
-  onFocus: (el, index) => setActiveIndex(index),
-  onActivate: (el, index) => selectItem(index),
-  onEscape: () => closeMenu(),
-});
-
-yield* $.div({ onKeyDown: handleKeyDown }, items);
-```
-
 ### UniqueId
 
 Generate unique IDs for ARIA relationships:
@@ -536,8 +507,6 @@ el.pipe(Element.setTextContent("Hello"));
 
 - `FocusTrap.make(options)` - Trap focus in container
 - `ScrollLock.lock` - Lock body scroll
-- `onClickOutside(refs, callback)` - Click outside detection
-- `createKeyboardNav(options)` - Keyboard navigation
 - `UniqueId.make(prefix?)` - Generate unique ID
 - `Portal(options?, children)` - Render to different DOM node
 - `provide(tag, value, children)` - Provide context

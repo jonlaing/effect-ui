@@ -16,7 +16,6 @@ export default defineConfig({
     "@effex/dom",
     "@effex/router",
     "@effex/form",
-    "@effex/primitives",
     "@effect/platform",
     "@effect/platform-node",
   ],

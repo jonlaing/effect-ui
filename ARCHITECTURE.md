@@ -28,7 +28,6 @@ packages/
 │
 ├── router/        # @effex/router - Routing
 ├── form/          # @effex/form - Form handling
-├── primitives/    # @effex/primitives - Headless UI components
 │
 └── platform/      # @effex/platform - Meta-framework for SSR apps
     └── src/
@@ -420,12 +419,11 @@ The `RouteLoader` namespace provides helpers:
 - `@effex/dom`
 - `@effex/router`
 - `@effex/form`
-- `@effex/primitives`
 
 This allows users to import everything from a single package:
 
 ```ts
-import { $, Signal, when, Router, Form, Dialog, render } from "@effex/platform";
+import { $, Signal, when, Router, Form, render } from "@effex/platform";
 ```
 
 ### Design Decisions

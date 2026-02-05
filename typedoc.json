@@ -5,7 +5,6 @@
     "./packages/dom/src/index.ts",
     "./packages/router/src/index.ts",
     "./packages/form/src/index.ts",
-    "./packages/primitives/src/index.ts",
     "./packages/platform/src/index.ts",
     "./packages/platform/src/server.ts",
     "./packages/platform/src/client.ts",

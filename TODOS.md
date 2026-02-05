@@ -43,9 +43,6 @@ Dialog, DropdownMenu, Select, Combobox, Popover, Tooltip, Tabs, Accordion, Toggl
 - Recommended config with curated TypeScript rules
 - Added to create-effex templates
 
-### Refactoring
-- `createKeyboardNav` helper adopted in: Tabs, RadioGroup, Toolbar, Accordion, DropdownMenu, ContextMenu, Select
-
 ### Layouts & Outlet
 - `_layout.tsx` file convention with nested layout hierarchy
 - `Outlet` component in `@effex/router` for rendering child content
@@ -175,9 +172,9 @@ Dialog, DropdownMenu, Select, Combobox, Popover, Tooltip, Tabs, Accordion, Toggl
   - Route prefetching, View Transitions API
   - Layout loaders (run layout-specific data fetching)
 
-- [ ] **Demo: Effex IDE** - VSCode-like clone showcasing primitives
-  - File explorer (TreeView), editor tabs, resizable panels (Splitter)
-  - Command palette (Combobox), CodeMirror integration
+- [ ] **Demo: Effex IDE** - VSCode-like clone
+  - File explorer, editor tabs, resizable panels
+  - Command palette, CodeMirror integration
   - Self-documenting: displays its own source code
 
 - [ ] **Demo: Effex PM** - Jira-lite project management
@@ -497,7 +494,6 @@ packages/
 ├── dom/           → @effex/dom (DOM rendering)
 ├── router/        → @effex/router (routing)
 ├── form/          → @effex/form (form handling)
-├── primitives/    → @effex/primitives (UI primitives)
 ├── platform/      → @effex/platform (meta-framework)
 ├── cli/           → @effex/cli (dev server, build tooling)
 ├── vite-plugin/   → @effex/vite-plugin (file-based routing)
