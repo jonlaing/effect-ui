@@ -1,16 +1,26 @@
-import { Context, Effect, ParseResult, Schema, Scope } from "effect";
+import { Context, Effect, Scope, type ParseResult } from "effect";
 
-import { MergePropsCtx, Readable, Signal } from "@effex/core";
+import { MergePropsCtx } from "@effex/core";
 
 import {
-  isLeafField,
+  type ArrayField,
   type EncodedOf,
-  type FieldConfig,
+  type Field,
   type LeafField,
+  type MapField,
+  type StructField,
   type TypeOf,
   type ValidateOn,
 } from "./Field";
-import type { FormState, LeafFieldState } from "./FieldState";
+import type {
+  ArrayFieldState,
+  FormState,
+  LeafFieldState,
+  MapFieldState,
+  StructFieldState,
+} from "./FieldState";
+import { createFieldState, type SupportedFieldState } from "./fieldStates";
+import { createFormState } from "./FormState";
 
 // -----------------------------------------------------------------------------
 // TypeId
@@ -77,16 +87,24 @@ export interface ProvideConfig<Encoded, Decoded, E = never, R = never> {
  * Maps Field types to their corresponding FieldState types.
  */
 type FieldStateOf<F> =
-  F extends LeafField<infer A, any> ? LeafFieldState<A> : never;
+  F extends LeafField<infer A, any>
+    ? LeafFieldState<A>
+    : F extends StructField<infer Fields>
+      ? StructFieldState<
+          { [K in keyof Fields]: TypeOf<Fields[K]> },
+          { [K in keyof Fields]: FieldStateOf<Fields[K]> }
+        >
+      : F extends ArrayField<infer Element>
+        ? ArrayFieldState<TypeOf<Element>, FieldStateOf<Element>>
+        : F extends MapField<infer K, infer Element>
+          ? MapFieldState<K, TypeOf<Element>, FieldStateOf<Element>>
+          : never;
 
 /**
  * Maps a record of Fields to a record of Effects that yield FieldStates.
  * The FormCtx is the identifier type of the context tag.
  */
-type FieldAccessors<
-  Fields extends Record<string, LeafField<any, any>>,
-  FormCtx,
-> = {
+type FieldAccessors<Fields extends Record<string, Field<any, any>>, FormCtx> = {
   readonly [K in keyof Fields]: Effect.Effect<
     FieldStateOf<Fields[K]>,
     never,
@@ -97,9 +115,9 @@ type FieldAccessors<
 /**
  * Internal form context containing live state.
  */
-interface FormContextValue<Fields extends Record<string, LeafField<any, any>>> {
+interface FormContextValue<Fields extends Record<string, Field<any, any>>> {
   readonly fieldStates: {
-    [K in keyof Fields]: LeafFieldState<TypeOf<Fields[K]>>;
+    [K in keyof Fields]: FieldStateOf<Fields[K]>;
   };
   readonly formState: FormState<
     { [K in keyof Fields]: EncodedOf<Fields[K]> },
@@ -115,7 +133,7 @@ interface FormContextValue<Fields extends Record<string, LeafField<any, any>>> {
  * @template FormCtx - The form context identifier (internal)
  */
 export interface Form<
-  Fields extends Record<string, LeafField<any, any>>,
+  Fields extends Record<string, Field<any, any>>,
   R = never,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   FormCtx = any,
@@ -177,7 +195,7 @@ export interface Form<
  * ```
  */
 export const make = <
-  Fields extends Record<string, LeafField<any, any>>,
+  Fields extends Record<string, Field<any, any>>,
   E = never,
   R = never,
 >(
@@ -203,14 +221,19 @@ export const make = <
   // Build field accessors
   const fieldAccessors = {} as Record<
     string,
-    Effect.Effect<LeafFieldState<unknown>, never, FormCtxId>
+    Effect.Effect<SupportedFieldState<unknown>, never, FormCtxId>
   >;
 
   for (const key of Object.keys(fields)) {
     fieldAccessors[key] = Effect.map(
       FormContext,
-      (ctx) => ctx.fieldStates[key as keyof Fields] as LeafFieldState<unknown>,
-    ) as unknown as Effect.Effect<LeafFieldState<unknown>, never, FormCtxId>;
+      (ctx) =>
+        ctx.fieldStates[key as keyof Fields] as SupportedFieldState<unknown>,
+    ) as unknown as Effect.Effect<
+      SupportedFieldState<unknown>,
+      never,
+      FormCtxId
+    >;
   }
 
   // Form accessor
@@ -257,7 +280,7 @@ export const make = <
       // Create context value
       const contextValue: FormContextValue<Fields> = {
         fieldStates: fieldStates as {
-          [K in keyof Fields]: LeafFieldState<TypeOf<Fields[K]>>;
+          [K in keyof Fields]: FieldStateOf<Fields[K]>;
         },
         formState: formState as FormState<Encoded, Decoded>,
       };
@@ -294,267 +317,28 @@ export const make = <
 // -----------------------------------------------------------------------------
 
 const createFieldStates = (
-  fields: Record<string, LeafField<any, any>>,
+  fields: Record<string, Field<any, any>>,
   defaults: Record<string, unknown>,
   formConfig: { validateOn?: ValidateOn; debounce?: number },
-): Effect.Effect<Record<string, LeafFieldState<unknown>>, never, Scope.Scope> =>
-  Effect.gen(function* () {
-    const states: Record<string, LeafFieldState<unknown>> = {};
-
-    for (const [key, field] of Object.entries(fields)) {
-      if (!isLeafField(field)) {
-        continue; // Skip non-leaf fields for now
-      }
-
-      const defaultValue = defaults[key];
-      const config: FieldConfig = {
-        validateOn: field.config.validateOn ?? formConfig.validateOn ?? "blur",
-        debounce: field.config.debounce ?? formConfig.debounce,
-      };
-
-      states[key] = yield* createLeafFieldState(field, defaultValue, config);
-    }
-
-    return states;
-  });
-
-const createLeafFieldState = <A, I>(
-  field: LeafField<A, I>,
-  defaultValue: unknown,
-  config: FieldConfig,
-): Effect.Effect<LeafFieldState<A>, never, Scope.Scope> =>
-  Effect.gen(function* () {
-    const value = yield* Signal.make(defaultValue as A);
-    const touched = yield* Signal.make(false);
-    const focused = yield* Signal.make(false);
-    const initialValue = defaultValue as A;
-
-    // Dirty = value differs from initial
-    const dirty = Readable.map(value, (v) => v !== initialValue);
-
-    // Validation errors - computed based on validateOn config
-    const errors: Readable.Readable<readonly ParseResult.ParseIssue[]> =
-      Readable.map(Readable.zipAll([value, touched] as const), ([v, t]) => {
-        // Don't validate until touched (for blur mode)
-        if (config.validateOn === "blur" && !t) {
-          return [];
-        }
-
-        // For submit mode, don't auto-validate
-        if (config.validateOn === "submit") {
-          return [];
-        }
-
-        // Validate using schema
-        const result = Schema.decodeUnknownEither(field.schema)(v);
-        if (result._tag === "Left") {
-          return result.left.issue ? [result.left.issue] : [];
-        }
-        return [];
-      });
-
-    const leafState: LeafFieldState<A> = {
-      value,
-      errors,
-      touched,
-      dirty,
-      set: (v: A) => value.set(v),
-      update: (f: (v: A) => A) => value.update(f),
-      blur: () =>
-        Effect.gen(function* () {
-          yield* touched.set(true);
-          yield* focused.set(false);
-        }),
-      focus: () => focused.set(true),
-      reset: () =>
-        Effect.gen(function* () {
-          yield* value.set(initialValue);
-          yield* touched.set(false);
-          yield* focused.set(false);
-        }),
-    };
-
-    return leafState;
-  });
-
-// -----------------------------------------------------------------------------
-// Internal: Create Form State
-// -----------------------------------------------------------------------------
-
-const createFormState = <R, R2>(
-  fields: Record<string, LeafField<any, any>>,
-  fieldStates: Record<string, LeafFieldState<unknown>>,
-  formOnSubmit:
-    | OnSubmit<Record<string, unknown>, Record<string, unknown>, unknown, R>
-    | undefined,
-  provideOnSubmit:
-    | OnSubmit<Record<string, unknown>, Record<string, unknown>, unknown, R2>
-    | undefined,
 ): Effect.Effect<
-  FormState<Record<string, unknown>, Record<string, unknown>>,
+  Record<string, SupportedFieldState<unknown>>,
   never,
   Scope.Scope
 > =>
   Effect.gen(function* () {
-    const isSubmitting = yield* Signal.make(false);
+    const states: Record<string, SupportedFieldState<unknown>> = {};
 
-    // Collect error readables
-    const fieldNames = Object.keys(fieldStates);
-    const errorReadables = fieldNames.map((k) => fieldStates[k].errors);
+    for (const [key, field] of Object.entries(fields)) {
+      const defaultValue = defaults[key];
+      const mergedConfig = {
+        validateOn: field.config.validateOn ?? formConfig.validateOn ?? "blur",
+        debounce: field.config.debounce ?? formConfig.debounce,
+      };
 
-    // Aggregate isValid from all fields
-    const isValid: Readable.Readable<boolean> =
-      errorReadables.length > 0
-        ? Readable.map(Readable.zipAll(errorReadables), (allErrors) =>
-            allErrors.every((errs) => errs.length === 0),
-          )
-        : Readable.of(true);
+      states[key] = yield* createFieldState(field, defaultValue, mergedConfig);
+    }
 
-    // Collect touched readables
-    const touchedReadables = fieldNames.map((k) => fieldStates[k].touched);
-
-    // Aggregate isTouched from all fields
-    const isTouched: Readable.Readable<boolean> =
-      touchedReadables.length > 0
-        ? Readable.map(Readable.zipAll(touchedReadables), (touchedStates) =>
-            touchedStates.some((t) => t),
-          )
-        : Readable.of(false);
-
-    // Collect dirty readables
-    const dirtyReadables = fieldNames.map((k) => fieldStates[k].dirty);
-
-    // Aggregate isDirty from all fields
-    const isDirty: Readable.Readable<boolean> =
-      dirtyReadables.length > 0
-        ? Readable.map(Readable.zipAll(dirtyReadables), (dirtyStates) =>
-            dirtyStates.some((d) => d),
-          )
-        : Readable.of(false);
-
-    // Form-level errors (empty for now - would come from struct refinements)
-    const errors: Readable.Readable<readonly ParseResult.ParseIssue[]> =
-      Readable.of([]);
-
-    // Get encoded values
-    const getEncoded = (): Effect.Effect<Record<string, unknown>> =>
-      Effect.gen(function* () {
-        const result: Record<string, unknown> = {};
-        for (const [key, state] of Object.entries(fieldStates)) {
-          result[key] = yield* state.value.get;
-        }
-        return result;
-      });
-
-    // Get decoded values (validates and transforms)
-    const getDecoded = (): Effect.Effect<
-      Record<string, unknown>,
-      ParseResult.ParseError
-    > => {
-      // Build schema outside the generator to avoid R inference issues
-      const schemaFields: Record<
-        string,
-        Schema.Schema<unknown, unknown, never>
-      > = {};
-      for (const [key, field] of Object.entries(fields)) {
-        if (isLeafField(field)) {
-          schemaFields[key] = field.schema as Schema.Schema<
-            unknown,
-            unknown,
-            never
-          >;
-        }
-      }
-      const structSchema = Schema.Struct(schemaFields);
-
-      return getEncoded().pipe(
-        Effect.flatMap((encoded) => Schema.decode(structSchema)(encoded)),
-        Effect.map((decoded) => decoded as Record<string, unknown>),
-      ) as Effect.Effect<
-        Record<string, unknown>,
-        ParseResult.ParseError,
-        never
-      >;
-    };
-
-    // Validate all fields
-    const validate = (): Effect.Effect<boolean> =>
-      Effect.gen(function* () {
-        // Touch all fields to trigger validation
-        for (const state of Object.values(fieldStates)) {
-          yield* state.blur();
-        }
-        return yield* isValid.get;
-      });
-
-    // Reset all fields
-    const reset = (): Effect.Effect<void> =>
-      Effect.all(Object.values(fieldStates).map((s) => s.reset())).pipe(
-        Effect.asVoid,
-      );
-
-    // Submit handler
-    const submit = (): Effect.Effect<void, unknown, R | R2> =>
-      Effect.gen(function* () {
-        yield* isSubmitting.set(true);
-
-        try {
-          // Validate first
-          const valid = yield* validate();
-          if (!valid) return;
-
-          // Get values
-          const encoded = yield* getEncoded();
-          const decodedResult = yield* Effect.either(getDecoded());
-
-          if (decodedResult._tag === "Left") {
-            // Validation failed
-            return;
-          }
-
-          const decoded = decodedResult.right;
-
-          // Build submit context
-          const ctx: SubmitContext<
-            Record<string, unknown>,
-            Record<string, unknown>
-          > = {
-            encoded,
-            decoded,
-            form: {
-              isValid: true,
-              errors: [],
-              touched: new Set(Object.keys(fieldStates)),
-              dirty: new Set(),
-            },
-          };
-
-          // Call form-level onSubmit first
-          if (formOnSubmit) {
-            yield* formOnSubmit(ctx) as Effect.Effect<void, unknown, R>;
-          }
-
-          // Call instance-level onSubmit
-          if (provideOnSubmit) {
-            yield* provideOnSubmit(ctx) as Effect.Effect<void, unknown, R2>;
-          }
-        } finally {
-          yield* isSubmitting.set(false);
-        }
-      });
-
-    return {
-      isValid,
-      isSubmitting,
-      isTouched,
-      isDirty,
-      errors,
-      getEncoded,
-      getDecoded,
-      validate,
-      reset,
-      submit: submit as () => Effect.Effect<void>,
-    };
+    return states;
   });
 
 // -----------------------------------------------------------------------------
@@ -566,7 +350,7 @@ const createFormState = <R, R2>(
  */
 export const isForm = (
   value: unknown,
-): value is Form<Record<string, LeafField<any, any>>> =>
+): value is Form<Record<string, Field<any, any>>> =>
   typeof value === "object" &&
   value !== null &&
   FormTypeId in value &&
