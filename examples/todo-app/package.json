@@ -1,0 +1,19 @@
+{
+  "name": "todo-app",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@effex/dom": "workspace:*",
+    "effect": "^3.0.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vite": "^7.0.0"
+  }
+}
