@@ -6,6 +6,7 @@ import {
   Layer,
   Predicate,
   Scope,
+  Stream,
   SubscriptionRef,
 } from "effect";
 
@@ -132,9 +133,9 @@ export const make = <A>(
 
     const ref = yield* SubscriptionRef.make(initial);
 
-    // SubscriptionRef.changes emits current value on subscription, then all future changes
-    // This is the correct semantic for Signal.changes
-    const getChanges = () => ref.changes;
+    // SubscriptionRef.changes emits current value on subscription, then all future changes.
+    // But Readable.changes contract says "does not include current value", so we drop the first.
+    const getChanges = () => Stream.drop(ref.changes, 1);
 
     const readable = Readable.make(SubscriptionRef.get(ref), getChanges);
 

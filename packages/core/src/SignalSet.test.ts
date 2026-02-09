@@ -61,6 +61,9 @@ describe("Signal.Set", () => {
             Effect.fork,
           );
 
+          // Yield to let the fiber subscribe before mutating
+          yield* Effect.yieldNow();
+
           yield* set.add("new");
           yield* Effect.yieldNow();
 

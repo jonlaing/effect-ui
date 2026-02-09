@@ -1,4 +1,11 @@
-import { Effect, Pipeable, Predicate, Scope, SubscriptionRef } from "effect";
+import {
+  Effect,
+  Pipeable,
+  Predicate,
+  Scope,
+  Stream,
+  SubscriptionRef,
+} from "effect";
 
 import { Readable, TypeId as ReadableTypeId } from "./Readable.js";
 
@@ -116,7 +123,8 @@ export const make = <T>(
     const initialSet = initial ? new Set(initial) : new Set<T>();
     const ref = yield* SubscriptionRef.make(initialSet);
 
-    const getChanges = () => ref.changes;
+    // Drop first emission from SubscriptionRef.changes (it emits current value on subscription)
+    const getChanges = () => Stream.drop(ref.changes, 1);
 
     // Helper to trigger update after mutation
     const notify = Effect.gen(function* () {

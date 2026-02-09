@@ -268,41 +268,23 @@ export const zipWith: {
     that: Readable<B>,
     f: (a: A, b: B) => C,
   ): Readable<C> => {
-    // Track the last emitted values to filter duplicates
-    let lastEmitted: [A, B] | undefined;
-
     const getCurrentPair = Effect.gen(function* () {
       const a = yield* self.get;
       const b = yield* that.get;
       return [a, b] as [A, B];
     });
 
-    const get = Effect.gen(function* () {
-      const pair = yield* getCurrentPair;
-      lastEmitted = pair;
-      return f(pair[0], pair[1]);
-    });
+    const get = Effect.map(getCurrentPair, ([a, b]) => f(a, b));
 
     const getChanges = (): Stream.Stream<C> => {
       // Merge both changes streams - when either emits, fetch both current values
+      // Trust that sources only emit when they've actually changed
       const mergedChanges = Stream.merge(
         Stream.map(self.changes, () => "change" as const),
         Stream.map(that.changes, () => "change" as const),
       );
 
-      return mergedChanges.pipe(
-        Stream.mapEffect(() => getCurrentPair),
-        // Filter out emissions where the values haven't actually changed
-        Stream.filterMap((pair) => {
-          if (lastEmitted !== undefined) {
-            if (pair[0] === lastEmitted[0] && pair[1] === lastEmitted[1]) {
-              return Option.none();
-            }
-          }
-          lastEmitted = pair;
-          return Option.some(f(pair[0], pair[1]));
-        }),
-      );
+      return mergedChanges.pipe(Stream.mapEffect(() => get));
     };
 
     return make(get, getChanges);
@@ -344,17 +326,11 @@ export const zipAll = <T extends readonly Readable<unknown>[]>(
     return make(Effect.succeed([] as unknown as Result), () => Stream.empty);
   }
 
-  // Track the last emitted value to filter duplicates
-  let lastEmitted: Result | undefined;
-
-  const get = Effect.gen(function* () {
-    const values = yield* getCurrentValues(readables);
-    lastEmitted = values;
-    return values;
-  });
+  const get = getCurrentValues(readables);
 
   const getChanges = (): Stream.Stream<Result> => {
     // Merge all changes streams - when any emits, fetch ALL current values
+    // Trust that sources only emit when they've actually changed
     const mergedChanges = readables
       .map((r) => r.changes)
       .reduce(
@@ -362,20 +338,7 @@ export const zipAll = <T extends readonly Readable<unknown>[]>(
         Stream.never as Stream.Stream<unknown>,
       );
 
-    return mergedChanges.pipe(
-      Stream.mapEffect(() => getCurrentValues(readables)),
-      // Filter out emissions where the values haven't actually changed
-      Stream.filterMap((values) => {
-        if (lastEmitted !== undefined) {
-          const same = values.every((v, i) => v === lastEmitted![i]);
-          if (same) {
-            return Option.none();
-          }
-        }
-        lastEmitted = values;
-        return Option.some(values);
-      }),
-    );
+    return mergedChanges.pipe(Stream.mapEffect(() => get));
   };
 
   return make(get, getChanges);

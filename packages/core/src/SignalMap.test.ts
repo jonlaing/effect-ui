@@ -69,6 +69,9 @@ describe("Signal.Map", () => {
             Effect.fork,
           );
 
+          // Yield to let the fiber subscribe before mutating
+          yield* Effect.yieldNow();
+
           yield* map.set("a", 1);
           yield* Effect.yieldNow();
 

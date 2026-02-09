@@ -285,6 +285,9 @@ const fromReadableImpl = <A, B, E, R>(
     // Fork the stream processing to run in background
     yield* Stream.runDrain(changesStream).pipe(Effect.forkIn(scope));
 
+    // Give the forked fiber time to start and establish its subscription
+    yield* Effect.sleep(0);
+
     const refetchEffect = (): Effect.Effect<void, never, R> =>
       Effect.gen(function* () {
         const currentValue = yield* self.get;

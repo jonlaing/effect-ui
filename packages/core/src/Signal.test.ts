@@ -147,9 +147,9 @@ describe("Signal reactivity", () => {
     );
   });
 
-  it("should emit on the changes stream (includes current value on subscription)", async () => {
-    // Note: Signal.changes includes the current value when subscribed due to SubscriptionRef semantics.
-    // This provides "catch-up" behavior - if you subscribe after a change, you get the current value.
+  it("should emit only future changes on the changes stream (not current value)", async () => {
+    // Note: Signal.changes does NOT include the current value - only future changes.
+    // Use Signal.values if you need the current value followed by changes.
     await Effect.runPromise(
       Effect.scoped(
         Effect.gen(function* () {
@@ -170,8 +170,8 @@ describe("Signal reactivity", () => {
           yield* sig.set(2);
           yield* Effect.sleep("20 millis");
 
-          // changes includes current value (0) on subscription, then future changes
-          expect(emissions).toEqual([0, 1, 2]);
+          // changes only includes future changes (1, 2), not the current value (0)
+          expect(emissions).toEqual([1, 2]);
         }),
       ),
     );

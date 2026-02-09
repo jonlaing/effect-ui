@@ -4,6 +4,7 @@ import {
   Pipeable,
   Predicate,
   Scope,
+  Stream,
   SubscriptionRef,
 } from "effect";
 
@@ -159,7 +160,8 @@ export const make = <K, V>(
       : new Map<K, V>();
     const ref = yield* SubscriptionRef.make(initialMap);
 
-    const getChanges = () => ref.changes;
+    // Drop first emission from SubscriptionRef.changes (it emits current value on subscription)
+    const getChanges = () => Stream.drop(ref.changes, 1);
 
     // Helper to trigger update after mutation
     const notify = Effect.gen(function* () {

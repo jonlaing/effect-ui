@@ -192,6 +192,9 @@ describe("Signal.Struct", () => {
             Effect.fork,
           );
 
+          // Yield to let the fiber subscribe before mutating
+          yield* Effect.yieldNow();
+
           yield* struct.replace({ name: "Jane", age: 25 });
           yield* Effect.yieldNow();
 

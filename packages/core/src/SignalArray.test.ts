@@ -51,6 +51,9 @@ describe("Signal.Array", () => {
             Effect.fork,
           );
 
+          // Yield to let the fiber subscribe before mutating
+          yield* Effect.yieldNow();
+
           yield* arr.push(2);
           yield* Effect.yieldNow();
 
