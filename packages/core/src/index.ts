@@ -60,6 +60,7 @@ export type {
   MatchOptionConfig,
   MatchEitherConfig,
   EachConfig,
+  RedrawConfig,
 } from "./Control";
 export {
   reconcile,
@@ -68,4 +69,5 @@ export {
   matchOption,
   matchEither,
   each,
+  redraw,
 } from "./Control";

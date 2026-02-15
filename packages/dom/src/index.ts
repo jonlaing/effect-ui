@@ -17,6 +17,7 @@ export {
   each,
   matchOption,
   matchEither,
+  redraw,
   HydrationMismatchError,
 } from "./Control";
 export type {
@@ -26,6 +27,7 @@ export type {
   EachConfig,
   MatchOptionConfig,
   MatchEitherConfig,
+  RedrawConfig,
 } from "./Control";
 
 // Boundary (async and error handling)

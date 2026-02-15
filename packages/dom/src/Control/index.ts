@@ -15,6 +15,7 @@ import {
   match as coreMatch,
   matchEither as coreMatchEither,
   matchOption as coreMatchOption,
+  redraw as coreRedraw,
   when as coreWhen,
   Readable,
 } from "@effex/core";
@@ -26,6 +27,7 @@ import type {
   MatchConfig,
   MatchEitherConfig,
   MatchOptionConfig,
+  RedrawConfig,
   WhenConfig,
 } from "./types";
 
@@ -37,6 +39,7 @@ export type {
   EachConfig,
   MatchOptionConfig,
   MatchEitherConfig,
+  RedrawConfig,
 } from "./types";
 
 // Re-export errors
@@ -232,3 +235,28 @@ export const matchEither = <
       ? Effect.provideService(AnimationConfigCtx, { single: config.animate })
       : (x) => x,
   ) as Element.Element<DOMElement, E1 | E2, R1 | R2 | ControlCtx>;
+
+/**
+ * Re-render a component whenever any of the provided Readables change.
+ *
+ * Unlike other control functions that switch between states, `redraw` always
+ * renders one element that gets completely recreated on each change. This is
+ * useful when you need to rebuild a component tree based on reactive values,
+ * rather than just updating individual properties.
+ *
+ * @example
+ * ```ts
+ * redraw([markdown, citations], {
+ *   render: ([md, cites]) => MarkdownRenderer({ markdown: md, citations: cites }),
+ *   container: () => $.div({ class: "markdown-container" }),
+ * })
+ * ```
+ */
+export const redraw = <T extends readonly Readable.Readable<unknown>[]>(
+  readables: T,
+  config: RedrawConfig<T>,
+): Element.Element<DOMElement, never, ControlCtx> =>
+  coreRedraw(readables, {
+    render: config.render,
+    container: config.container,
+  }) as Element.Element<DOMElement, never, ControlCtx>;
