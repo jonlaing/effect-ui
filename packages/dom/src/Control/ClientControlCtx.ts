@@ -31,9 +31,7 @@ interface DOMSlotEntry extends SlotEntry<DOMElement> {
  * Creates a fresh client control context with isolated state.
  * Each context has its own containerElement and slots Map.
  */
-const createClientControlCtx = (
-  animationConfig: { single?: unknown; list?: unknown } | undefined,
-): IControlCtx<DOMElement> => {
+const createClientControlCtx = (): IControlCtx<DOMElement> => {
   // Fresh state per context instance
   const slots = new Map<string, DOMSlotEntry>();
   let containerElement: DOMElement | null = null;
@@ -47,7 +45,7 @@ const createClientControlCtx = (
     });
 
   const ctx: IControlCtx<DOMElement> = {
-    fork: () => Effect.succeed(createClientControlCtx(animationConfig)),
+    fork: () => Effect.succeed(createClientControlCtx()),
 
     defaultContainer,
 
@@ -109,7 +107,10 @@ const createClientControlCtx = (
         };
         slots.set(key, entry);
 
-        // Run enter animation if configured
+        // Run enter animation if configured (read at runtime, not Layer creation)
+        const animationConfigOption =
+          yield* Effect.serviceOption(AnimationConfigCtx);
+        const animationConfig = Option.getOrUndefined(animationConfigOption);
         const animate = (animationConfig?.list ?? animationConfig?.single) as
           | Parameters<typeof runEnterAnimation>[1]
           | undefined;
@@ -125,7 +126,10 @@ const createClientControlCtx = (
         const entry = slots.get(key);
         if (!entry) return;
 
-        // Run exit animation if configured
+        // Run exit animation if configured (read at runtime, not Layer creation)
+        const animationConfigOption =
+          yield* Effect.serviceOption(AnimationConfigCtx);
+        const animationConfig = Option.getOrUndefined(animationConfigOption);
         const animate = (animationConfig?.list ?? animationConfig?.single) as
           | Parameters<typeof runExitAnimation>[1]
           | undefined;
@@ -179,16 +183,9 @@ const createClientControlCtx = (
 
 /**
  * Client-side ControlCtx implementation.
- * Optionally reads AnimationConfigCtx for enter/exit animations.
+ * Animation config is read at runtime in addSlot/removeSlot, not at Layer creation.
  */
 export const ClientControlCtx: Layer.Layer<ControlCtx> = Layer.effect(
   ControlCtx,
-  Effect.gen(function* () {
-    // Optionally get animation config
-    const animationConfigOption =
-      yield* Effect.serviceOption(AnimationConfigCtx);
-    const animationConfig = Option.getOrUndefined(animationConfigOption);
-
-    return createClientControlCtx(animationConfig) as IControlCtx<unknown>;
-  }),
+  Effect.succeed(createClientControlCtx() as IControlCtx<unknown>),
 );

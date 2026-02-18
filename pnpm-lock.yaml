@@ -124,15 +124,52 @@ importers:
         specifier: ^6.0.7
         version: 6.4.1(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2)
 
+  examples/kanban:
+    dependencies:
+      '@effex/dom':
+        specifier: workspace:*
+        version: link:../../packages/dom
+      '@effex/form':
+        specifier: workspace:*
+        version: link:../../packages/form
+      '@tailwindcss/vite':
+        specifier: ^4.1.18
+        version: 4.1.18(vite@7.3.0(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))
+      effect:
+        specifier: ^3.0.0
+        version: 3.19.13
+      tailwindcss:
+        specifier: ^4.1.18
+        version: 4.1.18
+    devDependencies:
+      daisyui:
+        specifier: ^5.5.18
+        version: 5.5.18
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^7.0.0
+        version: 7.3.0(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2)
+
   examples/todo-app:
     dependencies:
       '@effex/dom':
         specifier: workspace:*
         version: link:../../packages/dom
+      '@tailwindcss/vite':
+        specifier: ^4.1.18
+        version: 4.1.18(vite@7.3.0(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))
       effect:
         specifier: ^3.0.0
         version: 3.19.13
+      tailwindcss:
+        specifier: ^4.1.18
+        version: 4.1.18
     devDependencies:
+      daisyui:
+        specifier: ^5.5.18
+        version: 5.5.18
       typescript:
         specifier: ~5.9.3
         version: 5.9.3
@@ -3462,6 +3499,13 @@ snapshots:
       '@tailwindcss/oxide': 4.1.18
       tailwindcss: 4.1.18
       vite: 6.4.1(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2)
+
+  '@tailwindcss/vite@4.1.18(vite@7.3.0(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))':
+    dependencies:
+      '@tailwindcss/node': 4.1.18
+      '@tailwindcss/oxide': 4.1.18
+      tailwindcss: 4.1.18
+      vite: 7.3.0(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2)
 
   '@types/chai@5.2.3':
     dependencies:

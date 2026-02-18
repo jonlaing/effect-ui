@@ -1,0 +1,39 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+/* Height + fade animation using CSS grid trick */
+/*
+ * The animation system adds enterFrom + enter before reflow,
+ * then removes enterFrom after reflow.
+ * We use higher specificity so enterFrom values win when both present.
+ */
+
+/* Base enter state - has transition and display:grid */
+.todo-item-enter-active {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows 200ms ease-out,
+    opacity 200ms ease-out;
+}
+
+/* When enterFrom is also present, override to collapsed state */
+.todo-item-enter-active.todo-item-enter {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
+/* Exit: exit is added first (starting state + transition), then exitTo after reflow */
+.todo-item-exit {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows 200ms ease-out,
+    opacity 200ms ease-out;
+}
+
+/* exitTo provides target values - added after reflow to trigger transition */
+.todo-item-exit-active {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}

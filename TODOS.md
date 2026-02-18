@@ -189,6 +189,8 @@ Dialog, DropdownMenu, Select, Combobox, Popover, Tooltip, Tabs, Accordion, Toggl
 
 - [ ] **Remaining keyboard nav refactors**: Combobox, NavigationMenu, TreeView
 
+- [ ] **SVG imports as Effex components** - Vite plugin to transform `.svg` imports into Effex component functions (similar to SVGR for React)
+
 ---
 
 ## Effex API v2 Ideas

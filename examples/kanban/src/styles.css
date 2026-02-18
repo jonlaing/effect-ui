@@ -1,0 +1,61 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Card animations using CSS grid trick */
+
+/* Base wrapper maintains grid layout */
+.card-wrapper {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+
+.card-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Enter animation */
+.card-enter-active {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows 200ms ease-out,
+    opacity 200ms ease-out;
+}
+
+.card-enter-active.card-enter {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
+/* Exit animation */
+.card-exit-active {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows 200ms ease-out,
+    opacity 200ms ease-out;
+}
+
+.card-exit-active.card-exit-to {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
+/* Drag cursor styles */
+.cursor-grab {
+  cursor: grab;
+}
+
+.cursor-grab:active {
+  cursor: grabbing;
+}

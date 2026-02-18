@@ -1,5 +1,5 @@
 {
-  "name": "todo-app",
+  "name": "kanban",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@effex/dom": "workspace:*",
+    "@effex/form": "workspace:*",
     "@tailwindcss/vite": "^4.1.18",
     "effect": "^3.0.0",
     "tailwindcss": "^4.1.18"

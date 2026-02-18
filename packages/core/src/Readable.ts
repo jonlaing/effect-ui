@@ -4,6 +4,7 @@ import {
   Option,
   Pipeable,
   Predicate,
+  Scope,
   Stream,
 } from "effect";
 
@@ -352,30 +353,30 @@ export const combine = zipAll;
 
 /**
  * Run a side effect for each value emitted by the Readable.
- * Returns an Effect that subscribes to the Readable's values.
+ * Subscribes in the background (forked into the current scope) and returns immediately.
+ * The subscription is automatically cleaned up when the scope closes.
  *
  * @example
  * ```ts
- * const count = Readable.of(0);
- * yield* count.pipe(
- *   Readable.tap(n => Effect.log(`Count: ${n}`))
- * );
+ * yield* Readable.tap(count, (n) => Effect.log(`Count: ${n}`));
+ * // Subscription runs in background, component continues rendering
  * ```
  */
 export const tap: {
   <A, E, R>(
     f: (a: A) => Effect.Effect<void, E, R>,
-  ): (self: Readable<A>) => Effect.Effect<void, E, R>;
+  ): (self: Readable<A>) => Effect.Effect<void, E, R | Scope.Scope>;
   <A, E, R>(
     self: Readable<A>,
     f: (a: A) => Effect.Effect<void, E, R>,
-  ): Effect.Effect<void, E, R>;
+  ): Effect.Effect<void, E, R | Scope.Scope>;
 } = Fn.dual(
   2,
   <A, E, R>(
     self: Readable<A>,
     f: (a: A) => Effect.Effect<void, E, R>,
-  ): Effect.Effect<void, E, R> => Stream.runForEach(self.values, f),
+  ): Effect.Effect<void, E, R | Scope.Scope> =>
+    Effect.forkScoped(Stream.runForEach(self.values, f)).pipe(Effect.asVoid),
 );
 
 /**

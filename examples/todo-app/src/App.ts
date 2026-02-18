@@ -85,7 +85,10 @@ export const App = () =>
         $.div(
           { class: "text-center mb-8" },
           collect(
-            $.h1({ class: "text-4xl font-bold text-primary" }, $.of("todos")),
+            $.h1(
+              { class: "text-4xl font-bold text-primary" },
+              $.of("Effex Todo"),
+            ),
           ),
         ),
 
@@ -123,6 +126,16 @@ export const App = () =>
                   ),
                 ),
 
+                // Stats
+                $.div(
+                  { class: "stats stats-horizontal w-full mt-4 bg-base-200" },
+                  collect(
+                    Stat({ label: "Total", value: totalCount }),
+                    Stat({ label: "Active", value: activeCount }),
+                    Stat({ label: "Completed", value: completedCount }),
+                  ),
+                ),
+
                 // Filter tabs
                 $.div(
                   { class: "tabs tabs-boxed justify-center mt-4" },
@@ -137,28 +150,34 @@ export const App = () =>
                   ),
                 ),
 
-                // Stats
-                $.div(
-                  { class: "stats stats-horizontal w-full mt-4 bg-base-200" },
-                  collect(
-                    Stat({ label: "Total", value: totalCount }),
-                    Stat({ label: "Active", value: activeCount }),
-                    Stat({ label: "Completed", value: completedCount }),
-                  ),
-                ),
-
                 // Todo list
-                $.div(
-                  { class: "mt-4 space-y-2" },
-                  each(filteredTodos, {
-                    key: (todo) => String(todo.id),
-                    render: (todo) =>
-                      TodoItem({
-                        todo,
-                        onToggle: toggleTodo,
-                        onDelete: deleteTodo,
-                      }),
-                  }),
+                each(filteredTodos, {
+                  container: () => $.div({ class: "space-y-2" }),
+                  key: (todo) => String(todo.id),
+                  render: (todo) =>
+                    TodoItem({
+                      todo,
+                      onToggle: toggleTodo,
+                      onDelete: deleteTodo,
+                    }),
+                  animate: {
+                    enterFrom: "todo-item-enter",
+                    enter: "todo-item-enter-active",
+                    exit: "todo-item-exit",
+                    exitTo: "todo-item-exit-active",
+                  },
+                }),
+
+                when(
+                  Readable.map(totalCount, (n) => n === 0),
+                  {
+                    onTrue: () =>
+                      $.div(
+                        { class: "text-center text-gray-500" },
+                        $.of("No todos yet!"),
+                      ),
+                    onFalse: () => $.span(),
+                  },
                 ),
 
                 // Footer

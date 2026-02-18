@@ -577,8 +577,15 @@ export const setInputValue: {
   ): Element<A, E, R> =>
     Effect.gen(function* () {
       const el = yield* self;
-      const renderer = yield* RendererContext;
-      yield* renderer.setInputValue(el, value);
+      // For select elements, defer until next microtask so options are mounted
+      if (el.tagName === "SELECT") {
+        queueMicrotask(() => {
+          (el as HTMLSelectElement).value = value;
+        });
+      } else {
+        const renderer = yield* RendererContext;
+        yield* renderer.setInputValue(el, value);
+      }
       return el;
     }) as Element<A, E, R>,
 );
@@ -998,8 +1005,15 @@ export const bindInputValue: {
       const renderer = yield* RendererContext;
 
       // Set initial value
+      // For select elements, defer until next microtask so options are mounted
       const initialValue = yield* readable.get;
-      yield* renderer.setInputValue(el, String(initialValue));
+      if (el.tagName === "SELECT") {
+        queueMicrotask(() => {
+          (el as HTMLSelectElement).value = String(initialValue);
+        });
+      } else {
+        yield* renderer.setInputValue(el, String(initialValue));
+      }
 
       // Subscribe to changes
       const scope = yield* Effect.scope;

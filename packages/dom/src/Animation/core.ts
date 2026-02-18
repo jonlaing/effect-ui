@@ -157,9 +157,9 @@ export const runEnterAnimation = <E, R>(
  *
  * Sequence:
  * 1. Call onBeforeExit hook
- * 2. Add exit classes
- * 3. Add exitTo classes (if provided)
- * 4. Force reflow
+ * 2. Add exit classes (starting state + transition)
+ * 3. Force reflow
+ * 4. Add exitTo classes (triggers transition to target state)
  * 5. Wait for animation/transition to complete
  * 6. Remove exit classes
  * 7. Call onExit hook
@@ -183,10 +183,10 @@ export const runExitAnimation = <E, R>(
   return runAnimation(element, {
     triggerClasses: [exit, exitTo],
     skipFinalClass: undefined,
-    addBeforeReflow: [exit, exitTo],
+    addBeforeReflow: [exit],
     removeAfterReflow: [],
-    addAfterReflow: [],
-    removeAfterAnimation: [exit],
+    addAfterReflow: [exitTo],
+    removeAfterAnimation: [exit, exitTo],
     timeout,
     onBefore: onBeforeExit,
     onAfter: onExit,
