@@ -248,6 +248,183 @@ export const layout =
   };
 
 // =============================================================================
+// Error Handling Combinators
+// =============================================================================
+
+/**
+ * Catch errors from all routes using a predicate.
+ *
+ * @example
+ * ```ts
+ * const router = Router.empty.pipe(
+ *   Router.concat(HomeRoute),
+ *   Router.concat(UserRoute),
+ *   Router.catchIf(
+ *     (e) => e._tag === "NotFound",
+ *     () => NotFoundPage()
+ *   ),
+ * );
+ * ```
+ */
+export const catchIf =
+  <E, E2, R2>(
+    predicate: (error: E) => boolean,
+    handler: (error: E) => Element.Element<HTMLElement | SVGElement, E2, R2>,
+  ) =>
+  <R>(router: Router<E, R>): Router<Exclude<E, E> | E2, R | R2> => {
+    const transformedRoutes = router.routes.map((route) => ({
+      ...route,
+      render: () =>
+        Effect.catchIf(route.render(), predicate, handler) as Element.Element<
+          HTMLElement | SVGElement,
+          Exclude<E, E> | E2,
+          R | R2
+        >,
+    }));
+
+    const transformedFallback = router.fallback
+      ? () =>
+          Effect.catchIf(
+            router.fallback!(),
+            predicate,
+            handler,
+          ) as Element.Element<
+            HTMLElement | SVGElement,
+            Exclude<E, E> | E2,
+            R | R2
+          >
+      : null;
+
+    return Object.assign(Object.create(RouterProto), {
+      ...router,
+      routes: transformedRoutes,
+      fallback: transformedFallback,
+    }) as Router<Exclude<E, E> | E2, R | R2>;
+  };
+
+/**
+ * Catch errors with a specific _tag from all routes.
+ *
+ * @example
+ * ```ts
+ * const router = Router.empty.pipe(
+ *   Router.concat(HomeRoute),
+ *   Router.concat(UserRoute),
+ *   Router.catchTag("NotFound", () => NotFoundPage()),
+ *   Router.catchTag("Unauthorized", () => LoginPage()),
+ * );
+ * ```
+ */
+export const catchTag: {
+  <const K extends string, E2, R2>(
+    tag: K,
+    handler: (error: {
+      _tag: K;
+    }) => Element.Element<HTMLElement | SVGElement, E2, R2>,
+  ): <E extends { _tag: string }, R>(
+    router: Router<E, R>,
+  ) => Router<Exclude<E, { _tag: K }> | E2, R | R2>;
+} = (<const K extends string, E2, R2>(
+    tag: K,
+    handler: (error: {
+      _tag: K;
+    }) => Element.Element<HTMLElement | SVGElement, E2, R2>,
+  ) =>
+  <E extends { _tag: string }, R>(
+    router: Router<E, R>,
+  ): Router<Exclude<E, { _tag: K }> | E2, R | R2> => {
+    const transformedRoutes = router.routes.map((route) => ({
+      ...route,
+      render: () =>
+        Effect.catchTag(
+          route.render() as Effect.Effect<
+            HTMLElement | SVGElement,
+            { _tag: string },
+            unknown
+          >,
+          tag,
+          handler as (error: {
+            _tag: K;
+          }) => Effect.Effect<HTMLElement | SVGElement, E2, R2>,
+        ),
+    }));
+
+    const transformedFallback = router.fallback
+      ? () =>
+          Effect.catchTag(
+            router.fallback!() as Effect.Effect<
+              HTMLElement | SVGElement,
+              { _tag: string },
+              unknown
+            >,
+            tag,
+            handler as (error: {
+              _tag: K;
+            }) => Effect.Effect<HTMLElement | SVGElement, E2, R2>,
+          )
+      : null;
+
+    return Object.assign(Object.create(RouterProto), {
+      ...router,
+      routes: transformedRoutes,
+      fallback: transformedFallback,
+    }) as Router<Exclude<E, { _tag: K }> | E2, R | R2>;
+  }) as {
+  <const K extends string, E2, R2>(
+    tag: K,
+    handler: (error: {
+      _tag: K;
+    }) => Element.Element<HTMLElement | SVGElement, E2, R2>,
+  ): <E extends { _tag: string }, R>(
+    router: Router<E, R>,
+  ) => Router<Exclude<E, { _tag: K }> | E2, R | R2>;
+};
+
+/**
+ * Catch all errors from all routes.
+ * This removes errors from the error channel entirely.
+ *
+ * @example
+ * ```ts
+ * const router = Router.empty.pipe(
+ *   Router.concat(HomeRoute),
+ *   Router.concat(UserRoute),
+ *   Router.catchAll((error) => ErrorPage({ error })),
+ * );
+ * ```
+ */
+export const catchAll =
+  <E, E2, R2>(
+    handler: (error: E) => Element.Element<HTMLElement | SVGElement, E2, R2>,
+  ) =>
+  <R>(router: Router<E, R>): Router<E2, R | R2> => {
+    const transformedRoutes = router.routes.map((route) => ({
+      ...route,
+      render: () =>
+        Effect.catchAll(route.render(), handler) as Element.Element<
+          HTMLElement | SVGElement,
+          E2,
+          R | R2
+        >,
+    }));
+
+    const transformedFallback = router.fallback
+      ? () =>
+          Effect.catchAll(router.fallback!(), handler) as Element.Element<
+            HTMLElement | SVGElement,
+            E2,
+            R | R2
+          >
+      : null;
+
+    return Object.assign(Object.create(RouterProto), {
+      ...router,
+      routes: transformedRoutes,
+      fallback: transformedFallback,
+    }) as Router<E2, R | R2>;
+  };
+
+// =============================================================================
 // Matching
 // =============================================================================
 
@@ -330,6 +507,9 @@ export const Router = {
   fallback,
   guard,
   layout,
+  catchIf,
+  catchTag,
+  catchAll,
   findMatch,
   parseParams,
   parseSearchParams,

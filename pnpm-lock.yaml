@@ -11,6 +11,9 @@ importers:
       '@changesets/cli':
         specifier: ^2.29.8
         version: 2.29.8(@types/node@24.10.4)
+      '@effect/vitest':
+        specifier: ^0.27.0
+        version: 0.27.0(effect@3.19.13)(vitest@4.0.16)
       '@eslint/js':
         specifier: ^9.39.2
         version: 9.39.2
@@ -461,6 +464,12 @@ packages:
     resolution: {integrity: sha512-oIATd3M+RUe2q+bu0Qpgt4/qSbXBM9OEGBrRW7SvtwXGOWkCYkN+LfOPnmPrbMB7jYjpIb7808T1bONM1Nwgfg==}
     peerDependencies:
       effect: ^3.19.13
+
+  '@effect/vitest@0.27.0':
+    resolution: {integrity: sha512-8bM7n9xlMUYw9GqPIVgXFwFm2jf27m/R7psI64PGpwU5+26iwyxp9eAXEsfT5S6lqztYfpQQ1Ubp5o6HfNYzJQ==}
+    peerDependencies:
+      effect: ^3.19.0
+      vitest: ^3.2.0
 
   '@esbuild/aix-ppc64@0.25.12':
     resolution: {integrity: sha512-Hhmwd6CInZ3dwpuGTF8fJG6yoWmsToE+vYgD4nytZVxcu1ulHpUQRAB1UJ8+N1Am3Mz4+xOByoQoSZf4D+CpkA==}
@@ -3013,6 +3022,11 @@ snapshots:
       find-my-way-ts: 0.1.6
       msgpackr: 1.11.8
       multipasta: 0.2.7
+
+  '@effect/vitest@0.27.0(effect@3.19.13)(vitest@4.0.16)':
+    dependencies:
+      effect: 3.19.13
+      vitest: 4.0.16(@types/node@24.10.4)(@vitest/browser-playwright@4.0.16)(jiti@2.6.1)(jsdom@27.3.0)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2)
 
   '@esbuild/aix-ppc64@0.25.12':
     optional: true

@@ -420,6 +420,135 @@ export const withAnimation =
     });
   };
 
+// =============================================================================
+// Error Handling Combinators
+// =============================================================================
+
+/**
+ * Catch errors from the route's render function using a predicate.
+ *
+ * @example
+ * ```ts
+ * const UserRoute = Route.make("/users/:id", () => UserPage()).pipe(
+ *   Route.catch((error) => error._tag === "NotFound", () => NotFoundPage())
+ * );
+ * ```
+ */
+export const catchIf =
+  <E, E2, R2>(
+    predicate: (error: E) => boolean,
+    handler: (error: E) => Element.Element<HTMLElement | SVGElement, E2, R2>,
+  ) =>
+  <Path extends string, P, SP, R>(
+    route: Route<Path, P, SP, E, R>,
+  ): Route<Path, P, SP, Exclude<E, E> | E2, R | R2> => {
+    const ParamsTag = route.Params as Context.Tag<
+      RouteContext<P, SP>,
+      RouteContext<P, SP>
+    >;
+
+    return Object.assign(Object.create(RouteProto), {
+      ...route,
+      Params: ParamsTag,
+      render: () =>
+        Effect.catchIf(route.render(), predicate, handler) as Element.Element<
+          HTMLElement | SVGElement,
+          Exclude<E, E> | E2,
+          R | R2
+        >,
+    });
+  };
+
+/**
+ * Catch errors with a specific _tag from the route's render function.
+ *
+ * @example
+ * ```ts
+ * const UserRoute = Route.make("/users/:id", () => UserPage()).pipe(
+ *   Route.catchTag("NotFound", () => NotFoundPage()),
+ *   Route.catchTag("Unauthorized", () => UnauthorizedPage())
+ * );
+ * ```
+ */
+export const catchTag: {
+  <const K extends string, E2, R2>(
+    tag: K,
+    handler: (error: {
+      _tag: K;
+    }) => Element.Element<HTMLElement | SVGElement, E2, R2>,
+  ): <Path extends string, P, SP, E extends { _tag: string }, R>(
+    route: Route<Path, P, SP, E, R>,
+  ) => Route<Path, P, SP, Exclude<E, { _tag: K }> | E2, R | R2>;
+} = (<const K extends string, E2, R2>(
+    tag: K,
+    handler: (error: {
+      _tag: K;
+    }) => Element.Element<HTMLElement | SVGElement, E2, R2>,
+  ) =>
+  <Path extends string, P, SP, E extends { _tag: string }, R>(
+    route: Route<Path, P, SP, E, R>,
+  ): Route<Path, P, SP, Exclude<E, { _tag: K }> | E2, R | R2> => {
+    return Object.assign(Object.create(RouteProto), {
+      ...route,
+      render: () =>
+        Effect.catchTag(
+          route.render() as Effect.Effect<
+            HTMLElement | SVGElement,
+            { _tag: string },
+            unknown
+          >,
+          tag,
+          handler as (error: {
+            _tag: K;
+          }) => Effect.Effect<HTMLElement | SVGElement, E2, R2>,
+        ),
+    }) as Route<Path, P, SP, Exclude<E, { _tag: K }> | E2, R | R2>;
+  }) as {
+  <const K extends string, E2, R2>(
+    tag: K,
+    handler: (error: {
+      _tag: K;
+    }) => Element.Element<HTMLElement | SVGElement, E2, R2>,
+  ): <Path extends string, P, SP, E extends { _tag: string }, R>(
+    route: Route<Path, P, SP, E, R>,
+  ) => Route<Path, P, SP, Exclude<E, { _tag: K }> | E2, R | R2>;
+};
+
+/**
+ * Catch all errors from the route's render function.
+ * This removes errors from the error channel entirely.
+ *
+ * @example
+ * ```ts
+ * const UserRoute = Route.make("/users/:id", () => UserPage()).pipe(
+ *   Route.catchAll((error) => ErrorPage({ error }))
+ * );
+ * ```
+ */
+export const catchAll =
+  <E, E2, R2>(
+    handler: (error: E) => Element.Element<HTMLElement | SVGElement, E2, R2>,
+  ) =>
+  <Path extends string, P, SP, R>(
+    route: Route<Path, P, SP, E, R>,
+  ): Route<Path, P, SP, E2, R | R2> => {
+    const ParamsTag = route.Params as Context.Tag<
+      RouteContext<P, SP>,
+      RouteContext<P, SP>
+    >;
+
+    return Object.assign(Object.create(RouteProto), {
+      ...route,
+      Params: ParamsTag,
+      render: () =>
+        Effect.catchAll(route.render(), handler) as Element.Element<
+          HTMLElement | SVGElement,
+          E2,
+          R | R2
+        >,
+    });
+  };
+
 /**
  * Create a lazy-loaded route.
  *
@@ -504,4 +633,7 @@ export const Route = {
   withAnimation,
   lazy,
   isRoute,
+  catchIf,
+  catchTag,
+  catchAll,
 };

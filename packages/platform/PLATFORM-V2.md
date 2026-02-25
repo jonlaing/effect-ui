@@ -28,7 +28,7 @@ Instead of a meta-framework with conventions, provide composable Effect primitiv
 
 @effex/platform (environment-aware data primitives)
 ├── Loader.make()               # Data loading primitive (SSR/hydrate/fetch)
-├── Action.make()               # Mutation primitive (runs on server, POSTs from client)
+├── Action.make()               # Monadic mutation primitive (POST data → response)
 ├── Platform.toHttpRoutes()     # Router → HttpRouter (handles ?_data requests)
 ├── Serialization               # Type-preserving JSON
 └── Document                    # HTML document generation
@@ -75,9 +75,8 @@ import { Loader } from "@effex/platform"
 import { Route } from "@effex/router"
 
 // Route is just path + component (no loader property)
-export const userRoute = Route.make("/users/:id").pipe(
+export const userRoute = Route.make("/users/:id", () => UserPage()).pipe(
   Route.params(Schema.Struct({ id: Schema.NumberFromString })),
-  Route.render(UserPage),
 )
 
 // Component defines its own data needs
@@ -230,13 +229,14 @@ const Loader = {
 
 ## The Action Primitive
 
-`Action.make()` is the mutation counterpart to Loader. It runs on the server, POSTs from the client.
+`Action.make()` is an environment-aware mutation primitive. An Action is a **monad over POST data** - it represents a transformation pipeline that processes incoming form data, runs side effects, and returns a response.
 
 ### Basic Usage
 
 ```typescript
 import { Form, Field } from "@effex/form"
 import { Schema } from "effect"
+import { Action } from "@effex/platform"
 
 // Form defined outside component
 const ContactForm = Form.make({
@@ -247,9 +247,10 @@ const ContactForm = Form.make({
 
 const ContactPage = () =>
   Effect.gen(function* () {
-    // Action.make is environment-aware
-    const submitAction = yield* Action.make("submit", (data: typeof ContactForm.Type) =>
-      Effect.gen(function* () {
+    // Action is a pipeline: decode POST data → run effect → respond with result
+    const submitAction = yield* Action.make("submit").pipe(
+      Action.decode(ContactForm.schema),
+      Action.flatMap(data => Effect.gen(function* () {
         const email = yield* EmailService
         yield* email.send({
           to: "support@example.com",
@@ -257,20 +258,15 @@ const ContactPage = () =>
           body: data.message,
         })
         return { success: true }
-      })
+      }))
     )
 
-    // Form.provide mounts the form with live state
+    // Form uses native action attribute - just a string!
+    // Form package stays completely platform-agnostic
     return yield* ContactForm.provide(
       {
         defaults: { name: "", email: "", message: "" },
-        onSubmit: (ctx) =>
-          Effect.gen(function* () {
-            const result = yield* submitAction.run(ctx.decoded)
-            if (result.success) {
-              yield* Navigation.pushPath("/thank-you")
-            }
-          }),
+        action: submitAction.path,  // "?_action=submit"
       },
       $.form({}, collect(
         NameField(),
@@ -286,6 +282,7 @@ const NameField = () =>
   Effect.gen(function* () {
     const name = yield* ContactForm.fields.name
     return yield* $.input({
+      name: "name",  // Required for FormData
       value: name.value,
       onInput: (e) => name.set(e.target.value),
       onBlur: name.blur,
@@ -293,59 +290,124 @@ const NameField = () =>
   })
 ```
 
+### Action as a Monad
+
+An Action is a transformation pipeline over POST data. The response is whatever the pipeline produces:
+
+```typescript
+// Responds with raw body as JSON
+Action.make("echo")
+
+// Responds with just the message field
+Action.make("echo").pipe(
+  Action.map(data => data.message)
+)
+
+// Responds with decoded data (or ParseError)
+Action.make("submit").pipe(
+  Action.decode(ContactForm.schema)
+)
+
+// Responds with { success: true } after running side effects
+Action.make("submit").pipe(
+  Action.decode(ContactForm.schema),
+  Action.flatMap(data => Effect.gen(function* () {
+    yield* EmailService.send({ message: data.message })
+    return { success: true }
+  }))
+)
+
+// Redirect after mutation
+Action.make("submit").pipe(
+  Action.decode(ContactForm.schema),
+  Action.flatMap(data => Effect.gen(function* () {
+    yield* EmailService.send({ message: data.message })
+    return yield* Action.redirect("/thank-you")
+  }))
+)
+```
+
 ### How It Works
 
-**Server:**
+**Server (POST request):**
+1. Request arrives at `/contact?_action=submit` with form body
+2. Platform runs the component with no-op renderer
+3. `Action.make("submit")` registers itself during component execution
+4. Platform finds registered action, runs its pipeline with request body
+5. Pipeline result is JSON-serialized and returned as response
+
+**Client (form submission):**
+- Without JS: Native form POST, full page reload with response
+- With JS: Form intercepts submit, fetches, handles response (redirect, update UI, etc.)
+
+**Vite Transform (client build):**
 ```typescript
-// action.run(data) executes the effect directly
-const result = yield* submitAction.run(formData)
+// Server: full pipeline
+const submitAction = yield* Action.make("submit").pipe(
+  Action.decode(ContactForm.schema),
+  Action.flatMap(data => EmailService.send(...))
+)
+
+// Client: pipeline stripped, just path
+const submitAction = yield* Action.make("submit")
+// submitAction.path is still available
 ```
 
-**Client:**
-```typescript
-// action.run(data) POSTs to the current route
-// Vite strips the effect body, client just does:
-// POST /contact?_action=submit { body: formData }
-const result = yield* submitAction.run(formData)
-```
-
-### Action Implementation
+### Action Type & Combinators
 
 ```typescript
+interface Action<A, E, R> extends Pipeable {
+  readonly path: string
+  readonly key: string
+  // Internal: pipeline to run on POST body
+  readonly _pipeline: (body: unknown) => Effect<A, E, R>
+}
+
 const Action = {
-  make: <I, O, E, R>(
-    key: string,
-    handler?: (input: I) => Effect.Effect<O, E, R>
-  ) =>
-    Effect.gen(function* () {
-      const ctx = yield* ActionContext
+  // Create base action - wraps raw POST body
+  make: (key: string) => Effect<Action<unknown, never, never>, never, ActionContext>,
 
-      return {
-        run: (input: I): Effect.Effect<O, E, R> =>
-          Effect.gen(function* () {
-            if (ctx.mode === "server") {
-              // Server: run handler directly
-              return yield* handler!(input)
-            } else {
-              // Client: POST to server
-              const nav = yield* NavigationContext
-              const path = yield* nav.pathname.get
+  // Transform the value
+  map: <A, B>(fn: (a: A) => B) =>
+    <E, R>(action: Action<A, E, R>) => Action<B, E, R>,
 
-              const response = yield* Effect.tryPromise(() =>
-                fetch(`${path}?_action=${key}`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(input),
-                })
-              )
+  // Chain an Effect (for side effects, async operations)
+  flatMap: <A, B, E2, R2>(fn: (a: A) => Effect<B, E2, R2>) =>
+    <E, R>(action: Action<A, E, R>) => Action<B, E | E2, R | R2>,
 
-              return yield* Effect.tryPromise(() => response.json()) as Effect.Effect<O>
-            }
-          }),
-      }
-    }),
+  // Decode with Schema (sugar for flatMap + Schema.decodeUnknown)
+  decode: <A>(schema: Schema<A>) =>
+    <E, R>(action: Action<unknown, E, R>) => Action<A, E | ParseError, R>,
+
+  // Trigger redirect response
+  redirect: (url: string, status?: number) => Effect<never, RedirectError, never>,
 }
 ```
+
+### Form Integration
+
+Form stays completely platform-agnostic - it just accepts an `action` string:
+
+```typescript
+// @effex/form - no platform dependency
+interface FormProvideConfig<T> {
+  defaults: T
+  action?: string           // Native form action attribute
+  onSubmit?: (ctx) => Effect<void, E, R>  // JS-only handler (optional)
+}
+
+// Form renders with native action
+return yield* ContactForm.provide(
+  {
+    defaults: { ... },
+    action: submitAction.path,  // Just a string: "?_action=submit"
+  },
+  $.form({}, ...)
+)
+// Renders: <form action="?_action=submit" method="POST">
+```
+
+With JS available, Form can intercept submission and use fetch for a better UX (no full page reload). Without JS, the native form submission works.
 
 ---
 
@@ -358,14 +420,13 @@ With Loader and Action as primitives, routes don't need extension:
 import { Route, Router } from "@effex/router"
 import { Schema } from "effect"
 
-const homeRoute = Route.make("/").pipe(Route.render(HomePage))
+const homeRoute = Route.make("/", () => HomePage())
 
-const userRoute = Route.make("/users/:id").pipe(
+const userRoute = Route.make("/users/:id", () => UserPage()).pipe(
   Route.params(Schema.Struct({ id: Schema.NumberFromString })),
-  Route.render(UserPage),
 )
 
-const contactRoute = Route.make("/contact").pipe(Route.render(ContactPage))
+const contactRoute = Route.make("/contact", () => ContactPage())
 
 export const router = Router.empty.pipe(
   Router.concat(homeRoute),
@@ -954,7 +1015,7 @@ import * as t from "@babel/types"
  * Transform Loader.make() and Action.make() calls for client builds.
  *
  * Loader.make("key", effect) → Loader.make("key")
- * Action.make("key", handler) → Action.make("key")
+ * Action.make("key").pipe(...) → Action.make("key")
  *
  * Also removes imports that become unused after stripping.
  */
@@ -976,20 +1037,25 @@ export function transformLoaders(code: string, options: { isClient: boolean }): 
   const strippedIdentifiers = new Set<string>()
   const usedIdentifiers = new Set<string>()
 
-  // First pass: strip Effect arguments from Loader.make/Action.make
+  // First pass: strip Effect arguments from Loader.make, strip .pipe() from Action.make
   traverse(ast, {
     CallExpression(path) {
-      if (!isLoaderOrActionCall(path.node)) return
-
-      // Loader.make("key", effect) → Loader.make("key")
-      // Action.make("key", handler) → Action.make("key")
-      if (path.node.arguments.length > 1) {
-        // Collect identifiers used in the stripped argument
+      // Handle Loader.make("key", effect) → Loader.make("key")
+      if (isLoaderMakeCall(path.node) && path.node.arguments.length > 1) {
         const strippedArg = path.node.arguments[1]
         collectIdentifiers(strippedArg, strippedIdentifiers)
-
-        // Remove all arguments except the first (the key)
         path.node.arguments = [path.node.arguments[0]]
+      }
+
+      // Handle Action.make("key").pipe(...) → Action.make("key")
+      if (isActionPipeCall(path.node)) {
+        // Collect identifiers from .pipe() arguments
+        for (const arg of path.node.arguments) {
+          collectIdentifiers(arg, strippedIdentifiers)
+        }
+        // Replace entire .pipe() call with just Action.make("key")
+        const actionMakeCall = (path.node.callee as t.MemberExpression).object
+        path.replaceWith(actionMakeCall)
       }
     },
   })
@@ -1022,18 +1088,29 @@ export function transformLoaders(code: string, options: { isClient: boolean }): 
   return generate(ast).code
 }
 
-function isLoaderOrActionCall(node: t.CallExpression): boolean {
+function isLoaderMakeCall(node: t.CallExpression): boolean {
   if (!t.isMemberExpression(node.callee)) return false
-
   const obj = node.callee.object
   const prop = node.callee.property
+  return t.isIdentifier(obj) && obj.name === "Loader" &&
+         t.isIdentifier(prop) && prop.name === "make"
+}
 
-  if (!t.isIdentifier(obj) || !t.isIdentifier(prop)) return false
+function isActionPipeCall(node: t.CallExpression): boolean {
+  // Looking for: Action.make("key").pipe(...)
+  if (!t.isMemberExpression(node.callee)) return false
+  const prop = node.callee.property
+  if (!t.isIdentifier(prop) || prop.name !== "pipe") return false
 
-  return (
-    (obj.name === "Loader" && prop.name === "make") ||
-    (obj.name === "Action" && prop.name === "make")
-  )
+  // Check if the object is Action.make(...)
+  const obj = node.callee.object
+  if (!t.isCallExpression(obj)) return false
+  if (!t.isMemberExpression(obj.callee)) return false
+
+  const actionObj = obj.callee.object
+  const actionProp = obj.callee.property
+  return t.isIdentifier(actionObj) && actionObj.name === "Action" &&
+         t.isIdentifier(actionProp) && actionProp.name === "make"
 }
 
 function collectIdentifiers(node: t.Node, set: Set<string>): void {
@@ -1082,12 +1159,12 @@ export function effexPlugin(options: EffexPluginOptions = {}): Plugin[] {
 |--------|--------------|
 | `Loader.make("user", Effect.gen(...))` | `Loader.make("user")` |
 | `Loader.make("stats", fetchStats())` | `Loader.make("stats")` |
-| `Action.make("submit", handleSubmit)` | `Action.make("submit")` |
+| `Action.make("submit").pipe(Action.decode(...), Action.flatMap(...))` | `Action.make("submit")` |
 
 ### Benefits of This Approach
 
 1. **No file conventions needed** - transforms any file using Loader/Action
-2. **Simpler AST transform** - just remove the second argument
+2. **Simple AST transform** - remove second argument from Loader, strip .pipe() from Action
 3. **Works with any code structure** - inline, variable, imported handlers
 4. **Automatic dead code elimination** - Vite tree-shakes unused imports
 
@@ -1110,18 +1187,21 @@ describe("transformLoaders", () => {
     expect(output).not.toContain('import { db }')
   })
 
-  it("strips handler from Action.make", () => {
+  it("strips pipeline from Action.make", () => {
     const input = `
-      const action = yield* Action.make("submit", (data) =>
-        Effect.gen(function* () {
+      const action = yield* Action.make("submit").pipe(
+        Action.decode(ContactForm.schema),
+        Action.flatMap(data => Effect.gen(function* () {
           yield* EmailService.send(data)
-        })
+        }))
       )
     `
 
     const output = transformLoaders(input, { isClient: true })
 
     expect(output).toContain('Action.make("submit")')
+    expect(output).not.toContain("Action.decode")
+    expect(output).not.toContain("Action.flatMap")
     expect(output).not.toContain("EmailService")
   })
 
@@ -1145,7 +1225,7 @@ Current platform → v2:
 | `RouteLoader.loaderData()` | `Loader.make("key", effect)` |
 | `Route.define({ loader })` | `Loader.make()` in component |
 | `Route.define({ action })` | `Action.make()` in component |
-| `PlatformForm` | `Action.make()` + Form |
+| `PlatformForm` | `Action.make().pipe(...)` + Form with `action` prop |
 | `performSSR()` | Internal to `Platform.toHttpRoutes()` |
 | `hydrateApp()` | `Platform.makeClientLoaderLayer()` + `hydrate()` |
 | `Platform.cookies` | Use Effect Platform directly |
@@ -1153,7 +1233,7 @@ Current platform → v2:
 
 **Platform v2 provides:**
 - `Loader.make(key, effect)` - Environment-aware data loading primitive
-- `Action.make(key, handler)` - Environment-aware mutation primitive
+- `Action.make(key).pipe(...)` - Monadic mutation primitive (POST data → transform → response)
 - `Platform.toHttpRoutes()` - Builds HttpRouter routes with data collection
 - `Platform.makeClientLoaderLayer()` - Client-side loader context
 - `Serialization` - Type-preserving JSON
@@ -1199,11 +1279,10 @@ hydrateApp(App(), document.getElementById("root")!)
 import { Route, Router } from "@effex/router"
 import { Schema } from "effect"
 
-const homeRoute = Route.make("/").pipe(Route.render(HomePage))
+const homeRoute = Route.make("/", () => HomePage())
 
-const userRoute = Route.make("/users/:id").pipe(
+const userRoute = Route.make("/users/:id", () => UserPage()).pipe(
   Route.params(Schema.Struct({ id: Schema.NumberFromString })),
-  Route.render(UserPage),
 )
 
 export const router = Router.empty.pipe(
@@ -1332,13 +1411,11 @@ const UserPage = () =>
 
 **With boundary - shows fallback:**
 ```typescript
-const userRoute = Route.make("/users/:id").pipe(
-  Route.render(() =>
-    Boundary.suspense(
-      { fallback: () => UserSkeleton() },
-      UserPage()
-    )
-  ),
+const userRoute = Route.make("/users/:id", () =>
+  Boundary.suspense({
+    render: () => UserPage(),
+    fallback: () => UserSkeleton(),
+  })
 )
 ```
 
@@ -1346,14 +1423,14 @@ const userRoute = Route.make("/users/:id").pipe(
 ```typescript
 const App = () =>
   Effect.gen(function* () {
-    return yield* Boundary.suspense(
-      { fallback: () => PageSpinner() },
-      $.div({}, collect(
+    return yield* Boundary.suspense({
+      render: () => $.div({}, collect(
         Header(),
         Routes(),
         Footer(),
-      ))
-    )
+      )),
+      fallback: () => PageSpinner(),
+    })
   })
 ```
 
@@ -1361,38 +1438,187 @@ This is just Effect composition - no special Platform APIs needed.
 
 ---
 
+## Error Handling
+
+Error handling follows Effect patterns with combinators at the Route and Router level. `Platform.toHttpRoutes` only accepts routers with `never` in the error channel, forcing users to handle all errors before reaching the platform layer.
+
+### Route-Level Error Handling
+
+Routes can catch errors from their render function using familiar Effect combinators:
+
+```typescript
+import { Route } from "@effex/router"
+
+const userRoute = Route.make("/users/:id", () => UserPage()).pipe(
+  Route.params(Schema.Struct({ id: Schema.NumberFromString })),
+  // Handle specific error types
+  Route.catchTag("NotFound", () => NotFoundPage()),
+  Route.catchTag("Unauthorized", () => UnauthorizedPage()),
+)
+
+const dashboardRoute = Route.make("/dashboard", () => DashboardPage()).pipe(
+  // Redirect on auth errors
+  Route.catchTag("Unauthorized", () => Loader.redirect("/login")),
+  // Catch remaining errors
+  Route.catch((error) => ErrorPage({ error })),
+)
+```
+
+### Router-Level Error Handling
+
+Router provides fallback error handling for anything that slips through individual routes:
+
+```typescript
+import { Router } from "@effex/router"
+
+const router = Router.empty.pipe(
+  Router.concat(userRoute),
+  Router.concat(dashboardRoute),
+  Router.concat(homeRoute),
+  // Catch-all for unhandled errors
+  Router.catchAll((error) => GenericErrorPage({ error })),
+)
+```
+
+### Type-Safe Error Handling
+
+`Platform.toHttpRoutes` only accepts `Router<never, R>` - routers with no unhandled errors:
+
+```typescript
+// ✅ Compiles - all errors handled
+const safeRouter = Router.empty.pipe(
+  Router.concat(userRoute),
+  Router.catchAll(() => ErrorPage()),
+)
+Platform.toHttpRoutes(safeRouter, { document: { ... } })
+
+// ❌ Won't compile - unhandled NotFoundError
+const unsafeRouter = Router.empty.pipe(
+  Router.concat(userRoute),  // Has NotFoundError in E
+)
+Platform.toHttpRoutes(unsafeRouter, { document: { ... } })  // Type error!
+```
+
+### Error Handling and Loaders
+
+Since `Loader.make()` runs during render, loader errors bubble up through the render function and get caught by Route/Router error handlers:
+
+```typescript
+const UserPage = () =>
+  Effect.gen(function* () {
+    // If this fails with NotFoundError, it bubbles to Route.catchTag
+    const user = yield* Loader.make("user", Effect.gen(function* () {
+      const db = yield* DatabaseService
+      return yield* db.getUser(id)  // May fail with NotFoundError
+    }))
+
+    return yield* $.div({}, $.of(user.name))
+  })
+
+const userRoute = Route.make("/users/:id", () => UserPage()).pipe(
+  Route.catchTag("NotFoundError", () => NotFoundPage()),
+)
+```
+
+For `?_data=1` requests, if an error occurs and a catch handler runs, the catch handler's render executes (with its own loaders if any), and that data is returned. The catch handler *is* the error response.
+
+### Combinator Signatures
+
+```typescript
+// Route combinators
+Route.catch: <E, E2, R2>(
+  handler: (error: E) => Element<HTMLElement | SVGElement, E2, R2>
+) => <Path, Params, SearchParams, R>(
+  route: Route<Path, Params, SearchParams, E, R>
+) => Route<Path, Params, SearchParams, E2, R | R2>
+
+Route.catchTag: <K extends E["_tag"], E extends { _tag: string }, E2, R2>(
+  tag: K,
+  handler: (error: Extract<E, { _tag: K }>) => Element<HTMLElement | SVGElement, E2, R2>
+) => <Path, Params, SearchParams, R>(
+  route: Route<Path, Params, SearchParams, E, R>
+) => Route<Path, Params, SearchParams, Exclude<E, { _tag: K }> | E2, R | R2>
+
+Route.catchAll: <E2, R2>(
+  handler: (error: unknown) => Element<HTMLElement | SVGElement, E2, R2>
+) => <Path, Params, SearchParams, E, R>(
+  route: Route<Path, Params, SearchParams, E, R>
+) => Route<Path, Params, SearchParams, E2, R | R2>
+
+// Router combinators (similar pattern)
+Router.catch: ...
+Router.catchTag: ...
+Router.catchAll: ...
+```
+
+> **Note:** These combinators are environment-agnostic and belong in `@effex/router`, not `@effex/platform`. They're just Effect error handling applied to routes - no server-side rendering knowledge required.
+
+---
+
+## Implementation Plan
+
+### Phase 1: Router & Form Prerequisites
+
+**Router changes needed:**
+- [x] Add `Route.catchIf`, `Route.catchTag`, `Route.catchAll` combinators
+- [x] Add `Router.catchIf`, `Router.catchTag`, `Router.catchAll` combinators
+- [x] `Route.make(path, render)` API confirmed (render passed to make, not piped)
+- [ ] Ensure `Navigation.make()` works correctly on server (no window dependency when initialPath provided)
+
+**Form changes needed:**
+- [ ] Add optional `action` prop to `Form.provide` config (string, sets native form action attribute)
+- [ ] Ensure form renders with `method="POST"` when action is provided
+- [ ] Fields need `name` attributes for FormData serialization
+
+### Phase 2: Router Demo
+
+Before implementing Platform, validate that Router works correctly in a real application:
+- [ ] Build a multi-page demo app using Router
+- [ ] Test client-side navigation with Link
+- [ ] Test route params and search params
+- [ ] Test guards and redirects
+- [ ] Test layouts and nested routers
+- [ ] Test error handling with catch combinators
+
+### Phase 3: Platform Implementation
+
+After Router is validated:
+- [ ] Implement `Loader.make(key, effect)` primitive
+- [ ] Implement `LoaderContext` for SSR/hydration/client modes
+- [ ] Implement `Action.make(key)` with monadic combinators (`map`, `flatMap`, `decode`)
+- [ ] Implement `ActionContext` for registration during component render
+- [ ] Implement `Platform.toHttpRoutes(router, options)` - the HttpRouter builder
+- [ ] Implement `Platform.makeClientLoaderLayer()` for client hydration
+- [ ] Implement no-op renderer for data-only requests
+- [ ] Implement Vite transform for stripping Loader/Action server code
+- [ ] Implement `Serialization` module for type-preserving JSON
+
+### Phase 4: Platform Demo
+
+Validate Platform with a real SSR application:
+- [ ] Build demo with SSR + hydration
+- [ ] Test Loader.make with real data fetching
+- [ ] Test Action.make with form submission
+- [ ] Test client-side navigation with data fetching
+- [ ] Test error handling flows
+- [ ] Test redirects from loaders/actions
+
+### Deferred (Post-v1)
+
+- Prefetching on Link hover
+- Cache invalidation strategies
+- Optimistic update helpers (leave to user for now)
+
+---
+
 ## Open Questions
 
-1. **Error handling and response formats**
+1. ~~**Form and Action integration**~~ **RESOLVED**
 
-   Currently, loader/action errors bubble up to the HTTP layer. This is good behavior, but we need to resolve:
-   - Data requests (`?_data=1`) should return JSON errors
-   - HTML requests should return HTML errors (or bubble for user's middleware)
+   Action is a monad over POST data with a `.path` property. Form accepts `action` as a string (the native form attribute). Form stays completely platform-agnostic - it doesn't know about Action, just accepts a string. See "The Action Primitive" section.
 
-   Options discussed:
-   - `Platform.toHttpRoutes` automatically returns JSON for data requests, bubbles for HTML
-   - Add `onError` option to `Platform.toHttpRoutes` for customization:
-     ```typescript
-     Platform.toHttpRoutes(router, {
-       document: { ... },
-       onError: (err, isDataRequest) =>
-         isDataRequest
-           ? HttpServerResponse.json({ error: err.message }, { status: 500 })
-           : HttpServerResponse.html(render500Page(err), { status: 500 }),
-     })
-     ```
-   - Could also consider Route-level error fallbacks, but probably better at HTTP layer
+2. **Prefetching** - Should `Link` component prefetch on hover?
 
-2. **Form and Action integration**
+3. **Cache invalidation** - How long to cache loader data on client?
 
-   Currently `onSubmit` is required on Form. Discussed options for tighter Action integration while keeping Form platform-agnostic:
-   - Option 1: Form accepts `action` prop (but couples Form to platform concepts)
-   - Option 2: Action binds to Form and provides the form context
-   - Option 3: Native form submit with progressive enhancement (FormData serialization challenges)
-   - Decision: Leave as-is for now. Revisit after v1.
-
-3. **Prefetching** - Should `Link` component prefetch on hover?
-
-4. **Cache invalidation** - How long to cache loader data on client?
-
-5. **Optimistic updates** - Any built-in support, or leave to user?
+4. **Optimistic updates** - Any built-in support, or leave to user?
