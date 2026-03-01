@@ -252,11 +252,16 @@ export const matchEither = <
  * })
  * ```
  */
-export const redraw = <T extends readonly Readable.Readable<unknown>[]>(
+export const redraw = <T extends Readable.Readable<unknown>>(
   readables: T,
   config: RedrawConfig<T>,
 ): Element.Element<DOMElement, never, ControlCtx> =>
-  coreRedraw(readables, {
-    render: config.render,
-    container: config.container,
-  }) as Element.Element<DOMElement, never, ControlCtx>;
+  pipe(
+    coreRedraw(readables, {
+      render: config.render,
+      container: config.container,
+    }),
+    config.animate
+      ? Effect.provideService(AnimationConfigCtx, { single: config.animate })
+      : (x) => x,
+  ) as Element.Element<DOMElement, never, ControlCtx>;

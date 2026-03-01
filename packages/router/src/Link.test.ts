@@ -54,9 +54,9 @@ describe("Link", () => {
 
   const renderLink = async (props: LinkProps, initialPath = "/") => {
     const router = empty.pipe(
-      concat(Route.make("/", render)),
-      concat(Route.make("/users", render)),
-      concat(Route.make("/users/:id", render)),
+      concat(Route.make("/").pipe(Route.render(render))),
+      concat(Route.make("/users").pipe(Route.render(render))),
+      concat(Route.make("/users/:id").pipe(Route.render(render))),
     );
     const navLayer = Navigation.makeLayer(router, { initialPath });
     const layer = Layer.merge(navLayer, DOMRendererLive);
@@ -78,7 +78,7 @@ describe("Link", () => {
     });
 
     it("renders anchor with route-based navigation", async () => {
-      const UserRoute = Route.make("/users/:id", render);
+      const UserRoute = Route.make("/users/:id").pipe(Route.render(render));
 
       const router = empty.pipe(concat(UserRoute));
       const navLayer = Navigation.makeLayer(router, { initialPath: "/" });
@@ -145,7 +145,9 @@ describe("Link", () => {
 
   describe("click handling", () => {
     it("calls pushPath on click for internal links", async () => {
-      const router = empty.pipe(concat(Route.make("/", render)));
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+      );
       const navLayer = Navigation.makeLayer(router, { initialPath: "/" });
       const layer = Layer.merge(navLayer, DOMRendererLive);
 
@@ -170,7 +172,9 @@ describe("Link", () => {
     });
 
     it("calls replacePath when replace prop is true", async () => {
-      const router = empty.pipe(concat(Route.make("/", render)));
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+      );
       const navLayer = Navigation.makeLayer(router, { initialPath: "/" });
       const layer = Layer.merge(navLayer, DOMRendererLive);
 
@@ -193,7 +197,9 @@ describe("Link", () => {
     });
 
     it("does not prevent default for ctrl+click", async () => {
-      const router = empty.pipe(concat(Route.make("/", render)));
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+      );
       const navLayer = Navigation.makeLayer(router, { initialPath: "/" });
       const layer = Layer.merge(navLayer, DOMRendererLive);
 
@@ -219,7 +225,9 @@ describe("Link", () => {
 
   describe("external links", () => {
     it("does not prevent default for external URLs", async () => {
-      const router = empty.pipe(concat(Route.make("/", render)));
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+      );
       const navLayer = Navigation.makeLayer(router, { initialPath: "/" });
       const layer = Layer.merge(navLayer, DOMRendererLive);
 
@@ -235,7 +243,9 @@ describe("Link", () => {
     });
 
     it("does not prevent default for target=_blank", async () => {
-      const router = empty.pipe(concat(Route.make("/", render)));
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+      );
       const navLayer = Navigation.makeLayer(router, { initialPath: "/" });
       const layer = Layer.merge(navLayer, DOMRendererLive);
 

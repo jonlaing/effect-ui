@@ -46,7 +46,9 @@ export interface MatchOptions {
 export interface Router<E = never, R = never> extends Pipeable.Pipeable {
   readonly [TypeId]: TypeId;
   /** All routes in this router */
-  readonly routes: ReadonlyArray<Route<string, unknown, unknown, E, R>>;
+  readonly routes: ReadonlyArray<
+    Route<string, unknown, unknown, unknown, E, R>
+  >;
   /** Fallback render function when no route matches */
   readonly fallback:
     | (() => Element.Element<HTMLElement | SVGElement, E, R>)
@@ -97,14 +99,18 @@ export const empty: Router<never, never> = Object.assign(
  * ```
  */
 export const concat: {
-  <Path extends string, P, SP, E, R>(
-    route: Route<Path, P, SP, E, R>,
+  <Path extends string, P, SP, D, E, R>(
+    route: Route<Path, P, SP, D, E, R>,
   ): <E2, R2>(router: Router<E2, R2>) => Router<E | E2, R | R2>;
   <E, R>(
     other: Router<E, R>,
   ): <E2, R2>(router: Router<E2, R2>) => Router<E | E2, R | R2>;
 } =
-  <E, R>(routeOrRouter: Route<string, unknown, unknown, E, R> | Router<E, R>) =>
+  <E, R>(
+    routeOrRouter:
+      | Route<string, unknown, unknown, unknown, E, R>
+      | Router<E, R>,
+  ) =>
   <E2, R2>(router: Router<E2, R2>): Router<E | E2, R | R2> => {
     if (isRoute(routeOrRouter)) {
       // Adding a single route
@@ -274,8 +280,12 @@ export const catchIf =
   <R>(router: Router<E, R>): Router<Exclude<E, E> | E2, R | R2> => {
     const transformedRoutes = router.routes.map((route) => ({
       ...route,
-      render: () =>
-        Effect.catchIf(route.render(), predicate, handler) as Element.Element<
+      render: (data: any) =>
+        Effect.catchIf(
+          route.render(data),
+          predicate,
+          handler,
+        ) as Element.Element<
           HTMLElement | SVGElement,
           Exclude<E, E> | E2,
           R | R2
@@ -335,9 +345,9 @@ export const catchTag: {
   ): Router<Exclude<E, { _tag: K }> | E2, R | R2> => {
     const transformedRoutes = router.routes.map((route) => ({
       ...route,
-      render: () =>
+      render: (data: any) =>
         Effect.catchTag(
-          route.render() as Effect.Effect<
+          route.render(data) as Effect.Effect<
             HTMLElement | SVGElement,
             { _tag: string },
             unknown
@@ -400,8 +410,8 @@ export const catchAll =
   <R>(router: Router<E, R>): Router<E2, R | R2> => {
     const transformedRoutes = router.routes.map((route) => ({
       ...route,
-      render: () =>
-        Effect.catchAll(route.render(), handler) as Element.Element<
+      render: (data: any) =>
+        Effect.catchAll(route.render(data), handler) as Element.Element<
           HTMLElement | SVGElement,
           E2,
           R | R2
@@ -436,7 +446,7 @@ export const findMatch = <E, R>(
   router: Router<E, R>,
   pathname: string,
 ): Option.Option<{
-  route: Route<string, unknown, unknown, E, R>;
+  route: Route<string, unknown, unknown, unknown, E, R>;
   params: Record<string, string>;
 }> => {
   // Sort routes by specificity (descending)
@@ -458,7 +468,7 @@ export const findMatch = <E, R>(
  * Parse and validate params using the route's schema.
  */
 export const parseParams = <P, SP, E, R>(
-  route: Route<string, P, SP, E, R>,
+  route: Route<string, P, SP, unknown, E, R>,
   rawParams: Record<string, string>,
 ): Effect.Effect<P, unknown> => {
   if (route.paramsSchema) {
@@ -471,7 +481,7 @@ export const parseParams = <P, SP, E, R>(
  * Parse search params from URLSearchParams.
  */
 export const parseSearchParams = <P, SP, E, R>(
-  route: Route<string, P, SP, E, R>,
+  route: Route<string, P, SP, unknown, E, R>,
   searchParams: URLSearchParams,
 ): Effect.Effect<SP, unknown> => {
   const raw: Record<string, string> = {};

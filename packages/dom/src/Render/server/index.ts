@@ -68,14 +68,18 @@ export interface RenderToStringOptions {
  * });
  * ```
  */
-export const renderToString = <A extends HTMLElement | SVGElement>(
+export const renderToString = <
+  A extends HTMLElement | SVGElement,
+  E = never,
+  R = never,
+>(
   element: Element.Element<
     A,
-    never,
-    RendererContext | ControlCtx | SuspenseBoundaryCtx
+    E,
+    RendererContext | ControlCtx | SuspenseBoundaryCtx | R
   >,
   _options: RenderToStringOptions = {},
-) => {
+): Effect.Effect<string, E, R> => {
   const StringRendererLayer = Layer.succeed(
     RendererContext,
     StringRenderer as Renderer<unknown>,

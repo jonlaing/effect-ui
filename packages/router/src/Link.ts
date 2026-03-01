@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { $, Element, Readable } from "@effex/dom";
+import { $, Readable, type Element } from "@effex/dom";
 
 import { buildPath, NavigationContext } from "./Navigation.js";
 import type { Route } from "./Route.js";
@@ -18,7 +18,7 @@ export interface LinkProps {
   readonly href?: string;
 
   /** Route to navigate to (type-safe alternative to href) */
-  readonly to?: Route<string, unknown, unknown, unknown, unknown>;
+  readonly to?: Route<string, unknown, unknown, unknown, unknown, unknown>;
 
   /** Params for route-based navigation */
   readonly params?: Record<string, unknown>;
@@ -124,7 +124,7 @@ const isPrefixMatch = (pathname: string, href: string): boolean => {
  */
 export const Link = <E, R>(
   props: LinkProps,
-  children: Element.Child<E, R>,
+  children: Effect.Effect<unknown, E, R>,
 ): Element.Element<HTMLAnchorElement, E, R | NavigationContext> =>
   Effect.gen(function* () {
     const nav = yield* NavigationContext;
@@ -205,7 +205,7 @@ export const Link = <E, R>(
         "data-active-exact": dataActiveExact,
         "data-active-prefix": dataActivePrefix,
       },
-      children,
+      children as any,
     );
   });
 

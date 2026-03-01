@@ -3,6 +3,56 @@ import type { Effect, Scope } from "effect";
 import type { RendererContext } from "@effex/core";
 
 /**
+ * @module Animation
+ *
+ * Animation system for enter/exit transitions on elements.
+ *
+ * ## How It Works
+ *
+ * The animation system listens for `transitionend` or `animationend` events
+ * to know when animations complete. If no event fires within the timeout
+ * (default 5 seconds), it assumes the animation is done.
+ *
+ * ## Tailwind CSS Setup
+ *
+ * For animations to work correctly with Tailwind, you need BOTH:
+ * 1. A `transition-*` property (e.g., `transition-opacity`)
+ * 2. A `duration-*` property (e.g., `duration-150`)
+ *
+ * ### Common Gotcha: No Transition Event
+ *
+ * If your animation seems to hang for several seconds, the `transitionend`
+ * event isn't firing. This usually means:
+ * - Missing `transition-*` class (you have duration but no transition property)
+ * - CSS specificity issues (use `!` prefix in Tailwind for important)
+ * - The property isn't actually changing
+ *
+ * ### Example: Fade Animation
+ *
+ * ```typescript
+ * match(currentRoute, {
+ *   cases: [...],
+ *   animate: {
+ *     // enterFrom: initial state + transition setup
+ *     enterFrom: "opacity-0 transition-opacity duration-150",
+ *     // enter: target state (use ! for specificity)
+ *     enter: "!opacity-100",
+ *     // exit: starting state + transition setup
+ *     exit: "transition-opacity duration-150",
+ *     // exitTo: final state (use ! for specificity)
+ *     exitTo: "!opacity-0",
+ *   }
+ * })
+ * ```
+ *
+ * ### Why `!important`?
+ *
+ * Tailwind's `!` prefix ensures your animation classes override any existing
+ * opacity utilities on the element. Without it, `opacity-100` might not
+ * actually change the value if the element already has an opacity class.
+ */
+
+/**
  * Result of waiting for an animation to complete
  */
 export type AnimationEndResult =
@@ -38,25 +88,34 @@ export type AnimationHook = (
 ) => Effect.Effect<unknown, unknown, Scope.Scope | RendererContext>;
 
 /**
- * Options for enter/exit animations on a single element
+ * Options for enter/exit animations on a single element.
+ *
+ * See module docs above for Tailwind setup guide and common gotchas.
  */
 export interface AnimationOptions {
   /**
-   * CSS class(es) to apply during the enter animation.
-   * Multiple classes can be space-separated: "fade-in slide-up"
+   * CSS class(es) for the enter animation target state.
+   * Applied after enterFrom is removed to trigger the transition.
+   *
+   * Use `!` prefix (Tailwind important) if needed for specificity:
+   * @example "!opacity-100"
    */
   enter?: string;
 
   /**
-   * CSS class(es) to apply during the exit animation.
-   * Multiple classes can be space-separated: "fade-out slide-down"
+   * CSS class(es) to apply at the start of exit animation.
+   * Should include `transition-*` and `duration-*` for CSS transitions.
+   *
+   * @example "transition-opacity duration-150"
    */
   exit?: string;
 
   /**
    * CSS class(es) for the initial state before enter animation starts.
+   * Should include `transition-*` and `duration-*` for CSS transitions.
    * These are removed after the first frame to trigger the transition.
-   * Useful for "animate from" states like "opacity-0 translate-y-4"
+   *
+   * @example "opacity-0 transition-opacity duration-150"
    */
   enterFrom?: string;
 
@@ -67,14 +126,22 @@ export interface AnimationOptions {
   enterTo?: string;
 
   /**
-   * CSS class(es) for the final state after exit animation completes.
-   * Applied at the start of exit, removed when element is removed from DOM.
+   * CSS class(es) for the target state of exit animation.
+   * Applied after exit to trigger the transition.
+   *
+   * Use `!` prefix (Tailwind important) if needed for specificity:
+   * @example "!opacity-0"
    */
   exitTo?: string;
 
   /**
    * Maximum time in milliseconds to wait for animation/transition to complete.
    * If exceeded, animation is considered complete.
+   *
+   * **Troubleshooting:** If animations consistently hit this timeout,
+   * the `transitionend` event isn't firing. Check that your CSS classes
+   * include both `transition-*` AND `duration-*` properties.
+   *
    * @default 5000
    */
   timeout?: number;

@@ -163,9 +163,8 @@ export interface EachConfig<A, E = never, R = never> {
  * Helper type to extract values from an array of Readables.
  * `[Readable<A>, Readable<B>]` -> `[A, B]`
  */
-type ExtractReadableValues<T extends readonly Readable<unknown>[]> = {
-  [K in keyof T]: T[K] extends Readable<infer V> ? V : never;
-};
+type ExtractReadableValue<T extends Readable<unknown>> =
+  T extends Readable<infer V> ? V : never;
 
 /**
  * Configuration for the `redraw` control flow (DOM-specific).
@@ -175,7 +174,7 @@ type ExtractReadableValues<T extends readonly Readable<unknown>[]> = {
  * return errors and can only require Scope and RendererContext (which are
  * provided automatically).
  */
-export interface RedrawConfig<T extends readonly Readable<unknown>[]> {
+export interface RedrawConfig<T extends Readable<unknown>> {
   /**
    * Optional custom container element. If not provided, defaults to a div
    * with `display: contents`.
@@ -190,6 +189,8 @@ export interface RedrawConfig<T extends readonly Readable<unknown>[]> {
    * Readables whenever any of them change.
    */
   readonly render: (
-    values: ExtractReadableValues<T>,
+    values: ExtractReadableValue<T>,
   ) => Element.Element<HTMLElement | SVGElement, never, never>;
+  /** Optional animation configuration */
+  readonly animate?: AnimationOptions;
 }

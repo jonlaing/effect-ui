@@ -1563,31 +1563,32 @@ Router.catchAll: ...
 - [x] Add `Route.catchIf`, `Route.catchTag`, `Route.catchAll` combinators
 - [x] Add `Router.catchIf`, `Router.catchTag`, `Router.catchAll` combinators
 - [x] `Route.make(path, render)` API confirmed (render passed to make, not piped)
-- [ ] Ensure `Navigation.make()` works correctly on server (no window dependency when initialPath provided)
+- [x] Ensure `Navigation.make()` works correctly on server (no window dependency when initialPath provided)
 
 **Form changes needed:**
-- [ ] Add optional `action` prop to `Form.provide` config (string, sets native form action attribute)
-- [ ] Ensure form renders with `method="POST"` when action is provided
-- [ ] Fields need `name` attributes for FormData serialization
+- [x] Add optional `action` prop to `Form.provide` config (string, sets native form action attribute)
+- [x] Ensure form renders with `method="POST"` when action is provided
+- [ ] Fields need `name` attributes for FormData serialization (user responsibility - documented in examples)
 
 ### Phase 2: Router Demo
 
 Before implementing Platform, validate that Router works correctly in a real application:
-- [ ] Build a multi-page demo app using Router
-- [ ] Test client-side navigation with Link
-- [ ] Test route params and search params
-- [ ] Test guards and redirects
-- [ ] Test layouts and nested routers
+- [x] Build a multi-page demo app using Router
+- [x] Test client-side navigation with Link
+
+- [x] Test route params and search params
+- [x] Test guards and redirects
+- [x] Test layouts and nested routers
 - [ ] Test error handling with catch combinators
 
 ### Phase 3: Platform Implementation
 
 After Router is validated:
-- [ ] Implement `Loader.make(key, effect)` primitive
-- [ ] Implement `LoaderContext` for SSR/hydration/client modes
-- [ ] Implement `Action.make(key)` with monadic combinators (`map`, `flatMap`, `decode`)
-- [ ] Implement `ActionContext` for registration during component render
-- [ ] Implement `Platform.toHttpRoutes(router, options)` - the HttpRouter builder
+- [x] Implement `Loader.make(key, effect)` primitive
+- [x] Implement `LoaderContext` for SSR/hydration/client modes
+- [x] Implement `Action.make(key)` with monadic combinators (`map`, `flatMap`, `decode`)
+- [x] Implement `ActionContext` for registration during component render
+- [x] Implement `Platform.toHttpRoutes(router, options)` - the HttpRouter builder
 - [ ] Implement `Platform.makeClientLoaderLayer()` for client hydration
 - [ ] Implement no-op renderer for data-only requests
 - [ ] Implement Vite transform for stripping Loader/Action server code

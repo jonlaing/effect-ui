@@ -75,8 +75,14 @@ export interface FormConfig<Encoded, Decoded, E = never, R = never> {
 export interface ProvideConfig<Encoded, Decoded, E = never, R = never> {
   /** Initial/default values for all fields */
   readonly defaults: Encoded;
-  /** Instance-level submit handler */
+  /** Instance-level submit handler (runs on client with JS) */
   readonly onSubmit?: OnSubmit<Encoded, Decoded, E, R>;
+  /**
+   * Native form action attribute (e.g., "?_action=submit").
+   * When provided, form renders with action and method="POST" attributes,
+   * enabling progressive enhancement (works without JS).
+   */
+  readonly action?: string;
 }
 
 // -----------------------------------------------------------------------------
@@ -291,11 +297,20 @@ export const make = <
         return formState.submit();
       };
 
-      // Provide form context and inject onSubmit via MergePropsCtx
-      // The first element (typically $.form) will receive the onSubmit handler
+      // Build props to merge into form element
+      const mergeProps: Record<string, unknown> = { onSubmit };
+
+      // When action is provided, add native form attributes for progressive enhancement
+      if (provideConfig.action) {
+        mergeProps.action = provideConfig.action;
+        mergeProps.method = "POST";
+      }
+
+      // Provide form context and inject props via MergePropsCtx
+      // The first element (typically $.form) will receive these props
       return yield* children.pipe(
         Effect.provideService(FormContext, contextValue),
-        Effect.provideService(MergePropsCtx, { onSubmit }),
+        Effect.provideService(MergePropsCtx, mergeProps),
       );
     }) as Effect.Effect<A, never, R | R2 | Scope.Scope>;
 

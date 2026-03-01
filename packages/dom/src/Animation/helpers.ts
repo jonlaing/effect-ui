@@ -76,7 +76,19 @@ export const waitForAnimationEvent = (
 
       const handleAnimationEnd = () => resolve({ endedBy: "animation" });
       const handleTransitionEnd = () => resolve({ endedBy: "transition" });
-      const handleTimeout = () => resolve({ endedBy: "timeout" });
+      const handleTimeout = () => {
+        if (process.env.NODE_ENV !== "production") {
+          console.warn(
+            "[effex] Animation timeout reached. The transitionend/animationend event " +
+              "did not fire. This usually means your CSS classes are missing the " +
+              "transition property. With Tailwind, ensure you have BOTH transition-* " +
+              "(e.g., transition-opacity) AND duration-* (e.g., duration-150). " +
+              "You may also need the ! prefix for specificity (e.g., !opacity-100).",
+            element,
+          );
+        }
+        resolve({ endedBy: "timeout" });
+      };
 
       element.addEventListener("animationend", handleAnimationEnd, {
         once: true,

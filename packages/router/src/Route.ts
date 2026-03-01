@@ -1,4 +1,4 @@
-import { Context, Effect, ParseResult, Pipeable, Schema } from "effect";
+import { Context, Data, Effect, ParseResult, Pipeable, Schema } from "effect";
 
 import { Readable } from "@effex/core";
 import type { Element } from "@effex/dom";
@@ -9,6 +9,18 @@ import type { Element } from "@effex/dom";
 
 export const TypeId: unique symbol = Symbol.for("@effex/router/Route");
 export type TypeId = typeof TypeId;
+
+// =============================================================================
+// Errors
+// =============================================================================
+
+/**
+ * Error yielded when a route is used without calling `Route.render()`.
+ * `Route.render()` excludes this error from the route's E channel.
+ */
+export class NoRenderError extends Data.TaggedError("NoRenderError")<{
+  readonly path: string;
+}> {}
 
 // =============================================================================
 // Path Parsing
@@ -146,12 +158,22 @@ export type GuardOptions =
   | { readonly fallback: () => Element.Element<HTMLElement | SVGElement> };
 
 /**
+ * A handler entry for POST/PUT/DELETE mutations.
+ */
+export interface RouteHandler {
+  readonly method: "post" | "put" | "delete";
+  readonly key: string;
+  readonly handler: (body: unknown) => Effect.Effect<unknown, unknown, unknown>;
+}
+
+/**
  * A route definition with typed parameters.
  */
 export interface Route<
   Path extends string = string,
   Params = Record<string, string>,
   SearchParams = Record<string, string>,
+  Data = unknown,
   E = never,
   R = never,
 >
@@ -161,8 +183,10 @@ export interface Route<
   readonly path: Path;
   /** Parsed path segments */
   readonly segments: readonly PathSegment[];
-  /** The render function */
-  readonly render: () => Element.Element<HTMLElement | SVGElement, E, R>;
+  /** The render function — receives loader data (or undefined if no loader) */
+  readonly render: (
+    data: Data,
+  ) => Element.Element<HTMLElement | SVGElement, E, R>;
   /** Schema for params validation (if set) */
   readonly paramsSchema: Schema.Schema<Params, unknown> | null;
   /** Schema for search params validation (if set) */
@@ -201,6 +225,23 @@ export interface Route<
     ParseResult.ParseError,
     RouteContext<Params, SearchParams>
   >;
+  /**
+   * Loader hook — executed on GET by platform.
+   * Receives { params, searchParams } and returns data for the render function.
+   * Stored opaquely; the router never executes it.
+   */
+  readonly _loader:
+    | ((args: {
+        params: Params;
+        searchParams: SearchParams;
+      }) => Effect.Effect<unknown, unknown, unknown>)
+    | null;
+  /**
+   * Mutation handlers — executed on POST/PUT/DELETE by platform.
+   * Each entry has a method, unique key, and handler function.
+   * Stored opaquely; the router never executes them.
+   */
+  readonly _handlers: ReadonlyArray<RouteHandler>;
 }
 
 // =============================================================================
@@ -218,22 +259,38 @@ const RouteProto = {
 /**
  * Create a route definition.
  *
+ * Use combinators to add params, loaders, handlers, and the render function:
+ *
  * @param path - The path pattern (e.g., "/users/:id")
- * @param render - Function that returns the element to render
  *
  * @example
  * ```ts
- * const HomeRoute = Route.make("/", () => HomePage());
+ * const HomeRoute = Route.make("/").pipe(
+ *   Route.render(() => HomePage()),
+ * );
  *
- * const UserRoute = Route.make("/users/:id", () => UserPage()).pipe(
- *   Route.params(Schema.Struct({ id: Schema.NumberFromString }))
+ * const UserRoute = Route.make("/users/:id").pipe(
+ *   Route.params(Schema.Struct({ id: Schema.NumberFromString })),
+ *   Route.get(
+ *     ({ params: { id } }) => Effect.gen(function* () {
+ *       const db = yield* DatabaseService;
+ *       return yield* db.getUser(id);
+ *     }),
+ *     (user) => UserPage({ user }),
+ *   ),
  * );
  * ```
  */
-export const make = <Path extends string, E, R>(
+export const make = <Path extends string>(
   path: Path,
-  render: () => Element.Element<HTMLElement | SVGElement, E, R>,
-): Route<Path, Record<string, string>, Record<string, string>, E, R> => {
+): Route<
+  Path,
+  Record<string, string>,
+  Record<string, string>,
+  unknown,
+  NoRenderError,
+  never
+> => {
   const segments = parsePath(path);
 
   // Create a unique context tag for this route
@@ -245,12 +302,13 @@ export const make = <Path extends string, E, R>(
     Path,
     Record<string, string>,
     Record<string, string>,
-    E,
-    R
+    unknown,
+    NoRenderError,
+    never
   > = Object.assign(Object.create(RouteProto), {
     path,
     segments,
-    render,
+    render: (_data: unknown) => Effect.fail(new NoRenderError({ path })),
     paramsSchema: null,
     searchParamsSchema: null,
     guard: null,
@@ -260,6 +318,8 @@ export const make = <Path extends string, E, R>(
     Params: ParamsTag,
     params: Effect.map(ParamsTag, (ctx) => ctx.params),
     searchParams: Effect.map(ParamsTag, (ctx) => ctx.searchParams),
+    _loader: null,
+    _handlers: [],
   });
 
   return route;
@@ -275,7 +335,7 @@ export const make = <Path extends string, E, R>(
  *
  * @example
  * ```ts
- * const UserRoute = Route.make("/users/:id", () => UserPage()).pipe(
+ * const UserRoute = Route.make("/users/:id").pipe(
  *   Route.params(Schema.Struct({ id: Schema.NumberFromString }))
  * );
  *
@@ -285,9 +345,9 @@ export const make = <Path extends string, E, R>(
  */
 export const params =
   <P, I>(schema: Schema.Schema<P, I>) =>
-  <Path extends string, OldP, SP, E, R>(
-    route: Route<Path, OldP, SP, E, R>,
-  ): Route<Path, P, SP, E | ParseResult.ParseError, R> => {
+  <Path extends string, OldP, SP, D, E, R>(
+    route: Route<Path, OldP, SP, D, E, R>,
+  ): Route<Path, P, SP, D, E | ParseResult.ParseError, R> => {
     // Create a new context tag with the updated params type
     const ParamsTag = Context.GenericTag<RouteContext<P, SP>>(
       `@effex/router/Route(${route.path})`,
@@ -299,7 +359,7 @@ export const params =
       Params: ParamsTag,
       params: Effect.flatMap(ParamsTag, (ctx) => Effect.succeed(ctx.params)),
       searchParams: Effect.map(ParamsTag, (ctx) => ctx.searchParams),
-    }) as Route<Path, P, SP, E | ParseResult.ParseError, R>;
+    }) as Route<Path, P, SP, D, E | ParseResult.ParseError, R>;
   };
 
 /**
@@ -307,7 +367,7 @@ export const params =
  *
  * @example
  * ```ts
- * const SearchRoute = Route.make("/search", () => SearchPage()).pipe(
+ * const SearchRoute = Route.make("/search").pipe(
  *   Route.searchParams(Schema.Struct({
  *     q: Schema.String,
  *     page: Schema.optional(Schema.NumberFromString).pipe(
@@ -322,9 +382,9 @@ export const params =
  */
 export const searchParams =
   <SP, I>(schema: Schema.Schema<SP, I>) =>
-  <Path extends string, P, OldSP, E, R>(
-    route: Route<Path, P, OldSP, E, R>,
-  ): Route<Path, P, SP, E | ParseResult.ParseError, R> => {
+  <Path extends string, P, OldSP, D, E, R>(
+    route: Route<Path, P, OldSP, D, E, R>,
+  ): Route<Path, P, SP, D, E | ParseResult.ParseError, R> => {
     const ParamsTag = Context.GenericTag<RouteContext<P, SP>>(
       `@effex/router/Route(${route.path})`,
     );
@@ -337,7 +397,7 @@ export const searchParams =
       searchParams: Effect.flatMap(ParamsTag, (ctx) =>
         Effect.succeed(ctx.searchParams),
       ),
-    }) as Route<Path, P, SP, E | ParseResult.ParseError, R>;
+    }) as Route<Path, P, SP, D, E | ParseResult.ParseError, R>;
   };
 
 /**
@@ -346,7 +406,7 @@ export const searchParams =
  *
  * @example
  * ```ts
- * const ProfileRoute = Route.make("/profile/:username", () => ProfilePage()).pipe(
+ * const ProfileRoute = Route.make("/profile/:username").pipe(
  *   Route.rawParams
  * );
  *
@@ -354,9 +414,9 @@ export const searchParams =
  * const { username } = yield* ProfileRoute.params;  // string
  * ```
  */
-export const rawParams = <Path extends string, OldP, SP, E, R>(
-  route: Route<Path, OldP, SP, E, R>,
-): Route<Path, Record<string, string>, SP, E, R> => {
+export const rawParams = <Path extends string, OldP, SP, D, E, R>(
+  route: Route<Path, OldP, SP, D, E, R>,
+): Route<Path, Record<string, string>, SP, D, E, R> => {
   const ParamsTag = Context.GenericTag<
     RouteContext<Record<string, string>, SP>
   >(`@effex/router/Route(${route.path})`);
@@ -367,8 +427,161 @@ export const rawParams = <Path extends string, OldP, SP, E, R>(
     Params: ParamsTag,
     params: Effect.map(ParamsTag, (ctx) => ctx.params),
     searchParams: Effect.map(ParamsTag, (ctx) => ctx.searchParams),
-  }) as Route<Path, Record<string, string>, SP, E, R>;
+  }) as Route<Path, Record<string, string>, SP, D, E, R>;
 };
+
+// =============================================================================
+// Route-Level Hook Combinators
+// =============================================================================
+
+/**
+ * Set the render function for a route without a loader.
+ *
+ * Shorthand for routes that don't need data loading.
+ * For routes with loaders, use `Route.get(loader, render)` instead.
+ *
+ * @example
+ * ```ts
+ * const HomeRoute = Route.make("/").pipe(
+ *   Route.render(() => HomePage()),
+ * );
+ * ```
+ */
+export const render =
+  <E2, R2>(fn: () => Element.Element<HTMLElement | SVGElement, E2, R2>) =>
+  <Path extends string, P, SP, D, E, R>(
+    route: Route<Path, P, SP, D, E, R>,
+  ): [NoRenderError] extends [E]
+    ? Route<Path, P, SP, D, Exclude<E, NoRenderError> | E2, R | R2>
+    : never => {
+    return Object.assign(Object.create(RouteProto), {
+      ...route,
+      render: (_data: D) => fn(),
+    }) as any;
+  };
+
+/**
+ * Add a GET loader and render function to the route.
+ *
+ * The loader receives `{ params, searchParams }` and returns data of type `A`.
+ * The render function receives `A` directly — fully typed, no cast needed.
+ *
+ * The loader's E/R requirements do NOT flow into the Route's E/R —
+ * they flow to the Platform's HttpRouter instead.
+ *
+ * @example
+ * ```ts
+ * const UsersRoute = Route.make("/users").pipe(
+ *   Route.get(
+ *     ({}) => Effect.succeed(usersMock),
+ *     (users) => UsersPage({ users }),
+ *   ),
+ * );
+ *
+ * const UserRoute = Route.make("/users/:id").pipe(
+ *   Route.params(Schema.Struct({ id: Schema.NumberFromString })),
+ *   Route.get(
+ *     ({ params: { id } }) => Effect.gen(function* () {
+ *       const db = yield* DatabaseService;
+ *       return yield* db.getUser(id);
+ *     }),
+ *     (user) => UserPage({ user }),
+ *   ),
+ * );
+ * ```
+ */
+export const get =
+  <P, SP, A, E2, R2, E3, R3>(
+    loader: (args: { params: P; searchParams: SP }) => Effect.Effect<A, E2, R2>,
+    renderFn: (data: A) => Element.Element<HTMLElement | SVGElement, E3, R3>,
+  ) =>
+  <Path extends string, D, E, R>(
+    route: Route<Path, P, SP, D, E, R>,
+  ): [NoRenderError] extends [E]
+    ? Route<Path, P, SP, A, Exclude<E, NoRenderError> | E3, R | R3>
+    : never => {
+    return Object.assign(Object.create(RouteProto), {
+      ...route,
+      _loader: loader,
+      render: renderFn,
+    }) as any;
+  };
+
+/**
+ * Add a POST mutation handler to the route.
+ *
+ * The handler receives the parsed request body and returns a result.
+ * Platform executes it directly on POST — no component rendering needed.
+ *
+ * The handler's E/R requirements do NOT flow into the Route's E/R.
+ *
+ * @example
+ * ```ts
+ * const UserRoute = Route.make("/users/:id").pipe(
+ *   Route.post("updateProfile", (body) => Effect.gen(function* () {
+ *     const data = yield* Schema.decodeUnknown(ProfileSchema)(body);
+ *     const db = yield* DatabaseService;
+ *     return yield* db.updateProfile(data);
+ *   })),
+ *   Route.render(() => UserPage()),
+ * );
+ * ```
+ */
+export const post =
+  <A, E2, R2>(
+    key: string,
+    handler: (body: unknown) => Effect.Effect<A, E2, R2>,
+  ) =>
+  <Path extends string, P, SP, D, E, R>(
+    route: Route<Path, P, SP, D, E, R>,
+  ): Route<Path, P, SP, D, E, R> => {
+    return Object.assign(Object.create(RouteProto), {
+      ...route,
+      _handlers: [
+        ...route._handlers,
+        { method: "post" as const, key, handler },
+      ],
+    }) as Route<Path, P, SP, D, E, R>;
+  };
+
+/**
+ * Add a PUT mutation handler to the route.
+ * Same semantics as `Route.post()` but for PUT requests.
+ */
+export const put =
+  <A, E2, R2>(
+    key: string,
+    handler: (body: unknown) => Effect.Effect<A, E2, R2>,
+  ) =>
+  <Path extends string, P, SP, D, E, R>(
+    route: Route<Path, P, SP, D, E, R>,
+  ): Route<Path, P, SP, D, E, R> => {
+    return Object.assign(Object.create(RouteProto), {
+      ...route,
+      _handlers: [...route._handlers, { method: "put" as const, key, handler }],
+    }) as Route<Path, P, SP, D, E, R>;
+  };
+
+/**
+ * Add a DELETE mutation handler to the route.
+ * Same semantics as `Route.post()` but for DELETE requests.
+ */
+export const del =
+  <A, E2, R2>(
+    key: string,
+    handler: (body: unknown) => Effect.Effect<A, E2, R2>,
+  ) =>
+  <Path extends string, P, SP, D, E, R>(
+    route: Route<Path, P, SP, D, E, R>,
+  ): Route<Path, P, SP, D, E, R> => {
+    return Object.assign(Object.create(RouteProto), {
+      ...route,
+      _handlers: [
+        ...route._handlers,
+        { method: "delete" as const, key, handler },
+      ],
+    }) as Route<Path, P, SP, D, E, R>;
+  };
 
 /**
  * Add a guard to the route.
@@ -376,7 +589,7 @@ export const rawParams = <Path extends string, OldP, SP, E, R>(
  *
  * @example
  * ```ts
- * const DashboardRoute = Route.make("/dashboard", () => Dashboard()).pipe(
+ * const DashboardRoute = Route.make("/dashboard").pipe(
  *   Route.withGuard(isAuthenticated, { redirect: "/login" })
  * );
  * ```
@@ -386,9 +599,9 @@ export const withGuard =
     condition: Readable.Readable<boolean> | Effect.Effect<boolean>,
     options: GuardOptions,
   ) =>
-  <Path extends string, P, SP, E, R>(
-    route: Route<Path, P, SP, E, R>,
-  ): Route<Path, P, SP, E, R> => {
+  <Path extends string, P, SP, D, E, R>(
+    route: Route<Path, P, SP, D, E, R>,
+  ): Route<Path, P, SP, D, E, R> => {
     return Object.assign(Object.create(RouteProto), {
       ...route,
       guard: condition,
@@ -401,7 +614,7 @@ export const withGuard =
  *
  * @example
  * ```ts
- * const ModalRoute = Route.make("/modal/:id", () => Modal()).pipe(
+ * const ModalRoute = Route.make("/modal/:id").pipe(
  *   Route.withAnimation({
  *     enter: "slide-up",
  *     exit: "slide-down",
@@ -411,9 +624,9 @@ export const withGuard =
  */
 export const withAnimation =
   (options: AnimationOptions) =>
-  <Path extends string, P, SP, E, R>(
-    route: Route<Path, P, SP, E, R>,
-  ): Route<Path, P, SP, E, R> => {
+  <Path extends string, P, SP, D, E, R>(
+    route: Route<Path, P, SP, D, E, R>,
+  ): Route<Path, P, SP, D, E, R> => {
     return Object.assign(Object.create(RouteProto), {
       ...route,
       animation: options,
@@ -429,7 +642,7 @@ export const withAnimation =
  *
  * @example
  * ```ts
- * const UserRoute = Route.make("/users/:id", () => UserPage()).pipe(
+ * const UserRoute = Route.make("/users/:id").pipe(
  *   Route.catch((error) => error._tag === "NotFound", () => NotFoundPage())
  * );
  * ```
@@ -439,9 +652,9 @@ export const catchIf =
     predicate: (error: E) => boolean,
     handler: (error: E) => Element.Element<HTMLElement | SVGElement, E2, R2>,
   ) =>
-  <Path extends string, P, SP, R>(
-    route: Route<Path, P, SP, E, R>,
-  ): Route<Path, P, SP, Exclude<E, E> | E2, R | R2> => {
+  <Path extends string, P, SP, D, R>(
+    route: Route<Path, P, SP, D, E, R>,
+  ): Route<Path, P, SP, D, Exclude<E, E> | E2, R | R2> => {
     const ParamsTag = route.Params as Context.Tag<
       RouteContext<P, SP>,
       RouteContext<P, SP>
@@ -450,8 +663,12 @@ export const catchIf =
     return Object.assign(Object.create(RouteProto), {
       ...route,
       Params: ParamsTag,
-      render: () =>
-        Effect.catchIf(route.render(), predicate, handler) as Element.Element<
+      render: (data: any) =>
+        Effect.catchIf(
+          route.render(data),
+          predicate,
+          handler,
+        ) as Element.Element<
           HTMLElement | SVGElement,
           Exclude<E, E> | E2,
           R | R2
@@ -464,7 +681,7 @@ export const catchIf =
  *
  * @example
  * ```ts
- * const UserRoute = Route.make("/users/:id", () => UserPage()).pipe(
+ * const UserRoute = Route.make("/users/:id").pipe(
  *   Route.catchTag("NotFound", () => NotFoundPage()),
  *   Route.catchTag("Unauthorized", () => UnauthorizedPage())
  * );
@@ -476,23 +693,23 @@ export const catchTag: {
     handler: (error: {
       _tag: K;
     }) => Element.Element<HTMLElement | SVGElement, E2, R2>,
-  ): <Path extends string, P, SP, E extends { _tag: string }, R>(
-    route: Route<Path, P, SP, E, R>,
-  ) => Route<Path, P, SP, Exclude<E, { _tag: K }> | E2, R | R2>;
+  ): <Path extends string, P, SP, D, E extends { _tag: string }, R>(
+    route: Route<Path, P, SP, D, E, R>,
+  ) => Route<Path, P, SP, D, Exclude<E, { _tag: K }> | E2, R | R2>;
 } = (<const K extends string, E2, R2>(
     tag: K,
     handler: (error: {
       _tag: K;
     }) => Element.Element<HTMLElement | SVGElement, E2, R2>,
   ) =>
-  <Path extends string, P, SP, E extends { _tag: string }, R>(
-    route: Route<Path, P, SP, E, R>,
-  ): Route<Path, P, SP, Exclude<E, { _tag: K }> | E2, R | R2> => {
+  <Path extends string, P, SP, D, E extends { _tag: string }, R>(
+    route: Route<Path, P, SP, D, E, R>,
+  ): Route<Path, P, SP, D, Exclude<E, { _tag: K }> | E2, R | R2> => {
     return Object.assign(Object.create(RouteProto), {
       ...route,
-      render: () =>
+      render: (data: any) =>
         Effect.catchTag(
-          route.render() as Effect.Effect<
+          route.render(data) as Effect.Effect<
             HTMLElement | SVGElement,
             { _tag: string },
             unknown
@@ -502,16 +719,16 @@ export const catchTag: {
             _tag: K;
           }) => Effect.Effect<HTMLElement | SVGElement, E2, R2>,
         ),
-    }) as Route<Path, P, SP, Exclude<E, { _tag: K }> | E2, R | R2>;
+    }) as Route<Path, P, SP, D, Exclude<E, { _tag: K }> | E2, R | R2>;
   }) as {
   <const K extends string, E2, R2>(
     tag: K,
     handler: (error: {
       _tag: K;
     }) => Element.Element<HTMLElement | SVGElement, E2, R2>,
-  ): <Path extends string, P, SP, E extends { _tag: string }, R>(
-    route: Route<Path, P, SP, E, R>,
-  ) => Route<Path, P, SP, Exclude<E, { _tag: K }> | E2, R | R2>;
+  ): <Path extends string, P, SP, D, E extends { _tag: string }, R>(
+    route: Route<Path, P, SP, D, E, R>,
+  ) => Route<Path, P, SP, D, Exclude<E, { _tag: K }> | E2, R | R2>;
 };
 
 /**
@@ -520,7 +737,7 @@ export const catchTag: {
  *
  * @example
  * ```ts
- * const UserRoute = Route.make("/users/:id", () => UserPage()).pipe(
+ * const UserRoute = Route.make("/users/:id").pipe(
  *   Route.catchAll((error) => ErrorPage({ error }))
  * );
  * ```
@@ -529,9 +746,9 @@ export const catchAll =
   <E, E2, R2>(
     handler: (error: E) => Element.Element<HTMLElement | SVGElement, E2, R2>,
   ) =>
-  <Path extends string, P, SP, R>(
-    route: Route<Path, P, SP, E, R>,
-  ): Route<Path, P, SP, E2, R | R2> => {
+  <Path extends string, P, SP, D, R>(
+    route: Route<Path, P, SP, D, E, R>,
+  ): Route<Path, P, SP, D, E2, R | R2> => {
     const ParamsTag = route.Params as Context.Tag<
       RouteContext<P, SP>,
       RouteContext<P, SP>
@@ -540,8 +757,8 @@ export const catchAll =
     return Object.assign(Object.create(RouteProto), {
       ...route,
       Params: ParamsTag,
-      render: () =>
-        Effect.catchAll(route.render(), handler) as Element.Element<
+      render: (data: any) =>
+        Effect.catchAll(route.render(data), handler) as Element.Element<
           HTMLElement | SVGElement,
           E2,
           R | R2
@@ -560,26 +777,25 @@ export const catchAll =
 export const lazy = <Path extends string>(
   path: Path,
   load: () => Promise<{
-    default: Route<Path, unknown, unknown, unknown, unknown>;
+    default: Route<Path, unknown, unknown, unknown, unknown, unknown>;
   }>,
   options?: { fallback?: () => Element.Element<HTMLElement | SVGElement> },
-): Route<Path, unknown, unknown, never, never> => {
+): Route<Path, unknown, unknown, unknown, never, never> => {
   // Create a placeholder route that will be replaced when loaded
   const segments = parsePath(path);
   const ParamsTag = Context.GenericTag<RouteContext<unknown, unknown>>(
     `@effex/router/Route(${path})`,
   );
 
-  const route: Route<Path, unknown, unknown, never, never> = Object.assign(
-    Object.create(RouteProto),
-    {
+  const route: Route<Path, unknown, unknown, unknown, never, never> =
+    Object.assign(Object.create(RouteProto), {
       path,
       segments,
-      render:
-        options?.fallback ??
-        (() => {
-          throw new Error(`Lazy route ${path} not yet loaded`);
-        }),
+      render: options?.fallback
+        ? (_data: unknown) => options.fallback!()
+        : (_data: unknown) => {
+            throw new Error(`Lazy route ${path} not yet loaded`);
+          },
       paramsSchema: null,
       searchParamsSchema: null,
       guard: null,
@@ -589,10 +805,11 @@ export const lazy = <Path extends string>(
       Params: ParamsTag,
       params: Effect.map(ParamsTag, (ctx) => ctx.params),
       searchParams: Effect.map(ParamsTag, (ctx) => ctx.searchParams),
-      // Store the loader for the router to use
+      _loader: null,
+      _handlers: [],
+      // Store the module loader for the router to use
       _load: load,
-    },
-  );
+    });
 
   return route;
 };
@@ -612,13 +829,25 @@ export const isRoute = (value: unknown): value is Route => {
  * Extract the params type from a Route.
  */
 export type RouteParams<R> =
-  R extends Route<string, infer P, unknown, unknown, unknown> ? P : never;
+  R extends Route<string, infer P, unknown, unknown, unknown, unknown>
+    ? P
+    : never;
 
 /**
  * Extract the search params type from a Route.
  */
 export type RouteSearchParams<R> =
-  R extends Route<string, unknown, infer SP, unknown, unknown> ? SP : never;
+  R extends Route<string, unknown, infer SP, unknown, unknown, unknown>
+    ? SP
+    : never;
+
+/**
+ * Extract the data type from a Route.
+ */
+export type RouteData<R> =
+  R extends Route<string, unknown, unknown, infer D, unknown, unknown>
+    ? D
+    : never;
 
 // =============================================================================
 // Module
@@ -626,6 +855,11 @@ export type RouteSearchParams<R> =
 
 export const Route = {
   make,
+  render,
+  get,
+  post,
+  put,
+  delete: del,
   params,
   searchParams,
   rawParams,

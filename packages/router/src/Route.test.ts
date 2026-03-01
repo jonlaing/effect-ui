@@ -119,21 +119,27 @@ describe("routeSpecificity", () => {
 });
 
 describe("Route.make", () => {
-  it("creates a route with path and render function", () => {
-    const render = () => Effect.succeed(document.createElement("div"));
-    const route = Route.make("/users", render);
+  it("creates a route with path", () => {
+    const route = Route.make("/users");
 
     expect(route.path).toBe("/users");
-    expect(route.render).toBe(render);
     expect(route.segments).toEqual([{ type: "static", value: "users" }]);
     expect(route.paramsSchema).toBeNull();
     expect(route.guard).toBeNull();
     expect(route.animation).toBeNull();
+    expect(route._loader).toBeNull();
+    expect(route._handlers).toEqual([]);
+  });
+
+  it("render yields NoRenderError when not set", async () => {
+    const route = Route.make("/users");
+    const result = await Effect.runPromiseExit(route.render(undefined));
+    expect(result._tag).toBe("Failure");
   });
 
   it("is pipeable", () => {
-    const render = () => Effect.succeed(document.createElement("div"));
-    const route = Route.make("/users/:id", render).pipe(
+    const route = Route.make("/users/:id").pipe(
+      Route.render(() => Effect.succeed(document.createElement("div"))),
       Route.withAnimation({ enter: "fade-in" }),
     );
 
@@ -141,19 +147,120 @@ describe("Route.make", () => {
   });
 
   it("creates unique context tag per route", () => {
-    const render = () => Effect.succeed(document.createElement("div"));
-    const route1 = Route.make("/users", render);
-    const route2 = Route.make("/posts", render);
+    const route1 = Route.make("/users");
+    const route2 = Route.make("/posts");
 
     // Different routes should have different context tags
     expect(route1.Params.key).not.toBe(route2.Params.key);
   });
 });
 
+describe("Route.render", () => {
+  it("sets the render function", async () => {
+    const div = document.createElement("div");
+    const route = Route.make("/users").pipe(
+      Route.render(() => Effect.succeed(div)),
+    );
+
+    const result = await Effect.runPromise(route.render(undefined));
+    expect(result).toBe(div);
+  });
+});
+
+describe("Route.get", () => {
+  it("stores the loader and render function", () => {
+    const loader = ({}: {
+      params: Record<string, string>;
+      searchParams: Record<string, string>;
+    }) => Effect.succeed({ name: "test" });
+    const renderFn = (data: { name: string }) =>
+      Effect.succeed(document.createElement("div"));
+
+    const route = Route.make("/users/:id").pipe(Route.get(loader, renderFn));
+
+    expect(route._loader).toBe(loader);
+  });
+
+  it("passes loader data to render function", async () => {
+    const route = Route.make("/users").pipe(
+      Route.get(
+        ({}) => Effect.succeed({ greeting: "hello" }),
+        (data) => Effect.succeed(data),
+      ),
+    );
+
+    const result = await Effect.runPromise(route.render({ greeting: "hello" }));
+    expect(result).toEqual({ greeting: "hello" });
+  });
+
+  it("typed data flows from loader to render", async () => {
+    const route = Route.make("/users").pipe(
+      Route.get(
+        ({}) => Effect.succeed([1, 2, 3]),
+        (nums) => {
+          // nums is inferred as number[]
+          const sum: number = nums.reduce((a, b) => a + b, 0);
+          return Effect.succeed(sum);
+        },
+      ),
+    );
+
+    const result = await Effect.runPromise(route.render([1, 2, 3]));
+    expect(result).toBe(6);
+  });
+});
+
+describe("Route.post", () => {
+  it("stores a post handler", () => {
+    const handler = (body: unknown) => Effect.succeed({ ok: true });
+
+    const route = Route.make("/users").pipe(Route.post("submit", handler));
+
+    expect(route._handlers).toHaveLength(1);
+    expect(route._handlers[0].method).toBe("post");
+    expect(route._handlers[0].key).toBe("submit");
+    expect(route._handlers[0].handler).toBe(handler);
+  });
+
+  it("allows multiple handlers", () => {
+    const route = Route.make("/users").pipe(
+      Route.post("create", () => Effect.succeed({ created: true })),
+      Route.post("delete", () => Effect.succeed({ deleted: true })),
+    );
+
+    expect(route._handlers).toHaveLength(2);
+    expect(route._handlers[0].key).toBe("create");
+    expect(route._handlers[1].key).toBe("delete");
+  });
+});
+
+describe("Route.put", () => {
+  it("stores a put handler", () => {
+    const route = Route.make("/users/:id").pipe(
+      Route.put("update", () => Effect.succeed({ updated: true })),
+    );
+
+    expect(route._handlers).toHaveLength(1);
+    expect(route._handlers[0].method).toBe("put");
+    expect(route._handlers[0].key).toBe("update");
+  });
+});
+
+describe("Route.delete", () => {
+  it("stores a delete handler", () => {
+    const route = Route.make("/users/:id").pipe(
+      Route.delete("remove", () => Effect.succeed({ removed: true })),
+    );
+
+    expect(route._handlers).toHaveLength(1);
+    expect(route._handlers[0].method).toBe("delete");
+    expect(route._handlers[0].key).toBe("remove");
+  });
+});
+
 describe("Route.params", () => {
   it("adds a params schema to the route", () => {
-    const render = () => Effect.succeed(document.createElement("div"));
-    const route = Route.make("/users/:id", render).pipe(
+    const route = Route.make("/users/:id").pipe(
       Route.params(Schema.Struct({ id: Schema.NumberFromString })),
     );
 
@@ -161,8 +268,7 @@ describe("Route.params", () => {
   });
 
   it("provides typed params via context", async () => {
-    const render = () => Effect.succeed(document.createElement("div"));
-    const UserRoute = Route.make("/users/:id", render).pipe(
+    const UserRoute = Route.make("/users/:id").pipe(
       Route.params(Schema.Struct({ id: Schema.NumberFromString })),
     );
 
@@ -182,8 +288,7 @@ describe("Route.params", () => {
 
 describe("Route.searchParams", () => {
   it("adds a search params schema to the route", () => {
-    const render = () => Effect.succeed(document.createElement("div"));
-    const route = Route.make("/search", render).pipe(
+    const route = Route.make("/search").pipe(
       Route.searchParams(
         Schema.Struct({
           q: Schema.String,
@@ -198,8 +303,7 @@ describe("Route.searchParams", () => {
 
 describe("Route.rawParams", () => {
   it("keeps params as raw strings", () => {
-    const render = () => Effect.succeed(document.createElement("div"));
-    const route = Route.make("/users/:id", render).pipe(Route.rawParams);
+    const route = Route.make("/users/:id").pipe(Route.rawParams);
 
     expect(route.paramsSchema).toBeNull();
   });
@@ -207,10 +311,10 @@ describe("Route.rawParams", () => {
 
 describe("Route.withGuard", () => {
   it("adds a guard condition", () => {
-    const render = () => Effect.succeed(document.createElement("div"));
     const isAuthenticated = { get: Effect.succeed(true) } as any;
 
-    const route = Route.make("/dashboard", render).pipe(
+    const route = Route.make("/dashboard").pipe(
+      Route.render(() => Effect.succeed(document.createElement("div"))),
       Route.withGuard(isAuthenticated, { redirect: "/login" }),
     );
 
@@ -221,8 +325,8 @@ describe("Route.withGuard", () => {
 
 describe("Route.withAnimation", () => {
   it("adds animation options", () => {
-    const render = () => Effect.succeed(document.createElement("div"));
-    const route = Route.make("/modal", render).pipe(
+    const route = Route.make("/modal").pipe(
+      Route.render(() => Effect.succeed(document.createElement("div"))),
       Route.withAnimation({
         enter: "slide-up",
         exit: "slide-down",
@@ -238,8 +342,7 @@ describe("Route.withAnimation", () => {
 
 describe("isRoute", () => {
   it("returns true for routes", () => {
-    const render = () => Effect.succeed(document.createElement("div"));
-    const route = Route.make("/users", render);
+    const route = Route.make("/users");
     expect(isRoute(route)).toBe(true);
   });
 
@@ -252,11 +355,15 @@ describe("isRoute", () => {
 
 describe("Route composition", () => {
   it("allows chaining multiple combinators", () => {
-    const render = () => Effect.succeed(document.createElement("div"));
     const isAuth = Effect.succeed(true);
 
-    const route = Route.make("/users/:id", render).pipe(
+    const route = Route.make("/users/:id").pipe(
       Route.params(Schema.Struct({ id: Schema.NumberFromString })),
+      Route.post("submit", (body) => Effect.succeed(body)),
+      Route.get(
+        ({ params: { id } }) => Effect.succeed({ id, name: "test" }),
+        (user) => Effect.succeed(document.createElement("div")),
+      ),
       Route.withGuard(isAuth, { redirect: "/login" }),
       Route.withAnimation({ enter: "fade-in", exit: "fade-out" }),
     );
@@ -264,5 +371,7 @@ describe("Route composition", () => {
     expect(route.paramsSchema).not.toBeNull();
     expect(route.guard).toBe(isAuth);
     expect(route.animation).toEqual({ enter: "fade-in", exit: "fade-out" });
+    expect(route._loader).not.toBeNull();
+    expect(route._handlers).toHaveLength(1);
   });
 });

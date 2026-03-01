@@ -8,7 +8,7 @@ import {
   NavigationContext,
 } from "./Navigation.js";
 import { Route } from "./Route.js";
-import { concat, empty } from "./Router.js";
+import { concat, empty, fallback } from "./Router.js";
 
 // Helper to create a simple render function for tests
 const render = () => Effect.succeed(document.createElement("div"));
@@ -57,45 +57,47 @@ describe("Navigation", () => {
 
   describe("buildPath", () => {
     it("builds path from route without params", () => {
-      const route = Route.make("/users", render);
+      const route = Route.make("/users").pipe(Route.render(render));
       expect(buildPath(route, {})).toBe("/users");
     });
 
     it("replaces param segments with values", () => {
-      const route = Route.make("/users/:id", render);
+      const route = Route.make("/users/:id").pipe(Route.render(render));
       expect(buildPath(route, { id: "123" })).toBe("/users/123");
     });
 
     it("replaces multiple params", () => {
-      const route = Route.make("/users/:userId/posts/:postId", render);
+      const route = Route.make("/users/:userId/posts/:postId").pipe(
+        Route.render(render),
+      );
       expect(buildPath(route, { userId: "1", postId: "2" })).toBe(
         "/users/1/posts/2",
       );
     });
 
     it("appends search params", () => {
-      const route = Route.make("/users", render);
+      const route = Route.make("/users").pipe(Route.render(render));
       expect(buildPath(route, {}, { page: "1", sort: "name" })).toBe(
         "/users?page=1&sort=name",
       );
     });
 
     it("handles both params and search params", () => {
-      const route = Route.make("/users/:id", render);
+      const route = Route.make("/users/:id").pipe(Route.render(render));
       expect(buildPath(route, { id: "123" }, { tab: "profile" })).toBe(
         "/users/123?tab=profile",
       );
     });
 
     it("encodes search param values", () => {
-      const route = Route.make("/search", render);
+      const route = Route.make("/search").pipe(Route.render(render));
       expect(buildPath(route, {}, { q: "hello world" })).toBe(
         "/search?q=hello%20world",
       );
     });
 
     it("skips undefined search params", () => {
-      const route = Route.make("/users", render);
+      const route = Route.make("/users").pipe(Route.render(render));
       expect(
         buildPath(
           route,
@@ -109,8 +111,8 @@ describe("Navigation", () => {
   describe("make", () => {
     it("creates navigation with initial pathname from options", async () => {
       const router = empty.pipe(
-        concat(Route.make("/", render)),
-        concat(Route.make("/users", render)),
+        concat(Route.make("/").pipe(Route.render(render))),
+        concat(Route.make("/users").pipe(Route.render(render))),
       );
 
       const result = await Effect.runPromise(
@@ -128,7 +130,9 @@ describe("Navigation", () => {
     });
 
     it("creates navigation with initial search params", async () => {
-      const router = empty.pipe(concat(Route.make("/", render)));
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+      );
 
       const result = await Effect.runPromise(
         Effect.scoped(
@@ -151,8 +155,8 @@ describe("Navigation", () => {
     });
 
     it("computes currentMatch from pathname", async () => {
-      const HomeRoute = Route.make("/", render);
-      const UsersRoute = Route.make("/users", render);
+      const HomeRoute = Route.make("/").pipe(Route.render(render));
+      const UsersRoute = Route.make("/users").pipe(Route.render(render));
 
       const router = empty.pipe(concat(HomeRoute), concat(UsersRoute));
 
@@ -163,7 +167,7 @@ describe("Navigation", () => {
               initialPath: "/users",
             });
             const match = yield* nav.currentMatch.get;
-            return Option.isSome(match) ? match.value.route.path : null;
+            return match.route.path;
           }),
         ),
       );
@@ -171,8 +175,11 @@ describe("Navigation", () => {
       expect(result).toBe("/users");
     });
 
-    it("returns none when no route matches", async () => {
-      const router = empty.pipe(concat(Route.make("/", render)));
+    it("falls back when no route matches", async () => {
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+        fallback(render),
+      );
 
       const result = await Effect.runPromise(
         Effect.scoped(
@@ -180,16 +187,19 @@ describe("Navigation", () => {
             const nav = yield* makeNavigation(router, {
               initialPath: "/nonexistent",
             });
-            return yield* nav.currentMatch.get;
+            const match = yield* nav.currentMatch.get;
+            // When no route matches, currentMatch uses the fallback
+            return match.route;
           }),
         ),
       );
 
-      expect(Option.isNone(result)).toBe(true);
+      // The fallback is used when no route matches
+      expect(result).toBe(router.fallback);
     });
 
     it("extracts params in currentMatch", async () => {
-      const UserRoute = Route.make("/users/:id", render);
+      const UserRoute = Route.make("/users/:id").pipe(Route.render(render));
       const router = empty.pipe(concat(UserRoute));
 
       const result = await Effect.runPromise(
@@ -199,7 +209,7 @@ describe("Navigation", () => {
               initialPath: "/users/123",
             });
             const match = yield* nav.currentMatch.get;
-            return Option.isSome(match) ? match.value.params : null;
+            return match.params;
           }),
         ),
       );
@@ -211,8 +221,8 @@ describe("Navigation", () => {
   describe("pushPath", () => {
     it("updates pathname state", async () => {
       const router = empty.pipe(
-        concat(Route.make("/", render)),
-        concat(Route.make("/users", render)),
+        concat(Route.make("/").pipe(Route.render(render))),
+        concat(Route.make("/users").pipe(Route.render(render))),
       );
 
       const result = await Effect.runPromise(
@@ -234,7 +244,9 @@ describe("Navigation", () => {
     });
 
     it("calls history.pushState", async () => {
-      const router = empty.pipe(concat(Route.make("/", render)));
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+      );
 
       await Effect.runPromise(
         Effect.scoped(
@@ -253,7 +265,9 @@ describe("Navigation", () => {
     });
 
     it("updates searchParams when path includes query string", async () => {
-      const router = empty.pipe(concat(Route.make("/", render)));
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+      );
 
       const result = await Effect.runPromise(
         Effect.scoped(
@@ -276,7 +290,9 @@ describe("Navigation", () => {
 
   describe("replacePath", () => {
     it("updates pathname state", async () => {
-      const router = empty.pipe(concat(Route.make("/", render)));
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+      );
 
       const result = await Effect.runPromise(
         Effect.scoped(
@@ -292,7 +308,9 @@ describe("Navigation", () => {
     });
 
     it("calls history.replaceState", async () => {
-      const router = empty.pipe(concat(Route.make("/", render)));
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+      );
 
       await Effect.runPromise(
         Effect.scoped(
@@ -313,7 +331,8 @@ describe("Navigation", () => {
 
   describe("pushRoute", () => {
     it("navigates to route with params", async () => {
-      const UserRoute = Route.make("/users/:id", render).pipe(
+      const UserRoute = Route.make("/users/:id").pipe(
+        Route.render(render),
         Route.params(Schema.Struct({ id: Schema.NumberFromString })),
       );
 
@@ -333,7 +352,8 @@ describe("Navigation", () => {
     });
 
     it("navigates to route with search params", async () => {
-      const SearchRoute = Route.make("/search", render).pipe(
+      const SearchRoute = Route.make("/search").pipe(
+        Route.render(render),
         Route.searchParams(Schema.Struct({ q: Schema.String })),
       );
 
@@ -358,7 +378,7 @@ describe("Navigation", () => {
     });
 
     it("navigates to route without options", async () => {
-      const HomeRoute = Route.make("/", render);
+      const HomeRoute = Route.make("/").pipe(Route.render(render));
       const router = empty.pipe(concat(HomeRoute));
 
       const result = await Effect.runPromise(
@@ -379,7 +399,7 @@ describe("Navigation", () => {
 
   describe("replaceRoute", () => {
     it("replaces with route and params", async () => {
-      const UserRoute = Route.make("/users/:id", render);
+      const UserRoute = Route.make("/users/:id").pipe(Route.render(render));
       const router = empty.pipe(concat(UserRoute));
 
       await Effect.runPromise(
@@ -401,7 +421,9 @@ describe("Navigation", () => {
 
   describe("back and forward", () => {
     it("calls history.back()", async () => {
-      const router = empty.pipe(concat(Route.make("/", render)));
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+      );
 
       await Effect.runPromise(
         Effect.scoped(
@@ -416,7 +438,9 @@ describe("Navigation", () => {
     });
 
     it("calls history.forward()", async () => {
-      const router = empty.pipe(concat(Route.make("/", render)));
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+      );
 
       await Effect.runPromise(
         Effect.scoped(
@@ -433,7 +457,9 @@ describe("Navigation", () => {
 
   describe("popstate handling", () => {
     it("adds popstate listener on creation", async () => {
-      const router = empty.pipe(concat(Route.make("/", render)));
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+      );
 
       await Effect.runPromise(
         Effect.scoped(
@@ -449,7 +475,9 @@ describe("Navigation", () => {
     });
 
     it("removes popstate listener on scope close", async () => {
-      const router = empty.pipe(concat(Route.make("/", render)));
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+      );
 
       await Effect.runPromise(
         Effect.scoped(
@@ -474,8 +502,8 @@ describe("Navigation", () => {
 
       try {
         const router = empty.pipe(
-          concat(Route.make("/", render)),
-          concat(Route.make("/users/:id", render)),
+          concat(Route.make("/").pipe(Route.render(render))),
+          concat(Route.make("/users/:id").pipe(Route.render(render))),
         );
 
         const result = await Effect.runPromise(
@@ -492,8 +520,8 @@ describe("Navigation", () => {
 
               return {
                 pathname,
-                matchPath: Option.isSome(match) ? match.value.route.path : null,
-                matchParams: Option.isSome(match) ? match.value.params : null,
+                matchPath: match.route.path,
+                matchParams: match.params,
                 tab: params.get("tab"),
               };
             }),
@@ -515,7 +543,9 @@ describe("Navigation", () => {
       globalThis.window = undefined;
 
       try {
-        const router = empty.pipe(concat(Route.make("/", render)));
+        const router = empty.pipe(
+          concat(Route.make("/").pipe(Route.render(render))),
+        );
 
         const result = await Effect.runPromise(
           Effect.scoped(
@@ -538,7 +568,9 @@ describe("Navigation", () => {
       globalThis.window = undefined;
 
       try {
-        const router = empty.pipe(concat(Route.make("/", render)));
+        const router = empty.pipe(
+          concat(Route.make("/").pipe(Route.render(render))),
+        );
 
         // These should not throw
         await Effect.runPromise(
@@ -580,7 +612,9 @@ describe("Navigation", () => {
 
   describe("accessor effects", () => {
     it("Navigation.pathname gets current pathname", async () => {
-      const router = empty.pipe(concat(Route.make("/", render)));
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+      );
       const layer = Navigation.makeLayer(router, { initialPath: "/test" });
 
       const result = await Effect.runPromise(
@@ -591,7 +625,9 @@ describe("Navigation", () => {
     });
 
     it("Navigation.searchParams gets current search params", async () => {
-      const router = empty.pipe(concat(Route.make("/", render)));
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+      );
       const layer = Navigation.makeLayer(router, {
         initialPath: "/",
         initialSearch: "?foo=bar",
@@ -608,14 +644,14 @@ describe("Navigation", () => {
     });
 
     it("Navigation.currentMatch gets current match", async () => {
-      const UserRoute = Route.make("/users/:id", render);
+      const UserRoute = Route.make("/users/:id").pipe(Route.render(render));
       const router = empty.pipe(concat(UserRoute));
       const layer = Navigation.makeLayer(router, { initialPath: "/users/42" });
 
       const result = await Effect.runPromise(
         Effect.gen(function* () {
           const match = yield* Navigation.currentMatch;
-          return Option.isSome(match) ? match.value.params : null;
+          return match.params;
         }).pipe(Effect.provide(layer)),
       );
 
@@ -623,7 +659,9 @@ describe("Navigation", () => {
     });
 
     it("Navigation.pushPath navigates via context", async () => {
-      const router = empty.pipe(concat(Route.make("/", render)));
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+      );
       const layer = Navigation.makeLayer(router, { initialPath: "/" });
 
       await Effect.runPromise(

@@ -1,0 +1,71 @@
+import { Context, Effect } from "effect";
+
+import type { Route } from "./Route.js";
+
+// =============================================================================
+// RouteDataContext
+// =============================================================================
+
+/**
+ * Data provided to a route's render function by the platform.
+ *
+ * - `data` — result of the route's `Route.get()` loader (or `undefined` if none)
+ * - `actions` — map of handler key → URL path for POST/PUT/DELETE endpoints
+ */
+export interface RouteDataService {
+  readonly data: unknown;
+  readonly actions: Readonly<Record<string, string>>;
+}
+
+/**
+ * Context tag for route data.
+ *
+ * Components access loader data and action endpoint paths through this context.
+ * Platform provides the implementation (server: runs loader, client: hydration/fetch).
+ *
+ * @example
+ * ```ts
+ * Route.render(() => Effect.gen(function* () {
+ *   const { data, actions } = yield* RouteDataContext;
+ *   const user = data as User;
+ *
+ *   return yield* $.form({ action: actions.updateProfile, method: "POST" },
+ *     // ...
+ *   );
+ * }))
+ * ```
+ */
+export class RouteDataContext extends Context.Tag("@effex/router/RouteData")<
+  RouteDataContext,
+  RouteDataService
+>() {}
+
+// =============================================================================
+// RouteDataProvider
+// =============================================================================
+
+/**
+ * Abstract service for fetching route data.
+ *
+ * Platform provides implementations:
+ * - Server: executes the loader directly
+ * - Client (hydration): reads from `window.__EFFEX_DATA__`
+ * - Client (navigation): fetches from server via `?_data=1`
+ */
+export interface RouteDataProviderService {
+  readonly getRouteData: (
+    route: Route<string, unknown, unknown, unknown, unknown, unknown>,
+    params: Record<string, string>,
+    searchParams: Record<string, string>,
+  ) => Effect.Effect<RouteDataService>;
+}
+
+/**
+ * Context tag for the route data provider.
+ *
+ * Outlet uses this to obtain data before rendering a route.
+ * Only accessed when a route has `_loader` or `_handlers`.
+ */
+export class RouteDataProvider extends Context.Tag(
+  "@effex/router/RouteDataProvider",
+)<RouteDataProvider, RouteDataProviderService>() {}

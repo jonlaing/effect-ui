@@ -14,7 +14,7 @@ import { findMatch, type Router } from "./Router.js";
  * Replaces :param segments with actual values and appends search params.
  */
 export const buildPath = <P, SP>(
-  route: Route<string, P, SP, unknown, unknown>,
+  route: Route<string, P, SP, unknown, unknown, unknown>,
   params: P,
   searchParams?: SP,
 ): string => {
@@ -65,7 +65,7 @@ export interface RouteNavigateOptions<P, SP> {
  * The current match result from the router.
  */
 export interface CurrentMatch<E, R> {
-  readonly route: Route<string, unknown, unknown, E, R>;
+  readonly route: Route<string, unknown, unknown, unknown, E, R>;
   readonly params: Record<string, string>;
 }
 
@@ -83,7 +83,7 @@ export interface Navigation<E = never, R = never> {
   readonly searchParams: Readable.Readable<URLSearchParams>;
 
   /** Current matched route (if any) */
-  readonly currentMatch: Readable.Readable<Option.Option<CurrentMatch<E, R>>>;
+  readonly currentMatch: Readable.Readable<CurrentMatch<E, R>>;
 
   /** Navigate to a path string */
   readonly pushPath: (path: string) => Effect.Effect<void>;
@@ -93,13 +93,13 @@ export interface Navigation<E = never, R = never> {
 
   /** Navigate to a route with type-safe params */
   readonly pushRoute: <P, SP>(
-    route: Route<string, P, SP, E, R>,
+    route: Route<string, P, SP, unknown, E, R>,
     options?: RouteNavigateOptions<P, SP>,
   ) => Effect.Effect<void>;
 
   /** Navigate to a route, replacing current history entry */
   readonly replaceRoute: <P, SP>(
-    route: Route<string, P, SP, E, R>,
+    route: Route<string, P, SP, unknown, E, R>,
     options?: RouteNavigateOptions<P, SP>,
   ) => Effect.Effect<void>;
 
@@ -173,14 +173,15 @@ export const make = <E, R>(
     );
 
     // Compute current match from pathname (derived readable)
-    const currentMatch: Readable.Readable<Option.Option<CurrentMatch<E, R>>> =
-      Readable.map(
-        pathnameState,
-        (pathname): Option.Option<CurrentMatch<E, R>> => {
-          const match = findMatch(router, pathname);
-          return match as Option.Option<CurrentMatch<E, R>>;
-        },
-      );
+    const currentMatch: Readable.Readable<CurrentMatch<E, R>> = Readable.map(
+      pathnameState,
+      (pathname): CurrentMatch<E, R> => {
+        const match = findMatch(router, pathname);
+        return Option.getOrElse(match, () => ({
+          route: router.fallback,
+        })) as CurrentMatch<E, R>;
+      },
+    );
 
     // Update internal state from a full path (may include query string)
     const updateState = (fullPath: string): Effect.Effect<void> =>
@@ -193,22 +194,22 @@ export const make = <E, R>(
     // Navigation methods
     const pushPath = (path: string): Effect.Effect<void> =>
       Effect.gen(function* () {
+        yield* updateState(path);
         if (isBrowser) {
           window.history.pushState(null, "", path);
         }
-        yield* updateState(path);
       });
 
     const replacePath = (path: string): Effect.Effect<void> =>
       Effect.gen(function* () {
+        yield* updateState(path);
         if (isBrowser) {
           window.history.replaceState(null, "", path);
         }
-        yield* updateState(path);
       });
 
     const pushRoute = <P, SP>(
-      route: Route<string, P, SP, E, R>,
+      route: Route<string, P, SP, unknown, E, R>,
       opts?: RouteNavigateOptions<P, SP>,
     ): Effect.Effect<void> => {
       const path = buildPath(
@@ -220,7 +221,7 @@ export const make = <E, R>(
     };
 
     const replaceRoute = <P, SP>(
-      route: Route<string, P, SP, E, R>,
+      route: Route<string, P, SP, unknown, E, R>,
       opts?: RouteNavigateOptions<P, SP>,
     ): Effect.Effect<void> => {
       const path = buildPath(
@@ -316,7 +317,7 @@ export const searchParams: Effect.Effect<
  * Get the current matched route.
  */
 export const currentMatch: Effect.Effect<
-  Option.Option<CurrentMatch<unknown, unknown>>,
+  CurrentMatch<unknown, unknown>,
   never,
   NavigationContext
 > = Effect.flatMap(NavigationContext, (nav) => nav.currentMatch.get);

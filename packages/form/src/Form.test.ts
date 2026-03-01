@@ -1,6 +1,8 @@
 import { Effect, Schema, Scope } from "effect";
 import { describe, expect, it } from "vitest";
 
+import { MergePropsCtx } from "@effex/core";
+
 import { Field } from "./Field";
 import { Form, FormTypeId, isForm, make as makeForm } from "./Form";
 
@@ -2028,5 +2030,58 @@ describe("MapField support", () => {
     expect(result.touchedBefore).toBe(false);
     expect(result.touchedAfter).toBe(true);
     expect(result.isValid).toBe(false);
+  });
+});
+
+describe("Form.provide action prop", () => {
+  it("should include action and method in MergePropsCtx when action is provided", async () => {
+    const TestForm = makeForm({
+      name: Field.make(Schema.String),
+    });
+
+    const result = await runFormTest(
+      TestForm.provide(
+        {
+          defaults: { name: "" },
+          action: "?_action=submit",
+        },
+        Effect.gen(function* () {
+          const props = yield* MergePropsCtx;
+          return {
+            action: props.action,
+            method: props.method,
+            hasOnSubmit: typeof props.onSubmit === "function",
+          };
+        }),
+      ),
+    );
+
+    expect(result.action).toBe("?_action=submit");
+    expect(result.method).toBe("POST");
+    expect(result.hasOnSubmit).toBe(true);
+  });
+
+  it("should not include action and method when action is not provided", async () => {
+    const TestForm = makeForm({
+      name: Field.make(Schema.String),
+    });
+
+    const result = await runFormTest(
+      TestForm.provide(
+        { defaults: { name: "" } },
+        Effect.gen(function* () {
+          const props = yield* MergePropsCtx;
+          return {
+            action: props.action,
+            method: props.method,
+            hasOnSubmit: typeof props.onSubmit === "function",
+          };
+        }),
+      ),
+    );
+
+    expect(result.action).toBeUndefined();
+    expect(result.method).toBeUndefined();
+    expect(result.hasOnSubmit).toBe(true);
   });
 });

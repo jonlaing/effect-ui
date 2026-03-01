@@ -2,6 +2,11 @@
 export {
   Route,
   make as makeRoute,
+  render as routeRender,
+  get as routeGet,
+  post as routePost,
+  put as routePut,
+  del as routeDelete,
   params as routeParams,
   searchParams as routeSearchParams,
   rawParams as routeRawParams,
@@ -15,11 +20,14 @@ export {
   TypeId as RouteTypeId,
   type Route as RouteType,
   type RouteContext,
+  type RouteHandler,
   type PathSegment,
   type AnimationOptions,
   type GuardOptions,
+  NoRenderError,
   type RouteParams,
   type RouteSearchParams,
+  type RouteData,
 } from "./Route.js";
 
 // Router
@@ -54,5 +62,16 @@ export {
   type CurrentMatch,
 } from "./Navigation.js";
 
+// RouteData
+export {
+  RouteDataContext,
+  RouteDataProvider,
+  type RouteDataService,
+  type RouteDataProviderService,
+} from "./RouteData.js";
+
 // Link
 export { Link, type LinkProps } from "./Link.js";
+
+// Outlet
+export { Outlet, type OutletConfig } from "./Outlet.js";

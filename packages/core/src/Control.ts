@@ -339,19 +339,18 @@ export const each = <A, E = never, R = never>(
  * Helper type to extract values from an array of Readables.
  * `[Readable<A>, Readable<B>]` -> `[A, B]`
  */
-type ExtractReadableValues<T extends readonly Readable.Readable<unknown>[]> = {
-  [K in keyof T]: T[K] extends Readable.Readable<infer V> ? V : never;
-};
+type ExtractReadableValue<T extends Readable.Readable<unknown>> =
+  T extends Readable.Readable<infer V> ? V : never;
 
 /**
  * Configuration for `redraw`.
  */
 export interface RedrawConfig<
-  T extends readonly Readable.Readable<unknown>[],
+  T extends Readable.Readable<unknown>,
   E = never,
   R = never,
 > {
-  readonly render: (values: ExtractReadableValues<T>) => Element<unknown, E, R>;
+  readonly render: (value: ExtractReadableValue<T>) => Element<unknown, E, R>;
   readonly container?: () => Element<unknown, E, R>;
 }
 
@@ -372,39 +371,15 @@ export interface RedrawConfig<
  * ```
  */
 export const redraw = <
-  T extends readonly Readable.Readable<unknown>[],
+  T extends Readable.Readable<unknown>,
   E = never,
   R = never,
 >(
-  readables: T,
+  readable: T,
   config: RedrawConfig<T, E, R>,
 ): Element<unknown, E, R | ControlCtx> =>
-  Effect.gen(function* () {
-    const parentCtx = yield* ControlCtx;
-    const ctx = yield* parentCtx.fork();
-    const container = yield* ctx.getContainer(config.container);
-
-    // Combine all readables into a single tuple
-    const combined = Readable.zipAll(
-      readables as unknown as Readable.Readable<unknown>[],
-    );
-
-    const sync = (values: readonly unknown[]) =>
-      Effect.gen(function* () {
-        // Remove existing content (noop if doesn't exist yet)
-        yield* ctx.removeSlot("content");
-        // Render new content
-        yield* ctx.addSlot("content", () =>
-          config.render(values as ExtractReadableValues<T>),
-        );
-      });
-
-    // Initial render
-    const initialValues = yield* combined.get;
-    yield* sync(initialValues);
-
-    // Subscribe to future changes
-    yield* ctx.subscribe(combined, sync);
-
-    return container;
-  }) as Element<unknown, E, R | ControlCtx>;
+  reconcile(readable, {
+    container: config.container,
+    getTargetKeys: () => [String(Math.random())],
+    renderSlot: (_, a) => config.render(a as ExtractReadableValue<T>),
+  });

@@ -28,14 +28,16 @@ describe("Router", () => {
     });
 
     it("is pipeable", () => {
-      const router = empty.pipe(concat(Route.make("/", render)));
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+      );
       expect(router.routes.length).toBe(1);
     });
   });
 
   describe("concat", () => {
     it("adds a single route to a router", () => {
-      const HomeRoute = Route.make("/", render);
+      const HomeRoute = Route.make("/").pipe(Route.render(render));
       const router = empty.pipe(concat(HomeRoute));
 
       expect(router.routes.length).toBe(1);
@@ -43,8 +45,8 @@ describe("Router", () => {
     });
 
     it("adds multiple routes", () => {
-      const HomeRoute = Route.make("/", render);
-      const UsersRoute = Route.make("/users", render);
+      const HomeRoute = Route.make("/").pipe(Route.render(render));
+      const UsersRoute = Route.make("/users").pipe(Route.render(render));
 
       const router = empty.pipe(concat(HomeRoute), concat(UsersRoute));
 
@@ -54,9 +56,9 @@ describe("Router", () => {
     });
 
     it("merges another router", () => {
-      const HomeRoute = Route.make("/", render);
-      const UsersRoute = Route.make("/users", render);
-      const PostsRoute = Route.make("/posts", render);
+      const HomeRoute = Route.make("/").pipe(Route.render(render));
+      const UsersRoute = Route.make("/users").pipe(Route.render(render));
+      const PostsRoute = Route.make("/posts").pipe(Route.render(render));
 
       const mainRouter = empty.pipe(concat(HomeRoute));
       const apiRouter = empty.pipe(concat(UsersRoute), concat(PostsRoute));
@@ -76,11 +78,13 @@ describe("Router", () => {
         Effect.succeed(document.createElement("span"));
 
       const router1 = empty.pipe(
-        concat(Route.make("/", render)),
+        concat(Route.make("/").pipe(Route.render(render))),
         fallback(fallbackRender),
       );
 
-      const router2 = empty.pipe(concat(Route.make("/users", render)));
+      const router2 = empty.pipe(
+        concat(Route.make("/users").pipe(Route.render(render))),
+      );
 
       // router2's fallback is null, so router1's fallback should be preserved
       const combined = router2.pipe(concat(router1));
@@ -115,8 +119,8 @@ describe("Router", () => {
   describe("prefixAll", () => {
     it("adds prefix to all routes", () => {
       const router = empty.pipe(
-        concat(Route.make("/", render)),
-        concat(Route.make("/users", render)),
+        concat(Route.make("/").pipe(Route.render(render))),
+        concat(Route.make("/users").pipe(Route.render(render))),
         prefixAll("/admin"),
       );
 
@@ -126,7 +130,7 @@ describe("Router", () => {
 
     it("handles trailing slash in prefix", () => {
       const router = empty.pipe(
-        concat(Route.make("/users", render)),
+        concat(Route.make("/users").pipe(Route.render(render))),
         prefixAll("/api/"),
       );
 
@@ -135,7 +139,7 @@ describe("Router", () => {
 
     it("updates segments after prefixing", () => {
       const router = empty.pipe(
-        concat(Route.make("/users/:id", render)),
+        concat(Route.make("/users/:id").pipe(Route.render(render))),
         prefixAll("/api"),
       );
 
@@ -161,7 +165,9 @@ describe("Router", () => {
   describe("guard", () => {
     it("adds guard to protected routes", () => {
       const isAuthenticated = Effect.succeed(true);
-      const DashboardRoute = Route.make("/dashboard", render);
+      const DashboardRoute = Route.make("/dashboard").pipe(
+        Route.render(render),
+      );
 
       const protectedRouter = empty.pipe(concat(DashboardRoute));
       const router = empty.pipe(
@@ -179,7 +185,7 @@ describe("Router", () => {
         Effect.succeed(document.createElement("div"));
 
       const protectedRouter = empty.pipe(
-        concat(Route.make("/dashboard", render)),
+        concat(Route.make("/dashboard").pipe(Route.render(render))),
       );
 
       const router = empty.pipe(
@@ -195,13 +201,13 @@ describe("Router", () => {
       const isAuthenticated = Effect.succeed(true);
 
       const publicRoutes = empty.pipe(
-        concat(Route.make("/", render)),
-        concat(Route.make("/login", render)),
+        concat(Route.make("/").pipe(Route.render(render))),
+        concat(Route.make("/login").pipe(Route.render(render))),
       );
 
       const protectedRoutes = empty.pipe(
-        concat(Route.make("/dashboard", render)),
-        concat(Route.make("/profile", render)),
+        concat(Route.make("/dashboard").pipe(Route.render(render))),
+        concat(Route.make("/profile").pipe(Route.render(render))),
       );
 
       const router = publicRoutes.pipe(
@@ -223,7 +229,7 @@ describe("Router", () => {
       const wrapper = (children: any) => children;
 
       const router = empty.pipe(
-        concat(Route.make("/", render)),
+        concat(Route.make("/").pipe(Route.render(render))),
         layout(wrapper),
       );
 
@@ -236,7 +242,7 @@ describe("Router", () => {
       const outerLayout = (children: any) => children;
 
       const router = empty.pipe(
-        concat(Route.make("/", render)),
+        concat(Route.make("/").pipe(Route.render(render))),
         layout(innerLayout),
         layout(outerLayout),
       );
@@ -249,8 +255,8 @@ describe("Router", () => {
 
   describe("findMatch", () => {
     it("finds matching route for pathname", () => {
-      const HomeRoute = Route.make("/", render);
-      const UsersRoute = Route.make("/users", render);
+      const HomeRoute = Route.make("/").pipe(Route.render(render));
+      const UsersRoute = Route.make("/users").pipe(Route.render(render));
 
       const router = empty.pipe(concat(HomeRoute), concat(UsersRoute));
 
@@ -269,7 +275,7 @@ describe("Router", () => {
     });
 
     it("extracts params from matching route", () => {
-      const UserRoute = Route.make("/users/:id", render);
+      const UserRoute = Route.make("/users/:id").pipe(Route.render(render));
       const router = empty.pipe(concat(UserRoute));
 
       const match = findMatch(router, "/users/123");
@@ -280,7 +286,9 @@ describe("Router", () => {
     });
 
     it("returns none when no route matches", () => {
-      const router = empty.pipe(concat(Route.make("/", render)));
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+      );
 
       const match = findMatch(router, "/nonexistent");
       expect(Option.isNone(match)).toBe(true);
@@ -288,8 +296,8 @@ describe("Router", () => {
 
     it("matches more specific routes first", () => {
       const router = empty.pipe(
-        concat(Route.make("/users/:id", render)),
-        concat(Route.make("/users/settings", render)),
+        concat(Route.make("/users/:id").pipe(Route.render(render))),
+        concat(Route.make("/users/settings").pipe(Route.render(render))),
       );
 
       // Static "settings" should match before param ":id"
@@ -302,8 +310,8 @@ describe("Router", () => {
 
     it("falls back to param routes when no static match", () => {
       const router = empty.pipe(
-        concat(Route.make("/users/:id", render)),
-        concat(Route.make("/users/settings", render)),
+        concat(Route.make("/users/:id").pipe(Route.render(render))),
+        concat(Route.make("/users/settings").pipe(Route.render(render))),
       );
 
       const match = findMatch(router, "/users/123");
@@ -316,8 +324,8 @@ describe("Router", () => {
 
     it("matches catch-all routes", () => {
       const router = empty.pipe(
-        concat(Route.make("/", render)),
-        concat(Route.make("/docs/*", render)),
+        concat(Route.make("/").pipe(Route.render(render))),
+        concat(Route.make("/docs/*").pipe(Route.render(render))),
       );
 
       const match = findMatch(router, "/docs/api/reference");
@@ -330,8 +338,8 @@ describe("Router", () => {
 
     it("prefers more specific routes over catch-all", () => {
       const router = empty.pipe(
-        concat(Route.make("/*", render)),
-        concat(Route.make("/users", render)),
+        concat(Route.make("/*").pipe(Route.render(render))),
+        concat(Route.make("/users").pipe(Route.render(render))),
       );
 
       const match = findMatch(router, "/users");
@@ -344,7 +352,7 @@ describe("Router", () => {
 
   describe("parseParams", () => {
     it("returns raw params when no schema", async () => {
-      const route = Route.make("/users/:id", render);
+      const route = Route.make("/users/:id").pipe(Route.render(render));
       const rawParams = { id: "123" };
 
       const result = await Effect.runPromise(parseParams(route, rawParams));
@@ -352,7 +360,8 @@ describe("Router", () => {
     });
 
     it("validates and transforms params with schema", async () => {
-      const route = Route.make("/users/:id", render).pipe(
+      const route = Route.make("/users/:id").pipe(
+        Route.render(render),
         Route.params(Schema.Struct({ id: Schema.NumberFromString })),
       );
       const rawParams = { id: "123" };
@@ -362,7 +371,8 @@ describe("Router", () => {
     });
 
     it("fails on invalid params", async () => {
-      const route = Route.make("/users/:id", render).pipe(
+      const route = Route.make("/users/:id").pipe(
+        Route.render(render),
         Route.params(Schema.Struct({ id: Schema.NumberFromString })),
       );
       const rawParams = { id: "not-a-number" };
@@ -375,7 +385,7 @@ describe("Router", () => {
 
   describe("parseSearchParams", () => {
     it("returns raw search params when no schema", async () => {
-      const route = Route.make("/search", render);
+      const route = Route.make("/search").pipe(Route.render(render));
       const searchParams = new URLSearchParams("q=test&page=1");
 
       const result = await Effect.runPromise(
@@ -385,7 +395,8 @@ describe("Router", () => {
     });
 
     it("validates and transforms search params with schema", async () => {
-      const route = Route.make("/search", render).pipe(
+      const route = Route.make("/search").pipe(
+        Route.render(render),
         Route.searchParams(
           Schema.Struct({
             q: Schema.String,
@@ -405,13 +416,17 @@ describe("Router", () => {
   describe("isRouter", () => {
     it("returns true for routers", () => {
       expect(isRouter(empty)).toBe(true);
-      expect(isRouter(empty.pipe(concat(Route.make("/", render))))).toBe(true);
+      expect(
+        isRouter(
+          empty.pipe(concat(Route.make("/").pipe(Route.render(render)))),
+        ),
+      ).toBe(true);
     });
 
     it("returns false for non-routers", () => {
       expect(isRouter({})).toBe(false);
       expect(isRouter(null)).toBe(false);
-      expect(isRouter(Route.make("/", render))).toBe(false);
+      expect(isRouter(Route.make("/").pipe(Route.render(render)))).toBe(false);
     });
   });
 
@@ -436,16 +451,16 @@ describe("Router", () => {
 
       // Public routes
       const publicRouter = empty.pipe(
-        concat(Route.make("/", render)),
-        concat(Route.make("/login", render)),
-        concat(Route.make("/about", render)),
+        concat(Route.make("/").pipe(Route.render(render))),
+        concat(Route.make("/login").pipe(Route.render(render))),
+        concat(Route.make("/about").pipe(Route.render(render))),
       );
 
       // Admin routes with layout and prefix
       const adminRouter = empty.pipe(
-        concat(Route.make("/", render)), // becomes /admin
-        concat(Route.make("/users", render)), // becomes /admin/users
-        concat(Route.make("/settings", render)), // becomes /admin/settings
+        concat(Route.make("/").pipe(Route.render(render))), // becomes /admin
+        concat(Route.make("/users").pipe(Route.render(render))), // becomes /admin/users
+        concat(Route.make("/settings").pipe(Route.render(render))), // becomes /admin/settings
         prefixAll("/admin"),
         layout((children) => children), // AdminLayout
       );
@@ -482,16 +497,16 @@ describe("Router", () => {
     it("supports nested sub-routers", () => {
       // API v1 routes
       const apiV1 = empty.pipe(
-        concat(Route.make("/users", render)),
-        concat(Route.make("/posts", render)),
+        concat(Route.make("/users").pipe(Route.render(render))),
+        concat(Route.make("/posts").pipe(Route.render(render))),
         prefixAll("/v1"),
       );
 
       // API v2 routes
       const apiV2 = empty.pipe(
-        concat(Route.make("/users", render)),
-        concat(Route.make("/posts", render)),
-        concat(Route.make("/comments", render)),
+        concat(Route.make("/users").pipe(Route.render(render))),
+        concat(Route.make("/posts").pipe(Route.render(render))),
+        concat(Route.make("/comments").pipe(Route.render(render))),
         prefixAll("/v2"),
       );
 
