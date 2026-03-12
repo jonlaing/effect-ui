@@ -23,7 +23,7 @@ export const App = () =>
             ),
           ),
           KanbanBoard(),
-          CardDetailDialog(),
+          // CardDetailDialog(),
         ),
       ),
     );

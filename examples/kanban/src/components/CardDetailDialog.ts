@@ -61,8 +61,8 @@ export const CardDetailDialog = () =>
             return Effect.void;
           },
         },
-        redraw([kanban.selectedCard], {
-          render: ([card]) =>
+        redraw(kanban.selectedCard, {
+          render: (card) =>
             Effect.gen(function* () {
               if (!card) return yield* $.div();
 
