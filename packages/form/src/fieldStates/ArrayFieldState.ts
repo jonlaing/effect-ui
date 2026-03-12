@@ -2,14 +2,17 @@ import { Effect, Scope } from "effect";
 
 import { Readable, Signal } from "@effex/core";
 
-import type { ArrayField, Field, FieldConfig, TypeOf } from "../Field";
-import type { ArrayFieldState } from "../FieldState";
+import type { ArrayField, Field, FieldConfig, TypeOf } from "../Field.js";
+import type { ArrayFieldState } from "../FieldState.js";
 import {
   aggregateErrorsDynamic,
   aggregateTouchedDynamic,
   type SupportedFieldState,
-} from "./aggregation";
-import { createChildFieldState, type FieldStateOf } from "./createFieldState";
+} from "./aggregation.js";
+import {
+  createChildFieldState,
+  type FieldStateOf,
+} from "./createFieldState.js";
 
 export const createArrayFieldState = <F extends Field<any, any>>(
   field: ArrayField<F>,

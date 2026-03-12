@@ -35,6 +35,12 @@ export interface Slot<Node> {
  */
 export interface Renderer<Node> {
   /**
+   * A string identifying the rendering environment (e.g., "dom", "ssr", "terminal").
+   * Useful for conditional logic in components that need to behave differently
+   * in different environments.
+   */
+  readonly environment: string;
+  /**
    * Create an element node of the given type.
    * @param type - The element tag name
    * @param namespace - Optional namespace URI (e.g., "http://www.w3.org/2000/svg" for SVG)
@@ -161,6 +167,13 @@ export interface Renderer<Node> {
    * Check if the renderer is in hydration mode.
    */
   readonly isHydrating: Effect.Effect<boolean>;
+
+  /**
+   * Signal that an element created with createNode has been fully built
+   * (attributes set, children appended). Used by the hydration renderer
+   * to pop its traversal context. No-op for other renderers.
+   */
+  readonly finalizeNode: (node: Node) => Effect.Effect<void>;
 
   /**
    * Create a slot for swappable content.

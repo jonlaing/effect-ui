@@ -16,7 +16,7 @@ import {
 } from "@effex/core";
 
 import { runEnterAnimation, runExitAnimation } from "../Animation/index.js";
-import * as Element from "../Element";
+import * as Element from "../Element/index.js";
 import { DOMRenderer } from "../Render/DOMRenderer.js";
 import { AnimationConfigCtx } from "./AnimationConfigCtx.js";
 
@@ -40,20 +40,33 @@ export class HydrationRootCtx extends Context.Tag(
  */
 const createClientLikeControlCtx = (
   animationConfig: { single?: unknown; list?: unknown } | undefined,
+  startInClientMode = false,
 ): IControlCtx<DOMElement> => {
   const slots = new Map<string, DOMSlotEntry>();
   let containerElement: DOMElement | null = null;
+  // Captured when getContainer runs so finalizeContainer can pop the stack
+  let capturedRenderer: Renderer<unknown> | null = null;
+  // Tracks whether initial hydration sync is complete.
+  // After finalizeContainer, future addSlot calls use DOMRenderer.
+  // When startInClientMode is true, skip the hydration phase entirely.
+  let hydrationDone = startInClientMode;
 
   const defaultContainer: Element.Element<DOMElement, never, never> =
     Effect.gen(function* () {
       const renderer = yield* RendererContext;
+      capturedRenderer = renderer;
       const container = yield* renderer.createNode("div");
       yield* renderer.setStyleProperty(container, "display", "contents");
       return container as DOMElement;
     });
 
   const ctx: IControlCtx<DOMElement> = {
-    fork: () => Effect.succeed(createClientLikeControlCtx(animationConfig)),
+    // Propagate hydrationDone so nested control functions created after
+    // hydration finishes start in client mode immediately.
+    fork: () =>
+      Effect.succeed(
+        createClientLikeControlCtx(animationConfig, hydrationDone),
+      ),
 
     defaultContainer,
 
@@ -62,6 +75,10 @@ const createClientLikeControlCtx = (
     ): Element.Element<DOMElement, E, R> =>
       Effect.gen(function* () {
         if (containerElement) return containerElement;
+        // Capture renderer for finalizeContainer
+        if (!capturedRenderer) {
+          capturedRenderer = yield* RendererContext;
+        }
         const container = create
           ? yield* create()
           : yield* defaultContainer as Element.Element<DOMElement, E, R>;
@@ -91,19 +108,35 @@ const createClientLikeControlCtx = (
           Effect.provideService(Scope.Scope, slotScope),
         );
 
-        const element = (yield* render({ item, index }).pipe(
-          Effect.provideService(Scope.Scope, slotScope),
-          Effect.provideService(
-            RendererContext,
-            DOMRenderer as unknown as Renderer<unknown>,
-          ),
-        )) as DOMElement;
+        let element: DOMElement;
 
-        if (containerElement) {
-          const children = Array.from(containerElement.children);
-          const targetIndex = addOptions?.atIndex ?? children.length;
-          const refChild = children[targetIndex] ?? null;
-          containerElement.insertBefore(element, refChild);
+        if (!hydrationDone) {
+          // During initial hydration: use the hydration renderer to walk
+          // existing DOM and attach event handlers / reactive subscriptions.
+          element = (yield* render({ item, index }).pipe(
+            Effect.provideService(Scope.Scope, slotScope),
+          )) as DOMElement;
+          // Don't insert — content is already in the DOM
+        } else {
+          // After hydration: use DOMRenderer to create new DOM.
+          // Provide a fresh client-mode ControlCtx so nested control flow
+          // (each, matchOption, etc.) doesn't inherit the stale hydration root.
+          const freshCtx = createClientLikeControlCtx(animationConfig, true);
+          element = (yield* render({ item, index }).pipe(
+            Effect.provideService(Scope.Scope, slotScope),
+            Effect.provideService(
+              RendererContext,
+              DOMRenderer as unknown as Renderer<unknown>,
+            ),
+            Effect.provideService(ControlCtx, freshCtx as IControlCtx<unknown>),
+          )) as DOMElement;
+
+          if (containerElement) {
+            const children = Array.from(containerElement.children);
+            const targetIndex = addOptions?.atIndex ?? children.length;
+            const refChild = children[targetIndex] ?? null;
+            containerElement.insertBefore(element, refChild);
+          }
         }
 
         const entry: DOMSlotEntry = {
@@ -115,15 +148,28 @@ const createClientLikeControlCtx = (
         };
         slots.set(key, entry);
 
-        const animate = (animationConfig?.list ?? animationConfig?.single) as
-          | Parameters<typeof runEnterAnimation>[1]
-          | undefined;
-        if (animate && element instanceof HTMLElement) {
-          yield* runEnterAnimation(Effect.succeed(element), animate);
+        if (hydrationDone) {
+          const animate = (animationConfig?.list ?? animationConfig?.single) as
+            | Parameters<typeof runEnterAnimation>[1]
+            | undefined;
+          if (animate && element instanceof HTMLElement) {
+            yield* runEnterAnimation(Effect.succeed(element), animate);
+          }
         }
 
         return entry;
       }) as Effect.Effect<DOMSlotEntry, E, R>,
+
+    finalizeContainer: () => {
+      // Mark hydration as complete — future addSlot calls use DOMRenderer
+      hydrationDone = true;
+      // Pop the container from the hydration stack if the renderer supports it.
+      // capturedRenderer was set when getContainer ran.
+      if (containerElement && capturedRenderer) {
+        return capturedRenderer.finalizeNode(containerElement);
+      }
+      return Effect.void;
+    },
 
     removeSlot: (key: string): Effect.Effect<void> =>
       Effect.gen(function* () {
@@ -190,6 +236,9 @@ const createHydrationControlCtx = (
   animationConfig: { single?: unknown; list?: unknown } | undefined,
 ): IControlCtx<DOMElement> => {
   const slots = new Map<string, DOMSlotEntry>();
+  // Tracks whether the initial hydration pass is complete.
+  // Once true, fork() returns client-mode contexts.
+  let hydrationComplete = false;
 
   // Parse existing slots from DOM
   const children = Array.from(containerElement.children) as DOMElement[];
@@ -210,8 +259,11 @@ const createHydrationControlCtx = (
     Effect.succeed(containerElement);
 
   const ctx: IControlCtx<DOMElement> = {
-    // Nested control functions get client-like context (don't read from DOM)
-    fork: () => Effect.succeed(createClientLikeControlCtx(animationConfig)),
+    // After hydration completes, nested control functions start in client mode
+    fork: () =>
+      Effect.succeed(
+        createClientLikeControlCtx(animationConfig, hydrationComplete),
+      ),
 
     defaultContainer,
 
@@ -255,6 +307,7 @@ const createHydrationControlCtx = (
         }
 
         // No existing element, create new one (client fallback)
+        hydrationComplete = true;
         const slotScope = yield* Scope.make();
         const item = yield* Signal.make(addOptions?.initialItem).pipe(
           Effect.provideService(Scope.Scope, slotScope),
@@ -263,12 +316,14 @@ const createHydrationControlCtx = (
           Effect.provideService(Scope.Scope, slotScope),
         );
 
+        const freshCtx = createClientLikeControlCtx(animationConfig, true);
         const element = (yield* render({ item, index }).pipe(
           Effect.provideService(Scope.Scope, slotScope),
           Effect.provideService(
             RendererContext,
             DOMRenderer as unknown as Renderer<unknown>,
           ),
+          Effect.provideService(ControlCtx, freshCtx as IControlCtx<unknown>),
         )) as DOMElement;
 
         const containerChildren = Array.from(containerElement.children);
@@ -294,6 +349,9 @@ const createHydrationControlCtx = (
 
         return entry;
       }) as Effect.Effect<DOMSlotEntry, E, R>,
+
+    // No-op — container was provided externally, not found via hydration walker
+    finalizeContainer: () => Effect.void,
 
     removeSlot: (key: string): Effect.Effect<void> =>
       Effect.gen(function* () {

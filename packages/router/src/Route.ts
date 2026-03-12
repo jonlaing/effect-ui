@@ -231,10 +231,10 @@ export interface Route<
    * Stored opaquely; the router never executes it.
    */
   readonly _loader:
-    | ((args: {
+    | (<EL, RL>(args: {
         params: Params;
         searchParams: SearchParams;
-      }) => Effect.Effect<unknown, unknown, unknown>)
+      }) => Effect.Effect<unknown, EL, RL>)
     | null;
   /**
    * Mutation handlers — executed on POST/PUT/DELETE by platform.
@@ -457,7 +457,7 @@ export const render =
     return Object.assign(Object.create(RouteProto), {
       ...route,
       render: (_data: D) => fn(),
-    }) as any;
+    });
   };
 
 /**
@@ -504,7 +504,7 @@ export const get =
       ...route,
       _loader: loader,
       render: renderFn,
-    }) as any;
+    });
   };
 
 /**
@@ -663,7 +663,7 @@ export const catchIf =
     return Object.assign(Object.create(RouteProto), {
       ...route,
       Params: ParamsTag,
-      render: (data: any) =>
+      render: (data: D) =>
         Effect.catchIf(
           route.render(data),
           predicate,
@@ -707,7 +707,7 @@ export const catchTag: {
   ): Route<Path, P, SP, D, Exclude<E, { _tag: K }> | E2, R | R2> => {
     return Object.assign(Object.create(RouteProto), {
       ...route,
-      render: (data: any) =>
+      render: (data: D) =>
         Effect.catchTag(
           route.render(data) as Effect.Effect<
             HTMLElement | SVGElement,
@@ -757,7 +757,7 @@ export const catchAll =
     return Object.assign(Object.create(RouteProto), {
       ...route,
       Params: ParamsTag,
-      render: (data: any) =>
+      render: (data: D) =>
         Effect.catchAll(route.render(data), handler) as Element.Element<
           HTMLElement | SVGElement,
           E2,

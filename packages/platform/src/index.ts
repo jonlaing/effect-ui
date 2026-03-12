@@ -6,6 +6,7 @@ export {
   generateLoaderDataScript,
   generateDocument,
   toHttpRoutes,
+  makeClientLayer,
   type DocumentOptions,
   type ToHttpRoutesOptions,
 } from "./Platform.js";

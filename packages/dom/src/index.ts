@@ -2,13 +2,13 @@
 export * from "@effex/core";
 
 // DOM Renderer
-export { DOMRenderer, DOMRendererLive } from "./Render/DOMRenderer";
+export { DOMRenderer, DOMRendererLive } from "./Render/DOMRenderer.js";
 
 // Export Element as a namespace and also re-export common types directly
-export * as Element from "./Element";
+export * as Element from "./Element/index.js";
 
 // Re-export commonly used items from Element for convenience
-export { $, bindElementToRef, ref } from "./Element";
+export { $, bindElementToRef, ref } from "./Element/index.js";
 
 // Control flow
 export {
@@ -19,7 +19,7 @@ export {
   matchEither,
   redraw,
   HydrationMismatchError,
-} from "./Control";
+} from "./Control/index.js";
 export type {
   WhenConfig,
   MatchConfig,
@@ -28,16 +28,16 @@ export type {
   MatchOptionConfig,
   MatchEitherConfig,
   RedrawConfig,
-} from "./Control";
+} from "./Control/index.js";
 
 // Boundary (async and error handling)
-export { Boundary, suspense, error } from "./Boundary";
-export type { SuspenseOptions, BoundarySuspenseOptions } from "./Boundary";
+export { Boundary, suspense, error } from "./Boundary.js";
+export type { SuspenseOptions, BoundarySuspenseOptions } from "./Boundary.js";
 
 // Context provision
-export { provide } from "./Provide";
+export { provide } from "./Provide.js";
 
-export { collect } from "./Collect";
+export { collect } from "./Collect.js";
 
 // Animation
 export type {
@@ -61,14 +61,14 @@ export {
 } from "./Animation/index.js";
 
 // Mounting
-export { mount, runApp } from "./Render/client";
+export { mount, runApp } from "./Render/client/index.js";
 
 // Template helpers
-export { t } from "./Template";
+export { t } from "./Template.js";
 
 // Portal
-export type { PortalOptions } from "./Portal";
-export { Portal } from "./Portal";
+export type { PortalOptions } from "./Portal.js";
+export { Portal } from "./Portal.js";
 
 // Virtual List
 export type {
@@ -80,11 +80,11 @@ export type {
 export { virtualEach, VirtualListRef } from "./VirtualList/index.js";
 
 // Unique ID generation
-export { UniqueId } from "./UniqueId";
+export { UniqueId } from "./UniqueId.js";
 
 // Focus Trap
-export type { FocusTrapOptions } from "./FocusTrap";
-export { FocusTrap } from "./FocusTrap";
+export type { FocusTrapOptions } from "./FocusTrap/index.js";
+export { FocusTrap } from "./FocusTrap/index.js";
 
 // Scroll Lock
-export { ScrollLock } from "./ScrollLock";
+export { ScrollLock } from "./ScrollLock/index.js";

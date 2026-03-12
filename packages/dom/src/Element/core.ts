@@ -625,11 +625,11 @@ export const appendChild: {
           const textNode = yield* renderer.createTextNode(String(c));
           yield* renderer.appendChild(el, textNode);
         } else if (Readable.isReadable(c)) {
-          // Create a text node and subscribe to changes
-          const textNode = yield* renderer.createTextNode("");
-          yield* renderer.appendChild(el, textNode);
+          // Read initial value BEFORE creating the text node so hydration
+          // can match against the real SSR content instead of "".
           const initialValue = yield* c.get;
-          yield* renderer.setTextContent(textNode, String(initialValue));
+          const textNode = yield* renderer.createTextNode(String(initialValue));
+          yield* renderer.appendChild(el, textNode);
           // Subscribe to changes only (not values - we already set initial)
           const scope = yield* Effect.scope;
           yield* Stream.runForEach(c.changes, (value) =>
@@ -1076,12 +1076,13 @@ export const on: {
     handler: (e: HTMLElementEventMap[K]) => Effect.Effect<void, never, never>,
   ): Element<A, E, R> =>
     Effect.gen(function* () {
+      const renderer = yield* RendererContext;
       const el = yield* self;
 
       // Track if scope is still active to prevent stale handler calls
       let isActive = true;
 
-      const wrappedHandler = (e: Event) => {
+      const wrappedHandler = (e: unknown) => {
         if (isActive) {
           const effect = handler(e as HTMLElementEventMap[K]);
           if (effect && Effect.isEffect(effect)) {
@@ -1090,13 +1091,12 @@ export const on: {
         }
       };
 
-      el.addEventListener(event, wrappedHandler);
+      yield* renderer.addEventListener(el, event, wrappedHandler);
 
       // Clean up on scope finalization
       yield* Effect.addFinalizer(() =>
         Effect.sync(() => {
           isActive = false;
-          el.removeEventListener(event, wrappedHandler);
         }),
       );
 
@@ -1125,14 +1125,15 @@ export const once: {
     handler: (e: HTMLElementEventMap[K]) => Effect.Effect<void, never, never>,
   ): Element<A, E, R> =>
     Effect.gen(function* () {
+      const renderer = yield* RendererContext;
       const el = yield* self;
 
       // Track if scope is still active to prevent stale handler calls
       let isActive = true;
 
-      const wrappedHandler = (e: Event) => {
+      const wrappedHandler = (e: unknown) => {
         if (isActive) {
-          el.removeEventListener(event, wrappedHandler);
+          isActive = false;
           const effect = handler(e as HTMLElementEventMap[K]);
           if (effect && Effect.isEffect(effect)) {
             Effect.runPromise(effect);
@@ -1140,13 +1141,12 @@ export const once: {
         }
       };
 
-      el.addEventListener(event, wrappedHandler);
+      yield* renderer.addEventListener(el, event, wrappedHandler);
 
       // Clean up on scope finalization
       yield* Effect.addFinalizer(() =>
         Effect.sync(() => {
           isActive = false;
-          el.removeEventListener(event, wrappedHandler);
         }),
       );
 
@@ -1177,13 +1177,18 @@ export const addEventListener: {
     self: Element<A, E, R>,
     event: K,
     handler: (e: HTMLElementEventMap[K]) => void,
-    options?: AddEventListenerOptions,
+    _options?: AddEventListenerOptions,
   ): Element<A, E, R> =>
-    Effect.tap(self, (el) =>
-      Effect.sync(() =>
-        el.addEventListener(event, handler as EventListener, options),
-      ),
-    ) as Element<A, E, R>,
+    Effect.gen(function* () {
+      const renderer = yield* RendererContext;
+      const el = yield* self;
+      yield* renderer.addEventListener(
+        el,
+        event,
+        handler as (event: unknown) => void,
+      );
+      return el;
+    }) as Element<A, E, R>,
 );
 
 /**

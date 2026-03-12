@@ -104,6 +104,9 @@ export const reconcile = <A, E, R>(
     const initialValue = yield* readable.get;
     yield* sync(initialValue);
 
+    // Pop the container from the hydration stack (no-op in client/SSR)
+    yield* ctx.finalizeContainer();
+
     // Subscribe to future changes
     yield* ctx.subscribe(readable, sync);
 

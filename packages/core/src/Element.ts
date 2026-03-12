@@ -1,6 +1,6 @@
 import { Context, type Effect, type Scope } from "effect";
 
-import type { RendererContext } from "./Renderer";
+import type { RendererContext } from "./Renderer.js";
 
 /**
  * A rendered element wrapped in an Effect with scope management.

@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 
 import { MergePropsCtx } from "@effex/core";
 
-import { Field } from "./Field";
-import { Form, FormTypeId, isForm, make as makeForm } from "./Form";
+import { Field } from "./Field.js";
+import { Form, FormTypeId, isForm, make as makeForm } from "./Form.js";
 
 // Helper to run form effects in tests
 const runFormTest = <A>(

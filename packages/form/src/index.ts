@@ -19,7 +19,7 @@ export {
   type Field as FieldType,
   type TypeOf as FieldTypeOf,
   type EncodedOf as FieldEncodedOf,
-} from "./Field";
+} from "./Field.js";
 
 // FieldState - runtime state types
 export type {
@@ -29,7 +29,7 @@ export type {
   MapFieldState,
   FieldState,
   FormState,
-} from "./FieldState";
+} from "./FieldState.js";
 
 // Form
 export {
@@ -42,4 +42,4 @@ export {
   type FormConfig,
   type ProvideConfig,
   type Form as FormType,
-} from "./Form";
+} from "./Form.js";

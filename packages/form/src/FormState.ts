@@ -2,15 +2,15 @@ import { Effect, Either, ParseResult, Schema, Scope } from "effect";
 
 import { Readable, Signal } from "@effex/core";
 
-import { isLeafField, type Field } from "./Field";
+import { isLeafField, type Field } from "./Field.js";
 import type {
   ArrayFieldState,
   FormState,
   MapFieldState,
   StructFieldState,
-} from "./FieldState";
-import type { SupportedFieldState } from "./fieldStates";
-import type { OnSubmit, SubmitContext } from "./Form";
+} from "./FieldState.js";
+import type { SupportedFieldState } from "./fieldStates/index.js";
+import type { OnSubmit, SubmitContext } from "./Form.js";
 
 /**
  * Helper to trigger validation on a field state by touching it.

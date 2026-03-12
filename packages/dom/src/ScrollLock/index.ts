@@ -1,1 +1,1 @@
-export { ScrollLock } from "./ScrollLock";
+export { ScrollLock } from "./ScrollLock.js";

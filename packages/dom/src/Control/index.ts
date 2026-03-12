@@ -20,7 +20,7 @@ import {
   Readable,
 } from "@effex/core";
 
-import * as Element from "../Element";
+import * as Element from "../Element/index.js";
 import { AnimationConfigCtx } from "./AnimationConfigCtx.js";
 import type {
   EachConfig,
@@ -29,7 +29,7 @@ import type {
   MatchOptionConfig,
   RedrawConfig,
   WhenConfig,
-} from "./types";
+} from "./types.js";
 
 // Re-export types
 export type {
@@ -40,16 +40,22 @@ export type {
   MatchOptionConfig,
   MatchEitherConfig,
   RedrawConfig,
-} from "./types";
+} from "./types.js";
 
 // Re-export errors
-export { HydrationMismatchError } from "./errors";
+export { HydrationMismatchError } from "./errors.js";
 
 // Re-export ControlCtx layers and AnimationConfigCtx
-export { ClientControlCtx } from "./ClientControlCtx";
-export { SSRControlCtx } from "./SSRControlCtx";
-export { HydrationControlCtx, HydrationRootCtx } from "./HydrationControlCtx";
-export { AnimationConfigCtx, type AnimationConfig } from "./AnimationConfigCtx";
+export { ClientControlCtx } from "./ClientControlCtx.js";
+export { SSRControlCtx } from "./SSRControlCtx.js";
+export {
+  HydrationControlCtx,
+  HydrationRootCtx,
+} from "./HydrationControlCtx.js";
+export {
+  AnimationConfigCtx,
+  type AnimationConfig,
+} from "./AnimationConfigCtx.js";
 
 type DOMElement = HTMLElement | SVGElement;
 

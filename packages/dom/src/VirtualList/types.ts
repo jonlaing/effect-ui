@@ -2,8 +2,8 @@ import type { Deferred, Effect, Scope } from "effect";
 
 import type { Readable, Signal } from "@effex/core";
 
-import type { ListAnimationOptions } from "../Animation";
-import type * as Element from "../Element";
+import type { ListAnimationOptions } from "../Animation/index.js";
+import type * as Element from "../Element/index.js";
 
 /**
  * Visible range of items in the virtual list.

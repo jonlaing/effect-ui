@@ -2,8 +2,8 @@ import { Effect, Either, ParseResult, Schema, Scope } from "effect";
 
 import { Readable, Signal } from "@effex/core";
 
-import type { FieldConfig, LeafField } from "../Field";
-import type { LeafFieldState } from "../FieldState";
+import type { FieldConfig, LeafField } from "../Field.js";
+import type { LeafFieldState } from "../FieldState.js";
 
 export const createLeafFieldState = <A, I>(
   field: LeafField<A, I>,

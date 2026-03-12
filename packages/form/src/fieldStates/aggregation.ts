@@ -7,7 +7,7 @@ import type {
   LeafFieldState,
   MapFieldState,
   StructFieldState,
-} from "../FieldState";
+} from "../FieldState.js";
 
 /**
  * Supported field state types for aggregation.

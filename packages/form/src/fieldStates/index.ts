@@ -1,6 +1,6 @@
 // Import individual creators
 
-import { createArrayFieldState } from "./ArrayFieldState";
+import { createArrayFieldState } from "./ArrayFieldState.js";
 // Import the registry and wire it up
 import {
   createChildFieldState,
@@ -9,10 +9,10 @@ import {
   type CreateFieldState,
   type FieldStateOf,
   type SupportedFieldState,
-} from "./createFieldState";
-import { createLeafFieldState } from "./LeafFieldState";
-import { createMapFieldState } from "./MapFieldState";
-import { createStructFieldState } from "./StructFieldState";
+} from "./createFieldState.js";
+import { createLeafFieldState } from "./LeafFieldState.js";
+import { createMapFieldState } from "./MapFieldState.js";
+import { createStructFieldState } from "./StructFieldState.js";
 
 // Wire up the registry to break the circular dependency
 fieldStateCreators.leaf = createLeafFieldState;
@@ -43,4 +43,4 @@ export {
   aggregateErrors,
   aggregateTouchedDynamic,
   aggregateErrorsDynamic,
-} from "./aggregation";
+} from "./aggregation.js";

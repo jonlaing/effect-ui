@@ -1,6 +1,6 @@
 import { Duration, Effect, Either, Option } from "effect";
 
-import type { Element } from "./Element";
+import type { Element } from "./Element.js";
 import { SuspenseBoundaryCtx } from "./SuspenseBoundaryCtx.js";
 
 /**
@@ -123,7 +123,7 @@ export const error = <N, E, R1 = never, R2 = never>(
     const result = yield* tryRender().pipe(Effect.either);
 
     if (Either.isLeft(result)) {
-      return yield* catchRender(result.left);
+      return yield* catchRender(result.left as E);
     }
 
     return result.right;

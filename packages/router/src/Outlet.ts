@@ -1,7 +1,7 @@
 import { Effect, Option } from "effect";
 
-import { Readable } from "@effex/core";
-import { $, match, type AnimationOptions, type Element } from "@effex/dom";
+import { ControlCtx, reconcile } from "@effex/core";
+import { $, type AnimationOptions, type Element } from "@effex/dom";
 
 import { NavigationContext, type Navigation } from "./Navigation.js";
 import type { Route } from "./Route.js";
@@ -10,7 +10,7 @@ import {
   RouteDataProvider,
   type RouteDataService,
 } from "./RouteData.js";
-import type { LayoutWrapper, Router } from "./Router.js";
+import { findMatch, type LayoutWrapper, type Router } from "./Router.js";
 
 /**
  * Configuration for the Outlet component.
@@ -26,17 +26,18 @@ export interface OutletConfig<E = never, R = never> {
  * Apply layout wrappers to an Element Effect.
  * Layouts are applied inside-out (first layout is innermost).
  */
-const applyLayouts = (
-  element: Element.Element<HTMLElement | SVGElement, unknown, unknown>,
+const applyLayouts = <E, R>(
+  element: Element.Element<HTMLElement | SVGElement, E, R>,
   layouts: ReadonlyArray<LayoutWrapper>,
-): Element.Element<HTMLElement | SVGElement, unknown, unknown> => {
+): Element.Element<HTMLElement | SVGElement, E, R> => {
   if (layouts.length === 0) {
     return element;
   }
   // Apply layouts inside-out: layouts[0] wraps element, layouts[1] wraps that, etc.
-  return layouts.reduce<
-    Element.Element<HTMLElement | SVGElement, unknown, unknown>
-  >((inner, wrapper) => wrapper(inner), element);
+  return layouts.reduce<Element.Element<HTMLElement | SVGElement, E, R>>(
+    (inner, wrapper) => wrapper(inner),
+    element,
+  );
 };
 
 /**
@@ -58,11 +59,11 @@ const checkGuard = (
 /**
  * Render a route, handling guards, data loading, and layouts.
  */
-const renderRouteWithGuard = (
-  route: Route<string, unknown, unknown, unknown, unknown, unknown>,
-  nav: Navigation<unknown, unknown>,
+const renderRouteWithGuard = <ER, RR, EN, RN, EL, RL>(
+  route: Route<string, unknown, unknown, unknown, ER, RR>,
+  nav: Navigation<EN, RN>,
   layouts: ReadonlyArray<LayoutWrapper>,
-): Element.Element<HTMLElement | SVGElement, unknown, unknown> =>
+): Element.Element<HTMLElement | SVGElement, ER | EN | EL, RR | RN | RL> =>
   Effect.gen(function* () {
     // Check guard if present
     const allowed = yield* checkGuard(route);
@@ -103,12 +104,7 @@ const renderRouteWithGuard = (
       } else {
         // Default: run the loader directly, compute action paths
         const data = route._loader
-          ? yield* (
-              route._loader as (args: {
-                params: unknown;
-                searchParams: unknown;
-              }) => Effect.Effect<unknown, unknown, unknown>
-            )({
+          ? yield* route._loader<EL, RL>({
               params: currentMatch.params,
               searchParams: {},
             })
@@ -172,23 +168,41 @@ const renderRouteWithGuard = (
  * )
  * ```
  */
-export const Outlet = <E, R>(
-  config: OutletConfig<E, R>,
-): Element.Element<HTMLElement | SVGElement, E, R> =>
+export const Outlet = <ER, RR, EN, RN, EL, RL>(
+  config: OutletConfig<ER, RR>,
+): Element.Element<
+  HTMLElement | SVGElement,
+  ER | EN | EL,
+  RR | RN | RL | NavigationContext | ControlCtx
+> =>
   Effect.gen(function* () {
-    const nav = yield* NavigationContext;
+    const nav = (yield* NavigationContext) as Navigation<EN, RN>;
     const router = config.router;
     const layouts = router.layouts;
 
-    return yield* match(
-      Readable.map(nav.currentMatch, (m) => m.route.path),
-      {
-        cases: router.routes.map((route) => ({
-          pattern: route.path,
-          render: () => renderRouteWithGuard(route, nav, layouts),
-        })),
-        fallback: () => router.fallback?.() ?? $.div(),
-        animate: config.animate,
+    // Use pathname as the reconcile key so param-only navigations
+    // (e.g. /users/alice → /users/bob) trigger a re-render.
+    return (yield* reconcile(nav.pathname, {
+      getTargetKeys: (pathname) => {
+        const matched = findMatch(router as Router<ER, RR>, pathname);
+        if (Option.isSome(matched)) return [pathname];
+        if (router.fallback) return ["__fallback__"];
+        return [];
       },
-    );
-  }) as any;
+      renderSlot: (key) => {
+        if (key === "__fallback__") {
+          return router.fallback?.() ?? $.div();
+        }
+        // Find the route that matches this pathname
+        const matched = findMatch(router as Router<ER, RR>, key);
+        if (Option.isNone(matched)) {
+          return router.fallback?.() ?? $.div();
+        }
+        return renderRouteWithGuard(matched.value.route, nav, layouts);
+      },
+    })) as HTMLElement | SVGElement;
+  }) as Element.Element<
+    HTMLElement | SVGElement,
+    ER | EN | EL,
+    RR | RN | RL | NavigationContext | ControlCtx
+  >;

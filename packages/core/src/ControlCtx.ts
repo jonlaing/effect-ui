@@ -108,6 +108,14 @@ export interface IControlCtx<A> {
   readonly moveSlot: (key: string, toIndex: number) => Effect.Effect<void>;
 
   /**
+   * Signal that the container's initial children have been processed.
+   * In hydration mode, this pops the container from the traversal stack
+   * so sibling elements are found correctly.
+   * No-op in client/SSR mode.
+   */
+  readonly finalizeContainer: () => Effect.Effect<void>;
+
+  /**
    * Subscribe to a Readable and run handler on each change.
    * Noop in SSR, forks stream subscription in client/hydration.
    */

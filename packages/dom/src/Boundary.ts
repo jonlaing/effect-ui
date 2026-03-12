@@ -14,7 +14,7 @@ import {
   type BoundarySuspenseOptions as CoreSuspenseOptions,
 } from "@effex/core";
 
-import * as Element from "./Element";
+import * as Element from "./Element/index.js";
 
 type DOMElement = HTMLElement | SVGElement;
 

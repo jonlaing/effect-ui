@@ -34,12 +34,12 @@ import {
 } from "@effex/core";
 
 import { SSRControlCtx } from "../../Control/SSRControlCtx.js";
-import * as Element from "../../Element";
+import * as Element from "../../Element/index.js";
 import { SSRSuspenseBoundaryCtx } from "../../SuspenseBoundaryCtx/SSRSuspenseBoundaryCtx.js";
-import { vnodeToString } from "./renderToString";
-import { SSRContext, withSSRContext } from "./SSRContext";
-import { StringRenderer } from "./StringRenderer";
-import type { VNode } from "./VNode";
+import { vnodeToString } from "./renderToString.js";
+import { SSRContext, withSSRContext } from "./SSRContext.js";
+import { StringRenderer } from "./StringRenderer.js";
+import type { VNode } from "./VNode.js";
 
 export interface RenderToStringOptions {
   /**
@@ -109,6 +109,6 @@ export const renderToString = <
 };
 
 // Re-export types and utilities
-export { SSRContext } from "./SSRContext";
-export type { VNode, VElement, VText } from "./VNode";
-export { StringRenderer } from "./StringRenderer";
+export { SSRContext } from "./SSRContext.js";
+export type { VNode, VElement, VText } from "./VNode.js";
+export { StringRenderer } from "./StringRenderer.js";

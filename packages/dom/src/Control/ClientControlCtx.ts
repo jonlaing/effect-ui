@@ -16,7 +16,7 @@ import {
 } from "@effex/core";
 
 import { runEnterAnimation, runExitAnimation } from "../Animation/index.js";
-import * as Element from "../Element";
+import * as Element from "../Element/index.js";
 import { DOMRenderer } from "../Render/DOMRenderer.js";
 import { AnimationConfigCtx } from "./AnimationConfigCtx.js";
 
@@ -120,6 +120,8 @@ const createClientControlCtx = (): IControlCtx<DOMElement> => {
 
         return entry;
       }) as Effect.Effect<DOMSlotEntry, E, R>,
+
+    finalizeContainer: () => Effect.void,
 
     removeSlot: (key: string): Effect.Effect<void> =>
       Effect.gen(function* () {

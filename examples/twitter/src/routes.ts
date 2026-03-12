@@ -1,0 +1,92 @@
+import { Effect, Schema } from "effect";
+
+import { $ } from "@effex/dom";
+import { Route, Router } from "@effex/router";
+
+import { AppLayout } from "./components/AppLayout.js";
+import { FeedPage } from "./pages/Feed.js";
+import { NotFoundPage } from "./pages/NotFound.js";
+import { PostDetailPage } from "./pages/PostDetail.js";
+import { UserProfilePage } from "./pages/UserProfile.js";
+import { PostService, type Post, type User } from "./services/PostService.js";
+
+// =============================================================================
+// Feed — lists all posts
+// =============================================================================
+
+export const FeedRoute = Route.make("/").pipe(
+  Route.get(
+    ({}) =>
+      Effect.gen(function* () {
+        const svc = yield* PostService;
+        const posts = yield* svc.getPosts();
+        const users = yield* svc.getUsers();
+        return { posts, users } as {
+          posts: readonly Post[];
+          users: readonly User[];
+        };
+      }),
+    (data) => FeedPage(data),
+  ),
+  Route.post("create", (body) =>
+    Effect.gen(function* () {
+      const { content } = body as { content: string };
+      const svc = yield* PostService;
+      // Hardcode author to alice for demo simplicity
+      const post = yield* svc.createPost("alice", content);
+      return post;
+    }),
+  ),
+);
+
+// =============================================================================
+// Post detail — single post view
+// =============================================================================
+
+export const PostRoute = Route.make("/posts/:id").pipe(
+  Route.params(Schema.Struct({ id: Schema.String })),
+  Route.get(
+    ({ params: { id } }) =>
+      Effect.gen(function* () {
+        const svc = yield* PostService;
+        const post = yield* svc.getPost(id);
+        const author = yield* svc.getUser(post.authorId);
+        return { post, author } as { post: Post; author: User };
+      }),
+    (data) => PostDetailPage(data),
+  ),
+);
+
+// =============================================================================
+// User profile — user info + their posts
+// =============================================================================
+
+export const UserRoute = Route.make("/users/:id").pipe(
+  Route.params(Schema.Struct({ id: Schema.String })),
+  Route.get(
+    ({ params: { id } }) =>
+      Effect.gen(function* () {
+        const svc = yield* PostService;
+        const user = yield* svc.getUser(id);
+        const posts = yield* svc.getPostsByUser(id);
+        return { user, posts } as {
+          user: User;
+          posts: readonly Post[];
+        };
+      }),
+    (data) => UserProfilePage(data),
+  ),
+);
+
+// =============================================================================
+// Router
+// =============================================================================
+
+export const router = Router.empty.pipe(
+  Router.concat(FeedRoute),
+  Router.concat(PostRoute),
+  Router.concat(UserRoute),
+  Router.layout(AppLayout),
+  Router.fallback(() => NotFoundPage()),
+  Router.catchAll(() => $.div({}, $.of("Something went wrong"))),
+);

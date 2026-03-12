@@ -528,7 +528,15 @@ const createElement = <K extends keyof HTMLElementTagNameMap, E, R>(
     // Append children (clearing MergePropsCtx so children don't inherit it)
     const childEl = Core.appendChild(el, children);
 
-    return yield* Effect.provideService(childEl, MergePropsCtx, {});
+    const result = yield* Effect.provideService(childEl, MergePropsCtx, {});
+
+    // Signal that this element is fully built (children processed).
+    // In hydration mode, this pops the traversal context so sibling
+    // elements are found in the correct parent.
+    const renderer = yield* RendererContext;
+    yield* renderer.finalizeNode(result);
+
+    return result;
   }) as Core.Element<HTMLElementTagNameMap[K], E, R>;
 
 /**
@@ -556,7 +564,13 @@ const createSVGElement = <K extends keyof SVGElementTagNameMap, E, R>(
     // Append children (clearing MergePropsCtx so children don't inherit it)
     const childEl = Core.appendChild(el, children);
 
-    return yield* Effect.provideService(childEl, MergePropsCtx, {});
+    const result = yield* Effect.provideService(childEl, MergePropsCtx, {});
+
+    // Signal that this element is fully built (see createElement for details)
+    const renderer = yield* RendererContext;
+    yield* renderer.finalizeNode(result);
+
+    return result;
   }) as Core.Element<SVGElementTagNameMap[K], E, R>;
 
 // =============================================================================

@@ -22,14 +22,15 @@ import {
   type SuspenseBoundaryCtx,
 } from "@effex/core";
 
+import { ClientAsyncCacheLayer } from "../../ClientAsyncCache.js";
 import {
   HydrationControlCtx,
   HydrationRootCtx,
 } from "../../Control/HydrationControlCtx.js";
-import * as Element from "../../Element";
+import * as Element from "../../Element/index.js";
 import { HydrationSuspenseBoundaryCtx } from "../../SuspenseBoundaryCtx/HydrationSuspenseBoundaryCtx.js";
-import { makeHydrationContext } from "./HydrationContext";
-import { createHydrationRenderer } from "./HydrationRenderer";
+import { makeHydrationContext } from "./HydrationContext.js";
+import { createHydrationRenderer } from "./HydrationRenderer.js";
 
 export interface HydrateOptions {
   /**
@@ -97,6 +98,7 @@ export const hydrate = <A extends HTMLElement | SVGElement>(
     // Build the layers to provide to the element
     let elementLayers = Layer.merge(hydrationContextLayer, ControlLayer);
     elementLayers = Layer.merge(elementLayers, suspenseLayer);
+    elementLayers = Layer.merge(elementLayers, ClientAsyncCacheLayer);
     if (options.layers) {
       elementLayers = Layer.merge(elementLayers, options.layers);
     }
@@ -121,9 +123,9 @@ export const hydrate = <A extends HTMLElement | SVGElement>(
   return Promise.resolve();
 };
 
-export type { HydrationRenderer } from "./HydrationRenderer";
-export { createHydrationRenderer } from "./HydrationRenderer";
+export type { HydrationRenderer } from "./HydrationRenderer.js";
+export { createHydrationRenderer } from "./HydrationRenderer.js";
 export {
   HydrationContext,
   type HydrationContextService,
-} from "./HydrationContext";
+} from "./HydrationContext.js";

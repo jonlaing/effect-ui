@@ -3,7 +3,7 @@ import { Deferred, Effect, Scope } from "effect";
 import type {
   VirtualListControl,
   VirtualListRef as VirtualListRefType,
-} from "./types";
+} from "./types.js";
 
 /**
  * Create a VirtualListRef to access scroll control methods.

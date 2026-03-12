@@ -11,16 +11,19 @@ import {
   type StructField,
   type TypeOf,
   type ValidateOn,
-} from "./Field";
+} from "./Field.js";
 import type {
   ArrayFieldState,
   FormState,
   LeafFieldState,
   MapFieldState,
   StructFieldState,
-} from "./FieldState";
-import { createFieldState, type SupportedFieldState } from "./fieldStates";
-import { createFormState } from "./FormState";
+} from "./FieldState.js";
+import {
+  createFieldState,
+  type SupportedFieldState,
+} from "./fieldStates/index.js";
+import { createFormState } from "./FormState.js";
 
 // -----------------------------------------------------------------------------
 // TypeId

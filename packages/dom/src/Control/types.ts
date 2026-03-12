@@ -4,7 +4,7 @@ import type {
   AnimationOptions,
   ListAnimationOptions,
 } from "../Animation/index.js";
-import type * as Element from "../Element";
+import type * as Element from "../Element/index.js";
 
 /**
  * Configuration for the `when` control flow (DOM-specific with animation support).

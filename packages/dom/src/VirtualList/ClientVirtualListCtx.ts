@@ -7,8 +7,8 @@ import { Effect, Layer, Scope, Stream } from "effect";
 
 import { RendererContext, type Readable } from "@effex/core";
 
-import { calculateItemOffset } from "./helpers";
-import { VirtualListCtx, type IVirtualListCtx } from "./VirtualListCtx";
+import { calculateItemOffset } from "./helpers.js";
+import { VirtualListCtx, type IVirtualListCtx } from "./VirtualListCtx.js";
 
 /**
  * Create client virtual list context.

@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import * as Element from "../Element";
+import * as Element from "../Element/index.js";
 import type { AnimationEndResult, AnimationHook } from "./types.js";
 
 const DEFAULT_TIMEOUT = 5000;

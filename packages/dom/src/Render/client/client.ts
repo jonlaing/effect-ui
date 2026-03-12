@@ -26,8 +26,9 @@ import {
   type SuspenseBoundaryCtx,
 } from "@effex/core";
 
+import { ClientAsyncCacheLayer } from "../../ClientAsyncCache.js";
 import { ClientControlCtx } from "../../Control/ClientControlCtx.js";
-import * as Element from "../../Element";
+import * as Element from "../../Element/index.js";
 import { ClientSuspenseBoundaryCtx } from "../../SuspenseBoundaryCtx/ClientSuspenseBoundaryCtx.js";
 import { DOMRenderer } from "../DOMRenderer.js";
 
@@ -107,11 +108,11 @@ export const mount = (
       ClientSuspenseBoundaryCtx,
       rendererLayer,
     );
-
     const el = yield* element.pipe(
       Effect.provide(rendererLayer),
       Effect.provide(ClientControlCtx),
       Effect.provide(suspenseLayer),
+      Effect.provide(ClientAsyncCacheLayer),
     );
     container.appendChild(el);
 

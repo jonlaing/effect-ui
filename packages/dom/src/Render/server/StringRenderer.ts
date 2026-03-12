@@ -9,13 +9,14 @@ import {
   type VElement,
   type VNode,
   type VText,
-} from "./VNode";
+} from "./VNode.js";
 
 /**
  * Renderer implementation that produces VNodes for SSR.
  * VNodes are then serialized to HTML strings via vnodeToString.
  */
 export const StringRenderer: Renderer<VNode> = {
+  environment: "ssr",
   createNode: (type: string, _namespace?: string) =>
     Effect.sync(() => vElement(type)),
 
@@ -201,6 +202,8 @@ export const StringRenderer: Renderer<VNode> = {
     Effect.sync(() => (node._tag === "VElement" ? node.children : [])),
 
   isHydrating: Effect.succeed(false),
+
+  finalizeNode: () => Effect.void,
 
   createSlot: () =>
     Effect.sync((): Slot<VNode> => {

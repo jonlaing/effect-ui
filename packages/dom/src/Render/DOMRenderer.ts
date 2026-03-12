@@ -9,6 +9,7 @@ import { toKebabCase } from "../helpers/index.js";
  * Uses browser DOM APIs to create and manipulate elements.
  */
 export const DOMRenderer: Renderer<Node> = {
+  environment: "dom",
   createNode: (type: string, namespace?: string) =>
     Effect.sync(() =>
       namespace
@@ -112,6 +113,8 @@ export const DOMRenderer: Renderer<Node> = {
 
   isHydrating: Effect.succeed(false),
 
+  finalizeNode: () => Effect.void,
+
   createSlot: () =>
     Effect.sync((): Slot<Node> => {
       // Use a fragment to hold marker and initial content before DOM insertion
@@ -119,12 +122,14 @@ export const DOMRenderer: Renderer<Node> = {
       const marker = document.createComment("effex-slot");
       fragment.appendChild(marker);
       let currentContent: Node | null = null;
+      console.log("create slot, marker created:", marker);
 
       return {
         // Return fragment so both marker and content get inserted together
         marker: fragment,
         setContent: (content: Node) =>
           Effect.sync(() => {
+            console.log("Setting slot content:", content);
             if (currentContent) {
               // Replace existing content
               const parent = currentContent.parentNode;

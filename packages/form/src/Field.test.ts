@@ -12,7 +12,7 @@ import {
   isMapField,
   isStructField,
   make,
-} from "./Field";
+} from "./Field.js";
 
 describe("Field.make", () => {
   it("should create a leaf field from a Schema", () => {

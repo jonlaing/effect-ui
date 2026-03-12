@@ -6,7 +6,7 @@ import { Effect } from "effect";
 
 import type { Renderer, Slot } from "@effex/core";
 
-import type { HydrateOptions } from "./index";
+import type { HydrateOptions } from "./index.js";
 
 /**
  * Context for tracking current hydration state.
@@ -47,6 +47,7 @@ export const createHydrationRenderer = (
   const getCurrentContext = () => parentStack[parentStack.length - 1];
 
   const renderer: Renderer<Node> = {
+    environment: "dom-hydration",
     createNode: (type: string, namespace?: string) =>
       Effect.sync(() => {
         const ctx = getCurrentContext();
@@ -133,17 +134,10 @@ export const createHydrationRenderer = (
         return node;
       }),
 
-    appendChild: (_parent: Node, child: Node) =>
+    appendChild: (_parent: Node, _child: Node) =>
       Effect.sync(() => {
-        // During hydration, children are already in place.
-        // But we need to pop the child's context from the stack.
-        // The child was pushed when createNode was called for it.
-        if (
-          parentStack.length > 1 &&
-          parentStack[parentStack.length - 1].parent === child
-        ) {
-          parentStack.pop();
-        }
+        // During hydration, children are already in place — no-op.
+        // Stack management is handled by createNode (push) and finalizeNode (pop).
       }),
 
     removeChild: (parent: Node, child: Node) =>
@@ -247,6 +241,19 @@ export const createHydrationRenderer = (
     getChildren: (node: Node) => Effect.sync(() => Array.from(node.childNodes)),
 
     isHydrating: Effect.succeed(true),
+
+    finalizeNode: (node: Node) =>
+      Effect.sync(() => {
+        // Pop the context that was pushed by createNode for this element.
+        // This must be called after the element's children have been processed,
+        // so sibling elements are searched in the correct parent context.
+        if (
+          parentStack.length > 1 &&
+          parentStack[parentStack.length - 1].parent === node
+        ) {
+          parentStack.pop();
+        }
+      }),
 
     createSlot: () =>
       Effect.sync((): Slot<Node> => {

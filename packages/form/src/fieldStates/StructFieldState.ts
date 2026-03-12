@@ -2,14 +2,14 @@ import { Effect, Scope } from "effect";
 
 import { Readable, Signal } from "@effex/core";
 
-import type { Field, FieldConfig, StructField, TypeOf } from "../Field";
-import type { StructFieldState } from "../FieldState";
+import type { Field, FieldConfig, StructField, TypeOf } from "../Field.js";
+import type { StructFieldState } from "../FieldState.js";
 import {
   aggregateErrors,
   aggregateTouched,
   type SupportedFieldState,
-} from "./aggregation";
-import type { CreateFieldState, FieldStateOf } from "./createFieldState";
+} from "./aggregation.js";
+import type { CreateFieldState, FieldStateOf } from "./createFieldState.js";
 
 export const createStructFieldState = <
   F extends Record<string, Field<any, any>>,

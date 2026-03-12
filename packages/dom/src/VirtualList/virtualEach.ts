@@ -2,20 +2,20 @@ import { Effect, Exit, Scope } from "effect";
 
 import { Readable, RendererContext, Signal } from "@effex/core";
 
-import * as Element from "../Element";
+import * as Element from "../Element/index.js";
 import {
   calculateScrollToPosition,
   calculateTotalHeight,
   calculateVisibleRange,
   parseHeight,
   rangesEqual,
-} from "./helpers";
+} from "./helpers.js";
 import type {
   VirtualEachOptions,
   VirtualListControl,
   VisibleRange,
-} from "./types";
-import { VirtualListCtx } from "./VirtualListCtx";
+} from "./types.js";
+import { VirtualListCtx } from "./VirtualListCtx.js";
 
 /**
  * Internal state for a rendered item.

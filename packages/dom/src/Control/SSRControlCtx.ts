@@ -13,7 +13,7 @@ import {
   type SlotEntry,
 } from "@effex/core";
 
-import * as Element from "../Element";
+import * as Element from "../Element/index.js";
 
 type DOMElement = HTMLElement | SVGElement;
 
@@ -106,6 +106,8 @@ const createSSRControlCtx = (): IControlCtx<DOMElement> => {
 
         return entry;
       }) as Effect.Effect<DOMSlotEntry, E, R>,
+
+    finalizeContainer: () => Effect.void,
 
     removeSlot: (): Effect.Effect<void> => Effect.void,
 

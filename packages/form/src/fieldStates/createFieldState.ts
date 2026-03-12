@@ -12,17 +12,17 @@ import {
   type MapField,
   type StructField,
   type TypeOf,
-} from "../Field";
+} from "../Field.js";
 import type {
   ArrayFieldState,
   LeafFieldState,
   MapFieldState,
   StructFieldState,
-} from "../FieldState";
-import type { SupportedFieldState } from "./aggregation";
+} from "../FieldState.js";
+import type { SupportedFieldState } from "./aggregation.js";
 
 // Re-export SupportedFieldState for convenience
-export type { SupportedFieldState } from "./aggregation";
+export type { SupportedFieldState } from "./aggregation.js";
 
 /**
  * Maps Field types to their corresponding FieldState types.

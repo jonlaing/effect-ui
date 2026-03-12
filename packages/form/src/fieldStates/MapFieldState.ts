@@ -2,14 +2,17 @@ import { Effect, Scope } from "effect";
 
 import { Readable, Signal } from "@effex/core";
 
-import type { Field, FieldConfig, MapField, TypeOf } from "../Field";
-import type { MapFieldState } from "../FieldState";
+import type { Field, FieldConfig, MapField, TypeOf } from "../Field.js";
+import type { MapFieldState } from "../FieldState.js";
 import {
   aggregateErrorsDynamic,
   aggregateTouchedDynamic,
   type SupportedFieldState,
-} from "./aggregation";
-import { createChildFieldState, type FieldStateOf } from "./createFieldState";
+} from "./aggregation.js";
+import {
+  createChildFieldState,
+  type FieldStateOf,
+} from "./createFieldState.js";
 
 export const createMapFieldState = <K, F extends Field<any, any>>(
   field: MapField<K, F>,

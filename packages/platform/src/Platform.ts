@@ -18,9 +18,11 @@ import {
   HttpServerRequest,
   HttpServerResponse,
 } from "@effect/platform";
-import { Data, Effect, Layer, Schema, Scope } from "effect";
+import { Data, Effect, Layer, Ref, Schema, Scope } from "effect";
 
 import {
+  AsyncCache,
+  makeAsyncCache,
   RendererContext,
   type ControlCtx,
   type SuspenseBoundaryCtx,
@@ -32,6 +34,7 @@ import {
   RouteDataContext,
   RouteDataProvider,
   type Router as EffexRouter,
+  type RouteDataProviderService,
   type RouteDataService,
   type RouteType,
 } from "@effex/router";
@@ -54,6 +57,16 @@ export interface DocumentOptions {
 export interface ToHttpRoutesOptions {
   /** Document generation options */
   readonly document?: DocumentOptions;
+  /**
+   * Root app component to render on the server.
+   * This should be the same component tree the client hydrates.
+   * It should contain an Outlet that renders matched routes.
+   *
+   * If not provided, renders just the matched route with layouts.
+   */
+  readonly app?: () => import("@effex/dom").Element.Element<
+    HTMLElement | SVGElement
+  >;
 }
 
 // =============================================================================
@@ -317,25 +330,42 @@ export const toHttpRoutes = <E, R>(
         getRouteData: () => Effect.succeed(routeData),
       });
 
-      // Build element with route params provided
-      const element = route.render(loaderData).pipe(
-        Effect.provideService(route.Params, {
-          params: rawRouteParams as Record<string, string>,
-          searchParams: rawSearchParams,
-        }),
-        Effect.provideService(RouteDataContext, routeData),
-      );
+      // SSR AsyncCache — entries are scoped to this request
+      const asyncCacheLayer = Layer.succeed(AsyncCache, makeAsyncCache());
 
-      // Apply layouts (inside-out, same as Outlet)
-      const withLayouts = (router.layouts as any[]).reduce(
-        (inner: any, wrapper: any) => wrapper(inner),
-        element,
-      );
+      // Render to string
+      let html: string;
 
-      // Render to string with all contexts provided
-      const html: string = yield* render(withLayouts).pipe(
-        Effect.provide(Layer.mergeAll(navLayer, routeDataProviderLayer)),
-      );
+      if (options?.app) {
+        // Render the full app component (same tree client hydrates).
+        // Outlet inside the app will use the RouteDataProvider to get
+        // pre-computed data — no double-loading.
+        html = yield* render(options.app()).pipe(
+          Effect.provide(
+            Layer.mergeAll(navLayer, routeDataProviderLayer, asyncCacheLayer),
+          ),
+        );
+      } else {
+        // No app component — render just the matched route with layouts
+        const element = route.render(loaderData).pipe(
+          Effect.provideService(route.Params, {
+            params: rawRouteParams as Record<string, string>,
+            searchParams: rawSearchParams,
+          }),
+          Effect.provideService(RouteDataContext, routeData),
+        );
+
+        const withLayouts = (router.layouts as any[]).reduce(
+          (inner: any, wrapper: any) => wrapper(inner),
+          element,
+        );
+
+        html = yield* render(withLayouts).pipe(
+          Effect.provide(
+            Layer.mergeAll(navLayer, routeDataProviderLayer, asyncCacheLayer),
+          ),
+        );
+      }
 
       // Embed loader data for hydration
       const hydrationData: Record<string, unknown> = {
@@ -348,10 +378,16 @@ export const toHttpRoutes = <E, R>(
       );
     });
 
-    // Register GET handler
-    httpRouter = httpRouter.pipe(
-      HttpRouter.get(path, catchRedirects(getHandler) as any),
+    // Register GET handler with error logging
+    const debugHandler = catchRedirects(getHandler).pipe(
+      Effect.catchAllCause((cause) => {
+        console.error(`[Platform] Error handling GET ${path}:`, cause);
+        return Effect.succeed(
+          HttpServerResponse.text(`Internal Server Error`, { status: 500 }),
+        );
+      }),
     );
+    httpRouter = httpRouter.pipe(HttpRouter.get(path, debugHandler as any));
 
     // -------------------------------------------------------------------
     // Mutation handlers: POST/PUT/DELETE — direct execution, no render
@@ -427,6 +463,83 @@ export const toHttpRoutes = <E, R>(
 };
 
 // =============================================================================
+// Client Layer
+// =============================================================================
+
+declare const window: {
+  __EFFEX_DATA__?: Record<string, unknown>;
+};
+
+/**
+ * Create a client-side Layer that provides NavigationContext and RouteDataProvider.
+ *
+ * On the first call (hydration), reads data from `window.__EFFEX_DATA__`.
+ * On subsequent calls (client-side navigation), fetches from the server
+ * via `?_data=1`.
+ *
+ * @example
+ * ```ts
+ * import { hydrate } from "@effex/dom"
+ * import { Platform } from "@effex/platform"
+ * import { router } from "./routes"
+ *
+ * const program = Effect.gen(function* () {
+ *   yield* hydrate(App(), document.getElementById("root")!, {
+ *     layer: Platform.makeClientLayer(router),
+ *   })
+ * })
+ *
+ * Effect.runPromise(Effect.scoped(program))
+ * ```
+ */
+export const makeClientLayer = <E, R>(
+  router: EffexRouter<E, R>,
+): Layer.Layer<NavigationContext | RouteDataProvider, never, never> => {
+  const dataProviderLayer = Layer.scoped(
+    RouteDataProvider,
+    Effect.gen(function* () {
+      // Track whether this is the first data request (hydration)
+      const isFirstLoad = yield* Ref.make(true);
+
+      const provider: RouteDataProviderService = {
+        getRouteData: (route, params, _searchParams) =>
+          Effect.gen(function* () {
+            const first = yield* Ref.get(isFirstLoad);
+
+            if (first) {
+              yield* Ref.set(isFirstLoad, false);
+
+              // Hydration: read embedded data from SSR
+              const embedded =
+                typeof window !== "undefined"
+                  ? window.__EFFEX_DATA__
+                  : undefined;
+
+              if (embedded) {
+                return embedded as unknown as RouteDataService;
+              }
+            }
+
+            // Client navigation: fetch from server
+            const path = substituteParams(route.path, params);
+            const response = yield* Effect.tryPromise(() =>
+              fetch(`${path}?_data=1`),
+            );
+            const json = yield* Effect.tryPromise(() => response.json());
+            return json as unknown as RouteDataService;
+          }).pipe(Effect.orDie),
+      };
+
+      return provider;
+    }),
+  );
+
+  const navLayer = Navigation.makeLayer(router);
+
+  return Layer.mergeAll(navLayer, dataProviderLayer);
+};
+
+// =============================================================================
 // Namespace
 // =============================================================================
 
@@ -438,4 +551,5 @@ export const Platform = {
   generateLoaderDataScript,
   generateDocument,
   toHttpRoutes,
+  makeClientLayer,
 };

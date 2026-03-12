@@ -1,4 +1,4 @@
-import type { VisibleRange } from "./types";
+import type { VisibleRange } from "./types.js";
 
 /**
  * Calculate the visible range of items based on scroll position.
