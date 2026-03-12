@@ -1,151 +1,167 @@
 import { describe, expect, it } from "vitest";
 
-import { generateScaffold, injectRouteDefinePath } from "./plugin";
+import { stripServerCode } from "./plugin.js";
 
-describe("injectRouteDefinePath", () => {
-  it("should inject __path into Route.define()", () => {
-    const code = `export const route = Route.define();`;
-    const result = injectRouteDefinePath(code, "/users");
+describe("stripServerCode", () => {
+  describe("Route.get loader stripping", () => {
+    it("strips inline loader function", () => {
+      const input = `
+Route.get(
+  ({ params }) => Effect.gen(function* () {
+    const svc = yield* PostService;
+    return yield* svc.getPosts();
+  }),
+  (data) => FeedPage(data),
+)`;
+      const result = stripServerCode(input);
+      expect(result).toContain("Route.get(null,");
+      expect(result).toContain("(data) => FeedPage(data)");
+      expect(result).not.toContain("PostService");
+    });
 
-    expect(result).toBe(
-      `export const route = Route.define({ __path: "/users" });`,
+    it("strips loader with destructured params", () => {
+      const input = `Route.get(({ params: { id } }) => Effect.gen(function* () {
+    const svc = yield* PostService;
+    return yield* svc.getUser(id);
+  }), (data) => UserPage(data))`;
+      const result = stripServerCode(input);
+      expect(result).toContain("Route.get(null,");
+      expect(result).toContain("(data) => UserPage(data)");
+      expect(result).not.toContain("PostService");
+    });
+
+    it("handles multiple Route.get calls", () => {
+      const input = `
+const A = Route.make("/a").pipe(
+  Route.get(
+    () => Effect.succeed("a"),
+    (d) => PageA(d),
+  ),
+);
+const B = Route.make("/b").pipe(
+  Route.get(
+    () => Effect.succeed("b"),
+    (d) => PageB(d),
+  ),
+);`;
+      const result = stripServerCode(input);
+      expect(result).not.toContain('Effect.succeed("a")');
+      expect(result).not.toContain('Effect.succeed("b")');
+      expect(result).toContain("(d) => PageA(d)");
+      expect(result).toContain("(d) => PageB(d)");
+    });
+
+    it("preserves code outside Route.get", () => {
+      const input = `
+import { Route } from "@effex/router";
+const FeedRoute = Route.make("/").pipe(
+  Route.get(() => loadData(), (d) => Page(d)),
+);
+export { FeedRoute };`;
+      const result = stripServerCode(input);
+      expect(result).toContain('import { Route } from "@effex/router"');
+      expect(result).toContain('Route.make("/")');
+      expect(result).toContain("export { FeedRoute }");
+    });
+  });
+
+  describe("Route.post/put/del handler stripping", () => {
+    it("strips handler but keeps key", () => {
+      const input = `Route.post("create", (body) => Effect.gen(function* () {
+    const svc = yield* PostService;
+    return yield* svc.createPost(body);
+  }))`;
+      const result = stripServerCode(input);
+      expect(result).toContain('Route.post("create",');
+      expect(result).toContain("server only");
+      expect(result).not.toContain("PostService");
+    });
+
+    it("strips Route.put handler", () => {
+      const input = `Route.put("update", (body) => Effect.gen(function* () {
+    return yield* db.update(body);
+  }))`;
+      const result = stripServerCode(input);
+      expect(result).toContain('Route.put("update",');
+      expect(result).toContain("server only");
+      expect(result).not.toContain("db.update");
+    });
+
+    it("strips Route.del handler", () => {
+      const input = `Route.del("remove", (body) => Effect.gen(function* () {
+    return yield* db.delete(body);
+  }))`;
+      const result = stripServerCode(input);
+      expect(result).toContain('Route.del("remove",');
+      expect(result).toContain("server only");
+      expect(result).not.toContain("db.delete");
+    });
+
+    it("handles string key with special characters", () => {
+      const input = `Route.post("update-profile", handler)`;
+      const result = stripServerCode(input);
+      expect(result).toContain('"update-profile"');
+      expect(result).toContain("server only");
+    });
+  });
+
+  describe("combined Route.get + Route.post", () => {
+    it("strips both loader and handler in a pipe chain", () => {
+      const input = `
+export const FeedRoute = Route.make("/").pipe(
+  Route.get(
+    ({}) => Effect.gen(function* () {
+      const svc = yield* PostService;
+      const posts = yield* svc.getPosts();
+      return { posts };
+    }),
+    (data) => FeedPage(data),
+  ),
+  Route.post("create", (body) => Effect.gen(function* () {
+    const { content } = body as { content: string };
+    const svc = yield* PostService;
+    return yield* svc.createPost("alice", content);
+  })),
+);`;
+      const result = stripServerCode(input);
+      // Loader stripped
+      expect(result).toContain("Route.get(null,");
+      expect(result).toContain("(data) => FeedPage(data)");
+      // Handler stripped but key kept
+      expect(result).toContain('Route.post("create",');
+      expect(result).toContain("server only");
+      // Server code removed
+      expect(result).not.toContain("PostService");
+      expect(result).not.toContain("svc.getPosts");
+      expect(result).not.toContain("svc.createPost");
+    });
+  });
+
+  describe("edge cases", () => {
+    it("handles nested parentheses in loader", () => {
+      const input = `Route.get(({ params }) => Effect.gen(function* () {
+    const data = yield* Effect.tryPromise(() =>
+      fetch("/api").then((r) => r.json())
     );
-  });
+    return data;
+  }), (d) => Page(d))`;
+      const result = stripServerCode(input);
+      expect(result).toContain("Route.get(null,");
+      expect(result).not.toContain("fetch");
+    });
 
-  it("should inject __path into Route.define({})", () => {
-    const code = `export const route = Route.define({});`;
-    const result = injectRouteDefinePath(code, "/users/:id");
+    it("returns unchanged code when no Route calls present", () => {
+      const input = `const x = 1;\nconst y = 2;`;
+      const result = stripServerCode(input);
+      expect(result).toBe(input);
+    });
 
-    expect(result).toBe(
-      `export const route = Route.define({ __path: "/users/:id", });`,
-    );
-  });
-
-  it("should inject __path into Route.define with params", () => {
-    const code = `export const route = Route.define({
-  params: Schema.Struct({ id: Schema.String }),
-});`;
-    const result = injectRouteDefinePath(code, "/users/:id");
-
-    expect(result).toContain(`__path: "/users/:id"`);
-    expect(result).toContain(`params: Schema.Struct({ id: Schema.String })`);
-  });
-
-  it("should inject __path into Route.define with multiple options", () => {
-    const code = `export const route = Route.define({
-  params: Schema.Struct({ id: Schema.String }),
-  loader: (params) => Effect.succeed({ name: "test" }),
-});`;
-    const result = injectRouteDefinePath(code, "/users/:id");
-
-    expect(result).toContain(`__path: "/users/:id"`);
-    expect(result).toContain(`params: Schema.Struct`);
-    expect(result).toContain(`loader: (params)`);
-  });
-
-  it("should handle whitespace variations", () => {
-    const code = `export const route = Route.define(   {   });`;
-    const result = injectRouteDefinePath(code, "/about");
-
-    expect(result).toContain(`__path: "/about"`);
-  });
-
-  it("should not modify code without Route.define", () => {
-    const code = `export const route = Route.make("/users");`;
-    const result = injectRouteDefinePath(code, "/users");
-
-    expect(result).toBe(code);
-  });
-
-  it("should handle multiple Route.define calls", () => {
-    const code = `
-const route1 = Route.define({ params: Schema.Struct({ a: Schema.String }) });
-const route2 = Route.define({ params: Schema.Struct({ b: Schema.String }) });
-`;
-    const result = injectRouteDefinePath(code, "/test");
-
-    const matches = result.match(/__path: "\/test"/g);
-    expect(matches).toHaveLength(2);
-  });
-
-  it("should escape special characters in path", () => {
-    const code = `export const route = Route.define({});`;
-    const result = injectRouteDefinePath(code, '/users/"special"');
-
-    expect(result).toContain(`__path: "/users/\\"special\\""`);
-  });
-
-  it("should handle catch-all route", () => {
-    const code = `export const route = Route.define({});`;
-    const result = injectRouteDefinePath(code, "/*");
-
-    expect(result).toContain(`__path: "/*"`);
-  });
-
-  it("should handle root route", () => {
-    const code = `export const route = Route.define({});`;
-    const result = injectRouteDefinePath(code, "/");
-
-    expect(result).toContain(`__path: "/"`);
-  });
-});
-
-describe("generateScaffold", () => {
-  it("should generate scaffold for index route", () => {
-    const scaffold = generateScaffold("_index.tsx");
-
-    expect(scaffold).toContain('import { Effect } from "effect"');
-    expect(scaffold).toContain('import { Route } from "@effex/router"');
-    expect(scaffold).toContain('import { component, $ } from "@effex/dom"');
-    expect(scaffold).toContain("export const route = Route.define()");
-    expect(scaffold).toContain('export default component("IndexPage"');
-    expect(scaffold).toContain("$.div([");
-    expect(scaffold).toContain("$.h1([");
-    expect(scaffold).not.toContain("Schema");
-  });
-
-  it("should generate scaffold for simple route", () => {
-    const scaffold = generateScaffold("about.tsx");
-
-    expect(scaffold).toContain("export const route = Route.define()");
-    expect(scaffold).toContain('export default component("AboutPage"');
-    expect(scaffold).not.toContain("Schema");
-    expect(scaffold).not.toContain("route.params()");
-  });
-
-  it("should generate scaffold with params for dynamic route", () => {
-    const scaffold = generateScaffold("users.$id.tsx");
-
-    expect(scaffold).toContain('import { Schema } from "effect"');
-    expect(scaffold).toContain("Schema.Struct({");
-    expect(scaffold).toContain("id: Schema.String");
-    expect(scaffold).toContain('export default component("UsersIdPage"');
-    expect(scaffold).toContain("yield* route.params()");
-  });
-
-  it("should generate scaffold with multiple params", () => {
-    const scaffold = generateScaffold("users.$userId.posts.$postId.tsx");
-
-    expect(scaffold).toContain("userId: Schema.String");
-    expect(scaffold).toContain("postId: Schema.String");
-    expect(scaffold).toContain(
-      'export default component("UsersUserIdPostsPostIdPage"',
-    );
-  });
-
-  it("should generate scaffold for nested route", () => {
-    const scaffold = generateScaffold("settings.profile.tsx");
-
-    expect(scaffold).toContain("export const route = Route.define()");
-    expect(scaffold).toContain(
-      'export default component("SettingsProfilePage"',
-    );
-  });
-
-  it("should handle catch-all route", () => {
-    const scaffold = generateScaffold("$.tsx");
-
-    expect(scaffold).toContain("export const route = Route.define()");
-    expect(scaffold).toContain('export default component("Page"');
+    it("handles loader with template literal strings", () => {
+      const input =
+        "Route.get(({ params }) => Effect.gen(function* () {\n    const url = `/api/users/${params.id}`;\n    return yield* fetchData(url);\n  }), (d) => Page(d))";
+      const result = stripServerCode(input);
+      expect(result).toContain("Route.get(null,");
+      expect(result).not.toContain("fetchData");
+    });
   });
 });

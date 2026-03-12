@@ -235,6 +235,9 @@ importers:
         specifier: ^3.19.13
         version: 3.19.13
     devDependencies:
+      '@effex/vite-plugin':
+        specifier: workspace:*
+        version: link:../../packages/vite-plugin
       tsx:
         specifier: ^4.19.0
         version: 4.21.0
@@ -354,13 +357,6 @@ importers:
         version: 3.19.13
 
   packages/vite-plugin:
-    dependencies:
-      '@effex/router':
-        specifier: workspace:*
-        version: link:../router
-      fast-glob:
-        specifier: ^3.3.2
-        version: 3.3.3
     devDependencies:
       vite:
         specifier: ^7.0.0

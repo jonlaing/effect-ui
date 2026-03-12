@@ -4,9 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev:server": "tsx src/server.ts",
-    "dev:client": "vite",
-    "dev": "tsx src/server.ts & vite & wait",
+    "dev": "vite",
     "build": "vite build && vite build --ssr src/client.ts"
   },
   "dependencies": {
@@ -20,6 +18,7 @@
     "@effex/form": "workspace:*"
   },
   "devDependencies": {
+    "@effex/vite-plugin": "workspace:*",
     "tsx": "^4.19.0",
     "typescript": "~5.9.3",
     "vite": "^7.0.0"

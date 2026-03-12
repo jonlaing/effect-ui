@@ -84,24 +84,26 @@ const renderRouteWithGuard = <ER, RR, EN, RN, EL, RL>(
     // Get current match to access params
     const currentMatch = yield* nav.currentMatch.get;
 
-    // Fetch route data if route has hooks.
-    // If a RouteDataProvider is in context (e.g. from platform), use it.
-    // Otherwise fall back to running the loader directly.
-    const hasHooks =
-      route._loader || (route._handlers && route._handlers.length > 0);
-
+    // Fetch route data for the route.
+    // If a RouteDataProvider is in context (e.g. from platform), always use it —
+    // it has embedded/fetched data even when loaders have been stripped by the
+    // Vite transform (Route.get(null, render)).
+    // Otherwise fall back to running the loader directly (SPA mode).
     let routeData: RouteDataService = { data: undefined, actions: {} };
 
-    if (hasHooks) {
-      const maybeProvider = yield* Effect.serviceOption(RouteDataProvider);
+    const maybeProvider = yield* Effect.serviceOption(RouteDataProvider);
 
-      if (Option.isSome(maybeProvider)) {
-        routeData = yield* maybeProvider.value.getRouteData(
-          route,
-          currentMatch.params,
-          {},
-        );
-      } else {
+    if (Option.isSome(maybeProvider)) {
+      routeData = yield* maybeProvider.value.getRouteData(
+        route,
+        currentMatch.params,
+        {},
+      );
+    } else {
+      const hasHooks =
+        route._loader || (route._handlers && route._handlers.length > 0);
+
+      if (hasHooks) {
         // Default: run the loader directly, compute action paths
         const data = route._loader
           ? yield* route._loader<EL, RL>({
