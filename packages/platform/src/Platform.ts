@@ -279,18 +279,58 @@ export const toHttpRoutes = <E, R>(
         rawSearchParams,
       );
 
-      // Run loader if present
-      const loaderData = route._loader
-        ? yield* (
-            route._loader as (args: {
-              params: unknown;
-              searchParams: unknown;
-            }) => Effect.Effect<unknown, unknown, unknown>
-          )({
-            params: validatedParams,
-            searchParams: validatedSearchParams,
-          })
-        : undefined;
+      // Run loader if present — catch RedirectError so we can return
+      // an appropriate response for data requests vs full page loads
+      const loaderFn = route._loader
+        ? (route._loader as (args: {
+            params: unknown;
+            searchParams: unknown;
+          }) => Effect.Effect<unknown, unknown, unknown>)
+        : null;
+
+      if (loaderFn) {
+        const loaderOrRedirect = yield* loaderFn({
+          params: validatedParams,
+          searchParams: validatedSearchParams,
+        }).pipe(
+          Effect.map((data) => ({ redirect: false as const, data })),
+          Effect.catchAll((error) => {
+            if (
+              error &&
+              typeof error === "object" &&
+              "_tag" in error &&
+              (error as { _tag: string })._tag === "RedirectError"
+            ) {
+              const e = error as RedirectError;
+              return Effect.succeed({
+                redirect: true as const,
+                url: e.url,
+                status: e.status,
+                data: undefined,
+              });
+            }
+            return Effect.fail(error);
+          }),
+        );
+
+        if (loaderOrRedirect.redirect) {
+          if (isDataRequest) {
+            // Data requests get a JSON redirect signal so the client can
+            // trigger a client-side navigation instead of an HTTP redirect
+            return yield* HttpServerResponse.json({
+              _redirect: loaderOrRedirect.url,
+            });
+          }
+          return HttpServerResponse.redirect(loaderOrRedirect.url, {
+            status: loaderOrRedirect.status,
+          });
+        }
+
+        // Continue with loader data below
+        var loaderData: unknown = loaderOrRedirect.data;
+      } else {
+        var loaderData: unknown = undefined;
+      }
 
       // Compute action paths
       const actionPaths = computeActionPaths(
@@ -466,7 +506,7 @@ export const toHttpRoutes = <E, R>(
 // Client Layer
 // =============================================================================
 
-declare const window: {
+declare const window: Window & {
   __EFFEX_DATA__?: Record<string, unknown>;
 };
 
@@ -525,7 +565,11 @@ export const makeClientLayer = <E, R>(
             const response = yield* Effect.tryPromise(() =>
               fetch(`${path}?_data=1`),
             );
+
             const json = yield* Effect.tryPromise(() => response.json());
+
+            // Pass through as-is — if it's a redirect signal ({ _redirect: url }),
+            // the Outlet handles it via nav.pushPath
             return json as unknown as RouteDataService;
           }).pipe(Effect.orDie),
       };

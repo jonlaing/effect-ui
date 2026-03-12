@@ -41,10 +41,10 @@ Instead of a meta-framework with conventions, provide composable Effect primitiv
 ├── Platform.generateLoaderDataScript()  # Hydration script tag
 └── RedirectError                 # Redirect from loaders/handlers
 
-@effex/vite-plugin (file-based routing)
-├── scanRoutes()                  # Scan routes directory
-├── generateRoutes()              # Generate typed routes file
-└── (existing functionality)
+@effex/vite-plugin (build tooling + dev server)
+├── effexPlatform()               # Combined Vite plugin
+├──   Server-code stripping       # Strip loaders/handlers from client builds
+└──   SSR dev server              # Dev server with HMR (when entry provided)
 
 @effex/dom (unchanged)
 ├── renderToString()
@@ -298,7 +298,7 @@ Layouts are applied inside-out by both Outlet (client) and `toHttpRoutes` (serve
 - [x] Redirect handling via `RedirectError`
 - [x] `Platform.makeClientLayer(router)` — provides NavigationContext + RouteDataProvider (hydration + `?_data=1` fetching)
 - [x] `AsyncCache` — query-cache service provided on both server (per-request) and client, with prefix-based invalidation
-- [ ] Vite transform for stripping loader code from client builds (may not be needed — loaders live on Route, not in components)
+- [x] Vite transform for stripping loader/handler code from client builds (`@effex/vite-plugin`)
 
 ### Phase 4: Platform Demo — Done
 - [x] Build demo with SSR + hydration (twitter clone)
@@ -317,6 +317,4 @@ Layouts are applied inside-out by both Outlet (client) and `toHttpRoutes` (serve
 
 ## Open Questions
 
-1. **Vite loader stripping** — Since loaders are on the Route (not inline in components), they may already be tree-shaken if routes are split properly. Need to validate whether a Vite transform is actually needed.
-
-2. **Prefetching** — Should `Link` prefetch `?_data=1` on hover?
+1. **Prefetching** — Should `Link` prefetch `?_data=1` on hover?

@@ -99,6 +99,14 @@ const renderRouteWithGuard = <ER, RR, EN, RN, EL, RL>(
         currentMatch.params,
         {},
       );
+
+      // Handle client-side redirects — the data provider signals these
+      // as { _redirect: url } when the server returns a redirect for data requests
+      const maybeRedirect = routeData as unknown as { _redirect?: string };
+      if (maybeRedirect._redirect) {
+        yield* nav.pushPath(maybeRedirect._redirect);
+        return yield* $.div();
+      }
     } else {
       const hasHooks =
         route._loader || (route._handlers && route._handlers.length > 0);

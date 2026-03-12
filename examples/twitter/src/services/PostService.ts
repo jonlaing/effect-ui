@@ -1,4 +1,4 @@
-import { Context, Effect, Ref } from "effect";
+import { Context, Data, Effect, Ref } from "effect";
 
 // =============================================================================
 // Types
@@ -18,14 +18,23 @@ export interface Post {
 }
 
 // =============================================================================
+// Errors
+// =============================================================================
+
+export class NotFoundError extends Data.TaggedError("NotFoundError")<{
+  readonly resource: string;
+  readonly id: string;
+}> {}
+
+// =============================================================================
 // Service Interface
 // =============================================================================
 
 export interface PostServiceType {
   readonly getUsers: () => Effect.Effect<readonly User[]>;
-  readonly getUser: (id: string) => Effect.Effect<User>;
+  readonly getUser: (id: string) => Effect.Effect<User, NotFoundError>;
   readonly getPosts: () => Effect.Effect<readonly Post[]>;
-  readonly getPost: (id: string) => Effect.Effect<Post>;
+  readonly getPost: (id: string) => Effect.Effect<Post, NotFoundError>;
   readonly getPostsByUser: (userId: string) => Effect.Effect<readonly Post[]>;
   readonly createPost: (
     authorId: string,
@@ -92,7 +101,7 @@ export const PostServiceLive = Effect.gen(function* () {
         const user = users.find((u) => u.id === id);
         return user
           ? Effect.succeed(user)
-          : Effect.die(`User not found: ${id}`);
+          : Effect.fail(new NotFoundError({ resource: "User", id }));
       }),
 
     getPosts: () =>
@@ -105,7 +114,7 @@ export const PostServiceLive = Effect.gen(function* () {
         const post = posts.find((p) => p.id === id);
         return post
           ? Effect.succeed(post)
-          : Effect.die(`Post not found: ${id}`);
+          : Effect.fail(new NotFoundError({ resource: "Post", id }));
       }),
 
     getPostsByUser: (userId) =>

@@ -18,6 +18,10 @@ export const App = () =>
           Link({ href: "/users/bob" }, $.of("Bob")),
           $.of(" | "),
           Link({ href: "/users/carol" }, $.of("Carol")),
+          $.of(" | "),
+          Link({ href: "/users/me" }, $.of("Me (redirect)")),
+          $.of(" | "),
+          Link({ href: "/posts/999" }, $.of("Bad Post (404)")),
         ),
       ),
       // Matched route

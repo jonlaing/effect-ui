@@ -1,6 +1,7 @@
 import { Effect, Schema } from "effect";
 
 import { $ } from "@effex/dom";
+import { RedirectError } from "@effex/platform";
 import { Route, Router } from "@effex/router";
 
 import { AppLayout } from "./components/AppLayout.js";
@@ -8,7 +9,12 @@ import { FeedPage } from "./pages/Feed.js";
 import { NotFoundPage } from "./pages/NotFound.js";
 import { PostDetailPage } from "./pages/PostDetail.js";
 import { UserProfilePage } from "./pages/UserProfile.js";
-import { PostService, type Post, type User } from "./services/PostService.js";
+import {
+  NotFoundError,
+  PostService,
+  type Post,
+  type User,
+} from "./services/PostService.js";
 
 // =============================================================================
 // Feed — lists all posts
@@ -52,8 +58,13 @@ export const PostRoute = Route.make("/posts/:id").pipe(
         const post = yield* svc.getPost(id);
         const author = yield* svc.getUser(post.authorId);
         return { post, author } as { post: Post; author: User };
-      }),
-    (data) => PostDetailPage(data),
+      }).pipe(
+        // NotFoundError from the loader → render the 404 page instead of a 500
+        Effect.catchTag("NotFoundError", () =>
+          Effect.succeed(null as unknown as { post: Post; author: User }),
+        ),
+      ),
+    (data) => (data ? PostDetailPage(data) : NotFoundPage()),
   ),
 );
 
@@ -73,8 +84,25 @@ export const UserRoute = Route.make("/users/:id").pipe(
           user: User;
           posts: readonly Post[];
         };
-      }),
-    (data) => UserProfilePage(data),
+      }).pipe(
+        Effect.catchTag("NotFoundError", () =>
+          Effect.succeed(
+            null as unknown as { user: User; posts: readonly Post[] },
+          ),
+        ),
+      ),
+    (data) => (data ? UserProfilePage(data) : NotFoundPage()),
+  ),
+);
+
+// =============================================================================
+// Redirect: /users/me → /users/alice (demonstrates RedirectError in loaders)
+// =============================================================================
+
+export const MeRoute = Route.make("/users/me").pipe(
+  Route.get(
+    () => Effect.fail(new RedirectError({ url: "/users/alice", status: 302 })),
+    () => $.div(), // never reached — loader always redirects
   ),
 );
 
@@ -85,6 +113,7 @@ export const UserRoute = Route.make("/users/:id").pipe(
 export const router = Router.empty.pipe(
   Router.concat(FeedRoute),
   Router.concat(PostRoute),
+  Router.concat(MeRoute),
   Router.concat(UserRoute),
   Router.layout(AppLayout),
   Router.fallback(() => NotFoundPage()),
