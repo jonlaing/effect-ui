@@ -19,6 +19,7 @@ const effexRoutes = Platform.toHttpRoutes(router, {
   document: {
     title: "Twitter Demo",
     scripts: ["/src/client.ts"],
+    head: '<link rel="stylesheet" href="/src/styles.css">',
   },
 });
 

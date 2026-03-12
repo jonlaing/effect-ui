@@ -12,13 +12,16 @@
     "@effect/platform-node": "^0.104.0",
     "@effex/core": "workspace:*",
     "@effex/dom": "workspace:*",
+    "@effex/form": "workspace:*",
     "@effex/platform": "workspace:*",
     "@effex/router": "workspace:*",
+    "@tailwindcss/vite": "^4.1.18",
     "effect": "^3.19.13",
-    "@effex/form": "workspace:*"
+    "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
     "@effex/vite-plugin": "workspace:*",
+    "daisyui": "^5.5.18",
     "tsx": "^4.19.0",
     "typescript": "~5.9.3",
     "vite": "^7.0.0"

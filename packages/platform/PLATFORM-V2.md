@@ -306,7 +306,7 @@ Layouts are applied inside-out by both Outlet (client) and `toHttpRoutes` (serve
 - [x] Test mutation handlers with form submission
 - [x] Test client-side navigation with `?_data=1` data fetching
 - [x] Test reactive cache invalidation after mutations (AsyncCache + `each`/`matchOption`)
-- [ ] Test error handling and redirects
+- [x] Test error handling and redirects (NotFoundError → 404 page, RedirectError → server 302 + client-side nav)
 
 ### Deferred
 - Prefetching on Link hover

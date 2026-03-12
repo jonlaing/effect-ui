@@ -24,7 +24,7 @@ const PostList = ({
   users: Readable.Readable<readonly User[]>;
 }) =>
   each(posts, {
-    container: () => $.ul({}),
+    container: () => $.div({ class: "flex flex-col gap-3" }),
     key: (post) => post.id,
     render: (post) =>
       Effect.gen(function* () {
@@ -35,7 +35,7 @@ const PostList = ({
 
         return yield* matchOption(author, {
           onNone: () => $.div({}, $.of("Unknown author")),
-          onSome: (author) => $.li({}, PostCard({ post, author })),
+          onSome: (author) => PostCard({ post, author }),
         });
       }),
   });
@@ -79,7 +79,7 @@ export const FeedPage = (data: {
     return yield* $.div(
       {},
       collect(
-        $.h1({}, $.of("Feed")),
+        $.h1({ class: "text-3xl font-bold mb-6" }, $.of("Feed")),
         // New post form
         NewPostForm.provide(
           {
@@ -96,30 +96,35 @@ export const FeedPage = (data: {
                 );
                 // Invalidate feed cache — triggers refetch, UI updates reactively
                 yield* cache.invalidate(["feed"]);
-                yield* cache.invalidate(["posts"]); // Also invalidate individual posts cache to update post details if already open
+                yield* cache.invalidate(["posts"]);
               }),
           },
           Effect.gen(function* () {
             const content = yield* NewPostForm.fields.content;
 
             return yield* $.form(
-              {},
-              collect(
-                $.textarea({
-                  name: "content",
-                  placeholder: "What's happening?",
-                  rows: 3,
-                  value: content.value,
-                  onInput: (e: Event) =>
-                    content.set((e.target as HTMLTextAreaElement).value),
-                }),
-                $.br(),
-                $.button({ type: "submit" }, $.of("Post")),
+              { class: "card bg-base-100 shadow-sm mb-6" },
+              $.div(
+                { class: "card-body p-4" },
+                collect(
+                  $.textarea({
+                    class: "textarea textarea-bordered w-full mb-3",
+                    name: "content",
+                    placeholder: "What's happening?",
+                    rows: 3,
+                    value: content.value,
+                    onInput: (e: Event) =>
+                      content.set((e.target as HTMLTextAreaElement).value),
+                  }),
+                  $.button(
+                    { type: "submit", class: "btn btn-primary btn-sm" },
+                    $.of("Post"),
+                  ),
+                ),
               ),
             );
           }),
         ),
-        $.hr(),
         // Post list — reactive on client (via cache), static on server
         PostList({ posts, users }),
       ),

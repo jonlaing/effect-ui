@@ -1,3 +1,5 @@
+import "./styles.css";
+
 import type { Element } from "@effex/dom";
 import { hydrate } from "@effex/dom/hydrate";
 import { Platform } from "@effex/platform";
