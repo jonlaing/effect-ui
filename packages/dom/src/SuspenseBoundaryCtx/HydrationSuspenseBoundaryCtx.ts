@@ -12,8 +12,10 @@ import {
   type Renderer,
 } from "@effex/core";
 
+import { ClientControlCtx } from "../Control/ClientControlCtx.js";
 import { DOMRenderer } from "../Render/DOMRenderer.js";
 import { HydrationContext } from "../Render/hydrate/HydrationContext.js";
+import { ClientSuspenseBoundaryCtx } from "./ClientSuspenseBoundaryCtx.js";
 
 type DOMElement = HTMLElement | SVGElement;
 
@@ -72,15 +74,22 @@ export const HydrationSuspenseBoundaryCtx: Layer.Layer<
           const scope = yield* Effect.scope;
 
           // Use DOMRenderer for creating new async content (not HydrationRenderer)
-          // since this content doesn't exist in the DOM yet
+          // since this content doesn't exist in the DOM yet.
+          // Also provide ClientControlCtx and ClientSuspenseBoundaryCtx so that
+          // nested control flow (when, each, etc.) and suspense work in client mode.
           const domRendererLayer = Layer.succeed(
             RendererContext,
             DOMRenderer as Renderer<unknown>,
           );
+          const clientLayers = Layer.mergeAll(
+            domRendererLayer,
+            ClientControlCtx,
+            Layer.provide(ClientSuspenseBoundaryCtx, domRendererLayer),
+          );
 
           yield* pipe(
             render(),
-            Effect.provide(domRendererLayer),
+            Effect.provide(clientLayers),
             Effect.tap((element) =>
               Effect.sync(() => {
                 // Update state attribute
@@ -101,7 +110,7 @@ export const HydrationSuspenseBoundaryCtx: Layer.Layer<
               if (catchRender) {
                 return pipe(
                   catchRender(error),
-                  Effect.provide(domRendererLayer),
+                  Effect.provide(clientLayers),
                   Effect.tap((errorElement) =>
                     Effect.sync(() => {
                       currentContainer.setAttribute(
