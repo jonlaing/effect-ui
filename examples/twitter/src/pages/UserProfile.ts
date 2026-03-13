@@ -1,7 +1,6 @@
 import { Effect } from "effect";
 
-import { Readable } from "@effex/core";
-import { $, collect, each } from "@effex/dom";
+import { $, collect, each, Readable } from "@effex/dom";
 import { Link } from "@effex/router";
 
 import { PostCard } from "../components/PostCard.js";
