@@ -347,7 +347,6 @@ Key features:
 | [`twitter`](./examples/twitter) | Full-stack SSR app with loaders, mutations, and caching |
 | [`kanban`](./examples/kanban) | Kanban board with drag-and-drop and forms |
 | [`todo-app`](./examples/todo-app) | Classic todo app |
-| [`chat`](./examples/chat) | Chat interface |
 | [`router-demo`](./examples/router-demo) | Router features showcase |
 
 ## Why No JSX?
