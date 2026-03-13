@@ -8,8 +8,7 @@
       "@effex/core": ["packages/core/src/index.ts"],
       "@effex/dom": ["packages/dom/src/index.ts"],
       "@effex/router": ["packages/router/src/index.ts"],
-      "@effex/form": ["packages/form/src/index.ts"],
-      "@effex/primitives": ["packages/primitives/src/index.ts"]
+      "@effex/form": ["packages/form/src/index.ts"]
     }
   },
   "include": ["packages/*/src", "src"]

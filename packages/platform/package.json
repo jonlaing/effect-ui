@@ -1,6 +1,6 @@
 {
   "name": "@effex/platform",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Full-stack meta-framework for Effex applications",
   "type": "module",
   "license": "MIT",
@@ -26,16 +26,6 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    },
-    "./server": {
-      "types": "./dist/server.d.ts",
-      "import": "./dist/server.js",
-      "require": "./dist/server.cjs"
-    },
-    "./client": {
-      "types": "./dist/client.d.ts",
-      "import": "./dist/client.js",
-      "require": "./dist/client.cjs"
     }
   },
   "files": [
@@ -46,17 +36,13 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@effex/dom": "workspace:*",
-    "@effex/form": "workspace:*",
-    "@effex/router": "workspace:*"
+    "@effex/core": "workspace:*"
   },
   "peerDependencies": {
     "@effect/platform": "^0.94.0",
+    "@effex/dom": "workspace:*",
+    "@effex/router": "workspace:*",
     "effect": "^3.0.0"
   },
-  "peerDependenciesMeta": {
-    "@effect/platform": {
-      "optional": true
-    }
-  }
+  "peerDependenciesMeta": {}
 }

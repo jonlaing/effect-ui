@@ -1,7 +1,6 @@
-import type { Effect, Scope } from "effect";
+import { Context, type Effect, type Scope } from "effect";
 
-import type { Readable } from "./Readable";
-import type { RendererContext } from "./Renderer";
+import type { RendererContext } from "./Renderer.js";
 
 /**
  * A rendered element wrapped in an Effect with scope management.
@@ -38,17 +37,22 @@ export type Element<N = unknown, E = never, R = never> = Effect.Effect<
 >;
 
 /**
- * Valid child types for an element: strings, numbers, elements, reactive values, or arrays thereof.
- * This is the generic version for use with any renderer.
+ * Context for injecting props into child elements.
+ * Used by primitives implementing the `asChild` pattern and by Form.provide
+ * to inject handlers like onSubmit.
  *
- * @template N - The node type
- * @template E - The error type for child elements
- * @template R - The requirements/context type for child elements
+ * The first element created within this context will receive the merged props,
+ * with its own explicit props taking precedence over the injected ones.
+ *
+ * @example
+ * ```ts
+ * // Inject onSubmit into the first child element
+ * Effect.provideService(children, MergePropsCtx, {
+ *   onSubmit: (e) => { e.preventDefault(); return handleSubmit(); }
+ * })
+ * ```
  */
-export type Child<N = unknown, E = never, R = never> =
-  | string
-  | number
-  | Element<N, E, R>
-  | Readable<string>
-  | Readable<number>
-  | readonly Child<N, E, R>[];
+export class MergePropsCtx extends Context.Tag("MergePropsCtx")<
+  MergePropsCtx,
+  Record<string, unknown>
+>() {}

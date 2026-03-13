@@ -1,235 +1,385 @@
-import { Effect, Schema, Scope } from "effect";
+import { Context, Effect, Scope, type ParseResult } from "effect";
 
-import { Derived, Readable, Signal } from "@effex/dom";
+import { MergePropsCtx } from "@effex/core";
 
-import { buildFieldEntries, hasNoErrors, validateForm } from "./helpers";
+import {
+  type ArrayField,
+  type EncodedOf,
+  type Field,
+  type LeafField,
+  type MapField,
+  type StructField,
+  type TypeOf,
+  type ValidateOn,
+} from "./Field.js";
 import type {
-  Field,
-  FieldArray,
-  FormFields,
-  FormOptions,
-  Form as FormType,
-  SubmitHandler,
-  ValidationTiming,
-} from "./types";
+  ArrayFieldState,
+  FormState,
+  LeafFieldState,
+  MapFieldState,
+  StructFieldState,
+} from "./FieldState.js";
+import {
+  createFieldState,
+  type SupportedFieldState,
+} from "./fieldStates/index.js";
+import { createFormState } from "./FormState.js";
+
+// -----------------------------------------------------------------------------
+// TypeId
+// -----------------------------------------------------------------------------
+
+export const FormTypeId: unique symbol = Symbol.for("effex/form/Form");
+export type FormTypeId = typeof FormTypeId;
+
+// -----------------------------------------------------------------------------
+// Form Config
+// -----------------------------------------------------------------------------
 
 /**
- * Create a new Form with reactive state management.
- * @param options - Form configuration including schema and initial values
- *
- * @example
- * ```ts
- * const form = yield* Form.make({
- *   schema: Schema.Struct({
- *     email: Schema.String.pipe(Schema.nonEmptyString()),
- *     password: Schema.String.pipe(Schema.minLength(8)),
- *   }),
- *   initial: { email: "", password: "" },
- * })
- *
- * // Access fields
- * form.fields.email.value      // Signal<string>
- * form.fields.email.errors     // Readable<string[]>
- * form.fields.email.touched    // Readable<boolean>
- *
- * // Submit the form
- * yield* form.submit((values) =>
- *   Effect.gen(function* () {
- *     yield* api.register(values)
- *   })
- * )
- * ```
+ * Context for submit callbacks.
  */
-export const make = <
-  S extends Schema.Schema.AnyNoContext,
-  E = never,
-  R = never,
->(
-  options: FormOptions<S, E, R>,
-): Effect.Effect<FormType<S, E, R>, never, Scope.Scope> => {
-  type T = Schema.Schema.Type<S>;
-  const validation: ValidationTiming = options.validation ?? "hybrid";
+export interface SubmitContext<Encoded, Decoded> {
+  /** Raw form values (schema input type) */
+  readonly encoded: Encoded;
+  /** Validated/transformed values (schema output type) */
+  readonly decoded: Decoded;
+  /** Current form state */
+  readonly form: {
+    readonly isValid: boolean;
+    readonly errors: readonly ParseResult.ParseIssue[];
+    readonly touched: ReadonlySet<string>;
+    readonly dirty: ReadonlySet<string>;
+  };
+}
 
-  return Effect.gen(function* () {
-    const isSubmitting = yield* Signal.make(false);
+/**
+ * Submit handler type.
+ */
+export type OnSubmit<Encoded, Decoded, E = never, R = never> = (
+  ctx: SubmitContext<Encoded, Decoded>,
+) => Effect.Effect<void, E, R>;
 
-    const fieldEntries = yield* buildFieldEntries(
-      options.initial,
-      options.schema,
-      validation,
-    );
+/**
+ * Configuration for Form.make.
+ */
+export interface FormConfig<Encoded, Decoded, E = never, R = never> {
+  /** Default validation timing for all fields */
+  readonly validateOn?: ValidateOn;
+  /** Default debounce time in ms */
+  readonly debounce?: number;
+  /** Form-level submit handler */
+  readonly onSubmit?: OnSubmit<Encoded, Decoded, E, R>;
+}
 
-    const fields = Object.fromEntries(fieldEntries) as FormFields<T>;
+/**
+ * Configuration for Form.provide.
+ */
+export interface ProvideConfig<Encoded, Decoded, E = never, R = never> {
+  /** Initial/default values for all fields */
+  readonly defaults: Encoded;
+  /** Instance-level submit handler (runs on client with JS) */
+  readonly onSubmit?: OnSubmit<Encoded, Decoded, E, R>;
+  /**
+   * Native form action attribute (e.g., "?_action=submit").
+   * When provided, form renders with action and method="POST" attributes,
+   * enabling progressive enhancement (works without JS).
+   */
+  readonly action?: string;
+}
 
-    // Collect all field readables for derived state
-    const fieldNames = Object.keys(fields);
-    const allFields = Object.values(fields) as Array<
-      Field<unknown> | FieldArray<unknown>
-    >;
+// -----------------------------------------------------------------------------
+// Form Type
+// -----------------------------------------------------------------------------
 
-    // Get error readables from all fields
-    const errorReadables: Readable.Readable<readonly string[]>[] =
-      allFields.map((f) => (f as Field<unknown>).errors);
+/**
+ * Maps Field types to their corresponding FieldState types.
+ */
+type FieldStateOf<F> =
+  F extends LeafField<infer A, any>
+    ? LeafFieldState<A>
+    : F extends StructField<infer Fields>
+      ? StructFieldState<
+          { [K in keyof Fields]: TypeOf<Fields[K]> },
+          { [K in keyof Fields]: FieldStateOf<Fields[K]> }
+        >
+      : F extends ArrayField<infer Element>
+        ? ArrayFieldState<TypeOf<Element>, FieldStateOf<Element>>
+        : F extends MapField<infer K, infer Element>
+          ? MapFieldState<K, TypeOf<Element>, FieldStateOf<Element>>
+          : never;
 
-    // Derive form-level errors (aggregate from all fields)
-    const errors: Readable.Readable<Record<string, readonly string[]>> =
-      yield* Derived.sync(errorReadables, (allErrors) =>
-        fieldNames.reduce(
-          (acc, key, idx) => ({
-            ...acc,
-            [key]: allErrors[idx],
-          }),
-          {} as Record<string, readonly string[]>,
-        ),
-      );
-
-    // Derive isValid from errors
-    const isValid: Readable.Readable<boolean> = yield* Derived.sync(
-      [errors],
-      ([errs]) => hasNoErrors(errs),
-    );
-
-    // Get touched readables from all fields
-    const touchedReadables: Readable.Readable<boolean>[] = allFields.map(
-      (f) => (f as Field<unknown>).touched,
-    );
-
-    // Derive isTouched from all fields
-    const isTouched: Readable.Readable<boolean> = yield* Derived.sync(
-      touchedReadables,
-      (touchedStates) => touchedStates.some((t) => t),
-    );
-
-    // Get dirty readables from all fields
-    const dirtyReadables: Readable.Readable<boolean>[] = allFields.map(
-      (f) => (f as Field<unknown>).dirty,
-    );
-
-    // Derive isDirty from all fields
-    const isDirty: Readable.Readable<boolean> = yield* Derived.sync(
-      dirtyReadables,
-      (dirtyStates) => dirtyStates.some((d) => d),
-    );
-
-    // Get current values from all fields
-    const getValues = (): Effect.Effect<T> =>
-      Effect.gen(function* () {
-        const result: Record<string, unknown> = {};
-        for (const [name, field] of Object.entries(fields)) {
-          const f = field as Field<unknown>;
-          result[name] = yield* f.value.get;
-        }
-        return result as T;
-      });
-
-    // Validate all fields and return errors
-    const validateAll = (): Effect.Effect<
-      Record<keyof T, readonly string[]>,
-      E,
-      R
-    > =>
-      Effect.gen(function* () {
-        const values = yield* getValues();
-        const schemaErrors = yield* validateForm(options.schema, values);
-
-        // Also run async validators
-        const asyncErrors: Record<string, readonly string[]> = {};
-        if (options.validators) {
-          for (const [fieldNameKey, validator] of Object.entries(
-            options.validators,
-          )) {
-            if (validator) {
-              const fieldValue = (values as Record<string, unknown>)[
-                fieldNameKey
-              ];
-              const validatorFn = validator as (
-                v: unknown,
-              ) => Effect.Effect<readonly string[], E, R>;
-              asyncErrors[fieldNameKey] = yield* validatorFn(fieldValue);
-            }
-          }
-        }
-
-        // Merge errors - start with schema errors, then append async errors
-        const merged = { ...schemaErrors };
-        for (const [name, errs] of Object.entries(asyncErrors)) {
-          merged[name] = [...(merged[name] ?? []), ...errs];
-        }
-
-        return merged as Record<keyof T, readonly string[]>;
-      });
-
-    // Submit handler
-    const submit = <SE, SR>(
-      handler: SubmitHandler<T, SE, SR>,
-    ): Effect.Effect<void, E | SE, R | SR> =>
-      Effect.gen(function* () {
-        yield* isSubmitting.set(true);
-
-        // Touch all fields to show validation
-        for (const field of Object.values(fields)) {
-          const f = field as Field<unknown>;
-          yield* f.touch();
-        }
-
-        // Validate all
-        const allErrors = yield* validateAll();
-
-        if (!hasNoErrors(allErrors as Record<string, readonly string[]>)) {
-          // Set errors on fields
-          for (const [name, errs] of Object.entries(allErrors)) {
-            const field = (fields as Record<string, Field<unknown>>)[name];
-            yield* field?.setErrors(errs as readonly string[]);
-          }
-          return;
-        }
-
-        // Get validated values and call handler
-        const values = yield* getValues();
-        yield* handler(values);
-      }).pipe(Effect.ensuring(isSubmitting.set(false)));
-
-    // Reset all fields
-    const reset = (): Effect.Effect<void> =>
-      Effect.all(
-        Object.values(fields).map((field) => (field as Field<unknown>).reset()),
-      );
-
-    // Set external errors
-    const setErrors = (
-      externalErrors: Partial<Record<keyof T, readonly string[]>>,
-    ): Effect.Effect<void> =>
-      Effect.all(
-        Object.entries(externalErrors).map(([name, errs]) => {
-          const field = (fields as Record<string, Field<unknown>>)[name];
-          if (field && errs) {
-            return field.setErrors(errs as readonly string[]);
-          }
-          return Effect.void;
-        }),
-      );
-
-    const form: FormType<S, E, R> = {
-      fields,
-      isValid,
-      isSubmitting,
-      isTouched,
-      isDirty,
-      errors,
-      submit,
-      reset,
-      setErrors,
-      validate: validateAll,
-      getValues,
-    };
-
-    return form;
-  });
+/**
+ * Maps a record of Fields to a record of Effects that yield FieldStates.
+ * The FormCtx is the identifier type of the context tag.
+ */
+type FieldAccessors<Fields extends Record<string, Field<any, any>>, FormCtx> = {
+  readonly [K in keyof Fields]: Effect.Effect<
+    FieldStateOf<Fields[K]>,
+    never,
+    FormCtx
+  >;
 };
 
 /**
- * Form module namespace for creating forms with Effect Schema validation.
+ * Internal form context containing live state.
  */
+interface FormContextValue<Fields extends Record<string, Field<any, any>>> {
+  readonly fieldStates: {
+    [K in keyof Fields]: FieldStateOf<Fields[K]>;
+  };
+  readonly formState: FormState<
+    { [K in keyof Fields]: EncodedOf<Fields[K]> },
+    { [K in keyof Fields]: TypeOf<Fields[K]> }
+  >;
+}
+
+/**
+ * A Form definition.
+ *
+ * @template Fields - The record of field definitions
+ * @template R - Requirements from form-level callbacks
+ * @template FormCtx - The form context identifier (internal)
+ */
+export interface Form<
+  Fields extends Record<string, Field<any, any>>,
+  R = never,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  FormCtx = any,
+> {
+  readonly [FormTypeId]: FormTypeId;
+
+  /**
+   * Access individual field states via context.
+   */
+  readonly fields: FieldAccessors<Fields, FormCtx>;
+
+  /**
+   * Access form-level state via context.
+   */
+  readonly form: Effect.Effect<
+    FormState<
+      { [K in keyof Fields]: EncodedOf<Fields[K]> },
+      { [K in keyof Fields]: TypeOf<Fields[K]> }
+    >,
+    never,
+    FormCtx
+  >;
+
+  /**
+   * Create live form state and provide context to children.
+   */
+  readonly provide: <A, E2, R2>(
+    config: ProvideConfig<
+      { [K in keyof Fields]: EncodedOf<Fields[K]> },
+      { [K in keyof Fields]: TypeOf<Fields[K]> },
+      E2,
+      R2
+    >,
+    children: Effect.Effect<A, never, FormCtx>,
+  ) => Effect.Effect<A, never, R | R2 | Scope.Scope>;
+
+  /**
+   * The field definitions (for introspection).
+   */
+  readonly _fields: Fields;
+}
+
+// -----------------------------------------------------------------------------
+// Constructor
+// -----------------------------------------------------------------------------
+
+/**
+ * Create a new Form definition.
+ *
+ * @example
+ * ```ts
+ * const LoginForm = Form.make({
+ *   email: Field.make(Schema.String.pipe(Schema.email()), { validateOn: 'blur' }),
+ *   password: Field.make(Schema.String.pipe(Schema.minLength(8))),
+ * }, {
+ *   validateOn: 'blur',
+ *   onSubmit: (ctx) => telemetry.track("login_attempt"),
+ * });
+ * ```
+ */
+export const make = <
+  Fields extends Record<string, Field<any, any>>,
+  E = never,
+  R = never,
+>(
+  fields: Fields,
+  config: FormConfig<
+    { [K in keyof Fields]: EncodedOf<Fields[K]> },
+    { [K in keyof Fields]: TypeOf<Fields[K]> },
+    E,
+    R
+  > = {},
+): Form<Fields, R> => {
+  type Encoded = { [K in keyof Fields]: EncodedOf<Fields[K]> };
+  type Decoded = { [K in keyof Fields]: TypeOf<Fields[K]> };
+
+  // Create a unique context tag for this form
+  const FormContext = Context.GenericTag<FormContextValue<Fields>>(
+    `effex/form/FormContext/${Symbol().toString()}`,
+  );
+
+  // Infer the context identifier type
+  type FormCtxId = Context.Tag.Identifier<typeof FormContext>;
+
+  // Build field accessors
+  const fieldAccessors = {} as Record<
+    string,
+    Effect.Effect<SupportedFieldState<unknown>, never, FormCtxId>
+  >;
+
+  for (const key of Object.keys(fields)) {
+    fieldAccessors[key] = Effect.map(
+      FormContext,
+      (ctx) =>
+        ctx.fieldStates[key as keyof Fields] as SupportedFieldState<unknown>,
+    ) as unknown as Effect.Effect<
+      SupportedFieldState<unknown>,
+      never,
+      FormCtxId
+    >;
+  }
+
+  // Form accessor
+  const formAccessor = Effect.map(
+    FormContext,
+    (ctx) => ctx.formState,
+  ) as unknown as Effect.Effect<FormState<Encoded, Decoded>, never, FormCtxId>;
+
+  // Provide function
+  const provide = <A, E2, R2>(
+    provideConfig: ProvideConfig<Encoded, Decoded, E2, R2>,
+    children: Effect.Effect<A, never, FormCtxId>,
+  ): Effect.Effect<A, never, R | R2 | Scope.Scope> =>
+    Effect.gen(function* () {
+      // Create live state for all fields
+      const fieldStates = yield* createFieldStates(
+        fields,
+        provideConfig.defaults as Record<string, unknown>,
+        { validateOn: config.validateOn, debounce: config.debounce },
+      );
+
+      // Create form-level state
+      const formState = yield* createFormState(
+        fields,
+        fieldStates,
+        config.onSubmit as
+          | OnSubmit<
+              Record<string, unknown>,
+              Record<string, unknown>,
+              unknown,
+              R
+            >
+          | undefined,
+        provideConfig.onSubmit as
+          | OnSubmit<
+              Record<string, unknown>,
+              Record<string, unknown>,
+              unknown,
+              R2
+            >
+          | undefined,
+      );
+
+      // Create context value
+      const contextValue: FormContextValue<Fields> = {
+        fieldStates: fieldStates as {
+          [K in keyof Fields]: FieldStateOf<Fields[K]>;
+        },
+        formState: formState as FormState<Encoded, Decoded>,
+      };
+
+      // Create onSubmit handler for MergePropsCtx
+      const onSubmit = (e: Event) => {
+        e.preventDefault();
+        return formState.submit();
+      };
+
+      // Build props to merge into form element
+      const mergeProps: Record<string, unknown> = { onSubmit };
+
+      // When action is provided, add native form attributes for progressive enhancement
+      if (provideConfig.action) {
+        mergeProps.action = provideConfig.action;
+        mergeProps.method = "POST";
+      }
+
+      // Provide form context and inject props via MergePropsCtx
+      // The first element (typically $.form) will receive these props
+      return yield* children.pipe(
+        Effect.provideService(FormContext, contextValue),
+        Effect.provideService(MergePropsCtx, mergeProps),
+      );
+    }) as Effect.Effect<A, never, R | R2 | Scope.Scope>;
+
+  return {
+    [FormTypeId]: FormTypeId,
+    fields: fieldAccessors as unknown as FieldAccessors<Fields, FormCtxId>,
+    form: formAccessor as unknown as Effect.Effect<
+      FormState<Encoded, Decoded>,
+      never,
+      FormCtxId
+    >,
+    provide,
+    _fields: fields,
+  } as Form<Fields, R, FormCtxId>;
+};
+
+// -----------------------------------------------------------------------------
+// Internal: Create Field States
+// -----------------------------------------------------------------------------
+
+const createFieldStates = (
+  fields: Record<string, Field<any, any>>,
+  defaults: Record<string, unknown>,
+  formConfig: { validateOn?: ValidateOn; debounce?: number },
+): Effect.Effect<
+  Record<string, SupportedFieldState<unknown>>,
+  never,
+  Scope.Scope
+> =>
+  Effect.gen(function* () {
+    const states: Record<string, SupportedFieldState<unknown>> = {};
+
+    for (const [key, field] of Object.entries(fields)) {
+      const defaultValue = defaults[key];
+      const mergedConfig = {
+        validateOn: field.config.validateOn ?? formConfig.validateOn ?? "blur",
+        debounce: field.config.debounce ?? formConfig.debounce,
+      };
+
+      states[key] = yield* createFieldState(field, defaultValue, mergedConfig);
+    }
+
+    return states;
+  });
+
+// -----------------------------------------------------------------------------
+// Type Guard
+// -----------------------------------------------------------------------------
+
+/**
+ * Check if a value is a Form.
+ */
+export const isForm = (
+  value: unknown,
+): value is Form<Record<string, Field<any, any>>> =>
+  typeof value === "object" &&
+  value !== null &&
+  FormTypeId in value &&
+  (value as Record<symbol, unknown>)[FormTypeId] === FormTypeId;
+
+// -----------------------------------------------------------------------------
+// Namespace Export
+// -----------------------------------------------------------------------------
+
 export const Form = {
+  FormTypeId,
   make,
+  isForm,
 };

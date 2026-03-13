@@ -1,402 +1,367 @@
 # @effex/platform
 
-Full-stack meta-framework for Effex applications. Provides server-side rendering, hydration, loaders, actions, and platform services.
-
-> **Note:** This package re-exports everything from `@effex/core`, `@effex/dom`, `@effex/router`, and `@effex/form`. For most full-stack apps, you only need this package.
+Server-side rendering and hydration utilities for Effex applications. Converts an Effex Router into `@effect/platform` HTTP handlers, handling SSR, data requests, and mutation endpoints.
 
 ## Installation
 
 ```bash
-pnpm add @effex/platform effect
+pnpm add @effex/platform @effect/platform effect
+```
+
+`@effex/dom` and `@effex/router` are peer dependencies — install them separately:
+
+```bash
+pnpm add @effex/dom @effex/router
+```
+
+> `@effex/dom` re-exports `@effex/core`, so you don't need to install core separately.
+
+## Overview
+
+`@effex/platform` is a server-side package that bridges Effex's UI layer with `@effect/platform`'s HTTP server. It does not re-export dom or router — import those directly:
+
+```ts
+import { $, collect, Readable } from "@effex/dom";       // UI primitives
+import { Route, Router, Outlet, Link } from "@effex/router"; // Routing
+import { Platform, RedirectError } from "@effex/platform";    // SSR utilities
 ```
 
 ## Quick Start
 
-```ts
-// Everything from one import
-import {
-  $,
-  Signal,
-  component,
-  Router,
-  Route,
-  Form,
-  Routes,
-  Platform,
-} from "@effex/platform";
-```
-
-## File-Based Routing with Route.define
-
-Define routes with co-located params, loaders, and actions:
+### Define Routes
 
 ```ts
-// src/routes/users.$id.ts
+// routes.ts
 import { Effect, Schema } from "effect";
-import { $, component, Route } from "@effex/platform";
+import { Route, Router } from "@effex/router";
+import { RedirectError } from "@effex/platform";
 
-// Define route configuration
-export const route = Route.define({
-  params: Schema.Struct({ id: Schema.String }),
-  loader: (params) =>
+import { UserPage } from "./pages/User.js";
+import { FeedPage } from "./pages/Feed.js";
+
+const FeedRoute = Route.make("/").pipe(
+  Route.get(
+    () =>
+      Effect.gen(function* () {
+        const svc = yield* PostService;
+        return yield* svc.getPosts();
+      }),
+    (posts) => FeedPage({ posts }),
+  ),
+  Route.post("create", (body) =>
     Effect.gen(function* () {
-      return yield* fetchUser(params.id);
+      const { content } = body as { content: string };
+      const svc = yield* PostService;
+      return yield* svc.createPost(content);
     }),
-});
+  ),
+);
 
-// Component with type-safe access
-const UserPage = () =>
-  Effect.gen(function* () {
-    // Type-safe params
-    const params = yield* route.params();
+const UserRoute = Route.make("/users/:id").pipe(
+  Route.params(Schema.Struct({ id: Schema.String })),
+  Route.get(
+    ({ params: { id } }) =>
+      Effect.gen(function* () {
+        const svc = yield* PostService;
+        return yield* svc.getUser(id);
+      }),
+    (user) => UserPage({ user }),
+  ),
+);
 
-    // Type-safe loader data
-    const user = yield* route.loaderData<User>();
-
-    return yield* $.div(
-      {},
-      collect(
-        $.h1({}, $.of(user.name)),
-        $.p({}, $.of(user.email)),
-      ),
-    );
-  });
-
-export default UserPage;
+export const router = Router.empty.pipe(
+  Router.concat(FeedRoute),
+  Router.concat(UserRoute),
+  Router.fallback(() => NotFoundPage()),
+);
 ```
-
-## Server-Side Rendering
 
 ### Server Entry
 
 ```ts
-// server-entry.ts
-import { Effect } from "effect";
-import { render, renderToDocument } from "@effex/platform/server";
-import { Router, Routes } from "@effex/platform";
-import { routes, components } from "./generated/routes.js";
-
-export async function renderPage(request: Request): Promise<string> {
-  return Effect.runPromise(
-    Effect.scoped(
-      Effect.gen(function* () {
-        const url = new URL(request.url);
-        const router = yield* Router.make(routes, {
-          initialPath: url.pathname,
-          initialSearch: url.search,
-        });
-
-        const app = Routes({ components }).pipe(Effect.provide(router.layer));
-
-        const result = yield* render(app, { request, router });
-
-        return renderToDocument(result, {
-          title: "My App",
-          scripts: ["/client.js"],
-          styles: ["/styles.css"],
-        });
-      }),
-    ),
-  );
-}
-```
-
-### Client Hydration
-
-```ts
-// client.ts
-import { Effect } from "effect";
-import { Router, Routes } from "@effex/platform";
-import { hydrateApp } from "@effex/platform/client";
-import { routes, components } from "./generated/routes.js";
-
-Effect.runFork(
-  Effect.scoped(
-    Effect.gen(function* () {
-      const router = yield* Router.make(routes);
-
-      const app = Routes({ components }).pipe(Effect.provide(router.layer));
-
-      yield* Effect.promise(() =>
-        hydrateApp(app, document.getElementById("root")!, { router }),
-      );
-
-      yield* Effect.never; // Keep scope alive
-    }),
-  ),
-);
-```
-
-## Loaders
-
-Load data on the server before rendering:
-
-```ts
-// src/routes/users.$id.ts
-import { Effect, Schema } from "effect";
-import { $, Component, Route } from "@effex/platform";
-
-export const route = Route.define({
-  params: Schema.Struct({ id: Schema.String }),
-  loader: (params) =>
-    Effect.gen(function* () {
-      return yield* fetchUser(params.id);
-    }),
-});
-
-const UserPage = () =>
-  Effect.gen(function* () {
-    const user = yield* route.loaderData<User>();
-
-    return yield* $.div(
-      {},
-      collect(
-        $.h1({}, $.of(user.name)),
-        $.p({}, $.of(user.email)),
-      ),
-    );
-  });
-
-export default UserPage;
-```
-
-## Actions
-
-Handle form submissions on the server:
-
-```ts
-// src/routes/contact.ts
-import { Effect } from "effect";
-import { $, collect, Route, when, RouterContext } from "@effex/platform";
-
-export const route = Route.define({
-  action: ({ formData }) =>
-    Effect.gen(function* () {
-      const name = formData.get("name") as string;
-      const message = formData.get("message") as string;
-
-      yield* sendEmail({ name, message });
-
-      return { success: true, message: "Message sent!" };
-    }),
-});
-
-const ContactForm = () =>
-  Effect.gen(function* () {
-    const router = yield* RouterContext;
-    const actionState = router.actionState;
-
-    return yield* $.form(
-      { method: "post" },
-      collect(
-        $.input({ name: "name", placeholder: "Name" }),
-        $.textarea({ name: "message", placeholder: "Message" }),
-        $.button({ type: "submit" }, $.of("Send")),
-        when(actionState.map((s) => s.data?.success), {
-          onTrue: () => $.p({ class: "success" }, $.of("Message sent!")),
-          onFalse: () => $.span(),
-        }),
-      ),
-    );
-  });
-
-export default ContactForm;
-```
-
-## Platform Services
-
-Access platform utilities in your components:
-
-```ts
+// server.ts
+import { createServer } from "node:http";
+import { HttpRouter, HttpServer, HttpServerResponse } from "@effect/platform";
+import { NodeHttpServer, NodeRuntime } from "@effect/platform-node";
+import { Layer } from "effect";
 import { Platform } from "@effex/platform";
 
-const handler = Effect.gen(function* () {
-  // Environment detection
-  const isServer = yield* Platform.isServer;
-  const isClient = yield* Platform.isClient;
+import { App } from "./App.js";
+import { router } from "./routes.js";
 
-  // Cookie access (works on both server and client)
-  const cookies = yield* Platform.cookies;
-  const session = yield* cookies.get("session");
-  yield* cookies.set("theme", "dark", { maxAge: 86400, path: "/" });
-
-  // Server-only: access request and set response headers
-  const request = yield* Platform.request;
-  yield* Platform.setHeader("X-Custom-Header", "value");
-});
-```
-
-## Data Serialization
-
-Complex types are automatically serialized for SSR hydration:
-
-- `Date` - Serialized as ISO strings, restored as Date objects
-- `Map` and `Set` - Serialized as arrays, restored as Map/Set
-- `BigInt` - Serialized as strings, restored as BigInt
-- `RegExp` - Serialized with source and flags
-- `URL` - Serialized as href strings
-- `undefined`, `NaN`, `Infinity` - Preserved correctly
-
-```ts
-import { serialize, deserialize } from "@effex/platform";
-
-const data = {
-  created: new Date(),
-  items: new Set([1, 2, 3]),
-  metadata: new Map([["key", "value"]]),
-};
-
-// Serialize for SSR
-const json = serializeSync(data);
-
-// Deserialize on client (happens automatically during hydration)
-const restored = deserializeSync(json);
-// restored.created instanceof Date === true
-```
-
-## Routes Component
-
-Render the current route:
-
-```ts
-import { $, collect, Routes } from "@effex/platform";
-import { Effect } from "effect";
-
-const App = () =>
-  Effect.gen(function* () {
-    return yield* $.div(
-      {},
-      collect(
-        Header(),
-        Routes({
-          components,
-          fallback: () => NotFoundPage(),
-        }),
-        Footer(),
-      ),
-    );
-  });
-```
-
-## Integrating with Effect HttpApi
-
-Effex's server produces an `HttpApp.Default` that composes naturally with Effect's `HttpRouter`. This lets you serve both Effex pages and HttpApi endpoints from a single server:
-
-```ts
-import { HttpApi, HttpApiBuilder, HttpApiEndpoint, HttpApiGroup, HttpRouter, HttpServer } from "@effect/platform";
-import { NodeHttpServer, NodeRuntime } from "@effect/platform-node";
-import { Effect, Layer, Schema } from "effect";
-import { EffexServer } from "@effex/platform/server";
-import { App, router as effexRouter } from "./app";
-
-// Define your API
-class UsersApi extends HttpApiGroup.make("users").pipe(
-  HttpApiGroup.add(
-    HttpApiEndpoint.get("list", "/").pipe(
-      HttpApiEndpoint.setSuccess(Schema.Array(UserSchema)),
-    ),
-  ),
-  HttpApiGroup.add(
-    HttpApiEndpoint.get("get", "/:id").pipe(
-      HttpApiEndpoint.setSuccess(UserSchema),
-    ),
-  ),
-) {}
-
-class MyApi extends HttpApi.make("api").pipe(
-  HttpApi.addGroup(UsersApi),
-) {}
-
-// Implement handlers
-const usersHandlers = HttpApiBuilder.group(MyApi, "users", (handlers) =>
-  handlers
-    .handle("list", () => Effect.succeed([...]))
-    .handle("get", ({ path }) => fetchUser(path.id)),
-);
-
-const apiLive = HttpApiBuilder.api(MyApi).pipe(
-  Layer.provide(usersHandlers),
-);
-
-// Create the Effex app for pages
-const effexApp = EffexServer.makeHttpApp({
-  app: () => App(),
-  router: effexRouter,
+const effexRoutes = Platform.toHttpRoutes(router, {
+  app: App,
   document: {
     title: "My App",
-    scripts: ["/client.js"],
+    scripts: ["/src/client.ts"],
     styles: ["/styles.css"],
   },
 });
 
-// Compose into a single router
-const mainRouter = HttpRouter.empty.pipe(
-  // API routes at /api prefix
-  HttpRouter.mount("/api", HttpApiBuilder.toWebHandler(apiLive)),
-  // Effex handles everything else (pages)
-  HttpRouter.all("/*", effexApp),
+const httpApp = HttpRouter.empty.pipe(
+  HttpRouter.get("/api/health", HttpServerResponse.json({ ok: true })),
+  HttpRouter.concat(effexRoutes),
 );
 
-// Single server for both pages and API
-const server = HttpServer.serve(mainRouter).pipe(
-  Layer.provide(NodeHttpServer.layer({ port: 3000 })),
+const ServerLive = httpApp.pipe(
+  HttpServer.serve(),
+  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 })),
 );
 
-NodeRuntime.runMain(Layer.launch(server));
+NodeRuntime.runMain(Layer.launch(ServerLive));
 ```
 
-This approach gives you:
-- Single port/server - no CORS issues between frontend and API
-- Full type safety from HttpApi's schema definitions
-- Shared Effect services between pages and API handlers
-- API routes matched before the catch-all Effex handler
-- **Shared schemas** - The same Schema definitions validate data on both server and client, ensuring your frontend and backend always agree on data shapes
-
-## Subpath Exports
-
-For environment-specific code:
+### Client Entry
 
 ```ts
-// Server-only (SSR, HTTP handlers)
-import { render, EffexServer } from "@effex/platform/server";
+// client.ts
+import type { Element } from "@effex/dom";
+import { hydrate } from "@effex/dom/hydrate";
+import { Platform } from "@effex/platform";
 
-// Client-only (hydration)
-import { hydrateApp } from "@effex/platform/client";
+import { App } from "./App.js";
+import { router } from "./routes.js";
 
-// Shared (works everywhere)
-import { Routes, Form, Platform } from "@effex/platform";
+hydrate(
+  App() as unknown as Element.Element<HTMLElement>,
+  document.getElementById("root")!,
+  { layers: Platform.makeClientLayer(router) },
+);
 ```
+
+### App Component
+
+The app component is shared between server and client. It should contain an `Outlet` that renders matched routes:
+
+```ts
+// App.ts
+import { $, collect } from "@effex/dom";
+import { Link, Outlet } from "@effex/router";
+import { router } from "./routes.js";
+
+export const App = () =>
+  $.div(
+    { class: "app" },
+    collect(
+      $.nav({}, Link({ href: "/" }, $.of("Home"))),
+      $.main({}, Outlet({ router })),
+    ),
+  );
+```
+
+## Server API
+
+### `Platform.toHttpRoutes(router, options?)`
+
+Converts an Effex Router into an `@effect/platform` HttpRouter. For each route:
+
+- **GET** — Runs the loader, SSR renders the component, returns full HTML document. If `?_data=1` is present, returns loader data as JSON (used for client-side navigation).
+- **POST / PUT / DELETE** — Dispatches to the handler matching `?_action=key`, executes it with the parsed request body, returns JSON. No component rendering.
+
+```ts
+const effexRoutes = Platform.toHttpRoutes(router, {
+  app: App,                        // Root component (should contain Outlet)
+  document: {
+    title: "My App",
+    scripts: ["/client.js"],       // <script type="module"> tags
+    styles: ["/styles.css"],       // <link rel="stylesheet"> tags
+    head: '<meta name="..." ...>', // Additional head HTML
+  },
+});
+```
+
+The returned HttpRouter composes with any `@effect/platform` router via `HttpRouter.concat`.
+
+### `RedirectError`
+
+Throw from loaders or mutation handlers to trigger a redirect:
+
+```ts
+import { RedirectError } from "@effex/platform";
+
+Route.make("/users/me").pipe(
+  Route.get(
+    () => Effect.fail(new RedirectError({ url: "/users/alice", status: 302 })),
+    () => $.div(), // never reached
+  ),
+);
+```
+
+- On full page loads: returns an HTTP 3xx redirect
+- On data requests (`?_data=1`): returns `{ _redirect: url }` so the client navigates without a full reload
+
+### `generateDocument(html, loaderData, options?)`
+
+Wraps rendered HTML in a full HTML5 document with hydration data:
+
+```ts
+const doc = generateDocument("<div>Hello</div>", { data: { name: "World" } }, {
+  title: "My Page",
+  scripts: ["/client.js"],
+});
+```
+
+Produces:
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My Page</title>
+  </head>
+  <body>
+    <div id="root"><div>Hello</div></div>
+    <script>window.__EFFEX_DATA__={...}</script>
+    <script type="module" src="/client.js"></script>
+  </body>
+</html>
+```
+
+### `serializeForHtml(data)`
+
+Safely serializes JSON for embedding in HTML `<script>` tags. Escapes `<`, `>`, and `&` to prevent XSS.
+
+### `generateLoaderDataScript(loaderData)`
+
+Generates a `<script>` tag that sets `window.__EFFEX_DATA__`. Returns empty string if no data.
+
+## Client API
+
+### `Platform.makeClientLayer(router)`
+
+Creates an Effect Layer providing `NavigationContext` and `RouteDataProvider` for the client.
+
+- **First render (hydration):** Reads data from `window.__EFFEX_DATA__` embedded by the server
+- **Subsequent navigations:** Fetches data from the server via `?_data=1`
+
+```ts
+import { hydrate } from "@effex/dom/hydrate";
+import { Platform } from "@effex/platform";
+
+hydrate(App() as unknown as Element.Element<HTMLElement>, root, {
+  layers: Platform.makeClientLayer(router),
+});
+```
+
+## Data Flow
+
+### Initial Page Load
+
+```
+GET /users/123
+  -> Route matching
+  -> Run loader: getUser("123")
+  -> Build RouteDataService: { data, loaderPath, actions }
+  -> SSR render component tree
+  -> Embed data in window.__EFFEX_DATA__
+  -> Return full HTML document
+```
+
+### Client Hydration
+
+```
+Browser loads HTML
+  -> hydrate() attaches to existing DOM
+  -> makeClientLayer reads window.__EFFEX_DATA__
+  -> Component tree hydrates with server data
+```
+
+### Client-Side Navigation
+
+```
+User clicks Link
+  -> Outlet detects route change
+  -> RouteDataProvider fetches /users/456?_data=1
+  -> Server runs loader, returns JSON
+  -> Component re-renders with new data
+```
+
+### Mutation
+
+```
+Form submit -> POST /users/123?_action=update
+  -> Server finds handler with key "update"
+  -> Parses body (JSON or URL-encoded)
+  -> Executes handler, returns JSON result
+  -> Client receives result
+  -> AsyncCache invalidation triggers UI update
+```
+
+## Composing with Effect HttpApi
+
+Since `toHttpRoutes` returns a standard `@effect/platform` HttpRouter, it composes naturally with API endpoints:
+
+```ts
+const apiRoutes = HttpRouter.empty.pipe(
+  HttpRouter.get("/api/users", usersHandler),
+  HttpRouter.post("/api/users", createUserHandler),
+);
+
+const app = HttpRouter.empty.pipe(
+  HttpRouter.concat(apiRoutes),           // API routes first
+  HttpRouter.concat(effexRoutes),          // Effex pages catch the rest
+);
+```
+
+## Vite Plugin
+
+The `@effex/vite-plugin` package provides dev server integration and client build optimization:
+
+```ts
+// vite.config.ts
+import { effexPlatform } from "@effex/vite-plugin";
+
+export default defineConfig({
+  plugins: [
+    effexPlatform({ entry: "src/vite-entry.ts" }),
+  ],
+});
+```
+
+**Dev mode:** Intercepts requests to the Vite dev server and delegates to your SSR entry, with HMR support.
+
+**Client builds:** Strips server-only code from the client bundle — loader function bodies are removed from `Route.get()` calls, and mutation handlers in `Route.post/put/delete()` are replaced with stubs.
 
 ## API Reference
 
-### Route
+### Platform Namespace
 
-- `Route.define(options?)` - Define a route with params, loader, action
-- `route.params()` - Effect returning current params (or null)
-- `route.loaderData<T>()` - Effect returning loader data
-- `route.isActive()` - Readable signal for active state
+| Function | Description |
+|---|---|
+| `Platform.toHttpRoutes(router, options?)` | Convert Effex Router to `@effect/platform` HttpRouter |
+| `Platform.makeClientLayer(router)` | Create client-side Layer for hydration and navigation |
+| `Platform.generateDocument(html, data, options?)` | Wrap HTML in full document with hydration data |
+| `Platform.generateLoaderDataScript(data)` | Generate `<script>` tag for hydration data |
+| `Platform.serializeForHtml(data)` | Safely serialize JSON for HTML embedding |
 
-### Server
+### Named Exports
 
-- `render(element, options)` - Render to HTML
-- `renderToDocument(result, options)` - Wrap in HTML document
-- `EffexServer.makeHttpApp(options)` - Create HTTP handler
+| Export | Description |
+|---|---|
+| `RedirectError` | Tagged error class for server-side redirects |
+| `toHttpRoutes` | Same as `Platform.toHttpRoutes` |
+| `makeClientLayer` | Same as `Platform.makeClientLayer` |
+| `generateDocument` | Same as `Platform.generateDocument` |
+| `generateLoaderDataScript` | Same as `Platform.generateLoaderDataScript` |
+| `serializeForHtml` | Same as `Platform.serializeForHtml` |
 
-### Client
+### DocumentOptions
 
-- `hydrateApp(element, container, options)` - Hydrate server-rendered HTML
+```ts
+interface DocumentOptions {
+  title?: string;              // Page <title>
+  scripts?: readonly string[]; // Module script URLs
+  styles?: readonly string[];  // Stylesheet URLs
+  head?: string;               // Additional head HTML
+}
+```
 
-### Platform
+### ToHttpRoutesOptions
 
-- `Platform.isServer` - Effect that returns true on server
-- `Platform.isClient` - Effect that returns true on client
-- `Platform.cookies` - Cookie access
-- `Platform.request` - Server request (server only)
-- `Platform.setHeader(name, value)` - Set response header (server only)
-
-### Serialization
-
-- `serialize(data)` - Serialize to JSON (async)
-- `serializeSync(data)` - Serialize to JSON (sync)
-- `deserialize(json)` - Deserialize from JSON (async)
-- `deserializeSync(json)` - Deserialize from JSON (sync)
+```ts
+interface ToHttpRoutesOptions {
+  document?: DocumentOptions;
+  app?: () => Element.Element<HTMLElement | SVGElement>;  // Root app component
+}
+```

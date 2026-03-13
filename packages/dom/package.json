@@ -1,6 +1,6 @@
 {
   "name": "@effex/dom",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "DOM rendering for Effex - a reactive UI framework built on Effect.ts",
   "type": "module",
   "license": "MIT",
@@ -28,6 +28,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./client": {
+      "types": "./dist/client/index.d.ts",
+      "import": "./dist/client/index.js",
+      "require": "./dist/client/index.cjs"
     },
     "./server": {
       "types": "./dist/server/index.d.ts",

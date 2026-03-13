@@ -1,7 +1,14 @@
-import { Effect, Option, Scope, SubscriptionRef } from "effect";
+import {
+  Effect,
+  Option,
+  Pipeable,
+  Scope,
+  Stream,
+  SubscriptionRef,
+} from "effect";
 
-import { Readable as ReadableNS, type Readable } from "./Readable.js";
-import type { Signal } from "./Signal.js";
+import { Readable, TypeId as ReadableTypeId } from "./Readable.js";
+import { Signal, SignalTypeId } from "./Signal.js";
 
 /**
  * A reactive array that extends Signal with array-specific mutation methods.
@@ -24,7 +31,7 @@ import type { Signal } from "./Signal.js";
  * each(todos, { container: () => $.ul(), key: t => t.id, render: renderTodo })
  * ```
  */
-export interface SignalArray<T> extends Signal<readonly T[]> {
+export interface SignalArray<T> extends Signal.Signal<readonly T[]> {
   /**
    * Add one or more elements to the end of the array.
    */
@@ -100,7 +107,7 @@ export interface SignalArray<T> extends Signal<readonly T[]> {
   /**
    * Reactive length of the array.
    */
-  readonly length: Readable<number>;
+  readonly length: Readable.Readable<number>;
 }
 
 /**
@@ -115,7 +122,8 @@ export const make = <T>(
     // Use a mutable array internally
     const ref = yield* SubscriptionRef.make<T[]>([...initial]);
 
-    const getChanges = () => ref.changes;
+    // Drop first emission from SubscriptionRef.changes (it emits current value on subscription)
+    const getChanges = () => Stream.drop(ref.changes, 1);
 
     // Helper to trigger update after mutation
     const notify = Effect.gen(function* () {
@@ -124,17 +132,25 @@ export const make = <T>(
     });
 
     // Build the base Readable
-    const readable = ReadableNS.make(
+    const readable = Readable.make(
       Effect.map(SubscriptionRef.get(ref), (arr) => arr as readonly T[]),
       () => getChanges(),
     );
 
     const signalArray: SignalArray<T> = {
+      // TypeIds
+      [ReadableTypeId]: ReadableTypeId,
+      [SignalTypeId]: SignalTypeId,
+
+      // Pipeable
+      pipe() {
+        return Pipeable.pipeArguments(this, arguments);
+      },
+
       // Readable interface
       get: readable.get,
       changes: readable.changes,
       values: readable.values,
-      map: readable.map,
 
       // Signal interface
       set: (arr) =>
@@ -273,7 +289,7 @@ export const make = <T>(
         }),
 
       // Derived readable
-      length: readable.map((arr) => arr.length),
+      length: readable.pipe(Readable.map((arr) => arr.length)),
     };
 
     return signalArray;

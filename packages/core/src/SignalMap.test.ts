@@ -13,7 +13,7 @@ describe("Signal.Map", () => {
       runTest(
         Effect.gen(function* () {
           const map = yield* Signal.Map.make<string, number>();
-          const value = yield* map.readable.get;
+          const value = yield* map.get;
           expect(value.size).toBe(0);
         }),
       ));
@@ -26,8 +26,8 @@ describe("Signal.Map", () => {
             ["b", 2],
           ]);
           const map = yield* Signal.Map.make(initial);
-          const a = yield* map.get("a").get;
-          const b = yield* map.get("b").get;
+          const a = yield* map.at("a").get;
+          const b = yield* map.at("b").get;
           expect(Option.getOrThrow(a)).toBe(1);
           expect(Option.getOrThrow(b)).toBe(2);
         }),
@@ -40,7 +40,7 @@ describe("Signal.Map", () => {
             ["x", 10],
             ["y", 20],
           ]);
-          const x = yield* map.get("x").get;
+          const x = yield* map.at("x").get;
           expect(Option.getOrThrow(x)).toBe(10);
         }),
       ));
@@ -52,7 +52,7 @@ describe("Signal.Map", () => {
         Effect.gen(function* () {
           const map = yield* Signal.Map.make<string, number>();
           yield* map.set("key", 42);
-          const value = yield* map.get("key").get;
+          const value = yield* map.at("key").get;
           expect(Option.getOrThrow(value)).toBe(42);
         }),
       ));
@@ -63,11 +63,14 @@ describe("Signal.Map", () => {
           const map = yield* Signal.Map.make<string, number>();
           const changes: number[] = [];
 
-          const fiber = yield* map.readable.changes.pipe(
+          const fiber = yield* map.changes.pipe(
             Stream.take(1),
             Stream.runForEach((m) => Effect.sync(() => changes.push(m.size))),
             Effect.fork,
           );
+
+          // Yield to let the fiber subscribe before mutating
+          yield* Effect.yieldNow();
 
           yield* map.set("a", 1);
           yield* Effect.yieldNow();
@@ -78,12 +81,12 @@ describe("Signal.Map", () => {
       ));
   });
 
-  describe("get", () => {
+  describe("at", () => {
     it("should return Readable with Some for existing key", () =>
       runTest(
         Effect.gen(function* () {
           const map = yield* Signal.Map.make<string, number>([["a", 1]]);
-          const value = yield* map.get("a").get;
+          const value = yield* map.at("a").get;
           expect(Option.isSome(value)).toBe(true);
           expect(Option.getOrThrow(value)).toBe(1);
         }),
@@ -93,7 +96,7 @@ describe("Signal.Map", () => {
       runTest(
         Effect.gen(function* () {
           const map = yield* Signal.Map.make<string, number>();
-          const value = yield* map.get("missing").get;
+          const value = yield* map.at("missing").get;
           expect(Option.isNone(value)).toBe(true);
         }),
       ));
@@ -102,7 +105,7 @@ describe("Signal.Map", () => {
       runTest(
         Effect.gen(function* () {
           const map = yield* Signal.Map.make<string, number>();
-          const readable = map.get("a");
+          const readable = map.at("a");
 
           // Initially None
           const before = yield* readable.get;
@@ -116,12 +119,12 @@ describe("Signal.Map", () => {
       ));
   });
 
-  describe("getOrElse", () => {
+  describe("atOrElse", () => {
     it("should return value for existing key", () =>
       runTest(
         Effect.gen(function* () {
           const map = yield* Signal.Map.make<string, number>([["a", 1]]);
-          const value = yield* map.getOrElse("a", 0).get;
+          const value = yield* map.atOrElse("a", 0).get;
           expect(value).toBe(1);
         }),
       ));
@@ -130,7 +133,7 @@ describe("Signal.Map", () => {
       runTest(
         Effect.gen(function* () {
           const map = yield* Signal.Map.make<string, number>();
-          const value = yield* map.getOrElse("missing", 99).get;
+          const value = yield* map.atOrElse("missing", 99).get;
           expect(value).toBe(99);
         }),
       ));
@@ -139,7 +142,7 @@ describe("Signal.Map", () => {
       runTest(
         Effect.gen(function* () {
           const map = yield* Signal.Map.make<string, number>();
-          const readable = map.getOrElse("a", 0);
+          const readable = map.atOrElse("a", 0);
 
           // Initially fallback
           const before = yield* readable.get;
@@ -153,12 +156,12 @@ describe("Signal.Map", () => {
       ));
   });
 
-  describe("getEffect", () => {
+  describe("atEffect", () => {
     it("should return Some for existing key", () =>
       runTest(
         Effect.gen(function* () {
           const map = yield* Signal.Map.make<string, number>([["a", 1]]);
-          const value = yield* map.getEffect("a");
+          const value = yield* map.atEffect("a");
           expect(Option.isSome(value)).toBe(true);
           expect(Option.getOrThrow(value)).toBe(1);
         }),
@@ -168,7 +171,7 @@ describe("Signal.Map", () => {
       runTest(
         Effect.gen(function* () {
           const map = yield* Signal.Map.make<string, number>();
-          const value = yield* map.getEffect("missing");
+          const value = yield* map.atEffect("missing");
           expect(Option.isNone(value)).toBe(true);
         }),
       ));
@@ -281,8 +284,8 @@ describe("Signal.Map", () => {
           const map = yield* Signal.Map.make<string, number>([["a", 1]]);
           yield* map.replace(new Map([["x", 100]]));
 
-          const a = yield* map.get("a").get;
-          const x = yield* map.get("x").get;
+          const a = yield* map.at("a").get;
+          const x = yield* map.at("x").get;
           expect(Option.isNone(a)).toBe(true);
           expect(Option.getOrThrow(x)).toBe(100);
         }),
@@ -353,7 +356,7 @@ describe("Signal.Map", () => {
       ));
   });
 
-  describe("values", () => {
+  describe("valuesArray", () => {
     it("should return values as array", () =>
       runTest(
         Effect.gen(function* () {
@@ -361,20 +364,20 @@ describe("Signal.Map", () => {
             ["a", 1],
             ["b", 2],
           ]);
-          const values = yield* map.values.get;
+          const values = yield* map.valuesArray.get;
           expect(values).toEqual([1, 2]);
         }),
       ));
   });
 
-  describe("readable", () => {
+  describe("Readable interface", () => {
     it("should be usable with Readable.combine", () =>
       runTest(
         Effect.gen(function* () {
           const map = yield* Signal.Map.make<string, number>([["a", 1]]);
           const count = yield* Signal.make(10);
 
-          const combined = combine([map.readable, count] as const);
+          const combined = combine([map, count] as const);
 
           const [m, c] = yield* combined.get;
           expect(m.get("a")).toBe(1);

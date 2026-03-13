@@ -1,56 +1,26 @@
 /**
  * @effex/vite-plugin
  *
- * Vite plugin for file-based routing in Effex applications.
+ * Vite plugin for Effex Platform SSR applications.
+ *
+ * `effexPlatform()` provides:
+ * - Server-code stripping from client builds (loaders + handlers)
+ * - SSR dev server with HMR (when `entry` is provided)
  *
  * @example
  * ```ts
  * // vite.config.ts
  * import { defineConfig } from "vite";
- * import { effexRoutes } from "@effex/vite-plugin";
+ * import { effexPlatform } from "@effex/vite-plugin";
  *
  * export default defineConfig({
  *   plugins: [
- *     effexRoutes({
- *       routesDir: "src/routes",
- *       outputPath: "src/generated/routes.ts",
- *     }),
+ *     effexPlatform({ entry: "src/server-entry.ts" }),
  *   ],
  * });
- * ```
- *
- * @example
- * ```ts
- * // src/routes/users.$id.tsx
- * import { Effect, Schema } from "effect";
- * import { Component, div, h1 } from "@effex/dom";
- *
- * export const params = Schema.Struct({ id: Schema.String });
- *
- * export const loader = (params) =>
- *   Effect.gen(function* () {
- *     return yield* UserService.getById(params.id);
- *   });
- *
- * const UserPage = (): Element.Element<HTMLDivElement> =>
- *   Effect.gen(function* () {
- *     const user = yield* RouteLoader.loaderData();
- *     return yield* div([h1([user.name])]);
- *   });
- *
- * export default UserPage;
  * ```
  *
  * @packageDocumentation
  */
 
-export { effexRoutes } from "./plugin.js";
-export { effexSSR } from "./ssr.js";
-export { effexSSG } from "./ssg.js";
-export type {
-  EffexPluginOptions,
-  ScannedRoute,
-  RouteExports,
-} from "./types.js";
-export type { EffexSSROptions } from "./ssr.js";
-export type { EffexSSGOptions } from "./ssg.js";
+export { effexPlatform, type EffexPlatformOptions } from "./plugin.js";

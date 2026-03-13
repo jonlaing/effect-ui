@@ -1,351 +1,418 @@
-import * as fs from "node:fs";
 import * as path from "node:path";
 
 import type { Plugin, ViteDevServer } from "vite";
 
-import { generateRoutes } from "./generator.js";
-import { scanRoutes } from "./scanner.js";
-import type { EffexPluginOptions } from "./types.js";
-import {
-  filePathToRouteName,
-  filePathToRoutePath,
-  routeNameToComponentImportName,
-} from "./utils/pathConversion.js";
-
-const DEFAULT_ROUTES_DIR = "src/routes";
-const DEFAULT_OUTPUT_PATH = "src/generated/routes.ts";
-
 /**
- * Generate scaffold content for a new route file.
- *
- * @param filePath - File path relative to routes directory
- * @returns Scaffold code for the route file
+ * Options for the Effex Platform Vite plugin.
  */
-export const generateScaffold = (filePath: string): string => {
-  const routePath = filePathToRoutePath(filePath);
-  const routeName = filePathToRouteName(filePath);
-  const componentName = routeNameToComponentImportName(routeName).replace(
-    /Component$/,
-    "Page",
-  );
-
-  // Check if route has params
-  const hasParams = routePath?.includes(":") ?? false;
-
-  // Build imports
-  const imports = ['import { Effect } from "effect";'];
-  imports.push('import { Route } from "@effex/router";');
-  imports.push('import { component, $ } from "@effex/dom";');
-
-  if (hasParams) {
-    imports.push('import { Schema } from "effect";');
-  }
-
-  // Build route definition
-  let routeDefine: string;
-  if (hasParams && routePath) {
-    // Extract param names from path
-    const paramNames = routePath.match(/:(\w+)/g)?.map((p) => p.slice(1)) ?? [];
-    const schemaFields = paramNames
-      .map((name) => `  ${name}: Schema.String,`)
-      .join("\n");
-
-    routeDefine = `export const route = Route.define({
-  params: Schema.Struct({
-${schemaFields}
-  }),
-});`;
-  } else {
-    routeDefine = `export const route = Route.define();`;
-  }
-
-  // Build component
-  let componentBody: string;
-  if (hasParams) {
-    componentBody = `export default component("${componentName}", () =>
-  Effect.gen(function* () {
-    const params = yield* route.params();
-
-    return yield* $.div([
-      $.h1(["${componentName}"]),
-    ]);
-  })
-);`;
-  } else {
-    componentBody = `export default component("${componentName}", () =>
-  Effect.gen(function* () {
-    return yield* $.div([
-      $.h1(["${componentName}"]),
-    ]);
-  })
-);`;
-  }
-
-  return `${imports.join("\n")}
-
-${routeDefine}
-
-${componentBody}
-`;
-};
+export interface EffexPlatformOptions {
+  /**
+   * Path to the SSR entry module that exports a `render` function.
+   * The render function should have the signature: (request: Request) => Promise<Response>
+   *
+   * When provided, the plugin runs an SSR dev server with HMR in dev mode.
+   * When omitted, only the server-code stripping transform is applied.
+   *
+   * @example "src/vite-entry.ts"
+   */
+  readonly entry?: string;
+  /**
+   * File patterns to apply the server-code stripping transform to.
+   * Defaults to all .ts/.tsx/.js/.jsx files.
+   */
+  readonly include?: RegExp;
+  /**
+   * File patterns to exclude from the transform.
+   */
+  readonly exclude?: RegExp;
+}
 
 /**
- * Vite plugin for file-based routing in Effex applications.
+ * Vite plugin for @effex/platform SSR applications.
  *
- * Scans a routes directory for route files and generates a typed routes object
- * at build time. Watches for changes in development mode.
+ * Provides two capabilities:
  *
- * @param options - Plugin configuration
+ * 1. **Server-code stripping** (build time) — Removes loader and handler function
+ *    bodies from client builds so server-only dependencies (database services, etc.)
+ *    don't get bundled into the client.
+ *    - `Route.get(loader, render)` → `Route.get(null, render)`
+ *    - `Route.post("key", handler)` → `Route.post("key", () => { throw ... })`
+ *
+ * 2. **SSR dev server** (dev mode, when `entry` is provided) — Intercepts requests,
+ *    renders pages via `vite.ssrLoadModule`, and injects Vite's HMR client.
+ *
+ * Only needed when using @effex/platform for SSR. Pure SPAs that run loaders
+ * client-side should NOT use this plugin.
  *
  * @example
  * ```ts
  * // vite.config.ts
  * import { defineConfig } from "vite";
- * import { effexRoutes } from "@effex/vite-plugin";
+ * import { effexPlatform } from "@effex/vite-plugin";
  *
  * export default defineConfig({
  *   plugins: [
- *     effexRoutes({
- *       routesDir: "src/routes",
- *       outputPath: "src/generated/routes.ts",
- *     }),
+ *     effexPlatform({ entry: "src/server-entry.ts" }),
  *   ],
  * });
  * ```
  */
-export const effexRoutes = (options: EffexPluginOptions = {}): Plugin => {
-  const routesDir = options.routesDir ?? DEFAULT_ROUTES_DIR;
-  const outputPath = options.outputPath ?? DEFAULT_OUTPUT_PATH;
-
+export const effexPlatform = (options: EffexPlatformOptions = {}): Plugin => {
+  const include = options.include ?? /\.(tsx?|jsx?)$/;
+  const exclude = options.exclude;
+  let isSsr = false;
   let root: string;
-  let absoluteRoutesDir: string;
-  let absoluteOutputPath: string;
-  let isGenerating = false;
-
-  const generateRoutesFile = async (): Promise<void> => {
-    // Prevent concurrent generation
-    if (isGenerating) return;
-    isGenerating = true;
-
-    try {
-      // Scan route files
-      const routes = await scanRoutes(absoluteRoutesDir, {
-        extensions: options.extensions,
-      });
-
-      // Generate code
-      const code = generateRoutes(routes, {
-        routesDir: absoluteRoutesDir,
-        outputPath: absoluteOutputPath,
-      });
-
-      // Ensure output directory exists
-      const outputDir = path.dirname(absoluteOutputPath);
-      await fs.promises.mkdir(outputDir, { recursive: true });
-
-      // Check if content changed to avoid unnecessary writes
-      let existingContent = "";
-      try {
-        existingContent = await fs.promises.readFile(
-          absoluteOutputPath,
-          "utf-8",
-        );
-      } catch {
-        // File doesn't exist yet
-      }
-
-      if (existingContent !== code) {
-        await fs.promises.writeFile(absoluteOutputPath, code, "utf-8");
-        console.log(`[effex-routes] Generated ${outputPath}`);
-      }
-    } catch (error) {
-      console.error("[effex-routes] Error generating routes:", error);
-    } finally {
-      isGenerating = false;
-    }
-  };
+  let entryPath: string | null = null;
 
   return {
-    name: "effex-routes",
+    name: "effex-platform",
 
     configResolved(config) {
       root = config.root;
-      absoluteRoutesDir = path.resolve(root, routesDir);
-      absoluteOutputPath = path.resolve(root, outputPath);
-    },
-
-    async buildStart() {
-      await generateRoutesFile();
-    },
-
-    configureServer(server: ViteDevServer) {
-      // Watch routes directory for changes
-      server.watcher.add(absoluteRoutesDir);
-
-      const handleAdd = async (addedPath: string) => {
-        // Only react to changes in routes directory
-        if (!addedPath.startsWith(absoluteRoutesDir)) return;
-
-        // Ignore test files
-        if (
-          addedPath.includes(".test.") ||
-          addedPath.includes(".spec.") ||
-          addedPath.includes("__tests__")
-        ) {
-          return;
-        }
-
-        // Skip non-route files
-        if (!/\.(tsx?|jsx?)$/.test(addedPath)) return;
-
-        // Scaffold new empty files if enabled
-        if (options.scaffold) {
-          try {
-            const content = await fs.promises.readFile(addedPath, "utf-8");
-            // Only scaffold if file is empty or just whitespace
-            if (content.trim().length === 0) {
-              const relativePath = path.relative(absoluteRoutesDir, addedPath);
-              const scaffold = generateScaffold(relativePath);
-              await fs.promises.writeFile(addedPath, scaffold, "utf-8");
-              console.log(`[effex-routes] Scaffolded ${relativePath}`);
-            }
-          } catch {
-            // File might not exist yet or be locked, ignore
-          }
-        }
-
-        // Regenerate routes
-        await generateRoutesFile();
-
-        // Invalidate the generated routes module
-        const mod = server.moduleGraph.getModuleById(absoluteOutputPath);
-        if (mod) {
-          server.moduleGraph.invalidateModule(mod);
-        }
-      };
-
-      const handleChange = async (changedPath: string) => {
-        // Only react to changes in routes directory
-        if (!changedPath.startsWith(absoluteRoutesDir)) return;
-
-        // Ignore test files
-        if (
-          changedPath.includes(".test.") ||
-          changedPath.includes(".spec.") ||
-          changedPath.includes("__tests__")
-        ) {
-          return;
-        }
-
-        // Regenerate routes
-        await generateRoutesFile();
-
-        // Invalidate the generated routes module
-        const mod = server.moduleGraph.getModuleById(absoluteOutputPath);
-        if (mod) {
-          server.moduleGraph.invalidateModule(mod);
-        }
-      };
-
-      server.watcher.on("add", handleAdd);
-      server.watcher.on("unlink", handleChange);
-      server.watcher.on("change", handleChange);
-    },
-
-    async handleHotUpdate({ file, server }) {
-      // Only handle changes in routes directory
-      if (!file.startsWith(absoluteRoutesDir)) return;
-
-      // Ignore test files
-      if (
-        file.includes(".test.") ||
-        file.includes(".spec.") ||
-        file.includes("__tests__")
-      ) {
-        return;
-      }
-
-      // Regenerate routes
-      await generateRoutesFile();
-
-      // Invalidate the generated routes module
-      const mod = server.moduleGraph.getModuleById(absoluteOutputPath);
-      if (mod) {
-        server.moduleGraph.invalidateModule(mod);
+      isSsr = !!config.build?.ssr;
+      if (options.entry) {
+        entryPath = path.resolve(root, options.entry);
       }
     },
 
-    transform(code, id) {
-      // Only transform files in routes directory
-      if (!id.startsWith(absoluteRoutesDir)) return null;
+    // -------------------------------------------------------------------------
+    // Server-code stripping (client builds only)
+    // -------------------------------------------------------------------------
 
-      // Skip non-JS/TS files
-      if (!/\.(tsx?|jsx?)$/.test(id)) return null;
+    transform(code, id, options) {
+      // Never strip server code in SSR builds or SSR-loaded modules (dev)
+      if (isSsr || options?.ssr) return null;
 
-      // Skip test files
+      // Filter by include/exclude patterns
+      if (!include.test(id)) return null;
+      if (exclude && exclude.test(id)) return null;
+
+      // Quick bail — only transform files that reference Route
       if (
-        id.includes(".test.") ||
-        id.includes(".spec.") ||
-        id.includes("__tests__")
+        !code.includes("Route.get") &&
+        !code.includes("Route.post") &&
+        !code.includes("Route.put") &&
+        !code.includes("Route.del")
       ) {
         return null;
       }
 
-      // Check if file contains Route.define
-      if (!code.includes("Route.define")) return null;
-
-      // Calculate route path from file path
-      const relativePath = path.relative(absoluteRoutesDir, id);
-      const routePath = filePathToRoutePath(relativePath);
-
-      // Skip layout files (they return null)
-      if (routePath === null) return null;
-
-      // Transform Route.define calls to inject __path
-      const transformed = injectRouteDefinePath(code, routePath);
-
+      const transformed = stripServerCode(code);
       if (transformed === code) return null;
 
-      return {
-        code: transformed,
-        map: null, // TODO: generate source map for better debugging
+      return { code: transformed, map: null };
+    },
+
+    // -------------------------------------------------------------------------
+    // SSR dev server (dev mode only, when entry is provided)
+    // -------------------------------------------------------------------------
+
+    configureServer(server: ViteDevServer) {
+      if (!entryPath) return;
+
+      const entry = entryPath;
+
+      // Return a function to run after Vite's internal middleware
+      return () => {
+        server.middlewares.use(async (req, res, next) => {
+          // Use originalUrl to get the URL before Vite's historyFallback rewrites it
+          const url =
+            (req as { originalUrl?: string }).originalUrl || req.url || "/";
+
+          // Normalize index.html to root path
+          const normalizedUrl =
+            url === "/" || url === "/index.html" ? "/" : url;
+
+          // Skip Vite internal requests and static assets
+          if (
+            url.startsWith("/@") ||
+            url.startsWith("/__vite") ||
+            url.startsWith("/node_modules/") ||
+            url.startsWith("/src/") ||
+            (url.includes(".") && !url.endsWith("/") && url !== "/index.html")
+          ) {
+            return next();
+          }
+
+          try {
+            // Load the server entry module with HMR
+            const serverModule = await server.ssrLoadModule(entry);
+
+            if (typeof serverModule.render !== "function") {
+              throw new Error(
+                `Server entry "${options.entry}" must export a "render(request: Request) => Promise<Response>" function`,
+              );
+            }
+
+            // Create a Web Request from the Node request
+            const protocol = "http";
+            const host = req.headers.host || "localhost";
+            const webUrl = new URL(normalizedUrl, `${protocol}://${host}`);
+
+            // Handle request body for POST/PUT/etc
+            let body: string | undefined;
+            if (req.method !== "GET" && req.method !== "HEAD") {
+              body = await new Promise<string>((resolve) => {
+                let data = "";
+                req.on("data", (chunk: string) => (data += chunk));
+                req.on("end", () => resolve(data));
+              });
+            }
+
+            const webRequest = new Request(webUrl.href, {
+              method: req.method,
+              headers: Object.entries(req.headers).reduce(
+                (acc, [key, value]) => {
+                  if (value)
+                    acc[key] = Array.isArray(value) ? value.join(", ") : value;
+                  return acc;
+                },
+                {} as Record<string, string>,
+              ),
+              body: body,
+            });
+
+            // Call the render function — returns a Web Response
+            const response: Response = await serverModule.render(webRequest);
+
+            // Forward status and headers
+            res.statusCode = response.status;
+            response.headers.forEach((value, key) => {
+              res.setHeader(key, value);
+            });
+
+            const responseBody = await response.text();
+            const contentType = response.headers.get("content-type") || "";
+
+            // Inject Vite's HMR client into HTML responses
+            if (contentType.includes("text/html")) {
+              const transformedHtml = await server.transformIndexHtml(
+                normalizedUrl,
+                responseBody,
+              );
+              // Recalculate content-length since transformIndexHtml may inject scripts
+              res.setHeader(
+                "content-length",
+                Buffer.byteLength(transformedHtml),
+              );
+              res.end(transformedHtml);
+            } else {
+              res.end(responseBody);
+            }
+          } catch (e) {
+            server.ssrFixStacktrace(e as Error);
+            console.error("[effex-platform] Error:", e);
+
+            res.statusCode = 500;
+            res.setHeader("Content-Type", "text/html");
+            res.end(`
+              <!DOCTYPE html>
+              <html>
+                <head><title>SSR Error</title></head>
+                <body>
+                  <h1>Server Error</h1>
+                  <pre style="color: red; white-space: pre-wrap;">${escapeHtml((e as Error).stack || (e as Error).message)}</pre>
+                </body>
+              </html>
+            `);
+          }
+        });
       };
     },
   };
 };
 
+// =============================================================================
+// Server-code stripping internals
+// =============================================================================
+
 /**
- * Inject __path into Route.define calls.
+ * Strip server-only code from route definitions.
  *
- * Handles these patterns:
- * - Route.define() -> Route.define({ __path: "/..." })
- * - Route.define({}) -> Route.define({ __path: "/..." })
- * - Route.define({ params: ... }) -> Route.define({ __path: "/...", params: ... })
- *
- * @param code - Source code
- * @param routePath - The route path to inject
- * @returns Transformed code
+ * Transforms:
+ * - `Route.get(loaderFn, renderFn)` → `Route.get(null, renderFn)`
+ * - `Route.post("key", handlerFn)` → `Route.post("key", () => { throw new Error("server only"); })`
+ * - Same for Route.put and Route.del
  */
-export const injectRouteDefinePath = (
-  code: string,
-  routePath: string,
-): string => {
-  // Pattern to match Route.define with optional options
-  // This handles:
-  // - Route.define()
-  // - Route.define({...})
-  const pattern = /Route\.define\s*\(\s*(\{)?/g;
-
-  return code.replace(pattern, (_match, hasOpenBrace) => {
-    const escapedPath = JSON.stringify(routePath);
-
-    if (hasOpenBrace) {
-      // Has opening brace: Route.define({ -> Route.define({ __path: "...",
-      return `Route.define({ __path: ${escapedPath}, `;
-    } else {
-      // No arguments or empty parens: Route.define() -> Route.define({ __path: "..." })
-      // But we need to check if there's a closing paren right after
-      return `Route.define({ __path: ${escapedPath} }`;
-    }
-  });
+export const stripServerCode = (code: string): string => {
+  let result = code;
+  result = stripLoaders(result);
+  result = stripHandlers(result);
+  return result;
 };
+
+/**
+ * Replace the first argument (loader) in Route.get() calls with null.
+ */
+const stripLoaders = (code: string): string => {
+  const pattern = /Route\.get\s*\(/g;
+  let result = code;
+  let match: RegExpExecArray | null;
+  let offset = 0;
+
+  pattern.lastIndex = 0;
+
+  while ((match = pattern.exec(code)) !== null) {
+    const callStart = match.index + offset;
+    const argsStart = callStart + match[0].length;
+
+    const firstArgEnd = findArgEnd(result, argsStart);
+    if (firstArgEnd === -1) continue;
+
+    const before = result.slice(0, argsStart);
+    const after = result.slice(firstArgEnd);
+    const replacement = "null";
+    const oldLen = firstArgEnd - argsStart;
+    result = before + replacement + after;
+    offset += replacement.length - oldLen;
+
+    pattern.lastIndex = match.index + match[0].length;
+  }
+
+  return result;
+};
+
+/**
+ * Replace the handler function (second argument) in Route.post/put/del() calls with a no-op.
+ * Keeps the key (first argument) since Outlet reads it to compute action paths.
+ */
+const stripHandlers = (code: string): string => {
+  const pattern = /Route\.(post|put|del)\s*\(/g;
+  let result = code;
+  let match: RegExpExecArray | null;
+  let offset = 0;
+
+  pattern.lastIndex = 0;
+
+  while ((match = pattern.exec(code)) !== null) {
+    const callStart = match.index + offset;
+    const argsStart = callStart + match[0].length;
+
+    const firstArgEnd = findArgEnd(result, argsStart);
+    if (firstArgEnd === -1) continue;
+
+    let secondArgStart = firstArgEnd;
+    while (
+      secondArgStart < result.length &&
+      /[\s,]/.test(result[secondArgStart])
+    ) {
+      secondArgStart++;
+    }
+
+    const secondArgEnd = findArgEnd(result, secondArgStart);
+    if (secondArgEnd === -1) continue;
+
+    const before = result.slice(0, secondArgStart);
+    const after = result.slice(secondArgEnd);
+    const replacement = '() => { throw new Error("server only"); }';
+    const oldLen = secondArgEnd - secondArgStart;
+    result = before + replacement + after;
+    offset += replacement.length - oldLen;
+
+    pattern.lastIndex = match.index + match[0].length;
+  }
+
+  return result;
+};
+
+/**
+ * Find the end position of a single argument starting at `start`.
+ * Handles nested parens, braces, brackets, template literals, and strings.
+ * Returns the index right after the argument (at the comma or closing paren).
+ */
+const findArgEnd = (code: string, start: number): number => {
+  let depth = 0;
+  let i = start;
+
+  while (i < code.length) {
+    const ch = code[i];
+
+    if (ch === '"' || ch === "'" || ch === "`") {
+      i = skipString(code, i);
+      continue;
+    }
+
+    if (ch === "/" && code[i + 1] === "/") {
+      i = code.indexOf("\n", i);
+      if (i === -1) return -1;
+      i++;
+      continue;
+    }
+
+    if (ch === "/" && code[i + 1] === "*") {
+      i = code.indexOf("*/", i);
+      if (i === -1) return -1;
+      i += 2;
+      continue;
+    }
+
+    if (ch === "(" || ch === "{" || ch === "[") {
+      depth++;
+    } else if (ch === ")" || ch === "}" || ch === "]") {
+      if (depth === 0) {
+        return i;
+      }
+      depth--;
+    } else if (ch === "," && depth === 0) {
+      return i;
+    }
+
+    i++;
+  }
+
+  return -1;
+};
+
+/**
+ * Skip past a string literal (single-quoted, double-quoted, or template).
+ * Returns the index after the closing quote.
+ */
+const skipString = (code: string, start: number): number => {
+  const quote = code[start];
+  let i = start + 1;
+
+  while (i < code.length) {
+    const ch = code[i];
+
+    if (ch === "\\") {
+      i += 2;
+      continue;
+    }
+
+    if (quote === "`" && ch === "$" && code[i + 1] === "{") {
+      i += 2;
+      let templateDepth = 1;
+      while (i < code.length && templateDepth > 0) {
+        if (code[i] === "{") templateDepth++;
+        else if (code[i] === "}") templateDepth--;
+        else if (code[i] === '"' || code[i] === "'" || code[i] === "`") {
+          i = skipString(code, i);
+          continue;
+        }
+        i++;
+      }
+      continue;
+    }
+
+    if (ch === quote) {
+      return i + 1;
+    }
+
+    i++;
+  }
+
+  return i;
+};
+
+// =============================================================================
+// Utilities
+// =============================================================================
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}

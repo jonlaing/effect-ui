@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 
-import type { AnimationEndResult, AnimationHook } from "./types";
+import * as Element from "../Element/index.js";
+import type { AnimationEndResult, AnimationHook } from "./types.js";
 
 const DEFAULT_TIMEOUT = 5000;
 
@@ -14,31 +15,11 @@ export const prefersReducedMotion = (): boolean =>
 /**
  * Parse space-separated class string into array
  */
-const parseClasses = (classes: string): string[] =>
+export const parseClasses = (classes: string): string[] =>
   classes
     .split(/\s+/)
     .map((c) => c.trim())
     .filter((c) => c.length > 0);
-
-/**
- * Add CSS classes to an element
- */
-export const addClasses = (element: HTMLElement, classes: string): void => {
-  const parsed = parseClasses(classes);
-  if (parsed.length > 0) {
-    element.classList.add(...parsed);
-  }
-};
-
-/**
- * Remove CSS classes from an element
- */
-export const removeClasses = (element: HTMLElement, classes: string): void => {
-  const parsed = parseClasses(classes);
-  if (parsed.length > 0) {
-    element.classList.remove(...parsed);
-  }
-};
 
 /**
  * Check if element has any active CSS animations or transitions
@@ -95,7 +76,19 @@ export const waitForAnimationEvent = (
 
       const handleAnimationEnd = () => resolve({ endedBy: "animation" });
       const handleTransitionEnd = () => resolve({ endedBy: "transition" });
-      const handleTimeout = () => resolve({ endedBy: "timeout" });
+      const handleTimeout = () => {
+        if (process.env.NODE_ENV !== "production") {
+          console.warn(
+            "[effex] Animation timeout reached. The transitionend/animationend event " +
+              "did not fire. This usually means your CSS classes are missing the " +
+              "transition property. With Tailwind, ensure you have BOTH transition-* " +
+              "(e.g., transition-opacity) AND duration-* (e.g., duration-150). " +
+              "You may also need the ! prefix for specificity (e.g., !opacity-100).",
+            element,
+          );
+        }
+        resolve({ endedBy: "timeout" });
+      };
 
       element.addEventListener("animationend", handleAnimationEnd, {
         once: true,
@@ -115,24 +108,43 @@ export const waitForAnimationEvent = (
 
 /**
  * Execute an animation lifecycle hook.
- * Wraps the element in an Effect so hooks can use pipeable helpers.
+ * The element is passed directly so hooks can use Element combinators.
  */
-export const runHook = (
+export const runHook = <E, R>(
   hook: AnimationHook | undefined,
-  element: HTMLElement,
-): Effect.Effect<void> => {
-  if (!hook) return Effect.void;
+  element: Element.Element<HTMLElement, E, R>,
+): Effect.Effect<void, E, R> => {
+  if (!hook) return Effect.void as Effect.Effect<void, E, R>;
 
-  // Wrap element in Effect so hooks can pipe Element helpers
-  return Effect.asVoid(hook(Effect.succeed(element)));
+  // Pass element directly - hooks can pipe Element combinators
+  // Cast needed because AnimationHook has simpler type signature
+  return Effect.asVoid(
+    hook(element as unknown as Effect.Effect<HTMLElement>),
+  ) as Effect.Effect<void, E, R>;
 };
 
 /**
- * Force a browser reflow to ensure CSS changes take effect before animation starts
+ * Force a browser reflow to ensure CSS changes take effect before animation starts.
+ * Uses tap to access the raw element and trigger layout calculation.
  */
-export const forceReflow = (element: HTMLElement): void => {
-  // Reading offsetHeight forces the browser to calculate layout
-  if (Object.hasOwn(element, "offsetHeight")) {
-    void (element as HTMLElement).offsetHeight;
-  }
-};
+export const forceReflow = <E, R>(
+  element: Element.Element<HTMLElement, E, R>,
+): Effect.Effect<void, E, R> =>
+  Effect.asVoid(
+    Element.tap(element, (el: HTMLElement) => {
+      // Reading offsetHeight forces the browser to calculate layout
+      void el.offsetHeight;
+    }),
+  ) as Effect.Effect<void, E, R>;
+
+/**
+ * Wait for animation or transition to complete on an Element.
+ * This is the Element-based version of waitForAnimationEvent.
+ */
+export const waitForAnimationEnd = <E, R>(
+  element: Element.Element<HTMLElement, E, R>,
+  timeout: number = DEFAULT_TIMEOUT,
+): Effect.Effect<AnimationEndResult, E, R> =>
+  Effect.flatMap(element, (el) =>
+    waitForAnimationEvent(el, timeout),
+  ) as Effect.Effect<AnimationEndResult, E, R>;

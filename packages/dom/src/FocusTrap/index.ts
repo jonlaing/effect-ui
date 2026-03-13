@@ -1,1 +1,1 @@
-export { FocusTrap, type FocusTrapOptions } from "./FocusTrap";
+export { FocusTrap, type FocusTrapOptions } from "./FocusTrap.js";

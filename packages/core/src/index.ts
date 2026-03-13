@@ -1,61 +1,87 @@
 // Readable - exports both the interface type and namespace (declaration merging)
 export {
   Readable,
+  TypeId as ReadableTypeId,
   type Reactive,
-  isReadable,
-  of,
-  make as makeReadable,
-  map as mapReadable,
-  fromStream,
-  combine,
-  lift,
-} from "./Readable";
+} from "./Readable.js";
 
 // Signal - exports both the interface type and namespace (declaration merging)
 export {
   Signal,
-  type SignalOptions,
+  SignalTypeId,
   SignalRegistry,
   make as makeSignal,
   type SignalArray,
   type SignalMap,
   type SignalSet,
-} from "./Signal";
+  type SignalStruct,
+} from "./Signal.js";
 
-// Derived
-export type {
-  DerivedOptions,
-  AsyncState,
-  AsyncStrategy,
-  AsyncDerivedOptions,
-  AsyncDerived,
-} from "./Derived";
-export { Derived, defaultEquals } from "./Derived";
+// AsyncReadable
+export { AsyncReadable, AsyncReadableTypeId } from "./AsyncReadable.js";
 
-// Reaction
-export { Reaction } from "./Reaction";
+// AsyncCache
+export {
+  AsyncCache,
+  makeAsyncCache,
+  type IAsyncCache,
+  type CacheKey,
+  type CacheKeySegment,
+  type CacheGetOptions,
+} from "./AsyncCache.js";
+
+// Mutation
+export { Mutation, MutationTypeId } from "./Mutation.js";
 
 // Ref
-export type { Ref as RefType } from "./Ref";
-export { Ref } from "./Ref";
+export { Ref } from "./Ref.js";
 
 // Renderer
-export type { Renderer as RendererInterface, Slot } from "./Renderer";
-export { Renderer, RendererContext } from "./Renderer";
+export type { Slot } from "./Renderer.js";
+export { Renderer, RendererContext } from "./Renderer.js";
 
 // Element
-export type { Element, Child } from "./Element";
+export type { Element } from "./Element.js";
+export { MergePropsCtx } from "./Element.js";
 
 // Boundary
-export type { SuspenseOptions, BoundarySuspenseOptions } from "./Boundary";
-export { Boundary, suspense, error } from "./Boundary";
+export type { SuspenseOptions, BoundarySuspenseOptions } from "./Boundary.js";
+export { Boundary } from "./Boundary.js";
+
+// SuspenseBoundaryCtx
+export type { ISuspenseBoundaryCtx } from "./SuspenseBoundaryCtx.js";
+export { SuspenseBoundaryCtx } from "./SuspenseBoundaryCtx.js";
 
 // Transition
 export type {
-  Transition as TransitionType,
   TransitionConfig,
   TransitionTarget,
   GuardedTarget,
   GuardOptions,
-} from "./Transition";
-export { Transition, InvalidTransition } from "./Transition";
+} from "./Transition.js";
+export { Transition, InvalidTransition } from "./Transition.js";
+
+// ControlCtx
+export type { SlotEntry, IControlCtx } from "./ControlCtx.js";
+export { ControlCtx } from "./ControlCtx.js";
+
+// Control
+export type {
+  ReconcileConfig,
+  WhenConfig,
+  MatchCase,
+  MatchConfig,
+  MatchOptionConfig,
+  MatchEitherConfig,
+  EachConfig,
+  RedrawConfig,
+} from "./Control.js";
+export {
+  reconcile,
+  when,
+  match,
+  matchOption,
+  matchEither,
+  each,
+  redraw,
+} from "./Control.js";

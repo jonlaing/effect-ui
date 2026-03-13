@@ -34,3 +34,7 @@ docs/api
 
 # Documentation drafts
 docs-notes
+
+*.pem
+examples/chat
+TODOS.md

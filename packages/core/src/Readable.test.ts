@@ -96,10 +96,11 @@ describe("Readable", () => {
     it("should chain multiple maps", async () => {
       const readable = Readable.make(Effect.succeed(2), () => Stream.empty);
 
-      const mapped = readable
-        .map((n) => n * 2)
-        .map((n) => n + 1)
-        .map((n) => `Value: ${n}`);
+      const mapped = readable.pipe(
+        Readable.map((n) => n * 2),
+        Readable.map((n) => n + 1),
+        Readable.map((n) => `Value: ${n}`),
+      );
 
       const result = await Effect.runPromise(mapped.get);
       expect(result).toBe("Value: 5");
@@ -138,16 +139,16 @@ describe("Readable", () => {
     });
   });
 
-  describe("combine", () => {
+  describe("zipAll", () => {
     it("should combine empty array into empty tuple", async () => {
-      const combined = Readable.combine([]);
+      const combined = Readable.zipAll([]);
       const result = await Effect.runPromise(combined.get);
       expect(result).toEqual([]);
     });
 
     it("should combine single readable", async () => {
       const r1 = Readable.of(42);
-      const combined = Readable.combine([r1]);
+      const combined = Readable.zipAll([r1]);
       const result = await Effect.runPromise(combined.get);
       expect(result).toEqual([42]);
     });
@@ -157,7 +158,7 @@ describe("Readable", () => {
       const r2 = Readable.of(42);
       const r3 = Readable.of(true);
 
-      const combined = Readable.combine([r1, r2, r3]);
+      const combined = Readable.zipAll([r1, r2, r3]);
       const result = await Effect.runPromise(combined.get);
       expect(result).toEqual(["hello", 42, true]);
     });
@@ -167,7 +168,7 @@ describe("Readable", () => {
         const sig1 = yield* Signal.make("a");
         const sig2 = yield* Signal.make(1);
 
-        const combined = Readable.combine([sig1, sig2]);
+        const combined = Readable.zipAll([sig1, sig2]);
 
         // Initial value
         const initial = yield* combined.get;
@@ -206,7 +207,7 @@ describe("Readable", () => {
         const sig1 = yield* Signal.make(1);
         const sig2 = yield* Signal.make(10);
 
-        const combined = Readable.combine([sig1, sig2]);
+        const combined = Readable.zipAll([sig1, sig2]);
 
         // Collect emissions
         const emissions: [number, number][] = [];
@@ -231,6 +232,132 @@ describe("Readable", () => {
         expect(emissions[0]).toEqual([1, 10]); // initial
         expect(emissions[1]).toEqual([2, 10]); // sig1 changed
         expect(emissions[2]).toEqual([2, 20]); // sig2 changed
+      });
+
+      await Effect.runPromise(Effect.scoped(program));
+    });
+  });
+
+  describe("zip", () => {
+    it("should combine two readables into a tuple", async () => {
+      const r1 = Readable.of("hello");
+      const r2 = Readable.of(42);
+
+      const zipped = r1.pipe(Readable.zip(r2));
+      const result = await Effect.runPromise(zipped.get);
+      expect(result).toEqual(["hello", 42]);
+    });
+
+    it("should emit when either readable changes", async () => {
+      const program = Effect.gen(function* () {
+        const sig1 = yield* Signal.make("a");
+        const sig2 = yield* Signal.make(1);
+
+        const zipped = sig1.pipe(Readable.zip(sig2));
+
+        const emissions: [string, number][] = [];
+        yield* Stream.runForEach(zipped.values, (val) =>
+          Effect.sync(() => {
+            emissions.push(val);
+          }),
+        ).pipe(Effect.fork);
+
+        yield* Effect.sleep("30 millis");
+
+        yield* sig1.set("b");
+        yield* Effect.sleep("30 millis");
+
+        expect(emissions.length).toBeGreaterThanOrEqual(2);
+        expect(emissions[0]).toEqual(["a", 1]);
+        expect(emissions[1]).toEqual(["b", 1]);
+      });
+
+      await Effect.runPromise(Effect.scoped(program));
+    });
+  });
+
+  describe("zipWith", () => {
+    it("should combine two readables with a function", async () => {
+      const firstName = Readable.of("John");
+      const lastName = Readable.of("Doe");
+
+      const fullName = firstName.pipe(
+        Readable.zipWith(lastName, (first, last) => `${first} ${last}`),
+      );
+      const result = await Effect.runPromise(fullName.get);
+      expect(result).toBe("John Doe");
+    });
+  });
+
+  describe("normalize", () => {
+    it("should return Readable unchanged", async () => {
+      const readable = Readable.of(42);
+      const normalized = Readable.normalize(readable);
+      expect(normalized).toBe(readable);
+    });
+
+    it("should wrap static value in constant Readable", async () => {
+      const normalized = Readable.normalize(42);
+      const result = await Effect.runPromise(normalized.get);
+      expect(result).toBe(42);
+    });
+  });
+
+  describe("dedupe", () => {
+    it("should filter consecutive duplicates", async () => {
+      const program = Effect.gen(function* () {
+        const sig = yield* Signal.make(1);
+        const deduped = sig.pipe(Readable.dedupe);
+
+        const emissions: number[] = [];
+        yield* Stream.runForEach(deduped.values, (val) =>
+          Effect.sync(() => {
+            emissions.push(val);
+          }),
+        ).pipe(Effect.fork);
+
+        yield* Effect.sleep("20 millis");
+
+        yield* sig.set(1); // duplicate, should be filtered
+        yield* Effect.sleep("20 millis");
+
+        yield* sig.set(2); // new value
+        yield* Effect.sleep("20 millis");
+
+        yield* sig.set(2); // duplicate, should be filtered
+        yield* Effect.sleep("20 millis");
+
+        expect(emissions).toEqual([1, 2]);
+      });
+
+      await Effect.runPromise(Effect.scoped(program));
+    });
+  });
+
+  describe("dedupeWith", () => {
+    it("should filter using custom equality", async () => {
+      const program = Effect.gen(function* () {
+        const sig = yield* Signal.make({ id: 1, name: "John" });
+        const deduped = sig.pipe(Readable.dedupeWith((a, b) => a.id === b.id));
+
+        const emissions: { id: number; name: string }[] = [];
+        yield* Stream.runForEach(deduped.values, (val) =>
+          Effect.sync(() => {
+            emissions.push(val);
+          }),
+        ).pipe(Effect.fork);
+
+        yield* Effect.sleep("20 millis");
+
+        yield* sig.set({ id: 1, name: "Johnny" }); // same id, filtered
+        yield* Effect.sleep("20 millis");
+
+        yield* sig.set({ id: 2, name: "Jane" }); // different id, emitted
+        yield* Effect.sleep("20 millis");
+
+        expect(emissions.length).toBe(2);
+        expect(emissions[0]).toEqual({ id: 1, name: "John" });
+        expect(emissions[1]).toEqual({ id: 2, name: "Jane" });
       });
 
       await Effect.runPromise(Effect.scoped(program));

@@ -1,10 +1,10 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { Signal } from "@effex/core";
+import { Readable, Signal } from "@effex/core";
 
-import { DOMRendererLive } from "../DOMRenderer";
-import { $, div } from "../Element";
+import { $ } from "../Element";
+import { DOMRendererLive } from "../Render/DOMRenderer";
 import {
   calculateItemOffset,
   calculateScrollToPosition,
@@ -13,11 +13,12 @@ import {
   parseHeight,
   rangesEqual,
 } from "./helpers";
-import { virtualEach, VirtualListRef } from "./index";
+import { ClientVirtualListCtx, virtualEach, VirtualListRef } from "./index";
 
 const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
   Effect.runPromise(
     Effect.scoped(effect).pipe(
+      Effect.provide(ClientVirtualListCtx),
       Effect.provide(DOMRendererLive),
     ) as Effect.Effect<A, never, never>,
   );
@@ -179,7 +180,8 @@ describe("VirtualList", () => {
             key: (item) => item.id,
             itemHeight: 50,
             height: 300,
-            render: (item) => div({}, $.of(item.map((i) => i.text))),
+            render: (item) =>
+              $.div({}, $.of(Readable.map(item, (i) => i.text))),
           });
 
           expect(el.style.overflow).toBe("auto");
@@ -196,7 +198,8 @@ describe("VirtualList", () => {
             key: (item) => item.id,
             itemHeight: 50,
             height: 300,
-            render: (item) => div({}, $.of(item.map((i) => i.text))),
+            render: (item) =>
+              $.div({}, $.of(Readable.map(item, (i) => i.text))),
           });
 
           const inner = el.firstElementChild as HTMLElement;
@@ -215,7 +218,8 @@ describe("VirtualList", () => {
             itemHeight: 50,
             height: 300,
             overscan: 3,
-            render: (item) => div({}, $.of(item.map((i) => i.text))),
+            render: (item) =>
+              $.div({}, $.of(Readable.map(item, (i) => i.text))),
           });
 
           // Should only render visible items + overscan
@@ -236,7 +240,8 @@ describe("VirtualList", () => {
             key: (item) => item.id,
             itemHeight: 50,
             height: 300,
-            render: (item) => div({}, $.of(item.map((i) => i.text))),
+            render: (item) =>
+              $.div({}, $.of(Readable.map(item, (i) => i.text))),
           });
 
           const inner = el.firstElementChild as HTMLElement;
@@ -251,8 +256,8 @@ describe("VirtualList", () => {
     it("should throw error if no height option provided", async () => {
       const badOptions = {
         key: (item: TestItem) => item.id,
-        render: (item: { map: <T>(fn: (i: TestItem) => T) => T }) =>
-          div({}, $.of(item.map((i) => i.text))),
+        render: (item: Readable<TestItem>) =>
+          $.div({}, $.of(Readable.map(item, (i) => i.text))),
       };
 
       await expect(
@@ -279,7 +284,8 @@ describe("VirtualList", () => {
             itemHeight: 50,
             height: 300,
             ref,
-            render: (item) => div({}, $.of(item.map((i) => i.text))),
+            render: (item) =>
+              $.div({}, $.of(Readable.map(item, (i) => i.text))),
           });
 
           expect(ref.current).not.toBeNull();
@@ -302,7 +308,8 @@ describe("VirtualList", () => {
             itemHeight: 50,
             height: 300,
             ref,
-            render: (item) => div({}, $.of(item.map((i) => i.text))),
+            render: (item) =>
+              $.div({}, $.of(Readable.map(item, (i) => i.text))),
           });
 
           const control = yield* ref.ready;

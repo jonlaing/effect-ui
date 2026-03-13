@@ -22,10 +22,6 @@ export default defineConfig({
       "@effex/dom": resolve(__dirname, "packages/dom/src/index.ts"),
       "@effex/router": resolve(__dirname, "packages/router/src/index.ts"),
       "@effex/form": resolve(__dirname, "packages/form/src/index.ts"),
-      "@effex/primitives": resolve(
-        __dirname,
-        "packages/primitives/src/index.ts",
-      ),
       "@effex/platform": resolve(__dirname, "packages/platform/src/index.ts"),
     },
   },

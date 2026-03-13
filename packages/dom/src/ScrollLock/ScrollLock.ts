@@ -50,6 +50,9 @@ export const ScrollLock = {
    * Lock body scroll. Automatically unlocks when scope closes.
    */
   lock: Effect.gen(function* () {
+    // SSR safety - scroll locking only makes sense in browser
+    if (typeof document === "undefined") return;
+
     // Save current styles
     const originalOverflow = document.body.style.overflow;
     const originalPaddingRight = document.body.style.paddingRight;

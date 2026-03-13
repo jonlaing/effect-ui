@@ -1,200 +1,305 @@
-import { Effect, Option, Scope } from "effect";
+import type { Schema } from "effect";
 
-import { defaultEquals, Derived, Readable, Signal } from "@effex/dom";
+// -----------------------------------------------------------------------------
+// TypeId
+// -----------------------------------------------------------------------------
 
-import type { FieldArray, Field as FieldType, ValidationTiming } from "./types";
+export const FieldTypeId: unique symbol = Symbol.for("effex/form/Field");
+export type FieldTypeId = typeof FieldTypeId;
+
+// -----------------------------------------------------------------------------
+// Config
+// -----------------------------------------------------------------------------
 
 /**
- * Options for creating a Field.
- * @template A - The type of the field value
+ * Validation timing strategy for form fields.
+ * - "blur" - validate when field loses focus
+ * - "change" - validate on every keystroke (respects debounce)
+ * - "submit" - only validate when submitting
  */
-export interface FieldOptions<A> {
-  /** Initial value for the field */
-  readonly initial: A;
-  /** Validation timing strategy */
-  readonly validation: ValidationTiming;
-  /** Schema validation function */
-  readonly schemaValidate: (value: A) => Effect.Effect<readonly string[]>;
-  /** Custom equality function */
-  readonly equals?: (a: A, b: A) => boolean;
+export type ValidateOn = "blur" | "change" | "submit";
+
+/**
+ * Configuration options for a Field.
+ */
+export interface FieldConfig {
+  /** When to run validation */
+  readonly validateOn?: ValidateOn;
+  /** Debounce time in ms for 'change' validation */
+  readonly debounce?: number;
+}
+
+// -----------------------------------------------------------------------------
+// Field Types
+// -----------------------------------------------------------------------------
+
+/**
+ * A leaf field wrapping a Schema.
+ */
+export interface LeafField<A, I = A> {
+  readonly [FieldTypeId]: FieldTypeId;
+  readonly _tag: "Leaf";
+  readonly schema: Schema.Schema<A, I>;
+  readonly config: FieldConfig;
 }
 
 /**
- * Create a form field with reactive state.
- * @param options - Field configuration
+ * A struct field containing nested fields.
  */
-export const makeField = <A>(
-  options: FieldOptions<A>,
-): Effect.Effect<FieldType<A>, never, Scope.Scope> => {
-  const equals = options.equals ?? defaultEquals;
-
-  return Effect.gen(function* () {
-    // Core state signals
-    const value = yield* Signal.make(options.initial, { equals });
-    const touched = yield* Signal.make(false);
-    const manualErrors = yield* Signal.make<readonly string[]>([]);
-    const hasBlurred = yield* Signal.make(false);
-
-    // Track if value has changed from initial
-    const dirty = yield* Derived.sync(
-      [value],
-      ([v]) => !equals(v, options.initial),
-    );
-
-    // Run validation (synchronous only for simplicity)
-    const runValidation = (currentValue: A): Effect.Effect<readonly string[]> =>
-      options.schemaValidate(currentValue);
-
-    // Derived errors based on validation timing - use sync instead of async
-    // to avoid the complex AsyncState handling
-    const validationErrors = yield* Derived.async(
-      [value, touched, hasBlurred],
-      ([v, isTouched, blurred]) => {
-        // Determine if we should validate based on timing
-        switch (options.validation) {
-          case "submit":
-            // Don't auto-validate - only on explicit validate() call
-            return Effect.succeed<readonly string[]>([]);
-
-          case "blur":
-            // Only validate after field has been blurred
-            if (!blurred) return Effect.succeed<readonly string[]>([]);
-            return runValidation(v as A);
-
-          case "change":
-            // Validate on every change
-            return runValidation(v as A);
-
-          case "hybrid":
-          default:
-            // Validate on blur first, then on change after first blur
-            if (!isTouched) return Effect.succeed<readonly string[]>([]);
-            return runValidation(v as A);
-        }
-      },
-      { strategy: "abort" },
-    );
-
-    // Combine validation errors with manual errors
-    // validationErrors.value is Readable<Option<readonly string[]>>
-    const errors: Readable.Readable<readonly string[]> = yield* Derived.sync(
-      [validationErrors.value, manualErrors] as const,
-      ([validationOpt, manual]) => {
-        if (Option.isSome(validationOpt)) {
-          return [...validationOpt.value, ...manual];
-        }
-        return [...manual];
-      },
-    );
-
-    const field: FieldType<A> = {
-      value,
-      errors,
-      touched,
-      dirty,
-      touch: () =>
-        Effect.gen(function* () {
-          yield* touched.set(true);
-          yield* hasBlurred.set(true);
-        }),
-      reset: () =>
-        Effect.gen(function* () {
-          yield* value.set(options.initial);
-          yield* touched.set(false);
-          yield* hasBlurred.set(false);
-          yield* manualErrors.set([]);
-        }),
-      setErrors: (errs) => manualErrors.set(errs),
-      validate: () =>
-        Effect.gen(function* () {
-          const currentValue = yield* value.get;
-          return yield* runValidation(currentValue);
-        }),
-    };
-
-    return field;
-  });
-};
-
-/**
- * Options for creating a FieldArray.
- * @template A - The type of each array item
- */
-export interface FieldArrayOptions<A> {
-  /** Initial array values */
-  readonly initial: readonly A[];
-  /** Validation timing strategy */
-  readonly validation: ValidationTiming;
-  /** Schema validation function for individual items */
-  readonly itemSchemaValidate: (value: A) => Effect.Effect<readonly string[]>;
-  /** Custom equality function */
-  readonly equals?: (a: A, b: A) => boolean;
+export interface StructField<F extends Record<string, Field<any, any>>> {
+  readonly [FieldTypeId]: FieldTypeId;
+  readonly _tag: "Struct";
+  readonly fields: F;
+  readonly config: FieldConfig;
 }
 
 /**
- * Create a field array for dynamic lists.
- * @param options - Field array configuration
+ * An array field containing repeated fields.
  */
-export const makeFieldArray = <A>(
-  options: FieldArrayOptions<A>,
-): Effect.Effect<FieldArray<A>, never, Scope.Scope> => {
-  return Effect.gen(function* () {
-    // Helper to create a field for an item - note: requires Scope
-    const createItemField = (
-      initial: A,
-    ): Effect.Effect<FieldType<A>, never, Scope.Scope> =>
-      makeField({
-        initial,
-        validation: options.validation,
-        schemaValidate: options.itemSchemaValidate,
-        equals: options.equals,
-      });
-
-    // Create initial fields
-    const initialFields = yield* Effect.all(
-      options.initial.map((v) => createItemField(v)),
-    );
-
-    // Use SignalArray for built-in array manipulation methods
-    const fields = yield* Signal.Array.make<FieldType<A>>(initialFields);
-
-    const fieldArray: FieldArray<A> = {
-      items: fields,
-      append: (value) =>
-        Effect.gen(function* () {
-          const newField = yield* createItemField(value);
-          yield* fields.push(newField);
-        }).pipe(Effect.scoped),
-      prepend: (value) =>
-        Effect.gen(function* () {
-          const newField = yield* createItemField(value);
-          yield* fields.unshift(newField);
-        }).pipe(Effect.scoped),
-      insert: (index, value) =>
-        Effect.gen(function* () {
-          const newField = yield* createItemField(value);
-          yield* fields.insertAt(index, newField);
-        }).pipe(Effect.scoped),
-      remove: (index) => fields.removeAt(index).pipe(Effect.asVoid),
-      move: (fromIndex, toIndex) => fields.move(fromIndex, toIndex),
-      swap: (indexA, indexB) => fields.swap(indexA, indexB),
-      replace: (values) =>
-        Effect.gen(function* () {
-          const newFields = yield* Effect.all(
-            values.map((v) => createItemField(v)),
-          );
-          yield* fields.set(newFields);
-        }).pipe(Effect.scoped),
-    };
-
-    return fieldArray;
-  });
-};
+export interface ArrayField<F extends Field<any, any>> {
+  readonly [FieldTypeId]: FieldTypeId;
+  readonly _tag: "Array";
+  readonly element: F;
+  readonly config: FieldConfig;
+}
 
 /**
- * Field module namespace for creating form fields.
+ * A map field for dynamic key-value pairs.
  */
+export interface MapField<K, F extends Field<any, any>> {
+  readonly [FieldTypeId]: FieldTypeId;
+  readonly _tag: "Map";
+  readonly key: Schema.Schema<K>;
+  readonly element: F;
+  readonly config: FieldConfig;
+}
+
+/**
+ * Union of all field types.
+ */
+export type Field<A, I = A> =
+  | LeafField<A, I>
+  | StructField<Record<string, Field<any, any>>>
+  | ArrayField<Field<any, any>>
+  | MapField<any, Field<any, any>>;
+
+// -----------------------------------------------------------------------------
+// Type Extraction
+// -----------------------------------------------------------------------------
+
+/**
+ * Extract the output type from a Field.
+ */
+export type TypeOf<F> =
+  F extends LeafField<infer A, any>
+    ? A
+    : F extends StructField<infer Fields>
+      ? { [K in keyof Fields]: TypeOf<Fields[K]> }
+      : F extends ArrayField<infer Element>
+        ? Array<TypeOf<Element>>
+        : F extends MapField<infer K, infer Element>
+          ? Map<K, TypeOf<Element>>
+          : never;
+
+/**
+ * Extract the input (encoded) type from a Field.
+ */
+export type EncodedOf<F> =
+  F extends LeafField<any, infer I>
+    ? I
+    : F extends StructField<infer Fields>
+      ? { [K in keyof Fields]: EncodedOf<Fields[K]> }
+      : F extends ArrayField<infer Element>
+        ? Array<EncodedOf<Element>>
+        : F extends MapField<infer K, infer Element>
+          ? Map<K, EncodedOf<Element>>
+          : never;
+
+// -----------------------------------------------------------------------------
+// Type Guards
+// -----------------------------------------------------------------------------
+
+/**
+ * Check if a value is a Field.
+ */
+export const isField = (value: unknown): value is Field<any, any> =>
+  typeof value === "object" &&
+  value !== null &&
+  FieldTypeId in value &&
+  (value as Record<symbol, unknown>)[FieldTypeId] === FieldTypeId;
+
+/**
+ * Check if a field is a leaf field.
+ */
+export const isLeafField = <A, I>(
+  field: Field<A, I>,
+): field is LeafField<A, I> => (field as { _tag: string })._tag === "Leaf";
+
+/**
+ * Check if a field is a struct field.
+ */
+export const isStructField = <A, I>(
+  field: Field<A, I>,
+): field is StructField<Record<string, Field<any, any>>> =>
+  (field as { _tag: string })._tag === "Struct";
+
+/**
+ * Check if a field is an array field.
+ */
+export const isArrayField = <A, I>(
+  field: Field<A, I>,
+): field is ArrayField<Field<any, any>> =>
+  (field as { _tag: string })._tag === "Array";
+
+/**
+ * Check if a field is a map field.
+ */
+export const isMapField = <A, I>(
+  field: Field<A, I>,
+): field is MapField<unknown, Field<any, any>> =>
+  (field as { _tag: string })._tag === "Map";
+
+// -----------------------------------------------------------------------------
+// Constructors
+// -----------------------------------------------------------------------------
+
+/**
+ * Create a leaf field from a Schema.
+ *
+ * @example
+ * ```ts
+ * const email = Field.make(Schema.String.pipe(Schema.email()), {
+ *   validateOn: 'blur',
+ * });
+ * ```
+ */
+export function make<A, I>(
+  schema: Schema.Schema<A, I>,
+  config?: FieldConfig,
+): LeafField<A, I>;
+
+/**
+ * Create a struct field from a record of Fields.
+ *
+ * @example
+ * ```ts
+ * const address = Field.make({
+ *   street: Field.make(Schema.String),
+ *   city: Field.make(Schema.String),
+ * });
+ * ```
+ */
+export function make<F extends Record<string, Field<any, any>>>(
+  fields: F,
+  config?: FieldConfig,
+): StructField<F>;
+
+export function make(
+  schemaOrFields:
+    | Schema.Schema<unknown, unknown>
+    | Record<string, Field<any, any>>,
+  config: FieldConfig = {},
+): Field<any, any> {
+  // Check if it's a record of fields (struct)
+  if (isFieldRecord(schemaOrFields)) {
+    return {
+      [FieldTypeId]: FieldTypeId,
+      _tag: "Struct",
+      fields: schemaOrFields,
+      config,
+    };
+  }
+
+  // Otherwise it's a Schema (leaf)
+  return {
+    [FieldTypeId]: FieldTypeId,
+    _tag: "Leaf",
+    schema: schemaOrFields as Schema.Schema<unknown, unknown>,
+    config,
+  };
+}
+
+/**
+ * Create an array field.
+ *
+ * @example
+ * ```ts
+ * const emails = Field.Array(
+ *   Field.make(Schema.String.pipe(Schema.email()))
+ * );
+ * ```
+ */
+export function Array<F extends Field<any, any>>(
+  element: F,
+  config: FieldConfig = {},
+): ArrayField<F> {
+  return {
+    [FieldTypeId]: FieldTypeId,
+    _tag: "Array",
+    element,
+    config,
+  };
+}
+
+/**
+ * Create a map field for dynamic key-value pairs.
+ *
+ * @example
+ * ```ts
+ * const metadata = Field.Map(
+ *   Schema.String,
+ *   Field.make(Schema.String)
+ * );
+ * ```
+ */
+export function Map<K, F extends Field<any, any>>(
+  key: Schema.Schema<K>,
+  element: F,
+  config: FieldConfig = {},
+): MapField<K, F> {
+  return {
+    [FieldTypeId]: FieldTypeId,
+    _tag: "Map",
+    key,
+    element,
+    config,
+  };
+}
+
+// -----------------------------------------------------------------------------
+// Helpers
+// -----------------------------------------------------------------------------
+
+/**
+ * Check if a value is a record of Fields (vs a Schema).
+ */
+function isFieldRecord(
+  value: unknown,
+): value is Record<string, Field<any, any>> {
+  if (typeof value !== "object" || value === null) return false;
+
+  // If it has FieldTypeId, it's a Field itself, not a record of fields
+  if (FieldTypeId in value) return false;
+
+  // Check if all values are Fields
+  const entries = Object.entries(value);
+  if (entries.length === 0) return false;
+
+  return entries.every(([_, v]) => isField(v));
+}
+
+// -----------------------------------------------------------------------------
+// Namespace Export
+// -----------------------------------------------------------------------------
+
 export const Field = {
-  make: makeField,
-  makeArray: makeFieldArray,
+  FieldTypeId,
+  make,
+  Array,
+  Map,
+  isField,
+  isLeafField,
+  isStructField,
+  isArrayField,
+  isMapField,
 };

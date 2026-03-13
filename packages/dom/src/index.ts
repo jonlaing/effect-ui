@@ -1,172 +1,14 @@
 // Re-export everything from core so users can import from @effex/dom
-export {
-  Readable,
-  type Reactive,
-  isReadable,
-  makeReadable,
-  mapReadable,
-  fromStream,
-  Signal,
-  type SignalOptions,
-  type SignalSet,
-  type SignalArray,
-  type SignalMap,
-  SignalRegistry,
-  makeSignal,
-  type DerivedOptions,
-  type AsyncState,
-  type AsyncStrategy,
-  type AsyncDerivedOptions,
-  type AsyncDerived,
-  Derived,
-  defaultEquals,
-  Reaction,
-  type RefType,
-  Ref,
-  Renderer,
-  RendererContext,
-  type RendererInterface,
-} from "@effex/core";
+export * from "@effex/core";
 
 // DOM Renderer
-export { DOMRenderer, DOMRendererLive } from "./DOMRenderer";
+export { DOMRenderer, DOMRendererLive } from "./Render/DOMRenderer.js";
 
-// Element
-export type {
-  ClassValue,
-  EventHandler,
-  BaseAttributes,
-  EventAttributes,
-  HTMLAttributes,
-  ElementFactory,
-  ChildEffect,
-  ChildNode,
-} from "./Element";
-export {
-  Element,
-  type ElementRef,
-  NoSuchElementException,
-  AttributeNotFound,
-  DataAttributeNotFound,
-  bindElementToRef,
-  MergePropsCtx,
-} from "./Element";
-export {
-  $,
-  of,
-  // Document structure
-  div,
-  span,
-  p,
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6,
-  header,
-  footer,
-  main,
-  nav,
-  section,
-  article,
-  aside,
-  address,
-  // Text content
-  blockquote,
-  cite,
-  q,
-  pre,
-  code,
-  kbd,
-  samp,
-  varEl,
-  abbr,
-  dfn,
-  mark,
-  del,
-  ins,
-  s,
-  u,
-  small,
-  strong,
-  em,
-  b,
-  i,
-  sub,
-  sup,
-  time,
-  data,
-  wbr,
-  bdi,
-  bdo,
-  ruby,
-  rt,
-  rp,
-  hr,
-  br,
-  // Lists
-  ul,
-  ol,
-  li,
-  dl,
-  dt,
-  dd,
-  // Links and media
-  a,
-  img,
-  figure,
-  figcaption,
-  picture,
-  audio,
-  video,
-  source,
-  track,
-  canvas,
-  iframe,
-  embed,
-  objectEl,
-  map,
-  area,
-  // Tables
-  table,
-  thead,
-  tbody,
-  tfoot,
-  tr,
-  th,
-  td,
-  caption,
-  colgroup,
-  col,
-  // Forms
-  form,
-  input,
-  textarea,
-  select,
-  option,
-  optgroup,
-  button,
-  label,
-  fieldset,
-  legend,
-  datalist,
-  output,
-  progress,
-  meter,
-  // Interactive
-  details,
-  summary,
-  dialog,
-  menu,
-  // Template and slots
-  template,
-  slot,
-  // Scripting
-  noscript,
-  script,
-  style,
-} from "./Element";
+// Export Element as a namespace and also re-export common types directly
+export * as Element from "./Element/index.js";
+
+// Re-export commonly used items from Element for convenience
+export { $, bindElementToRef, ref } from "./Element/index.js";
 
 // Control flow
 export {
@@ -175,8 +17,9 @@ export {
   each,
   matchOption,
   matchEither,
+  redraw,
   HydrationMismatchError,
-} from "./Control";
+} from "./Control/index.js";
 export type {
   WhenConfig,
   MatchConfig,
@@ -184,16 +27,17 @@ export type {
   EachConfig,
   MatchOptionConfig,
   MatchEitherConfig,
-} from "./Control";
+  RedrawConfig,
+} from "./Control/index.js";
 
 // Boundary (async and error handling)
-export { Boundary, suspense, error } from "./Boundary";
-export type { SuspenseOptions, BoundarySuspenseOptions } from "./Boundary";
+export { Boundary, suspense, error } from "./Boundary.js";
+export type { SuspenseOptions, BoundarySuspenseOptions } from "./Boundary.js";
 
 // Context provision
-export { provide } from "./Provide";
+export { provide } from "./Provide.js";
 
-export { collect } from "./Collect";
+export { collect } from "./Collect.js";
 
 // Animation
 export type {
@@ -217,14 +61,14 @@ export {
 } from "./Animation/index.js";
 
 // Mounting
-export { mount, runApp } from "./Mount";
+export { mount, runApp } from "./Render/client/index.js";
 
 // Template helpers
-export { t } from "./Template";
+export { t } from "./Template.js";
 
 // Portal
-export type { PortalOptions } from "./Portal";
-export { Portal } from "./Portal";
+export type { PortalOptions } from "./Portal.js";
+export { Portal } from "./Portal.js";
 
 // Virtual List
 export type {
@@ -236,19 +80,11 @@ export type {
 export { virtualEach, VirtualListRef } from "./VirtualList/index.js";
 
 // Unique ID generation
-export { UniqueId } from "./UniqueId";
+export { UniqueId } from "./UniqueId.js";
 
 // Focus Trap
-export type { FocusTrapOptions } from "./FocusTrap";
-export { FocusTrap } from "./FocusTrap";
+export type { FocusTrapOptions } from "./FocusTrap/index.js";
+export { FocusTrap } from "./FocusTrap/index.js";
 
 // Scroll Lock
-export { ScrollLock } from "./ScrollLock";
-
-// DOM Helpers
-export type { KeyboardNavOptions, ElementRefLike } from "./helpers/index.js";
-export {
-  onClickOutside,
-  createKeyboardNav,
-  mergeProps,
-} from "./helpers/index.js";
+export { ScrollLock } from "./ScrollLock/index.js";

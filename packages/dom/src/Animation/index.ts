@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import type { StaggerFunction } from "./types";
+import type { StaggerFunction } from "./types.js";
 
 // Re-export types
 export type {
@@ -9,13 +9,18 @@ export type {
   AnimationOptions,
   ListAnimationOptions,
   StaggerFunction,
-} from "./types";
+} from "./types.js";
 
 // Re-export core functions
-export { runEnterAnimation, runExitAnimation } from "./core";
+export { runEnterAnimation, runExitAnimation } from "./core.js";
 
 // Re-export helpers that might be useful
-export { prefersReducedMotion } from "./helpers";
+export {
+  prefersReducedMotion,
+  waitForAnimationEvent,
+  waitForAnimationEnd,
+  forceReflow,
+} from "./helpers.js";
 
 // --- Stagger Utilities ---
 

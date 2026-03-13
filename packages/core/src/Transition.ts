@@ -1,7 +1,7 @@
 import { Effect, Scope } from "effect";
 
-import { Readable as ReadableNS, type Readable } from "./Readable.js";
-import { make as makeSignal } from "./Signal.js";
+import { Readable } from "./Readable.js";
+import { Signal } from "./Signal.js";
 
 /**
  * Error thrown when an invalid state transition is attempted.
@@ -27,7 +27,7 @@ export class InvalidTransition extends Error {
  */
 export interface GuardedTarget<S extends string> {
   readonly to: S;
-  readonly when: Readable<boolean>;
+  readonly when: Readable.Readable<boolean>;
 }
 
 /**
@@ -63,7 +63,7 @@ export interface GuardOptions {
  */
 export interface Transition<S extends string> {
   /** Current state as a Readable (read-only) */
-  readonly current: Readable<S>;
+  readonly current: Readable.Readable<S>;
 
   /**
    * Transition to a new state.
@@ -73,13 +73,13 @@ export interface Transition<S extends string> {
   readonly to: (state: S) => Effect.Effect<void, InvalidTransition>;
 
   /** Check if currently in a specific state (reactive) */
-  readonly is: (state: S) => Readable<boolean>;
+  readonly is: (state: S) => Readable.Readable<boolean>;
 
   /**
    * Check if transition to a state is currently allowed (reactive).
    * Takes guards into account - returns false if guard condition is not met.
    */
-  readonly canTransitionTo: (state: S) => Readable<boolean>;
+  readonly canTransitionTo: (state: S) => Readable.Readable<boolean>;
 
   /**
    * Create a guarded callback that only runs when in specified states.
@@ -157,10 +157,10 @@ export const make = <
 ): Effect.Effect<Transition<string & keyof C>, never, Scope.Scope> =>
   Effect.gen(function* () {
     type S = string & keyof C;
-    const stateSignal = yield* makeSignal<S>(initial as S);
+    const stateSignal = yield* Signal.make<S>(initial as S);
 
     // Current state as read-only Readable
-    const current: Readable<S> = ReadableNS.make(
+    const current: Readable.Readable<S> = Readable.make(
       stateSignal.get,
       () => stateSignal.changes,
     );
@@ -212,12 +212,13 @@ export const make = <
       });
 
     // Check if in a specific state (reactive)
-    const is = (state: S): Readable<boolean> => current.map((s) => s === state);
+    const is = (state: S): Readable.Readable<boolean> =>
+      current.pipe(Readable.map((s) => s === state));
 
     // Check if can transition to a state (reactive, respects guards)
-    const canTransitionTo = (target: S): Readable<boolean> => {
+    const canTransitionTo = (target: S): Readable.Readable<boolean> => {
       // Collect all unique guards from the config that affect transition to target
-      const guardsToTrack: Readable<boolean>[] = [];
+      const guardsToTrack: Readable.Readable<boolean>[] = [];
 
       for (const fromState of Object.keys(config) as S[]) {
         const targets = getAllowedTargets(fromState);
@@ -232,40 +233,44 @@ export const make = <
 
       // No guards - just check if current state allows the transition
       if (guardsToTrack.length === 0) {
-        return current.map((from) => {
-          const targets = getAllowedTargets(from);
-          return targets.some(
-            (t) => (typeof t === "string" ? t : t.to) === target,
-          );
-        });
+        return current.pipe(
+          Readable.map((from) => {
+            const targets = getAllowedTargets(from);
+            return targets.some(
+              (t) => (typeof t === "string" ? t : t.to) === target,
+            );
+          }),
+        );
       }
 
       // Combine current state with all relevant guards for reactivity
-      const combined = ReadableNS.combine([current, ...guardsToTrack]);
+      const combined = Readable.combine([current, ...guardsToTrack]);
 
-      return combined.map((values) => {
-        const from = values[0] as S;
-        const guardValues = values.slice(1) as boolean[];
-        const targets = getAllowedTargets(from);
+      return combined.pipe(
+        Readable.map((values) => {
+          const from = values[0] as S;
+          const guardValues = values.slice(1) as boolean[];
+          const targets = getAllowedTargets(from);
 
-        for (const t of targets) {
-          const targetState = typeof t === "string" ? t : t.to;
-          if (targetState !== target) continue;
+          for (const t of targets) {
+            const targetState = typeof t === "string" ? t : t.to;
+            if (targetState !== target) continue;
 
-          if (typeof t === "string") {
-            // Unguarded transition to target - allowed
-            return true;
-          } else {
-            // Guarded - check if this specific guard passes
-            const guardIndex = guardsToTrack.indexOf(t.when);
-            if (guardIndex !== -1 && guardValues[guardIndex]) {
+            if (typeof t === "string") {
+              // Unguarded transition to target - allowed
               return true;
+            } else {
+              // Guarded - check if this specific guard passes
+              const guardIndex = guardsToTrack.indexOf(t.when);
+              if (guardIndex !== -1 && guardValues[guardIndex]) {
+                return true;
+              }
             }
           }
-        }
 
-        return false;
-      });
+          return false;
+        }),
+      );
     };
 
     // Create a guarded callback

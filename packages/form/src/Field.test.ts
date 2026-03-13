@@ -1,536 +1,183 @@
-import { Effect } from "effect";
+import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { Reaction } from "@effex/dom";
+import {
+  Field,
+  Array as FieldArray,
+  Map as FieldMap,
+  FieldTypeId,
+  isArrayField,
+  isField,
+  isLeafField,
+  isMapField,
+  isStructField,
+  make,
+} from "./Field.js";
 
-import { Field, makeField, makeFieldArray } from "./Field";
+describe("Field.make", () => {
+  it("should create a leaf field from a Schema", () => {
+    const field = make(Schema.String);
 
-describe("Field", () => {
-  describe("makeField", () => {
-    it("should create a field with initial value", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const field = yield* makeField({
-              initial: "hello",
-              validation: "submit",
-              schemaValidate: () => Effect.succeed([]),
-            });
-            return yield* field.value.get;
-          }),
-        ),
-      );
-
-      expect(result).toBe("hello");
-    });
-
-    it("should track touched state", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const field = yield* makeField({
-              initial: "",
-              validation: "submit",
-              schemaValidate: () => Effect.succeed([]),
-            });
-
-            const before = yield* field.touched.get;
-            yield* field.touch();
-            const after = yield* field.touched.get;
-
-            return { before, after };
-          }),
-        ),
-      );
-
-      expect(result.before).toBe(false);
-      expect(result.after).toBe(true);
-    });
-
-    it("should track dirty state when value changes", async () => {
-      const lastDirty = { value: false };
-
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const field = yield* makeField({
-              initial: "initial",
-              validation: "submit",
-              schemaValidate: () => Effect.succeed([]),
-            });
-
-            yield* Reaction.make([field.dirty], ([d]) =>
-              Effect.sync(() => {
-                lastDirty.value = d;
-              }),
-            );
-
-            expect(lastDirty.value).toBe(false);
-
-            yield* field.value.set("changed");
-            yield* Effect.sleep(10);
-
-            expect(lastDirty.value).toBe(true);
-
-            // Setting back to initial should make it not dirty
-            yield* field.value.set("initial");
-            yield* Effect.sleep(10);
-
-            expect(lastDirty.value).toBe(false);
-          }),
-        ),
-      );
-    });
-
-    it("should reset field to initial state", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const field = yield* makeField({
-              initial: "initial",
-              validation: "submit",
-              schemaValidate: () => Effect.succeed([]),
-            });
-
-            yield* field.value.set("changed");
-            yield* field.touch();
-            yield* field.setErrors(["some error"]);
-
-            yield* field.reset();
-
-            const value = yield* field.value.get;
-            const touched = yield* field.touched.get;
-            const errors = yield* field.errors.get;
-
-            return { value, touched, errors };
-          }),
-        ),
-      );
-
-      expect(result.value).toBe("initial");
-      expect(result.touched).toBe(false);
-      expect(result.errors).toEqual([]);
-    });
-
-    it("should set manual errors", async () => {
-      const lastErrors = { value: [] as readonly string[] };
-
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const field = yield* makeField({
-              initial: "",
-              validation: "submit",
-              schemaValidate: () => Effect.succeed([]),
-            });
-
-            yield* Reaction.make([field.errors], ([e]) =>
-              Effect.sync(() => {
-                lastErrors.value = e;
-              }),
-            );
-
-            yield* field.setErrors(["Error 1", "Error 2"]);
-            yield* Effect.sleep(50);
-          }),
-        ),
-      );
-
-      expect(lastErrors.value).toEqual(["Error 1", "Error 2"]);
-    });
-
-    it("should validate on explicit validate() call", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const field = yield* makeField({
-              initial: "",
-              validation: "submit",
-              schemaValidate: (value) =>
-                Effect.succeed(value === "" ? ["Value is required"] : []),
-            });
-
-            const errors = yield* field.validate();
-            return errors;
-          }),
-        ),
-      );
-
-      expect(result).toEqual(["Value is required"]);
-    });
-
-    it("should use custom equality function", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const field = yield* makeField({
-              initial: { id: 1, name: "initial" },
-              validation: "submit",
-              schemaValidate: () => Effect.succeed([]),
-              equals: (a, b) => a.id === b.id,
-            });
-
-            // Change name but keep same ID - should not be dirty
-            yield* field.value.set({ id: 1, name: "changed" });
-            yield* Effect.sleep(10);
-            const dirty = yield* field.dirty.get;
-
-            return dirty;
-          }),
-        ),
-      );
-
-      expect(result).toBe(false);
-    });
+    expect(field[FieldTypeId]).toBe(FieldTypeId);
+    expect(field._tag).toBe("Leaf");
+    expect(isLeafField(field)).toBe(true);
   });
 
-  describe("validation timing", () => {
-    it("should validate on blur when validation is 'blur'", async () => {
-      const lastErrors = { value: [] as readonly string[] };
+  it("should create a leaf field with config", () => {
+    const field = make(Schema.String, { validateOn: "change", debounce: 300 });
 
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const field = yield* makeField({
-              initial: "",
-              validation: "blur",
-              schemaValidate: (value) =>
-                Effect.succeed(value === "" ? ["Required"] : []),
-            });
-
-            yield* Reaction.make([field.errors], ([e]) =>
-              Effect.sync(() => {
-                lastErrors.value = e;
-              }),
-            );
-
-            // Initially no errors (hasn't blurred yet)
-            yield* Effect.sleep(50);
-            expect(lastErrors.value).toEqual([]);
-
-            // Touch (blur) the field
-            yield* field.touch();
-            yield* Effect.sleep(50);
-
-            expect(lastErrors.value).toEqual(["Required"]);
-          }),
-        ),
-      );
-    });
-
-    it("should validate on change when validation is 'change'", async () => {
-      const lastErrors = { value: [] as readonly string[] };
-
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const field = yield* makeField({
-              initial: "valid",
-              validation: "change",
-              schemaValidate: (value) =>
-                Effect.succeed(value === "" ? ["Required"] : []),
-            });
-
-            yield* Reaction.make([field.errors], ([e]) =>
-              Effect.sync(() => {
-                lastErrors.value = e;
-              }),
-            );
-
-            // Initially valid
-            yield* Effect.sleep(50);
-            expect(lastErrors.value).toEqual([]);
-
-            // Change to invalid value
-            yield* field.value.set("");
-            yield* Effect.sleep(50);
-
-            expect(lastErrors.value).toEqual(["Required"]);
-          }),
-        ),
-      );
-    });
-
-    it("should not auto-validate when validation is 'submit'", async () => {
-      const lastErrors = { value: [] as readonly string[] };
-
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const field = yield* makeField({
-              initial: "",
-              validation: "submit",
-              schemaValidate: (value) =>
-                Effect.succeed(value === "" ? ["Required"] : []),
-            });
-
-            yield* Reaction.make([field.errors], ([e]) =>
-              Effect.sync(() => {
-                lastErrors.value = e;
-              }),
-            );
-
-            yield* field.touch();
-            yield* field.value.set("something");
-            yield* field.value.set("");
-            yield* Effect.sleep(50);
-
-            // Should never auto-validate
-            expect(lastErrors.value).toEqual([]);
-          }),
-        ),
-      );
-    });
-
-    it("should validate hybrid: blur first, then change", async () => {
-      const lastErrors = { value: [] as readonly string[] };
-
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const field = yield* makeField({
-              initial: "",
-              validation: "hybrid",
-              schemaValidate: (value) =>
-                Effect.succeed(value === "" ? ["Required"] : []),
-            });
-
-            yield* Reaction.make([field.errors], ([e]) =>
-              Effect.sync(() => {
-                lastErrors.value = e;
-              }),
-            );
-
-            // No validation before touched
-            yield* Effect.sleep(50);
-            expect(lastErrors.value).toEqual([]);
-
-            // Touch triggers validation
-            yield* field.touch();
-            yield* Effect.sleep(50);
-            expect(lastErrors.value).toEqual(["Required"]);
-
-            // Subsequent changes trigger validation
-            yield* field.value.set("valid");
-            yield* Effect.sleep(50);
-            expect(lastErrors.value).toEqual([]);
-
-            yield* field.value.set("");
-            yield* Effect.sleep(50);
-            expect(lastErrors.value).toEqual(["Required"]);
-          }),
-        ),
-      );
-    });
+    expect(field._tag).toBe("Leaf");
+    expect(field.config.validateOn).toBe("change");
+    expect(field.config.debounce).toBe(300);
   });
 
-  describe("makeFieldArray", () => {
-    it("should create field array with initial items", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const fieldArray = yield* makeFieldArray({
-              initial: ["a", "b", "c"],
-              validation: "submit",
-              itemSchemaValidate: () => Effect.succeed([]),
-            });
-
-            const items = yield* fieldArray.items.get;
-            const values = yield* Effect.all(items.map((f) => f.value.get));
-            return values;
-          }),
-        ),
-      );
-
-      expect(result).toEqual(["a", "b", "c"]);
+  it("should create a struct field from a record of fields", () => {
+    const field = make({
+      name: make(Schema.String),
+      age: make(Schema.Number),
     });
 
-    it("should append items", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const fieldArray = yield* makeFieldArray({
-              initial: ["a"],
-              validation: "submit",
-              itemSchemaValidate: () => Effect.succeed([]),
-            });
-
-            yield* fieldArray.append("b");
-            yield* fieldArray.append("c");
-
-            const items = yield* fieldArray.items.get;
-            const values = yield* Effect.all(items.map((f) => f.value.get));
-            return values;
-          }),
-        ),
-      );
-
-      expect(result).toEqual(["a", "b", "c"]);
-    });
-
-    it("should prepend items", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const fieldArray = yield* makeFieldArray({
-              initial: ["b"],
-              validation: "submit",
-              itemSchemaValidate: () => Effect.succeed([]),
-            });
-
-            yield* fieldArray.prepend("a");
-
-            const items = yield* fieldArray.items.get;
-            const values = yield* Effect.all(items.map((f) => f.value.get));
-            return values;
-          }),
-        ),
-      );
-
-      expect(result).toEqual(["a", "b"]);
-    });
-
-    it("should insert at index", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const fieldArray = yield* makeFieldArray({
-              initial: ["a", "c"],
-              validation: "submit",
-              itemSchemaValidate: () => Effect.succeed([]),
-            });
-
-            yield* fieldArray.insert(1, "b");
-
-            const items = yield* fieldArray.items.get;
-            const values = yield* Effect.all(items.map((f) => f.value.get));
-            return values;
-          }),
-        ),
-      );
-
-      expect(result).toEqual(["a", "b", "c"]);
-    });
-
-    it("should remove at index", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const fieldArray = yield* makeFieldArray({
-              initial: ["a", "b", "c"],
-              validation: "submit",
-              itemSchemaValidate: () => Effect.succeed([]),
-            });
-
-            yield* fieldArray.remove(1);
-
-            const items = yield* fieldArray.items.get;
-            const values = yield* Effect.all(items.map((f) => f.value.get));
-            return values;
-          }),
-        ),
-      );
-
-      expect(result).toEqual(["a", "c"]);
-    });
-
-    it("should move items", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const fieldArray = yield* makeFieldArray({
-              initial: ["a", "b", "c"],
-              validation: "submit",
-              itemSchemaValidate: () => Effect.succeed([]),
-            });
-
-            yield* fieldArray.move(0, 2);
-
-            const items = yield* fieldArray.items.get;
-            const values = yield* Effect.all(items.map((f) => f.value.get));
-            return values;
-          }),
-        ),
-      );
-
-      expect(result).toEqual(["b", "c", "a"]);
-    });
-
-    it("should swap items", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const fieldArray = yield* makeFieldArray({
-              initial: ["a", "b", "c"],
-              validation: "submit",
-              itemSchemaValidate: () => Effect.succeed([]),
-            });
-
-            yield* fieldArray.swap(0, 2);
-
-            const items = yield* fieldArray.items.get;
-            const values = yield* Effect.all(items.map((f) => f.value.get));
-            return values;
-          }),
-        ),
-      );
-
-      expect(result).toEqual(["c", "b", "a"]);
-    });
-
-    it("should replace all items", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const fieldArray = yield* makeFieldArray({
-              initial: ["a", "b"],
-              validation: "submit",
-              itemSchemaValidate: () => Effect.succeed([]),
-            });
-
-            yield* fieldArray.replace(["x", "y", "z"]);
-
-            const items = yield* fieldArray.items.get;
-            const values = yield* Effect.all(items.map((f) => f.value.get));
-            return values;
-          }),
-        ),
-      );
-
-      expect(result).toEqual(["x", "y", "z"]);
-    });
-
-    it("should handle empty initial array", async () => {
-      const result = await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const fieldArray = yield* makeFieldArray({
-              initial: [] as string[],
-              validation: "submit",
-              itemSchemaValidate: () => Effect.succeed([]),
-            });
-
-            const items = yield* fieldArray.items.get;
-            expect(items.length).toBe(0);
-
-            yield* fieldArray.append("first");
-            const afterAppend = yield* fieldArray.items.get;
-            return afterAppend.length;
-          }),
-        ),
-      );
-
-      expect(result).toBe(1);
-    });
+    expect(field[FieldTypeId]).toBe(FieldTypeId);
+    expect(field._tag).toBe("Struct");
+    expect(isStructField(field)).toBe(true);
   });
 
-  describe("Field namespace", () => {
-    it("should expose make function", () => {
-      expect(Field.make).toBe(makeField);
+  it("should create a struct field with config", () => {
+    const field = make(
+      {
+        name: make(Schema.String),
+        age: make(Schema.Number),
+      },
+      { validateOn: "blur" },
+    );
+
+    expect(field._tag).toBe("Struct");
+    expect(field.config.validateOn).toBe("blur");
+  });
+
+  it("should create nested struct fields", () => {
+    const field = make({
+      user: make({
+        name: make(Schema.String),
+        email: make(Schema.String),
+      }),
+      settings: make({
+        theme: make(Schema.String),
+      }),
     });
 
-    it("should expose makeArray function", () => {
-      expect(Field.makeArray).toBe(makeFieldArray);
+    expect(field._tag).toBe("Struct");
+    expect(isStructField(field)).toBe(true);
+  });
+});
+
+describe("Field.Array", () => {
+  it("should create an array field", () => {
+    const field = FieldArray(make(Schema.String));
+
+    expect(field[FieldTypeId]).toBe(FieldTypeId);
+    expect(field._tag).toBe("Array");
+    expect(isArrayField(field)).toBe(true);
+  });
+
+  it("should create an array field with config", () => {
+    const field = FieldArray(make(Schema.String), { validateOn: "submit" });
+
+    expect(field._tag).toBe("Array");
+    expect(field.config.validateOn).toBe("submit");
+  });
+
+  it("should create an array of struct fields", () => {
+    const field = FieldArray(
+      make({
+        name: make(Schema.String),
+        email: make(Schema.String),
+      }),
+    );
+
+    expect(field._tag).toBe("Array");
+    expect(field.element._tag).toBe("Struct");
+  });
+});
+
+describe("Field.Map", () => {
+  it("should create a map field", () => {
+    const field = FieldMap(Schema.String, make(Schema.Number));
+
+    expect(field[FieldTypeId]).toBe(FieldTypeId);
+    expect(field._tag).toBe("Map");
+    expect(isMapField(field)).toBe(true);
+  });
+
+  it("should create a map field with config", () => {
+    const field = FieldMap(Schema.String, make(Schema.Number), {
+      validateOn: "change",
     });
+
+    expect(field._tag).toBe("Map");
+    expect(field.config.validateOn).toBe("change");
+  });
+});
+
+describe("Type guards", () => {
+  it("isField should return true for fields", () => {
+    expect(isField(make(Schema.String))).toBe(true);
+    expect(isField(make({ name: make(Schema.String) }))).toBe(true);
+    expect(isField(FieldArray(make(Schema.String)))).toBe(true);
+    expect(isField(FieldMap(Schema.String, make(Schema.Number)))).toBe(true);
+  });
+
+  it("isField should return false for non-fields", () => {
+    expect(isField(null)).toBe(false);
+    expect(isField(undefined)).toBe(false);
+    expect(isField({})).toBe(false);
+    expect(isField({ _tag: "Leaf" })).toBe(false);
+    expect(isField(Schema.String)).toBe(false);
+  });
+
+  it("isLeafField should correctly identify leaf fields", () => {
+    const leaf = make(Schema.String);
+    const struct = make({ name: make(Schema.String) });
+
+    expect(isLeafField(leaf)).toBe(true);
+    expect(isLeafField(struct)).toBe(false);
+  });
+
+  it("isStructField should correctly identify struct fields", () => {
+    const leaf = make(Schema.String);
+    const struct = make({ name: make(Schema.String) });
+
+    expect(isStructField(leaf)).toBe(false);
+    expect(isStructField(struct)).toBe(true);
+  });
+
+  it("isArrayField should correctly identify array fields", () => {
+    const leaf = make(Schema.String);
+    const array = FieldArray(make(Schema.String));
+
+    expect(isArrayField(leaf)).toBe(false);
+    expect(isArrayField(array)).toBe(true);
+  });
+
+  it("isMapField should correctly identify map fields", () => {
+    const leaf = make(Schema.String);
+    const map = FieldMap(Schema.String, make(Schema.Number));
+
+    expect(isMapField(leaf)).toBe(false);
+    expect(isMapField(map)).toBe(true);
+  });
+});
+
+describe("Field namespace export", () => {
+  it("should expose all constructors and guards", () => {
+    expect(Field.make).toBe(make);
+    expect(Field.Array).toBe(FieldArray);
+    expect(Field.Map).toBe(FieldMap);
+    expect(Field.isField).toBe(isField);
+    expect(Field.isLeafField).toBe(isLeafField);
+    expect(Field.isStructField).toBe(isStructField);
+    expect(Field.isArrayField).toBe(isArrayField);
+    expect(Field.isMapField).toBe(isMapField);
+    expect(Field.FieldTypeId).toBe(FieldTypeId);
   });
 });

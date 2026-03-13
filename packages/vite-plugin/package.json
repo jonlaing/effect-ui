@@ -1,7 +1,7 @@
 {
   "name": "@effex/vite-plugin",
-  "version": "0.0.1",
-  "description": "Vite plugin for file-based routing in Effex applications",
+  "version": "0.1.0",
+  "description": "Vite plugin for Effex applications",
   "type": "module",
   "license": "MIT",
   "author": "Jon Laing",
@@ -15,8 +15,7 @@
     "effect-ts",
     "vite",
     "vite-plugin",
-    "file-based-routing",
-    "router"
+    "ssr"
   ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -35,12 +34,8 @@
   "scripts": {
     "build": "tsup"
   },
-  "dependencies": {
-    "fast-glob": "^3.3.2"
-  },
   "peerDependencies": {
-    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0",
-    "@effex/router": "workspace:*"
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0"
   },
   "devDependencies": {
     "vite": "^7.0.0"

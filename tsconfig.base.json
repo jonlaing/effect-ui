@@ -2,12 +2,12 @@
   "compilerOptions": {
     "target": "ES2022",
     "useDefineForClassFields": true,
-    "module": "ESNext",
+    "module": "NodeNext",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
 
     /* Bundler mode */
-    "moduleResolution": "bundler",
+    "moduleResolution": "NodeNext",
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "declaration": true,

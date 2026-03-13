@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { Element } from "./Element";
+import * as Element from "./Element/index.js";
 
 /**
  * Options for Portal rendering.
@@ -48,45 +48,85 @@ export function Portal<A extends HTMLElement | SVGElement, E, R>(
       : maybeChildren!;
 
   return Effect.gen(function* () {
-    // Resolve target element
-    let target: HTMLElement;
-    if (options.target === undefined) {
-      target = document.body;
-    } else if (typeof options.target === "string") {
-      const found = document.querySelector(options.target);
-      if (!found) {
-        // Return a hidden element if target not found - fail gracefully
-        console.warn(`Portal target not found: ${options.target}`);
-        const fallback = document.createElement("span");
-        fallback.style.display = "none";
-        return fallback;
-      }
-      target = found as HTMLElement;
-    } else {
-      target = options.target;
+    // SSR safety - render children inline without portaling
+    if (typeof document === "undefined") {
+      return (yield* children()) as HTMLElement;
     }
 
-    // Render children
+    // Render children first
     const content = yield* children();
 
-    // Append to portal target
-    target.appendChild(content);
+    // Create placeholder that will be returned
+    const placeholder = document.createElement("span");
+    placeholder.style.display = "none";
+    placeholder.setAttribute("data-portal-placeholder", "true");
 
-    // Clean up when scope closes (component unmounts)
-    yield* Effect.addFinalizer(() =>
-      Effect.sync(() => {
-        if (target.contains(content)) {
-          target.removeChild(content);
+    // Helper to find and append to target
+    const appendToTarget = () => {
+      let target: HTMLElement;
+      if (options.target === undefined) {
+        target = document.body;
+      } else if (typeof options.target === "string") {
+        const found = document.querySelector(options.target);
+        if (!found) return false;
+        target = found as HTMLElement;
+      } else {
+        target = options.target;
+      }
+      target.appendChild(content);
+      return true;
+    };
+
+    // Don't block! Fork the target lookup so the component tree can finish mounting.
+    // This avoids deadlock when the portal target is a sibling element.
+    yield* Effect.forkScoped(
+      Effect.async<void>((resume) => {
+        // Try immediately first
+        if (appendToTarget()) {
+          resume(Effect.void);
+          return;
+        }
+
+        // If target is a string selector, wait for it to appear
+        if (typeof options.target === "string") {
+          let resolved = false;
+          const observer = new MutationObserver(() => {
+            if (!resolved && appendToTarget()) {
+              resolved = true;
+              observer.disconnect();
+              resume(Effect.void);
+            }
+          });
+
+          observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+          });
+
+          // Also try on next frame in case it's already there
+          requestAnimationFrame(() => {
+            if (!resolved && appendToTarget()) {
+              resolved = true;
+              observer.disconnect();
+              resume(Effect.void);
+            }
+          });
+        } else {
+          // Element reference - fall back to body
+          document.body.appendChild(content);
+          resume(Effect.void);
         }
       }),
     );
 
-    // Return a placeholder in the original DOM position
-    // This maintains the component's place in the tree while
-    // the actual content lives in the portal target
-    const placeholder = document.createElement("span");
-    placeholder.style.display = "none";
-    placeholder.setAttribute("data-portal-placeholder", "true");
+    // Clean up when scope closes (component unmounts)
+    yield* Effect.addFinalizer(() =>
+      Effect.sync(() => {
+        if (content.parentNode) {
+          content.parentNode.removeChild(content);
+        }
+      }),
+    );
 
     return placeholder;
   });

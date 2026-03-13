@@ -10,17 +10,17 @@ If you're already using [Effect](https://effect.website/) in your application, E
 
 In Vue, component errors are runtime surprises. You catch them with `errorCaptured` hooks or global error handlers, but there's no compile-time visibility into what can fail.
 
-In Effex, every element has type `Element<E>` where `E` is the error channel. Errors propagate through the component tree, and you **must** handle them before mounting:
+In Effex, every element has type `Element<E, R>` where `E` is the error channel. Errors propagate through the component tree, and you **must** handle them before mounting:
 
 ```ts
-// This won't compile - UserProfile might fail with ApiError
+// This won't compile — UserProfile might fail with ApiError
 mount(UserProfile(), document.body); // Type error!
 
 // Handle the error first
 mount(
   Boundary.error(
     () => UserProfile(),
-    (error) => $.div(`Failed to load: ${error.message}`),
+    (error) => $.div({}, $.of(`Failed to load: ${error.message}`)),
   ),
   document.body,
 ); // Compiles
@@ -30,21 +30,21 @@ TypeScript tells you at build time which components can fail and forces you to h
 
 ### Similar Reactivity, Different Execution
 
-Vue's Composition API and Effex share similar reactive concepts - both have signals (refs) and derived values (computed). The key difference is *when* things run:
+Vue's Composition API and Effex share similar reactive concepts — both have signals (refs) and derived values (computed). The key difference is *when* things run:
 
 - Vue: Template re-renders when refs change, computed values update lazily
 - Effex: DOM nodes subscribe directly to signals, updates are synchronous and targeted
 
 ```ts
 // Vue: Computed re-evaluates, template re-renders
-const count = ref(0)
-const doubled = computed(() => count.value * 2)
-// Template: {{ doubled }} - entire template function runs
+const count = ref(0);
+const doubled = computed(() => count.value * 2);
+// Template: {{ doubled }} — entire template function runs
 
 // Effex: Only the text node updates
-const count = yield* Signal.make(0)
-const doubled = yield* Derived.sync([count], ([c]) => c * 2)
-// $.span(doubled) - only this span's text updates
+const count = yield* Signal.make(0);
+const doubled = Readable.map(count, (c) => c * 2);
+// $.span({}, $.of(doubled)) — only this span's text updates
 ```
 
 ### No Template Compilation
@@ -61,10 +61,13 @@ Vue uses a custom template syntax that compiles to render functions. Effex uses 
 </template>
 
 // Effex
-$.div({ class: "card" }, [
-  $.h1(title),
-  $.button({ onClick: handleClick }, "Submit"),
-])
+$.div(
+  { class: "card" },
+  collect(
+    $.h1({}, $.of(title)),
+    $.button({ onClick: handleClick }, $.of("Submit")),
+  ),
+)
 ```
 
 Benefits:
@@ -75,20 +78,20 @@ Benefits:
 
 ### Automatic Resource Cleanup
 
-Vue's `onUnmounted` and `watchEffect` cleanup are manual. Effex uses Effect's scope system - resources are automatically cleaned up when components unmount:
+Vue's `onUnmounted` and `watchEffect` cleanup are manual. Effex uses Effect's scope system — resources are automatically cleaned up when components unmount:
 
 ```ts
 // Vue: Manual cleanup registration
 onMounted(() => {
-  const subscription = eventSource.subscribe(handler)
-  onUnmounted(() => subscription.unsubscribe())
-})
+  const subscription = eventSource.subscribe(handler);
+  onUnmounted(() => subscription.unsubscribe());
+});
 
 // Effex: Automatic cleanup via scope
 yield* eventSource.pipe(
   Stream.runForEach(handler),
   Effect.forkIn(scope), // Cleaned up when scope closes
-)
+);
 ```
 
 ### Better Async Integration
@@ -103,53 +106,56 @@ Boundary.suspense({
       const user = yield* fetchUser(id); // Can fail!
       return yield* UserProfile({ user });
     }),
-  fallback: () => $.div("Loading..."),
-  catch: (error) => $.div(`Error: ${error.message}`), // Same place
+  fallback: () => $.div({}, $.of("Loading...")),
+  catch: (error) => $.div({}, $.of(`Error: ${error.message}`)),
   delay: "200 millis", // Avoid loading flash
-})
+});
 
-// Option 2: Derived.async (reactive, refetches when deps change)
-const userData = yield* Derived.async([userId], ([id]) => fetchUser(id));
+// Option 2: AsyncReadable (reactive, with refetch)
+const userData = yield* AsyncReadable.make(() => fetchUser(id));
 
-// AsyncState has separate Readables for fine-grained reactivity
-$.div([
-  when(userData.isLoading, {
-    onTrue: () => $.div("Loading..."),
-    onFalse: () => $.span(),
-  }),
-  matchOption(userData.error, {
-    onSome: (err) => $.div({ class: "error" }, err.map((e) => e.message)),
-    onNone: () => $.span(),
-  }),
-  matchOption(userData.value, {
-    onSome: (user) => UserProfile({ user }), // user is Readable<User>
-    onNone: () => $.span(),
-  }),
-])
+// AsyncReadable has separate Readables for fine-grained reactivity
+$.div(
+  {},
+  collect(
+    when(userData.isLoading, {
+      onTrue: () => $.div({}, $.of("Loading...")),
+      onFalse: () => $.span(),
+    }),
+    matchOption(userData.value, {
+      onSome: (user) => UserProfile({ user }),
+      onNone: () => $.span(),
+    }),
+    matchOption(userData.error, {
+      onSome: (err) => $.div({ class: "error" }, $.of(Readable.map(err, (e) => e.message))),
+      onNone: () => $.span(),
+    }),
+  ),
+);
 ```
 
 ## Concept Mapping
 
-| Vue (Composition API)      | Effex                                            | Notes                        |
-| -------------------------- | ------------------------------------------------ | ---------------------------- |
-| `ref(initial)`             | `Signal.make(initial)`                           | Must `yield*` to create      |
-| `reactive(obj)`            | `Signal.make(obj)`                               | Same as ref for objects      |
-| `computed(() => x)`        | `Derived.sync([deps], () => x)`                  | Deps are explicit signals    |
-| `watch(source, cb)`        | `Reaction`                                       | Automatic cleanup            |
-| `watchEffect(cb)`          | `Reaction` with immediate                        | Explicit dependencies        |
-| `provide/inject`           | `yield* ServiceTag`                              | Effect services              |
-| `ref` (template ref)       | `Ref.make()`                                     | For DOM refs                 |
-| `v-if / v-else`            | `when(cond, { onTrue, onFalse })`                | Object config                |
-| `v-if="x != null"`         | `matchOption(optX, { onSome, onNone })`          | Unwraps Option               |
-| `v-show`                   | Signal-based class/style                         | No direct equivalent         |
-| `v-for`                    | `each(arr, { key, render })`                     | Key function, not `:key`     |
-| `@click` / `v-on`          | `onClick` / event props                          | Camel case handlers          |
-| `:class` / `v-bind:class`  | `class` prop with Readable                       | Reactive by default          |
-| `<Teleport>`               | `Portal()`                                       | Similar API                  |
-| `<Suspense>`               | `Boundary.suspense` or `Derived.async`           | Multiple options             |
-| `defineProps`              | Function parameters                              | Plain TypeScript             |
-| `defineEmits`              | Callback props                                   | Plain functions              |
-| SFC `.vue` files           | Plain `.ts` files                                | No special file format       |
+| Vue (Composition API) | Effex | Notes |
+|---|---|---|
+| `ref(initial)` | `Signal.make(initial)` | Must `yield*` to create |
+| `reactive(obj)` | `Signal.make(obj)` | Same as ref for objects |
+| `computed(() => x)` | `Readable.map(dep, fn)` | Derives from a readable |
+| `watch(source, cb)` | `Readable.tap(source, fn)` | Automatic cleanup |
+| `watchEffect(cb)` | `Readable.tap(source, fn)` | Explicit source |
+| `provide/inject` | `yield* ServiceTag` | Effect services |
+| `ref` (template ref) | `ref<T>()` | For DOM element refs |
+| `v-if / v-else` | `when(cond, { onTrue, onFalse })` | Object config |
+| `v-if="x != null"` | `matchOption(optX, { onSome, onNone })` | Unwraps Option |
+| `v-show` | Signal-based class/style | No direct equivalent |
+| `v-for` | `each(arr, { key, render })` | Key function, not `:key` |
+| `@click` / `v-on` | `onClick` / event props | Camel case handlers |
+| `:class` / `v-bind:class` | `class` prop with Readable | Reactive by default |
+| `<Teleport>` | `Portal()` | Similar API |
+| `<Suspense>` | `Boundary.suspense` or `AsyncReadable` | Multiple options |
+| `defineProps` | Function parameters | Plain TypeScript |
+| `defineEmits` | Callback props | Plain functions |
+| SFC `.vue` files | Plain `.ts` files | No special file format |
 
 ## Side-by-Side Examples
 
@@ -199,9 +205,9 @@ const total = computed(() =>
 
 ```ts
 // Effex
-const Cart = (props: { items: Readable<Item[]> }) =>
+const Cart = (props: { items: Readable.Readable<Item[]> }) =>
   Effect.gen(function* () {
-    const total = yield* Derived.sync([props.items], ([items]) =>
+    const total = Readable.map(props.items, (items) =>
       items.reduce((sum, i) => sum + i.price, 0),
     );
     return yield* $.div({}, t`Total: $${total}`);
@@ -225,7 +231,7 @@ const isLoggedIn = ref(false)
 
 ```ts
 // Effex
-const Auth = (props: { isLoggedIn: Readable<boolean> }) =>
+const Auth = (props: { isLoggedIn: Readable.Readable<boolean> }) =>
   when(props.isLoggedIn, {
     onTrue: () => Dashboard(),
     onFalse: () => Login(),
@@ -252,11 +258,12 @@ const todos = ref([])
 
 ```ts
 // Effex
-const TodoList = (props: { todos: Readable<Todo[]> }) =>
+const TodoList = (props: { todos: Readable.Readable<Todo[]> }) =>
   each(props.todos, {
     container: () => $.ul(),
     key: (todo) => todo.id,
-    render: (todo) => $.li(todo.map((t) => t.text)),
+    render: (todo) =>
+      $.li({}, $.of(Readable.map(todo, (t) => t.text))),
   });
 ```
 
@@ -286,17 +293,19 @@ watch(title, (newTitle) => {
 
 ```ts
 // Effex
-const DocumentTitle = (props: { title: Readable<string>; unreadCount: Readable<number> }) =>
+const DocumentTitle = (props: {
+  title: Readable.Readable<string>;
+  unreadCount: Readable.Readable<number>;
+}) =>
   Effect.gen(function* () {
-    // Runs whenever title or unreadCount changes
-    yield* Reaction.make([props.title, props.unreadCount], ([title, count]) =>
-      Effect.sync(() => {
-        document.title = count > 0 ? `(${count}) ${title}` : title;
-      }),
+    const combined = Readable.zipWith(props.title, props.unreadCount, (title, count) =>
+      count > 0 ? `(${count}) ${title}` : title,
+    );
+    yield* Readable.tap(combined, (t) =>
+      Effect.sync(() => { document.title = t; }),
     );
 
-    // Runs whenever title changes
-    yield* Reaction.make([props.title], ([title]) =>
+    yield* Readable.tap(props.title, (title) =>
       Effect.sync(() => localStorage.setItem("lastTitle", title)),
     );
 
@@ -335,16 +344,13 @@ const Page = () =>
     return yield* $.div({ class: theme }, $.of("..."));
   });
 
-// Provide at mount (like wrapping the root)
+// Provide at mount
 runApp(mount(Page().pipe(Effect.provideService(ThemeService, "dark")), root));
 
-// Or provide inline with the provide helper
+// Or provide inline
 $.div(
   { class: "app" },
-  provide(ThemeService, "dark", [
-    Page(),
-    AnotherComponent(),
-  ]),
+  provide(ThemeService, "dark", Page()),
 );
 ```
 
@@ -395,25 +401,29 @@ const TextInput = () =>
 ```ts
 // Effex
 const Modal = () =>
-  Portal(
-    { target: document.body },
-    $.div({ class: "modal" }, "Modal content"),
+  Portal(() =>
+    $.div({ class: "modal" }, $.of("Modal content")),
   );
+
+// Or with a specific target
+Portal({ target: "#modal-root" }, () =>
+  $.div({ class: "modal" }, $.of("Modal content")),
+);
 ```
 
 ## Key Mindset Shifts
 
-1. **No template syntax** - Everything is TypeScript. `v-if` becomes `when()`, `v-for` becomes `each()`, `@click` becomes `onClick`.
+1. **No template syntax** — Everything is TypeScript. `v-if` becomes `when()`, `v-for` becomes `each()`, `@click` becomes `onClick`.
 
-2. **Explicit dependencies** - Vue's reactivity auto-tracks. Effex's `Derived.sync` requires explicit dependency arrays (but they're type-checked).
+2. **Explicit sources** — Vue's `watchEffect` auto-tracks. Effex's `Readable.tap` requires an explicit readable to subscribe to.
 
-3. **Errors are values** - Instead of `errorCaptured` hooks, errors flow through the type system. Handle them explicitly with `Boundary.error`.
+3. **Errors are values** — Instead of `errorCaptured` hooks, errors flow through the type system. Handle them explicitly with `Boundary.error`.
 
-4. **Effects are explicit** - Side effects aren't hidden in `watchEffect`. They're Effect values that you compose and run explicitly.
+4. **Effects are explicit** — Side effects aren't hidden in `watchEffect`. They're `Readable.tap` subscriptions that you set up explicitly.
 
-5. **No SFC magic** - No `<script setup>`, no `defineProps`, no compiler macros. Just TypeScript functions.
+5. **No SFC magic** — No `<script setup>`, no `defineProps`, no compiler macros. Just TypeScript functions.
 
-6. **Cleanup is automatic** - Effect's scope system handles resource cleanup. No more forgotten cleanup in `onUnmounted`.
+6. **Cleanup is automatic** — Effect's scope system handles resource cleanup. No more forgotten cleanup in `onUnmounted`.
 
 ## Custom Equality
 
@@ -428,12 +438,6 @@ const currentUser = yield* Signal.make<User>(
   { equals: (a, b) => a.id === b.id },
 );
 ```
-
-This gives you fine-grained control over when the UI updates, which is particularly useful for:
-
-- Objects with irrelevant fields (timestamps, metadata)
-- Expensive computations that shouldn't re-run on semantically equal inputs
-- Normalized data where you want to compare by ID rather than reference
 
 ## Imperative DOM Access
 
@@ -458,20 +462,19 @@ const handleFocus = () => {
 </template>
 ```
 
-In Effex, the `Element` namespace provides pipeable helpers for DOM manipulation:
+In Effex, `ref()` creates a pipeable element reference:
 
 ```ts
 // Effex
 const FocusInput = () =>
   Effect.gen(function* () {
-    const inputRef = yield* Element.ref<HTMLInputElement>();
+    const inputRef = yield* ref<HTMLInputElement>();
 
     const handleFocus = () =>
       inputRef.pipe(
         Element.focus,
         Element.scrollIntoView({ behavior: "smooth" }),
         Element.addClass("focused"),
-        Effect.runPromise,
       );
 
     return yield* $.input({ ref: inputRef, onClick: handleFocus });
@@ -481,7 +484,7 @@ const FocusInput = () =>
 ### Common Vue DOM Patterns
 
 | Vue Pattern | Effex Equivalent |
-|-------------|------------------|
+|---|---|
 | `ref.value?.focus()` | `el.pipe(Element.focus)` |
 | `ref.value?.blur()` | `el.pipe(Element.blur)` |
 | `ref.value?.click()` | `el.pipe(Element.click)` |
@@ -496,7 +499,7 @@ const FocusInput = () =>
 
 ### Animation Hooks
 
-Effex's animation system passes elements to lifecycle hooks as `Effect<HTMLElement>`, letting you use Element helpers:
+Effex's animation system passes elements to lifecycle hooks, letting you use Element helpers:
 
 ```ts
 when(isModalOpen, {

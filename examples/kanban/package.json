@@ -1,0 +1,23 @@
+{
+  "name": "kanban",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@effex/dom": "workspace:*",
+    "@effex/form": "workspace:*",
+    "@tailwindcss/vite": "^4.1.18",
+    "effect": "^3.0.0",
+    "tailwindcss": "^4.1.18"
+  },
+  "devDependencies": {
+    "daisyui": "^5.5.18",
+    "typescript": "~5.9.3",
+    "vite": "^7.0.0"
+  }
+}

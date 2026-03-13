@@ -1,14 +1,14 @@
 import { Effect } from "effect";
 
+import * as Element from "../Element/index.js";
 import {
-  addClasses,
   forceReflow,
+  parseClasses,
   prefersReducedMotion,
-  removeClasses,
   runHook,
-  waitForAnimationEvent,
-} from "./helpers";
-import type { AnimationHook, AnimationOptions } from "./types";
+  waitForAnimationEnd,
+} from "./helpers.js";
+import type { AnimationHook, AnimationOptions } from "./types.js";
 
 const DEFAULT_TIMEOUT = 5000;
 
@@ -41,10 +41,10 @@ interface AnimationConfig {
 /**
  * Core animation runner that handles the common animation lifecycle.
  */
-const runAnimation = (
-  element: HTMLElement,
+const runAnimation = <E, R>(
+  element: Element.Element<HTMLElement, E, R>,
   config: AnimationConfig,
-): Effect.Effect<void> =>
+): Effect.Effect<void, E, R> =>
   Effect.gen(function* () {
     const {
       triggerClasses,
@@ -65,7 +65,9 @@ const runAnimation = (
 
     if (shouldSkip) {
       yield* runHook(onBefore, element);
-      if (skipFinalClass) addClasses(element, skipFinalClass);
+      if (skipFinalClass) {
+        yield* Element.addClass(element, ...parseClasses(skipFinalClass));
+      }
       yield* runHook(onAfter, element);
       return;
     }
@@ -75,30 +77,38 @@ const runAnimation = (
 
     // Add classes before reflow
     for (const cls of addBeforeReflow) {
-      if (cls) addClasses(element, cls);
+      if (cls) {
+        yield* Element.addClass(element, ...parseClasses(cls));
+      }
     }
 
     // Force reflow to ensure classes take effect
-    forceReflow(element);
+    yield* forceReflow(element);
 
     // Remove/add classes after reflow to trigger transitions
     for (const cls of removeAfterReflow) {
-      if (cls) removeClasses(element, cls);
+      if (cls) {
+        yield* Element.removeClass(element, ...parseClasses(cls));
+      }
     }
     for (const cls of addAfterReflow) {
-      if (cls) addClasses(element, cls);
+      if (cls) {
+        yield* Element.addClass(element, ...parseClasses(cls));
+      }
     }
 
     // Wait for animation to complete
-    yield* waitForAnimationEvent(element, timeout);
+    yield* waitForAnimationEnd(element, timeout);
 
     // Cleanup animation classes
     for (const cls of removeAfterAnimation) {
-      if (cls) removeClasses(element, cls);
+      if (cls) {
+        yield* Element.removeClass(element, ...parseClasses(cls));
+      }
     }
 
     yield* runHook(onAfter, element);
-  });
+  }) as Effect.Effect<void, E, R>;
 
 /**
  * Run an enter animation on an element.
@@ -114,10 +124,10 @@ const runAnimation = (
  * 8. Remove enter classes
  * 9. Call onEnter hook
  */
-export const runEnterAnimation = (
-  element: HTMLElement,
+export const runEnterAnimation = <E, R>(
+  element: Element.Element<HTMLElement, E, R>,
   options: AnimationOptions,
-): Effect.Effect<void> => {
+): Effect.Effect<void, E, R> => {
   const {
     enter,
     enterFrom,
@@ -147,9 +157,9 @@ export const runEnterAnimation = (
  *
  * Sequence:
  * 1. Call onBeforeExit hook
- * 2. Add exit classes
- * 3. Add exitTo classes (if provided)
- * 4. Force reflow
+ * 2. Add exit classes (starting state + transition)
+ * 3. Force reflow
+ * 4. Add exitTo classes (triggers transition to target state)
  * 5. Wait for animation/transition to complete
  * 6. Remove exit classes
  * 7. Call onExit hook
@@ -157,10 +167,10 @@ export const runEnterAnimation = (
  * Note: Element is NOT removed from DOM by this function.
  * The caller is responsible for DOM removal after this completes.
  */
-export const runExitAnimation = (
-  element: HTMLElement,
+export const runExitAnimation = <E, R>(
+  element: Element.Element<HTMLElement, E, R>,
   options: AnimationOptions,
-): Effect.Effect<void> => {
+): Effect.Effect<void, E, R> => {
   const {
     exit,
     exitTo,
@@ -173,10 +183,10 @@ export const runExitAnimation = (
   return runAnimation(element, {
     triggerClasses: [exit, exitTo],
     skipFinalClass: undefined,
-    addBeforeReflow: [exit, exitTo],
+    addBeforeReflow: [exit],
     removeAfterReflow: [],
-    addAfterReflow: [],
-    removeAfterAnimation: [exit],
+    addAfterReflow: [exitTo],
+    removeAfterAnimation: [exit, exitTo],
     timeout,
     onBefore: onBeforeExit,
     onAfter: onExit,

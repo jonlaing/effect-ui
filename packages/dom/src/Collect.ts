@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import type { ChildNode } from "./Element/types";
+import type { ChildNode } from "./Element/types.js";
 
 /**
  * Combine multiple child effects into a single ChildEffect.
@@ -35,6 +35,17 @@ import type { ChildNode } from "./Element/types";
  * // Result: Effect<ChildNode[], ErrorA | ErrorB, CtxB>
  * ```
  */
-export const collect = <E, R>(
-  ...elements: Effect.Effect<ChildNode, E, R>[]
-): Effect.Effect<ChildNode[], E, R> => Effect.all(elements);
+export const collect = <
+  T extends readonly Effect.Effect<ChildNode, unknown, unknown>[],
+>(
+  ...elements: T
+): Effect.Effect<
+  ChildNode[],
+  Effect.Effect.Error<T[number]>,
+  Effect.Effect.Context<T[number]>
+> =>
+  Effect.all(elements) as Effect.Effect<
+    ChildNode[],
+    Effect.Effect.Error<T[number]>,
+    Effect.Effect.Context<T[number]>
+  >;

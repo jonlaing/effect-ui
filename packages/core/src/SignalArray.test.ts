@@ -1,6 +1,7 @@
 import { Effect, Fiber, Option, Scope, Stream } from "effect";
 import { describe, expect, it } from "vitest";
 
+import { Readable } from "./Readable";
 import { Signal } from "./Signal";
 
 const runTest = <A>(effect: Effect.Effect<A, never, Scope.Scope>): Promise<A> =>
@@ -49,6 +50,9 @@ describe("Signal.Array", () => {
             Stream.runForEach((v) => Effect.sync(() => changes.push([...v]))),
             Effect.fork,
           );
+
+          // Yield to let the fiber subscribe before mutating
+          yield* Effect.yieldNow();
 
           yield* arr.push(2);
           yield* Effect.yieldNow();
@@ -357,7 +361,9 @@ describe("Signal.Array", () => {
       runTest(
         Effect.gen(function* () {
           const arr = yield* Signal.Array.make([1, 2, 3]);
-          const sum = arr.map((a) => a.reduce((acc, x) => acc + x, 0));
+          const sum = arr.pipe(
+            Readable.map((a) => a.reduce((acc, x) => acc + x, 0)),
+          );
           const value = yield* sum.get;
           expect(value).toBe(6);
         }),

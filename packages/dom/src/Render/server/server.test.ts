@@ -1,0 +1,291 @@
+import { Effect } from "effect";
+import { describe, expect, it } from "vitest";
+
+import { Readable, Signal } from "@effex/core";
+
+import { Boundary } from "../../Boundary";
+import { collect } from "../../Collect";
+import { each, match, when } from "../../Control";
+import { $ } from "../../Element";
+import { renderToString } from "./index";
+
+describe("SSR", () => {
+  describe("renderToString", () => {
+    it("should render a simple element to HTML", async () => {
+      const html = await Effect.runPromise(
+        renderToString($.div({ class: "container" }, $.of("Hello World"))),
+      );
+
+      expect(html).toContain("<div");
+      expect(html).toContain('class="container"');
+      expect(html).toContain("Hello World");
+      expect(html).toContain("</div>");
+    });
+
+    it("should render nested elements", async () => {
+      const html = await Effect.runPromise(
+        renderToString(
+          $.div(
+            { class: "parent" },
+            collect(
+              $.span({ class: "child" }, $.of("First")),
+              $.span({ class: "child" }, $.of("Second")),
+            ),
+          ),
+        ),
+      );
+
+      expect(html).toContain('<div class="parent">');
+      expect(html).toContain('<span class="child">First</span>');
+      expect(html).toContain('<span class="child">Second</span>');
+    });
+
+    it("should escape HTML in text content", async () => {
+      const html = await Effect.runPromise(
+        renderToString($.div({}, $.of("<script>alert('xss')</script>"))),
+      );
+
+      expect(html).not.toContain("<script>");
+      expect(html).toContain("&lt;script&gt;");
+    });
+
+    it("should escape HTML in attributes", async () => {
+      const html = await Effect.runPromise(
+        renderToString($.div({ class: 'foo" onclick="alert(1)' })),
+      );
+
+      expect(html).toContain("&quot;");
+      expect(html).not.toContain('onclick="alert(1)"');
+    });
+  });
+
+  describe("when with hydration markers", () => {
+    it("should add hydration markers to when container", async () => {
+      const html = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const condition = yield* Signal.make(true);
+            return yield* renderToString(
+              when(condition, {
+                onTrue: () => $.div({}, $.of("Visible")),
+                onFalse: () => $.div({}, $.of("Hidden")),
+              }),
+            );
+          }),
+        ),
+      );
+
+      expect(html).toContain("data-effex-id=");
+      expect(html).toContain('data-effex-key="true"');
+      expect(html).toContain("Visible");
+      expect(html).not.toContain("Hidden");
+    });
+
+    it("should render false condition", async () => {
+      const html = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const condition = yield* Signal.make(false);
+            return yield* renderToString(
+              when(condition, {
+                onTrue: () => $.div({}, $.of("Visible")),
+                onFalse: () => $.div({}, $.of("Hidden")),
+              }),
+            );
+          }),
+        ),
+      );
+
+      expect(html).toContain('data-effex-key="false"');
+      expect(html).toContain("Hidden");
+      expect(html).not.toContain("Visible");
+    });
+  });
+
+  describe("match with hydration markers", () => {
+    it("should add hydration markers to match container", async () => {
+      const html = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const status = yield* Signal.make<"loading" | "success" | "error">(
+              "loading",
+            );
+            return yield* renderToString(
+              match(status, {
+                cases: [
+                  {
+                    pattern: "loading",
+                    render: () => $.div({}, $.of("Loading...")),
+                  },
+                  {
+                    pattern: "success",
+                    render: () => $.div({}, $.of("Done!")),
+                  },
+                  { pattern: "error", render: () => $.div({}, $.of("Failed")) },
+                ],
+              }),
+            );
+          }),
+        ),
+      );
+
+      expect(html).toContain("data-effex-id=");
+      expect(html).toContain('data-effex-key="loading"');
+      expect(html).toContain("Loading...");
+    });
+
+    it("should render fallback when no pattern matches", async () => {
+      const html = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const value = yield* Signal.make(999);
+            return yield* renderToString(
+              match(value, {
+                cases: [
+                  { pattern: 1, render: () => $.div({}, $.of("One")) },
+                  { pattern: 2, render: () => $.div({}, $.of("Two")) },
+                ],
+                fallback: () => $.div({}, $.of("Unknown")),
+              }),
+            );
+          }),
+        ),
+      );
+
+      expect(html).toContain("Unknown");
+    });
+  });
+
+  describe("each with hydration markers", () => {
+    it("should add hydration markers to each container and items", async () => {
+      const html = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const items = yield* Signal.make([
+              { id: "1", name: "Alice" },
+              { id: "2", name: "Bob" },
+            ]);
+            return yield* renderToString(
+              each(items, {
+                container: () => $.ul({ class: "list" }),
+                key: (item) => item.id,
+                render: (item) =>
+                  $.li({}, $.of(Readable.map(item, (i) => i.name))),
+              }),
+            );
+          }),
+        ),
+      );
+
+      expect(html).toContain("data-effex-id=");
+      expect(html).toContain('data-effex-key="1"');
+      expect(html).toContain('data-effex-key="2"');
+      expect(html).toContain("<ul");
+      expect(html).toContain("<li");
+      expect(html).toContain("Alice");
+      expect(html).toContain("Bob");
+    });
+
+    it("should render empty list", async () => {
+      const html = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const items = yield* Signal.make<{ id: string; name: string }[]>(
+              [],
+            );
+            return yield* renderToString(
+              each(items, {
+                key: (item) => item.id,
+                render: (item) =>
+                  $.li({}, $.of(Readable.map(item, (i) => i.name))),
+              }),
+            );
+          }),
+        ),
+      );
+
+      expect(html).toContain("data-effex-id=");
+      expect(html).not.toContain("<li");
+    });
+  });
+
+  describe("reactive values in SSR", () => {
+    it("should render initial value of Signal in text", async () => {
+      const html = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const count = yield* Signal.make(42);
+            return yield* renderToString(
+              $.div({}, collect($.of("Count: "), $.of(count))),
+            );
+          }),
+        ),
+      );
+
+      expect(html).toContain("Count: ");
+      expect(html).toContain("42");
+    });
+
+    it("should render initial value of Signal in attribute", async () => {
+      const html = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const isActive = yield* Signal.make(true);
+            return yield* renderToString(
+              $.div({
+                class: Readable.map(isActive, (a) =>
+                  a ? "active" : "inactive",
+                ),
+              }),
+            );
+          }),
+        ),
+      );
+
+      expect(html).toContain('class="active"');
+    });
+  });
+
+  describe("suspense boundaries in SSR", () => {
+    it("should render fallback with hydration markers", async () => {
+      const html = await Effect.runPromise(
+        renderToString(
+          Boundary.suspense({
+            render: () =>
+              Effect.gen(function* () {
+                yield* Effect.sleep(100);
+                return yield* $.div({}, $.of("Loaded content"));
+              }),
+            fallback: () => $.div({}, $.of("Loading...")),
+          }),
+        ),
+      );
+
+      expect(html).toContain("data-effex-id=");
+      expect(html).toContain('data-effex-type="suspense"');
+      expect(html).toContain('data-effex-suspense-state="loading"');
+      expect(html).toContain("Loading...");
+      // Should NOT contain the async content during SSR
+      expect(html).not.toContain("Loaded content");
+    });
+
+    it("should render fallback with catch handler", async () => {
+      const html = await Effect.runPromise(
+        renderToString(
+          Boundary.suspense({
+            render: () =>
+              Effect.gen(function* () {
+                yield* Effect.sleep(100);
+                return yield* $.div({}, $.of("Success"));
+              }),
+            fallback: () => $.div({}, $.of("Loading...")),
+            catch: () => $.div({}, $.of("Error occurred")),
+          }),
+        ),
+      );
+
+      expect(html).toContain('data-effex-type="suspense"');
+      expect(html).toContain("Loading...");
+    });
+  });
+});

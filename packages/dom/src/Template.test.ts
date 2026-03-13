@@ -1,7 +1,7 @@
 import { Effect, Fiber, Stream } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { Signal } from "@effex/core";
+import { Readable, Signal } from "@effex/core";
 
 import { t } from "./Template";
 
@@ -134,6 +134,9 @@ describe("Template (t)", () => {
               readable.changes.pipe(Stream.take(1), Stream.runCollect),
             );
 
+            // Yield to allow fiber to start and subscribe to the stream
+            yield* Effect.yieldNow();
+
             // Update the signal
             yield* count.set(42);
 
@@ -153,7 +156,7 @@ describe("Template (t)", () => {
             const name = yield* Signal.make("world");
 
             const readable = yield* t`hello, ${name}!`;
-            const upperResult = readable.map((s) => s.toUpperCase());
+            const upperResult = Readable.map(readable, (s) => s.toUpperCase());
 
             const value = yield* upperResult.get;
             expect(value).toBe("HELLO, WORLD!");
@@ -169,7 +172,7 @@ describe("Template (t)", () => {
             const count = yield* Signal.make(1);
 
             const readable = yield* t`${count}`;
-            const doubled = readable.map((s) => `${parseInt(s) * 2}`);
+            const doubled = Readable.map(readable, (s) => `${parseInt(s) * 2}`);
 
             yield* count.set(5);
 

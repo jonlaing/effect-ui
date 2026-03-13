@@ -3,8 +3,6 @@ import { defineConfig } from "tsup";
 export default defineConfig({
   entry: {
     index: "src/index.ts",
-    server: "src/server.ts",
-    client: "src/client.ts",
   },
   format: ["esm", "cjs"],
   dts: true,
@@ -16,7 +14,6 @@ export default defineConfig({
     "@effex/dom",
     "@effex/router",
     "@effex/form",
-    "@effex/primitives",
     "@effect/platform",
     "@effect/platform-node",
   ],

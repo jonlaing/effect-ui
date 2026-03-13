@@ -1,10 +1,10 @@
 import { Effect, Exit, Scope } from "effect";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { collect } from "./Collect";
-import { DOMRendererLive } from "./DOMRenderer";
 import { $ } from "./Element";
 import { Portal } from "./Portal";
+import { DOMRendererLive } from "./Render/DOMRenderer";
 
 describe("Portal", () => {
   let portalRoot: HTMLDivElement;
@@ -132,8 +132,6 @@ describe("Portal", () => {
   });
 
   it("handles missing target selector gracefully", async () => {
-    const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
-
     const program = Effect.gen(function* () {
       const placeholder = yield* Portal({ target: "#non-existent" }, () =>
         $.div({ id: "portal-content" }, $.of("Hello")),
@@ -145,19 +143,13 @@ describe("Portal", () => {
       Effect.scoped(program).pipe(Effect.provide(DOMRendererLive)),
     );
 
-    // Should return a hidden fallback element
+    // Should return a hidden placeholder element
     expect(result.tagName).toBe("SPAN");
     expect(result.style.display).toBe("none");
 
-    // Should warn about missing target
-    expect(consoleWarn).toHaveBeenCalledWith(
-      "Portal target not found: #non-existent",
-    );
-
-    // Content should NOT be rendered
+    // Content should NOT be in the document body since target doesn't exist
+    // (Portal uses MutationObserver to wait for the target to appear)
     expect(document.getElementById("portal-content")).toBeNull();
-
-    consoleWarn.mockRestore();
   });
 
   it("works with nested elements", async () => {
