@@ -3,7 +3,6 @@
 "@effex/dom": minor
 "@effex/router": minor
 "@effex/form": minor
-"@effex/primitives": minor
 ---
 
 Initial public release of Effex - a reactive UI framework built on Effect.
@@ -34,9 +33,3 @@ Initial public release of Effex - a reactive UI framework built on Effect.
 - Field-level state (value, errors, touched, dirty)
 - Configurable validation timing
 - Async validators support
-
-**@effex/primitives**
-- Headless, accessible UI components (Dialog, Menu, Select, Tabs, etc.)
-- WAI-ARIA compliant
-- Keyboard navigation built-in
-- Works with any styling solution
