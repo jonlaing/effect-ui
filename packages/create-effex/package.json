@@ -1,6 +1,6 @@
 {
   "name": "create-effex",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Create a new Effex application",
   "type": "module",
   "license": "MIT",
