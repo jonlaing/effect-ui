@@ -1,4 +1,3 @@
-// Platform utilities
 export {
   Platform,
   RedirectError,
