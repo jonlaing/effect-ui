@@ -175,7 +175,7 @@ async function main() {
       `    ${pc.cyan("pnpm")} dev          ${pc.dim("# Start dev server with SSR")}`,
     );
     console.log(
-      `    ${pc.cyan("pnpm")} build        ${pc.dim("# Build for production (client + SSG)")}`,
+      `    ${pc.cyan("pnpm")} build        ${pc.dim("# Build for production (client + server)")}`,
     );
     console.log(
       `    ${pc.cyan("pnpm")} start        ${pc.dim("# Start production server")}`,

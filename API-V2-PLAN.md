@@ -9,6 +9,7 @@ All core primitives refactored with TypeId patterns, pipeable APIs, and full tes
 - **Readable** - `TypeId`, `isReadable`, pipeable combinators (`map`, `flatMap`, `zip`, `zipWith`, `zipAll`, `filter`, `dedupe`, `lift`, `normalize`)
 - **Signal** - `SignalTypeId`, `isSignal`, pipeable `Signal.equals`, reactive collections (`Signal.Array`, `Signal.Map`, `Signal.Set`)
 - **AsyncReadable** - `AsyncReadableTypeId`, `isLoading/value/error` Readables, `refetch`, `reset`
+- **AsyncCache** - Query-cache service with prefix-based invalidation, seeded readables, auto-provided in SSR and client
 - **Mutation** - `MutationTypeId`, `isLoading/data/error` Readables, `run`, `reset`
 - **Transition** - State machines with guarded transitions
 - **ControlCtx** - Context pattern for control flow (client/SSR/hydration)
@@ -26,43 +27,64 @@ All DOM modules refactored:
 - **Boundary** - `Boundary.suspense`, `Boundary.error` using `SuspenseBoundaryCtx`
 - **SSR Safety** - Guards added to `FocusTrap`, `ScrollLock`, `Portal`
 - **Render** - `DOMRenderer`, `mount`, `runApp`, `renderToString`, `hydrate`
+- **ClientAsyncCacheLayer** - Shared singleton AsyncCache for mount/hydrate
+
+### Phase 6: Update Dependent Packages ✅
+
+#### 6.1 `@effex/form` ✅
+All 90 tests passing (Field: 17, Form: 73). Builds clean.
+
+#### 6.2 `@effex/router` ✅
+All 119 tests passing (Route: 35, Router: 34, Navigation: 33, Link: 17). Builds clean.
+
+New features:
+- `Route.get(loader, render)` — loader on route, data passed to render
+- `Route.post/put/delete(key, handler)` — mutation handlers
+- `Route.params(schema)` / `Route.searchParams(schema)` — typed validation
+- `Route.catchIf/catchTag/catchAll` — error handling combinators
+- `Route.withGuard(cond, opts)` — protected routes with redirect/fallback
+- `RouteDataContext` + `RouteDataProvider` — data flow abstractions
+- `Outlet` — renders matched route with data, handles redirects
+- `Link` — navigation component with active state
+
+#### 6.3 `@effex/platform` ✅
+Builds clean. Full SSR + hydration pipeline working.
+
+- `Platform.toHttpRoutes(router, options)` — Router → HttpRouter
+- `Platform.generateDocument()` — HTML document with hydration data
+- `Platform.makeClientLayer(router)` — client-side data provider (hydration + `?_data=1` fetching)
+- `RedirectError` — redirect from loaders/handlers (server 302 + client-side nav)
+- AsyncCache auto-provided on both server (per-request) and client
+
+#### 6.4 `@effex/vite-plugin` ✅
+12 tests passing. Builds clean.
+
+- `effexPlatform()` — combined Vite plugin
+  - Server-code stripping: strips `Route.get` loaders and `Route.post/put/del` handlers from client builds
+  - SSR dev server with HMR (when `entry` is provided)
 
 ### Phase 7 (Partial): Documentation ✅
 
 - `packages/core/README.md` - Updated
 - `packages/dom/README.md` - Updated
+- `packages/platform/PLATFORM-V2.md` - Complete design doc with all phases done
 
 ---
 
 ## Remaining Work
 
-### Phase 6: Update Dependent Packages
-
-#### 6.1 `@effex/form` - Uses removed `Derived.sync`
-
-```
-Error: Derived.sync is not a function
-```
-
-**Fix needed:** Replace `Derived.sync([deps], fn)` with `Readable.zipAll([deps]).pipe(Readable.map(fn))` or similar patterns.
-
-#### 6.2 `@effex/router` - Missing ControlCtx
-
-```
-Error: Service not found: @effex/core/ControlCtx
-```
-
-**Fix needed:** Tests need to provide `ClientControlCtx` layer. Router may also need API updates.
-
-#### 6.3 `@effex/platform`
-
-Needs testing after other packages are fixed.
-
 ### Phase 7 (Remaining): Templates & Examples
 
 - [ ] Update `create-effex` templates
-- [ ] Update example apps
+- [ ] Update example apps (chat, kanban, router-demo may need v2 API updates)
 - [ ] Migration guide (optional - breaking changes documented in READMEs)
+
+**Example app status:**
+- `twitter` ✅ — Full SSR + hydration demo with DaisyUI styling, error handling, redirects
+- `todo-app` ✅ — Working with Tailwind + DaisyUI
+- `chat` — Needs review
+- `kanban` — Needs review
+- `router-demo` — Needs review (may be superseded by twitter demo)
 
 ---
 
@@ -77,6 +99,7 @@ Needs testing after other packages are fixed.
 - `Readable.normalize(value)` - Normalizes `T | Readable<T>` to `Readable<T>`
 - `Readable.lift(fn)` - Makes functions accept reactive props
 - `AsyncReadable` - Async state with `isLoading`, `value`, `error`
+- `AsyncCache` - Query-cache with prefix-based invalidation, seeded readables
 - `Mutation` - Explicit mutations with state tracking
 - `ControlCtx` - Abstraction for control flow across environments
 - `VirtualListCtx` - Abstraction for virtual lists across environments
