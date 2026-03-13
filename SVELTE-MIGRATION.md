@@ -12,17 +12,17 @@ If you're already using [Effect](https://effect.website/) in your application, E
 
 In Svelte, component errors are runtime surprises. There's no built-in error boundary mechanism, and you typically rely on try/catch in event handlers or global error handling.
 
-In Effex, every element has type `Element<E>` where `E` is the error channel. Errors propagate through the component tree, and you **must** handle them before mounting:
+In Effex, every element has type `Element<E, R>` where `E` is the error channel. Errors propagate through the component tree, and you **must** handle them before mounting:
 
 ```ts
-// This won't compile - UserProfile might fail with ApiError
+// This won't compile — UserProfile might fail with ApiError
 mount(UserProfile(), document.body); // Type error!
 
 // Handle the error first
 mount(
   Boundary.error(
     () => UserProfile(),
-    (error) => $.div(`Failed to load: ${error.message}`),
+    (error) => $.div({}, $.of(`Failed to load: ${error.message}`)),
   ),
   document.body,
 ); // Compiles
@@ -32,12 +32,12 @@ TypeScript tells you at build time which components can fail and forces you to h
 
 ### No Compiler Magic
 
-Svelte's power comes from its compiler - `$:` reactive statements, automatic subscriptions to stores, and runes in Svelte 5. This is elegant but opaque:
+Svelte's power comes from its compiler — `$:` reactive statements, automatic subscriptions to stores, and runes in Svelte 5. This is elegant but opaque:
 
 ```svelte
 <!-- Svelte: Compiler transforms this -->
 <script>
-  let count = 0;        // Becomes reactive
+  let count = 0;           // Becomes reactive
   $: doubled = count * 2;  // Compiler creates derived value
 </script>
 
@@ -48,12 +48,12 @@ Svelte's power comes from its compiler - `$:` reactive statements, automatic sub
 </script>
 ```
 
-Effex is explicit - what you write is what runs:
+Effex is explicit — what you write is what runs:
 
 ```ts
 // Effex: No transformation
 const count = yield* Signal.make(0);
-const doubled = yield* Derived.sync([count], ([c]) => c * 2);
+const doubled = Readable.map(count, (c) => c * 2);
 ```
 
 Benefits:
@@ -66,12 +66,12 @@ Benefits:
 
 Both Svelte and Effex use fine-grained reactivity (not virtual DOM diffing). The concepts map fairly directly:
 
-| Svelte 5 Rune | Svelte 4          | Effex                    |
-| ------------- | ----------------- | ------------------------ |
-| `$state()`    | `let x = ...`     | `Signal.make()`          |
-| `$derived()`  | `$: x = ...`      | `Derived.sync()`         |
-| `$effect()`   | `$: { ... }`      | `Reaction`               |
-| `$props()`    | `export let`      | Function parameters      |
+| Svelte 5 Rune | Svelte 4 | Effex |
+|---|---|---|
+| `$state()` | `let x = ...` | `Signal.make()` |
+| `$derived()` | `$: x = ...` | `Readable.map()` |
+| `$effect()` | `$: { ... }` | `Readable.tap()` |
+| `$props()` | `export let` | Function parameters |
 
 ### Async Story
 
@@ -87,39 +87,42 @@ Both Svelte and Effex use fine-grained reactivity (not virtual DOM diffing). The
 ```
 
 ```ts
-// Effex - Option 1: Boundary.suspense (one-shot)
+// Effex — Option 1: Boundary.suspense (one-shot)
 Boundary.suspense({
   render: () =>
     Effect.gen(function* () {
       const user = yield* fetchUser(id);
       return yield* UserProfile({ user });
     }),
-  fallback: () => $.div("Loading..."),
-  catch: (error) => $.div(`Error: ${error.message}`),
-  delay: "200 millis", // Avoid loading flash - Svelte can't do this
-})
+  fallback: () => $.div({}, $.of("Loading...")),
+  catch: (error) => $.div({}, $.of(`Error: ${error.message}`)),
+  delay: "200 millis", // Avoid loading flash — Svelte can't do this
+});
 
-// Effex - Option 2: Derived.async (reactive, refetches when deps change)
-const userData = yield* Derived.async([userId], ([id]) => fetchUser(id));
+// Effex — Option 2: AsyncReadable (reactive, with refetch)
+const userData = yield* AsyncReadable.make(() => fetchUser(id));
 
-// AsyncState has separate Readables for fine-grained reactivity
-$.div([
-  when(userData.isLoading, {
-    onTrue: () => $.div("Loading..."),
-    onFalse: () => $.span(),
-  }),
-  matchOption(userData.error, {
-    onSome: (err) => $.div({ class: "error" }, err.map((e) => e.message)),
-    onNone: () => $.span(),
-  }),
-  matchOption(userData.value, {
-    onSome: (user) => UserProfile({ user }), // user is Readable<User>
-    onNone: () => $.span(),
-  }),
-])
+// AsyncReadable has separate Readables for fine-grained reactivity
+$.div(
+  {},
+  collect(
+    when(userData.isLoading, {
+      onTrue: () => $.div({}, $.of("Loading...")),
+      onFalse: () => $.span(),
+    }),
+    matchOption(userData.value, {
+      onSome: (user) => UserProfile({ user }),
+      onNone: () => $.span(),
+    }),
+    matchOption(userData.error, {
+      onSome: (err) => $.div({ class: "error" }, $.of(Readable.map(err, (e) => e.message))),
+      onNone: () => $.span(),
+    }),
+  ),
+);
 ```
 
-The `delay` option on `Boundary.suspense` prevents flash of loading state for fast responses - something Svelte's `{#await}` can't do without manual work. `Derived.async` is better when you need the data to reactively refetch when dependencies change.
+The `delay` option on `Boundary.suspense` prevents flash of loading state for fast responses — something Svelte's `{#await}` can't do without manual work. `AsyncReadable` is better when you need refetch or reset capabilities.
 
 ### Automatic Resource Cleanup
 
@@ -140,29 +143,29 @@ Svelte's `onDestroy` requires manual cleanup registration. Effex uses Effect's s
 yield* eventSource.pipe(
   Stream.runForEach(handler),
   Effect.forkIn(scope), // Cleaned up when scope closes
-)
+);
 ```
 
 ## Concept Mapping
 
-| Svelte 5                   | Svelte 4                   | Effex                                    | Notes                     |
-| -------------------------- | -------------------------- | ---------------------------------------- | ------------------------- |
-| `$state(initial)`          | `let x = initial`          | `Signal.make(initial)`                   | Must `yield*` to create   |
-| `$derived(expr)`           | `$: x = expr`              | `Derived.sync([deps], fn)`               | Explicit dependencies     |
-| `$effect(() => {})`        | `$: { statement }`         | `Reaction`                               | Automatic cleanup         |
-| `$props()`                 | `export let prop`          | Function parameters                      | Plain TypeScript          |
-| `$bindable()`              | `bind:value`               | Signal + event handler                   | Explicit two-way binding  |
-| `getContext/setContext`    | `getContext/setContext`    | `yield* ServiceTag`                      | Effect services           |
-| `bind:this`                | `bind:this`                | `Ref.make()`                             | For DOM refs              |
-| `{#if} {:else}`            | `{#if} {:else}`            | `when(cond, { onTrue, onFalse })`        | Object config             |
-| `{#if x != null}`          | `{#if x != null}`          | `matchOption(optX, { onSome, onNone })`  | Unwraps Option            |
-| `{#each}`                  | `{#each}`                  | `each(arr, { key, render })`             | Key function required     |
-| `{#await}`                 | `{#await}`                 | `Boundary.suspense` or `Derived.async`   | Multiple options          |
-| `on:click`                 | `on:click`                 | `onClick`                                | Camel case handlers       |
-| `class:active={isActive}`  | `class:active={isActive}`  | `class` prop with Readable               | Different syntax          |
-| `<svelte:component>`       | `<svelte:component>`       | Dynamic function call                    | Just call the component   |
-| `.svelte` files            | `.svelte` files            | Plain `.ts` files                        | No special file format    |
-| Stores (`writable`, etc.)  | Stores                     | `Signal`                                 | Similar concept           |
+| Svelte 5 | Svelte 4 | Effex | Notes |
+|---|---|---|---|
+| `$state(initial)` | `let x = initial` | `Signal.make(initial)` | Must `yield*` to create |
+| `$derived(expr)` | `$: x = expr` | `Readable.map(dep, fn)` | Derives from a readable |
+| `$effect(() => {})` | `$: { statement }` | `Readable.tap(dep, fn)` | Automatic cleanup |
+| `$props()` | `export let prop` | Function parameters | Plain TypeScript |
+| `$bindable()` | `bind:value` | Signal + event handler | Explicit two-way binding |
+| `getContext/setContext` | `getContext/setContext` | `yield* ServiceTag` | Effect services |
+| `bind:this` | `bind:this` | `ref<T>()` | For DOM element refs |
+| `{#if} {:else}` | `{#if} {:else}` | `when(cond, { onTrue, onFalse })` | Object config |
+| `{#if x != null}` | `{#if x != null}` | `matchOption(optX, { onSome, onNone })` | Unwraps Option |
+| `{#each}` | `{#each}` | `each(arr, { key, render })` | Key function required |
+| `{#await}` | `{#await}` | `Boundary.suspense` or `AsyncReadable` | Multiple options |
+| `on:click` | `on:click` | `onClick` | Camel case handlers |
+| `class:active={x}` | `class:active={x}` | `class` prop with Readable | Different syntax |
+| `<svelte:component>` | `<svelte:component>` | Dynamic function call | Just call the component |
+| `.svelte` files | `.svelte` files | Plain `.ts` files | No special file format |
+| Stores (`writable`) | Stores | `Signal` | Similar concept |
 
 ## Side-by-Side Examples
 
@@ -218,9 +221,9 @@ const Counter = () =>
 
 ```ts
 // Effex
-const Cart = (props: { items: Readable<Item[]> }) =>
+const Cart = (props: { items: Readable.Readable<Item[]> }) =>
   Effect.gen(function* () {
-    const total = yield* Derived.sync([props.items], ([items]) =>
+    const total = Readable.map(props.items, (items) =>
       items.reduce((sum, i) => sum + i.price, 0),
     );
     return yield* $.div({}, t`Total: $${total}`);
@@ -244,7 +247,7 @@ const Cart = (props: { items: Readable<Item[]> }) =>
 
 ```ts
 // Effex
-const Auth = (props: { isLoggedIn: Readable<boolean> }) =>
+const Auth = (props: { isLoggedIn: Readable.Readable<boolean> }) =>
   when(props.isLoggedIn, {
     onTrue: () => Dashboard(),
     onFalse: () => Login(),
@@ -268,11 +271,12 @@ const Auth = (props: { isLoggedIn: Readable<boolean> }) =>
 
 ```ts
 // Effex
-const TodoList = (props: { todos: Readable<Todo[]> }) =>
+const TodoList = (props: { todos: Readable.Readable<Todo[]> }) =>
   each(props.todos, {
     container: () => $.ul(),
     key: (todo) => todo.id,
-    render: (todo) => $.li(todo.map((t) => t.text)),
+    render: (todo) =>
+      $.li({}, $.of(Readable.map(todo, (t) => t.text))),
   });
 ```
 
@@ -309,17 +313,19 @@ const TodoList = (props: { todos: Readable<Todo[]> }) =>
 
 ```ts
 // Effex
-const DocumentTitle = (props: { title: Readable<string>; unreadCount: Readable<number> }) =>
+const DocumentTitle = (props: {
+  title: Readable.Readable<string>;
+  unreadCount: Readable.Readable<number>;
+}) =>
   Effect.gen(function* () {
-    // Runs whenever title or unreadCount changes
-    yield* Reaction.make([props.title, props.unreadCount], ([title, count]) =>
-      Effect.sync(() => {
-        document.title = count > 0 ? `(${count}) ${title}` : title;
-      }),
+    const combined = Readable.zipWith(props.title, props.unreadCount, (title, count) =>
+      count > 0 ? `(${count}) ${title}` : title,
+    );
+    yield* Readable.tap(combined, (t) =>
+      Effect.sync(() => { document.title = t; }),
     );
 
-    // Runs whenever title changes
-    yield* Reaction.make([props.title], ([title]) =>
+    yield* Readable.tap(props.title, (title) =>
       Effect.sync(() => localStorage.setItem("lastTitle", title)),
     );
 
@@ -355,16 +361,13 @@ const Page = () =>
     return yield* $.div({ class: theme }, $.of("..."));
   });
 
-// Provide at mount (like wrapping the root)
+// Provide at mount
 runApp(mount(Page().pipe(Effect.provideService(ThemeService, "dark")), root));
 
-// Or provide inline with the provide helper
+// Or provide inline
 $.div(
   { class: "app" },
-  provide(ThemeService, "dark", [
-    Page(),
-    AnotherComponent(),
-  ]),
+  provide(ThemeService, "dark", Page()),
 );
 ```
 
@@ -418,7 +421,7 @@ const TextInput = () =>
 const Counter = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0);
-    const doubled = yield* Derived.sync([count], ([c]) => c * 2);
+    const doubled = Readable.map(count, (c) => c * 2);
 
     return yield* $.div(
       {},
@@ -448,22 +451,23 @@ const Counter = () =>
 
 ```ts
 // Effex
-interface CardProps {
-  header?: Element;
-  children: Element;
-}
-
-const Card = (props: CardProps) =>
-  $.div({ class: "card" }, [
-    props.header ?? $.span(), // Named "slot"
-    props.children,           // Default children
-  ]);
+const Card = <E, R>(props: {
+  header?: Element.Element<HTMLElement, E, R>;
+  children: Element.Element<HTMLElement, E, R>;
+}) =>
+  $.div(
+    { class: "card" },
+    collect(
+      props.header ?? $.span(),
+      props.children,
+    ),
+  );
 
 // Usage
 Card({
-  header: $.h1("Title"),
-  children: $.p("Card content"),
-})
+  header: $.h1({}, $.of("Title")),
+  children: $.p({}, $.of("Card content")),
+});
 ```
 
 ### Async / Await Blocks
@@ -487,26 +491,26 @@ Boundary.suspense({
       const user = yield* fetchUser(id);
       return yield* UserProfile({ user });
     }),
-  fallback: () => $.p("Loading..."),
-  catch: (e) => $.p(`Error: ${e}`),
-})
+  fallback: () => $.p({}, $.of("Loading...")),
+  catch: (e) => $.p({}, $.of(`Error: ${e}`)),
+});
 ```
 
 ## Key Mindset Shifts
 
-1. **No compiler magic** - Svelte's `$:`, `$state`, `$derived` are compiler transforms. Effex is plain TypeScript - what you write is what runs.
+1. **No compiler magic** — Svelte's `$:`, `$state`, `$derived` are compiler transforms. Effex is plain TypeScript — what you write is what runs.
 
-2. **Explicit dependencies** - Svelte auto-tracks dependencies through compilation. Effex's `Derived.sync` requires explicit dependency arrays (but they're type-checked).
+2. **Explicit sources** — Svelte auto-tracks dependencies through compilation. Effex's `Readable.map` and `Readable.tap` require explicit readables to derive from or subscribe to.
 
-3. **No special file format** - No `.svelte` files with `<script>`, `<style>`, and template sections. Just TypeScript.
+3. **No special file format** — No `.svelte` files with `<script>`, `<style>`, and template sections. Just TypeScript.
 
-4. **Errors are values** - Instead of try/catch everywhere, errors flow through the type system. Handle them explicitly with `Boundary.error`.
+4. **Errors are values** — Instead of try/catch everywhere, errors flow through the type system. Handle them explicitly with `Boundary.error`.
 
-5. **No bind: directive** - Two-way binding is explicit with a value prop and event handler. More verbose but clearer data flow.
+5. **No bind: directive** — Two-way binding is explicit with a value prop and event handler. More verbose but clearer data flow.
 
-6. **Cleanup is automatic** - Effect's scope system handles resource cleanup. No need to remember `onDestroy`.
+6. **Cleanup is automatic** — Effect's scope system handles resource cleanup. No need to remember `onDestroy`.
 
-7. **Function calls, not templates** - `{#if}` becomes `when()`, `{#each}` becomes `each()`. It's all TypeScript.
+7. **Function calls, not templates** — `{#if}` becomes `when()`, `{#each}` becomes `each()`. It's all TypeScript.
 
 ## Custom Equality
 
@@ -521,12 +525,6 @@ const currentUser = yield* Signal.make<User>(
   { equals: (a, b) => a.id === b.id },
 );
 ```
-
-This gives you fine-grained control over when the UI updates, which is particularly useful for:
-
-- Objects with irrelevant fields (timestamps, metadata)
-- Expensive computations that shouldn't re-run on semantically equal inputs
-- Normalized data where you want to compare by ID rather than reference
 
 ## Transitions and Animations
 
@@ -546,13 +544,13 @@ Svelte has built-in transition directives. Effex uses CSS-first animations:
 ```ts
 // Effex
 when(visible, {
-  onTrue: () => $.div("Fading content"),
+  onTrue: () => $.div({}, $.of("Fading content")),
   onFalse: () => $.span(),
   animate: {
-    enter: "fade-in",   // CSS class
-    exit: "fade-out",   // CSS class
+    enter: "fade-in",  // CSS class
+    exit: "fade-out",  // CSS class
   },
-})
+});
 ```
 
 Effex's approach:
@@ -580,20 +578,19 @@ In Svelte, you use `bind:this` to get DOM element references:
 <input bind:this={inputEl} on:click={handleFocus} />
 ```
 
-In Effex, the `Element` namespace provides pipeable helpers for DOM manipulation:
+In Effex, `ref()` creates a pipeable element reference:
 
 ```ts
 // Effex
 const FocusInput = () =>
   Effect.gen(function* () {
-    const inputRef = yield* Element.ref<HTMLInputElement>();
+    const inputRef = yield* ref<HTMLInputElement>();
 
     const handleFocus = () =>
       inputRef.pipe(
         Element.focus,
         Element.scrollIntoView({ behavior: "smooth" }),
         Element.addClass("focused"),
-        Effect.runPromise,
       );
 
     return yield* $.input({ ref: inputRef, onClick: handleFocus });
@@ -603,7 +600,7 @@ const FocusInput = () =>
 ### Common Svelte DOM Patterns
 
 | Svelte Pattern | Effex Equivalent |
-|----------------|------------------|
+|---|---|
 | `el?.focus()` | `el.pipe(Element.focus)` |
 | `el?.blur()` | `el.pipe(Element.blur)` |
 | `el?.click()` | `el.pipe(Element.click)` |
@@ -618,7 +615,7 @@ const FocusInput = () =>
 
 ### Animation Hooks with Element Helpers
 
-Effex's animation system passes elements to lifecycle hooks as `Effect<HTMLElement>`, letting you use Element helpers:
+Effex's animation system passes elements to lifecycle hooks, letting you use Element helpers:
 
 ```ts
 when(isModalOpen, {
