@@ -10,6 +10,7 @@
       "@effex/router",
       "@effex/form",
       "@effex/platform",
+      "@effex/vite-plugin",
       "create-effex"
     ]
   ],
