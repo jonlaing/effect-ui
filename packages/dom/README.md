@@ -10,6 +10,14 @@ DOM rendering for Effex applications. This package provides elements, components
 pnpm add @effex/dom effect
 ```
 
+## Subpath Exports
+
+| Import Path | Purpose |
+|-------------|---------|
+| `@effex/dom` | Main export — elements, control flow, utilities, and all of `@effex/core` |
+| `@effex/dom/server` | Server-side rendering (`renderToString`) |
+| `@effex/dom/hydrate` | Client-side hydration (`hydrate`) |
+
 ## Basic Usage
 
 ### Simple Components
@@ -48,7 +56,7 @@ const Counter = () =>
 
 ### Running Your App
 
-Use `runApp` to mount your application:
+Use `runApp` and `mount` to start your application:
 
 ```ts
 import { Effect } from "effect";
@@ -56,14 +64,25 @@ import { mount, runApp } from "@effex/dom";
 
 runApp(
   Effect.gen(function* () {
-    yield* mount(Counter(), document.getElementById("root")!);
+    yield* mount(App(), document.getElementById("root")!);
   }),
+);
+```
+
+`runApp` handles boilerplate: scoping, SignalRegistry, and keeping the app alive. You can also pass a `layer` option for additional services:
+
+```ts
+runApp(
+  Effect.gen(function* () {
+    yield* mount(App(), document.getElementById("root")!);
+  }),
+  { layer: Navigation.makeLayer(router) },
 );
 ```
 
 ## Elements
 
-The `$` namespace contains all HTML element factories. Elements are Effects that must be yielded:
+The `$` namespace contains factories for all HTML and SVG elements. Elements are Effects that produce DOM nodes:
 
 ```ts
 yield* $.div({ class: "container", style: { color: "red" } }, collect(
@@ -71,6 +90,8 @@ yield* $.div({ class: "container", style: { color: "red" } }, collect(
   $.p({}, $.of(t`${count} items`)),
 ));
 ```
+
+### Children
 
 Use `$.of()` to lift primitives and Readables into children, and `collect()` to combine multiple children:
 
@@ -83,11 +104,76 @@ yield* $.div({}, collect(
   $.of("Hello"),
   $.span({}, $.of("World")),
 ));
+
+// Empty child
+yield* $.div({}, $.empty);
+```
+
+### Attributes
+
+Elements accept an optional attributes object as the first argument:
+
+```ts
+$.input({
+  // Standard attributes
+  type: "text",
+  placeholder: "Enter name",
+  disabled: true,
+  id: "name-input",
+
+  // Reactive attributes — UI updates automatically
+  value: name,             // Readable<string>
+  class: className,        // Readable<string>
+  hidden: isHidden,        // Readable<boolean>
+
+  // Style as object or string
+  style: { color: "red", fontSize: "16px" },
+
+  // Class as string, array, or Readable
+  class: ["btn", isActive.pipe(Readable.map(a => a ? "btn-active" : ""))],
+
+  // Data and ARIA attributes
+  "data-testid": "name",
+  "aria-label": "Name input",
+  role: "textbox",
+
+  // Ref binding
+  ref: inputRef,
+});
+```
+
+### Event Handlers
+
+Event handlers are functions that optionally return an Effect:
+
+```ts
+$.button({
+  onClick: (e) => count.update((n) => n + 1),
+  onKeyDown: (e) => {
+    if (e.key === "Enter") return submit.run();
+  },
+  onSubmit: (e) => {
+    e.preventDefault();
+    return handleSubmit();
+  },
+});
+```
+
+Supported events include: `onClick`, `onInput`, `onChange`, `onSubmit`, `onKeyDown`, `onKeyUp`, `onFocus`, `onBlur`, `onMouseDown`, `onMouseUp`, `onMouseEnter`, `onMouseLeave`, `onPointerDown`, `onPointerUp`, `onPointerMove`, `onScroll`, `onWheel`, `onDragStart`, `onDrag`, `onDragEnd`, `onDrop`, `onDragOver`, `onTouchStart`, `onTouchMove`, `onTouchEnd`, `onAnimationEnd`, `onTransitionEnd`, and more.
+
+### SVG Elements
+
+SVG elements are also available on `$`:
+
+```ts
+$.svg({ viewBox: "0 0 24 24", width: 24, height: 24 },
+  $.path({ d: "M12 2L2 22h20L12 2z", fill: "currentColor" }),
+);
 ```
 
 ### Template Strings
 
-The `t` tagged template creates reactive strings:
+The `t` tagged template creates reactive strings from Readables:
 
 ```ts
 import { t } from "@effex/dom";
@@ -103,14 +189,14 @@ yield* $.p({}, $.of(t`Hello, ${name}! Count: ${count}`));
 
 ### Simple (No State/Context)
 
-Components without state or context requirements are plain functions:
+Components without state or context requirements are plain functions that return an Element:
 
 ```ts
 const Greeting = (props: { name: string }) =>
   $.h1({}, $.of(`Hello, ${props.name}!`));
 
-// With children - generic over E and R to propagate types
-const Card = <E, R>(props: { title: string }, children: ChildEffect<E, R>) =>
+// With children — generic over E and R to propagate types
+const Card = <E, R>(props: { title: string }, children: Child<E, R>) =>
   $.div({ class: "card" }, collect(
     $.h2({}, $.of(props.title)),
     children,
@@ -156,7 +242,7 @@ const ThemedButton = (props: { label: string }) =>
     );
   });
 
-// Provide context
+// Provide context to children
 $.div({}, provide(ThemeContext, theme, ThemedButton({ label: "Click" })));
 ```
 
@@ -201,26 +287,41 @@ import { each } from "@effex/dom";
 
 each(todos, {
   key: (todo) => todo.id,
-  render: (todo) => $.li({}, $.of(todo.map((t) => t.text))),
+  render: (todo, index) => TodoItem({ todo, index }),
+  container: () => $.ul({ class: "todo-list" }),
 });
 ```
 
+The `render` callback receives `Readable<T>` items and `Readable<number>` indices — item identity is preserved across reorders. Only the changed items are updated.
+
 ### matchOption / matchEither
 
-Match on Option or Either values with unwrapped Readables:
+Match on Option or Either values. The inner value is unwrapped as a Readable:
 
 ```ts
 import { matchOption, matchEither } from "@effex/dom";
 
 // userData.value is Readable<Option<User>>
 matchOption(userData.value, {
-  onSome: (user) => $.div({}, $.of(user.map((u) => u.name))), // user is Readable<User>
+  onSome: (user) => UserCard({ user }),  // user is Readable<User>
   onNone: () => $.div({}, $.of("No user")),
 });
 
 matchEither(result, {
-  onRight: (value) => $.div({}, $.of(value)),
-  onLeft: (error) => $.span({ class: "error" }, $.of(error)),
+  onRight: (value) => SuccessView({ value }),  // value is Readable<A>
+  onLeft: (error) => ErrorView({ error }),     // error is Readable<E>
+});
+```
+
+### redraw
+
+Completely rebuild the component subtree whenever a Readable changes (use sparingly — `when`/`match`/`each` are usually better):
+
+```ts
+import { redraw } from "@effex/dom";
+
+redraw(locale, {
+  render: (currentLocale) => LocalizedApp({ locale: currentLocale }),
 });
 ```
 
@@ -241,7 +342,7 @@ Boundary.suspense({
     }),
   fallback: () => $.div({}, $.of("Loading...")),
   catch: (error) => $.div({}, $.of(`Error: ${error.message}`)),
-  delay: "200 millis", // Avoid loading flash
+  delay: "200 millis", // Avoid loading flash for fast responses
 });
 ```
 
@@ -275,6 +376,9 @@ const handler = Effect.gen(function* () {
 });
 ```
 
+Options:
+- `hydrate` (default: `true`) — include hydration markers in the output. Set to `false` for static rendering.
+
 ### Hydration
 
 ```ts
@@ -284,43 +388,125 @@ import { App } from "./App";
 hydrate(App(), document.getElementById("root")!);
 ```
 
-Hydration attaches to server-rendered HTML and sets up reactive bindings without re-rendering.
-
-## Virtual List
-
-For large lists (1000+ items), use `virtualEach` to only render visible items:
+With options:
 
 ```ts
-import { virtualEach, VirtualListRef } from "@effex/dom";
-
-// Basic usage
-virtualEach(items, {
-  key: (item) => item.id,
-  itemHeight: 48,
-  height: 400,
-  render: (item) => $.li({}, $.of(item.map((i) => i.text))),
+hydrate(App(), document.getElementById("root")!, {
+  onMismatch: (message, node) => console.warn("Mismatch:", message),
+  layers: myAppLayer,  // Additional layers to provide during hydration
 });
+```
 
-// With scroll control
-const listRef = yield* VirtualListRef.make();
+Hydration attaches to server-rendered HTML and sets up reactive bindings without re-rendering the DOM. The component tree must match what was rendered on the server.
 
-yield* virtualEach(items, {
-  key: (item) => item.id,
-  itemHeight: 60,
-  height: 400,
-  ref: listRef,
-  render: (item, index) => ListItem({ item, index }),
-});
+## Element Manipulation
 
-// Scroll to item 100
-yield* listRef.ready.pipe(
-  Effect.flatMap((control) => control.scrollTo(100))
+The `Element` namespace provides pipeable functions for imperative DOM manipulation. These are useful for refs and one-off operations:
+
+```ts
+import { Element, ref } from "@effex/dom";
+
+const buttonRef = yield* ref<HTMLButtonElement>();
+
+// Pipe operations on the ref
+yield* buttonRef.pipe(
+  Element.addClass("active"),
+  Element.setStyles({ color: "blue" }),
+  Element.focus,
 );
+```
+
+### Attribute Operations
+
+```ts
+yield* el.pipe(Element.setAttribute("aria-expanded", "true"));
+yield* el.pipe(Element.removeAttribute("disabled"));
+yield* el.pipe(Element.toggleAttribute("hidden"));
+yield* el.pipe(Element.hasAttribute("disabled")); // Effect<boolean>
+
+// Reactive binding — attribute updates when readable changes
+yield* el.pipe(Element.bindAttribute("aria-label", labelReadable));
+yield* el.pipe(Element.bindBooleanAttribute("disabled", isDisabled));
+```
+
+### Class Operations
+
+```ts
+yield* el.pipe(Element.addClass("active", "highlighted"));
+yield* el.pipe(Element.removeClass("loading"));
+yield* el.pipe(Element.toggleClass("expanded"));
+yield* el.pipe(Element.replaceClass("old-class", "new-class"));
+yield* el.pipe(Element.setClass("entirely-new-class"));
+
+// Reactive binding
+yield* el.pipe(Element.bindClass(classNameReadable));
+```
+
+### Style Operations
+
+```ts
+yield* el.pipe(Element.setStyle("backgroundColor", "red"));
+yield* el.pipe(Element.setStyles({ opacity: "1", fontSize: "16px" }));
+yield* el.pipe(Element.removeStyle("color"));
+
+// Reactive binding
+yield* el.pipe(Element.bindStyle("color", colorReadable));
+```
+
+### Data Attributes
+
+```ts
+yield* el.pipe(Element.setData("state", "open"));    // data-state="open"
+yield* el.pipe(Element.removeData("state"));
+yield* el.pipe(Element.getData("state"));             // Effect<string, DataAttributeNotFound>
+
+// Reactive binding
+yield* el.pipe(Element.bindData("state", stateReadable));
+```
+
+### Content Operations
+
+```ts
+yield* el.pipe(Element.setTextContent("Hello"));
+yield* el.pipe(Element.setInnerHTML("<em>bold</em>"));
+yield* el.pipe(Element.setInputValue("new value"));  // Without cursor reset
+
+// Reactive bindings
+yield* el.pipe(Element.bindTextContent(textReadable));
+yield* el.pipe(Element.bindInputValue(valueReadable));
+```
+
+### Focus & Interaction
+
+```ts
+yield* el.pipe(Element.focus);
+yield* el.pipe(Element.blur);
+yield* el.pipe(Element.click);
+yield* el.pipe(Element.focusFirst("[data-item]"));  // Focus first matching descendant
+yield* el.pipe(Element.focusLast("[data-item]"));
+
+yield* el.pipe(Element.getBoundingClientRect); // Effect<DOMRect>
+yield* el.pipe(Element.getId);                 // Effect<string>
+yield* el.pipe(Element.contains(childNode));   // Effect<boolean>
+```
+
+### Event Listeners
+
+```ts
+yield* el.pipe(Element.on("click", (e) => handleClick(e)));
+yield* el.pipe(Element.once("transitionend", (e) => afterTransition()));
+```
+
+### Utility
+
+```ts
+yield* el.pipe(Element.tap((node) => console.log(node)));
+yield* el.pipe(Element.tapEffect((node) => Effect.log("mounted")));
 ```
 
 ## Animation
 
-CSS-based animations for control flow:
+CSS-based animations for control flow transitions:
 
 ```ts
 import { when, each, stagger } from "@effex/dom";
@@ -348,20 +534,94 @@ each(items, {
 });
 ```
 
-### Imperative Animations
+### Stagger Functions
 
-For one-off animations, use `Element.animate`:
+| Function | Description |
+|----------|-------------|
+| `stagger(delayMs)` | Fixed delay between items |
+| `staggerFromCenter(delayMs)` | Items animate outward from center |
+| `staggerEased(totalDurationMs, easingFn)` | Custom easing curve |
+| `delay(delayMs)` | Fixed delay for all items |
+| `sequence(...delays)` | Sequential delays |
+| `parallel()` | All items animate simultaneously |
+
+## Virtual List
+
+For large lists (1000+ items), use `virtualEach` to only render visible items:
 
 ```ts
-buttonRef.pipe(
-  Element.animate(
-    [{ transform: "scale(1)" }, { transform: "scale(1.1)" }, { transform: "scale(1)" }],
-    { duration: 200, easing: "ease-out" },
-  ),
+import { virtualEach, VirtualListRef } from "@effex/dom";
+
+// Basic usage
+virtualEach(items, {
+  key: (item) => item.id,
+  itemHeight: 48,
+  height: 400,
+  render: (item) => $.li({}, $.of(item.pipe(Readable.map((i) => i.text)))),
+});
+```
+
+With scroll control:
+
+```ts
+const listRef = yield* VirtualListRef.make();
+
+yield* virtualEach(items, {
+  key: (item) => item.id,
+  itemHeight: 60,
+  height: 400,
+  overscan: 5,        // Render 5 extra items above/below viewport
+  ref: listRef,
+  render: (item, index) => ListItem({ item, index }),
+});
+
+// Scroll to item 100
+yield* listRef.ready.pipe(
+  Effect.flatMap((control) => control.scrollTo(100))
 );
+
+// Other controls
+control.scrollToTop();
+control.scrollToBottom();
+control.visibleRange;   // Readable<{ start: number, end: number }>
+control.totalItems;     // Readable<number>
+```
+
+## Portal
+
+Render children into a different DOM node:
+
+```ts
+import { Portal } from "@effex/dom";
+
+// Render into document.body (default)
+Portal(() => Modal({ title: "Hello" }));
+
+// Render into specific element
+Portal({ target: "#modal-root" }, () => Dropdown());
+Portal({ target: existingElement }, () => Tooltip());
 ```
 
 ## DOM Utilities
+
+### Ref
+
+Create refs to DOM elements for imperative access:
+
+```ts
+import { ref } from "@effex/dom";
+
+const inputRef = yield* ref<HTMLInputElement>();
+
+// Pass to element
+yield* $.input({ ref: inputRef, type: "text" });
+
+// Use later — waits until element is mounted
+yield* inputRef.pipe(Element.focus);
+
+// Check connection status
+inputRef.isConnected;  // Readable<boolean>
+```
 
 ### FocusTrap
 
@@ -372,14 +632,15 @@ import { FocusTrap } from "@effex/dom";
 
 yield* FocusTrap.make({
   container: dialogElement,
-  returnFocus: triggerElement, // Focus returns here when trap is released
+  initialFocus: firstInput,        // Optional: focus this element first
+  returnFocus: triggerElement,     // Optional: focus returns here on release
 });
 // Focus is trapped until scope closes
 ```
 
 ### ScrollLock
 
-Prevent body scrolling (for modals):
+Prevent body scrolling (for modals). Accounts for scrollbar width to prevent layout shift:
 
 ```ts
 import { ScrollLock } from "@effex/dom";
@@ -404,117 +665,94 @@ yield* $.div({}, collect(
 ));
 ```
 
-## Portal
-
-Render children into a different DOM node:
-
-```ts
-import { Portal } from "@effex/dom";
-
-// Render to document.body
-Portal(() => Modal({ title: "Hello" }));
-
-// Render to specific element
-Portal({ target: "#modal-root" }, () => Dropdown());
-```
-
-## Element Helpers
-
-The `Element` namespace provides pipeable DOM manipulation:
-
-```ts
-import { Element, $ } from "@effex/dom";
-
-const buttonRef = yield* Element.ref<HTMLButtonElement>();
-
-// Chain operations
-buttonRef.pipe(
-  Element.addClass("active"),
-  Element.setStyles({ color: "blue" }),
-  Element.focus,
-);
-
-// Query descendants
-buttonRef.pipe(
-  Element.querySelector(".icon"),
-  Element.setStyles({ opacity: "1" }),
-);
-```
-
-### Common Operations
-
-```ts
-// Classes
-el.pipe(Element.addClass("active", "highlighted"));
-el.pipe(Element.removeClass("loading"));
-el.pipe(Element.toggleClass("expanded"));
-
-// Styles
-el.pipe(Element.setStyles({ opacity: "1", fontSize: "16px" }));
-el.pipe(Element.setStyle("backgroundColor", "red"));
-
-// Attributes
-el.pipe(Element.setAttribute("aria-expanded", "true"));
-el.pipe(Element.toggleAttribute("disabled"));
-
-// Data attributes
-el.pipe(Element.setData("state", "open"));  // data-state="open"
-el.pipe(Element.getData("state"));          // Effect<string, DataAttributeNotFound>
-
-// Focus
-el.pipe(Element.focus);
-el.pipe(Element.focusFirst("[data-item]"));
-
-// Content
-el.pipe(Element.setTextContent("Hello"));
-```
-
 ## API Reference
 
 ### Elements
 
-- `$.<element>(attrs?, children?)` - Create an HTML element
-- `$.of(value)` - Lift a primitive or Readable into a child
-- `collect(...children)` - Combine multiple children
-- `t\`template\`` - Create reactive template string
-
-### Control Flow
-
-- `when(condition, options)` - Conditional rendering
-- `match(value, options)` - Pattern matching
-- `each(items, options)` - List rendering
-- `matchOption(option, options)` - Match on Option
-- `matchEither(either, options)` - Match on Either
-
-### Boundaries
-
-- `Boundary.suspense(options)` - Async loading boundary
-- `Boundary.error(render, catch)` - Error boundary
+| Export | Description |
+|--------|-------------|
+| `$.<element>(attrs?, children?)` | Create an HTML/SVG element |
+| `$.of(value)` | Lift a primitive or Readable into a child |
+| `$.empty` | Empty child (produces no DOM nodes) |
+| `collect(...children)` | Combine multiple children |
+| `t\`template\`` | Create reactive template string |
+| `provide(tag, value, children)` | Provide context to children |
 
 ### Mounting
 
-- `mount(element, container)` - Mount an element
-- `runApp(program)` - Run an application
-- `renderToString(element)` - SSR (from `@effex/dom/server`)
-- `hydrate(element, container)` - Hydration (from `@effex/dom/hydrate`)
+| Export | Description |
+|--------|-------------|
+| `mount(element, container)` | Mount an element into a DOM container |
+| `runApp(program, options?)` | Run an application with scoping and lifecycle |
+| `renderToString(element, options?)` | SSR — from `@effex/dom/server` |
+| `hydrate(element, container, options?)` | Hydration — from `@effex/dom/hydrate` |
 
-### Virtual List
+### Control Flow
 
-- `virtualEach(items, options)` - Virtualized list rendering
-- `VirtualListRef.make()` - Create scroll control ref
+| Export | Description |
+|--------|-------------|
+| `when(condition, config)` | Conditional rendering |
+| `match(value, config)` | Pattern matching |
+| `each(items, config)` | Keyed list rendering |
+| `matchOption(option, config)` | Match on Option |
+| `matchEither(either, config)` | Match on Either |
+| `redraw(readable, config)` | Full redraw on change |
 
-### Utilities
+### Boundaries
 
-- `FocusTrap.make(options)` - Trap focus in container
-- `ScrollLock.lock` - Lock body scroll
-- `UniqueId.make(prefix?)` - Generate unique ID
-- `Portal(options?, children)` - Render to different DOM node
-- `provide(tag, value, children)` - Provide context
+| Export | Description |
+|--------|-------------|
+| `Boundary.suspense(options)` | Async loading boundary with fallback |
+| `Boundary.error(render, catch)` | Error boundary |
 
 ### Animation
 
-- `stagger(delay)` - Linear stagger function
-- `staggerFromCenter(delay)` - Center-out stagger
-- `delay(ms, effect)` - Delay an effect
-- `sequence(...effects)` - Run in sequence
-- `parallel(...effects)` - Run in parallel
+| Export | Description |
+|--------|-------------|
+| `stagger(delayMs)` | Linear stagger between items |
+| `staggerFromCenter(delayMs)` | Center-out stagger |
+| `staggerEased(totalMs, easingFn)` | Easing-based stagger |
+| `delay(delayMs)` | Fixed delay |
+| `sequence(...delays)` | Sequential delays |
+| `parallel()` | Simultaneous animation |
+
+### Virtual List
+
+| Export | Description |
+|--------|-------------|
+| `virtualEach(items, config)` | Virtualized list rendering |
+| `VirtualListRef.make()` | Create scroll control ref |
+
+### DOM Utilities
+
+| Export | Description |
+|--------|-------------|
+| `ref<T>()` | Create element ref |
+| `FocusTrap.make(options)` | Trap focus in container |
+| `ScrollLock.lock` | Lock body scroll |
+| `UniqueId.make(prefix?)` | Generate unique ID |
+| `Portal(options?, children)` | Render to different DOM node |
+
+### Element Namespace
+
+The `Element` namespace contains all pipeable manipulation functions. Key categories:
+
+| Category | Functions |
+|----------|-----------|
+| Attributes | `setAttribute`, `removeAttribute`, `toggleAttribute`, `bindAttribute`, `bindBooleanAttribute` |
+| Classes | `setClass`, `addClass`, `removeClass`, `toggleClass`, `replaceClass`, `bindClass` |
+| Styles | `setStyle`, `setStyles`, `removeStyle`, `bindStyle` |
+| Data | `setData`, `removeData`, `getData`, `bindData` |
+| Content | `setTextContent`, `setInnerHTML`, `setInputValue`, `bindTextContent`, `bindInnerHTML`, `bindInputValue` |
+| Focus | `focus`, `blur`, `click`, `focusFirst`, `focusLast` |
+| Events | `on`, `once`, `addEventListener`, `removeEventListener` |
+| Query | `getBoundingClientRect`, `getId`, `hasAttribute`, `contains` |
+| Children | `appendChild`, `clearChildren` |
+| Misc | `setRef`, `tap`, `tapEffect` |
+
+### Renderer
+
+| Export | Description |
+|--------|-------------|
+| `DOMRenderer` | DOM implementation of the Renderer interface |
+| `DOMRendererLive` | Layer providing DOMRenderer |
