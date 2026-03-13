@@ -8,6 +8,8 @@ Type-safe form handling for Effex applications with Effect Schema validation.
 pnpm add @effex/form effect
 ```
 
+> `@effex/dom` re-exports `@effex/core`, so you don't need to install core separately.
+
 ## Overview
 
 Forms in `@effex/form` are defined separately from their runtime state. This separation allows you to:
@@ -21,33 +23,26 @@ Forms in `@effex/form` are defined separately from their runtime state. This sep
 
 ```ts
 import { Effect, Schema } from "effect";
-import { $, collect, when } from "@effex/dom";
+import { $, collect, Readable, when } from "@effex/dom";
 import { Field, Form } from "@effex/form";
 
 // 1. Define the form at module level
-const LoginForm = Form.make(
-  {
-    email: Field.make(
-      Schema.String.pipe(Schema.nonEmptyString({ message: () => "Email is required" })),
-      { validateOn: "blur" },
-    ),
-    password: Field.make(
-      Schema.String.pipe(Schema.minLength(8, { message: () => "At least 8 characters" })),
-      { validateOn: "blur" },
-    ),
-  },
-  {
-    onSubmit: (ctx) =>
-      Effect.sync(() => {
-        console.log("Form submitted:", ctx.decoded);
-      }),
-  },
-);
+const LoginForm = Form.make({
+  email: Field.make(
+    Schema.String.pipe(Schema.nonEmptyString({ message: () => "Email is required" })),
+    { validateOn: "blur" },
+  ),
+  password: Field.make(
+    Schema.String.pipe(Schema.minLength(8, { message: () => "At least 8 characters" })),
+    { validateOn: "blur" },
+  ),
+});
 
-// 2. Create field components - each yields only the state it needs
+// 2. Create field components — each yields only the state it needs
 const EmailField = () =>
   Effect.gen(function* () {
     const field = yield* LoginForm.fields.email;
+    const hasError = Readable.map(field.errors, (e) => e.length > 0);
 
     return yield* $.div(
       {},
@@ -59,9 +54,9 @@ const EmailField = () =>
           onInput: (e) => field.set((e.target as HTMLInputElement).value),
           onBlur: () => field.blur(),
         }),
-        when(field.errors.map((errs) => errs.length > 0), {
+        when(hasError, {
           onTrue: () => $.span({ class: "error" }, $.of("Invalid email")),
-          onFalse: () => Effect.succeed([]),
+          onFalse: () => $.span(),
         }),
       ),
     );
@@ -70,6 +65,7 @@ const EmailField = () =>
 const PasswordField = () =>
   Effect.gen(function* () {
     const field = yield* LoginForm.fields.password;
+    const hasError = Readable.map(field.errors, (e) => e.length > 0);
 
     return yield* $.div(
       {},
@@ -81,9 +77,9 @@ const PasswordField = () =>
           onInput: (e) => field.set((e.target as HTMLInputElement).value),
           onBlur: () => field.blur(),
         }),
-        when(field.errors.map((errs) => errs.length > 0), {
+        when(hasError, {
           onTrue: () => $.span({ class: "error" }, $.of("Too short")),
-          onFalse: () => Effect.succeed([]),
+          onFalse: () => $.span(),
         }),
       ),
     );
@@ -94,22 +90,30 @@ const SubmitButton = () =>
     const form = yield* LoginForm.form;
 
     return yield* $.button(
-      { type: "submit", disabled: form.isSubmitting },
-      $.of(form.isSubmitting.map((s) => (s ? "Submitting..." : "Log In"))),
+      {
+        type: "submit",
+        disabled: form.isSubmitting,
+      },
+      $.of(Readable.map(form.isSubmitting, (s) => (s ? "Submitting..." : "Log In"))),
     );
   });
 
-// 3. Compose the form - $.form automatically receives onSubmit from Form.provide
+// 3. Compose the form — $.form automatically receives onSubmit from Form.provide
 const LoginPage = () =>
   LoginForm.provide(
-    { defaults: { email: "", password: "" } },
+    {
+      defaults: { email: "", password: "" },
+      onSubmit: (ctx) =>
+        Effect.tryPromise(() =>
+          fetch("/api/login", {
+            method: "POST",
+            body: JSON.stringify(ctx.decoded),
+          }),
+        ),
+    },
     $.form(
-      { class: "login-form" },  // your props merge with the injected onSubmit
-      collect(
-        EmailField(),
-        PasswordField(),
-        SubmitButton(),
-      ),
+      { class: "login-form" },
+      collect(EmailField(), PasswordField(), SubmitButton()),
     ),
   );
 ```
@@ -153,10 +157,10 @@ const metadataField = Field.Map(Schema.String, Field.make(Schema.String));
 Control when validation runs per-field or form-wide:
 
 ```ts
-// Per-field config
+// Per-field config (overrides form default)
 Field.make(Schema.String, { validateOn: "change" });
 
-// Form-wide defaults
+// Form-wide default
 Form.make(
   { name: Field.make(Schema.String) },
   { validateOn: "blur", debounce: 200 },
@@ -164,19 +168,17 @@ Form.make(
 ```
 
 Options:
-- `"blur"` - Validate when field loses focus (default)
-- `"change"` - Validate on every change
-- `"submit"` - Only validate on form submission
+- `"blur"` — Validate when field loses focus (default)
+- `"change"` — Validate on every change (respects `debounce`)
+- `"submit"` — Only validate on form submission
 
 ## Field State
 
 Each field component yields only the state it needs. This keeps components focused and makes the data flow clear:
 
 ```ts
-// A reusable text input component
 const NameField = () =>
   Effect.gen(function* () {
-    // This component only accesses the name field
     const field = yield* MyForm.fields.name;
 
     return yield* $.input({
@@ -187,23 +189,92 @@ const NameField = () =>
   });
 ```
 
-### Field State Properties
+### Leaf Field State
 
 ```ts
 const field = yield* MyForm.fields.name;
 
 // Reactive values
-field.value    // Signal<T> - current value
-field.errors   // Readable<ParseIssue[]> - validation errors
-field.touched  // Readable<boolean> - has been blurred
-field.dirty    // Readable<boolean> - changed from initial
+field.value    // Signal<T> — current value
+field.errors   // Readable<ParseIssue[]> — validation errors
+field.touched  // Readable<boolean> — has been blurred
+field.dirty    // Readable<boolean> — changed from initial
 
 // Actions (all return Effect<void>)
 yield* field.set("new value");
 yield* field.update((v) => v.toUpperCase());
-yield* field.blur();   // Mark as touched
+yield* field.blur();   // Mark as touched, triggers validation
 yield* field.focus();  // Mark as focused
 yield* field.reset();  // Reset to initial value
+```
+
+### Struct Field State
+
+Struct fields provide access to nested field states:
+
+```ts
+const address = yield* MyForm.fields.address;
+
+// Aggregate reactive values
+address.value    // Signal<{ street, city, zip }>
+address.errors   // Readable<ParseIssue[]> — aggregated from nested fields
+address.touched  // Readable<boolean> — true if any nested field touched
+address.dirty    // Readable<boolean> — true if any nested field changed
+
+// Access nested states
+address.fields.street  // LeafFieldState<string>
+address.fields.city    // LeafFieldState<string>
+
+// Actions
+yield* address.set({ street: "123 Main", city: "NYC", zip: "10001" });
+yield* address.reset();
+```
+
+### Array Field State
+
+Array fields provide collection manipulation and per-item state:
+
+```ts
+const tags = yield* MyForm.fields.tags;
+
+// Reactive values
+tags.value    // Signal<readonly string[]>
+tags.length   // Readable<number>
+tags.items    // Readable<readonly ItemState[]> — per-item field states
+tags.errors   // Readable<ParseIssue[]> — aggregated
+tags.touched  // Readable<boolean> — aggregated
+tags.dirty    // Readable<boolean> — aggregated
+
+// Mutations (all return Effect<void>)
+yield* tags.push("new-tag");
+yield* tags.pop();
+yield* tags.unshift("first");
+yield* tags.shift();
+yield* tags.insertAt(2, "middle");
+yield* tags.removeAt(1);
+yield* tags.move(0, 3);         // Move item from index 0 to index 3
+yield* tags.clear();
+yield* tags.reset();
+```
+
+### Map Field State
+
+Map fields provide dynamic key-value pairs:
+
+```ts
+const metadata = yield* MyForm.fields.metadata;
+
+// Reactive values
+metadata.value    // Readable<ReadonlyMap<string, string>>
+metadata.size     // Readable<number>
+metadata.entries  // Readable<ReadonlyMap<string, EntryState>>
+
+// Mutations
+yield* metadata.setEntry("color", "blue");
+const entry = yield* metadata.getEntry("color");  // EntryState | undefined
+yield* metadata.delete("color");
+yield* metadata.clear();
+yield* metadata.reset();
 ```
 
 ## Form State
@@ -215,10 +286,9 @@ const SubmitButton = () =>
   Effect.gen(function* () {
     const form = yield* MyForm.form;
 
-    // Just use type="submit" - onSubmit is handled by Form.provide
     return yield* $.button(
       { type: "submit", disabled: form.isSubmitting },
-      $.of(form.isSubmitting.map((s) => (s ? "Saving..." : "Save"))),
+      $.of(Readable.map(form.isSubmitting, (s) => (s ? "Saving..." : "Save"))),
     );
   });
 
@@ -228,7 +298,7 @@ const FormStatus = () =>
 
     return yield* when(form.isDirty, {
       onTrue: () => $.span({}, $.of("You have unsaved changes")),
-      onFalse: () => Effect.succeed([]),
+      onFalse: () => $.span(),
     });
   });
 ```
@@ -239,28 +309,28 @@ const FormStatus = () =>
 const form = yield* MyForm.form;
 
 // Reactive values
-form.isValid       // Readable<boolean> - all fields valid
-form.isSubmitting  // Readable<boolean> - submit in progress
-form.isTouched     // Readable<boolean> - any field touched
-form.isDirty       // Readable<boolean> - any field changed
-form.errors        // Readable<ParseIssue[]> - form-level errors
+form.isValid       // Readable<boolean> — all fields valid
+form.isSubmitting  // Readable<boolean> — submit in progress
+form.isTouched     // Readable<boolean> — any field touched
+form.isDirty       // Readable<boolean> — any field changed
+form.errors        // Readable<ParseIssue[]> — form-level errors
 
 // Actions
 yield* form.validate();   // Validate all fields, returns boolean
-yield* form.reset();      // Reset all fields
-yield* form.submit();     // Validate and call onSubmit handlers
+yield* form.reset();      // Reset all fields to initial values
+yield* form.submit();     // Validate then call onSubmit handlers
 
 // Get values
 const encoded = yield* form.getEncoded();  // Raw form values
-const decoded = yield* form.getDecoded();  // Validated values (may fail)
+const decoded = yield* form.getDecoded();  // Validated values (may fail with ParseError)
 ```
 
 ## Submit Handlers
 
-Define submit handlers at form level and/or instance level:
+Submit handlers can be defined at two levels — form-level and instance-level. Both run on successful validation; form-level runs first.
 
 ```ts
-// Form-level handler (runs first)
+// Form-level handler (runs first — good for analytics, logging)
 const MyForm = Form.make(
   { name: Field.make(Schema.String) },
   {
@@ -271,7 +341,7 @@ const MyForm = Form.make(
   },
 );
 
-// Instance-level handler (runs second)
+// Instance-level handler (runs second — specific to this usage)
 MyForm.provide(
   {
     defaults: { name: "" },
@@ -284,7 +354,7 @@ MyForm.provide(
 );
 ```
 
-The submit context includes:
+The submit context provides:
 
 ```ts
 interface SubmitContext<Encoded, Decoded> {
@@ -293,15 +363,43 @@ interface SubmitContext<Encoded, Decoded> {
   form: {
     isValid: boolean;
     errors: ParseIssue[];
-    touched: Set<string>;
-    dirty: Set<string>;
+    touched: ReadonlySet<string>;
+    dirty: ReadonlySet<string>;
   };
 }
 ```
 
+## Progressive Enhancement
+
+When using `@effex/platform`, forms can work without JavaScript via the `action` property:
+
+```ts
+MyForm.provide(
+  {
+    defaults: { name: "" },
+    action: actions.create,   // from RouteDataContext
+    onSubmit: (ctx) =>
+      Effect.gen(function* () {
+        yield* Effect.tryPromise(() =>
+          fetch(actions.create, {
+            method: "POST",
+            body: JSON.stringify(ctx.encoded),
+          }),
+        );
+      }),
+  },
+  $.form(
+    { class: "my-form" },
+    // ...fields
+  ),
+);
+```
+
+When `action` is provided, the rendered `<form>` gets `action` and `method="POST"` attributes. Without JS, the form submits natively to the server. With JS, `onSubmit` intercepts and handles it client-side.
+
 ## Complex Validation
 
-Use Effect Schema's full power:
+Use Effect Schema's full power for validation:
 
 ```ts
 const RegistrationForm = Form.make({
@@ -330,19 +428,17 @@ const RegistrationForm = Form.make({
 
 ### Field
 
-```ts
-// Create a leaf field from a Schema
-Field.make(schema: Schema, config?: FieldConfig): LeafField
-
-// Create a struct field from nested fields
-Field.make(fields: Record<string, Field>, config?: FieldConfig): StructField
-
-// Create an array field
-Field.Array(element: Field, config?: FieldConfig): ArrayField
-
-// Create a map field
-Field.Map(keySchema: Schema, element: Field, config?: FieldConfig): MapField
-```
+| Function | Description |
+|---|---|
+| `Field.make(schema, config?)` | Create a leaf field from an Effect Schema |
+| `Field.make(fields, config?)` | Create a struct field from nested fields |
+| `Field.Array(element, config?)` | Create an array field |
+| `Field.Map(keySchema, element, config?)` | Create a map field |
+| `isField(value)` | Type guard for any field |
+| `isLeafField(value)` | Type guard for leaf fields |
+| `isStructField(value)` | Type guard for struct fields |
+| `isArrayField(value)` | Type guard for array fields |
+| `isMapField(value)` | Type guard for map fields |
 
 ### FieldConfig
 
@@ -355,19 +451,13 @@ interface FieldConfig {
 
 ### Form
 
-```ts
-// Create a form definition
-Form.make(fields: Record<string, LeafField>, config?: FormConfig): Form
-
-// Create live state and provide context
-form.provide(config: ProvideConfig, children: Effect<A>): Effect<A, never, Scope>
-
-// Access field state (inside Form.provide)
-form.fields.<name>: Effect<LeafFieldState>
-
-// Access form state (inside Form.provide)
-form.form: Effect<FormState>
-```
+| API | Description |
+|---|---|
+| `Form.make(fields, config?)` | Create a form definition |
+| `form.provide(config, children)` | Create live state, provide context to children |
+| `form.fields.<name>` | Effect that yields the named field's state |
+| `form.form` | Effect that yields form-level state |
+| `isForm(value)` | Type guard |
 
 ### FormConfig
 
@@ -383,8 +473,9 @@ interface FormConfig {
 
 ```ts
 interface ProvideConfig {
-  defaults: Encoded;  // Initial values for all fields
-  onSubmit?: (ctx: SubmitContext) => Effect<void>;
+  defaults: Encoded;                               // Initial values for all fields
+  onSubmit?: (ctx: SubmitContext) => Effect<void>;  // Instance-level submit handler
+  action?: string;                                 // Native form action for progressive enhancement
 }
 ```
 
