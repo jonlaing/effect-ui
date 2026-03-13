@@ -9,7 +9,8 @@
       "@effex/dom",
       "@effex/router",
       "@effex/form",
-      "@effex/primitives"
+      "@effex/platform",
+      "create-effex"
     ]
   ],
   "access": "public",
