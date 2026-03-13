@@ -338,9 +338,17 @@ export const toHttpRoutes = <E, R>(
         rawRouteParams as Record<string, string>,
       );
 
-      // Build route data
+      // Build route data with loaderPath that preserves search params
+      const basePath = substituteParams(
+        route.path,
+        rawRouteParams as Record<string, string>,
+      );
+      const loaderSearch = new URLSearchParams(rawSearchParams);
+      loaderSearch.delete("_data"); // remove if already present from data request
+      loaderSearch.set("_data", "1");
       const routeData: RouteDataService = {
         data: loaderData,
+        loaderPath: `${basePath}?${loaderSearch.toString()}`,
         actions: actionPaths,
       };
 
@@ -542,7 +550,7 @@ export const makeClientLayer = <E, R>(
       const isFirstLoad = yield* Ref.make(true);
 
       const provider: RouteDataProviderService = {
-        getRouteData: (route, params, _searchParams) =>
+        getRouteData: (route, params, searchParams) =>
           Effect.gen(function* () {
             const first = yield* Ref.get(isFirstLoad);
 
@@ -562,8 +570,10 @@ export const makeClientLayer = <E, R>(
 
             // Client navigation: fetch from server
             const path = substituteParams(route.path, params);
+            const qs = new URLSearchParams(searchParams);
+            qs.set("_data", "1");
             const response = yield* Effect.tryPromise(() =>
-              fetch(`${path}?_data=1`),
+              fetch(`${path}?${qs.toString()}`),
             );
 
             const json = yield* Effect.tryPromise(() => response.json());

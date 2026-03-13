@@ -10,10 +10,12 @@ import type { Route } from "./Route.js";
  * Data provided to a route's render function by the platform.
  *
  * - `data` — result of the route's `Route.get()` loader (or `undefined` if none)
+ * - `loaderPath` — URL to refetch the loader data (appends `?_data=1` to the route path)
  * - `actions` — map of handler key → URL path for POST/PUT/DELETE endpoints
  */
 export interface RouteDataService {
   readonly data: unknown;
+  readonly loaderPath: string;
   readonly actions: Readonly<Record<string, string>>;
 }
 
@@ -26,9 +28,13 @@ export interface RouteDataService {
  * @example
  * ```ts
  * Route.render(() => Effect.gen(function* () {
- *   const { data, actions } = yield* RouteDataContext;
+ *   const { data, loaderPath, actions } = yield* RouteDataContext;
  *   const user = data as User;
  *
+ *   // Refetch loader data
+ *   const fresh = yield* Effect.tryPromise(() => fetch(loaderPath).then(r => r.json()));
+ *
+ *   // Submit to a mutation handler
  *   return yield* $.form({ action: actions.updateProfile, method: "POST" },
  *     // ...
  *   );

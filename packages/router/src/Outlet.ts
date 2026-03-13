@@ -3,7 +3,7 @@ import { Effect, Option } from "effect";
 import { ControlCtx, reconcile } from "@effex/core";
 import { $, type AnimationOptions, type Element } from "@effex/dom";
 
-import { NavigationContext, type Navigation } from "./Navigation.js";
+import { buildPath, NavigationContext, type Navigation } from "./Navigation.js";
 import type { Route } from "./Route.js";
 import {
   RouteDataContext,
@@ -81,15 +81,27 @@ const renderRouteWithGuard = <ER, RR, EN, RN, EL, RL>(
       }
     }
 
-    // Get current match to access params
+    // Get current match and search params
     const currentMatch = yield* nav.currentMatch.get;
+    const currentSearchParams = yield* nav.searchParams.get;
+    const searchParamsObj = Object.fromEntries(currentSearchParams.entries());
+
+    // Build loaderPath preserving current search params alongside _data=1
+    const resolvedPath = buildPath(route, currentMatch.params);
+    const loaderSearch = new URLSearchParams(currentSearchParams);
+    loaderSearch.set("_data", "1");
+    const loaderPath = `${resolvedPath}?${loaderSearch.toString()}`;
 
     // Fetch route data for the route.
     // If a RouteDataProvider is in context (e.g. from platform), always use it —
     // it has embedded/fetched data even when loaders have been stripped by the
     // Vite transform (Route.get(null, render)).
     // Otherwise fall back to running the loader directly (SPA mode).
-    let routeData: RouteDataService = { data: undefined, actions: {} };
+    let routeData: RouteDataService = {
+      data: undefined,
+      loaderPath,
+      actions: {},
+    };
 
     const maybeProvider = yield* Effect.serviceOption(RouteDataProvider);
 
@@ -97,7 +109,7 @@ const renderRouteWithGuard = <ER, RR, EN, RN, EL, RL>(
       routeData = yield* maybeProvider.value.getRouteData(
         route,
         currentMatch.params,
-        {},
+        searchParamsObj,
       );
 
       // Handle client-side redirects — the data provider signals these
@@ -116,16 +128,16 @@ const renderRouteWithGuard = <ER, RR, EN, RN, EL, RL>(
         const data = route._loader
           ? yield* route._loader<EL, RL>({
               params: currentMatch.params,
-              searchParams: {},
+              searchParams: searchParamsObj,
             })
           : undefined;
 
         const actions: Record<string, string> = {};
         for (const h of route._handlers) {
-          actions[h.key] = `${route.path}?_action=${h.key}`;
+          actions[h.key] = `${resolvedPath}?_action=${h.key}`;
         }
 
-        routeData = { data, actions };
+        routeData = { data, loaderPath, actions };
       }
     }
 
@@ -133,7 +145,7 @@ const renderRouteWithGuard = <ER, RR, EN, RN, EL, RL>(
     const routeElement = route.render(routeData.data).pipe(
       Effect.provideService(route.Params, {
         params: currentMatch.params,
-        searchParams: {},
+        searchParams: searchParamsObj,
       }),
       Effect.provideService(RouteDataContext, routeData),
     );

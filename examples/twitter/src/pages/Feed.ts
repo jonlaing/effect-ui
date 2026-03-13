@@ -45,14 +45,14 @@ export const FeedPage = (data: {
   users: readonly User[];
 }) =>
   Effect.gen(function* () {
-    const { actions } = yield* RouteDataContext;
+    const { loaderPath, actions } = yield* RouteDataContext;
     const cache = yield* AsyncCache;
 
     const feedQuery = yield* cache.get(
       ["feed"],
       () =>
         Effect.tryPromise(() =>
-          fetch("/?_data=1").then(
+          fetch(loaderPath).then(
             (r) =>
               r.json() as Promise<{
                 data: { posts: Post[]; users: User[] };
