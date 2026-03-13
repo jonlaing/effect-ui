@@ -15,14 +15,14 @@ Effex brings the power of [Effect](https://effect.website/) to frontend developm
 Every element has type `Element<E, R>` where `E` is the error channel. Errors propagate through the component tree, and you **must** handle them before mounting:
 
 ```ts
-// This won't compile - UserProfile might fail with ApiError
+// This won't compile — UserProfile might fail with ApiError
 mount(UserProfile(), document.body); // Type error!
 
 // Handle the error first
 mount(
   Boundary.error(
     () => UserProfile(),
-    (error) => $.div(`Failed to load: ${error.message}`),
+    (error) => $.div({}, $.of(`Failed to load: ${error.message}`)),
   ),
   document.body,
 ); // Compiles
@@ -32,7 +32,7 @@ TypeScript tells you at build time which components can fail and forces you to h
 
 ### Fine-Grained Reactivity
 
-Effex uses signals for reactive state. When a signal updates, only the DOM nodes that actually depend on that signal update. No virtual DOM, no diffing, no wasted work:
+Effex uses signals for reactive state. When a signal updates, only the DOM nodes that depend on it update. No virtual DOM, no diffing, no wasted work:
 
 ```ts
 const Counter = () =>
@@ -58,11 +58,11 @@ yield* eventSource.pipe(
 
 Effex gives you access to Effect's entire ecosystem:
 
-- **Schema**: Runtime validation with static types
-- **Streams**: Reactive data flows
-- **Services**: Dependency injection via Effect's context system
-- **Retry/timeout**: Built-in resilience patterns
-- **Structured concurrency**: Fork, join, and race without footguns
+- **Schema** — Runtime validation with static types
+- **Streams** — Reactive data flows
+- **Services** — Dependency injection via Effect's context system
+- **Retry/timeout** — Built-in resilience patterns
+- **Structured concurrency** — Fork, join, and race without footguns
 
 ## Quick Start
 
@@ -77,12 +77,14 @@ pnpm dev
 Or install packages individually:
 
 ```bash
-# For a simple SPA
+# SPA (client-side only)
 pnpm add @effex/dom @effex/router effect
 
-# For full-stack SSR
-pnpm add @effex/platform effect
+# Full-stack SSR
+pnpm add @effex/dom @effex/router @effex/platform @effect/platform effect
 ```
+
+> `@effex/dom` re-exports everything from `@effex/core`, so you don't need to install core separately.
 
 ### Hello World
 
@@ -111,109 +113,242 @@ runApp(
 );
 ```
 
-### Components with Children
+## Reactive Primitives
 
-Components that accept children use a generic `ChildEffect<E, R>` parameter:
+Effex's reactivity layer lives in `@effex/core` (re-exported by `@effex/dom`):
 
 ```ts
-import { $, collect, ChildEffect } from "@effex/dom";
 import { Effect } from "effect";
+import { Signal, Readable, Ref } from "@effex/dom";
 
-// A reusable Card component that accepts children
-const Card = <E, R>(props: { title: string }, children: ChildEffect<E, R>) =>
-  Effect.gen(function* () {
-    return yield* $.div(
-      { class: "card" },
-      collect(
-        $.h2({}, $.of(props.title)),
-        $.div({ class: "card-body" }, children),
-      ),
-    );
-  });
+// Mutable reactive state
+const count = yield* Signal.make(0);
+yield* count.set(5);
+yield* count.update((n) => n + 1);
 
-// Usage
-$.div(
-  {},
-  Card(
-    { title: "Welcome" },
+// Derived values (read-only, auto-tracked)
+const doubled = Readable.map(count, (n) => n * 2);
+const label = Readable.map(count, (n) => `Count: ${n}`);
+
+// Reactive collections
+const todos = yield* Signal.Array.make([{ text: "Learn Effex", done: false }]);
+yield* todos.push({ text: "Build something", done: false });
+
+const users = yield* Signal.Map.make(new Map([["alice", { name: "Alice" }]]));
+yield* users.set("bob", { name: "Bob" });
+
+// Reactive structs (each field is independently reactive)
+const form = yield* Signal.Struct.make({ name: "", email: "" });
+yield* form.name.set("Alice"); // Only updates subscribers of `name`
+
+// Lightweight mutable refs (not reactive, no subscriptions)
+const cache = yield* Ref.make(new Map());
+```
+
+## DOM & Control Flow
+
+The `@effex/dom` package provides element constructors and reactive control flow:
+
+```ts
+import { $, collect, each, when, matchOption, Readable } from "@effex/dom";
+
+// Elements accept reactive attributes
+$.input({
+  class: Readable.map(hasError, (err) => err ? "input error" : "input"),
+  value: name,
+  onInput: (e) => name.set((e.target as HTMLInputElement).value),
+});
+
+// Conditional rendering
+when(isLoggedIn, {
+  onTrue: () => Dashboard(),
+  onFalse: () => LoginPage(),
+});
+
+// List rendering with keyed reconciliation
+each(todos, {
+  key: (todo) => todo.id,
+  render: (todo) => TodoItem({ todo }),
+});
+
+// Option matching
+matchOption(maybeUser, {
+  onSome: (user) => UserCard({ user }),
+  onNone: () => $.span({}, $.of("No user")),
+});
+```
+
+## Routing
+
+`@effex/router` provides type-safe routing with the builder pattern:
+
+```ts
+import { Route, Router, Outlet, Link } from "@effex/router";
+import { Schema } from "effect";
+
+// Define routes
+const HomeRoute = Route.make("/").pipe(
+  Route.render(() => HomePage()),
+);
+
+const UserRoute = Route.make("/users/:id").pipe(
+  Route.params(Schema.Struct({ id: Schema.String })),
+  Route.render((data) => UserPage(data)),
+);
+
+// Compose into a router
+const router = Router.empty.pipe(
+  Router.concat(HomeRoute),
+  Router.concat(UserRoute),
+  Router.fallback(() => NotFoundPage()),
+);
+
+// Render the matched route
+$.main({}, Outlet({ router }));
+
+// Navigate with type-safe links
+Link({ href: "/users/alice" }, $.of("Alice's Profile"));
+```
+
+### Loaders & Mutation Handlers
+
+Routes can define server-side data loading and mutations when used with `@effex/platform`:
+
+```ts
+import { Route } from "@effex/router";
+import { RedirectError } from "@effex/platform";
+
+const PostRoute = Route.make("/posts/:id").pipe(
+  Route.params(Schema.Struct({ id: Schema.String })),
+
+  // Loader: runs server-side with platform, client-side in SPA mode
+  Route.get(
+    ({ params }) =>
+      Effect.gen(function* () {
+        const svc = yield* PostService;
+        return yield* svc.getPost(params.id);
+      }),
+    (post) => PostPage({ post }),
+  ),
+
+  // Mutation handlers: server-side only (via platform)
+  Route.post("update", (body) =>
+    Effect.gen(function* () {
+      const svc = yield* PostService;
+      return yield* svc.updatePost(body);
+    }),
+  ),
+);
+```
+
+Route components access loader data and action endpoints via `RouteDataContext`:
+
+```ts
+const { data, loaderPath, actions } = yield* RouteDataContext;
+```
+
+## Forms
+
+`@effex/form` provides schema-validated forms with reactive field state:
+
+```ts
+import { Field, Form } from "@effex/form";
+import { Schema } from "effect";
+
+// Define the form at module level
+const LoginForm = Form.make({
+  email: Field.make(Schema.String.pipe(Schema.nonEmptyString()), { validateOn: "blur" }),
+  password: Field.make(Schema.String.pipe(Schema.minLength(8)), { validateOn: "blur" }),
+});
+
+// Use in a component
+LoginForm.provide(
+  {
+    defaults: { email: "", password: "" },
+    onSubmit: (ctx) => Effect.tryPromise(() => login(ctx.decoded)),
+  },
+  $.form(
+    { class: "login" },
     collect(
-      $.p({}, $.of("This is the card content.")),
-      $.button({}, $.of("Click me")),
+      Effect.gen(function* () {
+        const email = yield* LoginForm.fields.email;
+        return yield* $.input({
+          value: email.value,
+          onInput: (e) => email.set((e.target as HTMLInputElement).value),
+          onBlur: () => email.blur(),
+        });
+      }),
+      // ... more fields
     ),
   ),
 );
 ```
 
-## Full-Stack with @effex/platform
+Supports leaf fields, nested structs, arrays, and maps — all with Effect Schema validation.
 
-For production apps, `@effex/platform` provides everything you need: SSR, hydration, file-based routing, loaders, and actions.
+## Full-Stack SSR
+
+`@effex/platform` bridges Effex with `@effect/platform`'s HTTP server for server-side rendering:
 
 ```ts
-// src/routes/users.$id.ts
-import { Effect, Schema } from "effect";
-import { $, collect, Route } from "@effex/platform";
+// server.ts
+import { Platform } from "@effex/platform";
 
-// Define route with typed params, loader, and action
-export const route = Route.define({
-  params: Schema.Struct({ id: Schema.String }),
-  loader: (params) => fetchUser(params.id),
-  action: ({ formData }) =>
-    Effect.gen(function* () {
-      yield* updateUser(formData);
-      return { success: true };
-    }),
+const effexRoutes = Platform.toHttpRoutes(router, {
+  app: App,
+  document: { title: "My App", scripts: ["/client.js"] },
 });
 
-// Component with type-safe access to loader data
-const UserPage = () =>
-  Effect.gen(function* () {
-    const user = yield* route.loaderData(); // User type inferred from loader
+// Compose with any @effect/platform HttpRouter
+const httpApp = HttpRouter.empty.pipe(
+  HttpRouter.get("/api/health", HttpServerResponse.json({ ok: true })),
+  HttpRouter.concat(effexRoutes),
+);
+```
 
-    return yield* $.div(
-      {},
-      collect(
-        $.h1({}, $.of(user.name)),
-        $.form(
-          { method: "post" },
-          collect(
-            $.input({ name: "email", value: user.email }),
-            $.button({ type: "submit" }, $.of("Save")),
-          ),
-        ),
-      ),
-    );
-  });
+```ts
+// client.ts
+import { hydrate } from "@effex/dom/hydrate";
+import { Platform } from "@effex/platform";
 
-export default UserPage;
+hydrate(App(), document.getElementById("root")!, {
+  layers: Platform.makeClientLayer(router),
+});
 ```
 
 Key features:
-- **SSR + Hydration** - Server renders HTML, client picks up seamlessly
-- **Loaders** - Fetch data on the server before rendering
-- **Actions** - Handle form submissions with typed responses
-- **File-based routing** - Routes derived from filesystem structure
-- **HttpApi integration** - Mount Effect's HttpApi alongside pages on a single server
-- **Shared schemas** - Same Effect Schema validates data on server and client
-
-See the [`@effex/platform` README](./packages/platform/README.md) for the full documentation.
+- **SSR + Hydration** — Server renders HTML, client picks up seamlessly
+- **Loaders** — Fetch data server-side, serialized to client for hydration
+- **Mutation handlers** — `Route.post/put/delete` execute server-side, return JSON
+- **Data requests** — Client navigations fetch data via `?_data=1` without full page loads
+- **Redirects** — Throw `RedirectError` from loaders for server-side redirects
+- **HttpApi composition** — Mount Effect's HttpApi alongside Effex pages on a single server
 
 ## Packages
 
-Effex is organized into focused packages. Use what you need:
-
 | Package | Description |
 |---------|-------------|
-| [`@effex/core`](./packages/core) | Reactive primitives: Signals, Derived values, reactive collections |
-| [`@effex/dom`](./packages/dom) | DOM rendering, elements, control flow, components, animation |
-| [`@effex/router`](./packages/router) | Type-safe routing with Effect Schema validation |
-| [`@effex/form`](./packages/form) | Form handling with Effect Schema validation |
-| [`@effex/platform`](./packages/platform) | Full-stack meta-framework: SSR, hydration, loaders, actions |
-| [`@effex/cli`](./packages/cli) | Dev server and build tooling |
-| [`@effex/vite-plugin`](./packages/vite-plugin) | Vite plugin for file-based routing |
-| [`@effex/eslint-plugin`](./packages/eslint-plugin) | ESLint rules for Effect.ts/Effex best practices |
-| [`create-effex`](./packages/create-effex) | CLI to scaffold new projects |
+| [`@effex/core`](./packages/core) | Reactive primitives: Signal, Readable, Ref, Signal.Array/Map/Struct, AsyncCache |
+| [`@effex/dom`](./packages/dom) | DOM rendering, elements, control flow, animation, mount/hydrate |
+| [`@effex/router`](./packages/router) | Type-safe routing with loaders, mutation handlers, and Outlet |
+| [`@effex/form`](./packages/form) | Schema-validated forms with reactive field state |
+| [`@effex/platform`](./packages/platform) | Server-side rendering, hydration, and data loading |
+| [`@effex/vite-plugin`](./packages/vite-plugin) | Vite plugin: SSR dev server + server-code stripping |
+| [`create-effex`](./packages/create-effex) | CLI to scaffold new projects (SPA or SSR) |
 
-**Note:** `@effex/dom` re-exports everything from `@effex/core`, and `@effex/platform` re-exports everything from all packages. For most apps, you only need one import.
+**Import conventions:**
+- `@effex/dom` re-exports everything from `@effex/core` — no need to install core separately
+- `@effex/platform` does **not** re-export dom or router — import them directly
+
+## Examples
+
+| Example | Description |
+|---------|-------------|
+| [`twitter`](./examples/twitter) | Full-stack SSR app with loaders, mutations, and caching |
+| [`kanban`](./examples/kanban) | Kanban board with drag-and-drop and forms |
+| [`todo-app`](./examples/todo-app) | Classic todo app |
+| [`chat`](./examples/chat) | Chat interface |
+| [`router-demo`](./examples/router-demo) | Router features showcase |
 
 ## Why No JSX?
 
@@ -221,91 +356,33 @@ Effex uses function calls instead of JSX:
 
 ```ts
 // Effex
-$.div({ class: "container" }, [
-  $.h1("Hello"),
-  $.p(t`Count: ${count}`),
-  Counter(),
-])
-
-// vs JSX
-<div class="container">
-  <h1>Hello</h1>
-  <p>Count: {count}</p>
-  <Counter />
-</div>
-```
-
-**Why we chose this approach:**
-
-1. **Error type preservation**: Elements have type `Element<E>` where `E` is the error channel. JSX would erase this to `JSX.Element`, losing type-safe error propagation.
-
-2. **No build configuration**: Works out of the box with any TypeScript setup. No jsx runtime, tsconfig tweaks, or bundler plugins needed.
-
-3. **Explicit Effects**: Every element is an Effect that must be yielded. JSX would obscure this.
-
-4. **Consistent syntax**: Components and elements use the same call syntax.
-
-## Element Helpers
-
-The `Element` namespace provides pipeable DOM manipulation helpers for working with element refs and animation hooks:
-
-```ts
-import { Element, $ } from "@effex/dom";
-
-// Create an element ref
-const buttonRef = yield* Element.ref<HTMLButtonElement>();
-
-// Use in animation hooks
-when(isOpen, {
-  onTrue: () => Dropdown(),
-  animate: {
-    onEnter: (el) => el.pipe(
-      Element.setStyles({ "transform-origin": "top" }),
-      Element.focusFirst("[data-item]"),
-    ),
-  },
-});
-
-// Chain operations
-el.pipe(
-  Element.addClass("active"),
-  Element.setStyles({ opacity: "1" }),
-  Element.setAttribute("aria-expanded", "true"),
-  Element.focus,
+$.div(
+  { class: "container" },
+  collect($.h1({}, $.of("Hello")), $.p({}, $.of(count))),
 )
 ```
 
-Helpers are available for styles, classes, attributes, data attributes, focus, scrolling, events, and more. See the [`@effex/dom` README](./packages/dom/README.md#element-helpers) for the full API.
+**Why:**
+
+1. **Error type preservation** — Elements have type `Element<E, R>`. JSX would erase this to `JSX.Element`, losing type-safe error propagation.
+2. **No build configuration** — Works with any TypeScript setup. No JSX runtime, tsconfig tweaks, or bundler plugins.
+3. **Explicit Effects** — Every element is an Effect that must be yielded. JSX would obscure this.
+4. **Consistent syntax** — Components and elements use the same call pattern.
 
 ## Coming from Another Framework?
 
-We have migration guides with concept mapping and side-by-side examples:
+Migration guides with concept mapping and side-by-side examples:
 
 - [Coming from React](./REACT-MIGRATION.md)
 - [Coming from Vue](./VUE-MIGRATION.md)
 - [Coming from Svelte](./SVELTE-MIGRATION.md)
 
-## API Documentation
-
-Generate full API docs locally:
-
-```bash
-pnpm docs:gen
-```
-
 ## Acknowledgments
 
-Effex stands on the shoulders of giants:
-
-- **[Effect](https://effect.website/)** - The foundation of everything. Effect's approach to typed errors, resource management, and structured concurrency inspired this entire project.
-
-- **[React](https://react.dev/)** - The component model and hooks patterns heavily influenced Effex's API design.
-
-- **[Solid](https://www.solidjs.com/)** - Our fine-grained reactivity system draws direct inspiration from Solid's brilliant reactive primitives.
-
-- **[TanStack](https://tanstack.com/)** - The router API is inspired by TanStack Router.
-
-- **[effect-form](https://github.com/lucas-barake/effect-form)** - The form package's schema-first, context-based architecture was inspired by this excellent Effect-based form library.
+- **[Effect](https://effect.website/)** — The foundation. Effect's typed errors, resource management, and structured concurrency inspired this entire project.
+- **[Solid](https://www.solidjs.com/)** — Fine-grained reactivity draws direct inspiration from Solid's reactive primitives.
+- **[TanStack](https://tanstack.com/)** — The router API is inspired by TanStack Router.
+- **[effect-form](https://github.com/lucas-barake/effect-form)** — The form package's schema-first, context-based architecture was inspired by this library.
 
 ## License
 
