@@ -36,3 +36,4 @@ docs/api
 docs-notes
 
 *.pem
+examples/chat
