@@ -1,8 +1,8 @@
 # @effex/core
 
-Reactive primitives for Effex applications. This package provides the foundational reactivity system: Signals, Readables, async state management, and reactive collections.
+Reactive primitives for Effex applications. This package provides the foundational reactivity system: Signals, Readables, async state management, reactive collections, state machines, and control flow primitives.
 
-> **Note:** `@effex/dom` re-exports everything from this package. If you're using `@effex/dom` or `@effex/platform`, you don't need to install this separately.
+> **Note:** `@effex/dom` re-exports everything from this package. If you're using `@effex/dom`, you don't need to install this separately.
 
 ## Installation
 
@@ -27,6 +27,28 @@ const current = yield* count.get;
 yield* count.set(5);
 yield* count.update((n) => n + 1);
 ```
+
+### Custom Equality
+
+By default, Signal uses strict equality (`===`) to determine if a value has changed. Use `Signal.equals` for custom equality:
+
+```ts
+interface User {
+  id: number;
+  name: string;
+  lastSeen: Date;
+}
+
+// Only trigger updates when the user ID changes
+const currentUser = yield* Signal.make<User>(
+  { id: 1, name: "Alice", lastSeen: new Date() }
+).pipe(Signal.equals((a, b) => a.id === b.id));
+```
+
+This is useful for:
+- **Objects with irrelevant fields** (timestamps, metadata)
+- **Expensive computations** that shouldn't re-run on semantically equal inputs
+- **Normalized data** where you want to compare by ID rather than reference
 
 ## Readable
 
@@ -57,6 +79,16 @@ const both = Readable.zipAll([firstName, lastName]);
 // both: Readable<[string, string]>
 ```
 
+### Constants and Streams
+
+```ts
+// Constant (never changes)
+const label = Readable.of("Hello");
+
+// From an initial value + stream of updates
+const time = Readable.fromStream(Date.now(), clockStream);
+```
+
 ### Normalizing Props
 
 Many functions accept props that can be either static values or reactive `Readable` values. Use `Readable.normalize()` to handle both cases:
@@ -85,6 +117,49 @@ const Button = (props: ButtonProps, children: ChildEffect) => {
 };
 ```
 
+### Lifting Functions
+
+When using utility libraries like [class-variance-authority (CVA)](https://cva.style/docs) or [clsx](https://github.com/lukeed/clsx), use `Readable.lift` to make them reactive-aware:
+
+```ts
+import { cva } from "class-variance-authority";
+import { Signal, Readable } from "@effex/core";
+
+const buttonStyles = cva("btn font-medium rounded", {
+  variants: {
+    variant: { primary: "bg-blue-500", secondary: "bg-gray-200" },
+    size: { sm: "px-2 py-1", md: "px-4 py-2", lg: "px-6 py-3" },
+  },
+});
+
+// Lift it to accept Readables
+const reactiveButtonStyles = Readable.lift(buttonStyles);
+
+const variant = yield* Signal.make<"primary" | "secondary">("primary");
+
+// className is Readable<string> - updates when variant changes
+const className = reactiveButtonStyles({ variant, size: "md" });
+```
+
+## Ref
+
+Mutable references with deferred resolution, similar to React's `useRef` but with Effect integration:
+
+```ts
+import { Ref } from "@effex/core";
+
+// Create a ref for a DOM element
+const inputRef = yield* Ref.make<HTMLInputElement>();
+
+// inputRef.current is null until set
+// inputRef.value is an Effect that resolves when the ref is populated
+
+// Later, focus the input (waits until the ref is set)
+yield* inputRef.value.pipe(
+  Effect.tap((el) => Effect.sync(() => el.focus()))
+);
+```
+
 ## AsyncReadable
 
 For async operations like data fetching, use `AsyncReadable`. It provides reactive state for loading, value, and error:
@@ -111,10 +186,36 @@ yield* userData.refetch();
 yield* userData.reset();
 ```
 
+### From Promises
+
+```ts
+// Simple promise
+const data = yield* AsyncReadable.promise(() => fetch("/api/data").then(r => r.json()));
+
+// With error handling
+const data = yield* AsyncReadable.tryPromise(
+  () => fetch("/api/data").then(r => r.json()),
+  (error) => new ApiError({ cause: error })
+);
+```
+
+### Reactive Dependencies
+
+Recompute when a source Readable changes:
+
+```ts
+const userId = yield* Signal.make("alice");
+
+const profile = yield* AsyncReadable.fromReadable(
+  (id) => Effect.tryPromise(() => fetchProfile(id))
+)(userId);
+// Refetches automatically when userId changes
+```
+
 Use with control flow primitives:
 
 ```ts
-import { when, matchOption } from "@effex/dom";
+import { when, matchOption } from "@effex/core";
 
 // Show loading spinner
 when(userData.isLoading, {
@@ -125,8 +226,87 @@ when(userData.isLoading, {
 // Handle the value (matchOption unwraps Option for you)
 matchOption(userData.value, {
   onSome: (user) => UserCard({ user }),  // user is Readable<User>
-  onNone: () => $.span("No data"),
+  onNone: () => $.span({}, $.of("No data")),
 });
+```
+
+## AsyncCache
+
+A caching layer for async operations. Entries are keyed by hierarchical paths and can be invalidated by prefix. Ideal for data fetching in apps with loaders and mutations.
+
+```ts
+import { AsyncCache } from "@effex/core";
+
+const cache = yield* AsyncCache;
+
+// Get or create a cached async readable
+const posts = yield* cache.get(
+  ["posts"],
+  () => Effect.tryPromise(() => fetch("/api/posts").then(r => r.json())),
+);
+
+// Seed with initial data (e.g., from a server-side loader)
+const posts = yield* cache.get(
+  ["posts"],
+  () => Effect.tryPromise(() => fetch("/api/posts").then(r => r.json())),
+  { initialData: loaderData.posts },
+);
+```
+
+### Cache Keys
+
+Keys are arrays of primitives, enabling hierarchical invalidation:
+
+```ts
+// Key examples
+["posts"]                    // all posts
+["posts", "feed"]            // feed posts specifically
+["posts", userId]            // posts by user
+["users", 42, true]          // compound keys
+```
+
+### Invalidation
+
+```ts
+// Invalidate all entries starting with ["posts"] — triggers refetch
+yield* cache.invalidate(["posts"]);
+
+// Invalidate a specific user's data
+yield* cache.invalidate(["users", userId]);
+
+// Remove entries entirely (no refetch)
+yield* cache.remove(["posts"]);
+
+// Clear the whole cache
+yield* cache.clear();
+```
+
+### Typical Usage with Loaders
+
+```ts
+const FeedPage = (data: { posts: Post[] }) =>
+  Effect.gen(function* () {
+    const cache = yield* AsyncCache;
+
+    // Seed cache with server-loaded data, fetch from client on invalidation
+    const feedQuery = yield* cache.get(
+      ["feed"],
+      () => Effect.tryPromise(() =>
+        fetch("/?_data=1").then(r => r.json()).then(r => r.data)
+      ),
+      { initialData: data },
+    );
+
+    const posts = Readable.map(feedQuery.value, (fetched) =>
+      Option.match(fetched, {
+        onSome: (f) => f.posts,
+        onNone: () => data.posts,
+      }),
+    );
+
+    // After a mutation, invalidate to refetch:
+    yield* cache.invalidate(["feed"]);
+  });
 ```
 
 ## Mutation
@@ -155,31 +335,24 @@ const user = yield* createUser.run({ name: "Alice", email: "alice@example.com" }
 yield* createUser.reset();
 ```
 
-## Custom Equality
-
-By default, Signal uses strict equality (`===`) to determine if a value has changed. Use `Signal.equals` for custom equality:
+### From Promises
 
 ```ts
-interface User {
-  id: number;
-  name: string;
-  lastSeen: Date;
-}
+const createUser = yield* Mutation.promise((input: CreateUserInput) =>
+  fetch("/api/users", { method: "POST", body: JSON.stringify(input) }).then(r => r.json())
+);
 
-// Only trigger updates when the user ID changes
-const currentUser = yield* Signal.make<User>(
-  { id: 1, name: "Alice", lastSeen: new Date() }
-).pipe(Signal.equals((a, b) => a.id === b.id));
+// With error handling
+const createUser = yield* Mutation.tryPromise(
+  (input: CreateUserInput) =>
+    fetch("/api/users", { method: "POST", body: JSON.stringify(input) }).then(r => r.json()),
+  (error) => new ApiError({ cause: error })
+);
 ```
-
-This is useful for:
-- **Objects with irrelevant fields** (timestamps, metadata)
-- **Expensive computations** that shouldn't re-run on semantically equal inputs
-- **Normalized data** where you want to compare by ID rather than reference
 
 ## Reactive Collections
 
-Effex provides reactive versions of Array, Map, and Set. Unlike in React where you must clone collections on every mutation, these allow in-place mutations that automatically trigger reactive updates.
+Effex provides reactive versions of Array, Map, Set, and Struct. Unlike in React where you must clone collections on every mutation, these allow in-place mutations that automatically trigger reactive updates.
 
 ### Signal.Array
 
@@ -198,6 +371,7 @@ yield* todos.insertAt(0, item);
 yield* todos.removeAt(index);
 yield* todos.remove(specificItem);  // By reference
 yield* todos.move(fromIndex, toIndex);  // Great for drag-and-drop
+yield* todos.swap(indexA, indexB);
 yield* todos.sort((a, b) => a.id - b.id);
 yield* todos.reverse();
 yield* todos.clear();
@@ -227,21 +401,23 @@ const users = yield* Signal.Map.make<string, User>();
 yield* users.set("u1", { name: "Alice", role: "admin" });
 yield* users.delete("u1");
 yield* users.clear();
+yield* users.replace(newMap);
+yield* users.update(m => new Map([...m, ["u2", bob]]));
 
 // Reactive reads (for UI binding)
-users.get("u1");              // Readable<Option<User>>
-users.getOrElse("u1", guest); // Readable<User>
+users.at("u1");              // Readable<Option<User>>
+users.atOrElse("u1", guest); // Readable<User>
 users.has("u1");              // Readable<boolean>
 
 // One-time reads (for imperative code)
-const user = yield* users.getEffect("u1");   // Effect<Option<User>>
+const user = yield* users.atEffect("u1");   // Effect<Option<User>>
 const exists = yield* users.hasEffect("u1"); // Effect<boolean>
 
 // Reactive derived values
-users.size;     // Readable<number>
-users.entries;  // Readable<readonly [string, User][]>
-users.keys;     // Readable<readonly string[]>
-users.values;   // Readable<readonly User[]>
+users.size;         // Readable<number>
+users.entries;      // Readable<readonly [string, User][]>
+users.keys;         // Readable<readonly string[]>
+users.valuesArray;  // Readable<readonly User[]>
 ```
 
 ### Signal.Set
@@ -256,13 +432,18 @@ yield* tags.add("important");
 yield* tags.delete("draft");
 yield* tags.toggle("featured");  // Add if missing, remove if present
 yield* tags.clear();
+yield* tags.replace(newSet);
+yield* tags.update(s => new Set([...s, "extra"]));
 
 // Reactive reads
 tags.has("important");  // Readable<boolean>
 
+// One-time read
+const exists = yield* tags.hasEffect("important");  // Effect<boolean>
+
 // Reactive derived values
-tags.size;    // Readable<number>
-tags.values;  // Readable<readonly string[]>
+tags.size;         // Readable<number>
+tags.valuesArray;  // Readable<readonly string[]>
 ```
 
 **Why This Matters**: In React, mutating a Map/Set doesn't trigger re-renders because the reference is unchanged. You're forced to clone on every mutation:
@@ -274,6 +455,35 @@ setSet(new Set(set).add(item));
 ```
 
 With Effex's reactive collections, mutations are O(1) and automatically trigger updates.
+
+### Signal.Struct
+
+A reactive object where each field is an individual Signal. This allows granular updates to specific fields without affecting the rest:
+
+```ts
+const address = yield* Signal.Struct.make({
+  street: "123 Main St",
+  city: "Austin",
+  zip: "78701",
+});
+
+// Each field is a Signal — granular reads and writes
+yield* address.street.set("456 Oak Ave");
+yield* address.city.update((c) => c.toUpperCase());
+
+// Read the whole struct as a single Readable
+const value = yield* address.get;
+// { street: "456 Oak Ave", city: "AUSTIN", zip: "78701" }
+
+// Batch update multiple fields
+yield* address.update({ street: "789 Pine Rd", city: "Houston" });
+
+// Replace the entire struct
+yield* address.replace({ street: "100 New St", city: "San Antonio", zip: "78201" });
+
+// List of field keys
+address.keys;  // readonly ["street", "city", "zip"]
+```
 
 ## Transition (State Machines)
 
@@ -346,85 +556,196 @@ const submit = status.guard(
 yield* submit(formData);
 ```
 
-## Lifting Functions
+## Control Flow
 
-When using utility libraries like [class-variance-authority (CVA)](https://cva.style/docs) or [clsx](https://github.com/lukeed/clsx), use `Readable.lift` to make them reactive-aware:
+Reactive control flow primitives for conditional and list rendering. These work with any `Readable` value and automatically update the UI when the source changes.
+
+### when
+
+Conditional rendering based on a boolean Readable:
 
 ```ts
-import { cva } from "class-variance-authority";
-import { Signal, Readable } from "@effex/core";
+import { when } from "@effex/core";
 
-const buttonStyles = cva("btn font-medium rounded", {
-  variants: {
-    variant: { primary: "bg-blue-500", secondary: "bg-gray-200" },
-    size: { sm: "px-2 py-1", md: "px-4 py-2", lg: "px-6 py-3" },
-  },
+when(isLoggedIn, {
+  onTrue: () => Dashboard(),
+  onFalse: () => LoginForm(),
+});
+```
+
+### match
+
+Pattern matching on a Readable value:
+
+```ts
+import { match } from "@effex/core";
+
+match(status.current, {
+  cases: [
+    { pattern: "idle", render: () => IdleView() },
+    { pattern: "loading", render: () => LoadingSpinner() },
+    { pattern: "error", render: () => ErrorView() },
+  ],
+  fallback: () => $.div({}, $.of("Unknown state")),
+});
+```
+
+### matchOption / matchEither
+
+Handle `Option` and `Either` values reactively:
+
+```ts
+import { matchOption, matchEither } from "@effex/core";
+
+matchOption(userData.value, {
+  onSome: (user) => UserCard({ user }),  // user is Readable<User>
+  onNone: () => $.span({}, $.of("No data")),
 });
 
-// Lift it to accept Readables
-const reactiveButtonStyles = Readable.lift(buttonStyles);
+matchEither(result, {
+  onRight: (value) => SuccessView({ value }),
+  onLeft: (error) => ErrorView({ error }),
+});
+```
 
-const variant = yield* Signal.make<"primary" | "secondary">("primary");
+### each
 
-// className is Readable<string> - updates when variant changes
-const className = reactiveButtonStyles({ variant, size: "md" });
+Keyed list rendering with efficient reconciliation:
+
+```ts
+import { each } from "@effex/core";
+
+each(todos, {
+  key: (todo) => todo.id,
+  render: (todo, index) => TodoItem({ todo, index }),
+  container: () => $.ul({ class: "todo-list" }),
+});
+```
+
+### redraw
+
+Complete redraw on every change (useful when the whole subtree depends on the value):
+
+```ts
+import { redraw } from "@effex/core";
+
+redraw(theme, {
+  render: (currentTheme) => ThemedApp({ theme: currentTheme }),
+});
 ```
 
 ## API Reference
 
 ### Signal
 
-- `Signal.make<T>(initial)` - Create a signal with initial value
-- `Signal.equals(fn)` - Pipeable combinator for custom equality
-- `signal.get` - Effect that reads the current value
-- `signal.set(value)` - Effect that sets the value
-- `signal.update(fn)` - Effect that updates the value with a function
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `Signal.make` | `(initial: T) => Effect<Signal<T>, never, Scope>` | Create a signal |
+| `Signal.equals` | `(fn: (a, b) => boolean) => (signal) => signal` | Custom equality (pipeable) |
+| `Signal.fromNullable` | `(existing?, default) => Effect<Signal<T>>` | Use existing or create new |
+| `Signal.fromReactive` | `(value, default) => Effect<Signal<T>>` | Convert any reactive value to Signal |
+| `signal.get` | `Effect<T>` | Read current value |
+| `signal.set` | `(value: T) => Effect<void>` | Set value |
+| `signal.update` | `(fn: (T) => T) => Effect<void>` | Update with function |
 
 ### Readable
 
-- `Readable.of(value)` - Create a constant Readable
-- `Readable.normalize(value)` - Normalize a static or reactive value to Readable
-- `Readable.map(readable, fn)` - Transform a Readable's value
-- `Readable.flatMap(readable, fn)` - Chain Readables
-- `Readable.zip(a, b)` - Combine two Readables into a tuple
-- `Readable.zipWith(a, b, fn)` - Combine two Readables with a function
-- `Readable.zipAll(readables)` - Combine multiple Readables into a tuple
-- `Readable.filter(readable, predicate)` - Filter values
-- `Readable.dedupe(readable)` - Remove consecutive duplicates
-- `Readable.lift(fn)` - Lift a function to accept Readables
-- `readable.get` - Effect that reads the current value
-- `readable.changes` - Stream of value changes
-- `readable.values` - Stream of all values (current + changes)
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `Readable.of` | `(value: T) => Readable<T>` | Constant readable |
+| `Readable.normalize` | `(value: T \| Readable<T>) => Readable<T>` | Normalize static or reactive |
+| `Readable.fromStream` | `(initial, stream) => Readable<T>` | From initial + stream |
+| `Readable.map` | `(readable, fn) => Readable<B>` | Transform value |
+| `Readable.flatMap` | `(readable, fn) => Readable<B>` | Chain readables |
+| `Readable.zip` | `(a, b) => Readable<[A, B]>` | Combine into tuple |
+| `Readable.zipWith` | `(a, b, fn) => Readable<C>` | Combine with function |
+| `Readable.zipAll` | `(readables) => Readable<[...]>` | Combine multiple into tuple |
+| `Readable.filter` | `(readable, predicate) => Readable<T>` | Filter values |
+| `Readable.dedupe` | `(readable) => Readable<T>` | Remove consecutive duplicates |
+| `Readable.dedupeWith` | `(readable, equals) => Readable<T>` | Dedupe with custom equality |
+| `Readable.lift` | `(fn) => reactiveFn` | Lift function to accept Readables |
+| `Readable.tap` | `(readable, fn) => Readable<T>` | Side effect on each value |
+| `readable.get` | `Effect<T>` | Read current value |
+| `readable.changes` | `Stream<T>` | Stream of changes |
+| `readable.values` | `Stream<T>` | Stream of all values (current + changes) |
+
+### Ref
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `Ref.make` | `() => Effect<Ref<T>, never, Scope>` | Create empty ref |
+| `ref.current` | `T \| null` | Mutable current value |
+| `ref.value` | `Effect<T>` | Resolves when ref is set |
+| `ref.set` | `(value: T) => void` | Set value and complete deferred |
 
 ### AsyncReadable
 
-- `AsyncReadable.make(fn)` - Create an async readable
-- `asyncReadable.isLoading` - `Readable<boolean>`
-- `asyncReadable.value` - `Readable<Option<A>>`
-- `asyncReadable.error` - `Readable<Option<E>>`
-- `asyncReadable.refetch()` - Manually trigger refetch
-- `asyncReadable.reset()` - Reset to initial state
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `AsyncReadable.make` | `(fn) => Effect<AsyncReadable<A, E>>` | From effect (fetches immediately) |
+| `AsyncReadable.promise` | `(fn) => Effect<AsyncReadable<A, unknown>>` | From promise |
+| `AsyncReadable.tryPromise` | `(fn, onError) => Effect<AsyncReadable<A, E>>` | From promise with error mapping |
+| `AsyncReadable.fromReadable` | `(fn) => (source) => Effect<AsyncReadable>` | Recompute on source change |
+| `AsyncReadable.map` | `(ar, fn) => AsyncReadable<B, E>` | Transform successful value |
+| `ar.isLoading` | `Readable<boolean>` | Loading state |
+| `ar.value` | `Readable<Option<A>>` | Successful value |
+| `ar.error` | `Readable<Option<E>>` | Error state |
+| `ar.refetch` | `() => Effect<void>` | Manually refetch |
+| `ar.reset` | `() => Effect<void>` | Reset to initial state |
+
+### AsyncCache
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `AsyncCache` | `Context.Tag` | Service tag (use `yield* AsyncCache`) |
+| `makeAsyncCache` | `() => IAsyncCache` | Create instance |
+| `cache.get` | `(key, fetcher, options?) => Effect<AsyncReadable>` | Get or create cached entry |
+| `cache.invalidate` | `(keyPrefix) => Effect<void>` | Invalidate + refetch matching entries |
+| `cache.remove` | `(keyPrefix) => Effect<void>` | Remove matching entries |
+| `cache.clear` | `() => Effect<void>` | Clear entire cache |
 
 ### Mutation
 
-- `Mutation.make(fn)` - Create a mutation
-- `mutation.isLoading` - `Readable<boolean>`
-- `mutation.data` - `Readable<Option<O>>`
-- `mutation.error` - `Readable<Option<E>>`
-- `mutation.run(input)` - Execute the mutation
-- `mutation.reset()` - Reset to initial state
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `Mutation.make` | `(fn) => Effect<Mutation<I, O, E>>` | From effect |
+| `Mutation.promise` | `(fn) => Effect<Mutation<I, O, unknown>>` | From promise |
+| `Mutation.tryPromise` | `(fn, onError) => Effect<Mutation<I, O, E>>` | From promise with error mapping |
+| `Mutation.map` | `(mutation, fn) => Mutation<I, O2, E>` | Transform result |
+| `Mutation.flatMap` | `(mutation, fn) => Mutation<I, O2, E\|E2>` | Chain mutations |
+| `mutation.isLoading` | `Readable<boolean>` | Loading state |
+| `mutation.data` | `Readable<Option<O>>` | Successful result |
+| `mutation.error` | `Readable<Option<E>>` | Error state |
+| `mutation.run` | `(input: I) => Effect<O, E>` | Execute mutation |
+| `mutation.reset` | `() => Effect<void>` | Reset to initial state |
 
 ### Reactive Collections
 
-- `Signal.Array.make<T>(initial?)` - Create a reactive array
-- `Signal.Map.make<K, V>(initial?)` - Create a reactive map
-- `Signal.Set.make<T>(initial?)` - Create a reactive set
+| Constructor | Description |
+|-------------|-------------|
+| `Signal.Array.make<T>(initial?)` | Reactive array |
+| `Signal.Map.make<K, V>(initial?)` | Reactive map |
+| `Signal.Set.make<T>(initial?)` | Reactive set |
+| `Signal.Struct.make<T>(initial)` | Reactive struct with per-field Signals |
 
 ### Transition
 
-- `Transition.make(config, initial)` - Create a state machine
-- `transition.current` - `Readable<S>` - Current state
-- `transition.to(state)` - `Effect<void, InvalidTransition>` - Transition
-- `transition.is(state)` - `Readable<boolean>` - Check state
-- `transition.canTransitionTo(state)` - `Readable<boolean>` - Check if allowed
-- `transition.guard(states, callback, options?)` - Create guarded callback
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `Transition.make` | `(config, initial) => Effect<Transition<S>>` | Create state machine |
+| `transition.current` | `Readable<S>` | Current state |
+| `transition.to` | `(state) => Effect<void, InvalidTransition>` | Transition |
+| `transition.is` | `(state) => Readable<boolean>` | Check state |
+| `transition.canTransitionTo` | `(state) => Readable<boolean>` | Check if allowed |
+| `transition.guard` | `(states, callback, options?) => guardedFn` | Create guarded callback |
+
+### Control Flow
+
+| Function | Description |
+|----------|-------------|
+| `when(condition, { onTrue, onFalse })` | Conditional rendering |
+| `match(value, { cases, fallback })` | Pattern matching |
+| `matchOption(option, { onSome, onNone })` | Option matching |
+| `matchEither(either, { onRight, onLeft })` | Either matching |
+| `each(items, { key, render, container })` | Keyed list rendering |
+| `redraw(readable, { render, container })` | Full redraw on change |
