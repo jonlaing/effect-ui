@@ -4,6 +4,9 @@
   "description": "Full-stack meta-framework for Effex applications",
   "type": "module",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "author": "Jon Laing",
   "repository": {
     "type": "git",
@@ -29,7 +32,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "sideEffects": false,
   "scripts": {
