@@ -4,6 +4,9 @@
   "description": "DOM rendering for Effex - a reactive UI framework built on Effect.ts",
   "type": "module",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "author": "Jon Laing",
   "repository": {
     "type": "git",
@@ -46,7 +49,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "sideEffects": false,
   "scripts": {

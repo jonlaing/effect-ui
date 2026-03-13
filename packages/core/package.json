@@ -4,6 +4,9 @@
   "description": "Platform-agnostic reactivity primitives for Effex",
   "type": "module",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "author": "Jon Laing",
   "repository": {
     "type": "git",
@@ -28,7 +31,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "sideEffects": false,
   "scripts": {

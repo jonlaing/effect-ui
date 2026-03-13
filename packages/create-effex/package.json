@@ -4,6 +4,9 @@
   "description": "Create a new Effex application",
   "type": "module",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "author": "Jon Laing",
   "repository": {
     "type": "git",
@@ -23,7 +26,8 @@
   },
   "files": [
     "dist",
-    "templates"
+    "templates",
+    "README.md"
   ],
   "scripts": {
     "build": "tsup",
