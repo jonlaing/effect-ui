@@ -15,38 +15,40 @@ npm create effex my-app
 yarn create effex my-app
 ```
 
+The CLI prompts for a project name (if not provided), template selection, and whether to install dependencies.
+
 ## Templates
 
-### SPA (Single Page Application)
+### SPA (Single-Page Application)
 
 A client-side only application with routing:
 
 ```bash
-pnpm create effex my-app --template spa
+pnpm create effex my-app --spa
 ```
 
 Includes:
-- `@effex/dom` - DOM rendering
-- `@effex/router` - Client-side routing
-- `@effex/vite-plugin` - File-based routing
-- Vite configuration
-- Example routes
+- `@effex/dom` — DOM rendering and reactivity
+- `@effex/router` — Client-side routing
+- Vite dev server and build
+- Example routes with a reactive counter
 
 ### SSR (Server-Side Rendering)
 
-A full-stack application with SSR, loaders, and actions:
+A full-stack application with server-side rendering and hydration:
 
 ```bash
-pnpm create effex my-app --template ssr
+pnpm create effex my-app --ssr
 ```
 
 Includes:
-- `@effex/platform` - Full-stack framework
-- `@effex/vite-plugin` - File-based routing + SSR
-- Server entry for SSR
-- Client hydration
-- Example routes with loaders
-- Vite SSR configuration
+- `@effex/dom` — DOM rendering and reactivity
+- `@effex/router` — Routing (shared between server and client)
+- `@effex/platform` — SSR rendering and data loading
+- `@effex/vite-plugin` — Dev server with HMR and server-code stripping
+- `@effect/platform` / `@effect/platform-node` — HTTP server
+- Production server with static file serving
+- Client hydration entry point
 
 ## Project Structure
 
@@ -54,13 +56,12 @@ Includes:
 
 ```
 my-app/
+├── public/
+│   └── styles.css
 ├── src/
-│   ├── routes/
-│   │   ├── _index.ts      # Home page
-│   │   └── about.ts       # About page
-│   ├── generated/
-│   │   └── routes.ts      # Auto-generated
-│   └── main.ts            # Client entry
+│   ├── App.ts           # Root layout with nav + Outlet
+│   ├── main.ts          # Client entry point
+│   └── routes.ts        # Route definitions and router
 ├── index.html
 ├── vite.config.ts
 ├── tsconfig.json
@@ -71,16 +72,14 @@ my-app/
 
 ```
 my-app/
+├── public/
+│   └── styles.css
 ├── src/
-│   ├── routes/
-│   │   ├── _index.ts      # Home page
-│   │   └── about.ts       # About page
-│   ├── generated/
-│   │   └── routes.ts      # Auto-generated
-│   ├── client.ts          # Client hydration
-│   ├── server.ts          # Production server
-│   └── server-entry.ts    # SSR entry
-├── index.html
+│   ├── App.ts           # Root layout (shared server/client)
+│   ├── client.ts        # Client hydration entry
+│   ├── server.ts        # Production HTTP server
+│   ├── vite-entry.ts    # Vite dev server SSR entry
+│   └── routes.ts        # Route definitions and router
 ├── vite.config.ts
 ├── tsconfig.json
 └── package.json
@@ -92,27 +91,37 @@ After creating your project:
 
 ```bash
 cd my-app
-pnpm install
+pnpm install   # if you skipped auto-install
 pnpm dev
 ```
 
 ## Building
 
-```bash
-# Build for production
-pnpm build
+### SPA
 
-# Preview production build
-pnpm preview
+```bash
+pnpm build     # Build for production
+pnpm preview   # Preview production build
 ```
 
-## Options
+### SSR
+
+```bash
+pnpm build     # Build client + server bundles
+pnpm start     # Run production server
+```
+
+## CLI Options
 
 ```
 create-effex <project-name> [options]
 
 Options:
-  --template <template>  Template to use (spa, ssr)
-  --help                 Show help
-  --version              Show version
+  --spa          Use SPA template
+  --ssr          Use SSR template
+  --no-install   Skip dependency installation
+  --help         Show help
+  --version      Show version
 ```
+
+If both a project name and a template flag are provided, all prompts are skipped.
