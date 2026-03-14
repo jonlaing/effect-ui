@@ -9,13 +9,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 interface ProjectOptions {
   name: string;
-  template: "ssr" | "spa";
+  template: "ssr" | "spa" | "ssg";
   install: boolean;
 }
 
 const TEMPLATES = {
   ssr: "Full-stack SSR app with Effect HTTP server",
   spa: "Single-page app (client-only)",
+  ssg: "Static site generation (pre-rendered HTML)",
 };
 
 async function main() {
@@ -30,14 +31,15 @@ async function main() {
   const noInstall = args.includes("--no-install");
   const useSSR = args.includes("--ssr");
   const useSPA = args.includes("--spa");
+  const useSSG = args.includes("--ssg");
 
   let options: ProjectOptions;
 
   // If all options provided via CLI, skip prompts
-  if (projectNameArg && (useSSR || useSPA)) {
+  if (projectNameArg && (useSSR || useSPA || useSSG)) {
     options = {
       name: projectNameArg,
-      template: useSSR ? "ssr" : "spa",
+      template: useSSR ? "ssr" : useSSG ? "ssg" : "spa",
       install: !noInstall,
     };
   } else {
@@ -54,7 +56,7 @@ async function main() {
             "Name can only contain lowercase letters, numbers, and hyphens",
         },
         {
-          type: useSSR || useSPA ? null : "select",
+          type: useSSR || useSPA || useSSG ? null : "select",
           name: "template",
           message: "Select a template:",
           choices: [
@@ -65,6 +67,10 @@ async function main() {
             {
               title: `${pc.blue("SPA")} - ${TEMPLATES.spa}`,
               value: "spa",
+            },
+            {
+              title: `${pc.magenta("SSG")} - ${TEMPLATES.ssg}`,
+              value: "ssg",
             },
           ],
           initial: 0,
@@ -86,7 +92,13 @@ async function main() {
 
     options = {
       name: projectNameArg || response.name,
-      template: useSSR ? "ssr" : useSPA ? "spa" : response.template,
+      template: useSSR
+        ? "ssr"
+        : useSSG
+          ? "ssg"
+          : useSPA
+            ? "spa"
+            : response.template,
       install: noInstall ? false : (response.install ?? true),
     };
   }
@@ -179,6 +191,16 @@ async function main() {
     );
     console.log(
       `    ${pc.cyan("pnpm")} start        ${pc.dim("# Start production server")}`,
+    );
+  } else if (options.template === "ssg") {
+    console.log(
+      `    ${pc.cyan("pnpm")} dev          ${pc.dim("# Start dev server with SSR")}`,
+    );
+    console.log(
+      `    ${pc.cyan("pnpm")} build        ${pc.dim("# Build and generate static HTML")}`,
+    );
+    console.log(
+      `    ${pc.cyan("pnpm")} preview      ${pc.dim("# Preview the static site")}`,
     );
   } else {
     console.log(

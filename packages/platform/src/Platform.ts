@@ -13,6 +13,9 @@
  * @module
  */
 
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+
 import {
   HttpRouter,
   HttpServerRequest,
@@ -594,6 +597,235 @@ export const makeClientLayer = <E, R>(
 };
 
 // =============================================================================
+// Static Site Generation
+// =============================================================================
+
+export interface BuildStaticSiteOptions {
+  /** The router containing routes to build */
+  readonly router: EffexRouter<unknown, unknown>;
+  /**
+   * Root app component. If provided, each page renders through this
+   * (same component tree the client would hydrate).
+   */
+  readonly app?: () => import("@effex/dom").Element.Element<
+    HTMLElement | SVGElement
+  >;
+  /** Document generation options (title, scripts, styles) */
+  readonly document?: DocumentOptions;
+  /** Output directory for generated files */
+  readonly outDir: string;
+  /**
+   * Additional layers to provide to loaders and render functions.
+   * Use this for services like filesystem, markdown parsers, etc.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  readonly layers?: Layer.Layer<any, never, never>;
+}
+
+interface StaticPage {
+  readonly url: string;
+  readonly html: string;
+}
+
+/**
+ * Build a static site from a router's `Route.static` routes.
+ *
+ * Enumerates all static routes, runs their loaders, renders to HTML,
+ * and writes the output to `outDir`.
+ *
+ * @example
+ * ```ts
+ * await Platform.buildStaticSite({
+ *   router,
+ *   app: App,
+ *   document: {
+ *     title: "My Docs",
+ *     scripts: ["/assets/client.js"],
+ *     styles: ["/assets/styles.css"],
+ *   },
+ *   outDir: "dist",
+ *   layers: Layer.mergeAll(FileSystemLive, MarkdownServiceLive),
+ * });
+ * ```
+ */
+export const buildStaticSite = (
+  options: BuildStaticSiteOptions,
+): Promise<void> => {
+  const { router, outDir } = options;
+  const render = renderToString as (
+    element: unknown,
+  ) => Effect.Effect<string, unknown, unknown>;
+
+  const program = Effect.gen(function* () {
+    // Collect all pages to render
+    const pages: Array<{
+      url: string;
+      route: RouteType<string, unknown, unknown, unknown, unknown, unknown>;
+      params: Record<string, string>;
+    }> = [];
+
+    for (const route of router.routes) {
+      const staticConfig = (route as any)._staticConfig;
+      if (!staticConfig) continue;
+
+      // Get all param sets for this route
+      const paramSets: unknown[] = yield* (
+        staticConfig.paths as () => Effect.Effect<unknown[], unknown, unknown>
+      )();
+
+      for (const params of paramSets) {
+        const url = substituteParams(
+          route.path,
+          params as Record<string, string>,
+        );
+        pages.push({
+          url,
+          route: route as RouteType<
+            string,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown
+          >,
+          params: params as Record<string, string>,
+        });
+      }
+    }
+
+    // Render all pages concurrently
+    const rendered: StaticPage[] = yield* Effect.forEach(
+      pages,
+      (page) =>
+        Effect.gen(function* () {
+          const staticConfig = (page.route as any)._staticConfig;
+
+          // Run the loader
+          const data = yield* (
+            staticConfig.load as (args: {
+              params: unknown;
+            }) => Effect.Effect<unknown, unknown, unknown>
+          )({
+            params: page.params,
+          });
+
+          // Build route data for hydration
+          const routeData: RouteDataService = {
+            data,
+            loaderPath: page.url,
+            actions: {},
+          };
+
+          // Navigation layer for this page
+          const navLayer = Navigation.makeLayer(
+            router as EffexRouter<any, any>,
+            {
+              initialPath: page.url,
+              initialSearch: "",
+            },
+          );
+
+          // RouteDataProvider that returns pre-computed data
+          const routeDataProviderLayer = Layer.succeed(RouteDataProvider, {
+            getRouteData: () => Effect.succeed(routeData),
+          });
+
+          // AsyncCache for SSR
+          const asyncCacheLayer = Layer.succeed(AsyncCache, makeAsyncCache());
+
+          const ssrLayers = Layer.mergeAll(
+            navLayer,
+            routeDataProviderLayer,
+            asyncCacheLayer,
+          );
+
+          // Render to HTML
+          let html: string;
+          if (options.app) {
+            html = yield* render(options.app()).pipe(Effect.provide(ssrLayers));
+          } else {
+            const element = page.route.render(data);
+            html = yield* render(element).pipe(Effect.provide(ssrLayers));
+          }
+
+          // Wrap in document shell
+          const hydrationData: Record<string, unknown> = {
+            data,
+            actions: {},
+          };
+          const fullHtml = generateDocument(
+            html,
+            hydrationData,
+            options.document,
+          );
+
+          return { url: page.url, html: fullHtml } as StaticPage;
+        }),
+      { concurrency: 10 },
+    );
+
+    // Render 404 page from router fallback
+    if (router.fallback) {
+      const navLayer = Navigation.makeLayer(router as EffexRouter<any, any>, {
+        initialPath: "/404",
+        initialSearch: "",
+      });
+      const routeDataProviderLayer = Layer.succeed(RouteDataProvider, {
+        getRouteData: () =>
+          Effect.succeed({ data: undefined, loaderPath: "/404", actions: {} }),
+      });
+      const asyncCacheLayer = Layer.succeed(AsyncCache, makeAsyncCache());
+      const ssrLayers = Layer.mergeAll(
+        navLayer,
+        routeDataProviderLayer,
+        asyncCacheLayer,
+      );
+
+      let fallbackHtml: string;
+      if (options.app) {
+        fallbackHtml = yield* render(options.app()).pipe(
+          Effect.provide(ssrLayers),
+        );
+      } else {
+        fallbackHtml = yield* render(router.fallback()).pipe(
+          Effect.provide(ssrLayers),
+        );
+      }
+
+      const fullHtml = generateDocument(fallbackHtml, {}, options.document);
+      rendered.push({ url: "/__404__", html: fullHtml });
+    }
+
+    // Write all files to disk
+    yield* Effect.forEach(
+      rendered,
+      (page) =>
+        Effect.promise(async () => {
+          const filePath =
+            page.url === "/__404__"
+              ? path.join(outDir, "404.html")
+              : page.url === "/" || page.url === ""
+                ? path.join(outDir, "index.html")
+                : path.join(outDir, page.url, "index.html");
+
+          await fs.mkdir(path.dirname(filePath), { recursive: true });
+          await fs.writeFile(filePath, page.html, "utf-8");
+        }),
+      { concurrency: 10 },
+    );
+
+    console.log(`[SSG] Built ${rendered.length} pages to ${outDir}`);
+  });
+
+  // Run the program with user-provided layers
+  const withLayers = options.layers
+    ? Effect.provide(program, options.layers)
+    : program;
+
+  return Effect.runPromise(withLayers as Effect.Effect<void>);
+};
+
+// =============================================================================
 // Namespace
 // =============================================================================
 
@@ -606,4 +838,5 @@ export const Platform = {
   generateDocument,
   toHttpRoutes,
   makeClientLayer,
+  buildStaticSite,
 };

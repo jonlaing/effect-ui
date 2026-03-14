@@ -242,6 +242,17 @@ export interface Route<
    * Stored opaquely; the router never executes them.
    */
   readonly _handlers: ReadonlyArray<RouteHandler>;
+  /**
+   * Static site generation config — set by `Route.static`.
+   * Contains `paths` (enumerate param sets) and `load` (fetch data for one page).
+   * Stored opaquely; only consumed by `Platform.buildStaticSite()`.
+   */
+  readonly _staticConfig: {
+    readonly paths: () => Effect.Effect<unknown[], unknown, unknown>;
+    readonly load: (args: {
+      params: unknown;
+    }) => Effect.Effect<unknown, unknown, unknown>;
+  } | null;
 }
 
 // =============================================================================
@@ -320,6 +331,7 @@ export const make = <Path extends string>(
     searchParams: Effect.map(ParamsTag, (ctx) => ctx.searchParams),
     _loader: null,
     _handlers: [],
+    _staticConfig: null,
   });
 
   return route;
@@ -504,6 +516,56 @@ export const get =
       ...route,
       _loader: loader,
       render: renderFn,
+    });
+  };
+
+/**
+ * Static site generation config for a route.
+ *
+ * Provides `paths` to enumerate all param sets at build time,
+ * `load` to fetch data for each page, and `render` to produce the element.
+ *
+ * Mutually exclusive with `Route.get` and `Route.render` — all three
+ * consume `NoRenderError`.
+ *
+ * @example
+ * ```ts
+ * const DocRoute = Route.make("/docs/:slug").pipe(
+ *   Route.params(Schema.Struct({ slug: Schema.String })),
+ *   Route.static({
+ *     paths: () => Effect.gen(function* () {
+ *       const files = yield* glob("docs/*.md");
+ *       return files.map(f => ({ slug: basename(f, ".md") }));
+ *     }),
+ *     load: ({ params }) => Effect.gen(function* () {
+ *       const raw = yield* readFile(`docs/${params.slug}.md`);
+ *       return parseMarkdown(raw);
+ *     }),
+ *     render: (data) => DocPage(data),
+ *   }),
+ * );
+ * ```
+ */
+export const static_ =
+  <P, A, E2, R2, E3, R3>(config: {
+    readonly paths?: () => Effect.Effect<P[], E2, R2>;
+    readonly load: (args: { params: P }) => Effect.Effect<A, E2, R2>;
+    readonly render: (
+      data: A,
+    ) => Element.Element<HTMLElement | SVGElement, E3, R3>;
+  }) =>
+  <Path extends string, SP, D, E, R>(
+    route: Route<Path, P, SP, D, E, R>,
+  ): [NoRenderError] extends [E]
+    ? Route<Path, P, SP, A, Exclude<E, NoRenderError> | E3, R | R3>
+    : never => {
+    return Object.assign(Object.create(RouteProto), {
+      ...route,
+      render: config.render,
+      _staticConfig: {
+        paths: config.paths ?? (() => Effect.succeed([{} as P])),
+        load: config.load,
+      },
     });
   };
 
@@ -807,6 +869,7 @@ export const lazy = <Path extends string>(
       searchParams: Effect.map(ParamsTag, (ctx) => ctx.searchParams),
       _loader: null,
       _handlers: [],
+      _staticConfig: null,
       // Store the module loader for the router to use
       _load: load,
     });
@@ -857,6 +920,7 @@ export const Route = {
   make,
   render,
   get,
+  static: static_,
   post,
   put,
   delete: del,

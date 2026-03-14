@@ -12,6 +12,7 @@ export {
   rawParams as routeRawParams,
   withGuard as routeWithGuard,
   withAnimation as routeWithAnimation,
+  static_ as routeStatic,
   lazy as lazyRoute,
   isRoute,
   routeSpecificity,

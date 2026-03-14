@@ -164,4 +164,69 @@ export const FeedRoute = Route.make("/").pipe(
       expect(result).not.toContain("fetchData");
     });
   });
+
+  describe("Route.static stripping", () => {
+    it("strips static config with paths, load, and render", () => {
+      const input = `Route.static({
+  paths: () => Effect.gen(function* () {
+    const files = yield* glob("docs/*.md");
+    return files.map(f => ({ slug: f }));
+  }),
+  load: ({ params }) => Effect.gen(function* () {
+    return yield* readFile(params.slug);
+  }),
+  render: (data) => DocPage(data),
+})`;
+      const result = stripServerCode(input);
+      expect(result).toContain("Route.render(");
+      expect(result).toContain("DocPage(data)");
+      expect(result).not.toContain("Route.static");
+      expect(result).not.toContain("glob");
+      expect(result).not.toContain("readFile");
+    });
+
+    it("strips static config without paths (no dynamic params)", () => {
+      const input = `Route.static({
+  load: () => Effect.gen(function* () {
+    return yield* readFile("about.md");
+  }),
+  render: (data) => AboutPage(data),
+})`;
+      const result = stripServerCode(input);
+      expect(result).toContain("Route.render(");
+      expect(result).toContain("AboutPage(data)");
+      expect(result).not.toContain("Route.static");
+      expect(result).not.toContain("readFile");
+    });
+
+    it("handles Route.static in a pipeline", () => {
+      const input = `const DocRoute = Route.make("/docs/:slug").pipe(
+  Route.params(Schema.Struct({ slug: Schema.String })),
+  Route.static({
+    paths: () => Effect.succeed([{ slug: "intro" }]),
+    load: ({ params }) => fetchDoc(params.slug),
+    render: (data) => DocPage(data),
+  }),
+);`;
+      const result = stripServerCode(input);
+      expect(result).toContain("Route.render(");
+      expect(result).toContain("DocPage(data)");
+      expect(result).not.toContain("Route.static");
+      expect(result).not.toContain("fetchDoc");
+    });
+
+    it("handles multiple Route.static calls", () => {
+      const input = `
+const A = Route.make("/a").pipe(
+  Route.static({ load: () => Effect.succeed("a"), render: (d) => PageA(d) }),
+);
+const B = Route.make("/b").pipe(
+  Route.static({ load: () => Effect.succeed("b"), render: (d) => PageB(d) }),
+);`;
+      const result = stripServerCode(input);
+      expect(result).not.toContain("Route.static");
+      expect(result).toContain("PageA(d)");
+      expect(result).toContain("PageB(d)");
+    });
+  });
 });
