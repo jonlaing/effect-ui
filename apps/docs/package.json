@@ -1,0 +1,25 @@
+{
+  "name": "docs",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && vite build --ssr src/entry.ts",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@effect/platform": "^0.94.0",
+    "@effex/dom": "workspace:*",
+    "@effex/platform": "workspace:*",
+    "@effex/router": "workspace:*",
+    "effect": "3.19.13",
+    "markdown-it": "^14.1.0"
+  },
+  "devDependencies": {
+    "@effex/vite-plugin": "workspace:*",
+    "@types/markdown-it": "^14.1.2",
+    "typescript": "~5.9.3",
+    "vite": "^7.0.0"
+  }
+}

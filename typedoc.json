@@ -6,8 +6,6 @@
     "./packages/router/src/index.ts",
     "./packages/form/src/index.ts",
     "./packages/platform/src/index.ts",
-    "./packages/platform/src/server.ts",
-    "./packages/platform/src/client.ts",
     "./packages/vite-plugin/src/index.ts"
   ],
   "out": "./docs/api",
@@ -17,6 +15,6 @@
   "hideGenerator": true,
   "githubPages": false,
   "entryPointStrategy": "expand",
-  "exclude": ["**/*.test.ts", "**/*.stories.ts", "**/stories/**"],
+  "exclude": ["**/*.test.ts"],
   "skipErrorChecking": true
 }

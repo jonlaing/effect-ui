@@ -289,7 +289,11 @@ export const toHttpRoutes = <E, R>(
             params: unknown;
             searchParams: unknown;
           }) => Effect.Effect<unknown, unknown, unknown>)
-        : null;
+        : (route as any)._staticConfig?.load
+          ? ((route as any)._staticConfig.load as (args: {
+              params: unknown;
+            }) => Effect.Effect<unknown, unknown, unknown>)
+          : null;
 
       if (loaderFn) {
         const loaderOrRedirect = yield* loaderFn({

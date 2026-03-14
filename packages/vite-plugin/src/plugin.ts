@@ -74,6 +74,7 @@ export const effexPlatform = (options: EffexPlatformOptions = {}): Plugin => {
   const exclude = options.exclude;
   const mode = options.mode ?? "ssr";
   let isSsr = false;
+  let isDev = false;
   let root: string;
   let outDir: string;
   let entryPath: string | null = null;
@@ -85,6 +86,7 @@ export const effexPlatform = (options: EffexPlatformOptions = {}): Plugin => {
       root = config.root;
       outDir = path.resolve(root, config.build?.outDir ?? "dist");
       isSsr = !!config.build?.ssr;
+      isDev = config.command === "serve";
       if (options.entry) {
         entryPath = path.resolve(root, options.entry);
       }
@@ -241,7 +243,7 @@ export const effexPlatform = (options: EffexPlatformOptions = {}): Plugin => {
     // -------------------------------------------------------------------------
 
     async closeBundle() {
-      if (mode !== "ssg" || !entryPath || isSsr) return;
+      if (mode !== "ssg" || !entryPath || isSsr || isDev) return;
 
       try {
         // Dynamically import the built SSG entry.

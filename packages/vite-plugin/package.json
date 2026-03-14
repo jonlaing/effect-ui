@@ -35,7 +35,13 @@
     "build": "tsup"
   },
   "peerDependencies": {
+    "@effex/platform": "workspace:*",
     "vite": "^5.0.0 || ^6.0.0 || ^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@effex/platform": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "vite": "^7.0.0"
