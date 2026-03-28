@@ -243,7 +243,7 @@ export const effexPlatform = (options: EffexPlatformOptions = {}): Plugin => {
     // -------------------------------------------------------------------------
 
     async closeBundle() {
-      if (mode !== "ssg" || !entryPath || isSsr || isDev) return;
+      if (mode !== "ssg" || !entryPath || !isSsr || isDev) return;
 
       try {
         // Dynamically import the built SSG entry.
@@ -256,10 +256,11 @@ export const effexPlatform = (options: EffexPlatformOptions = {}): Plugin => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { buildStaticSite } = (await import(platformModule)) as any;
 
-        // Try to load from the built output first, fall back to source
-        const entryModule = await import(
-          /* @vite-ignore */ path.resolve(root, entryPath)
-        );
+        // Import the built SSR entry from the output directory.
+        // Vite's SSR build outputs `src/entry.ts` as `entry.js` in outDir.
+        const entryBasename = path.basename(entryPath, path.extname(entryPath));
+        const builtEntry = path.resolve(outDir, `${entryBasename}.js`);
+        const entryModule = await import(/* @vite-ignore */ builtEntry);
 
         if (!entryModule.router) {
           throw new Error(
@@ -287,6 +288,63 @@ export const effexPlatform = (options: EffexPlatformOptions = {}): Plugin => {
 // =============================================================================
 
 /**
+ * Remove import declarations whose specifiers are no longer referenced
+ * in the rest of the code. This prevents server-only modules from being
+ * evaluated after their call sites have been stripped.
+ *
+ * Only removes named imports (e.g. `import { a, b } from "..."`) where
+ * every imported name is unreferenced. Side-effect imports (`import "..."`)
+ * and namespace imports (`import * as x`) are left alone.
+ */
+const stripDeadImports = (code: string): string => {
+  const importRe = /^import\s+\{([^}]+)\}\s+from\s+["'][^"']+["'];?\s*$/gm;
+  let result = code;
+
+  const toRemove: { start: number; end: number }[] = [];
+  let match: RegExpExecArray | null;
+
+  importRe.lastIndex = 0;
+
+  while ((match = importRe.exec(code)) !== null) {
+    const specifiers = match[1]
+      .split(",")
+      .map((s) => {
+        const trimmed = s.trim().replace(/^type\s+/, "");
+        const asMatch = trimmed.match(/\S+\s+as\s+(\S+)/);
+        return asMatch ? asMatch[1] : trimmed;
+      })
+      .filter((s) => s.length > 0);
+
+    if (specifiers.length === 0) continue;
+
+    const importStart = match.index;
+    const importEnd = match.index + match[0].length;
+    const codeWithout = code.slice(0, importStart) + code.slice(importEnd);
+
+    const allDead = specifiers.every((name) => {
+      const re = new RegExp(`\\b${escapeRegExp(name)}\\b`);
+      return !re.test(codeWithout);
+    });
+
+    if (allDead) {
+      toRemove.push({ start: importStart, end: importEnd });
+    }
+  }
+
+  for (let i = toRemove.length - 1; i >= 0; i--) {
+    const { start, end } = toRemove[i];
+    const actualEnd =
+      end < result.length && result[end] === "\n" ? end + 1 : end;
+    result = result.slice(0, start) + result.slice(actualEnd);
+  }
+
+  return result;
+};
+
+const escapeRegExp = (s: string): string =>
+  s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
  * Strip server-only code from route definitions.
  *
  * Transforms:
@@ -299,6 +357,7 @@ export const stripServerCode = (code: string): string => {
   result = stripLoaders(result);
   result = stripHandlers(result);
   result = stripStaticConfig(result);
+  result = stripDeadImports(result);
   return result;
 };
 

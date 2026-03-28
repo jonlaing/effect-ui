@@ -55,6 +55,8 @@ export {
   currentMatch as navCurrentMatch,
   pushPath as navPushPath,
   replacePath as navReplacePath,
+  pushRoute as navPushRoute,
+  replaceRoute as navReplaceRoute,
   back as navBack,
   forward as navForward,
   type Navigation as NavigationType,

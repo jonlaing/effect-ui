@@ -1,11 +1,40 @@
+// Export Element as a namespace — values come from `export * as`,
+// types are added via declaration merging below to work around
+
+import type { Effect, Scope } from "effect";
+
+import type { Readable, RendererContext } from "@effex/core";
+
+import * as ElementCore from "./Element/index.js";
+
+export namespace Element {
+  export type Child<E = never, R = never> = Effect.Effect<
+    ChildNode | ChildNode[],
+    E,
+    R
+  >;
+  export type ChildNode =
+    | string
+    | number
+    | Readable.Readable<string | number>
+    | HTMLElement
+    | SVGElement;
+  export type Element<
+    A extends HTMLElement | SVGElement = HTMLElement | SVGElement,
+    E = never,
+    R = never,
+  > = Effect.Effect<A, E, Scope.Scope | RendererContext | R>;
+}
+
+export const Element = {
+  ...ElementCore,
+};
+
 // Re-export everything from core so users can import from @effex/dom
 export * from "@effex/core";
 
 // DOM Renderer
 export { DOMRenderer, DOMRendererLive } from "./Render/DOMRenderer.js";
-
-// Export Element as a namespace and also re-export common types directly
-export * as Element from "./Element/index.js";
 
 // Re-export commonly used items from Element for convenience
 export { $, bindElementToRef, ref } from "./Element/index.js";

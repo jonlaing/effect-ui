@@ -21,7 +21,8 @@ import {
   HttpServerRequest,
   HttpServerResponse,
 } from "@effect/platform";
-import { Data, Effect, Layer, Ref, Schema, Scope } from "effect";
+import type { RouteNotFound } from "@effect/platform/HttpServerError";
+import { Data, Effect, Layer, Record, Ref, Schema, Scope } from "effect";
 
 import {
   AsyncCache,
@@ -30,6 +31,7 @@ import {
   type ControlCtx,
   type SuspenseBoundaryCtx,
 } from "@effex/core";
+import { Element } from "@effex/dom";
 import { renderToString } from "@effex/dom/server";
 import {
   Navigation,
@@ -55,6 +57,8 @@ export interface DocumentOptions {
   readonly styles?: readonly string[];
   /** Additional head content */
   readonly head?: string;
+  /** Attributes to add to the <html> element */
+  readonly htmlAttrs?: Record<string, string>;
 }
 
 export interface ToHttpRoutesOptions {
@@ -67,8 +71,15 @@ export interface ToHttpRoutesOptions {
    *
    * If not provided, renders just the matched route with layouts.
    */
-  readonly app?: () => import("@effex/dom").Element.Element<
-    HTMLElement | SVGElement
+  readonly app?: () => Element.Element<
+    HTMLElement | SVGElement,
+    never,
+    | NavigationContext
+    | RouteDataContext
+    | RendererContext
+    | ControlCtx
+    | SuspenseBoundaryCtx
+    | Scope.Scope
   >;
 }
 
@@ -125,9 +136,15 @@ export const generateDocument = (
     .join("\n    ");
   const head = options?.head ?? "";
   const loaderScript = generateLoaderDataScript(loaderData);
+  const htmlAttrs = options?.htmlAttrs
+    ? " " +
+      Object.entries(options.htmlAttrs)
+        .map(([k, v]) => `${k}="${v}"`)
+        .join(" ")
+    : "";
 
   return `<!DOCTYPE html>
-<html>
+<html${htmlAttrs}>
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -161,8 +178,8 @@ const substituteParams = (
 /**
  * Compute action paths for a route's handlers given current params.
  */
-const computeActionPaths = (
-  route: RouteType<string, unknown, unknown, unknown, unknown, unknown>,
+const computeActionPaths = <P, S, D, E, R>(
+  route: RouteType<string, P, S, D, E, R>,
   params: Record<string, string>,
 ): Record<string, string> => {
   const actions: Record<string, string> = {};
@@ -176,27 +193,27 @@ const computeActionPaths = (
 /**
  * Validate route params against the route's schema.
  */
-const validateParams = (
-  route: RouteType<string, unknown, unknown, unknown, unknown, unknown>,
+const validateParams = <P, S, D, E, R>(
+  route: RouteType<string, P, S, D, E, R>,
   rawParams: Record<string, string>,
-): Effect.Effect<unknown, unknown> => {
+): Effect.Effect<P, unknown> => {
   if (route.paramsSchema) {
     return Schema.decodeUnknown(route.paramsSchema)(rawParams);
   }
-  return Effect.succeed(rawParams);
+  return Effect.succeed(rawParams as unknown as P);
 };
 
 /**
  * Validate search params against the route's schema.
  */
-const validateSearchParams = (
-  route: RouteType<string, unknown, unknown, unknown, unknown, unknown>,
+const validateSearchParams = <P, S, D, E, R>(
+  route: RouteType<string, P, S, D, E, R>,
   rawSearchParams: Record<string, string>,
-): Effect.Effect<unknown, unknown> => {
+): Effect.Effect<S, unknown> => {
   if (route.searchParamsSchema) {
     return Schema.decodeUnknown(route.searchParamsSchema)(rawSearchParams);
   }
-  return Effect.succeed(rawSearchParams);
+  return Effect.succeed(rawSearchParams as unknown as S);
 };
 
 // Redirect handling helper — uses _tag check to work with generic E
@@ -234,11 +251,16 @@ const catchRedirects = (
  *
  * Redirect errors are caught and converted to HTTP redirect responses.
  */
-export const toHttpRoutes = <E, R>(
-  router: EffexRouter<E, R>,
+export const toHttpRoutes = <
+  P extends Record<string, unknown> | never,
+  S extends Record<string, unknown> | never,
+  D,
+  R,
+>(
+  router: EffexRouter<P, S, D, never, R>,
   options?: ToHttpRoutesOptions,
 ): HttpRouter.HttpRouter<
-  Exclude<E, RedirectError>,
+  RedirectError | RouteNotFound,
   Exclude<
     R,
     | RouteDataContext
@@ -255,7 +277,7 @@ export const toHttpRoutes = <E, R>(
     element: unknown,
   ) => Effect.Effect<string, unknown, unknown>;
 
-  let httpRouter = HttpRouter.empty as HttpRouter.HttpRouter<any, any>;
+  let httpRouter = HttpRouter.empty as HttpRouter.HttpRouter<unknown, unknown>;
 
   for (const route of router.routes) {
     const path = route.path as `/${string}`;
@@ -288,11 +310,11 @@ export const toHttpRoutes = <E, R>(
         ? (route._loader as (args: {
             params: unknown;
             searchParams: unknown;
-          }) => Effect.Effect<unknown, unknown, unknown>)
-        : (route as any)._staticConfig?.load
-          ? ((route as any)._staticConfig.load as (args: {
+          }) => Effect.Effect<D, unknown, unknown>)
+        : route._staticConfig?.load
+          ? (route._staticConfig.load as (args: {
               params: unknown;
-            }) => Effect.Effect<unknown, unknown, unknown>)
+            }) => Effect.Effect<D, unknown, unknown>)
           : null;
 
       if (loaderFn) {
@@ -334,9 +356,11 @@ export const toHttpRoutes = <E, R>(
         }
 
         // Continue with loader data below
-        var loaderData: unknown = loaderOrRedirect.data;
+        // eslint-disable-next-line
+        var loaderData = loaderOrRedirect.data;
       } else {
-        var loaderData: unknown = undefined;
+        // eslint-disable-next-line
+        var loaderData = undefined as D;
       }
 
       // Compute action paths
@@ -375,7 +399,7 @@ export const toHttpRoutes = <E, R>(
       // SSR: Render the component with data provided
 
       // Navigation layer for this request
-      const navLayer = Navigation.makeLayer(router as EffexRouter<any, any>, {
+      const navLayer = Navigation.makeLayer(router, {
         initialPath: url.pathname,
         initialSearch: url.search,
       });
@@ -404,14 +428,14 @@ export const toHttpRoutes = <E, R>(
         // No app component — render just the matched route with layouts
         const element = route.render(loaderData).pipe(
           Effect.provideService(route.Params, {
-            params: rawRouteParams as Record<string, string>,
-            searchParams: rawSearchParams,
+            params: rawRouteParams as P,
+            searchParams: rawSearchParams as S,
           }),
           Effect.provideService(RouteDataContext, routeData),
         );
 
-        const withLayouts = (router.layouts as any[]).reduce(
-          (inner: any, wrapper: any) => wrapper(inner),
+        const withLayouts = router.layouts.reduce(
+          (inner, wrapper) => wrapper(inner),
           element,
         );
 
@@ -442,7 +466,12 @@ export const toHttpRoutes = <E, R>(
         );
       }),
     );
-    httpRouter = httpRouter.pipe(HttpRouter.get(path, debugHandler as any));
+    httpRouter = httpRouter.pipe(
+      HttpRouter.get(
+        path,
+        debugHandler as unknown as HttpRouter.HttpRouter<never, never>,
+      ),
+    );
 
     // -------------------------------------------------------------------
     // Mutation handlers: POST/PUT/DELETE — direct execution, no render
@@ -503,18 +532,45 @@ export const toHttpRoutes = <E, R>(
       });
 
       // Register on the appropriate HTTP method
-      const wrappedHandler = catchRedirects(mutationHandler) as any;
+      const wrappedHandler = catchRedirects(mutationHandler);
       if (handler.method === "post") {
-        httpRouter = httpRouter.pipe(HttpRouter.post(path, wrappedHandler));
+        httpRouter = httpRouter.pipe(
+          HttpRouter.post(
+            path,
+            wrappedHandler as unknown as HttpRouter.HttpRouter<never, never>,
+          ),
+        );
       } else if (handler.method === "put") {
-        httpRouter = httpRouter.pipe(HttpRouter.put(path, wrappedHandler));
+        httpRouter = httpRouter.pipe(
+          HttpRouter.put(
+            path,
+            wrappedHandler as unknown as HttpRouter.HttpRouter<never, never>,
+          ),
+        );
       } else if (handler.method === "delete") {
-        httpRouter = httpRouter.pipe(HttpRouter.del(path, wrappedHandler));
+        httpRouter = httpRouter.pipe(
+          HttpRouter.del(
+            path,
+            wrappedHandler as unknown as HttpRouter.HttpRouter<never, never>,
+          ),
+        );
       }
     }
   }
 
-  return httpRouter;
+  return httpRouter as unknown as HttpRouter.HttpRouter<
+    RedirectError | RouteNotFound,
+    Exclude<
+      R,
+      | RouteDataContext
+      | RouteDataProvider
+      | NavigationContext
+      | RendererContext
+      | ControlCtx
+      | SuspenseBoundaryCtx
+      | Scope.Scope
+    >
+  >;
 };
 
 // =============================================================================
@@ -547,8 +603,14 @@ declare const window: Window & {
  * Effect.runPromise(Effect.scoped(program))
  * ```
  */
-export const makeClientLayer = <E, R>(
-  router: EffexRouter<E, R>,
+export const makeClientLayer = <
+  P extends Record<string, unknown> | never,
+  S extends Record<string, unknown> | never,
+  D,
+  E,
+  R,
+>(
+  router: EffexRouter<P, S, D, E, R>,
 ): Layer.Layer<NavigationContext | RouteDataProvider, never, never> => {
   const dataProviderLayer = Layer.scoped(
     RouteDataProvider,
@@ -606,13 +668,16 @@ export const makeClientLayer = <E, R>(
 
 export interface BuildStaticSiteOptions {
   /** The router containing routes to build */
-  readonly router: EffexRouter<unknown, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  readonly router: EffexRouter<any, any, any, any, any>;
   /**
    * Root app component. If provided, each page renders through this
    * (same component tree the client would hydrate).
    */
   readonly app?: () => import("@effex/dom").Element.Element<
-    HTMLElement | SVGElement
+    HTMLElement | SVGElement,
+    never,
+    never
   >;
   /** Document generation options (title, scripts, styles) */
   readonly document?: DocumentOptions;
@@ -669,7 +734,7 @@ export const buildStaticSite = (
     }> = [];
 
     for (const route of router.routes) {
-      const staticConfig = (route as any)._staticConfig;
+      const staticConfig = route._staticConfig;
       if (!staticConfig) continue;
 
       // Get all param sets for this route
@@ -684,7 +749,7 @@ export const buildStaticSite = (
         );
         pages.push({
           url,
-          route: route as RouteType<
+          route: route as unknown as RouteType<
             string,
             unknown,
             unknown,
@@ -702,11 +767,11 @@ export const buildStaticSite = (
       pages,
       (page) =>
         Effect.gen(function* () {
-          const staticConfig = (page.route as any)._staticConfig;
+          const staticConfig = page.route._staticConfig;
 
           // Run the loader
           const data = yield* (
-            staticConfig.load as (args: {
+            staticConfig?.load as (args: {
               params: unknown;
             }) => Effect.Effect<unknown, unknown, unknown>
           )({
@@ -721,13 +786,10 @@ export const buildStaticSite = (
           };
 
           // Navigation layer for this page
-          const navLayer = Navigation.makeLayer(
-            router as EffexRouter<any, any>,
-            {
-              initialPath: page.url,
-              initialSearch: "",
-            },
-          );
+          const navLayer = Navigation.makeLayer(router, {
+            initialPath: page.url,
+            initialSearch: "",
+          });
 
           // RouteDataProvider that returns pre-computed data
           const routeDataProviderLayer = Layer.succeed(RouteDataProvider, {
@@ -770,7 +832,7 @@ export const buildStaticSite = (
 
     // Render 404 page from router fallback
     if (router.fallback) {
-      const navLayer = Navigation.makeLayer(router as EffexRouter<any, any>, {
+      const navLayer = Navigation.makeLayer(router, {
         initialPath: "/404",
         initialSearch: "",
       });

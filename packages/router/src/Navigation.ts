@@ -1,4 +1,4 @@
-import { Context, Effect, Layer, Option, Scope } from "effect";
+import { Context, Effect, Layer, Option, Record, Scope } from "effect";
 
 import { Readable, Signal } from "@effex/core";
 
@@ -13,8 +13,8 @@ import { findMatch, type Router } from "./Router.js";
  * Build a path string from a route and params.
  * Replaces :param segments with actual values and appends search params.
  */
-export const buildPath = <P, SP>(
-  route: Route<string, P, SP, unknown, unknown, unknown>,
+export const buildPath = <P, SP, D, E, R>(
+  route: Route<string, P, SP, D, E, R>,
   params: P,
   searchParams?: SP,
 ): string => {
@@ -64,17 +64,17 @@ export interface RouteNavigateOptions<P, SP> {
 /**
  * The current match result from the router.
  */
-export interface CurrentMatch<E, R> {
-  readonly route: Route<string, unknown, unknown, unknown, E, R>;
+export interface CurrentMatch {
+  readonly route: Route<string, unknown, unknown, unknown, unknown, unknown>;
   readonly params: Record<string, string>;
 }
 
 /**
  * Navigation service for managing browser history and route state.
  */
-export interface Navigation<E = never, R = never> {
+export interface Navigation {
   /** The router this navigation is bound to */
-  readonly router: Router<E, R>;
+  readonly router: Router<any, any, any, any, any>;
 
   /** Current pathname as a reactive readable */
   readonly pathname: Readable.Readable<string>;
@@ -83,7 +83,7 @@ export interface Navigation<E = never, R = never> {
   readonly searchParams: Readable.Readable<URLSearchParams>;
 
   /** Current matched route (if any) */
-  readonly currentMatch: Readable.Readable<CurrentMatch<E, R>>;
+  readonly currentMatch: Readable.Readable<CurrentMatch>;
 
   /** Navigate to a path string */
   readonly pushPath: (path: string) => Effect.Effect<void>;
@@ -93,13 +93,13 @@ export interface Navigation<E = never, R = never> {
 
   /** Navigate to a route with type-safe params */
   readonly pushRoute: <P, SP>(
-    route: Route<string, P, SP, unknown, E, R>,
+    route: Route<string, P, SP, unknown, unknown, unknown>,
     options?: RouteNavigateOptions<P, SP>,
   ) => Effect.Effect<void>;
 
   /** Navigate to a route, replacing current history entry */
   readonly replaceRoute: <P, SP>(
-    route: Route<string, P, SP, unknown, E, R>,
+    route: Route<string, P, SP, unknown, unknown, unknown>,
     options?: RouteNavigateOptions<P, SP>,
   ) => Effect.Effect<void>;
 
@@ -119,7 +119,7 @@ export interface Navigation<E = never, R = never> {
  */
 export class NavigationContext extends Context.Tag("@effex/router/Navigation")<
   NavigationContext,
-  Navigation<unknown, unknown>
+  Navigation
 >() {}
 
 // =============================================================================
@@ -152,10 +152,16 @@ export interface NavigationOptions {
  * }).pipe(Effect.provide(NavigationLive));
  * ```
  */
-export const make = <E, R>(
-  router: Router<E, R>,
+export const make = <
+  P extends Record<string, unknown> | never,
+  S extends Record<string, unknown> | never,
+  D,
+  E,
+  R,
+>(
+  router: Router<P, S, D, E, R>,
   options?: NavigationOptions,
-): Effect.Effect<Navigation<E, R>, never, Scope.Scope> =>
+): Effect.Effect<Navigation, never, Scope.Scope> =>
   Effect.gen(function* () {
     // Determine if we're in a browser environment
     const isBrowser = typeof window !== "undefined";
@@ -173,13 +179,13 @@ export const make = <E, R>(
     );
 
     // Compute current match from pathname (derived readable)
-    const currentMatch: Readable.Readable<CurrentMatch<E, R>> = Readable.map(
+    const currentMatch: Readable.Readable<CurrentMatch> = Readable.map(
       pathnameState,
-      (pathname): CurrentMatch<E, R> => {
+      (pathname): CurrentMatch => {
         const match = findMatch(router, pathname);
         return Option.getOrElse(match, () => ({
           route: router.fallback,
-        })) as CurrentMatch<E, R>;
+        })) as CurrentMatch;
       },
     );
 
@@ -209,7 +215,7 @@ export const make = <E, R>(
       });
 
     const pushRoute = <P, SP>(
-      route: Route<string, P, SP, unknown, E, R>,
+      route: Route<string, P, SP, unknown, unknown, unknown>,
       opts?: RouteNavigateOptions<P, SP>,
     ): Effect.Effect<void> => {
       const path = buildPath(
@@ -221,7 +227,7 @@ export const make = <E, R>(
     };
 
     const replaceRoute = <P, SP>(
-      route: Route<string, P, SP, unknown, E, R>,
+      route: Route<string, P, SP, unknown, unknown, unknown>,
       opts?: RouteNavigateOptions<P, SP>,
     ): Effect.Effect<void> => {
       const path = buildPath(
@@ -275,24 +281,22 @@ export const make = <E, R>(
       replaceRoute,
       back,
       forward,
-    } satisfies Navigation<E, R>;
+    } as Navigation;
   });
 
 /**
  * Create a Layer that provides Navigation for a router.
  */
-export const makeLayer = <E, R>(
-  router: Router<E, R>,
+export const makeLayer = <
+  P extends Record<string, unknown> | never,
+  S extends Record<string, unknown> | never,
+  D,
+  E,
+  R,
+>(
+  router: Router<P, S, D, E, R>,
   options?: NavigationOptions,
-): Layer.Layer<NavigationContext, never, never> =>
-  Layer.scoped(
-    NavigationContext,
-    make(router, options) as Effect.Effect<
-      Navigation<unknown, unknown>,
-      never,
-      Scope.Scope
-    >,
-  );
+) => Layer.scoped(NavigationContext, make(router, options));
 
 // =============================================================================
 // Accessor Effects
@@ -317,7 +321,7 @@ export const searchParams: Effect.Effect<
  * Get the current matched route.
  */
 export const currentMatch: Effect.Effect<
-  CurrentMatch<unknown, unknown>,
+  CurrentMatch,
   never,
   NavigationContext
 > = Effect.flatMap(NavigationContext, (nav) => nav.currentMatch.get);
@@ -337,6 +341,38 @@ export const replacePath = (
   path: string,
 ): Effect.Effect<void, never, NavigationContext> =>
   Effect.flatMap(NavigationContext, (nav) => nav.replacePath(path));
+
+/**
+ * Navigate to a route with type-safe params.
+ */
+export const pushRoute = <P, SP, D, E, R>(
+  route: Route<string, P, SP, D, E, R>,
+  options?: RouteNavigateOptions<P, SP>,
+): Effect.Effect<void, never, NavigationContext> =>
+  Effect.flatMap(NavigationContext, (nav) => {
+    const path = buildPath(
+      route,
+      options?.params ?? ({} as P),
+      options?.searchParams,
+    );
+    return nav.pushPath(path);
+  });
+
+/**
+ * Navigate to a route, replacing current history entry, with type-safe params.
+ */
+export const replaceRoute = <P, SP, D, E, R>(
+  route: Route<string, P, SP, D, E, R>,
+  options?: RouteNavigateOptions<P, SP>,
+): Effect.Effect<void, never, NavigationContext> =>
+  Effect.flatMap(NavigationContext, (nav) => {
+    const path = buildPath(
+      route,
+      options?.params ?? ({} as P),
+      options?.searchParams,
+    );
+    return nav.replacePath(path);
+  });
 
 /**
  * Go back in history.
@@ -364,6 +400,8 @@ export const Navigation = {
   currentMatch,
   pushPath,
   replacePath,
+  pushRoute,
+  replaceRoute,
   back,
   forward,
 };

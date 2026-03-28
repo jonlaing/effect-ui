@@ -1,6 +1,6 @@
 coverage
 public
 dist
-docs
+./docs
 pnpm-lock.yaml
 *.md

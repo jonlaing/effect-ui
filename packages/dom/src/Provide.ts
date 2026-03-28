@@ -1,6 +1,6 @@
 import { Context, Effect } from "effect";
 
-import type { ChildEffect } from "./Element/types.js";
+import type { Child } from "./Element/types.js";
 
 /**
  * Provide a context value to children elements.
@@ -39,6 +39,5 @@ import type { ChildEffect } from "./Element/types.js";
 export const provide = <I, S, E, R>(
   tag: Context.Tag<I, S>,
   value: S,
-  children: ChildEffect<E, R>,
-): ChildEffect<E, Exclude<R, I>> =>
-  children.pipe(Effect.provideService(tag, value));
+  children: Child<E, R>,
+): Child<E, Exclude<R, I>> => children.pipe(Effect.provideService(tag, value));

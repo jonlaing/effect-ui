@@ -10,6 +10,7 @@ import { MergePropsCtx, Readable, RendererContext } from "@effex/core";
 
 import * as Core from "./core.js";
 import type { ElementRef } from "./ref.js";
+import type { Child, Element } from "./types.js";
 
 // =============================================================================
 // Types
@@ -198,20 +199,20 @@ export type SVGAttributes<T extends SVGElement = SVGElement> =
 export type ElementFactory<K extends keyof HTMLElementTagNameMap> = {
   <E = never, R = never>(
     attrs: HTMLAttributes<HTMLElementTagNameMap[K]>,
-    children: Core.Child<E, R>,
-  ): Core.Element<HTMLElementTagNameMap[K], E, R>;
+    children: Child<E, R>,
+  ): Element<HTMLElementTagNameMap[K], E, R>;
   (
     attrs: HTMLAttributes<HTMLElementTagNameMap[K]>,
-  ): Core.Element<HTMLElementTagNameMap[K], never, never>;
+  ): Element<HTMLElementTagNameMap[K], never, never>;
   <E = never, R = never>(
-    children: Core.Child<E, R>,
-  ): Core.Element<HTMLElementTagNameMap[K], E, R>;
-  (children: string): Core.Element<HTMLElementTagNameMap[K], never, never>;
-  (children: number): Core.Element<HTMLElementTagNameMap[K], never, never>;
+    children: Child<E, R>,
+  ): Element<HTMLElementTagNameMap[K], E, R>;
+  (children: string): Element<HTMLElementTagNameMap[K], never, never>;
+  (children: number): Element<HTMLElementTagNameMap[K], never, never>;
   (
     children: Readable.Readable<string | number>,
-  ): Core.Element<HTMLElementTagNameMap[K], never, never>;
-  (): Core.Element<HTMLElementTagNameMap[K], never, never>;
+  ): Element<HTMLElementTagNameMap[K], never, never>;
+  (): Element<HTMLElementTagNameMap[K], never, never>;
 };
 
 /**
@@ -220,20 +221,20 @@ export type ElementFactory<K extends keyof HTMLElementTagNameMap> = {
 export type SVGElementFactory<K extends keyof SVGElementTagNameMap> = {
   <E = never, R = never>(
     attrs: SVGAttributes<SVGElementTagNameMap[K]>,
-    children: Core.Child<E, R>,
-  ): Core.Element<SVGElementTagNameMap[K], E, R>;
+    children: Child<E, R>,
+  ): Element<SVGElementTagNameMap[K], E, R>;
   (
     attrs: SVGAttributes<SVGElementTagNameMap[K]>,
-  ): Core.Element<SVGElementTagNameMap[K], never, never>;
+  ): Element<SVGElementTagNameMap[K], never, never>;
   <E = never, R = never>(
-    children: Core.Child<E, R>,
-  ): Core.Element<SVGElementTagNameMap[K], E, R>;
-  (children: string): Core.Element<SVGElementTagNameMap[K], never, never>;
-  (children: number): Core.Element<SVGElementTagNameMap[K], never, never>;
+    children: Child<E, R>,
+  ): Element<SVGElementTagNameMap[K], E, R>;
+  (children: string): Element<SVGElementTagNameMap[K], never, never>;
+  (children: number): Element<SVGElementTagNameMap[K], never, never>;
   (
     children: Readable.Readable<string | number>,
-  ): Core.Element<SVGElementTagNameMap[K], never, never>;
-  (): Core.Element<SVGElementTagNameMap[K], never, never>;
+  ): Element<SVGElementTagNameMap[K], never, never>;
+  (): Element<SVGElementTagNameMap[K], never, never>;
 };
 
 // =============================================================================
@@ -255,9 +256,9 @@ const classValueToString = (value: string | readonly string[]): string =>
  * Apply class attribute to an element using Core functions.
  */
 const applyClass = <A extends HTMLElement | SVGElement>(
-  el: Core.Element<A>,
+  el: Element<A>,
   value: ClassValue,
-): Core.Element<A> => {
+): Element<A> => {
   if (Readable.isReadable(value)) {
     // For reactive class that's a string/array, we need to handle it specially
     return Effect.gen(function* () {
@@ -271,7 +272,7 @@ const applyClass = <A extends HTMLElement | SVGElement>(
         renderer.setClassName(element, classValueToString(v)),
       ).pipe(Effect.forkIn(scope));
       return element;
-    }) as Core.Element<A>;
+    }) as Element<A>;
   } else if (typeof value === "string") {
     return Core.setClass(el, value);
   } else if (Array.isArray(value)) {
@@ -315,7 +316,7 @@ const applyClass = <A extends HTMLElement | SVGElement>(
 
         yield* updateClassName();
         return element;
-      }) as Core.Element<A>;
+      }) as Element<A>;
     }
   }
 
@@ -326,9 +327,9 @@ const applyClass = <A extends HTMLElement | SVGElement>(
  * Apply style attribute to an element using Core functions.
  */
 const applyStyle = <A extends HTMLElement | SVGElement>(
-  el: Core.Element<A>,
+  el: Element<A>,
   value: Record<string, StyleValue> | Readable.Readable<Record<string, string>>,
-): Core.Element<A> => {
+): Element<A> => {
   if (Readable.isReadable(value)) {
     // Entire style object is reactive
     return Effect.gen(function* () {
@@ -348,7 +349,7 @@ const applyStyle = <A extends HTMLElement | SVGElement>(
         ),
       ).pipe(Effect.forkIn(scope));
       return element;
-    }) as Core.Element<A>;
+    }) as Element<A>;
   }
 
   // Object with potentially reactive values
@@ -371,10 +372,10 @@ const applyStyle = <A extends HTMLElement | SVGElement>(
  * Apply an event handler to an element using Core functions.
  */
 const applyEventHandler = <A extends HTMLElement>(
-  el: Core.Element<A>,
+  el: Element<A>,
   eventName: string,
   handler: EventHandler<Event>,
-): Core.Element<A> =>
+): Element<A> =>
   Core.on(
     el,
     eventName as keyof HTMLElementEventMap,
@@ -385,9 +386,9 @@ const applyEventHandler = <A extends HTMLElement>(
  * Apply innerHTML to an element using Core functions.
  */
 const applyInnerHTML = <A extends HTMLElement | SVGElement>(
-  el: Core.Element<A>,
+  el: Element<A>,
   value: string | Readable.Readable<string>,
-): Core.Element<A> => {
+): Element<A> => {
   if (Readable.isReadable(value)) {
     return Core.bindInnerHTML(el, value);
   }
@@ -420,10 +421,10 @@ const BOOLEAN_ATTRIBUTES = new Set([
  * Apply a generic attribute to an element using Core functions.
  */
 const applyAttribute = <A extends HTMLElement | SVGElement>(
-  el: Core.Element<A>,
+  el: Element<A>,
   key: string,
   value: unknown,
-): Core.Element<A> => {
+): Element<A> => {
   if (Readable.isReadable(value)) {
     if (BOOLEAN_ATTRIBUTES.has(key)) {
       return Core.bindBooleanAttribute(
@@ -444,9 +445,9 @@ const applyAttribute = <A extends HTMLElement | SVGElement>(
  * Apply input value (special handling to avoid cursor reset).
  */
 const applyInputValue = <A extends HTMLElement | SVGElement>(
-  el: Core.Element<A>,
+  el: Element<A>,
   value: unknown,
-): Core.Element<A> => {
+): Element<A> => {
   if (Readable.isReadable(value)) {
     return Core.bindInputValue(el, value as Readable.Readable<unknown>);
   }
@@ -457,9 +458,9 @@ const applyInputValue = <A extends HTMLElement | SVGElement>(
  * Apply all attributes to an element using Core functions.
  */
 const applyAttributes = <T extends HTMLElement | SVGElement>(
-  el: Core.Element<T>,
+  el: Element<T>,
   attrs: Record<string, unknown>,
-): Core.Element<T> => {
+): Element<T> => {
   let result = el;
 
   for (const [key, value] of Object.entries(attrs)) {
@@ -484,10 +485,10 @@ const applyAttributes = <T extends HTMLElement | SVGElement>(
     } else if (key.startsWith("on") && key.length > 2) {
       const eventName = key.slice(2).toLowerCase();
       result = applyEventHandler(
-        result as Core.Element<HTMLElement>,
+        result as Element<HTMLElement>,
         eventName,
         value as EventHandler<Event>,
-      ) as Core.Element<T>;
+      ) as Element<T>;
     } else if (key === "value") {
       // Check if this is an input-like element at runtime
       result = applyInputValue(result, value);
@@ -509,8 +510,8 @@ const applyAttributes = <T extends HTMLElement | SVGElement>(
 const createElement = <K extends keyof HTMLElementTagNameMap, E, R>(
   tagName: K,
   attrs: HTMLAttributes<HTMLElementTagNameMap[K]>,
-  children: Core.Child<E, R>,
-): Core.Element<HTMLElementTagNameMap[K], E, R> =>
+  children: Child<E, R>,
+): Element<HTMLElementTagNameMap[K], E, R> =>
   Effect.gen(function* () {
     // Check for injected props from asChild pattern
     const mergePropsOption = yield* Effect.serviceOption(MergePropsCtx);
@@ -537,7 +538,7 @@ const createElement = <K extends keyof HTMLElementTagNameMap, E, R>(
     yield* renderer.finalizeNode(result);
 
     return result;
-  }) as Core.Element<HTMLElementTagNameMap[K], E, R>;
+  }) as Element<HTMLElementTagNameMap[K], E, R>;
 
 /**
  * Create an SVG element with attributes and children using Core functions.
@@ -545,8 +546,8 @@ const createElement = <K extends keyof HTMLElementTagNameMap, E, R>(
 const createSVGElement = <K extends keyof SVGElementTagNameMap, E, R>(
   tagName: K,
   attrs: SVGAttributes<SVGElementTagNameMap[K]>,
-  children: Core.Child<E, R>,
-): Core.Element<SVGElementTagNameMap[K], E, R> =>
+  children: Child<E, R>,
+): Element<SVGElementTagNameMap[K], E, R> =>
   Effect.gen(function* () {
     // Check for injected props from asChild pattern
     const mergePropsOption = yield* Effect.serviceOption(MergePropsCtx);
@@ -571,7 +572,7 @@ const createSVGElement = <K extends keyof SVGElementTagNameMap, E, R>(
     yield* renderer.finalizeNode(result);
 
     return result;
-  }) as Core.Element<SVGElementTagNameMap[K], E, R>;
+  }) as Element<SVGElementTagNameMap[K], E, R>;
 
 // =============================================================================
 // Factory Functions
@@ -598,7 +599,7 @@ const makeElementFactory = <K extends keyof HTMLElementTagNameMap>(
 
       // Effect child
       if (isEffect(arg)) {
-        return createElement(tagName, {}, arg as Core.Child<E, R>);
+        return createElement(tagName, {}, arg as Child<E, R>);
       }
 
       // Readable child
@@ -621,7 +622,7 @@ const makeElementFactory = <K extends keyof HTMLElementTagNameMap>(
     // Two arguments: attrs and children
     const [attrs, children] = args as [
       HTMLAttributes<HTMLElementTagNameMap[K]>,
-      Core.Child<E, R>,
+      Child<E, R>,
     ];
     return createElement(tagName, attrs, children);
   }) as ElementFactory<K>;
@@ -646,7 +647,7 @@ const makeSVGElementFactory = <K extends keyof SVGElementTagNameMap>(
       }
 
       if (isEffect(arg)) {
-        return createSVGElement(tagName, {}, arg as Core.Child<E, R>);
+        return createSVGElement(tagName, {}, arg as Child<E, R>);
       }
 
       if (Readable.isReadable(arg)) {
@@ -666,7 +667,7 @@ const makeSVGElementFactory = <K extends keyof SVGElementTagNameMap>(
 
     const [attrs, children] = args as [
       SVGAttributes<SVGElementTagNameMap[K]>,
-      Core.Child<E, R>,
+      Child<E, R>,
     ];
     return createSVGElement(tagName, attrs, children);
   }) as SVGElementFactory<K>;

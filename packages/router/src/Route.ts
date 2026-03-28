@@ -34,6 +34,31 @@ export type PathSegment =
   | { readonly type: "param"; readonly name: string }
   | { readonly type: "catchAll" };
 
+export type ExtractRouteParams<R> =
+  R extends Route<string, infer P, unknown, unknown, unknown, unknown>
+    ? P
+    : never;
+
+export type ExtractRouteSearchParams<R> =
+  R extends Route<string, unknown, infer SP, unknown, unknown, unknown>
+    ? SP
+    : never;
+
+export type ExtractRouteData<R> =
+  R extends Route<string, unknown, unknown, infer D, unknown, unknown>
+    ? D
+    : never;
+
+export type ExtractRouteError<R> =
+  R extends Route<string, unknown, unknown, unknown, infer E, unknown>
+    ? E
+    : never;
+
+export type ExtractRouteRequirements<R> =
+  R extends Route<string, unknown, unknown, unknown, unknown, infer Rq>
+    ? Rq
+    : never;
+
 /**
  * Parse a path pattern into segments.
  * Handles static segments, :param segments, and * catch-all.
@@ -155,7 +180,13 @@ export interface AnimationOptions {
  */
 export type GuardOptions =
   | { readonly redirect: string }
-  | { readonly fallback: () => Element.Element<HTMLElement | SVGElement> };
+  | {
+      readonly fallback: () => Element.Element<
+        HTMLElement | SVGElement,
+        never,
+        never
+      >;
+    };
 
 /**
  * A handler entry for POST/PUT/DELETE mutations.
@@ -231,10 +262,10 @@ export interface Route<
    * Stored opaquely; the router never executes it.
    */
   readonly _loader:
-    | (<EL, RL>(args: {
+    | (<A, EL, RL>(args: {
         params: Params;
         searchParams: SearchParams;
-      }) => Effect.Effect<unknown, EL, RL>)
+      }) => Effect.Effect<A, EL, RL>)
     | null;
   /**
    * Mutation handlers — executed on POST/PUT/DELETE by platform.
@@ -841,7 +872,9 @@ export const lazy = <Path extends string>(
   load: () => Promise<{
     default: Route<Path, unknown, unknown, unknown, unknown, unknown>;
   }>,
-  options?: { fallback?: () => Element.Element<HTMLElement | SVGElement> },
+  options?: {
+    fallback?: () => Element.Element<HTMLElement | SVGElement, never, never>;
+  },
 ): Route<Path, unknown, unknown, unknown, never, never> => {
   // Create a placeholder route that will be replaced when loaded
   const segments = parsePath(path);
