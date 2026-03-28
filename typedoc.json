@@ -9,7 +9,6 @@
     "./packages/vite-plugin/src/index.ts"
   ],
   "out": "./docs/api",
-  "plugin": ["typedoc-plugin-markdown"],
   "excludePrivate": true,
   "excludeInternal": true,
   "hideGenerator": true,

@@ -12,9 +12,7 @@
     "url": "https://github.com/jonlaing/effex.git"
   },
   "scripts": {
-    "dev": "pnpm -C demo dev",
     "build": "pnpm -r build",
-    "preview": "pnpm -C demo preview",
     "lint": "eslint .",
     "format": "prettier --log-level=silent --write .",
     "test": "vitest",
@@ -24,7 +22,7 @@
     "changeset": "changeset",
     "version": "changeset version",
     "release": "pnpm build && changeset publish",
-    "docgen": "rm -rf docs && typedoc",
+    "docs:gen": "rm -rf docs && typedoc",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -50,7 +48,6 @@
     "prettier": "^3.7.4",
     "tsup": "^8.5.1",
     "typedoc": "^0.28.15",
-    "typedoc-plugin-markdown": "^4.9.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.50.1",
     "vite": "^7.3.0",
