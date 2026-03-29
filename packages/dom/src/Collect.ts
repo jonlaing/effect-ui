@@ -3,7 +3,7 @@ import { Effect } from "effect";
 import type { ChildNode } from "./Element/types.js";
 
 /**
- * Combine multiple child effects into a single ChildEffect.
+ * Combine multiple child effects into a single Child.
  * Use this when an element needs multiple children.
  *
  * Error and context types are properly propagated through the union,
@@ -20,7 +20,7 @@ import type { ChildNode } from "./Element/types.js";
  * ))
  *
  * // Mixing static and effectful children
- * const Card = <E, R>(children: ChildEffect<E, R>) =>
+ * const Card = <E, R>(children: Child<E, R>) =>
  *   div({ class: "card" }, collect(
  *     h1({}, $.of("Title")),
  *     children  // E and R propagate up

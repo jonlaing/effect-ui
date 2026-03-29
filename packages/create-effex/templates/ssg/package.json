@@ -1,0 +1,23 @@
+{
+  "name": "effex-app",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && vite build --ssr src/entry.ts",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@effex/dom": "^0.0.1",
+    "@effex/platform": "^0.0.1",
+    "@effex/router": "^0.0.1",
+    "@effect/platform": "^0.94.0",
+    "effect": "^3.19.13"
+  },
+  "devDependencies": {
+    "@effex/vite-plugin": "^0.0.1",
+    "typescript": "~5.9.3",
+    "vite": "^7.0.0"
+  }
+}

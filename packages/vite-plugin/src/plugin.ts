@@ -7,8 +7,10 @@ import type { Plugin, ViteDevServer } from "vite";
  */
 export interface EffexPlatformOptions {
   /**
-   * Path to the SSR entry module that exports a `render` function.
-   * The render function should have the signature: (request: Request) => Promise<Response>
+   * Path to the SSR/SSG entry module.
+   *
+   * In SSR mode: exports a `render(request: Request) => Promise<Response>` function.
+   * In SSG mode: exports `{ router, app?, document?, layers? }` for static site generation.
    *
    * When provided, the plugin runs an SSR dev server with HMR in dev mode.
    * When omitted, only the server-code stripping transform is applied.
@@ -16,6 +18,16 @@ export interface EffexPlatformOptions {
    * @example "src/vite-entry.ts"
    */
   readonly entry?: string;
+  /**
+   * Build mode.
+   *
+   * - `"ssr"` (default) — Standard SSR with live server
+   * - `"ssg"` — Static site generation. After `vite build`, runs
+   *   `Platform.buildStaticSite()` to pre-render all `Route.static` routes.
+   *
+   * In dev mode, both modes behave the same (SSR dev server with HMR).
+   */
+  readonly mode?: "ssr" | "ssg";
   /**
    * File patterns to apply the server-code stripping transform to.
    * Defaults to all .ts/.tsx/.js/.jsx files.
@@ -60,8 +72,11 @@ export interface EffexPlatformOptions {
 export const effexPlatform = (options: EffexPlatformOptions = {}): Plugin => {
   const include = options.include ?? /\.(tsx?|jsx?)$/;
   const exclude = options.exclude;
+  const mode = options.mode ?? "ssr";
   let isSsr = false;
+  let isDev = false;
   let root: string;
+  let outDir: string;
   let entryPath: string | null = null;
 
   return {
@@ -69,7 +84,9 @@ export const effexPlatform = (options: EffexPlatformOptions = {}): Plugin => {
 
     configResolved(config) {
       root = config.root;
+      outDir = path.resolve(root, config.build?.outDir ?? "dist");
       isSsr = !!config.build?.ssr;
+      isDev = config.command === "serve";
       if (options.entry) {
         entryPath = path.resolve(root, options.entry);
       }
@@ -92,7 +109,8 @@ export const effexPlatform = (options: EffexPlatformOptions = {}): Plugin => {
         !code.includes("Route.get") &&
         !code.includes("Route.post") &&
         !code.includes("Route.put") &&
-        !code.includes("Route.del")
+        !code.includes("Route.del") &&
+        !code.includes("Route.static")
       ) {
         return null;
       }
@@ -219,12 +237,112 @@ export const effexPlatform = (options: EffexPlatformOptions = {}): Plugin => {
         });
       };
     },
+
+    // -------------------------------------------------------------------------
+    // SSG build (production only, when mode is "ssg")
+    // -------------------------------------------------------------------------
+
+    async closeBundle() {
+      if (mode !== "ssg" || !entryPath || !isSsr || isDev) return;
+
+      try {
+        // Dynamically import the built SSG entry.
+        // The entry must export: { router, app?, document?, layers? }
+        // The SSR build should have already been run (vite build --ssr)
+        // and the entry compiled. We import the built version.
+        // Dynamic import — @effex/platform is an optional peer dependency
+        // only needed for SSG mode at build time
+        const platformModule = "@effex/platform";
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { buildStaticSite } = (await import(platformModule)) as any;
+
+        // Import the built SSR entry from the output directory.
+        // Vite's SSR build outputs `src/entry.ts` as `entry.js` in outDir.
+        const entryBasename = path.basename(entryPath, path.extname(entryPath));
+        const builtEntry = path.resolve(outDir, `${entryBasename}.js`);
+        const entryModule = await import(/* @vite-ignore */ builtEntry);
+
+        if (!entryModule.router) {
+          throw new Error(
+            `SSG entry "${options.entry}" must export a "router"`,
+          );
+        }
+
+        await buildStaticSite({
+          router: entryModule.router,
+          app: entryModule.app,
+          document: entryModule.document,
+          outDir,
+          layers: entryModule.layers,
+        });
+      } catch (e) {
+        console.error("[effex-platform] SSG build failed:", e);
+        throw e;
+      }
+    },
   };
 };
 
 // =============================================================================
 // Server-code stripping internals
 // =============================================================================
+
+/**
+ * Remove import declarations whose specifiers are no longer referenced
+ * in the rest of the code. This prevents server-only modules from being
+ * evaluated after their call sites have been stripped.
+ *
+ * Only removes named imports (e.g. `import { a, b } from "..."`) where
+ * every imported name is unreferenced. Side-effect imports (`import "..."`)
+ * and namespace imports (`import * as x`) are left alone.
+ */
+const stripDeadImports = (code: string): string => {
+  const importRe = /^import\s+\{([^}]+)\}\s+from\s+["'][^"']+["'];?\s*$/gm;
+  let result = code;
+
+  const toRemove: { start: number; end: number }[] = [];
+  let match: RegExpExecArray | null;
+
+  importRe.lastIndex = 0;
+
+  while ((match = importRe.exec(code)) !== null) {
+    const specifiers = match[1]
+      .split(",")
+      .map((s) => {
+        const trimmed = s.trim().replace(/^type\s+/, "");
+        const asMatch = trimmed.match(/\S+\s+as\s+(\S+)/);
+        return asMatch ? asMatch[1] : trimmed;
+      })
+      .filter((s) => s.length > 0);
+
+    if (specifiers.length === 0) continue;
+
+    const importStart = match.index;
+    const importEnd = match.index + match[0].length;
+    const codeWithout = code.slice(0, importStart) + code.slice(importEnd);
+
+    const allDead = specifiers.every((name) => {
+      const re = new RegExp(`\\b${escapeRegExp(name)}\\b`);
+      return !re.test(codeWithout);
+    });
+
+    if (allDead) {
+      toRemove.push({ start: importStart, end: importEnd });
+    }
+  }
+
+  for (let i = toRemove.length - 1; i >= 0; i--) {
+    const { start, end } = toRemove[i];
+    const actualEnd =
+      end < result.length && result[end] === "\n" ? end + 1 : end;
+    result = result.slice(0, start) + result.slice(actualEnd);
+  }
+
+  return result;
+};
+
+const escapeRegExp = (s: string): string =>
+  s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**
  * Strip server-only code from route definitions.
@@ -238,6 +356,8 @@ export const stripServerCode = (code: string): string => {
   let result = code;
   result = stripLoaders(result);
   result = stripHandlers(result);
+  result = stripStaticConfig(result);
+  result = stripDeadImports(result);
   return result;
 };
 
@@ -306,6 +426,64 @@ const stripHandlers = (code: string): string => {
     const after = result.slice(secondArgEnd);
     const replacement = '() => { throw new Error("server only"); }';
     const oldLen = secondArgEnd - secondArgStart;
+    result = before + replacement + after;
+    offset += replacement.length - oldLen;
+
+    pattern.lastIndex = match.index + match[0].length;
+  }
+
+  return result;
+};
+
+/**
+ * Strip `Route.static(config)` to `Route.render(config.render)` in client builds.
+ * The `paths` and `load` functions are server-only (build-time), so the client
+ * only needs the `render` function for hydration.
+ *
+ * Transforms:
+ * - `Route.static({ paths: ..., load: ..., render: (data) => El(data) })`
+ *   → `Route.render((data) => El(data))`
+ * - `Route.static({ load: ..., render: (data) => El(data) })`
+ *   → `Route.render((data) => El(data))`
+ */
+const stripStaticConfig = (code: string): string => {
+  const pattern = /Route\.static\s*\(/g;
+  let result = code;
+  let match: RegExpExecArray | null;
+  let offset = 0;
+
+  pattern.lastIndex = 0;
+
+  while ((match = pattern.exec(code)) !== null) {
+    const callStart = match.index + offset;
+    const argsStart = callStart + match[0].length;
+
+    // Find the full config object argument
+    const configEnd = findArgEnd(result, argsStart);
+    if (configEnd === -1) continue;
+
+    const configStr = result.slice(argsStart, configEnd);
+
+    // Extract the render function value from the config object.
+    // Look for `render:` or `render :` followed by the function value.
+    const renderMatch = configStr.match(/\brender\s*:\s*/);
+    if (!renderMatch || renderMatch.index === undefined) continue;
+
+    const renderValueStart = renderMatch.index + renderMatch[0].length;
+    const renderValueEnd = findArgEnd(configStr, renderValueStart);
+    if (renderValueEnd === -1) continue;
+
+    const renderFn = configStr.slice(renderValueStart, renderValueEnd).trim();
+
+    // Replace `Route.static({ ... })` with `Route.render(() => renderFn(undefined))`
+    // But actually, Route.render takes `() => Element`, while Route.static's render
+    // takes `(data) => Element`. Since there's no loader data on the client,
+    // we wrap it to pass undefined.
+    const replacement = `Route.render(() => (${renderFn})(undefined))`;
+    const fullCallEnd = configEnd + 1; // +1 for closing paren of Route.static(...)
+    const before = result.slice(0, callStart);
+    const after = result.slice(fullCallEnd);
+    const oldLen = fullCallEnd - callStart;
     result = before + replacement + after;
     offset += replacement.length - oldLen;
 

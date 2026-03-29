@@ -210,6 +210,80 @@ describe("Route.get", () => {
   });
 });
 
+describe("Route.static", () => {
+  it("stores static config with paths and load", () => {
+    const paths = () => Effect.succeed([{ slug: "a" }, { slug: "b" }]);
+    const load = ({ params }: { params: { slug: string } }) =>
+      Effect.succeed({ content: `Page ${params.slug}` });
+    const renderFn = (data: { content: string }) =>
+      Effect.succeed(document.createElement("div"));
+
+    const route = Route.make("/docs/:slug").pipe(
+      Route.params(Schema.Struct({ slug: Schema.String })),
+      Route.static({ paths, load, render: renderFn }),
+    );
+
+    expect(route._staticConfig).not.toBeNull();
+    expect(route._staticConfig!.paths).toBe(paths);
+    expect(route._staticConfig!.load).toBe(load);
+  });
+
+  it("sets the render function", async () => {
+    const div = document.createElement("div");
+    const route = Route.make("/about").pipe(
+      Route.static({
+        load: () => Effect.succeed({ title: "About" }),
+        render: () => Effect.succeed(div),
+      }),
+    );
+
+    const result = await Effect.runPromise(route.render({ title: "About" }));
+    expect(result).toBe(div);
+  });
+
+  it("defaults paths to a single empty param set when omitted", async () => {
+    const route = Route.make("/about").pipe(
+      Route.static({
+        load: () => Effect.succeed({ title: "About" }),
+        render: () => Effect.succeed(document.createElement("div")),
+      }),
+    );
+
+    const paramSets = await Effect.runPromise(route._staticConfig!.paths());
+    expect(paramSets).toEqual([{}]);
+  });
+
+  it("does not set _loader (loaders are for SSR)", () => {
+    const route = Route.make("/about").pipe(
+      Route.static({
+        load: () => Effect.succeed({}),
+        render: () => Effect.succeed(document.createElement("div")),
+      }),
+    );
+
+    expect(route._loader).toBeNull();
+  });
+
+  it("passes typed data from load to render", async () => {
+    const route = Route.make("/docs/:slug").pipe(
+      Route.params(Schema.Struct({ slug: Schema.String })),
+      Route.static({
+        paths: () => Effect.succeed([{ slug: "test" }]),
+        load: ({ params }) =>
+          Effect.succeed({ content: `Page ${params.slug}` }),
+        render: (data) => Effect.succeed(data.content),
+      }),
+    );
+
+    // Simulate the build flow: load data, then pass to render
+    const data = await Effect.runPromise(
+      route._staticConfig!.load({ params: { slug: "hello" } }),
+    );
+    const result = await Effect.runPromise(route.render(data));
+    expect(result).toBe("Page hello");
+  });
+});
+
 describe("Route.post", () => {
   it("stores a post handler", () => {
     const handler = (body: unknown) => Effect.succeed({ ok: true });

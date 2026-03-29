@@ -100,7 +100,7 @@ interface ButtonProps {
   class?: Readable.Reactive<string>;
 }
 
-const Button = (props: ButtonProps, children: ChildEffect) => {
+const Button = <E, R>(props: ButtonProps, child: Child<E, R>) => {
   // Normalize props - works whether they're static or reactive
   const disabled = Readable.normalize(props.disabled ?? false);
   const className = Readable.normalize(props.class ?? "");
@@ -112,7 +112,7 @@ const Button = (props: ButtonProps, children: ChildEffect) => {
 
   return $.button(
     { class: className, disabled, "aria-disabled": ariaDisabled },
-    children
+    child
   );
 };
 ```

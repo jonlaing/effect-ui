@@ -1,0 +1,195 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap");
+@import "tailwindcss";
+
+@plugin "daisyui";
+
+@plugin "daisyui/theme" {
+  name: "dark";
+  default: true;
+  prefersdark: false;
+  color-scheme: "dark";
+  --color-base-100: oklch(25.33% 0.016 252.42);
+  --color-base-200: oklch(23.26% 0.014 253.1);
+  --color-base-300: oklch(21.15% 0.012 254.09);
+  --color-base-content: oklch(97.807% 0.029 256.847);
+  --color-primary: oklch(58% 0.233 277.117);
+  --color-primary-content: oklch(96% 0.018 272.314);
+  --color-secondary: oklch(65% 0.241 354.308);
+  --color-secondary-content: oklch(94% 0.028 342.258);
+  --color-accent: oklch(77% 0.152 181.912);
+  --color-accent-content: oklch(38% 0.063 188.416);
+  --color-neutral: oklch(14% 0.005 285.823);
+  --color-neutral-content: oklch(92% 0.004 286.32);
+  --color-info: oklch(74% 0.16 232.661);
+  --color-info-content: oklch(29% 0.066 243.157);
+  --color-success: oklch(76% 0.177 163.223);
+  --color-success-content: oklch(37% 0.077 168.94);
+  --color-warning: oklch(82% 0.189 84.429);
+  --color-warning-content: oklch(41% 0.112 45.904);
+  --color-error: oklch(71% 0.194 13.428);
+  --color-error-content: oklch(27% 0.105 12.094);
+  --radius-selector: 0.5rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@theme {
+  --font-serif: "Noto Serif", serif;
+  --font-sans: "Noto Sans", sans-serif;
+}
+
+/* ─── Sidebar active link ──────────────────────────────────────────────── */
+
+a[data-active-exact="true"] {
+  @apply text-primary font-semibold;
+}
+
+/* ─── Prose (markdown content) ─────────────────────────────────────────── */
+
+.prose h1 {
+  @apply text-5xl font-thin mb-4 pb-4 border-b border-base-content/50;
+}
+
+.prose h2 {
+  @apply text-3xl mt-10 mb-3 text-primary-content;
+}
+
+.prose h3 {
+  @apply text-xl mt-8 mb-4 text-primary-content;
+}
+
+.prose p {
+  @apply mb-4 leading-7 font-serif font-light text-base-content/75;
+}
+
+.prose ul,
+.prose ol {
+  @apply mb-4 pl-6;
+}
+
+.prose ul {
+  @apply list-disc;
+}
+
+.prose ol {
+  @apply list-decimal;
+}
+
+.prose li {
+  @apply mb-4 font-serif text-base-content/75;
+}
+
+.prose code {
+  @apply font-mono text-[0.9em] bg-base-300 px-1.5 py-0.5 rounded;
+}
+
+.prose pre {
+  @apply mb-5 rounded-lg overflow-x-auto text-sm leading-relaxed;
+}
+
+.prose pre code {
+  @apply bg-transparent p-0 rounded-none;
+}
+
+.prose .shiki {
+  @apply p-4 rounded-lg overflow-x-auto;
+}
+
+.prose table {
+  @apply w-full border-collapse mb-5;
+}
+
+.prose th,
+.prose td {
+  @apply text-left px-3 py-2 border border-base-300;
+}
+
+.prose th {
+  @apply bg-base-200 font-semibold;
+}
+
+.prose blockquote {
+  @apply border-l-3 border-primary px-4 pt-2 pb-1 mb-4 bg-base-200 text-base-content rounded-r;
+}
+
+.prose blockquote p {
+  @apply text-base-content;
+}
+
+.prose strong {
+  @apply font-semibold;
+}
+
+.prose hr {
+  @apply border-none border-t border-base-300 my-8;
+}
+
+.prose a {
+  @apply text-accent hover:underline;
+}
+
+@keyframes logo-in {
+  0% {
+    opacity: 0;
+    transform: translateY(20rem) rotate(-30deg);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-40px) rotate(15deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotate(0);
+  }
+}
+
+.animate-logo-in {
+  animation: logo-in 1s ease-in-out;
+}
+
+@keyframes subhead-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-100px);
+  }
+  50% {
+    opacity: 0;
+    transform: translateY(-100px);
+  }
+  75% {
+    opacity: 1;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-subhead-fade-in {
+  animation: subhead-fade-in 1.5s ease-in-out;
+  animation-fill-mode: forwards;
+}
+
+@keyframes slow-fade-in {
+  0% {
+    opacity: 0;
+  }
+  75% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-slow-fade-in {
+  animation: slow-fade-in 2s ease-in-out;
+  animation-fill-mode: forwards;
+}

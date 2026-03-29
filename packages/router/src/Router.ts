@@ -1,4 +1,4 @@
-import { Effect, Option, Pipeable, Schema } from "effect";
+import { Effect, Option, Pipeable, Record, Schema } from "effect";
 
 import { Readable } from "@effex/core";
 import type { Element } from "@effex/dom";
@@ -43,12 +43,17 @@ export interface MatchOptions {
 /**
  * A router containing routes and configuration.
  */
-export interface Router<E = never, R = never> extends Pipeable.Pipeable {
+export interface Router<
+  P extends Record<string, unknown> | never = never,
+  S extends Record<string, unknown> | never = never,
+  D = never,
+  E = never,
+  R = never,
+>
+  extends Pipeable.Pipeable {
   readonly [TypeId]: TypeId;
   /** All routes in this router */
-  readonly routes: ReadonlyArray<
-    Route<string, unknown, unknown, unknown, E, R>
-  >;
+  readonly routes: ReadonlyArray<Route<string, P, S, D, E, R>>;
   /** Fallback render function when no route matches */
   readonly fallback:
     | (() => Element.Element<HTMLElement | SVGElement, E, R>)
@@ -72,14 +77,11 @@ const RouterProto = {
 /**
  * An empty router with no routes.
  */
-export const empty: Router<never, never> = Object.assign(
-  Object.create(RouterProto),
-  {
-    routes: [],
-    fallback: null,
-    layouts: [],
-  },
-);
+export const empty: Router = Object.assign(Object.create(RouterProto), {
+  routes: [],
+  fallback: null,
+  layouts: [],
+});
 
 // =============================================================================
 // Combinators
@@ -99,28 +101,69 @@ export const empty: Router<never, never> = Object.assign(
  * ```
  */
 export const concat: {
-  <Path extends string, P, SP, D, E, R>(
-    route: Route<Path, P, SP, D, E, R>,
-  ): <E2, R2>(router: Router<E2, R2>) => Router<E | E2, R | R2>;
-  <E, R>(
-    other: Router<E, R>,
-  ): <E2, R2>(router: Router<E2, R2>) => Router<E | E2, R | R2>;
+  <
+    Path extends string,
+    P extends Record<string, unknown> | never,
+    S extends Record<string, unknown> | never,
+    D,
+    E,
+    R,
+  >(
+    route: Route<Path, P, S, D, E, R>,
+  ): <
+    P2 extends Record<string, unknown> | never,
+    S2 extends Record<string, unknown> | never,
+    D2,
+    E2,
+    R2,
+  >(
+    router: Router<P2, S2, D2, E2, R2>,
+  ) => Router<P & P2, S & S2, D | D2, E | E2, R | R2>;
+  <
+    P extends Record<string, unknown> | never,
+    S extends Record<string, unknown> | never,
+    D,
+    E,
+    R,
+  >(
+    other: Router<P, S, D, E, R>,
+  ): <
+    P2 extends Record<string, unknown> | never,
+    S2 extends Record<string, unknown> | never,
+    D2,
+    E2,
+    R2,
+  >(
+    router: Router<P2, S2, D2, E2, R2>,
+  ) => Router<P & P2, S & S2, D | D2, E | E2, R | R2>;
 } =
-  <E, R>(
-    routeOrRouter:
-      | Route<string, unknown, unknown, unknown, E, R>
-      | Router<E, R>,
+  <
+    P extends Record<string, unknown> | never,
+    S extends Record<string, unknown> | never,
+    D,
+    E,
+    R,
+  >(
+    routeOrRouter: Route<string, P, S, D, E, R> | Router<P, S, D, E, R>,
   ) =>
-  <E2, R2>(router: Router<E2, R2>): Router<E | E2, R | R2> => {
+  <
+    P2 extends Record<string, unknown> | never,
+    S2 extends Record<string, unknown> | never,
+    D2,
+    E2,
+    R2,
+  >(
+    router: Router<P2, S2, D2, E2, R2>,
+  ): Router<P & P2, S & S2, D | D2, E | E2, R | R2> => {
     if (isRoute(routeOrRouter)) {
       // Adding a single route
       return Object.assign(Object.create(RouterProto), {
         ...router,
         routes: [...router.routes, routeOrRouter],
-      }) as Router<E | E2, R | R2>;
+      }) as Router<P & P2, S & S2, D | D2, E | E2, R | R2>;
     }
     // Merging another router
-    const other = routeOrRouter as Router<E, R>;
+    const other = routeOrRouter as Router<P, S, D, E, R>;
     return Object.assign(Object.create(RouterProto), {
       ...router,
       routes: [...router.routes, ...other.routes],
@@ -128,7 +171,7 @@ export const concat: {
       fallback: other.fallback ?? router.fallback,
       // Combine layouts (router's layouts applied first, then other's)
       layouts: [...router.layouts, ...other.layouts],
-    }) as Router<E | E2, R | R2>;
+    }) as Router<P & P2, S & S2, D | D2, E | E2, R | R2>;
   };
 
 /**
@@ -146,7 +189,15 @@ export const concat: {
  */
 export const prefixAll =
   (prefix: string) =>
-  <E, R>(router: Router<E, R>): Router<E, R> => {
+  <
+    P extends Record<string, unknown> | never,
+    S extends Record<string, unknown> | never,
+    D,
+    E,
+    R,
+  >(
+    router: Router<P, S, D, E, R>,
+  ): Router<P, S, D, E, R> => {
     const normalizedPrefix = prefix.endsWith("/")
       ? prefix.slice(0, -1)
       : prefix;
@@ -167,7 +218,7 @@ export const prefixAll =
     return Object.assign(Object.create(RouterProto), {
       ...router,
       routes: prefixedRoutes,
-    }) as Router<E, R>;
+    }) as Router<P, S, D, E, R>;
   };
 
 /**
@@ -183,11 +234,19 @@ export const prefixAll =
  */
 export const fallback =
   <E, R>(render: () => Element.Element<HTMLElement | SVGElement, E, R>) =>
-  <E2, R2>(router: Router<E2, R2>): Router<E | E2, R | R2> => {
+  <
+    P extends Record<string, unknown>,
+    S extends Record<string, unknown>,
+    D,
+    E2,
+    R2,
+  >(
+    router: Router<P, S, D, E2, R2>,
+  ): Router<P, S, D, E | E2, R | R2> => {
     return Object.assign(Object.create(RouterProto), {
       ...router,
       fallback: render,
-    }) as Router<E | E2, R | R2>;
+    }) as Router<P, S, D, E | E2, R | R2>;
   };
 
 /**
@@ -208,14 +267,34 @@ export const fallback =
  * ```
  */
 export const guard =
-  <E, R>(
+  <
+    P extends Record<string, unknown> | never,
+    S extends Record<string, unknown> | never,
+    D,
+    E,
+    R,
+  >(
     condition: Readable.Readable<boolean> | Effect.Effect<boolean>,
-    protectedRouter: Router<E, R>,
+    protectedRouter: Router<P, S, D, E, R>,
     options:
       | { redirect: string }
-      | { fallback: () => Element.Element<HTMLElement | SVGElement> },
+      | {
+          fallback: () => Element.Element<
+            HTMLElement | SVGElement,
+            never,
+            never
+          >;
+        },
   ) =>
-  <E2, R2>(router: Router<E2, R2>): Router<E | E2, R | R2> => {
+  <
+    P2 extends Record<string, unknown> | never,
+    S2 extends Record<string, unknown> | never,
+    D2,
+    E2,
+    R2,
+  >(
+    router: Router<P2, S2, D2, E2, R2>,
+  ): Router<P & P2, S & S2, D | D2, E | E2, R | R2> => {
     // Add guard to all routes in the protected router
     const guardedRoutes = protectedRouter.routes.map((route) => ({
       ...route,
@@ -226,7 +305,7 @@ export const guard =
     return Object.assign(Object.create(RouterProto), {
       ...router,
       routes: [...router.routes, ...guardedRoutes],
-    }) as Router<E | E2, R | R2>;
+    }) as Router<P & P2, S & S2, D | D2, E | E2, R | R2>;
   };
 
 /**
@@ -245,12 +324,24 @@ export const guard =
  * ```
  */
 export const layout =
-  (wrapper: LayoutWrapper) =>
-  <E, R>(router: Router<E, R>): Router<E, R> => {
+  <E, R>(
+    wrapper: <A extends HTMLElement | SVGElement, E, R>(
+      children: Element.Element<A, E, R>,
+    ) => Element.Element<HTMLElement, E, R>,
+  ) =>
+  <
+    P extends Record<string, unknown> | never,
+    S extends Record<string, unknown> | never,
+    D,
+    E2,
+    R2,
+  >(
+    router: Router<P, S, D, E2, R2>,
+  ): Router<P, S, D, E | E2, R | R2> => {
     return Object.assign(Object.create(RouterProto), {
       ...router,
       layouts: [...router.layouts, wrapper],
-    }) as Router<E, R>;
+    }) as Router<P, S, D, E | E2, R | R2>;
   };
 
 // =============================================================================
@@ -273,23 +364,26 @@ export const layout =
  * ```
  */
 export const catchIf =
-  <E, E2, R2>(
+  <
+    P extends Record<string, unknown> | never,
+    S extends Record<string, unknown> | never,
+    D,
+    E,
+    E2,
+    R2,
+  >(
     predicate: (error: E) => boolean,
     handler: (error: E) => Element.Element<HTMLElement | SVGElement, E2, R2>,
   ) =>
-  <R>(router: Router<E, R>): Router<Exclude<E, E> | E2, R | R2> => {
+  <R>(router: Router<P, S, D, E, R>): Router<P, S, D, E2, R | R2> => {
     const transformedRoutes = router.routes.map((route) => ({
       ...route,
-      render: (data: any) =>
+      render: (data: D) =>
         Effect.catchIf(
           route.render(data),
           predicate,
           handler,
-        ) as Element.Element<
-          HTMLElement | SVGElement,
-          Exclude<E, E> | E2,
-          R | R2
-        >,
+        ) as Element.Element<HTMLElement | SVGElement, E2, R | R2>,
     }));
 
     const transformedFallback = router.fallback
@@ -298,18 +392,14 @@ export const catchIf =
             router.fallback!(),
             predicate,
             handler,
-          ) as Element.Element<
-            HTMLElement | SVGElement,
-            Exclude<E, E> | E2,
-            R | R2
-          >
+          ) as Element.Element<HTMLElement | SVGElement, E2, R | R2>
       : null;
 
     return Object.assign(Object.create(RouterProto), {
       ...router,
       routes: transformedRoutes,
       fallback: transformedFallback,
-    }) as Router<Exclude<E, E> | E2, R | R2>;
+    }) as Router<P, S, D, E2, R | R2>;
   };
 
 /**
@@ -326,26 +416,40 @@ export const catchIf =
  * ```
  */
 export const catchTag: {
-  <const K extends string, E2, R2>(
+  <
+    const K extends string,
+    P extends Record<string, unknown> | never,
+    S extends Record<string, unknown> | never,
+    D,
+    E2,
+    R2,
+  >(
     tag: K,
     handler: (error: {
       _tag: K;
     }) => Element.Element<HTMLElement | SVGElement, E2, R2>,
   ): <E extends { _tag: string }, R>(
-    router: Router<E, R>,
-  ) => Router<Exclude<E, { _tag: K }> | E2, R | R2>;
-} = (<const K extends string, E2, R2>(
+    router: Router<P, S, D, E, R>,
+  ) => Router<P, S, D, Exclude<E, { _tag: K }> | E2, R | R2>;
+} = (<
+    const K extends string,
+    P extends Record<string, unknown> | never,
+    S extends Record<string, unknown> | never,
+    D,
+    E2,
+    R2,
+  >(
     tag: K,
     handler: (error: {
       _tag: K;
     }) => Element.Element<HTMLElement | SVGElement, E2, R2>,
   ) =>
   <E extends { _tag: string }, R>(
-    router: Router<E, R>,
-  ): Router<Exclude<E, { _tag: K }> | E2, R | R2> => {
+    router: Router<P, S, D, E, R>,
+  ): Router<P, S, D, Exclude<E, { _tag: K }> | E2, R | R2> => {
     const transformedRoutes = router.routes.map((route) => ({
       ...route,
-      render: (data: any) =>
+      render: (data: D) =>
         Effect.catchTag(
           route.render(data) as Effect.Effect<
             HTMLElement | SVGElement,
@@ -378,16 +482,23 @@ export const catchTag: {
       ...router,
       routes: transformedRoutes,
       fallback: transformedFallback,
-    }) as Router<Exclude<E, { _tag: K }> | E2, R | R2>;
+    }) as Router<P, S, D, Exclude<E, { _tag: K }> | E2, R | R2>;
   }) as {
-  <const K extends string, E2, R2>(
+  <
+    const K extends string,
+    P extends Record<string, unknown> | never,
+    S extends Record<string, unknown> | never,
+    D,
+    E2,
+    R2,
+  >(
     tag: K,
     handler: (error: {
       _tag: K;
     }) => Element.Element<HTMLElement | SVGElement, E2, R2>,
   ): <E extends { _tag: string }, R>(
-    router: Router<E, R>,
-  ) => Router<Exclude<E, { _tag: K }> | E2, R | R2>;
+    router: Router<P, S, D, E, R>,
+  ) => Router<P, S, D, Exclude<E, { _tag: K }> | E2, R | R2>;
 };
 
 /**
@@ -404,13 +515,20 @@ export const catchTag: {
  * ```
  */
 export const catchAll =
-  <E, E2, R2>(
+  <
+    P extends Record<string, unknown> | never,
+    S extends Record<string, unknown> | never,
+    D,
+    E,
+    E2,
+    R2,
+  >(
     handler: (error: E) => Element.Element<HTMLElement | SVGElement, E2, R2>,
   ) =>
-  <R>(router: Router<E, R>): Router<E2, R | R2> => {
+  <R>(router: Router<P, S, D, E, R>): Router<P, S, D, E2, R | R2> => {
     const transformedRoutes = router.routes.map((route) => ({
       ...route,
-      render: (data: any) =>
+      render: (data: D) =>
         Effect.catchAll(route.render(data), handler) as Element.Element<
           HTMLElement | SVGElement,
           E2,
@@ -431,7 +549,7 @@ export const catchAll =
       ...router,
       routes: transformedRoutes,
       fallback: transformedFallback,
-    }) as Router<E2, R | R2>;
+    }) as Router<P, S, D, E2, R | R2>;
   };
 
 // =============================================================================
@@ -442,11 +560,17 @@ export const catchAll =
  * Find the best matching route for a pathname.
  * Routes are sorted by specificity - more specific routes match first.
  */
-export const findMatch = <E, R>(
-  router: Router<E, R>,
+export const findMatch = <
+  P extends Record<string, unknown> | never,
+  S extends Record<string, unknown> | never,
+  D,
+  E,
+  R,
+>(
+  router: Router<P, S, D, E, R>,
   pathname: string,
 ): Option.Option<{
-  route: Route<string, unknown, unknown, unknown, E, R>;
+  route: Route<string, P, S, D, E, R>;
   params: Record<string, string>;
 }> => {
   // Sort routes by specificity (descending)
@@ -467,8 +591,14 @@ export const findMatch = <E, R>(
 /**
  * Parse and validate params using the route's schema.
  */
-export const parseParams = <P, SP, E, R>(
-  route: Route<string, P, SP, unknown, E, R>,
+export const parseParams = <
+  P extends Record<string, unknown> | never,
+  S extends Record<string, unknown> | never,
+  D,
+  E,
+  R,
+>(
+  route: Route<string, P, S, D, E, R>,
   rawParams: Record<string, string>,
 ): Effect.Effect<P, unknown> => {
   if (route.paramsSchema) {
@@ -480,10 +610,16 @@ export const parseParams = <P, SP, E, R>(
 /**
  * Parse search params from URLSearchParams.
  */
-export const parseSearchParams = <P, SP, E, R>(
-  route: Route<string, P, SP, unknown, E, R>,
+export const parseSearchParams = <
+  P extends Record<string, unknown> | never,
+  S extends Record<string, unknown> | never,
+  D,
+  E,
+  R,
+>(
+  route: Route<string, P, S, D, E, R>,
   searchParams: URLSearchParams,
-): Effect.Effect<SP, unknown> => {
+): Effect.Effect<S, unknown> => {
   const raw: Record<string, string> = {};
   searchParams.forEach((value, key) => {
     raw[key] = value;
@@ -492,7 +628,7 @@ export const parseSearchParams = <P, SP, E, R>(
   if (route.searchParamsSchema) {
     return Schema.decodeUnknown(route.searchParamsSchema)(raw);
   }
-  return Effect.succeed(raw as SP);
+  return Effect.succeed(raw as S);
 };
 
 // =============================================================================

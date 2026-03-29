@@ -1,7 +1,7 @@
-import { Effect, Option } from "effect";
+import { Effect, Option, Record } from "effect";
 
 import { ControlCtx, reconcile } from "@effex/core";
-import { $, type AnimationOptions, type Element } from "@effex/dom";
+import { $, Element, type AnimationOptions } from "@effex/dom";
 
 import { buildPath, NavigationContext, type Navigation } from "./Navigation.js";
 import type { Route } from "./Route.js";
@@ -15,9 +15,15 @@ import { findMatch, type LayoutWrapper, type Router } from "./Router.js";
 /**
  * Configuration for the Outlet component.
  */
-export interface OutletConfig<E = never, R = never> {
+export interface OutletConfig<
+  P extends Record<string, unknown> | never,
+  S extends Record<string, unknown> | never,
+  D,
+  E,
+  R,
+> {
   /** The router whose routes/layouts to render */
-  readonly router: Router<E, R>;
+  readonly router: Router<P, S, D, E, R>;
   /** Animation options for route transitions */
   readonly animate?: AnimationOptions;
 }
@@ -44,8 +50,8 @@ const applyLayouts = <E, R>(
  * Check if a route's guard allows rendering.
  * Returns true if allowed, false if blocked.
  */
-const checkGuard = (
-  route: Route<string, unknown, unknown, unknown, unknown, unknown>,
+const checkGuard = <P, S, D, E, R>(
+  route: Route<string, P, S, D, E, R>,
 ): Effect.Effect<boolean> => {
   if (!route.guard) return Effect.succeed(true);
 
@@ -59,11 +65,11 @@ const checkGuard = (
 /**
  * Render a route, handling guards, data loading, and layouts.
  */
-const renderRouteWithGuard = <ER, RR, EN, RN, EL, RL>(
-  route: Route<string, unknown, unknown, unknown, ER, RR>,
-  nav: Navigation<EN, RN>,
+const renderRouteWithGuard = <E, R>(
+  route: Route<string, any, any, any, any, any>,
+  nav: Navigation,
   layouts: ReadonlyArray<LayoutWrapper>,
-): Element.Element<HTMLElement | SVGElement, ER | EN | EL, RR | RN | RL> =>
+): Element.Element<HTMLElement | SVGElement, E, R> =>
   Effect.gen(function* () {
     // Check guard if present
     const allowed = yield* checkGuard(route);
@@ -126,7 +132,7 @@ const renderRouteWithGuard = <ER, RR, EN, RN, EL, RL>(
       if (hasHooks) {
         // Default: run the loader directly, compute action paths
         const data = route._loader
-          ? yield* route._loader<EL, RL>({
+          ? yield* route._loader({
               params: currentMatch.params,
               searchParams: searchParamsObj,
             })
@@ -190,33 +196,39 @@ const renderRouteWithGuard = <ER, RR, EN, RN, EL, RL>(
  * )
  * ```
  */
-export const Outlet = <ER, RR, EN, RN, EL, RL>(
-  config: OutletConfig<ER, RR>,
+export const Outlet = <
+  P extends Record<string, unknown> | never,
+  S extends Record<string, unknown> | never,
+  D,
+  E,
+  R,
+>(
+  config: OutletConfig<P, S, D, E, R>,
 ): Element.Element<
   HTMLElement | SVGElement,
-  ER | EN | EL,
-  RR | RN | RL | NavigationContext | ControlCtx
+  E,
+  R | NavigationContext | ControlCtx
 > =>
   Effect.gen(function* () {
-    const nav = (yield* NavigationContext) as Navigation<EN, RN>;
+    const nav = yield* NavigationContext;
     const router = config.router;
     const layouts = router.layouts;
 
     // Use pathname as the reconcile key so param-only navigations
     // (e.g. /users/alice → /users/bob) trigger a re-render.
     return (yield* reconcile(nav.pathname, {
-      getTargetKeys: (pathname) => {
-        const matched = findMatch(router as Router<ER, RR>, pathname);
+      getTargetKeys: (pathname: string) => {
+        const matched = findMatch(router, pathname);
         if (Option.isSome(matched)) return [pathname];
         if (router.fallback) return ["__fallback__"];
         return [];
       },
-      renderSlot: (key) => {
+      renderSlot: (key: string) => {
         if (key === "__fallback__") {
           return router.fallback?.() ?? $.div();
         }
         // Find the route that matches this pathname
-        const matched = findMatch(router as Router<ER, RR>, key);
+        const matched = findMatch(router, key);
         if (Option.isNone(matched)) {
           return router.fallback?.() ?? $.div();
         }
@@ -225,6 +237,6 @@ export const Outlet = <ER, RR, EN, RN, EL, RL>(
     })) as HTMLElement | SVGElement;
   }) as Element.Element<
     HTMLElement | SVGElement,
-    ER | EN | EL,
-    RR | RN | RL | NavigationContext | ControlCtx
+    E,
+    R | NavigationContext | ControlCtx
   >;

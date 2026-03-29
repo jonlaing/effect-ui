@@ -59,8 +59,8 @@ export class RouteDataContext extends Context.Tag("@effex/router/RouteData")<
  * - Client (navigation): fetches from server via `?_data=1`
  */
 export interface RouteDataProviderService {
-  readonly getRouteData: (
-    route: Route<string, unknown, unknown, unknown, unknown, unknown>,
+  readonly getRouteData: <P, S, D, E, R>(
+    route: Route<string, P, S, D, E, R>,
     params: Record<string, string>,
     searchParams: Record<string, string>,
   ) => Effect.Effect<RouteDataService>;

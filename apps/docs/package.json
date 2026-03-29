@@ -1,0 +1,31 @@
+{
+  "name": "docs",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && vite build --ssr src/entry.ts",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@effect/platform": "^0.94.0",
+    "@effex/dom": "workspace:*",
+    "@effex/platform": "workspace:*",
+    "@effex/router": "workspace:*",
+    "@shikijs/markdown-it": "^4.0.2",
+    "@tailwindcss/vite": "^4.2.1",
+    "daisyui": "^5.5.19",
+    "effect": "3.19.13",
+    "lucide-static": "^0.576.0",
+    "markdown-it": "^14.1.0",
+    "shiki": "^4.0.2",
+    "tailwindcss": "^4.2.1"
+  },
+  "devDependencies": {
+    "@effex/vite-plugin": "workspace:*",
+    "@types/markdown-it": "^14.1.2",
+    "typescript": "~5.9.3",
+    "vite": "^7.0.0"
+  }
+}
