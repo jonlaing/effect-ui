@@ -1,3 +1,4 @@
+import * as fs from "node:fs";
 import * as path from "node:path";
 
 import type { Plugin, ViteDevServer } from "vite";
@@ -81,6 +82,17 @@ export const effexPlatform = (options: EffexPlatformOptions = {}): Plugin => {
 
   return {
     name: "effex-platform",
+
+    config(config) {
+      // Prevent the SSR build from wiping the client build's output
+      if (config.build?.ssr) {
+        return {
+          build: {
+            emptyOutDir: false,
+          },
+        };
+      }
+    },
 
     configResolved(config) {
       root = config.root;
@@ -248,8 +260,6 @@ export const effexPlatform = (options: EffexPlatformOptions = {}): Plugin => {
       try {
         // Dynamically import the built SSG entry.
         // The entry must export: { router, app?, document?, layers? }
-        // The SSR build should have already been run (vite build --ssr)
-        // and the entry compiled. We import the built version.
         // Dynamic import — @effex/platform is an optional peer dependency
         // only needed for SSG mode at build time
         const platformModule = "@effex/platform";
@@ -268,10 +278,48 @@ export const effexPlatform = (options: EffexPlatformOptions = {}): Plugin => {
           );
         }
 
+        // Read the client-built index.html to extract actual asset paths.
+        // Vite processes scripts/styles and outputs hashed filenames —
+        // we need those real paths instead of the source paths in document options.
+        const clientHtmlPath = path.resolve(outDir, "index.html");
+        const documentOptions = { ...entryModule.document };
+
+        if (fs.existsSync(clientHtmlPath)) {
+          const clientHtml = fs.readFileSync(clientHtmlPath, "utf-8");
+
+          // Extract script src attributes from the Vite-processed HTML
+          const scriptMatches = [
+            ...clientHtml.matchAll(/<script[^>]+src="([^"]+)"[^>]*>/g),
+          ];
+          // Replace source paths with the real hashed asset paths.
+          // If no scripts found in client HTML, keep the original (shouldn't happen).
+          if (scriptMatches.length > 0) {
+            documentOptions.scripts = scriptMatches.map(
+              (m: RegExpMatchArray) => m[1],
+            );
+          }
+
+          // Extract stylesheet href attributes.
+          // Check both attribute orderings (rel before href, href before rel).
+          const styleMatches = [
+            ...clientHtml.matchAll(
+              /<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"[^>]*>/g,
+            ),
+            ...clientHtml.matchAll(
+              /<link[^>]+href="([^"]+)"[^>]+rel="stylesheet"[^>]*>/g,
+            ),
+          ];
+          // Always override — if Vite bundled CSS into JS (e.g. Tailwind),
+          // there are no stylesheet links and we should clear the source paths.
+          documentOptions.styles = styleMatches.map(
+            (m: RegExpMatchArray) => m[1],
+          );
+        }
+
         await buildStaticSite({
           router: entryModule.router,
           app: entryModule.app,
-          document: entryModule.document,
+          document: documentOptions,
           outDir,
           layers: entryModule.layers,
         });
