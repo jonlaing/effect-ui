@@ -1,5 +1,16 @@
 # @effex/dom
 
+## 2.0.0
+
+### Minor Changes
+
+- 5023cff: fixing type errors and reconfiguring router
+
+### Patch Changes
+
+- Updated dependencies [5023cff]
+  - @effex/core@2.0.0
+
 ## 1.0.0
 
 ### Minor Changes

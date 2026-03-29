@@ -1,6 +1,6 @@
 {
   "name": "@effex/vite-plugin",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Vite plugin for Effex applications",
   "type": "module",
   "license": "MIT",
