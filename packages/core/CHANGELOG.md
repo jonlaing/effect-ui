@@ -1,5 +1,11 @@
 # @effex/core
 
+## 1.1.0
+
+### Minor Changes
+
+- 5023cff: fixing type errors and reconfiguring router
+
 ## 1.0.0
 
 ### Minor Changes
