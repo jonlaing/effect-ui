@@ -228,5 +228,3 @@ runApp(mount(yield* App(), container));
 2. **Signal operations** (`.get`, `.set()`, `.update()`) return Effects — use `yield*` in `Effect.gen`
 3. **Event handlers** return Effects (use `Effect.void` for no-ops)
 4. New items appear **automatically** thanks to `each` and reactivity
-
-[← Previous: Toggling and Updating](./05-toggling-and-updating.md) | [Next: Derived State →](./07-derived-state.md)

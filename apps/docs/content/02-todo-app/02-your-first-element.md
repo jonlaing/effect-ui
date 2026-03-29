@@ -239,5 +239,3 @@ But it's all static! In the next chapter, we'll add reactivity with Signals to m
 3. Use **`collect(...)`** to pass multiple children
 4. Use **`$.of("text")`** for text content
 5. Elements **nest naturally** - just put elements inside elements
-
-[← Previous: Getting Started](./01-getting-started.md) | [Next: Making It Interactive →](./03-making-it-interactive.md)

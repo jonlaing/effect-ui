@@ -310,5 +310,3 @@ You've built a complete todo application with Effex! You learned:
 - **[API Reference](/docs/api)** - Complete API documentation
 
 Happy building!
-
-[← Previous: Deleting Todos](./09-deleting-todos.md) | [Back to Introduction](./00-introduction.md)

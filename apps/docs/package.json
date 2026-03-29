@@ -13,8 +13,14 @@
     "@effex/dom": "workspace:*",
     "@effex/platform": "workspace:*",
     "@effex/router": "workspace:*",
+    "@shikijs/markdown-it": "^4.0.2",
+    "@tailwindcss/vite": "^4.2.1",
+    "daisyui": "^5.5.19",
     "effect": "3.19.13",
-    "markdown-it": "^14.1.0"
+    "lucide-static": "^0.576.0",
+    "markdown-it": "^14.1.0",
+    "shiki": "^4.0.2",
+    "tailwindcss": "^4.2.1"
   },
   "devDependencies": {
     "@effex/vite-plugin": "workspace:*",

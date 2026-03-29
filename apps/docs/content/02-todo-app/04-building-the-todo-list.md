@@ -241,5 +241,3 @@ const MyComponent = (props: MyComponentProps) =>
 ## Cleanup
 
 Remove the test buttons before the next chapter.
-
-[← Previous: Making It Interactive](./03-making-it-interactive.md) | [Next: Toggling and Updating →](./05-toggling-and-updating.md)

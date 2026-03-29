@@ -1,14 +1,15 @@
 ---
 title: "Effect in 2 Minutes"
 description: "A quick mental model for Effect.ts—think Promises with superpowers"
-order: 1
+order: 2
 ---
 
 # Effect in 2 Minutes
 
 You don't need to be an Effect expert to use Effex. This page gives you just enough to be productive.
 
-## The Mental Model: Promises with Superpowers
+## The Mental Model
+### Promises with Superpowers
 
 If you know Promises, you already understand 80% of Effect.
 
@@ -21,7 +22,8 @@ If you know Promises, you already understand 80% of Effect.
 
 The key difference: Effect tracks **errors** and **requirements** in the type system.
 
-## Pipeline Style: .then → .pipe
+## Pipeline Style
+### .then → .pipe
 
 You can chain Promises with `.then()`. Effect uses `.pipe()` with operators:
 
@@ -48,7 +50,8 @@ fetchUser(id).pipe(
 
 The difference? With Effect, **errors are typed**. The compiler knows exactly what can fail.
 
-## Generator Style: async/await → Effect.gen/yield*
+## Generator Style
+### async/await → Effect.gen/yield*
 
 Just like `async/await` made Promise chains readable, `Effect.gen` does the same:
 
@@ -167,7 +170,8 @@ Effect.runPromise(
 
 This makes testing trivial—swap `DatabaseLive` for `DatabaseTest` with no code changes.
 
-## Effect.gen: Where You'll See This Most
+## Effect.gen
+### Where You'll See This Most
 
 In Effex, you'll mostly use `Effect.gen`:
 

@@ -211,5 +211,3 @@ This is **fine-grained reactivity**. We don't re-render the whole app. Only the 
 ## Cleanup
 
 Remove the test button before the next chapter. We'll add proper todo creation soon.
-
-[← Previous: Your First Element](./02-your-first-element.md) | [Next: Building the Todo List →](./04-building-the-todo-list.md)

@@ -245,5 +245,3 @@ We won't cover animations in depth here, but know that Effex supports CSS-based 
 3. **`onTrue`** renders when true, **`onFalse`** when false
 4. Elements are **added/removed from DOM**, not just hidden
 5. Use `when` for **presence**, CSS for **visibility**
-
-[← Previous: Derived State](./07-derived-state.md) | [Next: Deleting Todos →](./09-deleting-todos.md)

@@ -1,9 +1,23 @@
 import { Effect } from "effect";
 
-import { $, collect } from "@effex/dom";
-import { Link, Route, Router } from "@effex/router";
+import { Route, Router } from "@effex/router";
 
-import { discoverPages, getSections, loadPage } from "./content.js";
+import { getAdjacentPages, getSections } from "./content.js";
+import {
+  discoverPages,
+  extractToc,
+  loadPage,
+  renderCode,
+} from "./content.server.js";
+import { DocPage } from "./pages/DocPage.js";
+import {
+  counterExample,
+  errorsExample,
+  fullstackExample,
+  HomePage,
+  signalsExample,
+} from "./pages/HomePage.js";
+import { NotFoundPage } from "./pages/NotFoundPage.js";
 
 // ─── Home page ───────────────────────────────────────────────────────────────
 
@@ -11,45 +25,24 @@ const HomeRoute = Route.make("/").pipe(
   Route.static({
     load: () =>
       Effect.gen(function* () {
-        const pages = yield* discoverPages();
-        const sections = getSections(pages);
-        return { sections };
+        const [counterHtml, signalsHtml, errorsHtml, fullstackHtml] =
+          yield* Effect.all([
+            renderCode(counterExample, "typescript"),
+            renderCode(signalsExample, "typescript"),
+            renderCode(errorsExample, "typescript"),
+            renderCode(fullstackExample, "typescript"),
+          ]);
+
+        return {
+          codeExamples: {
+            counterHtml,
+            signalsHtml,
+            errorsHtml,
+            fullstackHtml,
+          },
+        };
       }),
-    render: (data) =>
-      $.div(
-        { class: "home" },
-        collect(
-          $.h1({}, $.of("Effex Documentation")),
-          $.p(
-            { class: "lead" },
-            $.of(
-              "A reactive UI framework built on Effect.ts primitives.",
-            ),
-          ),
-          ...data.sections.map((section) =>
-            $.div(
-              { class: "section-group" },
-              collect(
-                $.h2({}, $.of(section.name)),
-                $.ul(
-                  {},
-                  collect(
-                    ...section.pages.map((page) =>
-                      $.li(
-                        {},
-                        Link(
-                          { href: `/docs/${page.slug}` },
-                          $.of(page.title),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+    render: (data) => HomePage(data),
   }),
 );
 
@@ -60,7 +53,7 @@ const DocRoute = Route.make("/docs/*").pipe(
     paths: () =>
       Effect.gen(function* () {
         const pages = yield* discoverPages();
-        return pages.map((p) => ({ "*": p.slug } as Record<string, string>));
+        return pages.map((p) => ({ "*": p.slug }) as Record<string, string>);
       }),
     load: ({ params }) =>
       Effect.gen(function* () {
@@ -70,63 +63,22 @@ const DocRoute = Route.make("/docs/*").pipe(
         const filename = parts[parts.length - 1] + ".md";
         const page = yield* loadPage(section, filename);
 
-        // Load all pages for sidebar navigation
         const allPages = yield* discoverPages();
         const sections = getSections(allPages);
 
-        return { page, sections };
+        const { prev, next } = getAdjacentPages(slug, sections);
+        const toc = extractToc(page.html);
+
+        return { page, sections, prev, next, toc };
       }),
     render: (data) =>
-      $.div(
-        { class: "doc-page" },
-        collect(
-          $.aside(
-            { class: "sidebar" },
-            collect(
-              $.div(
-                { class: "sidebar-header" },
-                Link({ href: "/" }, $.of("Effex Docs")),
-              ),
-              $.nav(
-                {},
-                collect(
-                  ...data.sections.map((section) =>
-                    $.div(
-                      { class: "nav-section" },
-                      collect(
-                        $.h3({}, $.of(section.name)),
-                        $.ul(
-                          {},
-                          collect(
-                            ...section.pages.map((page) =>
-                              $.li(
-                                {},
-                                Link(
-                                  { href: `/docs/${page.slug}` },
-                                  $.of(page.title),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          $.main(
-            { class: "content" },
-            collect(
-              $.article({
-                class: "prose",
-                innerHTML: data.page.html,
-              }),
-            ),
-          ),
-        ),
-      ),
+      DocPage({
+        page: data.page,
+        sections: data.sections,
+        prev: data.prev,
+        next: data.next,
+        toc: data.toc,
+      }),
   }),
 );
 
@@ -135,13 +87,5 @@ const DocRoute = Route.make("/docs/*").pipe(
 export const router = Router.empty.pipe(
   Router.concat(HomeRoute),
   Router.concat(DocRoute),
-  Router.fallback(() =>
-    $.div(
-      { class: "not-found" },
-      collect(
-        $.h1({}, $.of("404 — Page Not Found")),
-        $.p({}, Link({ href: "/" }, $.of("Back to Home"))),
-      ),
-    ),
-  ),
+  Router.fallback(() => NotFoundPage()),
 );

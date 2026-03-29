@@ -7,7 +7,6 @@
 
 import { HttpApp, HttpRouter } from "@effect/platform";
 
-import type { Element } from "@effex/dom";
 import { Platform } from "@effex/platform";
 
 import { DocLayout } from "./layout.js";
@@ -17,16 +16,17 @@ const documentOptions = {
   title: "Effex Docs",
   scripts: ["/src/client.ts"],
   styles: ["/src/styles.css"],
+  htmlAttrs: { lang: "en", "data-theme": "dark" },
 };
 
 // Used by buildStaticSite() at build time
 export { router };
-export const app = DocLayout as unknown as () => Element.Element;
+export const app = DocLayout;
 export const document = documentOptions;
 
 // Used by the dev server during development
 const effexRoutes = Platform.toHttpRoutes(router, {
-  app: DocLayout as unknown as () => Element.Element,
+  app: DocLayout,
   document: documentOptions,
 });
 

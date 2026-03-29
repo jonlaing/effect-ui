@@ -1,288 +1,195 @@
-/* ─── Reset & Base ──────────────────────────────────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap");
+@import "tailwindcss";
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+@plugin "daisyui";
+
+@plugin "daisyui/theme" {
+  name: "dark";
+  default: true;
+  prefersdark: false;
+  color-scheme: "dark";
+  --color-base-100: oklch(25.33% 0.016 252.42);
+  --color-base-200: oklch(23.26% 0.014 253.1);
+  --color-base-300: oklch(21.15% 0.012 254.09);
+  --color-base-content: oklch(97.807% 0.029 256.847);
+  --color-primary: oklch(58% 0.233 277.117);
+  --color-primary-content: oklch(96% 0.018 272.314);
+  --color-secondary: oklch(65% 0.241 354.308);
+  --color-secondary-content: oklch(94% 0.028 342.258);
+  --color-accent: oklch(77% 0.152 181.912);
+  --color-accent-content: oklch(38% 0.063 188.416);
+  --color-neutral: oklch(14% 0.005 285.823);
+  --color-neutral-content: oklch(92% 0.004 286.32);
+  --color-info: oklch(74% 0.16 232.661);
+  --color-info-content: oklch(29% 0.066 243.157);
+  --color-success: oklch(76% 0.177 163.223);
+  --color-success-content: oklch(37% 0.077 168.94);
+  --color-warning: oklch(82% 0.189 84.429);
+  --color-warning-content: oklch(41% 0.112 45.904);
+  --color-error: oklch(71% 0.194 13.428);
+  --color-error-content: oklch(27% 0.105 12.094);
+  --radius-selector: 0.5rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
 }
 
-html {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    sans-serif;
-  font-size: 16px;
-  line-height: 1.6;
-  color: #1a1a2e;
-  background: #fafafa;
+@theme {
+  --font-serif: "Noto Serif", serif;
+  --font-sans: "Noto Sans", sans-serif;
 }
 
-a {
-  color: #5b4fc4;
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
+/* ─── Sidebar active link ──────────────────────────────────────────────── */
+
+a[data-active-exact="true"] {
+  @apply text-primary font-semibold;
 }
 
-/* ─── App layout ────────────────────────────────────────────────────────── */
-
-.app {
-  min-height: 100vh;
-}
-
-/* ─── Home page ─────────────────────────────────────────────────────────── */
-
-.home {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 60px 24px;
-}
-
-.home h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-
-.home .lead {
-  font-size: 1.2rem;
-  color: #555;
-  margin-bottom: 48px;
-}
-
-.section-group {
-  margin-bottom: 32px;
-}
-
-.section-group h2 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #888;
-  margin-bottom: 8px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid #e5e5e5;
-}
-
-.section-group ul {
-  list-style: none;
-}
-
-.section-group li {
-  padding: 6px 0;
-}
-
-.section-group li a {
-  font-size: 1rem;
-}
-
-/* ─── Doc page layout ───────────────────────────────────────────────────── */
-
-.doc-page {
-  display: flex;
-  min-height: 100vh;
-}
-
-/* ─── Sidebar ───────────────────────────────────────────────────────────── */
-
-.sidebar {
-  width: 280px;
-  flex-shrink: 0;
-  padding: 24px;
-  border-right: 1px solid #e5e5e5;
-  background: #fff;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow-y: auto;
-}
-
-.sidebar-header {
-  margin-bottom: 24px;
-}
-
-.sidebar-header a {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #1a1a2e;
-}
-
-.nav-section {
-  margin-bottom: 20px;
-}
-
-.nav-section h3 {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #888;
-  margin-bottom: 6px;
-}
-
-.nav-section ul {
-  list-style: none;
-}
-
-.nav-section li {
-  padding: 3px 0;
-}
-
-.nav-section li a {
-  font-size: 0.9rem;
-  color: #555;
-}
-
-.nav-section li a:hover {
-  color: #5b4fc4;
-}
-
-.nav-section li a[data-active-exact="true"] {
-  color: #5b4fc4;
-  font-weight: 600;
-}
-
-/* ─── Content ───────────────────────────────────────────────────────────── */
-
-.content {
-  flex: 1;
-  min-width: 0;
-  padding: 48px 64px;
-  max-width: 800px;
-}
-
-/* ─── Prose (markdown content) ──────────────────────────────────────────── */
+/* ─── Prose (markdown content) ─────────────────────────────────────────── */
 
 .prose h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #e5e5e5;
+  @apply text-5xl font-thin mb-4 pb-4 border-b border-base-content/50;
 }
 
 .prose h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-top: 40px;
-  margin-bottom: 12px;
+  @apply text-3xl mt-10 mb-3 text-primary-content;
 }
 
 .prose h3 {
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin-top: 32px;
-  margin-bottom: 8px;
+  @apply text-xl mt-8 mb-4 text-primary-content;
 }
 
 .prose p {
-  margin-bottom: 16px;
+  @apply mb-4 leading-7 font-serif font-light text-base-content/75;
 }
 
 .prose ul,
 .prose ol {
-  margin-bottom: 16px;
-  padding-left: 24px;
+  @apply mb-4 pl-6;
+}
+
+.prose ul {
+  @apply list-disc;
+}
+
+.prose ol {
+  @apply list-decimal;
 }
 
 .prose li {
-  margin-bottom: 4px;
+  @apply mb-4 font-serif text-base-content/75;
 }
 
 .prose code {
-  font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
-  font-size: 0.9em;
-  background: #f0f0f5;
-  padding: 2px 6px;
-  border-radius: 4px;
+  @apply font-mono text-[0.9em] bg-base-300 px-1.5 py-0.5 rounded;
 }
 
 .prose pre {
-  margin-bottom: 20px;
-  padding: 16px;
-  background: #1e1e2e;
-  color: #cdd6f4;
-  border-radius: 8px;
-  overflow-x: auto;
-  font-size: 0.875rem;
-  line-height: 1.7;
+  @apply mb-5 rounded-lg overflow-x-auto text-sm leading-relaxed;
 }
 
 .prose pre code {
-  background: none;
-  padding: 0;
-  border-radius: 0;
-  color: inherit;
+  @apply bg-transparent p-0 rounded-none;
+}
+
+.prose .shiki {
+  @apply p-4 rounded-lg overflow-x-auto;
 }
 
 .prose table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 20px;
+  @apply w-full border-collapse mb-5;
 }
 
 .prose th,
 .prose td {
-  text-align: left;
-  padding: 8px 12px;
-  border: 1px solid #e5e5e5;
+  @apply text-left px-3 py-2 border border-base-300;
 }
 
 .prose th {
-  background: #f5f5f5;
-  font-weight: 600;
+  @apply bg-base-200 font-semibold;
 }
 
 .prose blockquote {
-  border-left: 3px solid #5b4fc4;
-  padding: 8px 16px;
-  margin-bottom: 16px;
-  background: #f8f7ff;
-  color: #444;
+  @apply border-l-3 border-primary px-4 pt-2 pb-1 mb-4 bg-base-200 text-base-content rounded-r;
+}
+
+.prose blockquote p {
+  @apply text-base-content;
 }
 
 .prose strong {
-  font-weight: 600;
+  @apply font-semibold;
 }
 
 .prose hr {
-  border: none;
-  border-top: 1px solid #e5e5e5;
-  margin: 32px 0;
+  @apply border-none border-t border-base-300 my-8;
 }
 
-/* ─── 404 ───────────────────────────────────────────────────────────────── */
-
-.not-found {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 120px 24px;
-  text-align: center;
+.prose a {
+  @apply text-accent hover:underline;
 }
 
-.not-found h1 {
-  font-size: 2rem;
-  margin-bottom: 16px;
+@keyframes logo-in {
+  0% {
+    opacity: 0;
+    transform: translateY(20rem) rotate(-30deg);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-40px) rotate(15deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotate(0);
+  }
 }
 
-/* ─── Responsive ────────────────────────────────────────────────────────── */
+.animate-logo-in {
+  animation: logo-in 1s ease-in-out;
+}
 
-@media (max-width: 768px) {
-  .doc-page {
-    flex-direction: column;
+@keyframes subhead-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-100px);
   }
+  50% {
+    opacity: 0;
+    transform: translateY(-100px);
+  }
+  75% {
+    opacity: 1;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
-  .sidebar {
-    width: 100%;
-    height: auto;
-    position: static;
-    border-right: none;
-    border-bottom: 1px solid #e5e5e5;
-  }
+.animate-subhead-fade-in {
+  animation: subhead-fade-in 1.5s ease-in-out;
+  animation-fill-mode: forwards;
+}
 
-  .content {
-    padding: 32px 24px;
+@keyframes slow-fade-in {
+  0% {
+    opacity: 0;
   }
+  75% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-slow-fade-in {
+  animation: slow-fade-in 2s ease-in-out;
+  animation-fill-mode: forwards;
 }

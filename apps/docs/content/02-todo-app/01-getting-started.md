@@ -113,5 +113,3 @@ The `$` factory returns an Effect that, when run, creates a DOM element. Effects
 ## Next Steps
 
 You've got a working Effex app! In the next chapter, we'll explore the `$` factory in depth and build out the structure of our todo app.
-
-[Next: Your First Element →](./02-your-first-element.md)

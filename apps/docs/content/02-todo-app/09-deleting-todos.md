@@ -149,5 +149,3 @@ The flow is simple:
 2. **Pass handlers down** just like toggle
 3. **CSS hover states** work great for revealing actions
 4. The **DOM updates automatically** when items are removed
-
-[← Previous: Conditional Rendering](./08-conditional-rendering.md) | [Next: Persistence →](./10-persistence.md)

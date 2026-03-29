@@ -215,5 +215,3 @@ Now the count updates as you toggle todos!
 3. **Conditional classes** work with `Readable.map()` returning different strings
 4. **Event handlers** return Effects
 5. Updates are **fine-grained**—only changed parts of the DOM update
-
-[← Previous: Building the Todo List](./04-building-the-todo-list.md) | [Next: Adding New Todos →](./06-adding-new-todos.md)

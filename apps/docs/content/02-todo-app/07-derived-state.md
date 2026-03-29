@@ -235,5 +235,3 @@ The key difference: Effex derivations are explicit and type-safe. You always kno
 3. Derived values **update automatically** when sources change
 4. Derived values are **read-only**
 5. Use derived state for **computed/filtered views** of your data
-
-[← Previous: Adding New Todos](./06-adding-new-todos.md) | [Next: Conditional Rendering →](./08-conditional-rendering.md)
