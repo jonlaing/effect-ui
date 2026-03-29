@@ -1,5 +1,14 @@
 # docs
 
+## 0.0.11
+
+### Patch Changes
+
+- Updated dependencies [5023cff]
+  - @effex/platform@1.1.0
+  - @effex/router@1.1.0
+  - @effex/dom@1.1.0
+
 ## 0.0.10
 
 ### Patch Changes
