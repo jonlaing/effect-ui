@@ -1,3 +1,5 @@
+import "./styles.css";
+
 import { Effect } from "effect";
 
 import { hydrate } from "@effex/dom/hydrate";
