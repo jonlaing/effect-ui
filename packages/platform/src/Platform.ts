@@ -170,7 +170,12 @@ const substituteParams = (
 ): string => {
   let result = path;
   for (const [key, value] of Object.entries(params)) {
-    result = result.replace(`:${key}`, encodeURIComponent(value));
+    if (key === "*") {
+      // Catchall — replace the trailing * with the value (no encoding)
+      result = result.replace("*", value);
+    } else {
+      result = result.replace(`:${key}`, encodeURIComponent(value));
+    }
   }
   return result;
 };
