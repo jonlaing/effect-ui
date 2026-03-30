@@ -1,5 +1,16 @@
 # @effex/platform
 
+## 1.2.0
+
+### Minor Changes
+
+- 9c3fb19: added meta combinator to be able to change title and description of routes
+
+### Patch Changes
+
+- Updated dependencies [9c3fb19]
+  - @effex/router@1.2.0
+
 ## 1.1.0
 
 ### Minor Changes
