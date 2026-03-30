@@ -5,6 +5,7 @@ import {
   isRoute,
   matchSegments,
   parsePath,
+  resolveMeta,
   Route,
   routeSpecificity,
   type RouteContext,
@@ -424,6 +425,137 @@ describe("isRoute", () => {
     expect(isRoute({})).toBe(false);
     expect(isRoute(null)).toBe(false);
     expect(isRoute("/users")).toBe(false);
+  });
+});
+
+describe("Route.meta", () => {
+  it("stores meta on the route", () => {
+    const route = Route.make("/").pipe(
+      Route.render(() => Effect.succeed(document.createElement("div"))),
+      Route.meta({ title: "Home" }),
+    );
+
+    expect(route._meta).toEqual({ title: "Home" });
+  });
+
+  it("defaults to null when not set", () => {
+    const route = Route.make("/");
+    expect(route._meta).toBeNull();
+  });
+
+  describe("resolveMeta", () => {
+    const args = { params: {}, searchParams: {}, data: undefined };
+
+    it("resolves static string fields", () => {
+      const route = Route.make("/").pipe(
+        Route.render(() => Effect.succeed(document.createElement("div"))),
+        Route.meta({ title: "Home", description: "Welcome" }),
+      );
+
+      const meta = resolveMeta(route, args);
+      expect(meta).toEqual({ title: "Home", description: "Welcome" });
+    });
+
+    it("resolves function fields with params", () => {
+      const route = Route.make("/users/:id").pipe(
+        Route.params(Schema.Struct({ id: Schema.NumberFromString })),
+        Route.render(() => Effect.succeed(document.createElement("div"))),
+        Route.meta({
+          title: ({ params }) => `User ${(params as { id: number }).id}`,
+        }),
+      );
+
+      const meta = resolveMeta(route, {
+        params: { id: 42 },
+        searchParams: {},
+        data: undefined,
+      });
+      expect(meta).toEqual({ title: "User 42" });
+    });
+
+    it("resolves function fields with loader data", () => {
+      const route = Route.make("/users/:id").pipe(
+        Route.get(
+          () => Effect.succeed({ name: "Alice" }),
+          () => Effect.succeed(document.createElement("div")),
+        ),
+        Route.meta({
+          title: ({ data }) => `${(data as { name: string }).name}'s Profile`,
+          description: ({ data }) =>
+            `Profile page for ${(data as { name: string }).name}`,
+        }),
+      );
+
+      const meta = resolveMeta(route, {
+        params: {},
+        searchParams: {},
+        data: { name: "Alice" },
+      });
+      expect(meta).toEqual({
+        title: "Alice's Profile",
+        description: "Profile page for Alice",
+      });
+    });
+
+    it("resolves a function returning the full meta object", () => {
+      const route = Route.make("/users/:id").pipe(
+        Route.get(
+          () => Effect.succeed({ name: "Bob", bio: "Loves coding" }),
+          () => Effect.succeed(document.createElement("div")),
+        ),
+        Route.meta(({ data }) => ({
+          title: `${(data as { name: string }).name}'s Profile`,
+          description: (data as { bio: string }).bio,
+        })),
+      );
+
+      const meta = resolveMeta(route, {
+        params: {},
+        searchParams: {},
+        data: { name: "Bob", bio: "Loves coding" },
+      });
+      expect(meta).toEqual({
+        title: "Bob's Profile",
+        description: "Loves coding",
+      });
+    });
+
+    it("supports mixed static and function fields", () => {
+      const route = Route.make("/docs/:slug").pipe(
+        Route.render(() => Effect.succeed(document.createElement("div"))),
+        Route.meta({
+          title: ({ params }) => `${(params as { slug: string }).slug} — Docs`,
+          description: "Documentation page",
+        }),
+      );
+
+      const meta = resolveMeta(route, {
+        params: { slug: "intro" },
+        searchParams: {},
+        data: undefined,
+      });
+      expect(meta).toEqual({
+        title: "intro — Docs",
+        description: "Documentation page",
+      });
+    });
+
+    it("returns empty object when no meta is set", () => {
+      const route = Route.make("/");
+      const meta = resolveMeta(route, args);
+      expect(meta).toEqual({});
+    });
+
+    it("omits undefined fields from object form", () => {
+      const route = Route.make("/").pipe(
+        Route.render(() => Effect.succeed(document.createElement("div"))),
+        Route.meta({ title: "Home" }),
+      );
+
+      const meta = resolveMeta(route, args);
+      expect(meta).toEqual({ title: "Home" });
+      expect("description" in meta).toBe(false);
+    });
   });
 });
 

@@ -4,7 +4,7 @@ import { ControlCtx, reconcile } from "@effex/core";
 import { $, Element, type AnimationOptions } from "@effex/dom";
 
 import { buildPath, NavigationContext, type Navigation } from "./Navigation.js";
-import type { Route } from "./Route.js";
+import { resolveMeta, type Route } from "./Route.js";
 import {
   RouteDataContext,
   RouteDataProvider,
@@ -144,6 +144,18 @@ const renderRouteWithGuard = <E, R>(
         }
 
         routeData = { data, loaderPath, actions };
+      }
+    }
+
+    // Resolve meta (title, description, etc.) and apply to document
+    if (route._meta) {
+      const meta = resolveMeta(route, {
+        params: currentMatch.params,
+        searchParams: searchParamsObj,
+        data: routeData.data,
+      });
+      if (typeof document !== "undefined" && meta.title) {
+        document.title = meta.title;
       }
     }
 

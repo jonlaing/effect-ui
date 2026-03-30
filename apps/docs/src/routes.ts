@@ -44,6 +44,7 @@ const HomeRoute = Route.make("/").pipe(
       }),
     render: (data) => HomePage(data),
   }),
+  Route.meta({ title: "Effex | Reactive UI Built on Effect.ts" }),
 );
 
 // ─── Doc pages ───────────────────────────────────────────────────────────────
@@ -80,6 +81,10 @@ const DocRoute = Route.make("/docs/*").pipe(
         toc: data.toc,
       }),
   }),
+  Route.meta(({ data }) => ({
+    title: `${data.page.title} | Effex Docs`,
+    description: data.page.description,
+  })),
 );
 
 // ─── Router ──────────────────────────────────────────────────────────────────

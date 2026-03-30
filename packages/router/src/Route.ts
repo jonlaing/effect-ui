@@ -188,6 +188,50 @@ export type GuardOptions =
       >;
     };
 
+// =============================================================================
+// Meta Types
+// =============================================================================
+
+/**
+ * Resolved meta values for a route.
+ */
+export interface RouteMeta {
+  readonly title?: string;
+  readonly description?: string;
+}
+
+/**
+ * Arguments passed to meta field functions.
+ */
+export interface MetaArgs<P = unknown, SP = unknown, D = unknown> {
+  readonly params: P;
+  readonly searchParams: SP;
+  readonly data: D;
+}
+
+/**
+ * A single meta field — either a static string or a function of route args.
+ */
+export type MetaField<P, SP, D> =
+  | string
+  | ((args: MetaArgs<P, SP, D>) => string);
+
+/**
+ * Object form of meta input — each field can be a string or function.
+ */
+export interface MetaObject<P, SP, D> {
+  readonly title?: MetaField<P, SP, D>;
+  readonly description?: MetaField<P, SP, D>;
+}
+
+/**
+ * Input to `Route.meta` — either an object with per-field values,
+ * or a function that returns the full meta object.
+ */
+export type MetaInput<P, SP, D> =
+  | MetaObject<P, SP, D>
+  | ((args: MetaArgs<P, SP, D>) => RouteMeta);
+
 /**
  * A handler entry for POST/PUT/DELETE mutations.
  */
@@ -284,6 +328,11 @@ export interface Route<
       params: unknown;
     }) => Effect.Effect<unknown, unknown, unknown>;
   } | null;
+  /**
+   * Route meta configuration — set by `Route.meta`.
+   * Resolved at render time by Outlet (client) or Platform (SSR/SSG).
+   */
+  readonly _meta: MetaInput<Params, SearchParams, Data> | null;
 }
 
 // =============================================================================
@@ -363,6 +412,7 @@ export const make = <Path extends string>(
     _loader: null,
     _handlers: [],
     _staticConfig: null,
+    _meta: null,
   });
 
   return route;
@@ -903,11 +953,82 @@ export const lazy = <Path extends string>(
       _loader: null,
       _handlers: [],
       _staticConfig: null,
+      _meta: null,
       // Store the module loader for the router to use
       _load: load,
     });
 
   return route;
+};
+
+// =============================================================================
+// Meta
+// =============================================================================
+
+/**
+ * Add meta (title, description, etc.) to a route.
+ *
+ * Accepts an object with per-field values (string or function),
+ * or a function that returns the full meta object.
+ *
+ * @example
+ * ```ts
+ * // Static title
+ * Route.meta({ title: "Home" })
+ *
+ * // Dynamic title from params
+ * Route.meta({ title: ({ params }) => `User ${params.id}` })
+ *
+ * // Function returning full meta from loader data
+ * Route.meta(({ data }) => ({
+ *   title: `${data.user.name}'s Profile`,
+ *   description: data.user.bio,
+ * }))
+ * ```
+ */
+export const meta =
+  <P, SP, D>(input: MetaInput<P, SP, D>) =>
+  <Path extends string, E, R>(
+    route: Route<Path, P, SP, D, E, R>,
+  ): Route<Path, P, SP, D, E, R> => {
+    return Object.assign(Object.create(RouteProto), {
+      ...route,
+      _meta: input,
+    });
+  };
+
+/**
+ * Resolve a route's meta config into concrete string values.
+ */
+export const resolveMeta = <P, SP, D, E, R>(
+  route: Route<string, P, SP, D, E, R>,
+  args: MetaArgs<P, SP, D>,
+): RouteMeta => {
+  if (!route._meta) return {};
+
+  // Function form — call it directly
+  if (typeof route._meta === "function") {
+    return route._meta(args);
+  }
+
+  // Object form — resolve each field
+  const result: { title?: string; description?: string } = {};
+
+  if (route._meta.title !== undefined) {
+    result.title =
+      typeof route._meta.title === "function"
+        ? route._meta.title(args)
+        : route._meta.title;
+  }
+
+  if (route._meta.description !== undefined) {
+    result.description =
+      typeof route._meta.description === "function"
+        ? route._meta.description(args)
+        : route._meta.description;
+  }
+
+  return result;
 };
 
 // =============================================================================
@@ -962,6 +1083,8 @@ export const Route = {
   rawParams,
   withGuard,
   withAnimation,
+  meta,
+  resolveMeta,
   lazy,
   isRoute,
   catchIf,
