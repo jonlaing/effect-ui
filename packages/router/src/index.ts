@@ -25,10 +25,17 @@ export {
   type PathSegment,
   type AnimationOptions,
   type GuardOptions,
+  meta as routeMeta,
+  resolveMeta,
   NoRenderError,
   type RouteParams,
   type RouteSearchParams,
   type RouteData,
+  type RouteMeta,
+  type MetaArgs,
+  type MetaInput,
+  type MetaField,
+  type MetaObject,
 } from "./Route.js";
 
 // Router

@@ -36,6 +36,7 @@ import { renderToString } from "@effex/dom/server";
 import {
   Navigation,
   NavigationContext,
+  resolveMeta,
   RouteDataContext,
   RouteDataProvider,
   type Router as EffexRouter,
@@ -126,8 +127,14 @@ export const generateDocument = (
   html: string,
   loaderData: Record<string, unknown>,
   options?: DocumentOptions,
+  meta?: { title?: string; description?: string },
 ): string => {
-  const title = options?.title ? `<title>${options.title}</title>` : "";
+  // Route-level meta overrides document-level options
+  const titleText = meta?.title ?? options?.title;
+  const title = titleText ? `<title>${titleText}</title>` : "";
+  const description = meta?.description
+    ? `<meta name="description" content="${meta.description.replace(/"/g, "&quot;")}">`
+    : "";
   const styles = (options?.styles ?? [])
     .map((href) => `<link rel="stylesheet" href="${href}">`)
     .join("\n    ");
@@ -149,6 +156,7 @@ export const generateDocument = (
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     ${title}
+    ${description}
     ${styles}
     ${head}
   </head>
@@ -451,6 +459,16 @@ export const toHttpRoutes = <
         );
       }
 
+      // Resolve route meta (title, description)
+      const routeMetaResolved = resolveMeta(
+        route as RouteType<string, unknown, unknown, unknown, unknown, unknown>,
+        {
+          params: rawRouteParams,
+          searchParams: rawSearchParams,
+          data: loaderData,
+        },
+      );
+
       // Embed loader data for hydration
       const hydrationData: Record<string, unknown> = {
         data: loaderData,
@@ -458,7 +476,12 @@ export const toHttpRoutes = <
       };
 
       return HttpServerResponse.html(
-        generateDocument(html, hydrationData, options?.document),
+        generateDocument(
+          html,
+          hydrationData,
+          options?.document,
+          routeMetaResolved,
+        ),
       );
     });
 
@@ -819,6 +842,13 @@ export const buildStaticSite = (
             html = yield* render(element).pipe(Effect.provide(ssrLayers));
           }
 
+          // Resolve route meta
+          const pageMeta = resolveMeta(page.route, {
+            params: page.params,
+            searchParams: {},
+            data,
+          });
+
           // Wrap in document shell
           const hydrationData: Record<string, unknown> = {
             data,
@@ -828,6 +858,7 @@ export const buildStaticSite = (
             html,
             hydrationData,
             options.document,
+            pageMeta,
           );
 
           return { url: page.url, html: fullHtml } as StaticPage;

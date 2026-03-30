@@ -1,4 +1,4 @@
-import { NotebookText } from "lucide-static";
+import { ExternalLink, NotebookText } from "lucide-static";
 
 import { $, collect } from "@effex/dom";
 import { Link } from "@effex/router";
@@ -78,6 +78,20 @@ export const Sidebar = (props: { readonly sections: readonly DocSection[] }) =>
                       ),
                     ),
                   ),
+                ),
+              ),
+              $.a(
+                {
+                  href: "https://effex-api.pages.dev",
+                  class:
+                    "mt-4 text-sm text-base-content/50 hover:text-primary transition-colors flex items-center gap-2",
+                },
+                collect(
+                  $.span({
+                    class: "[&_svg]:w-4 [&_svg]:h-4",
+                    innerHTML: ExternalLink,
+                  }),
+                  $.span({}, $.of("API Reference")),
                 ),
               ),
             ),
