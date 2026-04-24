@@ -152,31 +152,32 @@ export const HomePage = (props: {
       collect(
         // ── 1. Hero ───────────────────────────────────────────────────────
         $.div(
-          { class: "hero bg-base-300 py-16 overflow-hidden" },
+          { class: "hero bg-base-300 py-8 md:py-16 overflow-hidden" },
           $.div(
             { class: "hero-content text-center" },
             $.div(
               {},
               collect(
                 $.h1({
-                  class: "text-4xl font-bold mb-2 animate-logo-in",
+                  class:
+                    "text-4xl font-bold mb-2 animate-logo-in [&_svg]:w-full md:[&_svg]:w-auto flex justify-center",
                   innerHTML: logoSvg,
                 }),
                 $.div(
                   {
                     class:
-                      "text-lg text-base-content flex animate-subhead-fade-in mb-8",
+                      "text-lg text-base-content animate-subhead-fade-in mb-8",
                   },
                   collect(
-                    $.div({}, $.of("A reactive UI framework built on")),
+                    $.of("A reactive UI framework built on"),
                     $.div(
                       {
                         class:
-                          "p-1 rounded bg-secondary text-secondary-content mx-1 font-bold -skew-y-2 shadow",
+                          "inline-block p-1 rounded bg-secondary text-secondary-content mx-1 font-bold -skew-y-2 shadow",
                       },
                       $.of("Effect.ts"),
                     ),
-                    $.div({}, $.of("primitives.")),
+                    $.of("primitives."),
                   ),
                 ),
                 $.div(
@@ -222,7 +223,7 @@ export const HomePage = (props: {
         $.div(
           {
             class:
-              "lg:max-w-6xl mx-auto py-16 px-4 space-y-16 flex flex-col-reverse md:flex-row gap-4",
+              "lg:max-w-6xl mx-auto py-8 md:py-16 px-4 space-y-16 flex flex-col-reverse md:flex-row gap-4",
           },
           collect(
             $.div(
