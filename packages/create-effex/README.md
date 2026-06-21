@@ -50,6 +50,23 @@ Includes:
 - Production server with static file serving
 - Client hydration entry point
 
+### SSG (Static Site Generation)
+
+A pre-rendered static site with client-side hydration. Good for portfolios, marketing sites, documentation, and blogs:
+
+```bash
+pnpm create effex my-app --ssg
+```
+
+Includes:
+- `@effex/dom` — DOM rendering and reactivity
+- `@effex/router` — Routing (shared between build and client)
+- `@effex/platform` — Static site generation via `buildStaticSite`
+- `@effex/vite-plugin` configured in `ssg` mode — runs the static build after the client bundle
+- Client hydration entry point
+
+Routes opt into static generation via `Route.static({ paths, load, render })`. The `paths` function returns all parameter sets to build; the `load` function runs at build time per path. Output is fully hydratable — animations and interactive components work the same as SSR once the client bundle loads.
+
 ## Project Structure
 
 ### SPA Template
@@ -85,6 +102,20 @@ my-app/
 └── package.json
 ```
 
+### SSG Template
+
+```
+my-app/
+├── src/
+│   ├── App.ts           # Root layout (shared build/client)
+│   ├── client.ts        # Client hydration entry
+│   ├── entry.ts         # Vite SSG entry (exports router + app + document)
+│   └── routes.ts        # Route definitions and router
+├── vite.config.ts
+├── tsconfig.json
+└── package.json
+```
+
 ## Development
 
 After creating your project:
@@ -111,6 +142,15 @@ pnpm build     # Build client + server bundles
 pnpm start     # Run production server
 ```
 
+### SSG
+
+```bash
+pnpm build     # Build client bundle + generate static HTML for all Route.static routes
+pnpm preview   # Preview the static site locally
+```
+
+The build outputs static HTML pages plus a hashed client bundle to `dist/`. Deploy `dist/` to any static host.
+
 ## CLI Options
 
 ```
@@ -119,6 +159,7 @@ create-effex <project-name> [options]
 Options:
   --spa          Use SPA template
   --ssr          Use SSR template
+  --ssg          Use SSG template
   --no-install   Skip dependency installation
   --help         Show help
   --version      Show version

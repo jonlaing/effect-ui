@@ -64,14 +64,34 @@ Effex gives you access to Effect's entire ecosystem:
 - **Retry/timeout** — Built-in resilience patterns
 - **Structured concurrency** — Fork, join, and race without footguns
 
+## Rendering Modes
+
+Effex supports three rendering modes. Pick based on what your app needs at runtime:
+
+| Mode | When to use | Output | Hosting |
+|------|-------------|--------|---------|
+| **SPA** | App needs no server logic; all data fetched client-side. Internal tools, dashboards. | Client bundle + `index.html` | Any static host |
+| **SSR** | Per-request server logic (auth, dynamic data, mutations). Web apps with database access. | Long-running Node HTTP server + client bundle | Fly.io, Railway, VPS, Cloud Run |
+| **SSG** | Content is known at build time. Portfolios, marketing sites, docs, blogs. | Pre-rendered HTML pages + client bundle for hydration | Any static host (Cloudflare Pages, Netlify, GitHub Pages) |
+
+All three produce interactive, hydrated pages — SSG output behaves identically to SSR output once the client bundle loads. The difference is purely *where rendering happens* (build time vs. request time vs. browser).
+
 ## Quick Start
 
 ```bash
-# Create a new project
+# Create a new project — prompts you to pick SPA, SSR, or SSG
 pnpm create effex my-app
 cd my-app
 pnpm install
 pnpm dev
+```
+
+Skip the prompt with a template flag:
+
+```bash
+pnpm create effex my-app --spa   # SPA
+pnpm create effex my-app --ssr   # SSR
+pnpm create effex my-app --ssg   # SSG
 ```
 
 Or install packages individually:
@@ -80,7 +100,7 @@ Or install packages individually:
 # SPA (client-side only)
 pnpm add @effex/dom @effex/router effect
 
-# Full-stack SSR
+# Full-stack SSR / SSG
 pnpm add @effex/dom @effex/router @effex/platform @effect/platform effect
 ```
 
@@ -286,7 +306,7 @@ LoginForm.provide(
 
 Supports leaf fields, nested structs, arrays, and maps — all with Effect Schema validation.
 
-## Full-Stack SSR
+## Server-Side Rendering (SSR)
 
 `@effex/platform` bridges Effex with `@effect/platform`'s HTTP server for server-side rendering:
 
@@ -324,6 +344,39 @@ Key features:
 - **Redirects** — Throw `RedirectError` from loaders for server-side redirects
 - **HttpApi composition** — Mount Effect's HttpApi alongside Effex pages on a single server
 
+## Static Site Generation (SSG)
+
+The same `@effex/platform` package also supports building fully static sites. Routes opt in via `Route.static`, which declares the paths to generate and a build-time loader:
+
+```ts
+// routes.ts
+import { Route, Router } from "@effex/router";
+
+const PostRoute = Route.make("/posts/:slug").pipe(
+  Route.params(Schema.Struct({ slug: Schema.String })),
+  Route.static({
+    paths: () => Effect.succeed([{ slug: "hello" }, { slug: "world" }]),
+    load: ({ params }) => loadPostFromDisk(params.slug),
+    render: (post) => PostPage({ post }),
+  }),
+);
+```
+
+Build to a `dist/` directory of static HTML at build time:
+
+```ts
+// vite.config.ts
+import { effexPlatform } from "@effex/vite-plugin";
+
+export default defineConfig({
+  plugins: [effexPlatform({ mode: "ssg", entry: "src/entry.ts" })],
+});
+```
+
+Output is fully hydratable — the generated HTML embeds loader data via `window.__EFFEX_DATA__`, and the client bundle picks up where the server left off. Animations, interactive components, signal-driven UI all work post-hydration. Deploy to any static host (Cloudflare Pages, Netlify, GitHub Pages, S3 + CloudFront).
+
+See [`@effex/platform`](./packages/platform) for the full `buildStaticSite` API.
+
 ## Packages
 
 | Package | Description |
@@ -334,7 +387,7 @@ Key features:
 | [`@effex/form`](./packages/form) | Schema-validated forms with reactive field state |
 | [`@effex/platform`](./packages/platform) | Server-side rendering, hydration, and data loading |
 | [`@effex/vite-plugin`](./packages/vite-plugin) | Vite plugin: SSR dev server + server-code stripping |
-| [`create-effex`](./packages/create-effex) | CLI to scaffold new projects (SPA or SSR) |
+| [`create-effex`](./packages/create-effex) | CLI to scaffold new projects (SPA, SSR, or SSG) |
 
 **Import conventions:**
 - `@effex/dom` re-exports everything from `@effex/core` — no need to install core separately
