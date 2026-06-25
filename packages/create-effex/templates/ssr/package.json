@@ -9,15 +9,15 @@
     "start": "node --import tsx dist/server/server.js"
   },
   "dependencies": {
-    "@effex/dom": "^0.0.1",
-    "@effex/platform": "^0.0.1",
-    "@effex/router": "^0.0.1",
+    "@effex/dom": "^1.1.0",
+    "@effex/platform": "^1.2.0",
+    "@effex/router": "^1.2.0",
     "@effect/platform": "^0.94.0",
     "@effect/platform-node": "^0.104.0",
     "effect": "^3.19.13"
   },
   "devDependencies": {
-    "@effex/vite-plugin": "^0.0.1",
+    "@effex/vite-plugin": "^1.1.0",
     "tsx": "^4.19.0",
     "typescript": "~5.9.3",
     "vite": "^7.0.0"

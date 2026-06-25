@@ -20,7 +20,8 @@
     "bench": "vitest bench",
     "typecheck": "tsc --noEmit",
     "changeset": "changeset",
-    "version": "changeset version",
+    "version": "changeset version && pnpm sync-template-versions",
+    "sync-template-versions": "node scripts/sync-template-versions.mjs",
     "release": "pnpm build && changeset publish",
     "docs:gen": "rm -rf docs && typedoc",
     "prepare": "husky"

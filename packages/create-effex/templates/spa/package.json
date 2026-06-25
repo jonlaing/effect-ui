@@ -9,8 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@effex/dom": "^0.0.1",
-    "@effex/router": "^0.0.1",
+    "@effex/dom": "^1.1.0",
+    "@effex/router": "^1.2.0",
     "effect": "^3.19.13"
   },
   "devDependencies": {
