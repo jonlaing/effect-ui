@@ -1,6 +1,9 @@
 # @effex/platform
 
-Server-side rendering and hydration utilities for Effex applications. Converts an Effex Router into `@effect/platform` HTTP handlers, handling SSR, data requests, and mutation endpoints.
+Server-side rendering, static site generation, and hydration utilities for Effex applications. Supports two output modes:
+
+- **SSR** — Convert an Effex Router into `@effect/platform` HTTP handlers; renders pages per-request, handles data requests and mutations.
+- **SSG** — Pre-render all routes at build time into static HTML files for deployment to any static host.
 
 ## Installation
 
@@ -18,15 +21,29 @@ pnpm add @effex/dom @effex/router
 
 ## Overview
 
-`@effex/platform` is a server-side package that bridges Effex's UI layer with `@effect/platform`'s HTTP server. It does not re-export dom or router — import those directly:
+`@effex/platform` is a server-side package that bridges Effex's UI layer with `@effect/platform`'s HTTP server (for SSR) and a build-time static-site generator (for SSG). It does not re-export dom or router — import those directly:
 
 ```ts
-import { $, collect, Readable } from "@effex/dom";       // UI primitives
+import { $, collect, Readable } from "@effex/dom";          // UI primitives
 import { Route, Router, Outlet, Link } from "@effex/router"; // Routing
-import { Platform, RedirectError } from "@effex/platform";    // SSR utilities
+import { Platform, RedirectError } from "@effex/platform";   // SSR + SSG utilities
 ```
 
-## Quick Start
+## SSR vs. SSG — which to use
+
+| | SSR | SSG |
+|---|---|---|
+| **Rendering happens** | Per request, on a long-running server | Once, at build time |
+| **Route definition** | `Route.get(loader, render)` | `Route.static({ paths, load, render })` |
+| **Deployment target** | Node host (Fly.io, Railway, VPS) | Any static host (Cloudflare Pages, Netlify, S3) |
+| **Per-request data** | ✅ | ❌ (data fixed at build) |
+| **Mutation handlers (`Route.post/put/delete`)** | ✅ | ❌ (no server at runtime) |
+| **Operational cost** | Server uptime + compute | Free static hosting |
+| **Hydration / interactivity** | ✅ identical to SSG | ✅ identical to SSR |
+
+Both modes produce fully hydratable output — the same client bundle picks up the SSR-rendered or pre-built HTML and brings the same interactive components to life. Choose based on whether you need per-request server logic, not based on whether you need interactivity.
+
+## SSR Quick Start
 
 ### Define Routes
 
@@ -148,6 +165,127 @@ export const App = () =>
     ),
   );
 ```
+
+## SSG Quick Start
+
+### Define Static Routes
+
+Routes opt into static generation via `Route.static({ paths, load, render })`. The `paths` function returns all parameter sets to build; the `load` function runs at build time per parameter set:
+
+```ts
+// routes.ts
+import { Effect, Schema } from "effect";
+import { Route, Router } from "@effex/router";
+
+import { HomePage } from "./pages/Home.js";
+import { PostPage } from "./pages/Post.js";
+import { NotFoundPage } from "./pages/NotFound.js";
+
+const HomeRoute = Route.make("/").pipe(
+  Route.static({
+    paths: () => Effect.succeed([{}]), // one path, no params
+    load: () => Effect.succeed({ heading: "Welcome" }),
+    render: (data) => HomePage({ data }),
+  }),
+);
+
+const PostRoute = Route.make("/posts/:slug").pipe(
+  Route.params(Schema.Struct({ slug: Schema.String })),
+  Route.static({
+    paths: () =>
+      Effect.gen(function* () {
+        const fs = yield* FileSystem;
+        const slugs = yield* fs.listPostSlugs();
+        return slugs.map((slug) => ({ slug }));
+      }),
+    load: ({ params }) =>
+      Effect.gen(function* () {
+        const fs = yield* FileSystem;
+        return yield* fs.readPost(params.slug);
+      }),
+    render: (post) => PostPage({ post }),
+  }),
+);
+
+export const router = Router.empty.pipe(
+  Router.concat(HomeRoute),
+  Router.concat(PostRoute),
+  Router.fallback(() => NotFoundPage()),
+);
+```
+
+### SSG Build Entry
+
+```ts
+// entry.ts — consumed by @effex/vite-plugin in ssg mode
+import { Layer } from "effect";
+
+import { App } from "./App.js";
+import { router } from "./routes.js";
+import { FileSystemLive } from "./services/FileSystem.js";
+
+export { router };
+export const app = App;
+export const document = {
+  title: "My Site",
+  scripts: ["/src/client.ts"],
+};
+export const layers = FileSystemLive; // services needed by load() functions
+```
+
+### Vite Config
+
+```ts
+// vite.config.ts
+import { defineConfig } from "vite";
+import { effexPlatform } from "@effex/vite-plugin";
+
+export default defineConfig({
+  plugins: [effexPlatform({ mode: "ssg", entry: "src/entry.ts" })],
+});
+```
+
+### Build
+
+```bash
+pnpm build
+```
+
+The plugin runs `vite build` (client bundle) followed by `vite build --ssr src/entry.ts` (build-time SSR module), then invokes `Platform.buildStaticSite` to render every `Route.static` route to HTML in `dist/`.
+
+### Output Structure
+
+```
+dist/
+├── index.html                # Home route
+├── posts/
+│   ├── hello-world/
+│   │   └── index.html
+│   └── another-post/
+│       └── index.html
+├── 404.html                  # From router.fallback
+└── assets/
+    └── client-[hash].js      # Client bundle for hydration
+```
+
+### Hydration
+
+Same client entry as SSR. The static HTML embeds loader data via `window.__EFFEX_DATA__`, which the client picks up via `Platform.makeClientLayer`:
+
+```ts
+// client.ts
+import { hydrate } from "@effex/dom/hydrate";
+import { Platform } from "@effex/platform";
+
+import { App } from "./App.js";
+import { router } from "./routes.js";
+
+hydrate(App(), document.getElementById("root")!, {
+  layers: Platform.makeClientLayer(router),
+});
+```
+
+After hydration, the site behaves identically to an SSR-rendered page — Signal subscriptions are wired, event handlers attached, animations run.
 
 ## Server API
 
@@ -319,9 +457,11 @@ export default defineConfig({
 });
 ```
 
-**Dev mode:** Intercepts requests to the Vite dev server and delegates to your SSR entry, with HMR support.
+**Dev mode:** Intercepts requests to the Vite dev server and delegates to your SSR or SSG entry, with HMR support.
 
-**Client builds:** Strips server-only code from the client bundle — loader function bodies are removed from `Route.get()` calls, and mutation handlers in `Route.post/put/delete()` are replaced with stubs.
+**Client builds:** Strips server-only code from the client bundle — loader function bodies are removed from `Route.get()` calls, mutation handlers in `Route.post/put/delete()` are replaced with stubs, and `Route.static({...})` config (build-time `paths`/`load`) is reduced to its render function.
+
+**SSG mode:** After the SSR build completes, the plugin invokes `Platform.buildStaticSite` to enumerate `Route.static` routes, run their loaders, render to HTML, and write the output to `dist/`.
 
 ## API Reference
 
@@ -329,7 +469,8 @@ export default defineConfig({
 
 | Function | Description |
 |---|---|
-| `Platform.toHttpRoutes(router, options?)` | Convert Effex Router to `@effect/platform` HttpRouter |
+| `Platform.toHttpRoutes(router, options?)` | Convert Effex Router to `@effect/platform` HttpRouter (SSR) |
+| `Platform.buildStaticSite(options)` | Pre-render all `Route.static` routes to static HTML files (SSG) |
 | `Platform.makeClientLayer(router)` | Create client-side Layer for hydration and navigation |
 | `Platform.generateDocument(html, data, options?)` | Wrap HTML in full document with hydration data |
 | `Platform.generateLoaderDataScript(data)` | Generate `<script>` tag for hydration data |
@@ -341,6 +482,7 @@ export default defineConfig({
 |---|---|
 | `RedirectError` | Tagged error class for server-side redirects |
 | `toHttpRoutes` | Same as `Platform.toHttpRoutes` |
+| `buildStaticSite` | Same as `Platform.buildStaticSite` |
 | `makeClientLayer` | Same as `Platform.makeClientLayer` |
 | `generateDocument` | Same as `Platform.generateDocument` |
 | `generateLoaderDataScript` | Same as `Platform.generateLoaderDataScript` |
@@ -363,5 +505,17 @@ interface DocumentOptions {
 interface ToHttpRoutesOptions {
   document?: DocumentOptions;
   app?: () => Element.Element<HTMLElement | SVGElement>;  // Root app component
+}
+```
+
+### BuildStaticSiteOptions
+
+```ts
+interface BuildStaticSiteOptions {
+  router: Router<any, any, any, any, any>; // router with Route.static entries
+  app?: () => Element.Element<HTMLElement | SVGElement>;  // Optional root app
+  document?: DocumentOptions;
+  outDir: string;                          // Output directory (e.g. "dist")
+  layers?: Layer.Layer<any, never, never>; // Services for loaders/render
 }
 ```
