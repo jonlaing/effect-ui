@@ -37,9 +37,12 @@ export class HydrationRootCtx extends Context.Tag(
 /**
  * Creates a fresh client-like control context for nested/forked contexts during hydration.
  * Used when fork() is called - nested control functions don't read from DOM.
+ *
+ * AnimationConfigCtx is read lazily inside addSlot/removeSlot at the moment
+ * the effect runs, not captured at construction time — that way nested control
+ * flow (e.g. `each` with `animate`) sees the config its parent provided.
  */
 const createClientLikeControlCtx = (
-  animationConfig: { single?: unknown; list?: unknown } | undefined,
   startInClientMode = false,
 ): IControlCtx<DOMElement> => {
   const slots = new Map<string, DOMSlotEntry>();
@@ -63,10 +66,7 @@ const createClientLikeControlCtx = (
   const ctx: IControlCtx<DOMElement> = {
     // Propagate hydrationDone so nested control functions created after
     // hydration finishes start in client mode immediately.
-    fork: () =>
-      Effect.succeed(
-        createClientLikeControlCtx(animationConfig, hydrationDone),
-      ),
+    fork: () => Effect.succeed(createClientLikeControlCtx(hydrationDone)),
 
     defaultContainer,
 
@@ -121,7 +121,7 @@ const createClientLikeControlCtx = (
           // After hydration: use DOMRenderer to create new DOM.
           // Provide a fresh client-mode ControlCtx so nested control flow
           // (each, matchOption, etc.) doesn't inherit the stale hydration root.
-          const freshCtx = createClientLikeControlCtx(animationConfig, true);
+          const freshCtx = createClientLikeControlCtx(true);
           element = (yield* render({ item, index }).pipe(
             Effect.provideService(Scope.Scope, slotScope),
             Effect.provideService(
@@ -149,6 +149,12 @@ const createClientLikeControlCtx = (
         slots.set(key, entry);
 
         if (hydrationDone) {
+          // Read animation config at runtime, not at Layer creation,
+          // so nested `each` with `animate` sees the config its parent
+          // provided via AnimationConfigCtx.
+          const animationConfigOption =
+            yield* Effect.serviceOption(AnimationConfigCtx);
+          const animationConfig = Option.getOrUndefined(animationConfigOption);
           const animate = (animationConfig?.list ?? animationConfig?.single) as
             | Parameters<typeof runEnterAnimation>[1]
             | undefined;
@@ -176,6 +182,10 @@ const createClientLikeControlCtx = (
         const entry = slots.get(key);
         if (!entry) return;
 
+        // Read animation config at runtime, not at Layer creation.
+        const animationConfigOption =
+          yield* Effect.serviceOption(AnimationConfigCtx);
+        const animationConfig = Option.getOrUndefined(animationConfigOption);
         const animate = (animationConfig?.list ?? animationConfig?.single) as
           | Parameters<typeof runExitAnimation>[1]
           | undefined;
@@ -230,10 +240,12 @@ const createClientLikeControlCtx = (
 /**
  * Creates a hydration control context that reads from existing DOM.
  * fork() returns a client-like context for nested control functions.
+ *
+ * AnimationConfigCtx is read lazily inside addSlot/removeSlot — see the
+ * note on createClientLikeControlCtx for why.
  */
 const createHydrationControlCtx = (
   containerElement: DOMElement,
-  animationConfig: { single?: unknown; list?: unknown } | undefined,
 ): IControlCtx<DOMElement> => {
   const slots = new Map<string, DOMSlotEntry>();
   // Tracks whether the initial hydration pass is complete.
@@ -260,10 +272,7 @@ const createHydrationControlCtx = (
 
   const ctx: IControlCtx<DOMElement> = {
     // After hydration completes, nested control functions start in client mode
-    fork: () =>
-      Effect.succeed(
-        createClientLikeControlCtx(animationConfig, hydrationComplete),
-      ),
+    fork: () => Effect.succeed(createClientLikeControlCtx(hydrationComplete)),
 
     defaultContainer,
 
@@ -316,7 +325,7 @@ const createHydrationControlCtx = (
           Effect.provideService(Scope.Scope, slotScope),
         );
 
-        const freshCtx = createClientLikeControlCtx(animationConfig, true);
+        const freshCtx = createClientLikeControlCtx(true);
         const element = (yield* render({ item, index }).pipe(
           Effect.provideService(Scope.Scope, slotScope),
           Effect.provideService(
@@ -340,6 +349,12 @@ const createHydrationControlCtx = (
         };
         slots.set(key, entry);
 
+        // Read animation config at runtime, not at Layer creation,
+        // so nested `each` with `animate` sees the config its parent
+        // provided via AnimationConfigCtx.
+        const animationConfigOption =
+          yield* Effect.serviceOption(AnimationConfigCtx);
+        const animationConfig = Option.getOrUndefined(animationConfigOption);
         const animate = (animationConfig?.list ?? animationConfig?.single) as
           | Parameters<typeof runEnterAnimation>[1]
           | undefined;
@@ -358,6 +373,10 @@ const createHydrationControlCtx = (
         const entry = slots.get(key);
         if (!entry) return;
 
+        // Read animation config at runtime, not at Layer creation.
+        const animationConfigOption =
+          yield* Effect.serviceOption(AnimationConfigCtx);
+        const animationConfig = Option.getOrUndefined(animationConfigOption);
         const animate = (animationConfig?.list ?? animationConfig?.single) as
           | Parameters<typeof runExitAnimation>[1]
           | undefined;
@@ -414,6 +433,11 @@ const createHydrationControlCtx = (
 /**
  * Hydration ControlCtx implementation.
  * Finds existing DOM and attaches handlers, then subscribes like client mode.
+ *
+ * AnimationConfigCtx is intentionally NOT read here — it would be captured
+ * at Layer construction time (at the hydration root), before any `each`
+ * gets a chance to provide it. Instead each addSlot/removeSlot reads the
+ * service lazily, mirroring ClientControlCtx.
  */
 export const HydrationControlCtx: Layer.Layer<
   ControlCtx,
@@ -423,13 +447,6 @@ export const HydrationControlCtx: Layer.Layer<
   ControlCtx,
   Effect.gen(function* () {
     const containerElement = yield* HydrationRootCtx;
-    const animationConfigOption =
-      yield* Effect.serviceOption(AnimationConfigCtx);
-    const animationConfig = Option.getOrUndefined(animationConfigOption);
-
-    return createHydrationControlCtx(
-      containerElement,
-      animationConfig,
-    ) as IControlCtx<unknown>;
+    return createHydrationControlCtx(containerElement) as IControlCtx<unknown>;
   }),
 );
