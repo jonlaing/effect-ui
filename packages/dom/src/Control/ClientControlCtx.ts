@@ -107,15 +107,25 @@ const createClientControlCtx = (): IControlCtx<DOMElement> => {
         };
         slots.set(key, entry);
 
-        // Run enter animation if configured (read at runtime, not Layer creation)
-        const animationConfigOption =
-          yield* Effect.serviceOption(AnimationConfigCtx);
-        const animationConfig = Option.getOrUndefined(animationConfigOption);
-        const animate = (animationConfig?.list ?? animationConfig?.single) as
-          | Parameters<typeof runEnterAnimation>[1]
-          | undefined;
-        if (animate && element instanceof HTMLElement) {
-          yield* runEnterAnimation(Effect.succeed(element), animate);
+        // Fork enter animation into the slot's scope so it runs concurrently
+        // with subsequent addSlot calls (rather than serializing the reconcile
+        // loop) and gets interrupted if the slot is removed mid-animation.
+        // Config is read lazily inside the forked fiber.
+        if (element instanceof HTMLElement) {
+          yield* Effect.gen(function* () {
+            const animationConfigOption =
+              yield* Effect.serviceOption(AnimationConfigCtx);
+            const animationConfig = Option.getOrUndefined(
+              animationConfigOption,
+            );
+            const animate = (animationConfig?.list ??
+              animationConfig?.single) as
+              | Parameters<typeof runEnterAnimation>[1]
+              | undefined;
+            if (animate) {
+              yield* runEnterAnimation(Effect.succeed(element), animate);
+            }
+          }).pipe(Effect.forkIn(slotScope));
         }
 
         return entry;
@@ -128,24 +138,40 @@ const createClientControlCtx = (): IControlCtx<DOMElement> => {
         const entry = slots.get(key);
         if (!entry) return;
 
-        // Run exit animation if configured (read at runtime, not Layer creation)
-        const animationConfigOption =
-          yield* Effect.serviceOption(AnimationConfigCtx);
-        const animationConfig = Option.getOrUndefined(animationConfigOption);
-        const animate = (animationConfig?.list ?? animationConfig?.single) as
-          | Parameters<typeof runExitAnimation>[1]
-          | undefined;
-        if (animate && entry.element instanceof HTMLElement) {
-          yield* runExitAnimation(Effect.succeed(entry.element), animate);
-        }
-
-        if (containerElement && entry.element.parentNode === containerElement) {
-          containerElement.removeChild(entry.element);
-        }
-
-        yield* Scope.close(entry.scope, Exit.void);
+        // Remove from map immediately so subsequent syncs see the slot as gone.
         slots.delete(key);
-      }),
+
+        // Fork the exit sequence into the parent scope so removeSlot returns
+        // right away — otherwise the reconcile loop serializes on every exit
+        // animation. The fiber closes the slot's scope first (interrupting
+        // any in-flight enter animation), then plays exit, then removes the
+        // DOM node. Running on parentScope means the exit continues even if
+        // a fresh slot re-uses this key immediately.
+        const parentScope = yield* Effect.scope;
+        yield* Effect.gen(function* () {
+          yield* Scope.close(entry.scope, Exit.void);
+
+          const animationConfigOption =
+            yield* Effect.serviceOption(AnimationConfigCtx);
+          const animationConfig = Option.getOrUndefined(animationConfigOption);
+          const animate = (animationConfig?.list ?? animationConfig?.single) as
+            | Parameters<typeof runExitAnimation>[1]
+            | undefined;
+          if (animate && entry.element instanceof HTMLElement) {
+            yield* runExitAnimation(Effect.succeed(entry.element), animate);
+          }
+
+          if (
+            containerElement &&
+            entry.element.parentNode === containerElement
+          ) {
+            containerElement.removeChild(entry.element);
+          }
+        }).pipe(Effect.forkIn(parentScope));
+        // Cast: Effect.scope introduces Scope.Scope in R which the interface
+        // signature doesn't expose. Callers always have Scope.Scope in
+        // context — same pattern as `subscribe` above.
+      }) as unknown as Effect.Effect<void>,
 
     getSlot: (key: string): Effect.Effect<DOMSlotEntry | undefined> =>
       Effect.sync(() => slots.get(key)),

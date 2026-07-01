@@ -148,19 +148,24 @@ const createClientLikeControlCtx = (
         };
         slots.set(key, entry);
 
-        if (hydrationDone) {
-          // Read animation config at runtime, not at Layer creation,
-          // so nested `each` with `animate` sees the config its parent
-          // provided via AnimationConfigCtx.
-          const animationConfigOption =
-            yield* Effect.serviceOption(AnimationConfigCtx);
-          const animationConfig = Option.getOrUndefined(animationConfigOption);
-          const animate = (animationConfig?.list ?? animationConfig?.single) as
-            | Parameters<typeof runEnterAnimation>[1]
-            | undefined;
-          if (animate && element instanceof HTMLElement) {
-            yield* runEnterAnimation(Effect.succeed(element), animate);
-          }
+        if (hydrationDone && element instanceof HTMLElement) {
+          // Fork enter animation into the slot's scope so it runs concurrently
+          // with subsequent addSlot calls. Config is read lazily inside the
+          // forked fiber — see the note on createClientLikeControlCtx.
+          yield* Effect.gen(function* () {
+            const animationConfigOption =
+              yield* Effect.serviceOption(AnimationConfigCtx);
+            const animationConfig = Option.getOrUndefined(
+              animationConfigOption,
+            );
+            const animate = (animationConfig?.list ??
+              animationConfig?.single) as
+              | Parameters<typeof runEnterAnimation>[1]
+              | undefined;
+            if (animate) {
+              yield* runEnterAnimation(Effect.succeed(element), animate);
+            }
+          }).pipe(Effect.forkIn(slotScope));
         }
 
         return entry;
@@ -182,24 +187,33 @@ const createClientLikeControlCtx = (
         const entry = slots.get(key);
         if (!entry) return;
 
-        // Read animation config at runtime, not at Layer creation.
-        const animationConfigOption =
-          yield* Effect.serviceOption(AnimationConfigCtx);
-        const animationConfig = Option.getOrUndefined(animationConfigOption);
-        const animate = (animationConfig?.list ?? animationConfig?.single) as
-          | Parameters<typeof runExitAnimation>[1]
-          | undefined;
-        if (animate && entry.element instanceof HTMLElement) {
-          yield* runExitAnimation(Effect.succeed(entry.element), animate);
-        }
-
-        if (containerElement && entry.element.parentNode === containerElement) {
-          containerElement.removeChild(entry.element);
-        }
-
-        yield* Scope.close(entry.scope, Exit.void);
+        // Remove from map immediately so subsequent syncs see the slot as gone.
         slots.delete(key);
-      }),
+
+        // Fork the exit sequence into the parent scope; see ClientControlCtx
+        // for the full rationale.
+        const parentScope = yield* Effect.scope;
+        yield* Effect.gen(function* () {
+          yield* Scope.close(entry.scope, Exit.void);
+
+          const animationConfigOption =
+            yield* Effect.serviceOption(AnimationConfigCtx);
+          const animationConfig = Option.getOrUndefined(animationConfigOption);
+          const animate = (animationConfig?.list ?? animationConfig?.single) as
+            | Parameters<typeof runExitAnimation>[1]
+            | undefined;
+          if (animate && entry.element instanceof HTMLElement) {
+            yield* runExitAnimation(Effect.succeed(entry.element), animate);
+          }
+
+          if (
+            containerElement &&
+            entry.element.parentNode === containerElement
+          ) {
+            containerElement.removeChild(entry.element);
+          }
+        }).pipe(Effect.forkIn(parentScope));
+      }) as unknown as Effect.Effect<void>,
 
     getSlot: (key: string): Effect.Effect<DOMSlotEntry | undefined> =>
       Effect.sync(() => slots.get(key)),
@@ -349,17 +363,23 @@ const createHydrationControlCtx = (
         };
         slots.set(key, entry);
 
-        // Read animation config at runtime, not at Layer creation,
-        // so nested `each` with `animate` sees the config its parent
-        // provided via AnimationConfigCtx.
-        const animationConfigOption =
-          yield* Effect.serviceOption(AnimationConfigCtx);
-        const animationConfig = Option.getOrUndefined(animationConfigOption);
-        const animate = (animationConfig?.list ?? animationConfig?.single) as
-          | Parameters<typeof runEnterAnimation>[1]
-          | undefined;
-        if (animate && element instanceof HTMLElement) {
-          yield* runEnterAnimation(Effect.succeed(element), animate);
+        if (element instanceof HTMLElement) {
+          // Fork enter animation into the slot's scope; see
+          // createClientLikeControlCtx for rationale.
+          yield* Effect.gen(function* () {
+            const animationConfigOption =
+              yield* Effect.serviceOption(AnimationConfigCtx);
+            const animationConfig = Option.getOrUndefined(
+              animationConfigOption,
+            );
+            const animate = (animationConfig?.list ??
+              animationConfig?.single) as
+              | Parameters<typeof runEnterAnimation>[1]
+              | undefined;
+            if (animate) {
+              yield* runEnterAnimation(Effect.succeed(element), animate);
+            }
+          }).pipe(Effect.forkIn(slotScope));
         }
 
         return entry;
@@ -373,26 +393,31 @@ const createHydrationControlCtx = (
         const entry = slots.get(key);
         if (!entry) return;
 
-        // Read animation config at runtime, not at Layer creation.
-        const animationConfigOption =
-          yield* Effect.serviceOption(AnimationConfigCtx);
-        const animationConfig = Option.getOrUndefined(animationConfigOption);
-        const animate = (animationConfig?.list ?? animationConfig?.single) as
-          | Parameters<typeof runExitAnimation>[1]
-          | undefined;
-        if (animate && entry.element instanceof HTMLElement) {
-          yield* runExitAnimation(Effect.succeed(entry.element), animate);
-        }
-
-        if (entry.element.parentNode === containerElement) {
-          containerElement.removeChild(entry.element);
-        }
-
-        if (entry.scope) {
-          yield* Scope.close(entry.scope, Exit.void);
-        }
+        // Remove from map immediately so subsequent syncs see the slot as gone.
         slots.delete(key);
-      }),
+
+        // Fork exit sequence into parent scope; see ClientControlCtx.
+        const parentScope = yield* Effect.scope;
+        yield* Effect.gen(function* () {
+          if (entry.scope) {
+            yield* Scope.close(entry.scope, Exit.void);
+          }
+
+          const animationConfigOption =
+            yield* Effect.serviceOption(AnimationConfigCtx);
+          const animationConfig = Option.getOrUndefined(animationConfigOption);
+          const animate = (animationConfig?.list ?? animationConfig?.single) as
+            | Parameters<typeof runExitAnimation>[1]
+            | undefined;
+          if (animate && entry.element instanceof HTMLElement) {
+            yield* runExitAnimation(Effect.succeed(entry.element), animate);
+          }
+
+          if (entry.element.parentNode === containerElement) {
+            containerElement.removeChild(entry.element);
+          }
+        }).pipe(Effect.forkIn(parentScope));
+      }) as unknown as Effect.Effect<void>,
 
     getSlot: (key: string): Effect.Effect<DOMSlotEntry | undefined> =>
       Effect.sync(() => slots.get(key)),
