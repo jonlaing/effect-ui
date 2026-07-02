@@ -70,6 +70,8 @@ export const staggerFromCenter = (delayMs: number): StaggerFunction => {
  * @param totalDurationMs - Total duration for all staggers to complete
  * @param easingFn - Easing function (0-1 input, 0-1 output)
  *
+ * @deprecated Compose your own — `(index, total) => easingFn(index / (total - 1)) * totalDurationMs`. Will be removed in a future major.
+ *
  * @example
  * ```ts
  * // Ease-out: items near the end have smaller delays between them
@@ -99,6 +101,8 @@ export const staggerEased = (
 /**
  * Add a delay before running an effect.
  *
+ * @deprecated Use `Effect.delay(effect, ms)` directly. Will be removed in a future major.
+ *
  * @example
  * ```ts
  * yield* delay(200, runEnterAnimation(element, options))
@@ -111,6 +115,8 @@ export const delay = <A, E, R>(
 
 /**
  * Run multiple animation effects in sequence.
+ *
+ * @deprecated Use `Effect.all([...], { concurrency: 1 })` directly. Will be removed in a future major.
  *
  * @example
  * ```ts
@@ -126,6 +132,8 @@ export const sequence = <A, E, R>(
 
 /**
  * Run multiple animation effects in parallel.
+ *
+ * @deprecated Use `Effect.all([...], { concurrency: "unbounded" })` directly. Will be removed in a future major.
  *
  * @example
  * ```ts
@@ -144,6 +152,8 @@ export const parallel = <A, E, R>(
 /**
  * Calculate stagger delay for a given index.
  * Handles both numeric values and stagger functions.
+ *
+ * @deprecated Internal helper — no longer part of the public API. Will be removed in a future major.
  */
 export const calculateStaggerDelay = (
   stagger: number | StaggerFunction | undefined,
