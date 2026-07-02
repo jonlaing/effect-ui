@@ -3,7 +3,7 @@
  * Full reactive updates with optional animation support.
  */
 
-import { Effect, Exit, Layer, Option, Scope, Stream } from "effect";
+import { Effect, Layer, Scope, Stream } from "effect";
 
 import {
   ControlCtx,
@@ -15,10 +15,9 @@ import {
   type SlotEntry,
 } from "@effex/core";
 
-import { runEnterAnimation, runExitAnimation } from "../Animation/index.js";
 import * as Element from "../Element/index.js";
 import { DOMRenderer } from "../Render/DOMRenderer.js";
-import { AnimationConfigCtx } from "./AnimationConfigCtx.js";
+import { forkSlotEnter, forkSlotRemoval } from "./slotAnimation.js";
 
 type DOMElement = HTMLElement | SVGElement;
 
@@ -107,16 +106,7 @@ const createClientControlCtx = (): IControlCtx<DOMElement> => {
         };
         slots.set(key, entry);
 
-        // Run enter animation if configured (read at runtime, not Layer creation)
-        const animationConfigOption =
-          yield* Effect.serviceOption(AnimationConfigCtx);
-        const animationConfig = Option.getOrUndefined(animationConfigOption);
-        const animate = (animationConfig?.list ?? animationConfig?.single) as
-          | Parameters<typeof runEnterAnimation>[1]
-          | undefined;
-        if (animate && element instanceof HTMLElement) {
-          yield* runEnterAnimation(Effect.succeed(element), animate);
-        }
+        yield* forkSlotEnter(element, slotScope);
 
         return entry;
       }) as Effect.Effect<DOMSlotEntry, E, R>,
@@ -127,24 +117,15 @@ const createClientControlCtx = (): IControlCtx<DOMElement> => {
       Effect.gen(function* () {
         const entry = slots.get(key);
         if (!entry) return;
-
-        // Run exit animation if configured (read at runtime, not Layer creation)
-        const animationConfigOption =
-          yield* Effect.serviceOption(AnimationConfigCtx);
-        const animationConfig = Option.getOrUndefined(animationConfigOption);
-        const animate = (animationConfig?.list ?? animationConfig?.single) as
-          | Parameters<typeof runExitAnimation>[1]
-          | undefined;
-        if (animate && entry.element instanceof HTMLElement) {
-          yield* runExitAnimation(Effect.succeed(entry.element), animate);
-        }
-
-        if (containerElement && entry.element.parentNode === containerElement) {
-          containerElement.removeChild(entry.element);
-        }
-
-        yield* Scope.close(entry.scope, Exit.void);
         slots.delete(key);
+        yield* forkSlotRemoval(entry, () => {
+          if (
+            containerElement &&
+            entry.element.parentNode === containerElement
+          ) {
+            containerElement.removeChild(entry.element);
+          }
+        });
       }),
 
     getSlot: (key: string): Effect.Effect<DOMSlotEntry | undefined> =>

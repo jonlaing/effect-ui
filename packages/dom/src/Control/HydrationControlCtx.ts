@@ -3,7 +3,7 @@
  * Finds existing DOM and attaches handlers, then subscribes like client mode.
  */
 
-import { Context, Effect, Exit, Layer, Option, Scope, Stream } from "effect";
+import { Context, Effect, Layer, Scope, Stream } from "effect";
 
 import {
   ControlCtx,
@@ -15,10 +15,9 @@ import {
   type SlotEntry,
 } from "@effex/core";
 
-import { runEnterAnimation, runExitAnimation } from "../Animation/index.js";
 import * as Element from "../Element/index.js";
 import { DOMRenderer } from "../Render/DOMRenderer.js";
-import { AnimationConfigCtx } from "./AnimationConfigCtx.js";
+import { forkSlotEnter, forkSlotRemoval } from "./slotAnimation.js";
 
 type DOMElement = HTMLElement | SVGElement;
 
@@ -149,18 +148,7 @@ const createClientLikeControlCtx = (
         slots.set(key, entry);
 
         if (hydrationDone) {
-          // Read animation config at runtime, not at Layer creation,
-          // so nested `each` with `animate` sees the config its parent
-          // provided via AnimationConfigCtx.
-          const animationConfigOption =
-            yield* Effect.serviceOption(AnimationConfigCtx);
-          const animationConfig = Option.getOrUndefined(animationConfigOption);
-          const animate = (animationConfig?.list ?? animationConfig?.single) as
-            | Parameters<typeof runEnterAnimation>[1]
-            | undefined;
-          if (animate && element instanceof HTMLElement) {
-            yield* runEnterAnimation(Effect.succeed(element), animate);
-          }
+          yield* forkSlotEnter(element, slotScope);
         }
 
         return entry;
@@ -181,24 +169,15 @@ const createClientLikeControlCtx = (
       Effect.gen(function* () {
         const entry = slots.get(key);
         if (!entry) return;
-
-        // Read animation config at runtime, not at Layer creation.
-        const animationConfigOption =
-          yield* Effect.serviceOption(AnimationConfigCtx);
-        const animationConfig = Option.getOrUndefined(animationConfigOption);
-        const animate = (animationConfig?.list ?? animationConfig?.single) as
-          | Parameters<typeof runExitAnimation>[1]
-          | undefined;
-        if (animate && entry.element instanceof HTMLElement) {
-          yield* runExitAnimation(Effect.succeed(entry.element), animate);
-        }
-
-        if (containerElement && entry.element.parentNode === containerElement) {
-          containerElement.removeChild(entry.element);
-        }
-
-        yield* Scope.close(entry.scope, Exit.void);
         slots.delete(key);
+        yield* forkSlotRemoval(entry, () => {
+          if (
+            containerElement &&
+            entry.element.parentNode === containerElement
+          ) {
+            containerElement.removeChild(entry.element);
+          }
+        });
       }),
 
     getSlot: (key: string): Effect.Effect<DOMSlotEntry | undefined> =>
@@ -349,18 +328,7 @@ const createHydrationControlCtx = (
         };
         slots.set(key, entry);
 
-        // Read animation config at runtime, not at Layer creation,
-        // so nested `each` with `animate` sees the config its parent
-        // provided via AnimationConfigCtx.
-        const animationConfigOption =
-          yield* Effect.serviceOption(AnimationConfigCtx);
-        const animationConfig = Option.getOrUndefined(animationConfigOption);
-        const animate = (animationConfig?.list ?? animationConfig?.single) as
-          | Parameters<typeof runEnterAnimation>[1]
-          | undefined;
-        if (animate && element instanceof HTMLElement) {
-          yield* runEnterAnimation(Effect.succeed(element), animate);
-        }
+        yield* forkSlotEnter(element, slotScope);
 
         return entry;
       }) as Effect.Effect<DOMSlotEntry, E, R>,
@@ -372,26 +340,12 @@ const createHydrationControlCtx = (
       Effect.gen(function* () {
         const entry = slots.get(key);
         if (!entry) return;
-
-        // Read animation config at runtime, not at Layer creation.
-        const animationConfigOption =
-          yield* Effect.serviceOption(AnimationConfigCtx);
-        const animationConfig = Option.getOrUndefined(animationConfigOption);
-        const animate = (animationConfig?.list ?? animationConfig?.single) as
-          | Parameters<typeof runExitAnimation>[1]
-          | undefined;
-        if (animate && entry.element instanceof HTMLElement) {
-          yield* runExitAnimation(Effect.succeed(entry.element), animate);
-        }
-
-        if (entry.element.parentNode === containerElement) {
-          containerElement.removeChild(entry.element);
-        }
-
-        if (entry.scope) {
-          yield* Scope.close(entry.scope, Exit.void);
-        }
         slots.delete(key);
+        yield* forkSlotRemoval(entry, () => {
+          if (entry.element.parentNode === containerElement) {
+            containerElement.removeChild(entry.element);
+          }
+        });
       }),
 
     getSlot: (key: string): Effect.Effect<DOMSlotEntry | undefined> =>
