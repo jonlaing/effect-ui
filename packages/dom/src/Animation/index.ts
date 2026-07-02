@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 
+import * as Groups from "./groups.js";
 import type { StaggerFunction } from "./types.js";
 
 // Re-export types
@@ -10,6 +11,17 @@ export type {
   ListAnimationOptions,
   StaggerFunction,
 } from "./types.js";
+
+export type { AnimationGroup } from "./groups.js";
+
+/**
+ * Group choreography primitives — see `./groups.ts` for the full contract.
+ */
+export const Animation = {
+  group: Groups.group,
+  sequence: Groups.sequence,
+  parallel: Groups.parallel,
+} as const;
 
 // Re-export core functions
 export { runEnterAnimation, runExitAnimation } from "./core.js";

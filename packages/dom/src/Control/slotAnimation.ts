@@ -19,16 +19,26 @@
 
 import { Effect, Exit, Option, Scope } from "effect";
 
+import {
+  _awaitGate,
+  _complete,
+  _register,
+  type AnimationGroup,
+} from "../Animation/groups.js";
 import { runEnterAnimation, runExitAnimation } from "../Animation/index.js";
 import { AnimationConfigCtx } from "./AnimationConfigCtx.js";
 
 type DOMElement = HTMLElement | SVGElement;
 
-const readAnimateOption = <T>(): Effect.Effect<T | undefined> =>
+type AnimateWithGroup<T> = T & { group?: AnimationGroup };
+
+const readAnimateOption = <T>(): Effect.Effect<
+  AnimateWithGroup<T> | undefined
+> =>
   Effect.gen(function* () {
     const configOpt = yield* Effect.serviceOption(AnimationConfigCtx);
     const config = Option.getOrUndefined(configOpt);
-    return (config?.list ?? config?.single) as T | undefined;
+    return (config?.list ?? config?.single) as AnimateWithGroup<T> | undefined;
   });
 
 /**
@@ -36,6 +46,11 @@ const readAnimateOption = <T>(): Effect.Effect<T | undefined> =>
  * animation plays in the background and gets interrupted if the slot scope
  * closes before it finishes. No-op if the element is not an HTMLElement
  * (SVG doesn't support the CSS-class animation path).
+ *
+ * If the animation is attached to an {@link AnimationGroup}, the group is
+ * registered synchronously (before the fiber forks) so its pending count
+ * reflects every sibling animation before any completion decrements it.
+ * The forked fiber then awaits the group's gate before playing.
  */
 export const forkSlotEnter = (
   element: DOMElement,
@@ -45,10 +60,22 @@ export const forkSlotEnter = (
   return Effect.gen(function* () {
     const animate =
       yield* readAnimateOption<Parameters<typeof runEnterAnimation>[1]>();
-    if (animate) {
-      yield* runEnterAnimation(Effect.succeed(element), animate);
+    if (!animate) return;
+
+    const grp = animate.group;
+    if (grp) {
+      _register(grp);
     }
-  }).pipe(Effect.forkIn(slotScope), Effect.asVoid);
+
+    yield* Effect.gen(function* () {
+      if (grp) {
+        yield* _awaitGate(grp);
+      }
+      yield* runEnterAnimation(Effect.succeed(element), animate).pipe(
+        Effect.ensuring(grp ? _complete(grp) : Effect.void),
+      );
+    }).pipe(Effect.forkIn(slotScope));
+  }).pipe(Effect.asVoid);
 };
 
 /**
