@@ -2,6 +2,8 @@ import type { Effect, Scope } from "effect";
 
 import type { RendererContext } from "@effex/core";
 
+import type { AnimationGroup } from "./groups.js";
+
 /**
  * @module Animation
  *
@@ -172,6 +174,17 @@ export interface AnimationOptions {
    * Called after exit animation completes, before element is removed from DOM
    */
   onExit?: AnimationHook;
+
+  /**
+   * Attach this animation to a shared {@link AnimationGroup} — the animation
+   * waits for the group's gate before starting, and signals completion when
+   * it finishes. Combined with `Animation.sequence()`, this lets you
+   * choreograph animations across multiple blocks (e.g. one `each` per word
+   * in a headline).
+   *
+   * @see {@link ./groups.ts}
+   */
+  group?: AnimationGroup;
 }
 
 /**
