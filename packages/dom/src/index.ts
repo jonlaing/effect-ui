@@ -71,15 +71,20 @@ export { collect } from "./Collect.js";
 // Animation
 export type {
   AnimationEndResult,
+  AnimationGroup,
   AnimationHook,
   AnimationOptions,
   ListAnimationOptions,
   StaggerFunction,
 } from "./Animation/index.js";
 export {
+  Animation,
   runEnterAnimation,
   runExitAnimation,
   prefersReducedMotion,
+  waitForAnimationEvent,
+  waitForAnimationEnd,
+  forceReflow,
   stagger,
   staggerFromCenter,
   staggerEased,
