@@ -70,6 +70,8 @@ const createClientControlCtx = (): IControlCtx<DOMElement> => {
         atIndex?: number;
         initialItem?: unknown;
         initialIndex?: number;
+        totalItems?: number;
+        staggerStartAt?: number;
       },
     ): Effect.Effect<DOMSlotEntry, E, R> =>
       Effect.gen(function* () {
@@ -106,7 +108,11 @@ const createClientControlCtx = (): IControlCtx<DOMElement> => {
         };
         slots.set(key, entry);
 
-        yield* forkSlotEnter(element, slotScope);
+        yield* forkSlotEnter(element, slotScope, {
+          index: addOptions?.atIndex,
+          total: addOptions?.totalItems,
+          staggerStartAt: addOptions?.staggerStartAt,
+        });
 
         return entry;
       }) as Effect.Effect<DOMSlotEntry, E, R>,

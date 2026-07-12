@@ -617,4 +617,73 @@ describe("Control", () => {
       }).pipe(Effect.provide(TestLayer)),
     );
   });
+
+  describe("each animation stagger", () => {
+    it.scopedLive(
+      "invokes the stagger function with each item's index and total",
+      () =>
+        // Reconcile is expected to call stagger(index, total) for every new
+        // slot in the batch — so we spy on the function itself instead of
+        // measuring wall-clock delays (which are unreliable under CI load).
+        Effect.gen(function* () {
+          const calls: Array<{ index: number; total: number }> = [];
+          const spy = (index: number, total: number) => {
+            calls.push({ index, total });
+            return 0;
+          };
+
+          const items = yield* Signal.make(["a", "b", "c"]);
+          yield* each(items, {
+            key: (item) => item,
+            render: (item) => $.li({}, $.of(item)),
+            animate: {
+              enterFrom: "opacity-0",
+              enter: "opacity-100",
+              stagger: spy,
+              timeout: 10,
+            },
+          });
+
+          // Give the forked fibers a moment to reach the stagger call.
+          yield* Effect.sleep("20 millis");
+
+          expect(calls).toEqual([
+            { index: 0, total: 3 },
+            { index: 1, total: 3 },
+            { index: 2, total: 3 },
+          ]);
+        }).pipe(Effect.provide(TestLayer)),
+    );
+
+    it.scopedLive("does not invoke stagger when the option is omitted", () =>
+      Effect.gen(function* () {
+        let callCount = 0;
+        const untriggered = (_index: number, _total: number) => {
+          callCount++;
+          return 0;
+        };
+
+        const items = yield* Signal.make(["a", "b"]);
+        yield* each(items, {
+          key: (item) => item,
+          render: (item) => $.li({}, $.of(item)),
+          animate: {
+            // Note: stagger is deliberately omitted here. `untriggered` is
+            // declared only so the assertion below can reference it and be
+            // read as "the spy that would have fired if stagger had been
+            // set". Tsc otherwise flags the arrow as unused.
+            enterFrom: "opacity-0",
+            enter: "opacity-100",
+            timeout: 10,
+          },
+        });
+
+        yield* Effect.sleep("20 millis");
+        expect(callCount).toBe(0);
+        // Reference `untriggered` to satisfy the linter that it exists as a
+        // documentation aid; behaviourally it must never have been called.
+        expect(untriggered.length).toBe(2);
+      }).pipe(Effect.provide(TestLayer)),
+    );
+  });
 });

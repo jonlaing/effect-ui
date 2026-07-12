@@ -81,6 +81,19 @@ export interface IControlCtx<A> {
       atIndex?: number;
       initialItem?: unknown;
       initialIndex?: number;
+      /**
+       * Total number of slots in this reconcile batch, used by animation
+       * helpers to compute per-item stagger delay. Passed by `reconcile`;
+       * external callers can omit it.
+       */
+      totalItems?: number;
+      /**
+       * `Date.now()` timestamp captured when the current reconcile batch
+       * started. Animation helpers use it as a shared reference so every
+       * slot's stagger delay is measured from the same wall-clock moment
+       * rather than accumulating reconcile overhead. Passed by `reconcile`.
+       */
+      staggerStartAt?: number;
     },
   ) => Effect.Effect<SlotEntry<A>, E, R>;
 

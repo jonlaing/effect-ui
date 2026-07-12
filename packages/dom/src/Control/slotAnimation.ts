@@ -17,7 +17,7 @@
  * was in scope at Layer construction).
  */
 
-import { Effect, Exit, Option, Scope } from "effect";
+import { Clock, Effect, Exit, Option, Scope } from "effect";
 
 import {
   _awaitGate,
@@ -25,12 +25,27 @@ import {
   _register,
   type AnimationGroup,
 } from "../Animation/groups.js";
-import { runEnterAnimation, runExitAnimation } from "../Animation/index.js";
+import {
+  runEnterAnimation,
+  runExitAnimation,
+  type ListAnimationOptions,
+  type StaggerFunction,
+} from "../Animation/index.js";
 import { AnimationConfigCtx } from "./AnimationConfigCtx.js";
 
 type DOMElement = HTMLElement | SVGElement;
 
 type AnimateWithGroup<T> = T & { group?: AnimationGroup };
+
+const staggerDelayMs = (
+  stagger: ListAnimationOptions["stagger"] | undefined,
+  index: number,
+  total: number,
+): number => {
+  if (stagger === undefined) return 0;
+  if (typeof stagger === "number") return index * stagger;
+  return (stagger as StaggerFunction)(index, total);
+};
 
 interface ResolvedAnimation<T> {
   readonly animate: AnimateWithGroup<T>;
@@ -69,12 +84,25 @@ const readAnimation = <T>(): Effect.Effect<ResolvedAnimation<T> | undefined> =>
 export const forkSlotEnter = (
   element: DOMElement,
   slotScope: Scope.CloseableScope,
-  opts?: { readonly hydrating?: boolean },
+  opts?: {
+    readonly hydrating?: boolean;
+    /** Position of this slot within its reconcile batch (0-based). */
+    readonly index?: number;
+    /** Total number of slots in this reconcile batch. */
+    readonly total?: number;
+    /**
+     * `Date.now()` timestamp captured when reconcile started iterating.
+     * Used to compute stagger delays relative to a shared reference so
+     * items fire at `startAt + delayMs` regardless of how long reconcile
+     * takes to reach each slot — otherwise reconcile overhead would
+     * compound and each staggered item would drift further behind.
+     */
+    readonly staggerStartAt?: number;
+  },
 ): Effect.Effect<void> => {
   if (!(element instanceof HTMLElement)) return Effect.void;
   return Effect.gen(function* () {
-    const resolved =
-      yield* readAnimation<Parameters<typeof runEnterAnimation>[1]>();
+    const resolved = yield* readAnimation<ListAnimationOptions>();
     if (!resolved) return;
     if (opts?.hydrating && !resolved.intro) return;
 
@@ -84,13 +112,26 @@ export const forkSlotEnter = (
       _register(grp);
     }
 
+    const targetDelay =
+      opts?.index !== undefined && opts?.total !== undefined
+        ? staggerDelayMs(animate.stagger, opts.index, opts.total)
+        : 0;
+    const now = yield* Clock.currentTimeMillis;
+    const actualDelay =
+      targetDelay > 0 && opts?.staggerStartAt !== undefined
+        ? Math.max(0, opts.staggerStartAt + targetDelay - now)
+        : targetDelay;
+
     yield* Effect.gen(function* () {
       if (grp) {
         yield* _awaitGate(grp);
       }
-      yield* runEnterAnimation(Effect.succeed(element), animate).pipe(
+      const run = runEnterAnimation(Effect.succeed(element), animate).pipe(
         Effect.ensuring(grp ? _complete(grp) : Effect.void),
       );
+      yield* actualDelay > 0
+        ? run.pipe(Effect.delay(`${actualDelay} millis`))
+        : run;
     }).pipe(Effect.forkIn(slotScope));
   }).pipe(Effect.asVoid);
 };
