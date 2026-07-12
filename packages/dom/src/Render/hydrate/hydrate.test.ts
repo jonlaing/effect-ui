@@ -3,12 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Readable, Signal } from "@effex/core";
 
-import { Boundary } from "../../Boundary";
-import { collect } from "../../Collect";
-import { each, match, when } from "../../Control";
-import { $ } from "../../Element";
-import { renderToString } from "../server";
-import { hydrate } from "./index";
+import { Boundary } from "../../Boundary.js";
+import { collect } from "../../Collect.js";
+import { each, match, when } from "../../Control/index.js";
+import { $ } from "../../Element/index.js";
+import { renderToString } from "../server/index.js";
+import { hydrate } from "./index.js";
 
 describe("Hydration", () => {
   let container: HTMLElement;

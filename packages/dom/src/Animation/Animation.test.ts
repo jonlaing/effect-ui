@@ -1,13 +1,13 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { runEnterAnimation, runExitAnimation } from "./core";
+import { runEnterAnimation, runExitAnimation } from "./core.js";
 import {
   calculateStaggerDelay,
   stagger,
   staggerEased,
   staggerFromCenter,
-} from "./index";
+} from "./index.js";
 
 // Mock window.matchMedia for reduced motion tests
 const mockMatchMedia = (matches: boolean) => {

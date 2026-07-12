@@ -1,10 +1,10 @@
 import { Effect, Exit, Scope } from "effect";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { collect } from "./Collect";
-import { $ } from "./Element";
-import { Portal } from "./Portal";
-import { DOMRendererLive } from "./Render/DOMRenderer";
+import { collect } from "./Collect.js";
+import { $ } from "./Element/index.js";
+import { Portal } from "./Portal.js";
+import { DOMRendererLive } from "./Render/DOMRenderer.js";
 
 describe("Portal", () => {
   let portalRoot: HTMLDivElement;

@@ -86,7 +86,7 @@ describe("Link", () => {
 
       const el = await Effect.runPromise(
         Link(
-          { to: UserRoute, params: { id: "123" } },
+          { to: UserRoute as LinkProps["to"], params: { id: "123" } },
           Effect.succeed("User"),
         ).pipe(Effect.scoped, Effect.provide(layer)),
       );

@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { RendererContext, Signal } from "@effex/core";
 
-import { DOMRendererLive } from "../Render/DOMRenderer";
-import * as Core from "./core";
-import { make as makeRef } from "./ref";
+import { DOMRendererLive } from "../Render/DOMRenderer.js";
+import * as Core from "./core.js";
+import { make as makeRef } from "./ref.js";
 
 const runTest = <A, E>(
   effect: Effect.Effect<A, E, Scope.Scope | RendererContext>,

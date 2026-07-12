@@ -3,11 +3,11 @@ import { describe, expect, it } from "vitest";
 
 import { Readable, Signal } from "@effex/core";
 
-import { Boundary } from "../../Boundary";
-import { collect } from "../../Collect";
-import { each, match, when } from "../../Control";
-import { $ } from "../../Element";
-import { renderToString } from "./index";
+import { Boundary } from "../../Boundary.js";
+import { collect } from "../../Collect.js";
+import { each, match, when } from "../../Control/index.js";
+import { $ } from "../../Element/index.js";
+import { renderToString } from "./index.js";
 
 describe("SSR", () => {
   describe("renderToString", () => {

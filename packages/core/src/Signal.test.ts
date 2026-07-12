@@ -1,8 +1,8 @@
 import { Effect, Stream } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { Readable } from "./Readable";
-import { Signal } from "./Signal";
+import { Readable } from "./Readable.js";
+import { Signal } from "./Signal.js";
 
 describe("Signal.fromNullable", () => {
   it("should return existing signal when provided", async () => {

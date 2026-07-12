@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { RendererContext } from "@effex/core";
 
-import { DOMRenderer, DOMRendererLive } from "./DOMRenderer";
+import { DOMRenderer, DOMRendererLive } from "./DOMRenderer.js";
 
 const runTest = <A>(effect: Effect.Effect<A, never, RendererContext>) =>
   Effect.runPromise(effect.pipe(Effect.provide(DOMRendererLive)));

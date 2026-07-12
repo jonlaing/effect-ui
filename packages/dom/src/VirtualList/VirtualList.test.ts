@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Readable, Signal } from "@effex/core";
 
-import { $ } from "../Element";
-import { DOMRendererLive } from "../Render/DOMRenderer";
+import { $ } from "../Element/index.js";
+import { DOMRendererLive } from "../Render/DOMRenderer.js";
 import {
   calculateItemOffset,
   calculateScrollToPosition,
@@ -12,8 +12,8 @@ import {
   calculateVisibleRange,
   parseHeight,
   rangesEqual,
-} from "./helpers";
-import { ClientVirtualListCtx, virtualEach, VirtualListRef } from "./index";
+} from "./helpers.js";
+import { ClientVirtualListCtx, virtualEach, VirtualListRef } from "./index.js";
 
 const runTest = <A, R>(effect: Effect.Effect<A, never, R>) =>
   Effect.runPromise(

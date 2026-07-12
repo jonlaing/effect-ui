@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { Readable, Signal } from "@effex/core";
 
-import { t } from "./Template";
+import { t } from "./Template.js";
 
 describe("Template (t)", () => {
   describe("static templates", () => {
