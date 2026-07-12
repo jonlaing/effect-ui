@@ -90,8 +90,11 @@ export const when = <E1 = never, R1 = never, E2 = never, R2 = never>(
       onFalse: config.onFalse,
       container: config.container,
     }),
-    config.animate
-      ? Effect.provideService(AnimationConfigCtx, { single: config.animate })
+    config.animate || config.intro
+      ? Effect.provideService(AnimationConfigCtx, {
+          single: config.animate,
+          intro: config.intro,
+        })
       : (x) => x,
   ) as Element.Element<DOMElement, E1 | E2, R1 | R2 | ControlCtx>;
 
@@ -131,8 +134,11 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
       fallback: config.fallback,
       container: config.container,
     }),
-    config.animate
-      ? Effect.provideService(AnimationConfigCtx, { single: config.animate })
+    config.animate || config.intro
+      ? Effect.provideService(AnimationConfigCtx, {
+          single: config.animate,
+          intro: config.intro,
+        })
       : (x) => x,
   ) as Element.Element<DOMElement, E | E2, R | R2 | ControlCtx>;
 
@@ -207,8 +213,11 @@ export const matchOption = <A, E1 = never, R1 = never, E2 = never, R2 = never>(
       onNone: config.onNone,
       container: config.container,
     }),
-    config.animate
-      ? Effect.provideService(AnimationConfigCtx, { single: config.animate })
+    config.animate || config.intro
+      ? Effect.provideService(AnimationConfigCtx, {
+          single: config.animate,
+          intro: config.intro,
+        })
       : (x) => x,
   ) as Element.Element<DOMElement, E1 | E2, R1 | R2 | ControlCtx>;
 
@@ -240,8 +249,11 @@ export const matchEither = <
       onLeft: config.onLeft,
       container: config.container,
     }),
-    config.animate
-      ? Effect.provideService(AnimationConfigCtx, { single: config.animate })
+    config.animate || config.intro
+      ? Effect.provideService(AnimationConfigCtx, {
+          single: config.animate,
+          intro: config.intro,
+        })
       : (x) => x,
   ) as Element.Element<DOMElement, E1 | E2, R1 | R2 | ControlCtx>;
 
@@ -270,7 +282,10 @@ export const redraw = <T extends Readable.Readable<unknown>>(
       render: config.render,
       container: config.container,
     }),
-    config.animate
-      ? Effect.provideService(AnimationConfigCtx, { single: config.animate })
+    config.animate || config.intro
+      ? Effect.provideService(AnimationConfigCtx, {
+          single: config.animate,
+          intro: config.intro,
+        })
       : (x) => x,
   ) as Element.Element<DOMElement, never, ControlCtx>;

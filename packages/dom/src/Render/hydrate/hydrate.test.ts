@@ -343,5 +343,31 @@ describe("Hydration", () => {
 
       expect(onBeforeEnter).toHaveBeenCalledTimes(letters().length);
     });
+
+    it("re-animates a `when` branch when intro: true", async () => {
+      const onBeforeEnter = vi.fn(() => Effect.void);
+
+      const App = () =>
+        Effect.gen(function* () {
+          const visible = yield* Signal.make(true);
+          return yield* when(visible, {
+            onTrue: () => $.div({ class: "hero" }, $.of("Hi")),
+            onFalse: () => $.div({}, $.of("")),
+            animate: {
+              enterFrom: "opacity-0",
+              enter: "opacity-100",
+              onBeforeEnter,
+              timeout: 50,
+            },
+            intro: true,
+          });
+        });
+
+      container.innerHTML = await Effect.runPromise(renderToString(App()));
+      await hydrate(App(), container);
+      await new Promise((r) => setTimeout(r, 20));
+
+      expect(onBeforeEnter).toHaveBeenCalledTimes(1);
+    });
   });
 });

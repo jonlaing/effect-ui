@@ -25,6 +25,11 @@ export interface WhenConfig<E1 = never, R1 = never, E2 = never, R2 = never> {
   readonly onFalse: () => Element.Element<HTMLElement | SVGElement, E2, R2>;
   /** Optional animation configuration */
   readonly animate?: AnimationOptions;
+  /**
+   * Re-animate the SSR/SSG-rendered branch on hydration. See {@link EachConfig.intro}
+   * for the full contract and FOUC caveat.
+   */
+  readonly intro?: boolean;
 }
 
 /**
@@ -54,6 +59,11 @@ export interface MatchConfig<A, E = never, R = never, E2 = never, R2 = never> {
   readonly fallback?: () => Element.Element<HTMLElement | SVGElement, E2, R2>;
   /** Optional animation configuration */
   readonly animate?: AnimationOptions;
+  /**
+   * Re-animate the SSR/SSG-rendered case on hydration. See {@link EachConfig.intro}
+   * for the full contract and FOUC caveat.
+   */
+  readonly intro?: boolean;
   /**
    * Optional function to extract the pattern from the value for matching.
    * Use this when the value contains additional information for change detection
@@ -97,6 +107,11 @@ export interface MatchOptionConfig<
   readonly onNone: () => Element.Element<HTMLElement | SVGElement, E2, R2>;
   /** Optional animation configuration */
   readonly animate?: AnimationOptions;
+  /**
+   * Re-animate the SSR/SSG-rendered branch on hydration. See {@link EachConfig.intro}
+   * for the full contract and FOUC caveat.
+   */
+  readonly intro?: boolean;
 }
 
 /**
@@ -129,6 +144,11 @@ export interface MatchEitherConfig<
   ) => Element.Element<HTMLElement | SVGElement, E2, R2>;
   /** Optional animation configuration */
   readonly animate?: AnimationOptions;
+  /**
+   * Re-animate the SSR/SSG-rendered branch on hydration. See {@link EachConfig.intro}
+   * for the full contract and FOUC caveat.
+   */
+  readonly intro?: boolean;
 }
 
 /**
@@ -211,4 +231,9 @@ export interface RedrawConfig<T extends Readable<unknown>> {
   ) => Element.Element<HTMLElement | SVGElement, never, never>;
   /** Optional animation configuration */
   readonly animate?: AnimationOptions;
+  /**
+   * Re-animate the SSR/SSG-rendered element on hydration. See {@link EachConfig.intro}
+   * for the full contract and FOUC caveat.
+   */
+  readonly intro?: boolean;
 }

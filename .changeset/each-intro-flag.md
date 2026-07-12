@@ -2,7 +2,7 @@
 "@effex/dom": minor
 ---
 
-Add an `intro?: boolean` flag on `each` to opt into re-animating SSR/SSG-rendered items during hydration.
+Add an `intro?: boolean` flag on `each` — and symmetrically on `when`, `match`, `matchOption`, `matchEither`, and `redraw` — to opt into re-animating SSR/SSG-rendered content during hydration.
 
 Default behaviour stays as-is: hydration attaches handlers to pre-existing DOM without re-running enter animations — the right choice for content lists (feeds, sidebars, todos) that shouldn't jitter into view on every page load. Setting `intro: true` flips that for decorative sequences where the animation *is* the point:
 
@@ -15,6 +15,17 @@ each(letters, {
     enter: "opacity-100 translate-y-0 transition duration-300",
     stagger: stagger(40),
   },
+  intro: true,
+});
+```
+
+The same flag makes sense on single-slot controls too — a hero fade-in for a `when`-gated banner, or an animated card for a `match`-selected state:
+
+```ts
+when(isReady, {
+  onTrue: () => Hero(),
+  onFalse: () => Placeholder(),
+  animate: { enterFrom: "opacity-0", enter: "opacity-100 transition duration-500" },
   intro: true,
 });
 ```
