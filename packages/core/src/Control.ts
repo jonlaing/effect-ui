@@ -1,4 +1,4 @@
-import { Effect, Either, Option } from "effect";
+import { Clock, Effect, Either, Option } from "effect";
 
 import { ControlCtx } from "./ControlCtx.js";
 import type { Element } from "./Element.js";
@@ -60,9 +60,10 @@ export const reconcile = <A, E, R>(
       Effect.gen(function* () {
         // Reference point for stagger delays. All new slots in this batch
         // compute their fire time as `batchStart + index * staggerStep`, so
-        // slot N's animation fires at the same wall-clock moment regardless
-        // of how long reconcile takes to iterate to it.
-        const batchStart = Date.now();
+        // slot N's animation fires at the same moment regardless of how
+        // long reconcile takes to iterate to it. Sourced from Effect.Clock
+        // (not Date.now()) so tests can substitute a TestClock.
+        const batchStart = yield* Clock.currentTimeMillis;
         const currentKeys = yield* ctx.getSlotKeys();
         const targetKeys = config.getTargetKeys(value);
         const targetSet = new Set(targetKeys);

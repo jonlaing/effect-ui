@@ -17,7 +17,7 @@
  * was in scope at Layer construction).
  */
 
-import { Effect, Exit, Option, Scope } from "effect";
+import { Clock, Effect, Exit, Option, Scope } from "effect";
 
 import {
   _awaitGate,
@@ -116,9 +116,10 @@ export const forkSlotEnter = (
       opts?.index !== undefined && opts?.total !== undefined
         ? staggerDelayMs(animate.stagger, opts.index, opts.total)
         : 0;
+    const now = yield* Clock.currentTimeMillis;
     const actualDelay =
       targetDelay > 0 && opts?.staggerStartAt !== undefined
-        ? Math.max(0, opts.staggerStartAt + targetDelay - Date.now())
+        ? Math.max(0, opts.staggerStartAt + targetDelay - now)
         : targetDelay;
 
     yield* Effect.gen(function* () {
