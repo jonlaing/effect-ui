@@ -24,7 +24,7 @@
  * @module
  */
 
-import { Effect, Layer } from "effect";
+import { Effect, Layer, type Scope } from "effect";
 
 import {
   RendererContext,
@@ -73,13 +73,13 @@ export const renderToString = <
   E = never,
   R = never,
 >(
-  element: Element.Element<
-    A,
-    E,
-    RendererContext | ControlCtx | SuspenseBoundaryCtx | R
-  >,
+  element: Element.Element<A, E, R>,
   _options: RenderToStringOptions = {},
-): Effect.Effect<string, E, R> => {
+): Effect.Effect<
+  string,
+  E,
+  Exclude<R, RendererContext | ControlCtx | SuspenseBoundaryCtx | Scope.Scope>
+> => {
   const StringRendererLayer = Layer.succeed(
     RendererContext,
     StringRenderer as Renderer<unknown>,
@@ -105,7 +105,11 @@ export const renderToString = <
     Effect.provide(StringRendererLayer),
     Effect.provide(SSRControlCtx),
     withSSRContext,
-  );
+  ) as Effect.Effect<
+    string,
+    E,
+    Exclude<R, RendererContext | ControlCtx | SuspenseBoundaryCtx | Scope.Scope>
+  >;
 };
 
 // Re-export types and utilities

@@ -462,7 +462,7 @@ describe("Router", () => {
         concat(Route.make("/users").pipe(Route.render(render))), // becomes /admin/users
         concat(Route.make("/settings").pipe(Route.render(render))), // becomes /admin/settings
         prefixAll("/admin"),
-        layout((children) => children), // AdminLayout
+        layout((children) => children as never), // AdminLayout
       );
 
       // Combine everything

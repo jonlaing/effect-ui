@@ -1,8 +1,8 @@
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { Signal } from "./Signal";
-import { InvalidTransition, Transition } from "./Transition";
+import { Signal } from "./Signal.js";
+import { InvalidTransition, Transition } from "./Transition.js";
 
 describe("Transition", () => {
   describe("make", () => {

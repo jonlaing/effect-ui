@@ -1,7 +1,7 @@
 import { Effect, Fiber } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { Ref } from "./Ref";
+import { Ref } from "./Ref.js";
 
 describe("Ref", () => {
   it("should create a ref with null current initially", async () => {

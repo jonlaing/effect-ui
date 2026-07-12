@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { toCamelCase, toKebabCase } from "./strings";
+import { toCamelCase, toKebabCase } from "./strings.js";
 
 describe("toKebabCase", () => {
   it("should convert camelCase to kebab-case", () => {

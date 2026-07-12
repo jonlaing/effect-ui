@@ -1,8 +1,8 @@
 import { Chunk, Effect, Stream } from "effect";
 import { describe, expect, it } from "vitest";
 
-import * as Readable from "./Readable";
-import * as Signal from "./Signal";
+import * as Readable from "./Readable.js";
+import * as Signal from "./Signal.js";
 
 describe("Readable", () => {
   describe("make", () => {

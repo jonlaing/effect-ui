@@ -134,7 +134,12 @@ describe("Route.make", () => {
 
   it("render yields NoRenderError when not set", async () => {
     const route = Route.make("/users");
-    const result = await Effect.runPromiseExit(route.render(undefined));
+    // Element carries Scope | RendererContext in R; these tests exercise
+    // render's Effect-level behaviour without touching the DOM, so the cast
+    // to a fully-resolved Effect is safe.
+    const result = await Effect.runPromiseExit(
+      route.render(undefined) as never,
+    );
     expect(result._tag).toBe("Failure");
   });
 
@@ -163,7 +168,7 @@ describe("Route.render", () => {
       Route.render(() => Effect.succeed(div)),
     );
 
-    const result = await Effect.runPromise(route.render(undefined));
+    const result = await Effect.runPromise(route.render(undefined) as never);
     expect(result).toBe(div);
   });
 });
@@ -174,7 +179,7 @@ describe("Route.get", () => {
       params: Record<string, string>;
       searchParams: Record<string, string>;
     }) => Effect.succeed({ name: "test" });
-    const renderFn = (data: { name: string }) =>
+    const renderFn = (_data: { name: string }) =>
       Effect.succeed(document.createElement("div"));
 
     const route = Route.make("/users/:id").pipe(Route.get(loader, renderFn));
@@ -186,11 +191,16 @@ describe("Route.get", () => {
     const route = Route.make("/users").pipe(
       Route.get(
         ({}) => Effect.succeed({ greeting: "hello" }),
-        (data) => Effect.succeed(data),
+        // Cast: these tests exercise type flow from loader to render, so we
+        // return the data itself instead of a real element. The type
+        // assertion satisfies renderFn's HTMLElement | SVGElement contract.
+        (data) => Effect.succeed(data) as never,
       ),
     );
 
-    const result = await Effect.runPromise(route.render({ greeting: "hello" }));
+    const result = (await Effect.runPromise(
+      route.render({ greeting: "hello" }) as never,
+    )) as { greeting: string };
     expect(result).toEqual({ greeting: "hello" });
   });
 
@@ -201,12 +211,14 @@ describe("Route.get", () => {
         (nums) => {
           // nums is inferred as number[]
           const sum: number = nums.reduce((a, b) => a + b, 0);
-          return Effect.succeed(sum);
+          return Effect.succeed(sum) as never;
         },
       ),
     );
 
-    const result = await Effect.runPromise(route.render([1, 2, 3]));
+    const result = (await Effect.runPromise(
+      route.render([1, 2, 3]) as never,
+    )) as number;
     expect(result).toBe(6);
   });
 });
@@ -216,7 +228,7 @@ describe("Route.static", () => {
     const paths = () => Effect.succeed([{ slug: "a" }, { slug: "b" }]);
     const load = ({ params }: { params: { slug: string } }) =>
       Effect.succeed({ content: `Page ${params.slug}` });
-    const renderFn = (data: { content: string }) =>
+    const renderFn = (_data: { content: string }) =>
       Effect.succeed(document.createElement("div"));
 
     const route = Route.make("/docs/:slug").pipe(
@@ -238,7 +250,9 @@ describe("Route.static", () => {
       }),
     );
 
-    const result = await Effect.runPromise(route.render({ title: "About" }));
+    const result = await Effect.runPromise(
+      route.render({ title: "About" }) as never,
+    );
     expect(result).toBe(div);
   });
 
@@ -250,7 +264,9 @@ describe("Route.static", () => {
       }),
     );
 
-    const paramSets = await Effect.runPromise(route._staticConfig!.paths());
+    const paramSets = await Effect.runPromise(
+      route._staticConfig!.paths() as never,
+    );
     expect(paramSets).toEqual([{}]);
   });
 
@@ -272,22 +288,23 @@ describe("Route.static", () => {
         paths: () => Effect.succeed([{ slug: "test" }]),
         load: ({ params }) =>
           Effect.succeed({ content: `Page ${params.slug}` }),
-        render: (data) => Effect.succeed(data.content),
+        // Cast: exercises data flow only; renderFn returns the data itself.
+        render: (data) => Effect.succeed(data.content) as never,
       }),
     );
 
     // Simulate the build flow: load data, then pass to render
-    const data = await Effect.runPromise(
-      route._staticConfig!.load({ params: { slug: "hello" } }),
-    );
-    const result = await Effect.runPromise(route.render(data));
+    const data = (await Effect.runPromise(
+      route._staticConfig!.load({ params: { slug: "hello" } }) as never,
+    )) as { content: string };
+    const result = await Effect.runPromise(route.render(data) as never);
     expect(result).toBe("Page hello");
   });
 });
 
 describe("Route.post", () => {
   it("stores a post handler", () => {
-    const handler = (body: unknown) => Effect.succeed({ ok: true });
+    const handler = (_body: unknown) => Effect.succeed({ ok: true });
 
     const route = Route.make("/users").pipe(Route.post("submit", handler));
 
@@ -568,7 +585,7 @@ describe("Route composition", () => {
       Route.post("submit", (body) => Effect.succeed(body)),
       Route.get(
         ({ params: { id } }) => Effect.succeed({ id, name: "test" }),
-        (user) => Effect.succeed(document.createElement("div")),
+        (_user) => Effect.succeed(document.createElement("div")),
       ),
       Route.withGuard(isAuth, { redirect: "/login" }),
       Route.withAnimation({ enter: "fade-in", exit: "fade-out" }),

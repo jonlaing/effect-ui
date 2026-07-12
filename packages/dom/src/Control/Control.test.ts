@@ -4,10 +4,10 @@ import { beforeEach, expect } from "vitest";
 
 import { Readable, Signal } from "@effex/core";
 
-import { ClientControlCtx, each, match, when } from ".";
-import { collect } from "../Collect";
-import { $ } from "../Element";
-import { DOMRendererLive } from "../Render/DOMRenderer";
+import { collect } from "../Collect.js";
+import { $ } from "../Element/index.js";
+import { DOMRendererLive } from "../Render/DOMRenderer.js";
+import { ClientControlCtx, each, match, when } from "./index.js";
 
 const TestLayer = Layer.mergeAll(ClientControlCtx, DOMRendererLive);
 

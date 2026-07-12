@@ -1,8 +1,8 @@
 import { Effect, Fiber, Option, Scope, Stream } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { Readable } from "./Readable";
-import { Signal } from "./Signal";
+import { Readable } from "./Readable.js";
+import { Signal } from "./Signal.js";
 
 const runTest = <A>(effect: Effect.Effect<A, never, Scope.Scope>): Promise<A> =>
   Effect.runPromise(Effect.scoped(effect));
