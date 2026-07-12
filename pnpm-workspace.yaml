@@ -1,3 +1,10 @@
 packages:
   - "packages/*"
   - "apps/*"
+
+# Force a single `effect` copy across the workspace. Without this pin,
+# @effect/platform (peer ^3.0.0 → 3.19.13) and @effect/vitest (peer ^3.0.0 →
+# 3.19.19) resolve to different copies and the runtime prints hundreds of
+# "Executing Effect X under Runtime Y" warnings during tests.
+overrides:
+  effect: "3.19.19"
