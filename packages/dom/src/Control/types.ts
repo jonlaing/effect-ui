@@ -157,6 +157,24 @@ export interface EachConfig<A, E = never, R = never> {
   ) => Element.Element<HTMLElement | SVGElement, E, R>;
   /** Optional animation configuration */
   readonly animate?: ListAnimationOptions;
+  /**
+   * Re-animate SSR/SSG-rendered items on hydration. By default `each` attaches
+   * handlers to pre-existing DOM without re-running enter animations (right
+   * default for content lists — you don't want every feed re-animating on
+   * every page load). Set `intro: true` for decorative sequences (headline
+   * letter cascades, opening scenes) where the animation *is* the point and
+   * skipping it on hydration defeats the purpose.
+   *
+   * @remarks
+   * There's a brief visual flash between the SSR paint and hydration
+   * applying the `enterFrom` state. To eliminate it, hide the container in
+   * CSS until hydration completes (e.g. `visibility: hidden` on a class
+   * you toggle from your client entry). A first-class FOUC-prevention
+   * mechanism is planned for a follow-up.
+   *
+   * Respects `prefers-reduced-motion` via `runEnterAnimation`.
+   */
+  readonly intro?: boolean;
 }
 
 /**

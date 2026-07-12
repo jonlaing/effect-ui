@@ -168,8 +168,11 @@ export const each = <A, E = never, R = never>(
       render: config.render,
       container: config.container,
     }),
-    config.animate
-      ? Effect.provideService(AnimationConfigCtx, { list: config.animate })
+    config.animate || config.intro
+      ? Effect.provideService(AnimationConfigCtx, {
+          list: config.animate,
+          intro: config.intro,
+        })
       : (x) => x,
   ) as Element.Element<DOMElement, E, R | ControlCtx>;
 

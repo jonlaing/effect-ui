@@ -147,9 +147,9 @@ const createClientLikeControlCtx = (
         };
         slots.set(key, entry);
 
-        if (hydrationDone) {
-          yield* forkSlotEnter(element, slotScope);
-        }
+        // Post-hydration → always. During hydration → forkSlotEnter checks
+        // the intro flag and only runs for opted-in controls.
+        yield* forkSlotEnter(element, slotScope, { hydrating: !hydrationDone });
 
         return entry;
       }) as Effect.Effect<DOMSlotEntry, E, R>,
@@ -291,6 +291,15 @@ const createHydrationControlCtx = (
             index,
           };
           slots.set(key, entry);
+
+          // Attaching to pre-existing SSR/SSG DOM. forkSlotEnter checks the
+          // intro flag and only runs the enter animation for opted-in
+          // controls; ordinary content lists just wire up handlers and
+          // leave the rendered DOM as-is.
+          yield* forkSlotEnter(existing.element, slotScope, {
+            hydrating: true,
+          });
+
           return entry;
         }
 

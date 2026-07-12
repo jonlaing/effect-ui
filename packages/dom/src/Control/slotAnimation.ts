@@ -32,13 +32,21 @@ type DOMElement = HTMLElement | SVGElement;
 
 type AnimateWithGroup<T> = T & { group?: AnimationGroup };
 
-const readAnimateOption = <T>(): Effect.Effect<
-  AnimateWithGroup<T> | undefined
-> =>
+interface ResolvedAnimation<T> {
+  readonly animate: AnimateWithGroup<T>;
+  readonly intro: boolean;
+}
+
+const readAnimation = <T>(): Effect.Effect<ResolvedAnimation<T> | undefined> =>
   Effect.gen(function* () {
     const configOpt = yield* Effect.serviceOption(AnimationConfigCtx);
     const config = Option.getOrUndefined(configOpt);
-    return (config?.list ?? config?.single) as AnimateWithGroup<T> | undefined;
+    if (!config) return undefined;
+    const animate = (config.list ?? config.single) as
+      | AnimateWithGroup<T>
+      | undefined;
+    if (!animate) return undefined;
+    return { animate, intro: config.intro === true };
   });
 
 /**
@@ -46,6 +54,12 @@ const readAnimateOption = <T>(): Effect.Effect<
  * animation plays in the background and gets interrupted if the slot scope
  * closes before it finishes. No-op if the element is not an HTMLElement
  * (SVG doesn't support the CSS-class animation path).
+ *
+ * When `opts.hydrating` is true, the animation only runs if the parent
+ * control opted into intro re-animation (`animate.intro` on the config).
+ * The default hydration behaviour is to attach handlers to pre-existing
+ * DOM without re-animating; the intro flag flips that for decorative
+ * sequences.
  *
  * If the animation is attached to an {@link AnimationGroup}, the group is
  * registered synchronously (before the fiber forks) so its pending count
@@ -55,13 +69,16 @@ const readAnimateOption = <T>(): Effect.Effect<
 export const forkSlotEnter = (
   element: DOMElement,
   slotScope: Scope.CloseableScope,
+  opts?: { readonly hydrating?: boolean },
 ): Effect.Effect<void> => {
   if (!(element instanceof HTMLElement)) return Effect.void;
   return Effect.gen(function* () {
-    const animate =
-      yield* readAnimateOption<Parameters<typeof runEnterAnimation>[1]>();
-    if (!animate) return;
+    const resolved =
+      yield* readAnimation<Parameters<typeof runEnterAnimation>[1]>();
+    if (!resolved) return;
+    if (opts?.hydrating && !resolved.intro) return;
 
+    const { animate } = resolved;
     const grp = animate.group;
     if (grp) {
       _register(grp);
@@ -105,10 +122,13 @@ export const forkSlotRemoval = (
         yield* Scope.close(entry.scope, Exit.void);
       }
       if (entry.element instanceof HTMLElement) {
-        const animate =
-          yield* readAnimateOption<Parameters<typeof runExitAnimation>[1]>();
-        if (animate) {
-          yield* runExitAnimation(Effect.succeed(entry.element), animate);
+        const resolved =
+          yield* readAnimation<Parameters<typeof runExitAnimation>[1]>();
+        if (resolved) {
+          yield* runExitAnimation(
+            Effect.succeed(entry.element),
+            resolved.animate,
+          );
         }
       }
       removeFromDom();
