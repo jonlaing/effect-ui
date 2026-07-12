@@ -7,6 +7,9 @@
     "paths": {
       "@effex/core": ["packages/core/src/index.ts"],
       "@effex/dom": ["packages/dom/src/index.ts"],
+      "@effex/dom/client": ["packages/dom/src/Render/client/index.ts"],
+      "@effex/dom/server": ["packages/dom/src/Render/server/index.ts"],
+      "@effex/dom/hydrate": ["packages/dom/src/Render/hydrate/index.ts"],
       "@effex/router": ["packages/router/src/index.ts"],
       "@effex/form": ["packages/form/src/index.ts"]
     }
