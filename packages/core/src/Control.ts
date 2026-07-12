@@ -58,6 +58,11 @@ export const reconcile = <A, E, R>(
 
     const sync = (value: A) =>
       Effect.gen(function* () {
+        // Reference point for stagger delays. All new slots in this batch
+        // compute their fire time as `batchStart + index * staggerStep`, so
+        // slot N's animation fires at the same wall-clock moment regardless
+        // of how long reconcile takes to iterate to it.
+        const batchStart = Date.now();
         const currentKeys = yield* ctx.getSlotKeys();
         const targetKeys = config.getTargetKeys(value);
         const targetSet = new Set(targetKeys);
@@ -94,7 +99,13 @@ export const reconcile = <A, E, R>(
               key,
               ({ item, index }) =>
                 config.renderSlot(key, value, { item, index }),
-              { atIndex: i, initialItem: itemValue, initialIndex: i },
+              {
+                atIndex: i,
+                initialItem: itemValue,
+                initialIndex: i,
+                totalItems: targetKeys.length,
+                staggerStartAt: batchStart,
+              },
             );
           }
         }

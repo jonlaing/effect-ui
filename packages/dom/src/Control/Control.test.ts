@@ -4,6 +4,7 @@ import { beforeEach, expect } from "vitest";
 
 import { Readable, Signal } from "@effex/core";
 
+import { stagger } from "../Animation/index.js";
 import { collect } from "../Collect.js";
 import { $ } from "../Element/index.js";
 import { DOMRendererLive } from "../Render/DOMRenderer.js";
@@ -615,6 +616,79 @@ describe("Control", () => {
         expect(el.children[0].textContent).toBe("No Header");
         expect(el.children[1].children.length).toBe(3);
       }).pipe(Effect.provide(TestLayer)),
+    );
+  });
+
+  describe("each animation stagger", () => {
+    it.scopedLive(
+      "runs onBeforeEnter with per-item delays matching the stagger function",
+      () =>
+        Effect.gen(function* () {
+          // Record hook invocations against a monotonic clock. jsdom doesn't
+          // fire real transitionend, so animations complete via the timeout;
+          // we only care that onBeforeEnter fires with the expected spacing.
+          const start = performance.now();
+          const timings: number[] = [];
+          const onBeforeEnter = () =>
+            Effect.sync(() => {
+              timings.push(performance.now() - start);
+            });
+
+          const items = yield* Signal.make(["a", "b", "c"]);
+          yield* each(items, {
+            key: (item) => item,
+            render: (item) => $.li({}, $.of(item)),
+            animate: {
+              enterFrom: "opacity-0",
+              enter: "opacity-100",
+              stagger: stagger(40),
+              onBeforeEnter,
+              timeout: 20,
+            },
+          });
+
+          // Longest expected delay is 2 * 40ms; wait a bit past that.
+          yield* Effect.sleep("150 millis");
+
+          expect(timings).toHaveLength(3);
+          // Item 0 fires ~immediately, item 1 near 40ms, item 2 near 80ms.
+          // Generous tolerance for scheduler jitter under jsdom.
+          expect(timings[0]).toBeLessThan(20);
+          expect(timings[1]).toBeGreaterThanOrEqual(30);
+          expect(timings[1]).toBeLessThan(70);
+          expect(timings[2]).toBeGreaterThanOrEqual(70);
+          expect(timings[2]).toBeLessThan(120);
+        }).pipe(Effect.provide(TestLayer)),
+    );
+
+    it.scopedLive(
+      "runs all items simultaneously when no stagger is configured",
+      () =>
+        Effect.gen(function* () {
+          const start = performance.now();
+          const timings: number[] = [];
+          const onBeforeEnter = () =>
+            Effect.sync(() => {
+              timings.push(performance.now() - start);
+            });
+
+          const items = yield* Signal.make(["a", "b", "c"]);
+          yield* each(items, {
+            key: (item) => item,
+            render: (item) => $.li({}, $.of(item)),
+            animate: {
+              enterFrom: "opacity-0",
+              enter: "opacity-100",
+              onBeforeEnter,
+              timeout: 20,
+            },
+          });
+
+          yield* Effect.sleep("50 millis");
+
+          expect(timings).toHaveLength(3);
+          for (const t of timings) expect(t).toBeLessThan(20);
+        }).pipe(Effect.provide(TestLayer)),
     );
   });
 });

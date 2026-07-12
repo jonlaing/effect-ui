@@ -95,6 +95,8 @@ const createClientLikeControlCtx = (
         atIndex?: number;
         initialItem?: unknown;
         initialIndex?: number;
+        totalItems?: number;
+        staggerStartAt?: number;
       },
     ): Effect.Effect<DOMSlotEntry, E, R> =>
       Effect.gen(function* () {
@@ -149,7 +151,12 @@ const createClientLikeControlCtx = (
 
         // Post-hydration → always. During hydration → forkSlotEnter checks
         // the intro flag and only runs for opted-in controls.
-        yield* forkSlotEnter(element, slotScope, { hydrating: !hydrationDone });
+        yield* forkSlotEnter(element, slotScope, {
+          hydrating: !hydrationDone,
+          index: addOptions?.atIndex,
+          total: addOptions?.totalItems,
+          staggerStartAt: addOptions?.staggerStartAt,
+        });
 
         return entry;
       }) as Effect.Effect<DOMSlotEntry, E, R>,
@@ -270,6 +277,8 @@ const createHydrationControlCtx = (
         atIndex?: number;
         initialItem?: unknown;
         initialIndex?: number;
+        totalItems?: number;
+        staggerStartAt?: number;
       },
     ): Effect.Effect<DOMSlotEntry, E, R> =>
       Effect.gen(function* () {
@@ -298,6 +307,9 @@ const createHydrationControlCtx = (
           // leave the rendered DOM as-is.
           yield* forkSlotEnter(existing.element, slotScope, {
             hydrating: true,
+            index: addOptions?.atIndex,
+            total: addOptions?.totalItems,
+            staggerStartAt: addOptions?.staggerStartAt,
           });
 
           return entry;
@@ -337,7 +349,11 @@ const createHydrationControlCtx = (
         };
         slots.set(key, entry);
 
-        yield* forkSlotEnter(element, slotScope);
+        yield* forkSlotEnter(element, slotScope, {
+          index: addOptions?.atIndex,
+          total: addOptions?.totalItems,
+          staggerStartAt: addOptions?.staggerStartAt,
+        });
 
         return entry;
       }) as Effect.Effect<DOMSlotEntry, E, R>,
