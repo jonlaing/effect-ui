@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  effect: 3.19.19
+
 importers:
 
   .:
@@ -82,7 +85,7 @@ importers:
     dependencies:
       '@effect/platform':
         specifier: ^0.94.0
-        version: 0.94.0(effect@3.19.13)
+        version: 0.94.0(effect@3.19.19)
       '@effex/dom':
         specifier: workspace:*
         version: link:../../packages/dom
@@ -102,8 +105,8 @@ importers:
         specifier: ^5.5.19
         version: 5.5.19
       effect:
-        specifier: 3.19.13
-        version: 3.19.13
+        specifier: 3.19.19
+        version: 3.19.19
       lucide-static:
         specifier: ^0.576.0
         version: 0.576.0
@@ -133,8 +136,8 @@ importers:
   packages/core:
     dependencies:
       effect:
-        specifier: ^3.0.0
-        version: 3.19.13
+        specifier: 3.19.19
+        version: 3.19.19
 
   packages/create-effex:
     dependencies:
@@ -155,8 +158,8 @@ importers:
         specifier: workspace:*
         version: link:../core
       effect:
-        specifier: ^3.0.0
-        version: 3.19.13
+        specifier: 3.19.19
+        version: 3.19.19
 
   packages/form:
     dependencies:
@@ -164,14 +167,14 @@ importers:
         specifier: workspace:*
         version: link:../core
       effect:
-        specifier: ^3.0.0
-        version: 3.19.13
+        specifier: 3.19.19
+        version: 3.19.19
 
   packages/platform:
     dependencies:
       '@effect/platform':
         specifier: ^0.94.0
-        version: 0.94.0(effect@3.19.13)
+        version: 0.94.0(effect@3.19.19)
       '@effex/core':
         specifier: workspace:^
         version: link:../core
@@ -182,8 +185,8 @@ importers:
         specifier: workspace:^
         version: link:../router
       effect:
-        specifier: ^3.0.0
-        version: 3.19.13
+        specifier: 3.19.19
+        version: 3.19.19
 
   packages/router:
     dependencies:
@@ -194,8 +197,8 @@ importers:
         specifier: workspace:*
         version: link:../dom
       effect:
-        specifier: ^3.0.0
-        version: 3.19.13
+        specifier: 3.19.19
+        version: 3.19.19
 
   packages/vite-plugin:
     dependencies:
@@ -365,12 +368,12 @@ packages:
   '@effect/platform@0.94.0':
     resolution: {integrity: sha512-oIATd3M+RUe2q+bu0Qpgt4/qSbXBM9OEGBrRW7SvtwXGOWkCYkN+LfOPnmPrbMB7jYjpIb7808T1bONM1Nwgfg==}
     peerDependencies:
-      effect: ^3.19.13
+      effect: 3.19.19
 
   '@effect/vitest@0.27.0':
     resolution: {integrity: sha512-8bM7n9xlMUYw9GqPIVgXFwFm2jf27m/R7psI64PGpwU5+26iwyxp9eAXEsfT5S6lqztYfpQQ1Ubp5o6HfNYzJQ==}
     peerDependencies:
-      effect: ^3.19.0
+      effect: 3.19.19
       vitest: ^3.2.0
 
   '@esbuild/aix-ppc64@0.27.2':
@@ -1311,9 +1314,6 @@ packages:
   dir-glob@3.0.1:
     resolution: {integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==}
     engines: {node: '>=8'}
-
-  effect@3.19.13:
-    resolution: {integrity: sha512-8MZ783YuHRwHZX2Mmm+bpGxq+7XPd88sWwYAz2Ysry80sEKpftDZXs2Hg9ZyjESi1IBTNHF0oDKe0zJRkUlyew==}
 
   effect@3.19.19:
     resolution: {integrity: sha512-Yc8U/SVXo2dHnaP7zNBlAo83h/nzSJpi7vph6Hzyl4ulgMBIgPmz3UzOjb9sBgpFE00gC0iETR244sfXDNLHRg==}
@@ -2836,9 +2836,9 @@ snapshots:
 
   '@csstools/css-tokenizer@3.0.4': {}
 
-  '@effect/platform@0.94.0(effect@3.19.13)':
+  '@effect/platform@0.94.0(effect@3.19.19)':
     dependencies:
-      effect: 3.19.13
+      effect: 3.19.19
       find-my-way-ts: 0.1.6
       msgpackr: 1.11.8
       multipasta: 0.2.7
@@ -3684,11 +3684,6 @@ snapshots:
   dir-glob@3.0.1:
     dependencies:
       path-type: 4.0.0
-
-  effect@3.19.13:
-    dependencies:
-      '@standard-schema/spec': 1.1.0
-      fast-check: 3.23.2
 
   effect@3.19.19:
     dependencies:

@@ -1,11 +1,11 @@
 import { Effect } from "effect";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { Signal } from "@effex/core";
+import { Readable, Signal } from "@effex/core";
 
 import { Boundary } from "../../Boundary";
 import { collect } from "../../Collect";
-import { match, when } from "../../Control";
+import { each, match, when } from "../../Control";
 import { $ } from "../../Element";
 import { renderToString } from "../server";
 import { hydrate } from "./index";
@@ -282,6 +282,92 @@ describe("Hydration", () => {
       expect(container.innerHTML).toContain("Async content");
       expect(container.innerHTML).toContain("First visible");
       expect(container.innerHTML).toContain("Second hidden");
+    });
+  });
+
+  describe("each intro flag", () => {
+    const letters = () => [
+      { id: "l1", char: "H" },
+      { id: "l2", char: "i" },
+    ];
+
+    it("does not re-animate SSR items by default", async () => {
+      const onBeforeEnter = vi.fn(() => Effect.void);
+
+      const App = () =>
+        Effect.gen(function* () {
+          const items = yield* Signal.make(letters());
+          return yield* each(items, {
+            key: (l: { id: string; char: string }) => l.id,
+            render: (l: Readable.Readable<{ id: string; char: string }>) =>
+              $.span({}, $.of(Readable.map(l, (v) => v.char))),
+            animate: {
+              enterFrom: "opacity-0",
+              enter: "opacity-100",
+              onBeforeEnter,
+            },
+          });
+        });
+
+      container.innerHTML = await Effect.runPromise(renderToString(App()));
+      await hydrate(App(), container);
+      await new Promise((r) => setTimeout(r, 20));
+
+      expect(onBeforeEnter).not.toHaveBeenCalled();
+    });
+
+    it("re-animates SSR items when intro: true", async () => {
+      const onBeforeEnter = vi.fn(() => Effect.void);
+
+      const App = () =>
+        Effect.gen(function* () {
+          const items = yield* Signal.make(letters());
+          return yield* each(items, {
+            key: (l: { id: string; char: string }) => l.id,
+            render: (l: Readable.Readable<{ id: string; char: string }>) =>
+              $.span({}, $.of(Readable.map(l, (v) => v.char))),
+            animate: {
+              enterFrom: "opacity-0",
+              enter: "opacity-100",
+              onBeforeEnter,
+              timeout: 50,
+            },
+            intro: true,
+          });
+        });
+
+      container.innerHTML = await Effect.runPromise(renderToString(App()));
+      await hydrate(App(), container);
+      // Give forked enter animations a tick to invoke the hook.
+      await new Promise((r) => setTimeout(r, 20));
+
+      expect(onBeforeEnter).toHaveBeenCalledTimes(letters().length);
+    });
+
+    it("re-animates a `when` branch when intro: true", async () => {
+      const onBeforeEnter = vi.fn(() => Effect.void);
+
+      const App = () =>
+        Effect.gen(function* () {
+          const visible = yield* Signal.make(true);
+          return yield* when(visible, {
+            onTrue: () => $.div({ class: "hero" }, $.of("Hi")),
+            onFalse: () => $.div({}, $.of("")),
+            animate: {
+              enterFrom: "opacity-0",
+              enter: "opacity-100",
+              onBeforeEnter,
+              timeout: 50,
+            },
+            intro: true,
+          });
+        });
+
+      container.innerHTML = await Effect.runPromise(renderToString(App()));
+      await hydrate(App(), container);
+      await new Promise((r) => setTimeout(r, 20));
+
+      expect(onBeforeEnter).toHaveBeenCalledTimes(1);
     });
   });
 });

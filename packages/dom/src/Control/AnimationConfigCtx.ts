@@ -20,6 +20,14 @@ export interface AnimationConfig {
   readonly single?: AnimationOptions;
   /** Animation options for list controls (each) */
   readonly list?: ListAnimationOptions;
+  /**
+   * When true, animations also fire during hydration for slots whose DOM
+   * pre-existed from SSR/SSG. Default behaviour is to attach handlers to
+   * pre-rendered DOM without re-animating (right choice for content lists);
+   * setting `intro: true` opts a control into re-animation for decorative
+   * intro sequences (staggered headline letters, opening scenes, ...).
+   */
+  readonly intro?: boolean;
 }
 
 /**

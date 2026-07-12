@@ -25,6 +25,11 @@ export interface WhenConfig<E1 = never, R1 = never, E2 = never, R2 = never> {
   readonly onFalse: () => Element.Element<HTMLElement | SVGElement, E2, R2>;
   /** Optional animation configuration */
   readonly animate?: AnimationOptions;
+  /**
+   * Re-animate the SSR/SSG-rendered branch on hydration. See {@link EachConfig.intro}
+   * for the full contract and FOUC caveat.
+   */
+  readonly intro?: boolean;
 }
 
 /**
@@ -54,6 +59,11 @@ export interface MatchConfig<A, E = never, R = never, E2 = never, R2 = never> {
   readonly fallback?: () => Element.Element<HTMLElement | SVGElement, E2, R2>;
   /** Optional animation configuration */
   readonly animate?: AnimationOptions;
+  /**
+   * Re-animate the SSR/SSG-rendered case on hydration. See {@link EachConfig.intro}
+   * for the full contract and FOUC caveat.
+   */
+  readonly intro?: boolean;
   /**
    * Optional function to extract the pattern from the value for matching.
    * Use this when the value contains additional information for change detection
@@ -97,6 +107,11 @@ export interface MatchOptionConfig<
   readonly onNone: () => Element.Element<HTMLElement | SVGElement, E2, R2>;
   /** Optional animation configuration */
   readonly animate?: AnimationOptions;
+  /**
+   * Re-animate the SSR/SSG-rendered branch on hydration. See {@link EachConfig.intro}
+   * for the full contract and FOUC caveat.
+   */
+  readonly intro?: boolean;
 }
 
 /**
@@ -129,6 +144,11 @@ export interface MatchEitherConfig<
   ) => Element.Element<HTMLElement | SVGElement, E2, R2>;
   /** Optional animation configuration */
   readonly animate?: AnimationOptions;
+  /**
+   * Re-animate the SSR/SSG-rendered branch on hydration. See {@link EachConfig.intro}
+   * for the full contract and FOUC caveat.
+   */
+  readonly intro?: boolean;
 }
 
 /**
@@ -157,6 +177,24 @@ export interface EachConfig<A, E = never, R = never> {
   ) => Element.Element<HTMLElement | SVGElement, E, R>;
   /** Optional animation configuration */
   readonly animate?: ListAnimationOptions;
+  /**
+   * Re-animate SSR/SSG-rendered items on hydration. By default `each` attaches
+   * handlers to pre-existing DOM without re-running enter animations (right
+   * default for content lists — you don't want every feed re-animating on
+   * every page load). Set `intro: true` for decorative sequences (headline
+   * letter cascades, opening scenes) where the animation *is* the point and
+   * skipping it on hydration defeats the purpose.
+   *
+   * @remarks
+   * There's a brief visual flash between the SSR paint and hydration
+   * applying the `enterFrom` state. To eliminate it, hide the container in
+   * CSS until hydration completes (e.g. `visibility: hidden` on a class
+   * you toggle from your client entry). A first-class FOUC-prevention
+   * mechanism is planned for a follow-up.
+   *
+   * Respects `prefers-reduced-motion` via `runEnterAnimation`.
+   */
+  readonly intro?: boolean;
 }
 
 /**
@@ -193,4 +231,9 @@ export interface RedrawConfig<T extends Readable<unknown>> {
   ) => Element.Element<HTMLElement | SVGElement, never, never>;
   /** Optional animation configuration */
   readonly animate?: AnimationOptions;
+  /**
+   * Re-animate the SSR/SSG-rendered element on hydration. See {@link EachConfig.intro}
+   * for the full contract and FOUC caveat.
+   */
+  readonly intro?: boolean;
 }
