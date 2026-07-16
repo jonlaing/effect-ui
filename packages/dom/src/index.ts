@@ -47,6 +47,7 @@ export {
   matchOption,
   matchEither,
   redraw,
+  animated,
   HydrationMismatchError,
 } from "./Control/index.js";
 export type {
@@ -57,6 +58,7 @@ export type {
   MatchOptionConfig,
   MatchEitherConfig,
   RedrawConfig,
+  AnimatedConfig,
 } from "./Control/index.js";
 
 // Boundary (async and error handling)
@@ -74,6 +76,7 @@ export type {
   AnimationGroup,
   AnimationHook,
   AnimationOptions,
+  EnterOnlyAnimationOptions,
   ListAnimationOptions,
   StaggerFunction,
 } from "./Animation/index.js";

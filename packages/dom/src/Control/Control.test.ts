@@ -4,10 +4,11 @@ import { beforeEach, expect } from "vitest";
 
 import { Readable, Signal } from "@effex/core";
 
+import { Animation } from "../Animation/index.js";
 import { collect } from "../Collect.js";
 import { $ } from "../Element/index.js";
 import { DOMRendererLive } from "../Render/DOMRenderer.js";
-import { ClientControlCtx, each, match, when } from "./index.js";
+import { animated, ClientControlCtx, each, match, when } from "./index.js";
 
 const TestLayer = Layer.mergeAll(ClientControlCtx, DOMRendererLive);
 
@@ -683,6 +684,96 @@ describe("Control", () => {
         // Reference `untriggered` to satisfy the linter that it exists as a
         // documentation aid; behaviourally it must never have been called.
         expect(untriggered.length).toBe(2);
+      }).pipe(Effect.provide(TestLayer)),
+    );
+  });
+
+  describe("animated", () => {
+    it.scopedLive("mounts its child inside a container", () =>
+      Effect.gen(function* () {
+        const el = yield* animated({}, () =>
+          $.span({ class: "greeting" }, $.of("Hello")),
+        );
+        // Default container wraps the rendered child.
+        expect(el.children.length).toBe(1);
+        expect(el.children[0].tagName).toBe("SPAN");
+        expect(el.children[0].textContent).toBe("Hello");
+      }).pipe(Effect.provide(TestLayer)),
+    );
+
+    it.scopedLive(
+      "fires onBeforeEnter on client mount when animate is set",
+      () =>
+        Effect.gen(function* () {
+          let called = 0;
+          yield* animated(
+            {
+              animate: {
+                enterFrom: "opacity-0",
+                enter: "opacity-100",
+                onBeforeEnter: () =>
+                  Effect.sync(() => {
+                    called += 1;
+                  }),
+                timeout: 10,
+              },
+            },
+            () => $.span({}, $.of("Hi")),
+          );
+          // Give the forked enter animation a moment to reach onBeforeEnter.
+          yield* Effect.sleep("20 millis");
+          expect(called).toBe(1);
+        }).pipe(Effect.provide(TestLayer)),
+    );
+
+    it.scopedLive("gates on an AnimationGroup", () =>
+      Effect.gen(function* () {
+        // Two `animated` blocks in sequence — the second must not fire its
+        // onBeforeEnter until the first's group completes.
+        const [g0, g1] = yield* Animation.sequence(2);
+        const log: string[] = [];
+
+        yield* animated(
+          {
+            animate: {
+              enter: "in",
+              group: g0,
+              onBeforeEnter: () =>
+                Effect.sync(() => {
+                  log.push("0-start");
+                }),
+              onEnter: () =>
+                Effect.sync(() => {
+                  log.push("0-end");
+                }),
+              timeout: 10,
+            },
+          },
+          () => $.span({}, $.of("First")),
+        );
+
+        yield* animated(
+          {
+            animate: {
+              enter: "in",
+              group: g1,
+              onBeforeEnter: () =>
+                Effect.sync(() => {
+                  log.push("1-start");
+                }),
+              timeout: 10,
+            },
+          },
+          () => $.span({}, $.of("Second")),
+        );
+
+        // 0 fires immediately (g0 gate open), 1 waits for g0 to complete.
+        yield* Effect.sleep("50 millis");
+        // 0-start must precede 0-end, and 1-start must be strictly after 0-end.
+        const zeroEnd = log.indexOf("0-end");
+        const oneStart = log.indexOf("1-start");
+        expect(zeroEnd).toBeGreaterThan(-1);
+        expect(oneStart).toBeGreaterThan(zeroEnd);
       }).pipe(Effect.provide(TestLayer)),
     );
   });
