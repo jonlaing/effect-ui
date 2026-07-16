@@ -2,6 +2,7 @@ import type { Readable } from "@effex/core";
 
 import type {
   AnimationOptions,
+  EnterOnlyAnimationOptions,
   ListAnimationOptions,
 } from "../Animation/index.js";
 import type * as Element from "../Element/index.js";
@@ -147,6 +148,36 @@ export interface MatchEitherConfig<
   /**
    * Re-animate the SSR/SSG-rendered branch on hydration. See {@link EachConfig.intro}
    * for the full contract and FOUC caveat.
+   */
+  readonly intro?: boolean;
+}
+
+/**
+ * Configuration for `animated` — a mount-once wrapper for a single element
+ * that applies enter animations on mount (or on hydration when `intro` is
+ * set) and can be sequenced across siblings via `animate.group`.
+ *
+ * Only supports enter-related animation options because the element is
+ * never removed; the type surface makes that explicit via {@link
+ * EnterOnlyAnimationOptions}. Group membership lives inside `animate.group`
+ * (same shape as `each`/`when`/`match`) so a pure-CSS element that only
+ * wants to sequence writes `{ animate: { group: g0 } }`.
+ */
+export interface AnimatedConfig {
+  /**
+   * Optional custom container element. If not provided, defaults to a div
+   * with `display: contents`.
+   */
+  readonly container?: () => Element.Element<
+    HTMLElement | SVGElement,
+    never,
+    never
+  >;
+  /** Enter-lifecycle animation options (no exit). */
+  readonly animate?: EnterOnlyAnimationOptions;
+  /**
+   * Re-animate this element's SSR/SSG-rendered content on hydration. See
+   * {@link EachConfig.intro} for the full contract and FOUC caveat.
    */
   readonly intro?: boolean;
 }

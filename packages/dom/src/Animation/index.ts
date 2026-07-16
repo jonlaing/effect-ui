@@ -8,6 +8,7 @@ export type {
   AnimationEndResult,
   AnimationHook,
   AnimationOptions,
+  EnterOnlyAnimationOptions,
   ListAnimationOptions,
   StaggerFunction,
 } from "./types.js";

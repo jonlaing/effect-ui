@@ -5,7 +5,7 @@ import { Readable, Signal } from "@effex/core";
 
 import { Boundary } from "../../Boundary.js";
 import { collect } from "../../Collect.js";
-import { each, match, when } from "../../Control/index.js";
+import { animated, each, match, when } from "../../Control/index.js";
 import { $ } from "../../Element/index.js";
 import { renderToString } from "./index.js";
 
@@ -352,6 +352,45 @@ describe("SSR", () => {
       const html = await Effect.runPromise(renderToString(App()));
 
       expect(html).toContain("opacity-0");
+    });
+
+    it("emits enterFrom on animated's SSR child when intro is set", async () => {
+      const html = await Effect.runPromise(
+        renderToString(
+          animated(
+            {
+              animate: {
+                enterFrom: "opacity-0 translate-y-2",
+                enter: "opacity-100 translate-y-0",
+              },
+              intro: true,
+            },
+            () => $.h1({}, $.of("Hero")),
+          ),
+        ),
+      );
+
+      expect(html).toContain("opacity-0");
+      expect(html).toContain("translate-y-2");
+      expect(html).toContain("Hero");
+    });
+
+    it("does not emit enterFrom on animated when intro is omitted", async () => {
+      const html = await Effect.runPromise(
+        renderToString(
+          animated(
+            {
+              animate: {
+                enterFrom: "opacity-0",
+                enter: "opacity-100",
+              },
+            },
+            () => $.h1({}, $.of("Hero")),
+          ),
+        ),
+      );
+
+      expect(html).not.toContain("opacity-0");
     });
   });
 });

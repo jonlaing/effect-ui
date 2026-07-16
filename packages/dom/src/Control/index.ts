@@ -23,6 +23,7 @@ import {
 import * as Element from "../Element/index.js";
 import { AnimationConfigCtx } from "./AnimationConfigCtx.js";
 import type {
+  AnimatedConfig,
   EachConfig,
   MatchConfig,
   MatchEitherConfig,
@@ -33,6 +34,7 @@ import type {
 
 // Re-export types
 export type {
+  AnimatedConfig,
   WhenConfig,
   MatchConfig,
   MatchCase,
@@ -289,3 +291,80 @@ export const redraw = <T extends Readable.Readable<unknown>>(
         })
       : (x) => x,
   ) as Element.Element<DOMElement, never, ControlCtx>;
+
+/**
+ * Mount-once wrapper for a single element with animation support.
+ *
+ * Renders `render()` inside a container and applies enter animations on
+ * mount (or on hydration when `intro: true` is set). Unlike `each` /
+ * `when` / `match`, `animated` doesn't reconcile against a signal — the
+ * element is inserted exactly once and stays. Exit-related animation
+ * fields are unavailable by construction (see {@link EnterOnlyAnimationOptions}).
+ *
+ * Use it to wrap sibling elements in a hand-authored intro sequence:
+ *
+ * @example Sequenced headline with mixed animation styles
+ * ```ts
+ * const App = () =>
+ *   Effect.gen(function* () {
+ *     const [g0, g1, g2] = yield* Animation.sequence(3);
+ *     return $.h1(
+ *       {},
+ *       collect(
+ *         animated(
+ *           {
+ *             animate: {
+ *               enterFrom: "opacity-0",
+ *               enter: "opacity-100 transition duration-300",
+ *               group: g0,
+ *             },
+ *             intro: true,
+ *           },
+ *           () => $.span({}, $.of("Hello,")),
+ *         ),
+ *         animated(
+ *           // No visual animation — the span has its own CSS keyframes; the
+ *           // group still gates when it appears in the sequence.
+ *           { animate: { group: g1 } },
+ *           () => $.span({ class: "wobble" }, $.of("world!")),
+ *         ),
+ *         animated(
+ *           {
+ *             animate: {
+ *               enterFrom: "opacity-0",
+ *               enter: "opacity-100 transition duration-500",
+ *               group: g2,
+ *             },
+ *             intro: true,
+ *           },
+ *           () => $.span({}, $.of("Welcome.")),
+ *         ),
+ *       ),
+ *     );
+ *   });
+ * ```
+ */
+export const animated = <E = never, R = never>(
+  config: AnimatedConfig,
+  render: () => Element.Element<DOMElement, E, R>,
+): Element.Element<DOMElement, E, R | ControlCtx> =>
+  pipe(
+    Effect.gen(function* () {
+      const parentCtx = yield* ControlCtx;
+      const ctx = yield* parentCtx.fork();
+      const container = yield* ctx.getContainer(config.container);
+      yield* ctx.addSlot("_", () => render(), {
+        atIndex: 0,
+        initialIndex: 0,
+        totalItems: 1,
+      });
+      yield* ctx.finalizeContainer();
+      return container;
+    }) as Element.Element<DOMElement, E, R | ControlCtx>,
+    config.animate || config.intro
+      ? Effect.provideService(AnimationConfigCtx, {
+          single: config.animate,
+          intro: config.intro,
+        })
+      : (x) => x,
+  ) as Element.Element<DOMElement, E, R | ControlCtx>;

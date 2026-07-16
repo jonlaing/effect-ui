@@ -188,6 +188,27 @@ export interface AnimationOptions {
 }
 
 /**
+ * Subset of {@link AnimationOptions} covering only the enter lifecycle.
+ * Used by control functions (like `animated`) that mount their content
+ * once and never remove it, so any exit-related fields would be dead code.
+ *
+ * Includes `group` so callers can wire the element into an
+ * {@link AnimationGroup} the same way they would with `each`/`when`/`match`:
+ * `{ animate: { group: g0, ... } }`.
+ */
+export type EnterOnlyAnimationOptions = Pick<
+  AnimationOptions,
+  | "enter"
+  | "enterFrom"
+  | "enterTo"
+  | "onBeforeEnter"
+  | "onEnter"
+  | "timeout"
+  | "respectReducedMotion"
+  | "group"
+>;
+
+/**
  * Stagger function that calculates delay for each item in a list
  * @param index - Zero-based index of the item
  * @param total - Total number of items being animated
