@@ -3,7 +3,7 @@
  * Renders once with hydration markers, no subscriptions or animations.
  */
 
-import { Effect, Layer, Scope } from "effect";
+import { Effect, Layer, Option, Scope } from "effect";
 
 import {
   ControlCtx,
@@ -13,7 +13,9 @@ import {
   type SlotEntry,
 } from "@effex/core";
 
+import type { AnimationOptions } from "../Animation/index.js";
 import * as Element from "../Element/index.js";
+import { AnimationConfigCtx } from "./AnimationConfigCtx.js";
 
 type DOMElement = HTMLElement | SVGElement;
 
@@ -90,6 +92,26 @@ const createSSRControlCtx = (): IControlCtx<DOMElement> => {
         )) as DOMElement;
 
         yield* renderer.setAttribute(element, "data-effex-key", key);
+
+        // FOUC prevention: when the control opted into intro re-animation,
+        // emit the `enterFrom` classes on the SSR/SSG output so the browser
+        // paints the pre-animation state (e.g. `opacity-0`). Hydration then
+        // runs the full enter lifecycle which removes them and transitions
+        // to the final state. Without this, users see a flash of the final
+        // state before hydration starts animating.
+        const animConfigOpt = yield* Effect.serviceOption(AnimationConfigCtx);
+        const animConfig = Option.getOrUndefined(animConfigOpt);
+        if (animConfig?.intro) {
+          const animate = (animConfig.list ?? animConfig.single) as
+            | AnimationOptions
+            | undefined;
+          const enterFrom = animate?.enterFrom;
+          if (enterFrom) {
+            for (const cls of enterFrom.split(/\s+/).filter(Boolean)) {
+              yield* renderer.toggleClass(element, cls, true);
+            }
+          }
+        }
 
         if (containerElement) {
           yield* renderer.appendChild(containerElement, element);
