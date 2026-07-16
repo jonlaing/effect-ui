@@ -288,4 +288,70 @@ describe("SSR", () => {
       expect(html).toContain("Loading...");
     });
   });
+
+  describe("intro FOUC prevention", () => {
+    it("emits enterFrom classes on each's SSR items when intro is set", async () => {
+      const App = () =>
+        Effect.gen(function* () {
+          const items = yield* Signal.make(["a", "b"]);
+          return yield* each(items, {
+            key: (item) => item,
+            render: (item) => $.li({}, $.of(item)),
+            animate: {
+              enterFrom: "opacity-0 translate-y-2",
+              enter: "opacity-100 translate-y-0",
+            },
+            intro: true,
+          });
+        });
+
+      const html = await Effect.runPromise(renderToString(App()));
+
+      // Both items should carry the enterFrom classes so the browser paints
+      // them hidden until hydration animates them in.
+      const opacityMatches = html.match(/opacity-0/g) ?? [];
+      const translateMatches = html.match(/translate-y-2/g) ?? [];
+      expect(opacityMatches).toHaveLength(2);
+      expect(translateMatches).toHaveLength(2);
+    });
+
+    it("does not emit enterFrom classes when intro is omitted", async () => {
+      const App = () =>
+        Effect.gen(function* () {
+          const items = yield* Signal.make(["a", "b"]);
+          return yield* each(items, {
+            key: (item) => item,
+            render: (item) => $.li({}, $.of(item)),
+            animate: {
+              enterFrom: "opacity-0",
+              enter: "opacity-100",
+            },
+          });
+        });
+
+      const html = await Effect.runPromise(renderToString(App()));
+
+      expect(html).not.toContain("opacity-0");
+    });
+
+    it("emits enterFrom on when's SSR branch when intro is set", async () => {
+      const App = () =>
+        Effect.gen(function* () {
+          const visible = yield* Signal.make(true);
+          return yield* when(visible, {
+            onTrue: () => $.div({ class: "hero" }, $.of("Hi")),
+            onFalse: () => $.div({}, $.of("")),
+            animate: {
+              enterFrom: "opacity-0",
+              enter: "opacity-100",
+            },
+            intro: true,
+          });
+        });
+
+      const html = await Effect.runPromise(renderToString(App()));
+
+      expect(html).toContain("opacity-0");
+    });
+  });
 });
