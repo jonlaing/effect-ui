@@ -2,6 +2,7 @@ import { Effect } from "effect";
 
 import type { Renderer, Slot } from "@effex/core";
 
+import { warnIfInvalidNesting } from "../validateNesting.js";
 import {
   vComment,
   vElement,
@@ -25,6 +26,9 @@ export const StringRenderer: Renderer<VNode> = {
   appendChild: (parent: VNode, child: VNode) =>
     Effect.sync(() => {
       if (parent._tag === "VElement") {
+        if (child._tag === "VElement") {
+          warnIfInvalidNesting(parent.type, child.type);
+        }
         parent.children.push(child);
         // Track parent reference for slot markers
         if (child._tag === "VComment") {
