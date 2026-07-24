@@ -1,6 +1,12 @@
+import { Effect } from "effect";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { checkNesting, warnIfInvalidNesting } from "./validateNesting.js";
+
+/** Helper: warnIfInvalidNesting returns Effect<void>; run it synchronously. */
+const warn = (parent: string | undefined, child: string | undefined): void => {
+  Effect.runSync(warnIfInvalidNesting(parent, child));
+};
 
 describe("checkNesting", () => {
   it("flags a paragraph nested inside a paragraph", () => {
@@ -56,36 +62,36 @@ describe("warnIfInvalidNesting", () => {
   });
 
   it("emits a console.warn on invalid nesting", () => {
-    warnIfInvalidNesting("p", "div");
+    warn("p", "div");
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy.mock.calls[0][0]).toMatch(/\[@effex\/dom\]/);
     expect(warnSpy.mock.calls[0][0]).toMatch(/<div> inside <p>/);
   });
 
   it("is silent on valid nesting", () => {
-    warnIfInvalidNesting("div", "p");
-    warnIfInvalidNesting("ul", "li");
+    warn("div", "p");
+    warn("ul", "li");
     expect(warnSpy).not.toHaveBeenCalled();
   });
 
   it("is silent when either arg is missing (text nodes, comments, etc.)", () => {
-    warnIfInvalidNesting(undefined, "div");
-    warnIfInvalidNesting("p", undefined);
-    warnIfInvalidNesting(undefined, undefined);
+    warn(undefined, "div");
+    warn("p", undefined);
+    warn(undefined, undefined);
     expect(warnSpy).not.toHaveBeenCalled();
   });
 
   it("only warns once per parent-child pair (across calls)", () => {
     // The module-level Set caches across tests, so use a distinct pair that
     // no other test in this file exercises for warning-count assertions.
-    warnIfInvalidNesting("form", "form");
-    warnIfInvalidNesting("form", "form");
-    warnIfInvalidNesting("form", "form");
+    warn("form", "form");
+    warn("form", "form");
+    warn("form", "form");
     expect(warnSpy).toHaveBeenCalledTimes(1);
   });
 
   it("normalizes tag case", () => {
-    warnIfInvalidNesting("BUTTON", "INPUT");
+    warn("BUTTON", "INPUT");
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy.mock.calls[0][0]).toMatch(/<input> inside <button>/);
   });

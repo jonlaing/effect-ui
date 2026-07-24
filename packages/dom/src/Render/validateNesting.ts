@@ -1,3 +1,5 @@
+import { Console, Effect } from "effect";
+
 /**
  * Compile-time HTML nesting validator.
  *
@@ -102,24 +104,25 @@ export const checkNesting = (parent: string, child: string): string | null => {
 const warned = new Set<string>();
 
 /**
- * Report an invalid nesting via `console.warn`, once per parent-child pair
- * per process. Safe to call unconditionally — the check is cheap and the
- * warning only fires on real bugs. No-ops in environments without `console`.
+ * Report an invalid nesting via Effect's {@link Console.warn}, once per
+ * parent-child pair per process. Returns `Effect.void` when the pair is
+ * valid or has already been warned about, so callers can `yield*` it
+ * unconditionally without branching.
+ *
+ * Uses Effect's Console service (not raw `console.warn`) to stay idiomatic
+ * with the rest of the codebase and to let tests swap the sink via Layer.
  */
 export const warnIfInvalidNesting = (
   parent: string | undefined,
   child: string | undefined,
-): void => {
-  if (!parent || !child) return;
+): Effect.Effect<void> => {
+  if (!parent || !child) return Effect.void;
   const p = parent.toLowerCase();
   const c = child.toLowerCase();
   const key = `${p}>${c}`;
-  if (warned.has(key)) return;
+  if (warned.has(key)) return Effect.void;
   const message = checkNesting(p, c);
-  if (!message) return;
+  if (!message) return Effect.void;
   warned.add(key);
-  if (typeof console !== "undefined") {
-    // eslint-disable-next-line no-console
-    console.warn(`[@effex/dom] ${message}`);
-  }
+  return Console.warn(`[@effex/dom] ${message}`);
 };
