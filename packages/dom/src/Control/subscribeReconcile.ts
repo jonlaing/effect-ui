@@ -20,9 +20,10 @@
  * nothing in the console pointing at the cause.
  *
  * This helper wraps the pattern with two behaviours:
- *   1. Every failed handler run is logged via `console.error` with a full
- *      Effect Cause (fiber trace + inner errors) so navigation/reconcile
- *      failures surface.
+ *   1. Every failed handler run is logged via {@link Console.error} with a
+ *      full Effect Cause (fiber trace + inner errors) so navigation/reconcile
+ *      failures surface. Uses Effect's Console service (not plain
+ *      `console.error`) so tests can swap the sink via Layer.
  *   2. The failure is swallowed at the per-value boundary so a single bad
  *      update doesn't kill the subscription — subsequent state changes
  *      still trigger the handler. A user who navigates to a broken route
@@ -30,7 +31,7 @@
  *      future updates too.
  */
 
-import { Cause, Effect, Stream } from "effect";
+import { Cause, Console, Effect, Stream } from "effect";
 
 import type { Readable } from "@effex/core";
 
@@ -44,14 +45,11 @@ export const subscribeReconcile = <V, E, R>(
       Stream.runForEach((value) =>
         handler(value).pipe(
           Effect.tapErrorCause((cause) =>
-            Effect.sync(() => {
-              // eslint-disable-next-line no-console
-              console.error(
-                `[@effex/dom] Reconcile handler failed for value:`,
-                value,
-                `\nCause:\n${Cause.pretty(cause)}`,
-              );
-            }),
+            Console.error(
+              `[@effex/dom] Reconcile handler failed for value:`,
+              value,
+              `\nCause:\n${Cause.pretty(cause)}`,
+            ),
           ),
           // Swallow so the subscription survives; the error is already
           // logged, and subsequent updates should still be applied.
