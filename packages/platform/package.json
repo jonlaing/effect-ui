@@ -40,7 +40,7 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@effex/core": "workspace:^"
+    "@effex/core": "workspace:*"
   },
   "peerDependencies": {
     "@effect/platform": "^0.94.0",
