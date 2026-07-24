@@ -24,10 +24,10 @@ export const StringRenderer: Renderer<VNode> = {
   createTextNode: (text: string) => Effect.sync(() => vText(text)),
 
   appendChild: (parent: VNode, child: VNode) =>
-    Effect.sync(() => {
+    Effect.gen(function* () {
       if (parent._tag === "VElement") {
         if (child._tag === "VElement") {
-          warnIfInvalidNesting(parent.type, child.type);
+          yield* warnIfInvalidNesting(parent.type, child.type);
         }
         parent.children.push(child);
         // Track parent reference for slot markers
