@@ -3,14 +3,13 @@
  * Full reactive updates with optional animation support.
  */
 
-import { Effect, Layer, Scope, Stream } from "effect";
+import { Effect, Layer, Scope } from "effect";
 
 import {
   ControlCtx,
   RendererContext,
   Signal,
   type IControlCtx,
-  type Readable,
   type Renderer,
   type SlotEntry,
 } from "@effex/core";
@@ -18,6 +17,7 @@ import {
 import * as Element from "../Element/index.js";
 import { DOMRenderer } from "../Render/DOMRenderer.js";
 import { forkSlotEnter, forkSlotRemoval } from "./slotAnimation.js";
+import { subscribeReconcile } from "./subscribeReconcile.js";
 
 type DOMElement = HTMLElement | SVGElement;
 
@@ -154,17 +154,7 @@ const createClientControlCtx = (): IControlCtx<DOMElement> => {
         containerElement.insertBefore(entry.element, refChild);
       }),
 
-    subscribe: <V, E, R>(
-      readable: Readable.Readable<V>,
-      handler: (value: V) => Effect.Effect<void, E, R>,
-    ): Effect.Effect<void, E, R> =>
-      Effect.gen(function* () {
-        const scope = yield* Effect.scope;
-        yield* readable.changes.pipe(
-          Stream.runForEach(handler),
-          Effect.forkIn(scope),
-        );
-      }) as Effect.Effect<void, E, R>,
+    subscribe: subscribeReconcile,
   };
 
   return ctx;
