@@ -22,7 +22,16 @@ import {
   HttpServerResponse,
 } from "@effect/platform";
 import type { RouteNotFound } from "@effect/platform/HttpServerError";
-import { Data, Effect, Layer, Record, Ref, Schema, Scope } from "effect";
+import {
+  Console,
+  Data,
+  Effect,
+  Layer,
+  Record,
+  Ref,
+  Schema,
+  Scope,
+} from "effect";
 
 import {
   AsyncCache,
@@ -487,12 +496,14 @@ export const toHttpRoutes = <
 
     // Register GET handler with error logging
     const debugHandler = catchRedirects(getHandler).pipe(
-      Effect.catchAllCause((cause) => {
-        console.error(`[Platform] Error handling GET ${path}:`, cause);
-        return Effect.succeed(
-          HttpServerResponse.text(`Internal Server Error`, { status: 500 }),
-        );
-      }),
+      Effect.catchAllCause((cause) =>
+        Effect.gen(function* () {
+          yield* Console.error(`[Platform] Error handling GET ${path}:`, cause);
+          return HttpServerResponse.text(`Internal Server Error`, {
+            status: 500,
+          });
+        }),
+      ),
     );
     httpRouter = httpRouter.pipe(
       HttpRouter.get(
@@ -722,8 +733,7 @@ export const makeClientLayer = <
               // Static host served HTML but we couldn't find the data blob.
               // Not fatal — some routes may legitimately have no loader data
               // — but log it so a broken build/deploy doesn't sit invisible.
-              // eslint-disable-next-line no-console
-              console.warn(
+              yield* Console.warn(
                 `[@effex/platform] Fetched HTML for ${path} but couldn't find window.__EFFEX_DATA__. ` +
                   `Continuing with data: undefined.`,
               );
@@ -736,17 +746,15 @@ export const makeClientLayer = <
             } as unknown as RouteDataService;
           }).pipe(
             // Log before Effect.orDie so a failed fetch/parse doesn't become
-            // an invisible blank Outlet. Devs see the cause in the console;
-            // error trackers (Sentry, etc.) still catch it via console.error.
+            // an invisible blank Outlet. Effect's Console goes through a
+            // service (swappable via Layer for tests); default sink is
+            // browser console, so error trackers still see it.
             Effect.tapError((err) =>
-              Effect.sync(() => {
-                // eslint-disable-next-line no-console
-                console.error(
-                  `[@effex/platform] Failed to load route data for ${substituteParams(route.path, params)}. ` +
-                    `Outlet will render empty.`,
-                  err,
-                );
-              }),
+              Console.error(
+                `[@effex/platform] Failed to load route data for ${substituteParams(route.path, params)}. ` +
+                  `Outlet will render empty.`,
+                err,
+              ),
             ),
             Effect.orDie,
           ),
@@ -987,7 +995,7 @@ export const buildStaticSite = (
       { concurrency: 10 },
     );
 
-    console.log(`[SSG] Built ${rendered.length} pages to ${outDir}`);
+    yield* Console.log(`[SSG] Built ${rendered.length} pages to ${outDir}`);
   });
 
   // Run the program with user-provided layers
