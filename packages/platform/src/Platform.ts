@@ -718,13 +718,38 @@ export const makeClientLayer = <
             const embeddedBlob = extractEmbeddedRouteData(html) as
               | { data: unknown; actions?: Record<string, unknown> }
               | undefined;
+            if (embeddedBlob === undefined) {
+              // Static host served HTML but we couldn't find the data blob.
+              // Not fatal — some routes may legitimately have no loader data
+              // — but log it so a broken build/deploy doesn't sit invisible.
+              // eslint-disable-next-line no-console
+              console.warn(
+                `[@effex/platform] Fetched HTML for ${path} but couldn't find window.__EFFEX_DATA__. ` +
+                  `Continuing with data: undefined.`,
+              );
+            }
             const loaderPath = `${path}?${qs.toString()}`;
             return {
               data: embeddedBlob?.data,
               loaderPath,
               actions: embeddedBlob?.actions ?? {},
             } as unknown as RouteDataService;
-          }).pipe(Effect.orDie),
+          }).pipe(
+            // Log before Effect.orDie so a failed fetch/parse doesn't become
+            // an invisible blank Outlet. Devs see the cause in the console;
+            // error trackers (Sentry, etc.) still catch it via console.error.
+            Effect.tapError((err) =>
+              Effect.sync(() => {
+                // eslint-disable-next-line no-console
+                console.error(
+                  `[@effex/platform] Failed to load route data for ${substituteParams(route.path, params)}. ` +
+                    `Outlet will render empty.`,
+                  err,
+                );
+              }),
+            ),
+            Effect.orDie,
+          ),
       };
 
       return provider;
