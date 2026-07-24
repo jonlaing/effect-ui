@@ -126,17 +126,27 @@ const renderRouteWithGuard = <E, R>(
         return yield* $.div();
       }
     } else {
+      // SPA fallback: no data provider in context (e.g. SPA-only app, or a
+      // component tree with a data provider bypassed). Run whichever loader
+      // the route has directly. Route.get sets `_loader`; Route.static puts
+      // its loader inside `_staticConfig.load` — both need to be honoured or
+      // the route's render will receive undefined data and crash.
+      const hasLoader =
+        route._loader != null || route._staticConfig?.load != null;
       const hasHooks =
-        route._loader || (route._handlers && route._handlers.length > 0);
+        hasLoader || (route._handlers && route._handlers.length > 0);
 
       if (hasHooks) {
-        // Default: run the loader directly, compute action paths
         const data = route._loader
           ? yield* route._loader({
               params: currentMatch.params,
               searchParams: searchParamsObj,
             })
-          : undefined;
+          : route._staticConfig?.load
+            ? yield* route._staticConfig.load({
+                params: currentMatch.params,
+              })
+            : undefined;
 
         const actions: Record<string, string> = {};
         for (const h of route._handlers) {
