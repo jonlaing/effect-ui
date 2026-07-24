@@ -631,6 +631,30 @@ declare const window: Window & {
  * Effect.runPromise(Effect.scoped(program))
  * ```
  */
+/**
+ * Extract embedded `window.__EFFEX_DATA__` from a page's HTML.
+ *
+ * SSG deploys serve the same HTML for `<path>` and `<path>?_data=1`, so when
+ * `makeClientLayer`'s data fetch gets HTML back, we scan for the loader-data
+ * `<script>` tag emitted by {@link generateLoaderDataScript}. The JSON inside
+ * uses \\uXXXX escapes for script-breaking characters (see {@link serializeForHtml}),
+ * which JSON.parse handles natively.
+ */
+const extractEmbeddedRouteData = (html: string): unknown => {
+  const match = html.match(
+    /<script[^>]*>\s*window\.__EFFEX_DATA__\s*=\s*(.+?)\s*<\/script>/s,
+  );
+  if (!match) return undefined;
+  try {
+    return JSON.parse(match[1]);
+  } catch {
+    return undefined;
+  }
+};
+
+const isJsonContentType = (response: Response): boolean =>
+  (response.headers.get("content-type") ?? "").toLowerCase().includes("json");
+
 export const makeClientLayer = <
   P extends Record<string, unknown> | never,
   S extends Record<string, unknown> | never,
@@ -665,7 +689,13 @@ export const makeClientLayer = <
               }
             }
 
-            // Client navigation: fetch from server
+            // Client navigation: fetch data for the target path.
+            //
+            // On an SSR server this hits the `?_data=1` handler and returns
+            // JSON. On a static host (SSG output on any file server) the
+            // query string is ignored and the same page HTML comes back — we
+            // fall back to extracting the embedded `window.__EFFEX_DATA__`
+            // from the HTML shell. Both modes look the same to callers.
             const path = substituteParams(route.path, params);
             const qs = new URLSearchParams(searchParams);
             qs.set("_data", "1");
@@ -673,12 +703,53 @@ export const makeClientLayer = <
               fetch(`${path}?${qs.toString()}`),
             );
 
-            const json = yield* Effect.tryPromise(() => response.json());
+            if (isJsonContentType(response)) {
+              const json = yield* Effect.tryPromise(() => response.json());
+              // Pass through as-is — if it's a redirect signal
+              // ({ _redirect: url }), the Outlet handles it via nav.pushPath
+              return json as unknown as RouteDataService;
+            }
 
-            // Pass through as-is — if it's a redirect signal ({ _redirect: url }),
-            // the Outlet handles it via nav.pushPath
-            return json as unknown as RouteDataService;
-          }).pipe(Effect.orDie),
+            // Static fallback: extract from the served HTML shell. The
+            // embedded blob has shape `{ data, actions }` (see buildStaticSite's
+            // hydrationData construction); we pass it through unchanged after
+            // adding a synthetic loaderPath.
+            const html = yield* Effect.tryPromise(() => response.text());
+            const embeddedBlob = extractEmbeddedRouteData(html) as
+              | { data: unknown; actions?: Record<string, unknown> }
+              | undefined;
+            if (embeddedBlob === undefined) {
+              // Static host served HTML but we couldn't find the data blob.
+              // Not fatal — some routes may legitimately have no loader data
+              // — but log it so a broken build/deploy doesn't sit invisible.
+              // eslint-disable-next-line no-console
+              console.warn(
+                `[@effex/platform] Fetched HTML for ${path} but couldn't find window.__EFFEX_DATA__. ` +
+                  `Continuing with data: undefined.`,
+              );
+            }
+            const loaderPath = `${path}?${qs.toString()}`;
+            return {
+              data: embeddedBlob?.data,
+              loaderPath,
+              actions: embeddedBlob?.actions ?? {},
+            } as unknown as RouteDataService;
+          }).pipe(
+            // Log before Effect.orDie so a failed fetch/parse doesn't become
+            // an invisible blank Outlet. Devs see the cause in the console;
+            // error trackers (Sentry, etc.) still catch it via console.error.
+            Effect.tapError((err) =>
+              Effect.sync(() => {
+                // eslint-disable-next-line no-console
+                console.error(
+                  `[@effex/platform] Failed to load route data for ${substituteParams(route.path, params)}. ` +
+                    `Outlet will render empty.`,
+                  err,
+                );
+              }),
+            ),
+            Effect.orDie,
+          ),
       };
 
       return provider;
