@@ -3,6 +3,10 @@ import { Effect, Layer } from "effect";
 import { RendererContext, type Renderer, type Slot } from "@effex/core";
 
 import { toKebabCase } from "../helpers/index.js";
+import { warnIfInvalidNesting } from "./validateNesting.js";
+
+const tagNameOf = (node: Node): string | undefined =>
+  node.nodeType === 1 ? (node as Element).tagName.toLowerCase() : undefined;
 
 /**
  * DOM implementation of the Renderer interface.
@@ -22,6 +26,7 @@ export const DOMRenderer: Renderer<Node> = {
 
   appendChild: (parent: Node, child: Node) =>
     Effect.sync(() => {
+      warnIfInvalidNesting(tagNameOf(parent), tagNameOf(child));
       parent.appendChild(child);
     }),
 
