@@ -541,15 +541,21 @@ export const rawParams = <Path extends string, OldP, SP, D, E, R>(
  * ```
  */
 export const render =
-  <E2, R2>(fn: () => Element.Element<HTMLElement | SVGElement, E2, R2>) =>
-  <Path extends string, P, SP, D, E, R>(
+  <D, E2, R2>(
+    fn: (data?: D) => Element.Element<HTMLElement | SVGElement, E2, R2>,
+  ) =>
+  <Path extends string, P, SP, E, R>(
     route: Route<Path, P, SP, D, E, R>,
   ): [NoRenderError] extends [E]
     ? Route<Path, P, SP, D, Exclude<E, NoRenderError> | E2, R | R2>
     : never => {
     return Object.assign(Object.create(RouteProto), {
       ...route,
-      render: (_data: D) => fn(),
+      // Pass data through so `Route.render(fn)` works both for the classic
+      // no-arg fn (`() => Element`) — JS ignores the extra arg — and for
+      // the arg-aware fn shape (`(data) => Element`) that the vite-plugin
+      // emits when stripping Route.static's server-side bits away.
+      render: (data: D) => fn(data),
     });
   };
 

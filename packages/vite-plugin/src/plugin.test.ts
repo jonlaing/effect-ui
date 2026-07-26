@@ -228,5 +228,21 @@ const B = Route.make("/b").pipe(
       expect(result).toContain("PageA(d)");
       expect(result).toContain("PageB(d)");
     });
+
+    it("does NOT hardcode undefined for the render arg", () => {
+      // Regression: an earlier version wrapped the render fn as
+      // `Route.render(() => renderFn(undefined))`, which broke the client
+      // provider's data-fetch path — the fetched data reached Outlet, but
+      // the transform threw it away before calling the user's render.
+      const input = `Route.static({
+  load: () => Effect.succeed({ title: "About" }),
+  render: (data) => $.h1({}, $.of(data.title)),
+})`;
+      const result = stripServerCode(input);
+      expect(result).not.toContain("(undefined)");
+      expect(result).not.toMatch(/Route\.render\s*\(\s*\(\s*\)\s*=>/);
+      // Should preserve the arg-receiving render fn directly.
+      expect(result).toMatch(/Route\.render\(\s*\(data\)/);
+    });
   });
 });

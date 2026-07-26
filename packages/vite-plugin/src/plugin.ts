@@ -523,11 +523,12 @@ const stripStaticConfig = (code: string): string => {
 
     const renderFn = configStr.slice(renderValueStart, renderValueEnd).trim();
 
-    // Replace `Route.static({ ... })` with `Route.render(() => renderFn(undefined))`
-    // But actually, Route.render takes `() => Element`, while Route.static's render
-    // takes `(data) => Element`. Since there's no loader data on the client,
-    // we wrap it to pass undefined.
-    const replacement = `Route.render(() => (${renderFn})(undefined))`;
+    // Replace `Route.static({ ..., render: <fn> })` with `Route.render(<fn>)`.
+    // The client's RouteDataProvider fetches loader data via `?_data=1`, so
+    // the render fn does receive real data at runtime — we just need Route
+    // to pass its argument through. Route.render's wrapper does that (see
+    // `packages/router/src/Route.ts`).
+    const replacement = `Route.render(${renderFn})`;
     const fullCallEnd = configEnd + 1; // +1 for closing paren of Route.static(...)
     const before = result.slice(0, callStart);
     const after = result.slice(fullCallEnd);
