@@ -205,7 +205,7 @@ export const Link = <E, R>(
         "data-active-exact": dataActiveExact,
         "data-active-prefix": dataActivePrefix,
       },
-      children as any,
+      children as Effect.Effect<string, E, R>,
     );
   });
 

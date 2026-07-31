@@ -34,3 +34,30 @@ export type Child<E = never, R = never> = Effect.Effect<
   E,
   R
 >;
+
+/**
+ * A child input accepted by element builders (`$.div`, `$.span`, ...).
+ *
+ * Broader than {@link Child}: element factories accept the raw types
+ * users naturally write in markup — strings, numbers, nested elements,
+ * reactive text, arrays for `.map()`-style output, and nullish/boolean
+ * for conditional rendering. The factory normalizes these into `Child`
+ * effects internally.
+ *
+ * - `string` / `number` → wrapped as text nodes
+ * - `null` / `undefined` / `boolean` → skipped (React-style; `false && el`
+ *    produces nothing, `true` also skipped for symmetry)
+ * - `Element` / `Readable` → passed through as-is
+ * - `ChildInput[]` → flattened recursively
+ */
+export type ChildInput<E = never, R = never> =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  // Any Effect that yields a ChildNode — covers Elements (`$.div(...)`),
+  // text nodes (`$.of(...)`), and combined children (`collect(...)`).
+  | Child<E, R>
+  | Readable.Readable<string | number>
+  | ReadonlyArray<ChildInput<E, R>>;
