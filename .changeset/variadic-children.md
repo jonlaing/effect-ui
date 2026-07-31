@@ -1,6 +1,6 @@
 ---
 "@effex/dom": minor
-"@effex/router": patch
+"@effex/router": minor
 ---
 
 Element factories (`$.div`, `$.span`, ...) now accept variadic children with
@@ -46,5 +46,8 @@ channels — mixing children with different errors and service requirements
 now produces the correct combined signature instead of collapsing to the
 first slot's type.
 
-`@effex/router` receives a small internal type tightening on `Link` to
-match the sharper inference; its public API is unchanged.
+`@effex/router`'s `Link` component now accepts the same `ClassValue` type
+for `class` as the builder primitives — string, `readonly ClassItem[]`, or
+`Readable`. The forwarding to `$.a` was already unconditional, so this is
+purely a type widening. `ClassValue` and `ClassItem` are now re-exported
+from `@effex/dom`'s package root for downstream use.

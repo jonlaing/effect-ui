@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { $, Readable, type Element } from "@effex/dom";
+import { $, Readable, type ClassValue, type Element } from "@effex/dom";
 
 import { buildPath, NavigationContext } from "./Navigation.js";
 import type { Route } from "./Route.js";
@@ -30,7 +30,7 @@ export interface LinkProps {
   readonly replace?: boolean;
 
   // Standard anchor attributes
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: ClassValue;
   readonly target?: string;
   readonly rel?: string;
   readonly id?: string;
