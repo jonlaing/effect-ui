@@ -15,12 +15,11 @@ const TocItem = (
       },
       entry.title,
     ),
-    entry.children.length > 0
-      ? $.ul(
-          { class: "pl-4 border-l border-base-content/40 py-0 my-2" },
-          entry.children.map(TocItem),
-        )
-      : $.div({}),
+    entry.children.length > 0 &&
+      $.ul(
+        { class: "pl-4 border-l border-base-content/40 py-0 my-2" },
+        entry.children.map(TocItem),
+      ),
   );
 
 export const DocToc = (toc: TocEntry[]) =>
