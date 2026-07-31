@@ -54,7 +54,7 @@ Effect.gen(function* () {
 const MyComponent = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0);
-    return yield* $.div({}, $.of("Hello!"));
+    return yield* $.div({}, "Hello!");
   });
 ```
 

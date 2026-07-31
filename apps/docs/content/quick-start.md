@@ -90,7 +90,7 @@ Routes are plain functions that return Effects:
 
 ```typescript
 import { Route, Router } from "@effex/router";
-import { $, collect, Signal } from "@effex/dom";
+import { $, Signal } from "@effex/dom";
 
 const Home = Route.make("/").pipe(
   Route.render(() =>
@@ -98,12 +98,10 @@ const Home = Route.make("/").pipe(
       const count = yield* Signal.make(0);
       return yield* $.div(
         {},
-        collect(
-          $.h1({}, $.of("Welcome to Effex")),
-          $.button(
-            { onClick: () => count.update((n) => n + 1) },
-            count,
-          ),
+        $.h1({}, "Welcome to Effex"),
+        $.button(
+          { onClick: () => count.update((n) => n + 1) },
+          count,
         ),
       );
     }),
@@ -272,7 +270,7 @@ const DocsRoute = Route.make("/docs/:slug").pipe(
     render: (data) =>
       $.article(
         {},
-        $.of(data.content),
+        data.content,
       ),
   }),
 );

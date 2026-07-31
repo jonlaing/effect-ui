@@ -98,10 +98,8 @@ const UserPage = (props: { user: User }) =>
 
     return yield* $.form(
       { action: actions.updateProfile, method: "POST" },
-      collect(
-        $.input({ name: "name", value: props.user.name }),
-        $.button({ type: "submit" }, $.of("Save")),
-      ),
+      $.input({ name: "name", value: props.user.name }),
+      $.button({ type: "submit" }, "Save"),
     );
   });
 ```
@@ -164,11 +162,9 @@ The `app` option specifies your root component — the same tree the client hydr
 const App = () =>
   $.div(
     { class: "app" },
-    collect(
-      Header(),
-      $.main({}, Outlet({ router })),
-      Footer(),
-    ),
+    Header(),
+    $.main({}, Outlet({ router })),
+    Footer(),
   );
 
 Platform.toHttpRoutes(router, { app: App });

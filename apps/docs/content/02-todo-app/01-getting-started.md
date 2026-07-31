@@ -85,7 +85,7 @@ const container = document.getElementById("root");
 if (!container) throw new Error("Root element not found");
 
 // Our app - just a simple div for now
-const App = $.div({}, $.of("Hello, Effex!"));
+const App = $.div({}, "Hello, Effex!");
 
 // Mount it
 runApp(
@@ -102,7 +102,7 @@ Save the file. Your browser should now show "Hello, Effex!"
 
 Let's break it down:
 
-1. **`$.div({}, $.of("Hello, Effex!"))`** - Creates a div element with text content. The `$` object has methods for every HTML element (`$.div`, `$.span`, `$.button`, etc.). Text content is wrapped in `$.of()`
+1. **`$.div({}, "Hello, Effex!")`** - Creates a div element with text content. The `$` object has methods for every HTML element (`$.div`, `$.span`, `$.button`, etc.). Strings can be passed directly as children.
 
 2. **`mount(App, container)`** - Takes our element and renders it into the DOM container
 

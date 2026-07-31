@@ -28,7 +28,7 @@ mount(UserProfile(), document.body); // Type error!
 mount(
   Boundary.error(
     () => UserProfile(),
-    (error) => $.div({}, $.of(`Failed to load: ${error.message}`)),
+    (error) => $.div({}, `Failed to load: ${error.message}`),
   ),
   document.body,
 ); // Compiles
@@ -100,8 +100,8 @@ Boundary.suspense({
       const user = yield* fetchUser(id);
       return yield* UserProfile({ user });
     }),
-  fallback: () => $.div({}, $.of("Loading...")),
-  catch: (error) => $.div({}, $.of(`Error: ${error.message}`)),
+  fallback: () => $.div({}, "Loading..."),
+  catch: (error) => $.div({}, `Error: ${error.message}`),
   delay: "200 millis", // Avoid loading flash — Svelte can't do this
 });
 
@@ -111,20 +111,18 @@ const userData = yield* AsyncReadable.make(() => fetchUser(id));
 // AsyncReadable has separate Readables for fine-grained reactivity
 $.div(
   {},
-  collect(
-    when(userData.isLoading, {
-      onTrue: () => $.div({}, $.of("Loading...")),
-      onFalse: () => $.span(),
-    }),
-    matchOption(userData.value, {
-      onSome: (user) => UserProfile({ user }),
-      onNone: () => $.span(),
-    }),
-    matchOption(userData.error, {
-      onSome: (err) => $.div({ class: "error" }, $.of(Readable.map(err, (e) => e.message))),
-      onNone: () => $.span(),
-    }),
-  ),
+  when(userData.isLoading, {
+    onTrue: () => $.div({}, "Loading..."),
+    onFalse: () => $.span(),
+  }),
+  matchOption(userData.value, {
+    onSome: (user) => UserProfile({ user }),
+    onNone: () => $.span(),
+  }),
+  matchOption(userData.error, {
+    onSome: (err) => $.div({ class: "error" }, Readable.map(err, (e) => e.message)),
+    onNone: () => $.span(),
+  }),
 );
 ```
 
@@ -200,7 +198,7 @@ const Counter = () =>
     const count = yield* Signal.make(0);
     return yield* $.button(
       { onClick: () => count.update((c) => c + 1) },
-      $.of(count),
+      count,
     );
   });
 ```
@@ -282,7 +280,7 @@ const TodoList = (props: { todos: Readable.Readable<Todo[]> }) =>
     container: () => $.ul(),
     key: (todo) => todo.id,
     render: (todo) =>
-      $.li({}, $.of(Readable.map(todo, (t) => t.text))),
+      $.li({}, Readable.map(todo, (t) => t.text)),
   });
 ```
 
@@ -335,7 +333,7 @@ const DocumentTitle = (props: {
       Effect.sync(() => localStorage.setItem("lastTitle", title)),
     );
 
-    return yield* $.h1({}, $.of(props.title));
+    return yield* $.h1({}, props.title);
   });
 ```
 
@@ -364,7 +362,7 @@ class ThemeService extends Context.Tag("Theme")<ThemeService, string>() {}
 const Page = () =>
   Effect.gen(function* () {
     const theme = yield* ThemeService;
-    return yield* $.div({ class: theme }, $.of("..."));
+    return yield* $.div({ class: theme }, "...");
   });
 
 // Provide at mount
@@ -396,13 +394,11 @@ const TextInput = () =>
     const text = yield* Signal.make("");
     return yield* $.div(
       {},
-      collect(
-        $.input({
-          value: text,
-          onInput: (e) => text.set((e.target as HTMLInputElement).value),
-        }),
-        $.p({}, t`You typed: ${text}`),
-      ),
+      $.input({
+        value: text,
+        onInput: (e) => text.set((e.target as HTMLInputElement).value),
+      }),
+      $.p({}, t`You typed: ${text}`),
     );
   });
 ```
@@ -431,10 +427,8 @@ const Counter = () =>
 
     return yield* $.div(
       {},
-      collect(
-        $.button({ onClick: () => count.update((c) => c + 1) }, $.of(count)),
-        $.p({}, t`Doubled: ${doubled}`),
-      ),
+      $.button({ onClick: () => count.update((c) => c + 1) }, count),
+      $.p({}, t`Doubled: ${doubled}`),
     );
   });
 ```
@@ -463,16 +457,14 @@ const Card = <E, R>(props: {
 }) =>
   $.div(
     { class: "card" },
-    collect(
-      props.header ?? $.span(),
-      props.children,
-    ),
+    props.header ?? $.span(),
+    props.children,
   );
 
 // Usage
 Card({
-  header: $.h1({}, $.of("Title")),
-  children: $.p({}, $.of("Card content")),
+  header: $.h1({}, "Title"),
+  children: $.p({}, "Card content"),
 });
 ```
 
@@ -497,8 +489,8 @@ Boundary.suspense({
       const user = yield* fetchUser(id);
       return yield* UserProfile({ user });
     }),
-  fallback: () => $.p({}, $.of("Loading...")),
-  catch: (e) => $.p({}, $.of(`Error: ${e}`)),
+  fallback: () => $.p({}, "Loading..."),
+  catch: (e) => $.p({}, `Error: ${e}`),
 });
 ```
 
@@ -550,7 +542,7 @@ Svelte has built-in transition directives. Effex uses CSS-first animations:
 ```ts
 // Effex
 when(visible, {
-  onTrue: () => $.div({}, $.of("Fading content")),
+  onTrue: () => $.div({}, "Fading content"),
   onFalse: () => $.span(),
   animate: {
     enter: "fade-in",  // CSS class

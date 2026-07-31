@@ -24,7 +24,7 @@ First, update the props interface and component in `src/components/TodoItem.ts`:
 
 ```typescript
 import { Effect } from "effect";
-import { $, collect, Readable } from "@effex/dom";
+import { $, Readable } from "@effex/dom";
 
 interface Todo {
   id: number;
@@ -47,15 +47,13 @@ export const TodoItem = (props: TodoItemProps) =>
           t.completed ? "todo-item completed" : "todo-item"
         ),
       },
-      collect(
-        $.input({
-          type: "checkbox",
-          class: "toggle",
-          checked: Readable.map(props.todo, t => t.completed),
-          onChange: () => props.onToggle(todoId),
-        }),
-        $.span({ class: "todo-text" }, $.of(Readable.map(props.todo, t => t.text))),
-      ),
+      $.input({
+        type: "checkbox",
+        class: "toggle",
+        checked: Readable.map(props.todo, t => t.completed),
+        onChange: () => props.onToggle(todoId),
+      }),
+      $.span({ class: "todo-text" }, Readable.map(props.todo, t => t.text)),
     );
   });
 ```
@@ -74,7 +72,7 @@ Now update `src/main.ts` to create the toggle function and pass it down:
 ```typescript
 import "./styles.css";
 import { Effect } from "effect";
-import { $, collect, each, mount, Readable, runApp, Signal } from "@effex/dom";
+import { $, each, mount, Readable, runApp, Signal } from "@effex/dom";
 import { TodoItem } from "./components/TodoItem";
 
 const container = document.getElementById("root");
@@ -105,36 +103,32 @@ const App = () =>
       );
 
     return yield* $.div({ class: "todo-app" },
-      collect(
-        $.header({ class: "header" },
-          collect(
-            $.h1({}, $.of("todos")),
-            $.input({
-              class: "new-todo",
-              placeholder: "What needs to be done?",
-              autofocus: true,
-            }),
-          ),
-        ),
+      $.header({ class: "header" },
+        $.h1({}, "todos"),
+        $.input({
+          class: "new-todo",
+          placeholder: "What needs to be done?",
+          autofocus: true,
+        }),
+      ),
 
-        $.main({ class: "main" },
-          $.ul(
-            { class: "todo-list" },
-            each(todos, {
-              key: (todo) => todo.id,
-              render: (todo) => TodoItem({ todo, onToggle: toggleTodo }),
-            }),
-          ),
+      $.main({ class: "main" },
+        $.ul(
+          { class: "todo-list" },
+          each(todos, {
+            key: (todo) => todo.id,
+            render: (todo) => TodoItem({ todo, onToggle: toggleTodo }),
+          }),
         ),
+      ),
 
-        $.footer({ class: "footer" },
-          $.span(
-            { class: "todo-count" },
-            $.of(Readable.map(todos, t => {
-              const remaining = t.filter(todo => !todo.completed).length;
-              return `${remaining} item${remaining === 1 ? "" : "s"} left`;
-            })),
-          ),
+      $.footer({ class: "footer" },
+        $.span(
+          { class: "todo-count" },
+          Readable.map(todos, t => {
+            const remaining = t.filter(todo => !todo.completed).length;
+            return `${remaining} item${remaining === 1 ? "" : "s"} left`;
+          }),
         ),
       ),
     );
@@ -199,10 +193,10 @@ Our footer still shows total items. Let's fix it to show only incomplete items:
 ```typescript
 $.span(
   { class: "todo-count" },
-  $.of(Readable.map(todos, t => {
+  Readable.map(todos, t => {
     const remaining = t.filter(todo => !todo.completed).length;
     return `${remaining} item${remaining === 1 ? "" : "s"} left`;
-  })),
+  }),
 ),
 ```
 

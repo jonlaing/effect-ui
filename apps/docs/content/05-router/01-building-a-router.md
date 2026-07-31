@@ -85,10 +85,8 @@ const SidebarLayout = <A extends HTMLElement | SVGElement, E, R>(
 ) =>
   $.div(
     { class: "flex" },
-    collect(
-      Sidebar(),
-      $.main({ class: "flex-1" }, children),
-    ),
+    Sidebar(),
+    $.main({ class: "flex-1" }, children),
   );
 ```
 

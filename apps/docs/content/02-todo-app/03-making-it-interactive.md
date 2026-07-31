@@ -53,7 +53,7 @@ Update `src/main.ts`:
 ```typescript
 import "./styles.css";
 import { Effect } from "effect";
-import { $, collect, mount, Readable, runApp, Signal, t } from "@effex/dom";
+import { $, mount, Readable, runApp, Signal, t } from "@effex/dom";
 
 const container = document.getElementById("root");
 if (!container) throw new Error("Root element not found");
@@ -78,39 +78,31 @@ const App = () =>
     const remainingTodoCount = Readable.map(todos, t => t.filter(todo => !todo.completed).length);
 
     return yield* $.div({ class: "todo-app" },
-      collect(
-        $.header({ class: "header" },
-          collect(
-            $.h1({}, $.of("todos")),
-            $.input({
-              class: "new-todo",
-              placeholder: "What needs to be done?",
-              autofocus: true,
-            }),
-          ),
-        ),
+      $.header({ class: "header" },
+        $.h1({}, "todos"),
+        $.input({
+          class: "new-todo",
+          placeholder: "What needs to be done?",
+          autofocus: true,
+        }),
+      ),
 
-        $.main({ class: "main" },
-          $.ul({ class: "todo-list" },
-            // Still hardcoded for now - we'll fix this next chapter
-            $.li({ class: "todo-item" },
-              collect(
-                $.input({ type: "checkbox", class: "toggle" }),
-                $.span({ class: "todo-text" }, $.of("Learn Effex")),
-              ),
-            ),
+      $.main({ class: "main" },
+        $.ul({ class: "todo-list" },
+          // Still hardcoded for now - we'll fix this next chapter
+          $.li({ class: "todo-item" },
+            $.input({ type: "checkbox", class: "toggle" }),
+            $.span({ class: "todo-text" }, "Learn Effex"),
           ),
         ),
+      ),
 
-        $.footer({ class: "footer" },
-          collect(
-            // Make the count reactive!
-            // Note: use the `t` template literal for concatenating strings
-            // with reactive values
-            $.span({ class: "todo-count" }, $.of(t`${completedTodoCount} items completed`)),
-            $.span({ class: "todo-count" }, $.of(t`${remainingTodoCount} items left`)),
-          ),
-        ),
+      $.footer({ class: "footer" },
+        // Make the count reactive!
+        // Note: use the `t` template literal for concatenating strings
+        // with reactive values
+        $.span({ class: "todo-count" }, t`${completedTodoCount} items completed`),
+        $.span({ class: "todo-count" }, t`${remainingTodoCount} items left`),
       ),
     );
   });
@@ -154,7 +146,7 @@ $.button(
       completed: false
     })
   },
-  $.of("Add Test Todo")
+  "Add Test Todo"
 )
 ```
 
