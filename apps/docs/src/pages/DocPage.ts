@@ -30,11 +30,8 @@ export const DocPage = (props: {
             class:
               "flex flex-col items-start gap-1 text-sm hover:text-primary transition-colors",
           },
-          $.div(
-            {},
-            $.span({ class: "text-base-content/50 text-xs" }, "Previous"),
-            $.span({}, `← ${props.prev.title}`),
-          ),
+          $.span({ class: "text-base-content/50 text-xs" }, "Previous"),
+          $.span({}, `← ${props.prev.title}`),
         )
       : $.div({}),
     props.next
@@ -44,11 +41,8 @@ export const DocPage = (props: {
             class:
               "flex flex-col items-end gap-1 text-sm hover:text-primary transition-colors",
           },
-          $.div(
-            {},
-            $.span({ class: "text-base-content/50 text-xs" }, "Next"),
-            $.span({}, `${props.next.title} →`),
-          ),
+          $.span({ class: "text-base-content/50 text-xs" }, "Next"),
+          $.span({}, `${props.next.title} →`),
         )
       : $.div({}),
   );

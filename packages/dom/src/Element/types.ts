@@ -36,7 +36,8 @@ export type Child<E = never, R = never> = Effect.Effect<
 >;
 
 /**
- * A child input accepted by element builders (`$.div`, `$.span`, ...).
+ * A child input accepted by element builders (`$.div`, `$.span`, ...) and
+ * component authors who want to opt in to the same variadic API.
  *
  * Broader than {@link Child}: element factories accept the raw types
  * users naturally write in markup — strings, numbers, nested elements,

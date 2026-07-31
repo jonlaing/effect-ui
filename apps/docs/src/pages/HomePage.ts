@@ -6,7 +6,7 @@ import logoSvg from "../assets/effex-logo-dark.svg?raw";
 // ─── Code examples ──────────────────────────────────────────────────────────
 
 export const counterExample = `import { Effect } from "effect";
-import { $, collect, Signal, mount, runApp } from "@effex/dom";
+import { $, Signal, mount, runApp } from "@effex/dom";
 
 const Counter = () =>
   Effect.gen(function* () {
@@ -14,22 +14,20 @@ const Counter = () =>
 
     return yield* $.div(
       { class: "flex items-center gap-4" },
-      collect(
-        $.button(
-          {
-            class: "btn btn-primary",
-            onClick: () => count.update((n) => n - 1),
-          },
-          $.of("-"),
-        ),
-        $.span({ class: "text-2xl tabular-nums" }, count),
-        $.button(
-          {
-            class: "btn btn-primary",
-            onClick: () => count.update((n) => n + 1),
-          },
-          $.of("+"),
-        ),
+      $.button(
+        {
+          class: "btn btn-primary",
+          onClick: () => count.update((n) => n - 1),
+        },
+        "-",
+      ),
+      $.span({ class: "text-2xl tabular-nums" }, count),
+      $.button(
+        {
+          class: "btn btn-primary",
+          onClick: () => count.update((n) => n + 1),
+        },
+        "+",
       ),
     );
   });
@@ -54,7 +52,7 @@ const UserProfile = (id: string): Element<HttpError, ApiClient> =>
   Effect.gen(function* () {
     const api = yield* ApiClient;
     const user = yield* api.getUser(id);
-    return yield* $.div({}, $.of(user.name));
+    return yield* $.div({}, user.name);
   });
 
 // TypeScript won't let you mount this without
@@ -167,11 +165,11 @@ export const HomePage = (props: {
               { class: "flex gap-4 justify-center" },
               Link(
                 { href: "/docs/quick-start", class: "btn btn-primary" },
-                $.of("Quick Start Guide"),
+                "Quick Start Guide",
               ),
               Link(
                 { href: "/docs/introduction", class: "btn btn-neutral" },
-                $.of("Documentation"),
+                "Documentation",
               ),
             ),
             $.div(
@@ -341,11 +339,11 @@ export const HomePage = (props: {
               href: "/docs/02-todo-app/00-introduction",
               class: "btn btn-primary",
             },
-            $.of("Follow the Tutorial"),
+            "Follow the Tutorial",
           ),
           Link(
             { href: "/docs/introduction", class: "btn btn-neutral" },
-            $.of("Read the Docs"),
+            "Read the Docs",
           ),
         ),
       ),

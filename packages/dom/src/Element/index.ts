@@ -26,6 +26,6 @@ export {
 } from "./ref.js";
 
 export * from "./core.js";
-export type { Child, ChildNode, Element } from "./types.js";
+export type { Child, ChildInput, ChildNode, Element } from "./types.js";
 
 export { $, MergePropsCtx } from "./DOMElements.js";

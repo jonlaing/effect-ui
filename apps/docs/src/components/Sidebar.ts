@@ -16,22 +16,19 @@ export const Sidebar = (props: { readonly sections: readonly DocSection[] }) =>
         { class: "pb-6 px-4 border-b border-neutral-500/50" },
         Link(
           { href: "/", class: "flex gap-2 items-center group" },
+          $.div({
+            class:
+              "[&_svg]:h-8 [&_svg]:w-auto group-hover:-translate-y-1 transition-transform",
+            innerHTML: logoSvg,
+          }),
           $.div(
-            {},
-            $.div({
-              class:
-                "[&_svg]:h-8 [&_svg]:w-auto group-hover:-translate-y-1 transition-transform",
-              innerHTML: logoSvg,
-            }),
-            $.div(
-              {
-                class: [
-                  "uppercase tracking-widest px-2 py-1 rounded bg-primary -rotate-3 shadow",
-                  "group-hover:rotate-0 group-hover:shadow-lg transition-transform",
-                ],
-              },
-              "Docs",
-            ),
+            {
+              class: [
+                "uppercase tracking-widest px-2 py-1 rounded bg-primary -rotate-3 shadow",
+                "group-hover:rotate-0 group-hover:shadow-lg transition-transform",
+              ],
+            },
+            "Docs",
           ),
         ),
       ),
@@ -57,14 +54,11 @@ export const Sidebar = (props: { readonly sections: readonly DocSection[] }) =>
                       href: `/docs/${page.slug}`,
                       class: "text-base-content/60 hover:text-primary",
                     },
-                    $.div(
-                      {},
-                      $.i({
-                        class: "[&_svg]:w-4 [&_svg]:h-4",
-                        innerHTML: NotebookText,
-                      }),
-                      $.span({}, page.title),
-                    ),
+                    $.i({
+                      class: "[&_svg]:w-4 [&_svg]:h-4",
+                      innerHTML: NotebookText,
+                    }),
+                    $.span({}, page.title),
                   ),
                 ),
               ),

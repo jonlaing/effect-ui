@@ -1,6 +1,12 @@
 import { Effect } from "effect";
 
-import { $, Readable, type ClassValue, type Element } from "@effex/dom";
+import {
+  $,
+  Readable,
+  type ChildInput,
+  type ClassValue,
+  type Element,
+} from "@effex/dom";
 
 import { buildPath, NavigationContext } from "./Navigation.js";
 import type { Route } from "./Route.js";
@@ -124,7 +130,7 @@ const isPrefixMatch = (pathname: string, href: string): boolean => {
  */
 export const Link = <E, R>(
   props: LinkProps,
-  children: Effect.Effect<unknown, E, R>,
+  ...children: ReadonlyArray<ChildInput<E, R>>
 ): Element.Element<HTMLAnchorElement, E, R | NavigationContext> =>
   Effect.gen(function* () {
     const nav = yield* NavigationContext;
@@ -197,7 +203,17 @@ export const Link = <E, R>(
             }
           });
 
-    return yield* $.a(
+    // The factory's variadic-tuple inference re-derives `E`/`R` from each
+    // child. Link has already fixed its own `<E, R>` by this point, so
+    // routing that inference again through `$.a` produces TS2589 (recursive
+    // depth). Sidestep by calling the factory with a widened signature and
+    // asserting the result back — `ChildInput` flattens the array at
+    // runtime, so semantics are identical.
+    const factory = $.a as (
+      attrs: Parameters<typeof $.a>[0],
+      children: ReadonlyArray<ChildInput<E, R>>,
+    ) => Element.Element<HTMLAnchorElement, E, R>;
+    return yield* factory(
       {
         ...anchorProps,
         href: computedHref,
@@ -205,7 +221,7 @@ export const Link = <E, R>(
         "data-active-exact": dataActiveExact,
         "data-active-prefix": dataActivePrefix,
       },
-      children as Effect.Effect<string, E, R>,
+      children,
     );
   });
 

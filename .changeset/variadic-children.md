@@ -46,8 +46,31 @@ channels — mixing children with different errors and service requirements
 now produces the correct combined signature instead of collapsing to the
 first slot's type.
 
-`@effex/router`'s `Link` component now accepts the same `ClassValue` type
-for `class` as the builder primitives — string, `readonly ClassItem[]`, or
-`Readable`. The forwarding to `$.a` was already unconditional, so this is
-purely a type widening. `ClassValue` and `ClassItem` are now re-exported
-from `@effex/dom`'s package root for downstream use.
+`@effex/router`'s `Link` now matches the builder-primitive API:
+
+- `class` accepts the same `ClassValue` type as `$.div` etc. — string,
+  `readonly ClassItem[]`, or a `Readable` of either.
+- `children` is variadic and takes any `ChildInput` — pass strings,
+  Elements, arrays, or a mix without wrapping in a `$.div`.
+
+```ts
+// Before
+Link(
+  { href: "/docs", class: "btn" },
+  $.div(
+    {},
+    $.i({ innerHTML: iconSvg }),
+    $.span({}, "Docs"),
+  ),
+);
+
+// After
+Link(
+  { href: "/docs", class: ["btn", "btn-primary"] },
+  $.i({ innerHTML: iconSvg }),
+  $.span({}, "Docs"),
+);
+```
+
+`ChildInput`, `ClassValue`, and `ClassItem` are now re-exported from
+`@effex/dom`'s package root for downstream component authors.
