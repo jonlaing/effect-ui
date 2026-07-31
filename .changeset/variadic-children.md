@@ -75,13 +75,18 @@ Link(
 );
 ```
 
-`ChildInput`, `ChildLeaf`, `ClassValue`, and `ClassItem` are now re-exported
-from `@effex/dom`'s package root for downstream component authors.
+### Component-author aliases
 
-Component authors picking between the two:
+Two purpose-oriented types for wrapper variadic-rest params — pick by the
+wrapper's intent:
 
-- `ChildInput<E, R>` — permissive; users can pass leaves or an array as a
-  single arg. Use for pass-through wrappers that just forward children.
-- `ChildLeaf<E, R>` — leaves only. Use when the wrapper wants to *interleave*
-  its own children alongside forwarded ones (`$.section(attrs, ownH2, children)`).
-  Callers pass leaves or spread arrays.
+- **`Children<E, R>`** — variadic children of leaves only. Use when the
+  wrapper wants to **interleave** its own owned children with forwarded
+  ones in a single primitive call. Callers spread arrays:
+  `Section(props, ...myArray)`.
+- **`PermissiveChildren<E, R>`** — variadic children of leaves *or* one
+  array-as-single-arg. Use for **pure pass-through** wrappers. Callers may
+  write `Link(props, [a, b])`, `Link(props, a, b)`, or `Link(props, ...arr)`.
+
+Also exported from `@effex/dom` package root: `ChildInput`, `ChildLeaf`,
+`ClassValue`, `ClassItem`.

@@ -71,3 +71,53 @@ export type ChildLeaf<E = never, R = never> =
 export type ChildInput<E = never, R = never> =
   | ChildLeaf<E, R>
   | ReadonlyArray<ChildLeaf<E, R>>;
+
+// =============================================================================
+// Component-author aliases
+// =============================================================================
+//
+// The two shapes below cover ~all wrapper components. Pick by the wrapper's
+// intent, not by the caller's ergonomics.
+
+/**
+ * Variadic-rest type for wrappers that need to **interleave** their own
+ * elements with forwarded children:
+ *
+ * ```ts
+ * const Section = <E = never, R = never>(
+ *   props: { heading: string },
+ *   ...children: Children<E, R>
+ * ): Element<HTMLElement, E, R> =>
+ *   $.section({}, $.h2({}, props.heading), children);
+ * ```
+ *
+ * Uses `ChildLeaf` under the hood — no array-as-single-arg from the caller,
+ * but the collected array fits `$.section`'s ChildInput slot as one unit,
+ * so the wrapper can pass it alongside its own owned children in the same
+ * primitive call. Callers spread arrays: `Section(props, ...myArray)`.
+ *
+ * This is the recommended default for wrapper variadic children.
+ */
+export type Children<E = never, R = never> = ReadonlyArray<ChildLeaf<E, R>>;
+
+/**
+ * Variadic-rest type for wrappers that only **forward** children without
+ * mixing in wrapper-owned elements:
+ *
+ * ```ts
+ * const Link = <E = never, R = never>(
+ *   props: LinkProps,
+ *   ...children: PermissiveChildren<E, R>
+ * ): Element<HTMLAnchorElement, E, R> =>
+ *   $.a({ href: props.href }, children);
+ * ```
+ *
+ * Uses `ChildInput` — callers may pass an array as a single argument
+ * (`Link(props, [a, b])`) as well as spread or variadic. In exchange, the
+ * wrapper cannot interleave its own children with the forwarded ones in
+ * the same primitive call (it must forward `children` as the sole child
+ * argument).
+ */
+export type PermissiveChildren<E = never, R = never> = ReadonlyArray<
+  ChildInput<E, R>
+>;

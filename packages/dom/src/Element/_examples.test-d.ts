@@ -8,7 +8,7 @@
 import { Context } from "effect";
 
 import { $, type Element } from "../index.js";
-import type { ChildInput, ChildLeaf } from "./types.js";
+import type { Children, PermissiveChildren } from "./types.js";
 
 // Shared fixtures — two services + two errors so we can see E/R unions.
 class ApiClient extends Context.Tag("ApiClient")<
@@ -54,7 +54,7 @@ void _cardProof;
 // to know about ChildInputE / ChildInputR.
 
 const CardList = <E = never, R = never>(
-  ...items: ReadonlyArray<ChildInput<E, R>>
+  ...items: PermissiveChildren<E, R>
 ): Element.Element<HTMLUListElement, E, R> =>
   $.ul({ class: "card-list" }, items);
 
@@ -72,7 +72,7 @@ void _clProof1;
 
 const Panel = <E = never, R = never>(
   props: { class?: string },
-  ...children: ReadonlyArray<ChildInput<E, R>>
+  ...children: PermissiveChildren<E, R>
 ): Element.Element<HTMLDivElement, E, R> =>
   $.div({ class: props.class ?? "panel" }, children);
 
@@ -84,27 +84,20 @@ void _panelProof;
 // ============================================================================
 // PATTERN C-alt — Wrapper interleaves its own children with forwarded ones
 // ============================================================================
-// Use `ChildLeaf<E, R>` (not `ChildInput`) for the variadic slot when the
-// wrapper wants to mix wrapper-authored children with forwarded ones.
-// Rationale:
+// Use `Children<E, R>` when the wrapper wants to mix wrapper-authored
+// children with forwarded ones in one primitive call. Callers spread arrays
+// (`Section(props, ...myArray)`) — they can't pass a single-array arg.
 //
-//   - `ChildInput<E, R>` = leaf OR `ReadonlyArray<ChildLeaf>` — permissive,
-//     users can pass an array as a single arg. Great for pure pass-through,
-//     but the collected `ReadonlyArray<ChildInput>` is not itself a valid
-//     ChildInput (elements could be arrays), so it can't be interleaved
-//     into a primitive's tuple slot.
-//   - `ChildLeaf<E, R>` = single-child leaves only — restrictive, but the
-//     collected `ReadonlyArray<ChildLeaf>` IS a valid `ChildInput` (matches
-//     the array branch), so wrappers can pass it as one slot alongside
-//     wrapper-owned children.
+// The two aliases side by side:
 //
-// If your wrapper never mixes its own children with forwarded ones, use
-// `ChildInput` for permissive callers. If it does, use `ChildLeaf` and
-// document that callers should spread arrays (`Section(props, ...arr)`).
+//   Children<E, R>            — leaves only. Interleaving-friendly.
+//   PermissiveChildren<E, R>  — leaves OR one array-as-single-arg. Passthrough
+//                               only; cannot be interleaved with wrapper-owned
+//                               siblings in one primitive call.
 
 const Section = <E = never, R = never>(
   props: { heading: string; class?: string },
-  ...children: ReadonlyArray<ChildLeaf<E, R>>
+  ...children: Children<E, R>
 ): Element.Element<HTMLElement, E, R> =>
   $.section(
     { class: props.class ?? "section" },

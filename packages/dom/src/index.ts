@@ -43,8 +43,10 @@ export type {
   ChildInputE,
   ChildInputR,
   ChildLeaf,
+  Children,
   ClassItem,
   ClassValue,
+  PermissiveChildren,
 } from "./Element/index.js";
 
 // Control flow

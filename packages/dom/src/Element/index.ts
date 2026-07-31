@@ -33,7 +33,9 @@ export type {
   ChildInput,
   ChildLeaf,
   ChildNode,
+  Children,
   Element,
+  PermissiveChildren,
 } from "./types.js";
 
 export { $, MergePropsCtx } from "./DOMElements.js";

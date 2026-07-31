@@ -3,9 +3,9 @@ import { Effect } from "effect";
 import {
   $,
   Readable,
-  type ChildInput,
   type ClassValue,
   type Element,
+  type PermissiveChildren,
 } from "@effex/dom";
 
 import { buildPath, NavigationContext } from "./Navigation.js";
@@ -130,7 +130,7 @@ const isPrefixMatch = (pathname: string, href: string): boolean => {
  */
 export const Link = <E = never, R = never>(
   props: LinkProps,
-  ...children: ReadonlyArray<ChildInput<E, R>>
+  ...children: PermissiveChildren<E, R>
 ): Element.Element<HTMLAnchorElement, E, R | NavigationContext> =>
   Effect.gen(function* () {
     const nav = yield* NavigationContext;
