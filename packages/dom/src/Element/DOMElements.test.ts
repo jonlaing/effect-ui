@@ -592,12 +592,8 @@ describe("DOMElements", () => {
         }).pipe(Effect.provide(TestLayer)),
       );
 
-      it.scopedLive("recurses through nested arrays", () =>
-        Effect.gen(function* () {
-          const el = yield* div({}, ["a", ["b", ["c", "d"]], "e"]);
-          expect(el.textContent).toBe("abcde");
-        }).pipe(Effect.provide(TestLayer)),
-      );
+      // Nested arrays are intentionally not part of ChildInput. Use
+      // `.flat()` or the variadic form to combine multiple lists.
 
       it.scopedLive("skips empty arrays", () =>
         Effect.gen(function* () {

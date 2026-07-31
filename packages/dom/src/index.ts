@@ -42,6 +42,7 @@ export type {
   ChildInput,
   ChildInputE,
   ChildInputR,
+  ChildLeaf,
   ClassItem,
   ClassValue,
 } from "./Element/index.js";

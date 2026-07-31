@@ -603,12 +603,14 @@ const isAttrsObject = (arg: unknown): boolean => {
 };
 
 /**
- * Normalize a variadic list of {@link ChildInput}s into `Child` effects:
+ * Normalize a list of {@link ChildInput}s into `Child` effects:
  *
  * - Strings / numbers wrap as text children via `Core.of`.
  * - `null` / `undefined` / booleans drop out (React-style — supports
  *   `condition && <el/>` and `list?.map(...)`).
- * - Nested arrays flatten recursively (for JSX `.map()` interop).
+ * - One level of array nesting flattens (matches `ChildInput`'s type
+ *   surface; deeper nesting isn't part of the contract but the runtime
+ *   walks recursively as a defensive belt-and-braces measure).
  * - Readables of string/number pass through as reactive text.
  * - Elements (Effects) pass through as-is.
  */

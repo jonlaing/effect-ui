@@ -36,29 +36,38 @@ export type Child<E = never, R = never> = Effect.Effect<
 >;
 
 /**
- * A child input accepted by element builders (`$.div`, `$.span`, ...) and
- * component authors who want to opt in to the same variadic API.
+ * A single child leaf — everything the factory accepts as one element in
+ * its variadic tuple or as one entry inside a children array.
  *
- * Broader than {@link Child}: element factories accept the raw types
- * users naturally write in markup — strings, numbers, nested elements,
- * reactive text, arrays for `.map()`-style output, and nullish/boolean
- * for conditional rendering. The factory normalizes these into `Child`
- * effects internally.
- *
- * - `string` / `number` → wrapped as text nodes
- * - `null` / `undefined` / `boolean` → skipped (React-style; `false && el`
- *    produces nothing, `true` also skipped for symmetry)
- * - `Element` / `Readable` → passed through as-is
- * - `ChildInput[]` → flattened recursively
+ * - `string` / `number` → wrapped as a text node
+ * - `null` / `undefined` / `boolean` → skipped (React-style)
+ * - `Effect<ChildNode | ChildNode[]>` → passed through
+ * - `Readable<string | number>` → reactive text
  */
-export type ChildInput<E = never, R = never> =
+export type ChildLeaf<E = never, R = never> =
   | string
   | number
   | boolean
   | null
   | undefined
-  // Any Effect that yields a ChildNode — covers Elements (`$.div(...)`),
-  // text nodes (`$.of(...)`), and combined children (`collect(...)`).
   | Child<E, R>
-  | Readable.Readable<string | number>
-  | ReadonlyArray<ChildInput<E, R>>;
+  | Readable.Readable<string | number>;
+
+/**
+ * A child input accepted by element builders (`$.div`, `$.span`, ...) and
+ * component authors who want to opt in to the same API.
+ *
+ * A ChildInput is either a leaf or a *single-level* array of leaves. Nested
+ * arrays (`[[a, b], [c]]`) are intentionally not part of the type — the
+ * runtime does not walk deeper than one level either. Use `.flat()` or the
+ * variadic form if you're combining multiple lists.
+ *
+ * The single-level constraint is what makes `E`/`R` inference through
+ * component wrappers tractable — a self-recursive array branch collides
+ * with `ChildInputE`/`ChildInputR`'s array recursion and produces TS2589
+ * ("excessively deep") whenever a wrapper forwards its own generic
+ * children to a primitive.
+ */
+export type ChildInput<E = never, R = never> =
+  | ChildLeaf<E, R>
+  | ReadonlyArray<ChildLeaf<E, R>>;

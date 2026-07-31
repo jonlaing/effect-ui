@@ -70,15 +70,17 @@ const _proof2: Element.Element<
   ServiceA | ServiceB
 > = combined2;
 
-// Nested array with mixed types — union must recurse through arrays.
-const combined3 = $.div({}, [childA, [childB, "nested"]]);
+// Single-level array with mixed types — union propagates across the array
+// element union. Nested arrays are intentionally NOT part of ChildInput
+// (they'd re-introduce the TS2589 depth issue for component wrappers).
+const combined3 = $.div({}, [childA, childB, "flat"]);
 const _proof3: Element.Element<
   HTMLDivElement,
   ErrA | ErrB,
   ServiceA | ServiceB
 > = combined3;
 
-// Mix of Elements, primitives, arrays, nullish.
+// Mix of Elements, primitives, single-level arrays, nullish.
 const combined4 = $.div(
   { class: "y" },
   childA,
@@ -87,7 +89,7 @@ const combined4 = $.div(
   undefined,
   "hello",
   42,
-  [childB, "nested"],
+  [childB, "arr-item"],
 );
 const _proof4: Element.Element<
   HTMLDivElement,
