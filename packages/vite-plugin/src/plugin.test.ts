@@ -163,6 +163,36 @@ export const FeedRoute = Route.make("/").pipe(
       expect(result).toContain("Route.get(null,");
       expect(result).not.toContain("fetchData");
     });
+
+    it("preserves `$` import when `$` is used in the code", () => {
+      // Regression: dead-import detection used `\b<name>\b`, and `\b` is a
+      // \w↔\W boundary. `$` is a \w character, but the JS `$` at a call
+      // site like `$.div(...)` is bordered by whitespace on the left and
+      // `.` on the right — so `\b$\b` couldn't match a real usage, and
+      // `$`-only imports were misclassified as dead.
+      const input = `import { $ } from "@effex/dom";
+const App = () => $.div({}, "hi");`;
+      const result = stripServerCode(input);
+      expect(result).toContain('import { $ } from "@effex/dom"');
+    });
+
+    it("preserves `$` when it shares an import line with a used specifier", () => {
+      // Regression cover: the bug was hidden while other used specifiers
+      // (e.g. `collect`) sat next to `$` on the same import line, because
+      // the "all dead" check short-circuits when any one specifier looks
+      // used.
+      const input = `import { $, when } from "@effex/dom";
+const App = () => $.div({}, when(cond, { onTrue: () => Yes(), onFalse: () => No() }));`;
+      const result = stripServerCode(input);
+      expect(result).toContain('import { $, when } from "@effex/dom"');
+    });
+
+    it("still strips a truly dead `$`-only import", () => {
+      const input = `import { $ } from "@effex/dom";
+const x = 1;`;
+      const result = stripServerCode(input);
+      expect(result).not.toContain('import { $ } from "@effex/dom"');
+    });
   });
 
   describe("Route.static stripping", () => {
