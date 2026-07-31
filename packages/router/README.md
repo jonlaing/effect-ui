@@ -38,18 +38,20 @@ const AboutRoute = Route.make("/about").pipe(
 const router = Router.empty.pipe(
   Router.concat(HomeRoute),
   Router.concat(AboutRoute),
-  Router.fallback(() => $.div({}, $.of("Not found"))),
+  Router.fallback(() => $.div({}, "Not found")),
 );
 
 // App component with navigation
 const App = () =>
-  $.div({}, collect(
-    $.nav({}, collect(
-      Link({ href: "/" }, $.of("Home")),
-      Link({ href: "/about" }, $.of("About")),
-    )),
+  $.div(
+    {},
+    $.nav(
+      {},
+      Link({ href: "/" }, "Home"),
+      Link({ href: "/about" }, "About"),
+    ),
     Outlet({ router }),
-  ));
+  );
 
 // Run the app
 runApp(
@@ -347,11 +349,11 @@ Wrap routes with a layout component. Layouts are applied inside-out:
 ```ts
 const AppLayout = <A extends HTMLElement | SVGElement, E, R>(
   children: Element.Element<A, E, R>,
-) => $.div({ class: "app" }, collect(Navbar(), $.main({}, children)));
+) => $.div({ class: "app" }, Navbar(), $.main({}, children));
 
 const SidebarLayout = <A extends HTMLElement | SVGElement, E, R>(
   children: Element.Element<A, E, R>,
-) => $.div({ class: "with-sidebar" }, collect(Sidebar(), children));
+) => $.div({ class: "with-sidebar" }, Sidebar(), children);
 
 const router = Router.empty.pipe(
   Router.concat(DashboardRoute),
@@ -393,10 +395,11 @@ The `Outlet` component renders the currently matched route. It handles guard enf
 import { Outlet } from "@effex/router";
 
 const App = () =>
-  $.div({}, collect(
+  $.div(
+    {},
     Navbar(),
     $.main({}, Outlet({ router })),
-  ));
+  );
 ```
 
 Outlet automatically:
