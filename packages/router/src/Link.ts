@@ -1,6 +1,12 @@
 import { Effect } from "effect";
 
-import { $, Readable, type Element } from "@effex/dom";
+import {
+  $,
+  Readable,
+  type ClassValue,
+  type Element,
+  type PermissiveChildren,
+} from "@effex/dom";
 
 import { buildPath, NavigationContext } from "./Navigation.js";
 import type { Route } from "./Route.js";
@@ -30,7 +36,7 @@ export interface LinkProps {
   readonly replace?: boolean;
 
   // Standard anchor attributes
-  readonly class?: string | Readable.Readable<string>;
+  readonly class?: ClassValue;
   readonly target?: string;
   readonly rel?: string;
   readonly id?: string;
@@ -122,9 +128,9 @@ const isPrefixMatch = (pathname: string, href: string): boolean => {
  * // a[data-active-prefix] { color: blue; }
  * ```
  */
-export const Link = <E, R>(
+export const Link = <E = never, R = never>(
   props: LinkProps,
-  children: Effect.Effect<unknown, E, R>,
+  ...children: PermissiveChildren<E, R>
 ): Element.Element<HTMLAnchorElement, E, R | NavigationContext> =>
   Effect.gen(function* () {
     const nav = yield* NavigationContext;
@@ -205,7 +211,7 @@ export const Link = <E, R>(
         "data-active-exact": dataActiveExact,
         "data-active-prefix": dataActivePrefix,
       },
-      children as any,
+      children,
     );
   });
 

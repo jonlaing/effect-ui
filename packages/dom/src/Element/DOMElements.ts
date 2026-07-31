@@ -10,7 +10,7 @@ import { MergePropsCtx, Readable, RendererContext } from "@effex/core";
 
 import * as Core from "./core.js";
 import type { ElementRef } from "./ref.js";
-import type { Child, Element } from "./types.js";
+import type { Child, ChildInput, ChildNode, Element } from "./types.js";
 
 // =============================================================================
 // Types
@@ -194,47 +194,125 @@ export type SVGAttributes<T extends SVGElement = SVGElement> =
     };
 
 /**
+ * Extract the union of `E` (error) types across every {@link ChildInput}
+ * in a variadic tuple, recursing into nested arrays. Primitives (string,
+ * number, boolean, null, undefined) and Readables contribute `never` and
+ * fall out of the union.
+ *
+ * Exposed so component authors can preserve E/R inference when wrapping
+ * a primitive with variadic children — see {@link ElementFactory}'s
+ * forwarding overload for the intended usage.
+ */
+export type ChildInputE<T> =
+  T extends Effect.Effect<unknown, infer E, unknown>
+    ? E
+    : T extends ReadonlyArray<infer U>
+      ? ChildInputE<U>
+      : never;
+
+/**
+ * Extract the union of `R` (requirements) types across every
+ * {@link ChildInput} in a variadic tuple, recursing into nested arrays.
+ * Scope and RendererContext from `Element`'s type alias flow through
+ * naturally; they're satisfied by the ambient render layer.
+ */
+export type ChildInputR<T> =
+  T extends Effect.Effect<unknown, unknown, infer R>
+    ? R
+    : T extends ReadonlyArray<infer U>
+      ? ChildInputR<U>
+      : never;
+
+/**
  * Factory function type for HTML elements.
+ *
+ * Supports four call shapes, resolved by TypeScript overload matching on
+ * the first argument:
+ *
+ * - `$.tag()` — no attrs, no children.
+ * - `$.tag(attrs)` — attrs only.
+ * - `$.tag(child1, child2, ...)` — variadic children with no attrs (first
+ *   arg must be a {@link ChildInput}, not a plain attrs object).
+ * - `$.tag(attrs, child1, child2, ...)` — the full form.
+ *
+ * Each child is a {@link ChildInput} — string, number, Element, Readable,
+ * nullish/boolean (skipped), or a nested array (flattened recursively).
+ * Backward-compatible: a single `Child` effect (e.g. from `collect(...)`)
+ * still works as one variadic entry.
+ *
+ * The variadic-tuple generic `T` captures each argument's type
+ * independently, so the returned Element's `E` and `R` channels are the
+ * *union* of every child's requirements — mixing children with different
+ * error types and service dependencies works as expected.
  */
 export type ElementFactory<K extends keyof HTMLElementTagNameMap> = {
+  // Forwarding overload: takes a homogeneous array of children with a
+  // single `<E, R>` pair — the shape wrappers naturally have when they
+  // collect their own variadic children into an array and pass it down.
+  // Avoids TS2589 (recursive depth) because there's no `ChildInputE`
+  // computation on a tuple type.
+  //
+  // Component authors write:
+  //   export const MyComponent = <E, R>(
+  //     ...children: ReadonlyArray<ChildInput<E, R>>
+  //   ): Element<..., E, R> => $.div(attrs, children);
+  //
+  // Tradeoff: `E`/`R` collapse to a single pair, so heterogeneous
+  // requirements from siblings become an intersection (contravariant R).
+  // For the common wrapper case (E/R passes through) that's exactly right.
   <E = never, R = never>(
     attrs: HTMLAttributes<HTMLElementTagNameMap[K]>,
-    children: Child<E, R>,
+    children: ReadonlyArray<ChildInput<E, R>>,
   ): Element<HTMLElementTagNameMap[K], E, R>;
-  (
-    attrs: HTMLAttributes<HTMLElementTagNameMap[K]>,
-  ): Element<HTMLElementTagNameMap[K], never, never>;
   <E = never, R = never>(
-    children: Child<E, R>,
+    children: ReadonlyArray<ChildInput<E, R>>,
   ): Element<HTMLElementTagNameMap[K], E, R>;
-  (children: string): Element<HTMLElementTagNameMap[K], never, never>;
-  (children: number): Element<HTMLElementTagNameMap[K], never, never>;
-  (
-    children: Readable.Readable<string | number>,
-  ): Element<HTMLElementTagNameMap[K], never, never>;
-  (): Element<HTMLElementTagNameMap[K], never, never>;
+
+  // Variadic overload: max inference across mixed positional children.
+  <T extends ReadonlyArray<ChildInput<unknown, unknown>>>(
+    attrs: HTMLAttributes<HTMLElementTagNameMap[K]>,
+    ...children: T
+  ): Element<
+    HTMLElementTagNameMap[K],
+    ChildInputE<T[number]>,
+    ChildInputR<T[number]>
+  >;
+  <T extends ReadonlyArray<ChildInput<unknown, unknown>>>(
+    ...children: T
+  ): Element<
+    HTMLElementTagNameMap[K],
+    ChildInputE<T[number]>,
+    ChildInputR<T[number]>
+  >;
 };
 
 /**
- * Factory function type for SVG elements.
+ * Factory function type for SVG elements. Mirrors {@link ElementFactory}.
  */
 export type SVGElementFactory<K extends keyof SVGElementTagNameMap> = {
   <E = never, R = never>(
     attrs: SVGAttributes<SVGElementTagNameMap[K]>,
-    children: Child<E, R>,
+    children: ReadonlyArray<ChildInput<E, R>>,
   ): Element<SVGElementTagNameMap[K], E, R>;
-  (
-    attrs: SVGAttributes<SVGElementTagNameMap[K]>,
-  ): Element<SVGElementTagNameMap[K], never, never>;
   <E = never, R = never>(
-    children: Child<E, R>,
+    children: ReadonlyArray<ChildInput<E, R>>,
   ): Element<SVGElementTagNameMap[K], E, R>;
-  (children: string): Element<SVGElementTagNameMap[K], never, never>;
-  (children: number): Element<SVGElementTagNameMap[K], never, never>;
-  (
-    children: Readable.Readable<string | number>,
-  ): Element<SVGElementTagNameMap[K], never, never>;
-  (): Element<SVGElementTagNameMap[K], never, never>;
+
+  <T extends ReadonlyArray<ChildInput<unknown, unknown>>>(
+    attrs: SVGAttributes<SVGElementTagNameMap[K]>,
+    ...children: T
+  ): Element<
+    SVGElementTagNameMap[K],
+    ChildInputE<T[number]>,
+    ChildInputR<T[number]>
+  >;
+  <T extends ReadonlyArray<ChildInput<unknown, unknown>>>(
+    ...children: T
+  ): Element<
+    SVGElementTagNameMap[K],
+    ChildInputE<T[number]>,
+    ChildInputR<T[number]>
+  >;
 };
 
 // =============================================================================
@@ -501,6 +579,93 @@ const applyAttributes = <T extends HTMLElement | SVGElement>(
 };
 
 // =============================================================================
+// Child normalization
+// =============================================================================
+
+/**
+ * Runtime duck-type check: is this argument a plain attrs object (as opposed
+ * to a ChildInput)? Attrs are plain objects that aren't Effects, Readables,
+ * DOM nodes, or arrays. Anything else (string, number, boolean, null,
+ * undefined, Effect, Readable, Node, array) is a ChildInput.
+ *
+ * Used by the factory to disambiguate `$.tag(attrs, ...children)` from
+ * `$.tag(...children)` at runtime — TypeScript overloads pick statically
+ * but the runtime needs to decide which slot arg[0] fills.
+ */
+const isAttrsObject = (arg: unknown): boolean => {
+  if (arg == null) return false;
+  if (typeof arg !== "object") return false;
+  if (Array.isArray(arg)) return false;
+  if (isEffect(arg)) return false;
+  if (Readable.isReadable(arg)) return false;
+  if (typeof Node !== "undefined" && arg instanceof Node) return false;
+  return true;
+};
+
+/**
+ * Normalize a list of {@link ChildInput}s into `Child` effects:
+ *
+ * - Strings / numbers wrap as text children via `Core.of`.
+ * - `null` / `undefined` / booleans drop out (React-style — supports
+ *   `condition && <el/>` and `list?.map(...)`).
+ * - One level of array nesting flattens (matches `ChildInput`'s type
+ *   surface; deeper nesting isn't part of the contract but the runtime
+ *   walks recursively as a defensive belt-and-braces measure).
+ * - Readables of string/number pass through as reactive text.
+ * - Elements (Effects) pass through as-is.
+ */
+const normalizeChildren = <E, R>(
+  inputs: ReadonlyArray<ChildInput<E, R>>,
+): Array<Child<E, R>> => {
+  const out: Array<Child<E, R>> = [];
+  const walk = (item: ChildInput<E, R>): void => {
+    if (item == null || typeof item === "boolean") return;
+    if (Array.isArray(item)) {
+      for (const nested of item) walk(nested as ChildInput<E, R>);
+      return;
+    }
+    if (typeof item === "string" || typeof item === "number") {
+      out.push(Core.of(item) as Child<E, R>);
+      return;
+    }
+    if (Readable.isReadable(item)) {
+      out.push(
+        Core.of(item as Readable.Readable<string | number>) as Child<E, R>,
+      );
+      return;
+    }
+    // At this point item is an Element (Effect) — pass through.
+    out.push(item as Child<E, R>);
+  };
+  for (const input of inputs) walk(input);
+  return out;
+};
+
+/**
+ * Combine an array of normalized children into a single `Child` effect
+ * that yields the concatenated `ChildNode` list. `Core.appendChild` accepts
+ * that shape and iterates internally.
+ *
+ * Returns `Core.empty` for an empty list so the factory has one uniform
+ * `Child` to pass to `createElement`.
+ */
+const combineChildren = <E, R>(
+  children: ReadonlyArray<Child<E, R>>,
+): Child<E, R> => {
+  if (children.length === 0) return Core.empty as Child<E, R>;
+  if (children.length === 1) return children[0];
+  return Effect.gen(function* () {
+    const collected: ChildNode[] = [];
+    for (const child of children) {
+      const value = yield* child;
+      if (Array.isArray(value)) collected.push(...value);
+      else collected.push(value);
+    }
+    return collected;
+  }) as Child<E, R>;
+};
+
+// =============================================================================
 // Element Creation using Core functions
 // =============================================================================
 
@@ -579,52 +744,30 @@ const createSVGElement = <K extends keyof SVGElementTagNameMap, E, R>(
 // =============================================================================
 
 /**
+ * Split a variadic argument list into `[attrs, children]` at runtime.
+ * TypeScript overloads pick statically; this is the runtime counterpart —
+ * a duck-type check on `args[0]` decides whether it occupies the attrs slot.
+ */
+const splitArgs = <A>(args: unknown[]): { attrs: A; children: unknown[] } => {
+  if (args.length > 0 && isAttrsObject(args[0])) {
+    return { attrs: args[0] as A, children: args.slice(1) };
+  }
+  return { attrs: {} as A, children: args };
+};
+
+/**
  * Create an HTML element factory for a specific tag.
  */
 const makeElementFactory = <K extends keyof HTMLElementTagNameMap>(
   tagName: K,
 ): ElementFactory<K> => {
   return (<E = never, R = never>(...args: unknown[]) => {
-    if (args.length === 0) {
-      return createElement(tagName, {}, Core.empty);
-    }
-
-    if (args.length === 1) {
-      const arg = args[0];
-
-      // String or number child
-      if (typeof arg === "string" || typeof arg === "number") {
-        return createElement(tagName, {}, Core.of(arg));
-      }
-
-      // Effect child
-      if (isEffect(arg)) {
-        return createElement(tagName, {}, arg as Child<E, R>);
-      }
-
-      // Readable child
-      if (Readable.isReadable(arg)) {
-        return createElement(
-          tagName,
-          {},
-          Core.of(arg as Readable.Readable<string | number>),
-        );
-      }
-
-      // Attributes object
-      return createElement(
-        tagName,
-        arg as HTMLAttributes<HTMLElementTagNameMap[K]>,
-        Core.empty,
-      );
-    }
-
-    // Two arguments: attrs and children
-    const [attrs, children] = args as [
-      HTMLAttributes<HTMLElementTagNameMap[K]>,
-      Child<E, R>,
-    ];
-    return createElement(tagName, attrs, children);
+    const { attrs, children: rawChildren } =
+      splitArgs<HTMLAttributes<HTMLElementTagNameMap[K]>>(args);
+    const normalized = normalizeChildren<E, R>(
+      rawChildren as ReadonlyArray<ChildInput<E, R>>,
+    );
+    return createElement(tagName, attrs, combineChildren(normalized));
   }) as ElementFactory<K>;
 };
 
@@ -635,41 +778,12 @@ const makeSVGElementFactory = <K extends keyof SVGElementTagNameMap>(
   tagName: K,
 ): SVGElementFactory<K> => {
   return (<E = never, R = never>(...args: unknown[]) => {
-    if (args.length === 0) {
-      return createSVGElement(tagName, {}, Core.empty);
-    }
-
-    if (args.length === 1) {
-      const arg = args[0];
-
-      if (typeof arg === "string" || typeof arg === "number") {
-        return createSVGElement(tagName, {}, Core.of(arg));
-      }
-
-      if (isEffect(arg)) {
-        return createSVGElement(tagName, {}, arg as Child<E, R>);
-      }
-
-      if (Readable.isReadable(arg)) {
-        return createSVGElement(
-          tagName,
-          {},
-          Core.of(arg as Readable.Readable<string | number>),
-        );
-      }
-
-      return createSVGElement(
-        tagName,
-        arg as SVGAttributes<SVGElementTagNameMap[K]>,
-        Core.empty,
-      );
-    }
-
-    const [attrs, children] = args as [
-      SVGAttributes<SVGElementTagNameMap[K]>,
-      Child<E, R>,
-    ];
-    return createSVGElement(tagName, attrs, children);
+    const { attrs, children: rawChildren } =
+      splitArgs<SVGAttributes<SVGElementTagNameMap[K]>>(args);
+    const normalized = normalizeChildren<E, R>(
+      rawChildren as ReadonlyArray<ChildInput<E, R>>,
+    );
+    return createSVGElement(tagName, attrs, combineChildren(normalized));
   }) as SVGElementFactory<K>;
 };
 

@@ -2,6 +2,8 @@
 export type {
   AttributeValue,
   BaseElementAttributes,
+  ChildInputE,
+  ChildInputR,
   ClassItem,
   ClassValue,
   ElementFactory,
@@ -26,6 +28,14 @@ export {
 } from "./ref.js";
 
 export * from "./core.js";
-export type { Child, ChildNode, Element } from "./types.js";
+export type {
+  Child,
+  ChildInput,
+  ChildLeaf,
+  ChildNode,
+  Children,
+  Element,
+  PermissiveChildren,
+} from "./types.js";
 
 export { $, MergePropsCtx } from "./DOMElements.js";

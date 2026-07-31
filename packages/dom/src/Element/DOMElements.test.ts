@@ -4,6 +4,7 @@ import { beforeEach, expect, vi } from "vitest";
 
 import { Signal } from "@effex/core";
 
+import { collect } from "../Collect.js";
 import { DOMRendererLive } from "../Render/DOMRenderer.js";
 import {
   $,
@@ -489,6 +490,234 @@ describe("DOMElements", () => {
         expect(el.textContent).toBe("");
       }).pipe(Effect.provide(TestLayer)),
     );
+  });
+
+  // Regression tests for the variadic-children API (issue #56). These guard
+  // the ChildInput normalization: primitive auto-wrapping, nullish/boolean
+  // skip, recursive array flattening, and backward-compat with `collect` /
+  // `$.of` / raw Effects.
+  describe("variadic children", () => {
+    describe("primitive auto-wrapping", () => {
+      it.scopedLive("wraps a bare string as a text node", () =>
+        Effect.gen(function* () {
+          const el = yield* div({}, "hello");
+          expect(el.textContent).toBe("hello");
+          expect(el.childNodes.length).toBe(1);
+          expect(el.childNodes[0].nodeType).toBe(Node.TEXT_NODE);
+        }).pipe(Effect.provide(TestLayer)),
+      );
+
+      it.scopedLive("wraps a bare number as a text node", () =>
+        Effect.gen(function* () {
+          const el = yield* div({}, 42);
+          expect(el.textContent).toBe("42");
+        }).pipe(Effect.provide(TestLayer)),
+      );
+
+      it.scopedLive("preserves multiple sibling text children in order", () =>
+        Effect.gen(function* () {
+          const el = yield* div({}, "a", "b", "c");
+          expect(el.textContent).toBe("abc");
+        }).pipe(Effect.provide(TestLayer)),
+      );
+
+      it.scopedLive("interleaves text and Element children", () =>
+        Effect.gen(function* () {
+          const el = yield* div({}, "before ", span({}, "middle"), " after");
+          expect(el.children.length).toBe(1);
+          expect(el.children[0].tagName).toBe("SPAN");
+          expect(el.textContent).toBe("before middle after");
+        }).pipe(Effect.provide(TestLayer)),
+      );
+    });
+
+    describe("nullish and boolean skip (React parity)", () => {
+      it.scopedLive("skips null children", () =>
+        Effect.gen(function* () {
+          const el = yield* div({}, "before", null, "after");
+          expect(el.textContent).toBe("beforeafter");
+        }).pipe(Effect.provide(TestLayer)),
+      );
+
+      it.scopedLive("skips undefined children", () =>
+        Effect.gen(function* () {
+          const el = yield* div({}, "before", undefined, "after");
+          expect(el.textContent).toBe("beforeafter");
+        }).pipe(Effect.provide(TestLayer)),
+      );
+
+      it.scopedLive("skips false children (conditional && el)", () =>
+        Effect.gen(function* () {
+          const show = false;
+          const el = yield* div({}, "x", show && span({}, "hidden"), "y");
+          expect(el.children.length).toBe(0);
+          expect(el.textContent).toBe("xy");
+        }).pipe(Effect.provide(TestLayer)),
+      );
+
+      it.scopedLive("skips true children for symmetry", () =>
+        Effect.gen(function* () {
+          const el = yield* div({}, "x", true, "y");
+          expect(el.textContent).toBe("xy");
+        }).pipe(Effect.provide(TestLayer)),
+      );
+
+      it.scopedLive("supports the conditional-render idiom", () =>
+        Effect.gen(function* () {
+          const show = true;
+          const el = yield* div({}, "before ", show && "shown", " after");
+          expect(el.textContent).toBe("before shown after");
+        }).pipe(Effect.provide(TestLayer)),
+      );
+    });
+
+    describe("array flattening", () => {
+      it.scopedLive("flattens a single-level array of children", () =>
+        Effect.gen(function* () {
+          const items = ["a", "b", "c"];
+          const el = yield* div({}, items);
+          expect(el.textContent).toBe("abc");
+        }).pipe(Effect.provide(TestLayer)),
+      );
+
+      it.scopedLive("flattens arrays of Elements produced by .map()", () =>
+        Effect.gen(function* () {
+          const el = yield* ul(
+            {},
+            [1, 2, 3].map((n) => li({}, `item ${n}`)),
+          );
+          expect(el.children.length).toBe(3);
+          expect(el.children[0].textContent).toBe("item 1");
+          expect(el.children[2].textContent).toBe("item 3");
+        }).pipe(Effect.provide(TestLayer)),
+      );
+
+      // Nested arrays are intentionally not part of ChildInput. Use
+      // `.flat()` or the variadic form to combine multiple lists.
+
+      it.scopedLive("skips empty arrays", () =>
+        Effect.gen(function* () {
+          const el = yield* div({}, "before", [], "after");
+          expect(el.textContent).toBe("beforeafter");
+          expect(el.childNodes.length).toBe(2);
+        }).pipe(Effect.provide(TestLayer)),
+      );
+
+      it.scopedLive("skips nullish/boolean inside arrays", () =>
+        Effect.gen(function* () {
+          const el = yield* div({}, ["a", null, "b", false, "c", undefined]);
+          expect(el.textContent).toBe("abc");
+        }).pipe(Effect.provide(TestLayer)),
+      );
+    });
+
+    describe("call-shape resolution", () => {
+      it.scopedLive("no args produces an empty element", () =>
+        Effect.gen(function* () {
+          const el = yield* div();
+          expect(el).toBeInstanceOf(HTMLDivElement);
+          expect(el.childNodes.length).toBe(0);
+        }).pipe(Effect.provide(TestLayer)),
+      );
+
+      it.scopedLive("attrs-only produces an empty element with attrs", () =>
+        Effect.gen(function* () {
+          const el = yield* div({ id: "x", class: "y" });
+          expect(el.id).toBe("x");
+          expect(el.className).toBe("y");
+          expect(el.childNodes.length).toBe(0);
+        }).pipe(Effect.provide(TestLayer)),
+      );
+
+      it.scopedLive("children-only (first arg is a string) skips attrs", () =>
+        Effect.gen(function* () {
+          const el = yield* div("no attrs here");
+          expect(el.id).toBe("");
+          expect(el.className).toBe("");
+          expect(el.textContent).toBe("no attrs here");
+        }).pipe(Effect.provide(TestLayer)),
+      );
+
+      it.scopedLive("children-only (first arg is an Element) skips attrs", () =>
+        Effect.gen(function* () {
+          const el = yield* div(span({}, "nested"));
+          expect(el.children.length).toBe(1);
+          expect(el.children[0].tagName).toBe("SPAN");
+        }).pipe(Effect.provide(TestLayer)),
+      );
+
+      it.scopedLive("children-only (first arg is an array) skips attrs", () =>
+        Effect.gen(function* () {
+          const el = yield* div(["a", "b"]);
+          expect(el.textContent).toBe("ab");
+        }).pipe(Effect.provide(TestLayer)),
+      );
+    });
+
+    describe("backward compatibility", () => {
+      it.scopedLive("accepts a `collect(...)` bundle as a single child", () =>
+        Effect.gen(function* () {
+          const el = yield* div(
+            { class: "container" },
+            collect(span({}, "a"), span({}, "b")),
+          );
+          expect(el.className).toBe("container");
+          expect(el.children.length).toBe(2);
+          expect(el.children[0].textContent).toBe("a");
+          expect(el.children[1].textContent).toBe("b");
+        }).pipe(Effect.provide(TestLayer)),
+      );
+
+      it.scopedLive("accepts an `$.of(...)` text-node effect", () =>
+        Effect.gen(function* () {
+          const el = yield* div({}, of("hello"));
+          expect(el.textContent).toBe("hello");
+        }).pipe(Effect.provide(TestLayer)),
+      );
+
+      it.scopedLive("mixes `collect(...)` with variadic siblings", () =>
+        Effect.gen(function* () {
+          const el = yield* div(
+            {},
+            "start",
+            collect(span({}, "in-collect-1"), span({}, "in-collect-2")),
+            "end",
+          );
+          expect(el.children.length).toBe(2);
+          expect(el.textContent).toBe("startin-collect-1in-collect-2end");
+        }).pipe(Effect.provide(TestLayer)),
+      );
+
+      it.scopedLive("accepts a raw Effect<string>", () =>
+        Effect.gen(function* () {
+          const el = yield* div({}, Effect.succeed("raw"));
+          expect(el.textContent).toBe("raw");
+        }).pipe(Effect.provide(TestLayer)),
+      );
+    });
+
+    describe("Readable signals as children", () => {
+      it.scopedLive("accepts a Signal directly as a variadic child", () =>
+        Effect.gen(function* () {
+          const s = yield* Signal.make("initial");
+          const el = yield* div({}, "prefix ", s);
+          expect(el.textContent).toBe("prefix initial");
+        }).pipe(Effect.provide(TestLayer)),
+      );
+    });
+
+    describe("SVG factory parity", () => {
+      it.scopedLive("SVG factories accept the same variadic shape", () =>
+        Effect.gen(function* () {
+          const el = yield* svg({ width: "100" }, "text-child", null, false, [
+            "nested",
+          ]);
+          expect(el).toBeInstanceOf(SVGElement);
+          expect(el.getAttribute("width")).toBe("100");
+          expect(el.textContent).toBe("text-childnested");
+        }).pipe(Effect.provide(TestLayer)),
+      );
+    });
   });
 
   describe("data and aria attributes", () => {
