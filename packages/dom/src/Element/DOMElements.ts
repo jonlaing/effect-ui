@@ -198,8 +198,12 @@ export type SVGAttributes<T extends SVGElement = SVGElement> =
  * in a variadic tuple, recursing into nested arrays. Primitives (string,
  * number, boolean, null, undefined) and Readables contribute `never` and
  * fall out of the union.
+ *
+ * Exposed so component authors can preserve E/R inference when wrapping
+ * a primitive with variadic children — see {@link ElementFactory}'s
+ * forwarding overload for the intended usage.
  */
-type ChildInputE<T> =
+export type ChildInputE<T> =
   T extends Effect.Effect<unknown, infer E, unknown>
     ? E
     : T extends ReadonlyArray<infer U>
@@ -212,7 +216,7 @@ type ChildInputE<T> =
  * Scope and RendererContext from `Element`'s type alias flow through
  * naturally; they're satisfied by the ambient render layer.
  */
-type ChildInputR<T> =
+export type ChildInputR<T> =
   T extends Effect.Effect<unknown, unknown, infer R>
     ? R
     : T extends ReadonlyArray<infer U>
@@ -242,6 +246,29 @@ type ChildInputR<T> =
  * error types and service dependencies works as expected.
  */
 export type ElementFactory<K extends keyof HTMLElementTagNameMap> = {
+  // Forwarding overload: takes a homogeneous array of children with a
+  // single `<E, R>` pair — the shape wrappers naturally have when they
+  // collect their own variadic children into an array and pass it down.
+  // Avoids TS2589 (recursive depth) because there's no `ChildInputE`
+  // computation on a tuple type.
+  //
+  // Component authors write:
+  //   export const MyComponent = <E, R>(
+  //     ...children: ReadonlyArray<ChildInput<E, R>>
+  //   ): Element<..., E, R> => $.div(attrs, children);
+  //
+  // Tradeoff: `E`/`R` collapse to a single pair, so heterogeneous
+  // requirements from siblings become an intersection (contravariant R).
+  // For the common wrapper case (E/R passes through) that's exactly right.
+  <E = never, R = never>(
+    attrs: HTMLAttributes<HTMLElementTagNameMap[K]>,
+    children: ReadonlyArray<ChildInput<E, R>>,
+  ): Element<HTMLElementTagNameMap[K], E, R>;
+  <E = never, R = never>(
+    children: ReadonlyArray<ChildInput<E, R>>,
+  ): Element<HTMLElementTagNameMap[K], E, R>;
+
+  // Variadic overload: max inference across mixed positional children.
   <T extends ReadonlyArray<ChildInput<unknown, unknown>>>(
     attrs: HTMLAttributes<HTMLElementTagNameMap[K]>,
     ...children: T
@@ -263,6 +290,14 @@ export type ElementFactory<K extends keyof HTMLElementTagNameMap> = {
  * Factory function type for SVG elements. Mirrors {@link ElementFactory}.
  */
 export type SVGElementFactory<K extends keyof SVGElementTagNameMap> = {
+  <E = never, R = never>(
+    attrs: SVGAttributes<SVGElementTagNameMap[K]>,
+    children: ReadonlyArray<ChildInput<E, R>>,
+  ): Element<SVGElementTagNameMap[K], E, R>;
+  <E = never, R = never>(
+    children: ReadonlyArray<ChildInput<E, R>>,
+  ): Element<SVGElementTagNameMap[K], E, R>;
+
   <T extends ReadonlyArray<ChildInput<unknown, unknown>>>(
     attrs: SVGAttributes<SVGElementTagNameMap[K]>,
     ...children: T

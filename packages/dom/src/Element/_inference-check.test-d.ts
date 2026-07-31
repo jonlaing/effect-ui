@@ -8,6 +8,13 @@
 import { Context, Effect } from "effect";
 
 import { $, type Element } from "../index.js";
+// -------------------------------------------------------------------------
+// Forwarding-case check — a wrapper component that passes its own children
+// param down to a primitive. This is the pattern that hit TS2589 before
+// the forwarding overload was added.
+// -------------------------------------------------------------------------
+
+import type { ChildInput } from "./types.js";
 
 class ServiceA extends Context.Tag("ServiceA")<
   ServiceA,
@@ -98,3 +105,28 @@ void _proof2;
 void _proof3;
 void _proof4;
 void _proofEmpty;
+
+// The canonical wrapper pattern: single-generic `<E, R>`, variadic
+// `ReadonlyArray<ChildInput<E, R>>` children, and forwarding the collected
+// array to a primitive. The factory's forwarding overload matches this
+// shape and passes E/R straight through — no cast, no TS2589.
+//
+// Tradeoff: single-generic locks E/R across all children (covariant E
+// unions naturally, contravariant R intersects). For the common wrapper
+// case where callers pass children with a shared or compatible R, this is
+// exactly what you want. Callers who genuinely need heterogeneous
+// requirements use the primitive directly via its variadic overload.
+const MyWrapper = <E, R>(
+  ...children: ReadonlyArray<ChildInput<E, R>>
+): Element.Element<HTMLDivElement, E, R> =>
+  $.div({ class: "wrapper" }, children);
+
+// Homogeneous children pass through E and R unchanged.
+declare const childHomA: Element.Element<HTMLSpanElement, ErrA, ServiceA>;
+declare const childHomB: Element.Element<HTMLParagraphElement, ErrA, ServiceA>;
+
+const wrappedHomogeneous = MyWrapper(childHomA, childHomB);
+const _proofWrappedHom: Element.Element<HTMLDivElement, ErrA, ServiceA> =
+  wrappedHomogeneous;
+
+void _proofWrappedHom;

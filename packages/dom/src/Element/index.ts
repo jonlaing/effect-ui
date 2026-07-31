@@ -2,6 +2,8 @@
 export type {
   AttributeValue,
   BaseElementAttributes,
+  ChildInputE,
+  ChildInputR,
   ClassItem,
   ClassValue,
   ElementFactory,

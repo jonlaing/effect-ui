@@ -38,7 +38,13 @@ export { DOMRenderer, DOMRendererLive } from "./Render/DOMRenderer.js";
 
 // Re-export commonly used items from Element for convenience
 export { $, bindElementToRef, ref } from "./Element/index.js";
-export type { ChildInput, ClassItem, ClassValue } from "./Element/index.js";
+export type {
+  ChildInput,
+  ChildInputE,
+  ChildInputR,
+  ClassItem,
+  ClassValue,
+} from "./Element/index.js";
 
 // Control flow
 export {

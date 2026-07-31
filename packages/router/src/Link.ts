@@ -128,7 +128,7 @@ const isPrefixMatch = (pathname: string, href: string): boolean => {
  * // a[data-active-prefix] { color: blue; }
  * ```
  */
-export const Link = <E, R>(
+export const Link = <E = never, R = never>(
   props: LinkProps,
   ...children: ReadonlyArray<ChildInput<E, R>>
 ): Element.Element<HTMLAnchorElement, E, R | NavigationContext> =>
@@ -203,17 +203,7 @@ export const Link = <E, R>(
             }
           });
 
-    // The factory's variadic-tuple inference re-derives `E`/`R` from each
-    // child. Link has already fixed its own `<E, R>` by this point, so
-    // routing that inference again through `$.a` produces TS2589 (recursive
-    // depth). Sidestep by calling the factory with a widened signature and
-    // asserting the result back — `ChildInput` flattens the array at
-    // runtime, so semantics are identical.
-    const factory = $.a as (
-      attrs: Parameters<typeof $.a>[0],
-      children: ReadonlyArray<ChildInput<E, R>>,
-    ) => Element.Element<HTMLAnchorElement, E, R>;
-    return yield* factory(
+    return yield* $.a(
       {
         ...anchorProps,
         href: computedHref,
