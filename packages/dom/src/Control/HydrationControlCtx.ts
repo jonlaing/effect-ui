@@ -16,7 +16,11 @@ import {
 
 import * as Element from "../Element/index.js";
 import { DOMRenderer } from "../Render/DOMRenderer.js";
-import { forkSlotEnter, forkSlotRemoval } from "./slotAnimation.js";
+import {
+  applyPreInsertEnterFrom,
+  forkSlotEnter,
+  forkSlotRemoval,
+} from "./slotAnimation.js";
 import { subscribeReconcile } from "./subscribeReconcile.js";
 
 type DOMElement = HTMLElement | SVGElement;
@@ -131,6 +135,10 @@ const createClientLikeControlCtx = (
             ),
             Effect.provideService(ControlCtx, freshCtx as IControlCtx<unknown>),
           )) as DOMElement;
+
+          // Client-mode mount — apply enterFrom before insertion (see
+          // ClientControlCtx for rationale).
+          yield* applyPreInsertEnterFrom(element);
 
           if (containerElement) {
             const children = Array.from(containerElement.children);
@@ -324,6 +332,9 @@ const createHydrationControlCtx = (
           ),
           Effect.provideService(ControlCtx, freshCtx as IControlCtx<unknown>),
         )) as DOMElement;
+
+        // Client-mode fallback mount — apply enterFrom before insertion.
+        yield* applyPreInsertEnterFrom(element);
 
         const containerChildren = Array.from(containerElement.children);
         const targetIndex = addOptions?.atIndex ?? containerChildren.length;
