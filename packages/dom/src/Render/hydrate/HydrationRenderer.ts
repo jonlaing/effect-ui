@@ -255,6 +255,18 @@ export const createHydrationRenderer = (
         }
       }),
 
+    pushHydrationParent: (node: Node) =>
+      Effect.sync(() => {
+        // Resume hydration inside `node`. Used by reconcile after a forked
+        // ControlCtx has walked to its containerElement — the container's
+        // own createElement already pushed and popped its stack frame
+        // (via createNode+finalizeNode), so the walker is one level too
+        // shallow when addSlot begins looking for slot nodes inside the
+        // container. Push a fresh frame at childIndex 0 so the next
+        // createNode call finds children in the right parent.
+        parentStack.push({ parent: node, childIndex: 0 });
+      }),
+
     createSlot: () =>
       Effect.sync((): Slot<Node> => {
         const ctx = getCurrentContext();

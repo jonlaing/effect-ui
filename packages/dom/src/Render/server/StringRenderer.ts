@@ -209,6 +209,8 @@ export const StringRenderer: Renderer<VNode> = {
 
   finalizeNode: () => Effect.void,
 
+  pushHydrationParent: () => Effect.void,
+
   createSlot: () =>
     Effect.sync((): Slot<VNode> => {
       const marker = vComment("effex-slot");

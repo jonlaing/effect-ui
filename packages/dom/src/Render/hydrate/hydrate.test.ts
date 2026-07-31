@@ -370,4 +370,95 @@ describe("Hydration", () => {
       expect(onBeforeEnter).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe("each removal after hydration", () => {
+    it("removes a hydrated slot's SSR DOM node when its key drops out", async () => {
+      let itemsSignal: Signal.Signal<Array<{ id: string; text: string }>>;
+      const initial = [
+        { id: "a", text: "Alpha" },
+        { id: "b", text: "Bravo" },
+        { id: "c", text: "Charlie" },
+      ];
+
+      const App = () =>
+        Effect.gen(function* () {
+          itemsSignal = yield* Signal.make(initial);
+          return yield* each(itemsSignal, {
+            key: (item: { id: string; text: string }) => item.id,
+            render: (item: Readable.Readable<{ id: string; text: string }>) =>
+              $.li({}, $.of(Readable.map(item, (v) => v.text))),
+            container: () => $.ul({ class: "letters" }),
+          });
+        });
+
+      container.innerHTML = await Effect.runPromise(renderToString(App()));
+
+      // Sanity: SSR emits three <li> nodes.
+      const ssrLis = container.querySelectorAll("li");
+      expect(ssrLis.length).toBe(3);
+      expect(Array.from(ssrLis).map((li) => li.textContent)).toEqual([
+        "Alpha",
+        "Bravo",
+        "Charlie",
+      ]);
+
+      await hydrate(App(), container);
+      // hydrate() returns Promise.resolve() immediately and completes the
+      // App() render inside a forked fiber — wait a tick so the signal has
+      // been created and subscriptions wired before we drive it.
+      await new Promise((r) => setTimeout(r, 20));
+
+      // Drop "Bravo" — its <li> should be removed from the DOM.
+      await Effect.runPromise(
+        itemsSignal!.set([
+          { id: "a", text: "Alpha" },
+          { id: "c", text: "Charlie" },
+        ]),
+      );
+      // Let the forked removal fiber run.
+      await new Promise((r) => setTimeout(r, 40));
+
+      const afterLis = container.querySelectorAll("li");
+      expect(afterLis.length).toBe(2);
+      expect(Array.from(afterLis).map((li) => li.textContent)).toEqual([
+        "Alpha",
+        "Charlie",
+      ]);
+    });
+
+    it("removes the correct node when the each is nested inside a wrapper", async () => {
+      // Regression cover: the forked ControlCtx that reconcile creates has
+      // to re-push its container onto the hydration walker after `create()`
+      // pops it; otherwise slot renders find the wrong parent, entry.element
+      // is a detached fresh node, and the SSR node stays orphaned in the DOM.
+      let itemsSignal: Signal.Signal<Array<{ id: string; text: string }>>;
+
+      const App = () =>
+        Effect.gen(function* () {
+          itemsSignal = yield* Signal.make([
+            { id: "a", text: "Alpha" },
+            { id: "b", text: "Bravo" },
+          ]);
+          return yield* $.section(
+            { class: "wrap" },
+            each(itemsSignal, {
+              key: (item: { id: string; text: string }) => item.id,
+              render: (item: Readable.Readable<{ id: string; text: string }>) =>
+                $.p({}, $.of(Readable.map(item, (v) => v.text))),
+            }),
+          );
+        });
+
+      container.innerHTML = await Effect.runPromise(renderToString(App()));
+      await hydrate(App(), container);
+      await new Promise((r) => setTimeout(r, 20));
+
+      await Effect.runPromise(itemsSignal!.set([{ id: "a", text: "Alpha" }]));
+      await new Promise((r) => setTimeout(r, 40));
+
+      const remaining = container.querySelectorAll("section p");
+      expect(remaining.length).toBe(1);
+      expect(remaining[0].textContent).toBe("Alpha");
+    });
+  });
 });
