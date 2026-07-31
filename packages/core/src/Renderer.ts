@@ -176,6 +176,20 @@ export interface Renderer<Node> {
   readonly finalizeNode: (node: Node) => Effect.Effect<void>;
 
   /**
+   * Resume a hydration walk inside a node whose subtree hasn't been fully
+   * consumed yet. Used by reconcile after a forked ControlCtx builds its
+   * `containerElement` via `create()` — `create()`'s inner `finalizeNode`
+   * pops the container off the stack, and subsequent `addSlot` renders
+   * need it back on top so they find the SSR slot nodes inside.
+   *
+   * The complementary pop is `finalizeNode(node)`, which is invoked
+   * indirectly by `finalizeContainer` at the end of reconcile.
+   *
+   * No-op for renderers that don't maintain a traversal stack.
+   */
+  readonly pushHydrationParent: (node: Node) => Effect.Effect<void>;
+
+  /**
    * Create a slot for swappable content.
    * Used by Boundary.suspense to swap fallback with actual content.
    * Returns a Slot with a marker node and methods to set/clear content.

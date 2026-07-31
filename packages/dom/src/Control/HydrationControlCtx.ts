@@ -86,6 +86,15 @@ const createClientLikeControlCtx = (
           ? yield* create()
           : yield* defaultContainer as Element.Element<DOMElement, E, R>;
         containerElement = container;
+        // During hydration, `create()` walked the SSR DOM to `container` and
+        // then popped the traversal stack via its inner `finalizeNode`
+        // (createElement's default behavior). But subsequent addSlot renders
+        // need to walk INTO the container to find slot nodes — re-push the
+        // container onto the walker so children resolve correctly. No-op
+        // once hydration is done or on non-hydrating renderers.
+        if (!hydrationDone) {
+          yield* capturedRenderer.pushHydrationParent(container);
+        }
         return container;
       }) as Element.Element<DOMElement, E, R>,
 
