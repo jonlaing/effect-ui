@@ -370,7 +370,14 @@ const stripDeadImports = (code: string): string => {
     const codeWithout = code.slice(0, importStart) + code.slice(importEnd);
 
     const allDead = specifiers.every((name) => {
-      const re = new RegExp(`\\b${escapeRegExp(name)}\\b`);
+      // `\b` is a `\w`↔`\W` boundary — it doesn't recognize identifier
+      // characters that aren't in `\w`, notably `$`. A `\b$\b` pattern
+      // never matches a real `$.foo` call site (the `$` sits between
+      // whitespace and `.`, both `\W`). Match with lookarounds that
+      // treat the full JS identifier alphabet as one side.
+      const re = new RegExp(
+        `(?<![A-Za-z0-9_$])${escapeRegExp(name)}(?![A-Za-z0-9_$])`,
+      );
       return !re.test(codeWithout);
     });
 
