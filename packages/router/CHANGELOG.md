@@ -1,5 +1,13 @@
 # @effex/router
 
+## 1.3.1
+
+### Patch Changes
+
+- Updated dependencies [e3e8157]
+  - @effex/core@1.1.2
+  - @effex/dom@1.4.1
+
 ## 1.3.0
 
 ### Minor Changes

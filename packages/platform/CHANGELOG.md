@@ -1,5 +1,14 @@
 # @effex/platform
 
+## 1.2.3
+
+### Patch Changes
+
+- Updated dependencies [e3e8157]
+  - @effex/core@1.1.2
+  - @effex/dom@1.4.1
+  - @effex/router@1.3.1
+
 ## 1.2.2
 
 ### Patch Changes
