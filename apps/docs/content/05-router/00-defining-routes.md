@@ -14,10 +14,10 @@ Create a route with `Route.make` and add a render function with `Route.render`:
 
 ```typescript
 import { Route } from "@effex/router";
-import { $, collect } from "@effex/dom";
+import { $ } from "@effex/dom";
 
 const HomeRoute = Route.make("/").pipe(
-  Route.render(() => $.h1({}, $.of("Welcome home"))),
+  Route.render(() => $.h1({}, "Welcome home")),
 );
 ```
 
@@ -47,7 +47,7 @@ Each route creates a unique context tag for its params. Access them with `yield*
 const UserPage = () =>
   Effect.gen(function* () {
     const { id } = yield* UserRoute.params;       // number
-    return yield* $.div({}, $.of(`User ${id}`));
+    return yield* $.div({}, `User ${id}`);
   });
 ```
 
@@ -124,7 +124,7 @@ If `isAuthenticated` is a Readable that returns `false`, the user is redirected 
 
 ```typescript
 Route.withGuard(isAuthenticated, {
-  fallback: () => $.div({}, $.of("Please log in")),
+  fallback: () => $.div({}, "Please log in"),
 })
 ```
 

@@ -11,39 +11,39 @@ The `$` namespace is your entry point for creating DOM elements. Every element f
 ## Creating Elements
 
 ```typescript
-import { $, collect } from "@effex/dom";
+import { $ } from "@effex/dom";
 
-yield* $.div({ class: "container" }, collect(
-  $.h1({}, $.of("Hello")),
-  $.p({}, $.of("Welcome to Effex")),
-));
+yield* $.div({ class: "container" },
+  $.h1({}, "Hello"),
+  $.p({}, "Welcome to Effex"),
+);
 ```
 
 Every HTML and SVG element has a corresponding factory on `$`: `$.div`, `$.span`, `$.button`, `$.input`, `$.svg`, `$.path`, and so on.
 
 ## Children
 
-Use `$.of()` to lift primitives and Readables into children, and `collect()` to combine multiple children:
+Pass children directly as arguments after the attributes object. Strings, numbers, Readables, and other elements all work as children:
 
 ```typescript
-// Single child
-yield* $.h1({}, $.of("Hello World"));
+// Single string child
+yield* $.h1({}, "Hello World");
 
-// Multiple children
-yield* $.div({}, collect(
-  $.of("Hello"),
-  $.span({}, $.of("World")),
-));
+// Multiple children of mixed types
+yield* $.div({},
+  "Hello",
+  $.span({}, "World"),
+);
 
 // Empty child (renders nothing)
 yield* $.div({}, $.empty);
 ```
 
-`$.of()` accepts strings, numbers, Readables, and DOM nodes. When you pass a Readable, the text updates automatically when the value changes:
+When you pass a Readable as a child, the text updates automatically when the value changes:
 
 ```typescript
 const count = yield* Signal.make(0);
-yield* $.span({}, $.of(count));  // Updates in place when count changes
+yield* $.span({}, count);  // Updates in place when count changes
 ```
 
 ### Template Strings
@@ -57,7 +57,7 @@ const name = yield* Signal.make("World");
 const count = yield* Signal.make(0);
 
 // Creates a Readable<string> that updates automatically
-yield* $.p({}, $.of(t`Hello, ${name}! Count: ${count}`));
+yield* $.p({}, t`Hello, ${name}! Count: ${count}`);
 ```
 
 ## Attributes

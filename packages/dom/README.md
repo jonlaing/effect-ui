@@ -25,13 +25,14 @@ pnpm add @effex/dom effect
 Components without state or context requirements can be plain functions:
 
 ```ts
-import { $, collect } from "@effex/dom";
+import { $ } from "@effex/dom";
 
 const Greeting = (props: { name: string }) =>
-  $.div({ class: "greeting" }, collect(
-    $.h1({}, $.of(`Hello, ${props.name}!`)),
-    $.p({}, $.of("Welcome to Effex")),
-  ));
+  $.div(
+    { class: "greeting" },
+    $.h1({}, `Hello, ${props.name}!`),
+    $.p({}, "Welcome to Effex"),
+  );
 ```
 
 ### Stateful Components
@@ -40,17 +41,18 @@ Components that need signals, context, or other Effects use `Effect.gen`:
 
 ```ts
 import { Effect } from "effect";
-import { $, collect, Signal } from "@effex/dom";
+import { $, Signal } from "@effex/dom";
 
 const Counter = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0);
 
-    return yield* $.div({}, collect(
-      $.button({ onClick: () => count.update((n) => n - 1) }, $.of("-")),
-      $.span({}, $.of(count)),
-      $.button({ onClick: () => count.update((n) => n + 1) }, $.of("+")),
-    ));
+    return yield* $.div(
+      {},
+      $.button({ onClick: () => count.update((n) => n - 1) }, "-"),
+      $.span({}, count),
+      $.button({ onClick: () => count.update((n) => n + 1) }, "+"),
+    );
   });
 ```
 
@@ -85,27 +87,31 @@ runApp(
 The `$` namespace contains factories for all HTML and SVG elements. Elements are Effects that produce DOM nodes:
 
 ```ts
-yield* $.div({ class: "container", style: { color: "red" } }, collect(
-  $.h1({}, $.of(name)),
-  $.p({}, $.of(t`${count} items`)),
-));
+yield* $.div(
+  { class: "container", style: { color: "red" } },
+  $.h1({}, name),
+  $.p({}, t`${count} items`),
+);
 ```
 
 ### Children
 
-Use `$.of()` to lift primitives and Readables into children, and `collect()` to combine multiple children:
+Pass children directly after the attributes object. Strings, numbers, Readables, and Elements all work — pass them individually as variadic args:
 
 ```ts
 // Single child
-yield* $.h1({}, $.of("Hello World"));
+yield* $.h1({}, "Hello World");
 
-// Multiple children
-yield* $.div({}, collect(
-  $.of("Hello"),
-  $.span({}, $.of("World")),
-));
+// Multiple children of mixed types
+yield* $.div({},
+  "Hello",
+  $.span({}, "World"),
+);
 
-// Empty child
+// Conditional children — `false`, `null`, `undefined` are skipped
+yield* $.div({}, cond && $.span({}, "shown"));
+
+// Empty child (explicit no-op)
 yield* $.div({}, $.empty);
 ```
 
@@ -182,7 +188,7 @@ const name = yield* Signal.make("World");
 const count = yield* Signal.make(0);
 
 // Creates a Readable<string> that updates automatically
-yield* $.p({}, $.of(t`Hello, ${name}! Count: ${count}`));
+yield* $.p({}, t`Hello, ${name}! Count: ${count}`);
 ```
 
 ## Defining Components
@@ -193,14 +199,20 @@ Components without state or context requirements are plain functions that return
 
 ```ts
 const Greeting = (props: { name: string }) =>
-  $.h1({}, $.of(`Hello, ${props.name}!`));
+  $.h1({}, `Hello, ${props.name}!`);
 
-// With children — generic over E and R to propagate types
-const Card = <E, R>(props: { title: string }, children: Child<E, R>) =>
-  $.div({ class: "card" }, collect(
-    $.h2({}, $.of(props.title)),
+// With variadic children — generic over E and R to propagate types.
+// Use `Children<E, R>` when the wrapper interleaves its own elements
+// with forwarded children (as here — the wrapper adds its own <h2>).
+const Card = <E = never, R = never>(
+  props: { title: string },
+  ...children: Children<E, R>
+) =>
+  $.div(
+    { class: "card" },
+    $.h2({}, props.title),
     children,
-  ));
+  );
 ```
 
 ### With State or Context
@@ -211,17 +223,18 @@ Use `Effect.gen` when you need signals, context, or other Effects:
 const Counter = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0);
-    return yield* $.div({}, collect(
-      $.button({ onClick: () => count.update((n) => n - 1) }, $.of("-")),
-      $.span({}, $.of(count)),
-      $.button({ onClick: () => count.update((n) => n + 1) }, $.of("+")),
-    ));
+    return yield* $.div(
+      {},
+      $.button({ onClick: () => count.update((n) => n - 1) }, "-"),
+      $.span({}, count),
+      $.button({ onClick: () => count.update((n) => n + 1) }, "+"),
+    );
   });
 
 const UserBadge = () =>
   Effect.gen(function* () {
     const user = yield* UserContext;  // Requires context
-    return yield* $.span({}, $.of(user.name));
+    return yield* $.span({}, user.name);
   });
 ```
 
@@ -238,7 +251,7 @@ const ThemedButton = (props: { label: string }) =>
     const theme = yield* ThemeContext;
     return yield* $.button(
       { style: { backgroundColor: theme.primary } },
-      $.of(props.label),
+      props.label,
     );
   });
 
@@ -256,8 +269,8 @@ Conditionally render based on a reactive boolean:
 import { when } from "@effex/dom";
 
 when(isLoggedIn, {
-  onTrue: () => $.div({}, $.of("Welcome back!")),
-  onFalse: () => $.div({}, $.of("Please log in")),
+  onTrue: () => $.div({}, "Welcome back!"),
+  onFalse: () => $.div({}, "Please log in"),
 });
 ```
 
@@ -274,7 +287,7 @@ match(status, {
     { pattern: "error", render: () => ErrorMessage() },
     { pattern: "success", render: () => Content() },
   ],
-  fallback: () => $.div({}, $.of("Unknown")),
+  fallback: () => $.div({}, "Unknown"),
 });
 ```
 
@@ -304,7 +317,7 @@ import { matchOption, matchEither } from "@effex/dom";
 // userData.value is Readable<Option<User>>
 matchOption(userData.value, {
   onSome: (user) => UserCard({ user }),  // user is Readable<User>
-  onNone: () => $.div({}, $.of("No user")),
+  onNone: () => $.div({}, "No user"),
 });
 
 matchEither(result, {
@@ -340,8 +353,8 @@ Boundary.suspense({
       const user = yield* fetchUser(id);
       return yield* UserProfile({ user });
     }),
-  fallback: () => $.div({}, $.of("Loading...")),
-  catch: (error) => $.div({}, $.of(`Error: ${error.message}`)),
+  fallback: () => $.div({}, "Loading..."),
+  catch: (error) => $.div({}, `Error: ${error.message}`),
   delay: "200 millis", // Avoid loading flash for fast responses
 });
 ```
@@ -351,7 +364,7 @@ Boundary.suspense({
 ```ts
 Boundary.error(
   () => RiskyComponent(),
-  (error) => $.div({}, $.of(`Failed: ${error.message}`)),
+  (error) => $.div({}, `Failed: ${error.message}`),
 );
 ```
 
@@ -557,7 +570,7 @@ virtualEach(items, {
   key: (item) => item.id,
   itemHeight: 48,
   height: 400,
-  render: (item) => $.li({}, $.of(item.pipe(Readable.map((i) => i.text)))),
+  render: (item) => $.li({}, item.pipe(Readable.map((i) => i.text))),
 });
 ```
 
@@ -659,10 +672,11 @@ import { UniqueId } from "@effex/dom";
 const labelId = yield* UniqueId.make("label");
 const inputId = yield* UniqueId.make("input");
 
-yield* $.div({}, collect(
-  $.label({ id: labelId, htmlFor: inputId }, $.of("Name")),
+yield* $.div(
+  {},
+  $.label({ id: labelId, htmlFor: inputId }, "Name"),
   $.input({ id: inputId, "aria-labelledby": labelId }),
-));
+);
 ```
 
 ## API Reference
@@ -671,10 +685,10 @@ yield* $.div({}, collect(
 
 | Export | Description |
 |--------|-------------|
-| `$.<element>(attrs?, children?)` | Create an HTML/SVG element |
-| `$.of(value)` | Lift a primitive or Readable into a child |
+| `$.<element>(attrs?, ...children)` | Create an HTML/SVG element with variadic children |
+| `$.of(value)` | Lift a primitive/Readable into a `Child` effect (rarely needed — pass values directly as children) |
 | `$.empty` | Empty child (produces no DOM nodes) |
-| `collect(...children)` | Combine multiple children |
+| `collect(...children)` | Combine multiple children into a single `Child` (mostly obsolete — variadic children are natural now) |
 | `t\`template\`` | Create reactive template string |
 | `provide(tag, value, children)` | Provide context to children |
 

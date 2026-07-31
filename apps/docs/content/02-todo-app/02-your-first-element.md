@@ -28,14 +28,12 @@ Pass content as arguments:
 
 ```typescript
 // Text content
-$.h1({}, $.of("My Todo App"))
+$.h1({}, "My Todo App")
 
 // Multiple children
 $.div({},
-  collect(
-    $.h1({}, $.of("My Todo App")),
-    $.p({}, $.of("A simple todo list"))
-  )
+  $.h1({}, "My Todo App"),
+  $.p({}, "A simple todo list"),
 )
 ```
 
@@ -48,14 +46,12 @@ Pass an attributes object as the first argument:
 $.input({ type: "text", placeholder: "What needs to be done?" })
 
 // Attributes + content
-$.button({ class: "btn-primary" }, $.of("Add Todo"))
+$.button({ class: "btn-primary" }, "Add Todo")
 
 // Attributes + children
 $.div({ class: "container" },
-  collect(
-    $.h1({}, $.of("My Todo App")),
-    $.p({}, $.of("A simple todo list"))
-  )
+  $.h1({}, "My Todo App"),
+  $.p({}, "A simple todo list"),
 )
 ```
 
@@ -71,50 +67,40 @@ Let's create the basic HTML structure for our todo app. Update `src/main.ts`:
 
 ```typescript
 import { Effect } from "effect";
-import { $, collect, mount, runApp } from "@effex/dom";
+import { $, mount, runApp } from "@effex/dom";
 
 const container = document.getElementById("root");
 if (!container) throw new Error("Root element not found");
 
 const App = () => $.div({ class: "todo-app" },
-  collect(
-    // Header
-    $.header({ class: "header" },
-      collect(
-        $.h1({}, $.of("todos")),
-        $.input({
-          class: "new-todo",
-          placeholder: "What needs to be done?",
-          autofocus: true,
-        }),
+  // Header
+  $.header({ class: "header" },
+    $.h1({}, "todos"),
+    $.input({
+      class: "new-todo",
+      placeholder: "What needs to be done?",
+      autofocus: true,
+    }),
+  ),
+
+  // Main section (todo list)
+  $.main({ class: "main" },
+    $.ul({ class: "todo-list" },
+      // We'll make this dynamic later
+      $.li({ class: "todo-item" },
+        $.input({ type: "checkbox", class: "toggle" }),
+        $.span({ class: "todo-text" }, "Learn Effex"),
+      ),
+      $.li({ class: "todo-item" },
+        $.input({ type: "checkbox", class: "toggle" }),
+        $.span({ class: "todo-text" }, "Build a todo app"),
       ),
     ),
+  ),
 
-    // Main section (todo list)
-    $.main({ class: "main" },
-      $.ul({ class: "todo-list" },
-        collect(
-          // We'll make this dynamic later
-          $.li({ class: "todo-item" },
-            collect(
-              $.input({ type: "checkbox", class: "toggle" }),
-              $.span({ class: "todo-text" }, $.of("Learn Effex")),
-            ),
-          ),
-          $.li({ class: "todo-item" },
-            collect(
-              $.input({ type: "checkbox", class: "toggle" }),
-              $.span({ class: "todo-text" }, $.of("Build a todo app")),
-            ),
-          ),
-        ),
-      ),
-    ),
-
-    // Footer
-    $.footer({ class: "footer" },
-      $.span({ class: "todo-count" }, $.of("2 items left")),
-    ),
+  // Footer
+  $.footer({ class: "footer" },
+    $.span({ class: "todo-count" }, "2 items left"),
   ),
 );
 
@@ -197,8 +183,8 @@ Notice how elements nest naturally:
 ```typescript
 $.div({ class: "parent" },
   $.div({ class: "child" },
-    $.span({}, $.of("Deeply nested content"))
-  )
+    $.span({}, "Deeply nested content"),
+  ),
 )
 ```
 
@@ -236,6 +222,6 @@ But it's all static! In the next chapter, we'll add reactivity with Signals to m
 
 1. **`$`** is a factory with methods for all HTML elements
 2. Pass **attributes first**, then **content**
-3. Use **`collect(...)`** to pass multiple children
-4. Use **`$.of("text")`** for text content
+3. **Multiple children** can be passed as separate arguments
+4. **Strings can be passed directly** as children — no wrapping needed
 5. Elements **nest naturally** - just put elements inside elements

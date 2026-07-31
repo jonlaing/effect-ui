@@ -46,19 +46,17 @@ const EmailField = () =>
 
     return yield* $.div(
       {},
-      collect(
-        $.label({}, $.of("Email")),
-        $.input({
-          type: "email",
-          value: field.value,
-          onInput: (e) => field.set((e.target as HTMLInputElement).value),
-          onBlur: () => field.blur(),
-        }),
-        when(hasError, {
-          onTrue: () => $.span({ class: "error" }, $.of("Invalid email")),
-          onFalse: () => $.span(),
-        }),
-      ),
+      $.label({}, "Email"),
+      $.input({
+        type: "email",
+        value: field.value,
+        onInput: (e) => field.set((e.target as HTMLInputElement).value),
+        onBlur: () => field.blur(),
+      }),
+      when(hasError, {
+        onTrue: () => $.span({ class: "error" }, "Invalid email"),
+        onFalse: () => $.span(),
+      }),
     );
   });
 
@@ -69,19 +67,17 @@ const PasswordField = () =>
 
     return yield* $.div(
       {},
-      collect(
-        $.label({}, $.of("Password")),
-        $.input({
-          type: "password",
-          value: field.value,
-          onInput: (e) => field.set((e.target as HTMLInputElement).value),
-          onBlur: () => field.blur(),
-        }),
-        when(hasError, {
-          onTrue: () => $.span({ class: "error" }, $.of("Too short")),
-          onFalse: () => $.span(),
-        }),
-      ),
+      $.label({}, "Password"),
+      $.input({
+        type: "password",
+        value: field.value,
+        onInput: (e) => field.set((e.target as HTMLInputElement).value),
+        onBlur: () => field.blur(),
+      }),
+      when(hasError, {
+        onTrue: () => $.span({ class: "error" }, "Too short"),
+        onFalse: () => $.span(),
+      }),
     );
   });
 
@@ -94,7 +90,7 @@ const SubmitButton = () =>
         type: "submit",
         disabled: form.isSubmitting,
       },
-      $.of(Readable.map(form.isSubmitting, (s) => (s ? "Submitting..." : "Log In"))),
+      Readable.map(form.isSubmitting, (s) => (s ? "Submitting..." : "Log In")),
     );
   });
 
@@ -113,7 +109,9 @@ const LoginPage = () =>
     },
     $.form(
       { class: "login-form" },
-      collect(EmailField(), PasswordField(), SubmitButton()),
+      EmailField(),
+      PasswordField(),
+      SubmitButton(),
     ),
   );
 ```

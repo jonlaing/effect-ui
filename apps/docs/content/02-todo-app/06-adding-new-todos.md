@@ -51,26 +51,22 @@ const App = () =>
       });
 
     return yield* $.div({ class: "todo-app" },
-      collect(
-        $.header({ class: "header" },
-          collect(
-            $.h1({}, $.of("todos")),
-            $.input({
-              class: "new-todo",
-              placeholder: "What needs to be done?",
-              autofocus: true,
-              value: newTodoText,
-              onInput: (e) => newTodoText.set((e.target as HTMLInputElement).value),
-              onKeyDown: (e) => {
-                if (e.key === "Enter") return addTodo();
-                return Effect.void;
-              },
-            }),
-          ),
-        ),
-
-        // ... rest of the app
+      $.header({ class: "header" },
+        $.h1({}, "todos"),
+        $.input({
+          class: "new-todo",
+          placeholder: "What needs to be done?",
+          autofocus: true,
+          value: newTodoText,
+          onInput: (e) => newTodoText.set((e.target as HTMLInputElement).value),
+          onKeyDown: (e) => {
+            if (e.key === "Enter") return addTodo();
+            return Effect.void;
+          },
+        }),
       ),
+
+      // ... rest of the app
     );
   });
 ```
@@ -129,7 +125,7 @@ Here's the full `src/main.ts`:
 ```typescript
 import "./styles.css";
 import { Effect } from "effect";
-import { $, collect, each, mount, Readable, runApp, Signal } from "@effex/dom";
+import { $, each, mount, Readable, runApp, Signal } from "@effex/dom";
 import { TodoItem } from "./components/TodoItem";
 
 const container = document.getElementById("root");
@@ -170,42 +166,38 @@ const App = () =>
       });
 
     return yield* $.div({ class: "todo-app" },
-      collect(
-        $.header({ class: "header" },
-          collect(
-            $.h1({}, $.of("todos")),
-            $.input({
-              class: "new-todo",
-              placeholder: "What needs to be done?",
-              autofocus: true,
-              value: newTodoText,
-              onInput: (e) => newTodoText.set((e.target as HTMLInputElement).value),
-              onKeyDown: (e) => {
-                if (e.key === "Enter") return addTodo();
-                return Effect.void;
-              },
-            }),
-          ),
-        ),
+      $.header({ class: "header" },
+        $.h1({}, "todos"),
+        $.input({
+          class: "new-todo",
+          placeholder: "What needs to be done?",
+          autofocus: true,
+          value: newTodoText,
+          onInput: (e) => newTodoText.set((e.target as HTMLInputElement).value),
+          onKeyDown: (e) => {
+            if (e.key === "Enter") return addTodo();
+            return Effect.void;
+          },
+        }),
+      ),
 
-        $.main({ class: "main" },
-          $.ul(
-            { class: "todo-list" },
-            each(todos, {
-              key: (todo) => todo.id,
-              render: (todo) => TodoItem({ todo, onToggle: toggleTodo }),
-            }),
-          ),
+      $.main({ class: "main" },
+        $.ul(
+          { class: "todo-list" },
+          each(todos, {
+            key: (todo) => todo.id,
+            render: (todo) => TodoItem({ todo, onToggle: toggleTodo }),
+          }),
         ),
+      ),
 
-        $.footer({ class: "footer" },
-          $.span(
-            { class: "todo-count" },
-            $.of(Readable.map(todos, t => {
-              const remaining = t.filter(todo => !todo.completed).length;
-              return `${remaining} item${remaining === 1 ? "" : "s"} left`;
-            })),
-          ),
+      $.footer({ class: "footer" },
+        $.span(
+          { class: "todo-count" },
+          Readable.map(todos, t => {
+            const remaining = t.filter(todo => !todo.completed).length;
+            return `${remaining} item${remaining === 1 ? "" : "s"} left`;
+          }),
         ),
       ),
     );

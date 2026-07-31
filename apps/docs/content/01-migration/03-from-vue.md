@@ -26,7 +26,7 @@ mount(UserProfile(), document.body); // Type error!
 mount(
   Boundary.error(
     () => UserProfile(),
-    (error) => $.div({}, $.of(`Failed to load: ${error.message}`)),
+    (error) => $.div({}, `Failed to load: ${error.message}`),
   ),
   document.body,
 ); // Compiles
@@ -50,7 +50,7 @@ const doubled = computed(() => count.value * 2);
 // Effex: Only the text node updates
 const count = yield* Signal.make(0);
 const doubled = Readable.map(count, (c) => c * 2);
-// $.span({}, $.of(doubled)) — only this span's text updates
+// $.span({}, doubled) — only this span's text updates
 ```
 
 ### No Template Compilation
@@ -69,10 +69,8 @@ Vue uses a custom template syntax that compiles to render functions. Effex uses 
 // Effex
 $.div(
   { class: "card" },
-  collect(
-    $.h1({}, $.of(title)),
-    $.button({ onClick: handleClick }, $.of("Submit")),
-  ),
+  $.h1({}, title),
+  $.button({ onClick: handleClick }, "Submit"),
 )
 ```
 
@@ -112,8 +110,8 @@ Boundary.suspense({
       const user = yield* fetchUser(id); // Can fail!
       return yield* UserProfile({ user });
     }),
-  fallback: () => $.div({}, $.of("Loading...")),
-  catch: (error) => $.div({}, $.of(`Error: ${error.message}`)),
+  fallback: () => $.div({}, "Loading..."),
+  catch: (error) => $.div({}, `Error: ${error.message}`),
   delay: "200 millis", // Avoid loading flash
 });
 
@@ -123,20 +121,18 @@ const userData = yield* AsyncReadable.make(() => fetchUser(id));
 // AsyncReadable has separate Readables for fine-grained reactivity
 $.div(
   {},
-  collect(
-    when(userData.isLoading, {
-      onTrue: () => $.div({}, $.of("Loading...")),
-      onFalse: () => $.span(),
-    }),
-    matchOption(userData.value, {
-      onSome: (user) => UserProfile({ user }),
-      onNone: () => $.span(),
-    }),
-    matchOption(userData.error, {
-      onSome: (err) => $.div({ class: "error" }, $.of(Readable.map(err, (e) => e.message))),
-      onNone: () => $.span(),
-    }),
-  ),
+  when(userData.isLoading, {
+    onTrue: () => $.div({}, "Loading..."),
+    onFalse: () => $.span(),
+  }),
+  matchOption(userData.value, {
+    onSome: (user) => UserProfile({ user }),
+    onNone: () => $.span(),
+  }),
+  matchOption(userData.error, {
+    onSome: (err) => $.div({ class: "error" }, Readable.map(err, (e) => e.message)),
+    onNone: () => $.span(),
+  }),
 );
 ```
 
@@ -186,7 +182,7 @@ const Counter = () =>
     const count = yield* Signal.make(0);
     return yield* $.button(
       { onClick: () => count.update((c) => c + 1) },
-      $.of(count),
+      count,
     );
   });
 ```
@@ -269,7 +265,7 @@ const TodoList = (props: { todos: Readable.Readable<Todo[]> }) =>
     container: () => $.ul(),
     key: (todo) => todo.id,
     render: (todo) =>
-      $.li({}, $.of(Readable.map(todo, (t) => t.text))),
+      $.li({}, Readable.map(todo, (t) => t.text)),
   });
 ```
 
@@ -315,7 +311,7 @@ const DocumentTitle = (props: {
       Effect.sync(() => localStorage.setItem("lastTitle", title)),
     );
 
-    return yield* $.h1({}, $.of(props.title));
+    return yield* $.h1({}, props.title);
   });
 ```
 
@@ -347,7 +343,7 @@ class ThemeService extends Context.Tag("Theme")<ThemeService, string>() {}
 const Page = () =>
   Effect.gen(function* () {
     const theme = yield* ThemeService;
-    return yield* $.div({ class: theme }, $.of("..."));
+    return yield* $.div({ class: theme }, "...");
   });
 
 // Provide at mount
@@ -382,13 +378,11 @@ const TextInput = () =>
     const text = yield* Signal.make("");
     return yield* $.div(
       {},
-      collect(
-        $.input({
-          value: text,
-          onInput: (e) => text.set((e.target as HTMLInputElement).value),
-        }),
-        $.p({}, t`You typed: ${text}`),
-      ),
+      $.input({
+        value: text,
+        onInput: (e) => text.set((e.target as HTMLInputElement).value),
+      }),
+      $.p({}, t`You typed: ${text}`),
     );
   });
 ```
@@ -408,12 +402,12 @@ const TextInput = () =>
 // Effex
 const Modal = () =>
   Portal(() =>
-    $.div({ class: "modal" }, $.of("Modal content")),
+    $.div({ class: "modal" }, "Modal content"),
   );
 
 // Or with a specific target
 Portal({ target: "#modal-root" }, () =>
-  $.div({ class: "modal" }, $.of("Modal content")),
+  $.div({ class: "modal" }, "Modal content"),
 );
 ```
 

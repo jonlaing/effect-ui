@@ -21,8 +21,8 @@ Boundary.suspense({
       const user = yield* fetchUser(id);
       return yield* UserProfile({ user });
     }),
-  fallback: () => $.div({}, $.of("Loading...")),
-  catch: (error) => $.div({}, $.of(`Error: ${error.message}`)),
+  fallback: () => $.div({}, "Loading..."),
+  catch: (error) => $.div({}, `Error: ${error.message}`),
   delay: "200 millis",  // Avoid loading flash for fast responses
 });
 ```
@@ -43,7 +43,7 @@ Catch errors from a component subtree without crashing the whole app:
 ```typescript
 Boundary.error(
   () => RiskyComponent(),
-  (error) => $.div({}, $.of(`Failed: ${error.message}`)),
+  (error) => $.div({}, `Failed: ${error.message}`),
 );
 ```
 
@@ -60,7 +60,7 @@ Boundary.error(
       render: () => DataDashboard(),
       fallback: () => DashboardSkeleton(),
     }),
-  (error) => $.div({}, $.of("Dashboard unavailable")),
+  (error) => $.div({}, "Dashboard unavailable"),
 );
 ```
 

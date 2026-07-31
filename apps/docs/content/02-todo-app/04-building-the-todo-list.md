@@ -17,7 +17,7 @@ import { each } from "@effex/dom";
 
 each(itemsSignal, {
   key: (item) => item.id,  // Unique identifier
-  render: (item) => $.li({}, $.of(Readable.map(item, i => i.text)))
+  render: (item) => $.li({}, Readable.map(item, i => i.text))
 })
 ```
 
@@ -32,7 +32,7 @@ The `each` helper:
 First, let's create a component for individual todo items. Create a new file `src/components/TodoItem.ts`:
 
 ```typescript
-import { $, collect, Readable } from "@effex/dom";
+import { $, Readable } from "@effex/dom";
 
 interface Todo {
   id: number;
@@ -46,14 +46,12 @@ interface TodoItemProps {
 
 export const TodoItem = (props: TodoItemProps) =>
   $.li({ class: "todo-item" },
-    collect(
-      $.input({
-        type: "checkbox",
-        class: "toggle",
-        checked: Readable.map(props.todo, t => t.completed),
-      }),
-      $.span({ class: "todo-text" }, $.of(Readable.map(props.todo, t => t.text))),
-    ),
+    $.input({
+      type: "checkbox",
+      class: "toggle",
+      checked: Readable.map(props.todo, t => t.completed),
+    }),
+    $.span({ class: "todo-text" }, Readable.map(props.todo, t => t.text)),
   );
 ```
 
@@ -70,7 +68,7 @@ Now update `src/main.ts`:
 ```typescript
 import "./styles.css";
 import { Effect } from "effect";
-import { $, collect, each, mount, Readable, runApp, Signal, t } from "@effex/dom";
+import { $, each, mount, Readable, runApp, Signal, t } from "@effex/dom";
 import { TodoItem } from "./components/TodoItem";
 
 const container = document.getElementById("root");
@@ -94,32 +92,26 @@ const App = () =>
     const remainingTodoCount = Readable.map(todos, t => t.filter(todo => !todo.completed).length);
 
     return yield* $.div({ class: "todo-app" },
-      collect(
-        $.header({ class: "header" },
-          collect(
-            $.h1({}, $.of("todos")),
-            $.input({
-              class: "new-todo",
-              placeholder: "What needs to be done?",
-              autofocus: true,
-            }),
-          ),
-        ),
+      $.header({ class: "header" },
+        $.h1({}, "todos"),
+        $.input({
+          class: "new-todo",
+          placeholder: "What needs to be done?",
+          autofocus: true,
+        }),
+      ),
 
-        $.main({ class: "main" },
-          each(todos, {
-            key: (todo) => todo.id,
-            container: () => $.ul({ class: "todo-list" }), // $.div() by default
-            render: (todo) => TodoItem({ todo }),
-          }),
-        ),
+      $.main({ class: "main" },
+        each(todos, {
+          key: (todo) => todo.id,
+          container: () => $.ul({ class: "todo-list" }), // $.div() by default
+          render: (todo) => TodoItem({ todo }),
+        }),
+      ),
 
-        $.footer({ class: "footer" },
-          collect(
-            $.span({ class: "todo-count" }, $.of(t`${completedTodoCount} items completed`)),
-            $.span({ class: "todo-count" }, $.of(t`${remainingTodoCount} items left`)),
-          ),
-        ),
+      $.footer({ class: "footer" },
+        $.span({ class: "todo-count" }, t`${completedTodoCount} items completed`),
+        $.span({ class: "todo-count" }, t`${remainingTodoCount} items left`),
       ),
     );
   });
@@ -163,13 +155,13 @@ $.button(
       completed: false
     })
   },
-  $.of("Add Todo"),
+  "Add Todo",
 ),
 $.button(
   {
     onClick: () => todos.pop().pipe(Effect.ignore)
   },
-  $.of("Remove Last"),
+  "Remove Last",
 )
 ```
 

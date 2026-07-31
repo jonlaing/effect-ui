@@ -88,7 +88,6 @@ import { Context, Effect, Layer, Option } from "effect";
 
 import {
   $,
-  collect,
   each,
   matchOption,
   Readable,
@@ -151,18 +150,16 @@ const App = () =>
     const filter = yield* Signal.make<Filter>("all");
 
     return yield* $.div({ class: "todo-app" },
-      collect(
-        // ... header, todo list, footer ...
+      // ... header, todo list, footer ...
 
-        // Display error messages if any
-        matchOption(error, {
-          onSome: (err) =>
-            $.div({ class: "error-message" }, $.of(err)),
-          onNone: () => $.div()
-        }),
+      // Display error messages if any
+      matchOption(error, {
+        onSome: (err) =>
+          $.div({ class: "error-message" }, err),
+        onNone: () => $.div()
+      }),
 
-        // ... rest of the app (footer, etc.) ...
-      )
+      // ... rest of the app (footer, etc.) ...
     );
   });
 ```

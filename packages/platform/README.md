@@ -152,17 +152,15 @@ The app component is shared between server and client. It should contain an `Out
 
 ```ts
 // App.ts
-import { $, collect } from "@effex/dom";
+import { $ } from "@effex/dom";
 import { Link, Outlet } from "@effex/router";
 import { router } from "./routes.js";
 
 export const App = () =>
   $.div(
     { class: "app" },
-    collect(
-      $.nav({}, Link({ href: "/" }, $.of("Home"))),
-      $.main({}, Outlet({ router })),
-    ),
+    $.nav({}, Link({ href: "/" }, "Home")),
+    $.main({}, Outlet({ router })),
   );
 ```
 

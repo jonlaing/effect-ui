@@ -24,7 +24,7 @@ This filters out the todo with the matching ID, effectively removing it. The fun
 Update `src/components/TodoItem.ts` to accept an `onDelete` callback:
 
 ```typescript
-import { $, collect, Readable } from "@effex/dom";
+import { $, Readable } from "@effex/dom";
 import { Effect } from "effect";
 
 interface Todo {
@@ -50,22 +50,20 @@ export const TodoItem = (props: TodoItemProps) =>
           t.completed ? "todo-item completed" : "todo-item"
         ),
       },
-      collect(
-        $.input({
-          type: "checkbox",
-          class: "toggle",
-          checked: Readable.map(todo, t => t.completed),
-          onChange: () => onToggle(todoId),
-        }),
-        $.span({ class: "todo-text" }, $.of(Readable.map(todo, t => t.text))),
-        $.button(
-          {
-            class: "delete-btn",
-            onClick: () => onDelete(todoId),
-          },
-          $.of("×")
-        ),
-      )
+      $.input({
+        type: "checkbox",
+        class: "toggle",
+        checked: Readable.map(todo, t => t.completed),
+        onChange: () => onToggle(todoId),
+      }),
+      $.span({ class: "todo-text" }, Readable.map(todo, t => t.text)),
+      $.button(
+        {
+          class: "delete-btn",
+          onClick: () => onDelete(todoId),
+        },
+        "×",
+      ),
     );
   });
 ```

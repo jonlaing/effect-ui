@@ -19,7 +19,7 @@ const count = yield* Signal.make(5);
 const doubled = Readable.map(count, n => n * 2);
 
 // Use it in the UI
-$.span({}, $.of(doubled))  // Displays "10", updates automatically
+$.span({}, doubled)  // Displays "10", updates automatically
 ```
 
 The derived value:
@@ -53,7 +53,7 @@ Now we need a derived value that filters todos based on the current filter. We c
 For combining multiple signals, use `Readable.zipWith`:
 
 ```typescript
-import { $, collect, each, Readable, Signal, when } from "@effex/dom";
+import { $, each, Readable, Signal, when } from "@effex/dom";
 
 // Inside App component:
 const filteredTodos = Readable.zipWith(todos, filter, (todoList, currentFilter) => {
@@ -92,41 +92,37 @@ Add the filter buttons in the footer:
 
 ```typescript
 $.footer({ class: "footer" },
-  collect(
-    $.span(
-      { class: "todo-count" },
-      $.of(Readable.map(todos, t => {
-        const remaining = t.filter(todo => !todo.completed).length;
-        return `${remaining} item${remaining === 1 ? "" : "s"} left`;
-      }))
-    ),
+  $.span(
+    { class: "todo-count" },
+    Readable.map(todos, t => {
+      const remaining = t.filter(todo => !todo.completed).length;
+      return `${remaining} item${remaining === 1 ? "" : "s"} left`;
+    }),
+  ),
 
-    $.div({ class: "filters" },
-      collect(
-        $.button(
-          {
-            class: Readable.map(filter, f => f === "all" ? "filter-btn selected" : "filter-btn"),
-            onClick: () => filter.set("all"),
-          },
-          $.of("All")
-        ),
-        $.button(
-          {
-            class: Readable.map(filter, f => f === "active" ? "filter-btn selected" : "filter-btn"),
-            onClick: () => filter.set("active"),
-          },
-          $.of("Active")
-        ),
-        $.button(
-          {
-            class: Readable.map(filter, f => f === "completed" ? "filter-btn selected" : "filter-btn"),
-            onClick: () => filter.set("completed"),
-          },
-          $.of("Completed")
-        ),
-      )
+  $.div({ class: "filters" },
+    $.button(
+      {
+        class: Readable.map(filter, f => f === "all" ? "filter-btn selected" : "filter-btn"),
+        onClick: () => filter.set("all"),
+      },
+      "All",
     ),
-  )
+    $.button(
+      {
+        class: Readable.map(filter, f => f === "active" ? "filter-btn selected" : "filter-btn"),
+        onClick: () => filter.set("active"),
+      },
+      "Active",
+    ),
+    $.button(
+      {
+        class: Readable.map(filter, f => f === "completed" ? "filter-btn selected" : "filter-btn"),
+        onClick: () => filter.set("completed"),
+      },
+      "Completed",
+    ),
+  ),
 ),
 ```
 
@@ -165,41 +161,37 @@ Here's the full footer section:
 
 ```typescript
 $.footer({ class: "footer" },
-  collect(
-    $.span(
-      { class: "todo-count" },
-      $.of(Readable.map(todos, t => {
-        const remaining = t.filter(todo => !todo.completed).length;
-        return `${remaining} item${remaining === 1 ? "" : "s"} left`;
-      }))
-    ),
+  $.span(
+    { class: "todo-count" },
+    Readable.map(todos, t => {
+      const remaining = t.filter(todo => !todo.completed).length;
+      return `${remaining} item${remaining === 1 ? "" : "s"} left`;
+    }),
+  ),
 
-    $.div({ class: "filters" },
-      collect(
-        $.button(
-          {
-            class: Readable.map(filter, f => f === "all" ? "filter-btn selected" : "filter-btn"),
-            onClick: () => filter.set("all"),
-          },
-          $.of("All")
-        ),
-        $.button(
-          {
-            class: Readable.map(filter, f => f === "active" ? "filter-btn selected" : "filter-btn"),
-            onClick: () => filter.set("active"),
-          },
-          $.of("Active")
-        ),
-        $.button(
-          {
-            class: Readable.map(filter, f => f === "completed" ? "filter-btn selected" : "filter-btn"),
-            onClick: () => filter.set("completed"),
-          },
-          $.of("Completed")
-        ),
-      )
+  $.div({ class: "filters" },
+    $.button(
+      {
+        class: Readable.map(filter, f => f === "all" ? "filter-btn selected" : "filter-btn"),
+        onClick: () => filter.set("all"),
+      },
+      "All",
     ),
-  )
+    $.button(
+      {
+        class: Readable.map(filter, f => f === "active" ? "filter-btn selected" : "filter-btn"),
+        onClick: () => filter.set("active"),
+      },
+      "Active",
+    ),
+    $.button(
+      {
+        class: Readable.map(filter, f => f === "completed" ? "filter-btn selected" : "filter-btn"),
+        onClick: () => filter.set("completed"),
+      },
+      "Completed",
+    ),
+  ),
 ),
 ```
 

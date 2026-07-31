@@ -18,7 +18,7 @@ import { ref, Element } from "@effex/dom";
 const buttonRef = yield* ref<HTMLButtonElement>();
 
 // Pass to an element
-yield* $.button({ ref: buttonRef }, $.of("Click me"));
+yield* $.button({ ref: buttonRef }, "Click me");
 
 // Manipulate later — waits until the element is mounted
 yield* buttonRef.pipe(Element.focus);

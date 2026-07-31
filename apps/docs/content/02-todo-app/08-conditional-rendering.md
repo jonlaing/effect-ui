@@ -16,8 +16,8 @@ The `when` helper conditionally renders elements:
 import { when } from "@effex/dom";
 
 when(condition, {
-  onTrue: () => $.div({}, $.of("Shown when true")),
-  onFalse: () => $.div({}, $.of("Shown when false")),  // optional
+  onTrue: () => $.div({}, "Shown when true"),
+  onFalse: () => $.div({}, "Shown when false"),  // optional
 })
 ```
 
@@ -49,36 +49,32 @@ const clearCompleted = () =>
 Now use `when` in the footer:
 
 ```typescript
-import { $, collect, each, Readable, Signal, when } from "@effex/dom";
+import { $, each, Readable, Signal, when } from "@effex/dom";
 
 // In the footer:
 $.footer({ class: "footer" },
-  collect(
-    $.span(
-      { class: "todo-count" },
-      $.of(Readable.map(todos, t => {
-        const remaining = t.filter(todo => !todo.completed).length;
-        return `${remaining} item${remaining === 1 ? "" : "s"} left`;
-      }))
-    ),
-
-    $.div({ class: "filters" },
-      collect(
-        // ... filter buttons
-      )
-    ),
-
-    // Clear completed button - only shows when there are completed todos
-    when(hasCompletedTodos, {
-      onTrue: () => $.button(
-        {
-          class: "clear-completed",
-          onClick: () => clearCompleted(),
-        },
-        $.of("Clear completed")
-      ),
+  $.span(
+    { class: "todo-count" },
+    Readable.map(todos, t => {
+      const remaining = t.filter(todo => !todo.completed).length;
+      return `${remaining} item${remaining === 1 ? "" : "s"} left`;
     }),
-  )
+  ),
+
+  $.div({ class: "filters" },
+    // ... filter buttons
+  ),
+
+  // Clear completed button - only shows when there are completed todos
+  when(hasCompletedTodos, {
+    onTrue: () => $.button(
+      {
+        class: "clear-completed",
+        onClick: () => clearCompleted(),
+      },
+      "Clear completed",
+    ),
+  }),
 ),
 ```
 
@@ -107,16 +103,17 @@ const hasTodos = Readable.map(todos, t => t.length > 0);
 
 // Wrap the main section
 when(hasTodos, {
-  onTrue: () => $.main({ class: "main" },
+  onTrue: () =>
+    $.main(
+      { class: "main" },
       each(filteredTodos, {
         container: () => $.ul({ class: "todo-list" }),
         key: (todo) => todo.id,
         render: (todo) => TodoItem({ todo, onToggle: toggleTodo }),
-      })
+      }),
     ),
-  ),
-  onFalse: () => $.p({ class: "empty-state" }, $.of("No todos yet. Add one above!")),
-}),
+  onFalse: () => $.p({ class: "empty-state" }, "No todos yet. Add one above!"),
+})
 ```
 
 Add the empty state styling:
@@ -136,9 +133,7 @@ The footer should probably also hide when there are no todos:
 ```typescript
 when(hasTodos, {
   onTrue: () => $.footer({ class: "footer" },
-    collect(
-      // ... footer content
-    )
+    // ... footer content
   ),
 }),
 ```
@@ -149,64 +144,55 @@ Here's how the main structure looks now:
 
 ```typescript
 return yield* $.div({ class: "todo-app" },
-  collect(
-    // Header (always shown)
-    $.header({ class: "header" },
-      collect(
-        $.h1({}, $.of("todos")),
-        $.input({
-          class: "new-todo",
-          placeholder: "What needs to be done?",
-          autofocus: true,
-          value: newTodoText,
-          onInput: (e) => newTodoText.set((e.target as HTMLInputElement).value),
-          onKeyDown: (e) => {
-            if (e.key === "Enter") return addTodo();
-            return Effect.void;
-          },
-        }),
-      )
+  // Header (always shown)
+  $.header({ class: "header" },
+    $.h1({}, "todos"),
+    $.input({
+      class: "new-todo",
+      placeholder: "What needs to be done?",
+      autofocus: true,
+      value: newTodoText,
+      onInput: (e) => newTodoText.set((e.target as HTMLInputElement).value),
+      onKeyDown: (e) => {
+        if (e.key === "Enter") return addTodo();
+        return Effect.void;
+      },
+    }),
+  ),
+
+  // Main section (only when todos exist)
+  when(hasTodos, {
+    onTrue: () => $.main({ class: "main" },
+      each(filteredTodos, {
+        container: () => $.ul({ class: "todo-list" }),
+        key: (todo) => todo.id,
+        render: (todo) => TodoItem({ todo, onToggle: toggleTodo }),
+      }),
     ),
+    onFalse: () => $.p({ class: "empty-state" }, "No todos yet. Add one above!"),
+  }),
 
-    // Main section (only when todos exist)
-    when(hasTodos, {
-      onTrue: () => $.main({ class: "main" },
-          each(filteredTodos, {
-            container: () => $.ul({ class: "todo-list" }),
-            key: (todo) => todo.id,
-            render: (todo) => TodoItem({ todo, onToggle: toggleTodo }),
-          })
+  // Footer (only when todos exist)
+  when(hasTodos, {
+    onTrue: () => $.footer({ class: "footer" },
+      $.span(
+        { class: "todo-count" },
+        Readable.map(todos, t => {
+          const remaining = t.filter(todo => !todo.completed).length;
+          return `${remaining} item${remaining === 1 ? "" : "s"} left`;
+        }),
+      ),
+      $.div({ class: "filters" },
+        // Filter buttons...
+      ),
+      when(hasCompletedTodos, {
+        onTrue: () => $.button(
+          { class: "clear-completed", onClick: () => clearCompleted() },
+          "Clear completed",
         ),
-      ),
-      onFalse: () => $.p({ class: "empty-state" }, $.of("No todos yet. Add one above!")),
-    }),
-
-    // Footer (only when todos exist)
-    when(hasTodos, {
-      onTrue: () => $.footer({ class: "footer" },
-        collect(
-          $.span(
-            { class: "todo-count" },
-            $.of(Readable.map(todos, t => {
-              const remaining = t.filter(todo => !todo.completed).length;
-              return `${remaining} item${remaining === 1 ? "" : "s"} left`;
-            }))
-          ),
-          $.div({ class: "filters" },
-            collect(
-              // Filter buttons...
-            )
-          ),
-          when(hasCompletedTodos, {
-            onTrue: () => $.button(
-              { class: "clear-completed", onClick: () => clearCompleted() },
-              $.of("Clear completed")
-            ),
-          }),
-        )
-      ),
-    }),
-  )
+      }),
+    ),
+  }),
 );
 ```
 
@@ -228,7 +214,7 @@ You can add enter/exit animations to `when`:
 
 ```typescript
 when(condition, {
-  onTrue: () => $.div({}, $.of("Animated!")),
+  onTrue: () => $.div({}, "Animated!"),
   animate: {
     enter: "fade-in",
     exit: "fade-out",

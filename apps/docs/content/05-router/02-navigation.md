@@ -109,30 +109,30 @@ import { Link } from "@effex/router";
 import { $ } from "@effex/dom";
 
 // Path-based
-Link({ href: "/users" }, $.of("Users"));
+Link({ href: "/users" }, "Users");
 
 // Type-safe route-based
 Link(
   { to: UserRoute, params: { id: 123 } },
-  $.of("View User"),
+  "View User",
 );
 
 // With search params
 Link(
   { href: "/search", searchParams: { q: "test" } },
-  $.of("Search"),
+  "Search",
 );
 
 // Replace instead of push
 Link(
   { href: "/settings", replace: true },
-  $.of("Settings"),
+  "Settings",
 );
 
 // External links work normally
 Link(
   { href: "https://example.com", target: "_blank" },
-  $.of("External"),
+  "External",
 );
 ```
 
@@ -170,11 +170,9 @@ import { $ } from "@effex/dom";
 const App = () =>
   $.div(
     { class: "app" },
-    collect(
-      Header(),
-      $.main({}, Outlet({ router })),
-      Footer(),
-    ),
+    Header(),
+    $.main({}, Outlet({ router })),
+    Footer(),
   );
 ```
 

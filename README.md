@@ -22,7 +22,7 @@ mount(UserProfile(), document.body); // Type error!
 mount(
   Boundary.error(
     () => UserProfile(),
-    (error) => $.div({}, $.of(`Failed to load: ${error.message}`)),
+    (error) => $.div({}, `Failed to load: ${error.message}`),
   ),
   document.body,
 ); // Compiles
@@ -39,7 +39,7 @@ const Counter = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0);
     console.log("setup"); // Logs once, on mount
-    return yield* $.div({}, $.of(count)); // count changes update only this text node
+    return yield* $.div({}, count); // count changes update only this text node
   });
 ```
 
@@ -110,7 +110,7 @@ pnpm add @effex/dom @effex/router @effex/platform @effect/platform effect
 
 ```ts
 import { Effect } from "effect";
-import { $, collect, Signal, mount, runApp } from "@effex/dom";
+import { $, Signal, mount, runApp } from "@effex/dom";
 
 const Counter = () =>
   Effect.gen(function* () {
@@ -118,11 +118,9 @@ const Counter = () =>
 
     return yield* $.div(
       {},
-      collect(
-        $.button({ onClick: () => count.update((n) => n - 1) }, $.of("-")),
-        $.span({}, $.of(count)),
-        $.button({ onClick: () => count.update((n) => n + 1) }, $.of("+")),
-      ),
+      $.button({ onClick: () => count.update((n) => n - 1) }, "-"),
+      $.span({}, count),
+      $.button({ onClick: () => count.update((n) => n + 1) }, "+"),
     );
   });
 
@@ -170,7 +168,7 @@ const cache = yield* Ref.make(new Map());
 The `@effex/dom` package provides element constructors and reactive control flow:
 
 ```ts
-import { $, collect, each, when, matchOption, Readable } from "@effex/dom";
+import { $, each, when, matchOption, Readable } from "@effex/dom";
 
 // Elements accept reactive attributes
 $.input({
@@ -194,7 +192,7 @@ each(todos, {
 // Option matching
 matchOption(maybeUser, {
   onSome: (user) => UserCard({ user }),
-  onNone: () => $.span({}, $.of("No user")),
+  onNone: () => $.span({}, "No user"),
 });
 ```
 
@@ -227,7 +225,7 @@ const router = Router.empty.pipe(
 $.main({}, Outlet({ router }));
 
 // Navigate with type-safe links
-Link({ href: "/users/alice" }, $.of("Alice's Profile"));
+Link({ href: "/users/alice" }, "Alice's Profile");
 ```
 
 ### Loaders & Mutation Handlers
@@ -289,17 +287,15 @@ LoginForm.provide(
   },
   $.form(
     { class: "login" },
-    collect(
-      Effect.gen(function* () {
-        const email = yield* LoginForm.fields.email;
-        return yield* $.input({
-          value: email.value,
-          onInput: (e) => email.set((e.target as HTMLInputElement).value),
-          onBlur: () => email.blur(),
-        });
-      }),
-      // ... more fields
-    ),
+    Effect.gen(function* () {
+      const email = yield* LoginForm.fields.email;
+      return yield* $.input({
+        value: email.value,
+        onInput: (e) => email.set((e.target as HTMLInputElement).value),
+        onBlur: () => email.blur(),
+      });
+    }),
+    // ... more fields
   ),
 );
 ```
@@ -410,7 +406,8 @@ Effex uses function calls instead of JSX:
 // Effex
 $.div(
   { class: "container" },
-  collect($.h1({}, $.of("Hello")), $.p({}, $.of(count))),
+  $.h1({}, "Hello"),
+  $.p({}, count),
 )
 ```
 

@@ -26,7 +26,7 @@ mount(UserProfile(), document.body); // Type error!
 mount(
   Boundary.error(
     () => UserProfile(),
-    (error) => $.div({}, $.of(`Failed to load: ${error.message}`)),
+    (error) => $.div({}, `Failed to load: ${error.message}`),
   ),
   document.body,
 ); // Compiles
@@ -53,7 +53,7 @@ const Counter = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0);
     console.log("render"); // Logs once, on mount
-    return yield* $.div({}, $.of(count)); // count changes update only this text
+    return yield* $.div({}, count); // count changes update only this text
   });
 ```
 
@@ -132,8 +132,8 @@ Boundary.suspense({
       const user = yield* fetchUser(id); // Can fail!
       return yield* UserProfile({ user });
     }),
-  fallback: () => $.div({}, $.of("Loading...")),
-  catch: (error) => $.div({}, $.of(`Error: ${error.message}`)),
+  fallback: () => $.div({}, "Loading..."),
+  catch: (error) => $.div({}, `Error: ${error.message}`),
   delay: "200 millis", // Avoid loading flash
 });
 ```
@@ -175,7 +175,7 @@ const Counter = () =>
     const count = yield* Signal.make(0);
     return yield* $.button(
       { onClick: () => count.update((c) => c + 1) },
-      $.of(count),
+      count,
     );
   });
 ```
@@ -238,7 +238,7 @@ const TodoList = (props: { todos: Readable.Readable<Todo[]> }) =>
     container: () => $.ul(),
     key: (todo) => todo.id,
     render: (todo) =>
-      $.li({}, $.of(Readable.map(todo, (t) => t.text))),
+      $.li({}, Readable.map(todo, (t) => t.text)),
   });
 ```
 
@@ -258,10 +258,10 @@ const UserProfile = (props: { id: string }) =>
     render: () =>
       Effect.gen(function* () {
         const user = yield* fetchUser(props.id);
-        return yield* $.div({}, $.of(user.name));
+        return yield* $.div({}, user.name);
       }),
-    fallback: () => $.div({}, $.of("Loading...")),
-    catch: (e) => $.div({}, $.of(`Error: ${e}`)),
+    fallback: () => $.div({}, "Loading..."),
+    catch: (e) => $.div({}, `Error: ${e}`),
   });
 
 // Effex — Option 2: AsyncReadable (reactive, with refetch)
@@ -271,20 +271,18 @@ const UserProfileAsync = (props: { id: string }) =>
 
     return yield* $.div(
       {},
-      collect(
-        when(userData.isLoading, {
-          onTrue: () => $.div({}, $.of("Loading...")),
-          onFalse: () => $.span(),
-        }),
-        matchOption(userData.value, {
-          onSome: (user) => $.div({}, $.of(Readable.map(user, (u) => u.name))),
-          onNone: () => $.span(),
-        }),
-        matchOption(userData.error, {
-          onSome: (err) => $.div({ class: "error" }, $.of(Readable.map(err, (e) => e.message))),
-          onNone: () => $.span(),
-        }),
-      ),
+      when(userData.isLoading, {
+        onTrue: () => $.div({}, "Loading..."),
+        onFalse: () => $.span(),
+      }),
+      matchOption(userData.value, {
+        onSome: (user) => $.div({}, Readable.map(user, (u) => u.name)),
+        onNone: () => $.span(),
+      }),
+      matchOption(userData.error, {
+        onSome: (err) => $.div({ class: "error" }, Readable.map(err, (e) => e.message)),
+        onNone: () => $.span(),
+      }),
     );
   });
 ```
@@ -312,7 +310,7 @@ class ThemeService extends Context.Tag("Theme")<ThemeService, string>() {}
 const Page = () =>
   Effect.gen(function* () {
     const theme = yield* ThemeService;
-    return yield* $.div({ class: theme }, $.of("..."));
+    return yield* $.div({ class: theme }, "...");
   });
 
 // Provide at mount
@@ -360,7 +358,7 @@ const DocumentTitle = (props: {
       Effect.sync(() => localStorage.setItem("lastTitle", title)),
     );
 
-    return yield* $.h1({}, $.of(props.title));
+    return yield* $.h1({}, props.title);
   });
 ```
 

@@ -13,10 +13,10 @@ Effex components are just functions that return Elements. There's no special com
 Components without state or context requirements are plain functions:
 
 ```typescript
-import { $, collect } from "@effex/dom";
+import { $ } from "@effex/dom";
 
 const Greeting = (props: { name: string }) =>
-  $.h1({}, $.of(`Hello, ${props.name}!`));
+  $.h1({}, `Hello, ${props.name}!`);
 ```
 
 ### With Children
@@ -30,10 +30,10 @@ const Card = <E, R>(
   props: { title: string },
   children: Element.Child<E, R>,
 ) =>
-  $.div({ class: "card" }, collect(
-    $.h2({}, $.of(props.title)),
+  $.div({ class: "card" },
+    $.h2({}, props.title),
     children,
-  ));
+  );
 ```
 
 This ensures that if the children require a context or may produce an error, those types flow through to the Card's return type. The compiler tracks them for you.
@@ -44,23 +44,23 @@ Use `Effect.gen` when you need signals, context, or other Effects:
 
 ```typescript
 import { Effect } from "effect";
-import { $, collect, Signal } from "@effex/dom";
+import { $, Signal } from "@effex/dom";
 
 const Counter = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0);
 
-    return yield* $.div({}, collect(
+    return yield* $.div({},
       $.button(
         { onClick: () => count.update((n) => n - 1) },
-        $.of("-"),
+        "-",
       ),
-      $.span({}, $.of(count)),
+      $.span({}, count),
       $.button(
         { onClick: () => count.update((n) => n + 1) },
-        $.of("+"),
+        "+",
       ),
-    ));
+    );
   });
 ```
 
@@ -74,7 +74,7 @@ Components that depend on context simply `yield*` the context tag:
 const UserBadge = () =>
   Effect.gen(function* () {
     const user = yield* UserContext;
-    return yield* $.span({}, $.of(user.name));
+    return yield* $.span({}, user.name);
   });
 ```
 
@@ -98,7 +98,7 @@ const ThemedButton = (props: { label: string }) =>
     const theme = yield* ThemeContext;
     return yield* $.button(
       { style: { backgroundColor: theme.primary } },
-      $.of(props.label),
+      props.label,
     );
   });
 

@@ -182,11 +182,9 @@ const Counter = () =>
 
     return yield* $.div(
       {},
-      collect(
-        $.button({ onClick: () => count.update(n => n - 1) }, $.of("-")),
-        $.span({}, $.of(count)),
-        $.button({ onClick: () => count.update(n => n + 1) }, $.of("+")),
-      ),
+      $.button({ onClick: () => count.update(n => n - 1) }, "-"),
+      $.span({}, count),
+      $.button({ onClick: () => count.update(n => n + 1) }, "+"),
     );
   });
 ```

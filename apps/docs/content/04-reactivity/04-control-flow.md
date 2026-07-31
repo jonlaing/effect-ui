@@ -37,7 +37,7 @@ match(status.current, {
     { pattern: "success", render: () => SuccessView() },
     { pattern: "error", render: () => ErrorView() },
   ],
-  fallback: () => $.div({}, $.of("Unknown state")),
+  fallback: () => $.div({}, "Unknown state"),
 });
 ```
 
@@ -52,7 +52,7 @@ import { matchOption } from "@effex/dom";
 
 matchOption(userData.value, {
   onSome: (user) => UserCard({ user }),  // user is Readable<User>
-  onNone: () => $.span({}, $.of("No data")),
+  onNone: () => $.span({}, "No data"),
 });
 ```
 

@@ -67,10 +67,10 @@ import { UniqueId } from "@effex/dom";
 const labelId = yield* UniqueId.make("label");
 const inputId = yield* UniqueId.make("input");
 
-yield* $.div({}, collect(
-  $.label({ id: labelId, htmlFor: inputId }, $.of("Name")),
+yield* $.div({},
+  $.label({ id: labelId, htmlFor: inputId }, "Name"),
   $.input({ id: inputId, "aria-labelledby": labelId }),
-));
+);
 ```
 
 IDs are unique within the application and include the optional prefix for readability in the DOM inspector.
