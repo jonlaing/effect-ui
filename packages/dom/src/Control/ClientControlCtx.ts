@@ -16,7 +16,11 @@ import {
 
 import * as Element from "../Element/index.js";
 import { DOMRenderer } from "../Render/DOMRenderer.js";
-import { forkSlotEnter, forkSlotRemoval } from "./slotAnimation.js";
+import {
+  applyPreInsertEnterFrom,
+  forkSlotEnter,
+  forkSlotRemoval,
+} from "./slotAnimation.js";
 import { subscribeReconcile } from "./subscribeReconcile.js";
 
 type DOMElement = HTMLElement | SVGElement;
@@ -91,6 +95,12 @@ const createClientControlCtx = (): IControlCtx<DOMElement> => {
             DOMRenderer as unknown as Renderer<unknown>,
           ),
         )) as DOMElement;
+
+        // Apply enterFrom classes BEFORE inserting into the DOM, so the
+        // browser's first paint of this element is already in the hidden
+        // pre-animation state. Otherwise there's a one-frame flash of the
+        // resolved state before forkSlotEnter's fiber gets to apply them.
+        yield* applyPreInsertEnterFrom(element);
 
         if (containerElement) {
           const children = Array.from(containerElement.children);

@@ -65,6 +65,39 @@ const readAnimation = <T>(): Effect.Effect<ResolvedAnimation<T> | undefined> =>
   });
 
 /**
+ * Apply the configured `enterFrom` classes to an element *before* it is
+ * inserted into the DOM. Without this, on client-mode mounts (fresh
+ * addSlot outside the hydration path) the browser paints the element in
+ * its final state before `forkSlotEnter`'s forked fiber gets a chance to
+ * apply `enterFrom` — producing a one-frame flash of the resolved state
+ * followed by the animation playing "backwards" from the end.
+ *
+ * SSR already emits `enterFrom` classes in the HTML for `intro: true`
+ * controls, so hydration paths don't need this. This is the client-only
+ * equivalent: same guarantee, applied synchronously in JS instead of in
+ * the SSG output.
+ *
+ * Only touches `enterFrom` — the transition setup and target state stay
+ * with `runEnterAnimation`, which will re-add `enterFrom` (no-op),
+ * reflow, and swap to enter/enterTo as before.
+ */
+export const applyPreInsertEnterFrom = (
+  element: DOMElement,
+): Effect.Effect<void> => {
+  if (!(element instanceof HTMLElement)) return Effect.void;
+  return Effect.gen(function* () {
+    const resolved = yield* readAnimation<{ enterFrom?: string }>();
+    if (!resolved) return;
+    const { enterFrom } = resolved.animate;
+    if (!enterFrom) return;
+    const classes = enterFrom.split(/\s+/).filter(Boolean);
+    if (classes.length > 0) {
+      element.classList.add(...classes);
+    }
+  });
+};
+
+/**
  * Fork an enter animation into the slot's scope. Returns immediately; the
  * animation plays in the background and gets interrupted if the slot scope
  * closes before it finishes. No-op if the element is not an HTMLElement
