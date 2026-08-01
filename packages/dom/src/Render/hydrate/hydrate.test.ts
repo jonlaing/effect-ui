@@ -5,7 +5,7 @@ import { Readable, Signal } from "@effex/core";
 
 import { Boundary } from "../../Boundary.js";
 import { collect } from "../../Collect.js";
-import { each, match, when } from "../../Control/index.js";
+import { animated, each, match, when } from "../../Control/index.js";
 import { $ } from "../../Element/index.js";
 import { renderToString } from "../server/index.js";
 import { hydrate } from "./index.js";
@@ -459,6 +459,49 @@ describe("Hydration", () => {
       const remaining = container.querySelectorAll("section p");
       expect(remaining.length).toBe(1);
       expect(remaining[0].textContent).toBe("Alpha");
+    });
+  });
+
+  describe("animated wrapper under hydration", () => {
+    it("hydrates content wrapped in `animated` alongside other siblings", async () => {
+      // Regression cover: `animated` uses the same forked-ControlCtx +
+      // getContainer path as `each`, but it hits the DEFAULT container
+      // (no `config.container` factory). If getContainer's fix pushes on
+      // top of a container that createNode already pushed but never
+      // popped, the walker ends up with a residual frame after
+      // finalizeContainer — siblings rendered after the `animated` block
+      // then look in the wrong parent and mismatch.
+      const App = () =>
+        $.div(
+          { class: "root" },
+          animated(
+            {
+              animate: {
+                enterFrom: "opacity-0",
+                enter: "opacity-100",
+              },
+            },
+            () => $.h1({}, "Animated title"),
+          ),
+          $.p({ class: "sibling" }, "A sibling"),
+        );
+
+      const html = await Effect.runPromise(renderToString(App()));
+      container.innerHTML = html;
+
+      const mismatches: string[] = [];
+      await hydrate(App(), container, {
+        onMismatch: (message) => mismatches.push(message),
+      });
+      await new Promise((r) => setTimeout(r, 20));
+
+      // The sibling must hydrate against the actual <p>, not fall through
+      // to onMismatch because the walker was in the wrong parent.
+      expect(mismatches).toEqual([]);
+      expect(container.querySelector(".sibling")?.textContent).toBe(
+        "A sibling",
+      );
+      expect(container.querySelector("h1")?.textContent).toBe("Animated title");
     });
   });
 });
