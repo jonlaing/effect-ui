@@ -63,6 +63,13 @@ const createClientLikeControlCtx = (
       capturedRenderer = renderer;
       const container = yield* renderer.createNode("div");
       yield* renderer.setStyleProperty(container, "display", "contents");
+      // Pop the frame that createNode pushed so this helper is symmetric
+      // with a user-provided `create()` (which ends with finalizeNode via
+      // createElement). Without this, `getContainer`'s pushHydrationParent
+      // call below would stack a second frame on top of `createNode`'s
+      // and leave the walker with residue after `finalizeContainer` pops.
+      // No-op on non-hydrating renderers.
+      yield* renderer.finalizeNode(container);
       return container as DOMElement;
     });
 
