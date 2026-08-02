@@ -1,5 +1,74 @@
 # @effex/dom
 
+## 1.4.3
+
+### Patch Changes
+
+- 236f4a0: Short-circuit enter/exit animations when the element has no CSS
+  transition or animation that will ever fire an `animationend` /
+  `transitionend` event. Previously stalled for the full timeout (default
+  5s) — surfacing as a "missing transition property" warning in dev and
+  a visible FOUC on re-mount in production.
+
+  The gate in `waitForAnimationEvent` used to check:
+  - `animationName !== "none"`
+  - `transitionDuration !== "0s"` (exact string comparison)
+
+  That treated three common cases as "animation is running":
+  1. `transition-property: none` with a non-zero `transition-duration`
+     (e.g., a base class sets duration, an override kills the property).
+     No transition fires.
+  2. Comma-separated `transition-duration` where every entry is zero
+     (`"0s, 0s"`). The `!== "0s"` check evaluates truthy but nothing fires.
+  3. Element carrying an infinite CSS animation (e.g., Tailwind's
+     `animate-pulse`) at intro time. `animationName` is a real keyframe
+     name and `animationDuration` is positive, but `animation-iteration-
+count: infinite` means `animationend` never fires.
+
+  New helpers `maxDurationSeconds` (parses comma lists),
+  `hasCompletingAnimation` (name + positive duration + finite iterations),
+  and `hasTransitionThatWillFire` (property !== "none" + positive
+  duration) replace the ad-hoc string checks. Regression tests cover all
+  three cases and lock in that finite animations/transitions still wait
+  correctly.
+
+  Also fixes a listener leak in the same function: interruption (e.g.,
+  navigating away mid-animation) used to only cancel the pending
+  `requestAnimationFrame` — if the RAF had already fired and set up
+  `animationend`/`transitionend` listeners plus a timeout, the interrupt
+  left them dangling on the unmounted element. Cancellation now runs the
+  same cleanup path a successful resolution would.
+
+- 6c2c574: Fix `enterFrom` classes being stripped during hydration for controls
+  with `intro: true`, causing every intro animation on an SSR-rendered
+  page to stall until the 5s timeout.
+
+  `HydrationRenderer.setAttribute` overwrote whatever was on the DOM node
+  with the value from the element factory. That's fine for most
+  attributes — SSR and hydration emit the same value — but SSR augments
+  the `class` attribute for intro-flagged controls: `SSRControlCtx.addSlot`
+  appends `enterFrom` classes on top of the developer's `class` value
+  (`toggleClass(element, cls, true)`) so the browser paints the pre-
+  animation state on first render. When hydration ran, the element
+  factory's `setAttribute("class", <developer value>)` erased those extras
+  — by the time `onBeforeEnter` fired the class was back to just the
+  developer's value, `enterTo` set the property to a value it already had,
+  no `transitionend` fired, and the animation stalled for 5s.
+
+  Fix: HydrationRenderer's `setAttribute` for `class` now **merges** the
+  developer's classes into what's already there instead of overwriting.
+  SSR/hydration render the same tree, so the developer's classes should
+  be a subset of what SSR emitted anyway; the only difference is the SSR
+  extras we want to preserve. Other attributes still write through as
+  before.
+
+  Regression test in `hydrate.test.ts` covers the exact reported shape:
+  `animated({ intro: true, animate: { enterFrom: "opacity-0", ... }, ... })`
+  inside a `when` toggle, hydrate, snapshot `onBeforeEnter`'s class list,
+  then toggle away and back and snapshot again. Both snapshots must
+  contain `opacity-0`. Additional cover in `Control.test.ts` locks in the
+  pure client-mode re-mount path.
+
 ## 1.4.2
 
 ### Patch Changes
