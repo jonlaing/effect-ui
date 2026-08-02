@@ -726,6 +726,97 @@ describe("Control", () => {
         }).pipe(Effect.provide(TestLayer)),
     );
 
+    it.scopedLive(
+      "applies enterFrom to the child before the animation fiber runs",
+      () =>
+        // The other-agent claim we're testing: on client-mode addSlot
+        // (the re-mount path, not hydration), enterFrom lands on the
+        // element BEFORE the forked enter animation starts. onBeforeEnter
+        // runs at the top of runAnimation, before the addBeforeReflow
+        // step — so a snapshot taken there tells us whether
+        // applyPreInsertEnterFrom has already fired.
+        Effect.gen(function* () {
+          let snapshotAtBeforeEnter: string | null = null;
+          const container = yield* animated(
+            {
+              animate: {
+                enterFrom: "opacity-0",
+                enter: "opacity-100",
+                enterTo: "opacity-100",
+                onBeforeEnter: (el) =>
+                  Effect.tap(el, (e) =>
+                    Effect.sync(() => {
+                      snapshotAtBeforeEnter = e.className;
+                    }),
+                  ),
+                timeout: 10,
+              },
+            },
+            () => $.span({ class: "target" }, $.of("Hi")),
+          );
+          // Also snapshot the classList SYNCHRONOUSLY after mount, before
+          // the forked enter runs — proves applyPreInsertEnterFrom landed
+          // BEFORE insertion, not just when onBeforeEnter fires.
+          const child = container.querySelector<HTMLSpanElement>(".target");
+          const preAnimationClasses = child?.className ?? "";
+
+          yield* Effect.sleep("20 millis");
+
+          expect(preAnimationClasses).toContain("opacity-0");
+          expect(snapshotAtBeforeEnter).toContain("opacity-0");
+        }).pipe(Effect.provide(TestLayer)),
+    );
+
+    it.scopedLive(
+      "re-applies enterFrom on remount (simulating a router re-render)",
+      () =>
+        // The heart of the reported bug: when a component is unmounted
+        // and re-mounted (route navigation), the second mount should
+        // apply enterFrom to the fresh element the same way the first
+        // did. This drives a `when` toggle to exercise the reconcile
+        // remove/add path — the same path the router hits on nav.
+        Effect.gen(function* () {
+          const visible = yield* Signal.make(true);
+          const snapshots: string[] = [];
+          const wrapper = yield* when(visible, {
+            onTrue: () =>
+              animated(
+                {
+                  animate: {
+                    enterFrom: "opacity-0",
+                    enter: "opacity-100",
+                    enterTo: "opacity-100",
+                    onBeforeEnter: (el) =>
+                      Effect.tap(el, (e) =>
+                        Effect.sync(() => {
+                          snapshots.push(e.className);
+                        }),
+                      ),
+                    timeout: 10,
+                  },
+                },
+                () => $.span({ class: "target" }, $.of("Hi")),
+              ),
+            onFalse: () => $.div({ class: "gone" }, $.of("gone")),
+          });
+
+          // First mount fires.
+          yield* Effect.sleep("20 millis");
+          expect(snapshots.length).toBe(1);
+          expect(snapshots[0]).toContain("opacity-0");
+
+          // Simulate route navigation away and back.
+          yield* visible.set(false);
+          yield* Effect.sleep("10 millis");
+          yield* visible.set(true);
+          yield* Effect.sleep("20 millis");
+
+          expect(snapshots.length).toBe(2);
+          expect(snapshots[1]).toContain("opacity-0");
+          void wrapper;
+        }).pipe(Effect.provide(TestLayer)),
+    );
+
     it.scopedLive("gates on an AnimationGroup", () =>
       Effect.gen(function* () {
         // Two `animated` blocks in sequence — the second must not fire its
