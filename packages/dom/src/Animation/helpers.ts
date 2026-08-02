@@ -22,24 +22,83 @@ export const parseClasses = (classes: string): string[] =>
     .filter((c) => c.length > 0);
 
 /**
+ * Parse a CSS time-list value (e.g. "0.15s, 0s, 300ms") to the maximum
+ * duration in seconds. Returns 0 for an empty/invalid input.
+ */
+const maxDurationSeconds = (raw: string): number => {
+  if (!raw) return 0;
+  let max = 0;
+  for (const chunk of raw.split(",")) {
+    const trimmed = chunk.trim();
+    if (!trimmed) continue;
+    // getComputedStyle normalizes ms to seconds, but tolerate either form.
+    const num = parseFloat(trimmed);
+    if (Number.isNaN(num)) continue;
+    const seconds = trimmed.endsWith("ms") ? num / 1000 : num;
+    if (seconds > max) max = seconds;
+  }
+  return max;
+};
+
+/**
+ * Check whether the CSS animation set on the element will ever fire
+ * `animationend`. A live animation with `animation-iteration-count:
+ * infinite` never emits it — so the enter/exit lifecycle should treat
+ * such an animation as non-blocking (skip immediately).
+ *
+ * Returns true iff the element has at least one animation with:
+ *   - a resolvable name (not "none"),
+ *   - a positive duration,
+ *   - a finite iteration count.
+ *
+ * Animation properties can be comma-separated lists that DON'T
+ * necessarily align 1:1 with animation-name entries — we take the
+ * conservative approach: if ANY iteration count is infinite AND we
+ * can't tell them apart by name alignment, treat as non-completing.
+ */
+const hasCompletingAnimation = (style: CSSStyleDeclaration): boolean => {
+  const name = style.animationName;
+  if (!name || name === "none") return false;
+
+  if (maxDurationSeconds(style.animationDuration) <= 0) return false;
+
+  // If any iteration count is `infinite`, `animationend` never fires
+  // for that animation. For a single-animation element that means we
+  // shouldn't wait. For multi-animation, we can't reliably tell if the
+  // finite one belongs to a keyframe we care about — bail conservatively.
+  const iterations = style.animationIterationCount;
+  if (
+    iterations &&
+    iterations.split(",").some((v) => v.trim() === "infinite")
+  ) {
+    return false;
+  }
+
+  return true;
+};
+
+/**
+ * Check whether the CSS transition on the element will ever fire
+ * `transitionend`. Returns true iff `transition-property` is not `none`
+ * and at least one entry in `transition-duration` is > 0.
+ */
+const hasTransitionThatWillFire = (style: CSSStyleDeclaration): boolean => {
+  if (style.transitionProperty === "none") return false;
+  return maxDurationSeconds(style.transitionDuration) > 0;
+};
+
+/**
  * Check if element has any active CSS animations or transitions
+ * that will fire an `animationend` / `transitionend` event. If neither
+ * is present, waitForAnimationEvent short-circuits with `endedBy: "skip"`
+ * instead of stalling until the timeout — which fixes the 5s FOUC users
+ * saw when their intro classes lacked a transition property, or when a
+ * living infinite CSS animation (e.g. `animate-pulse`) sat on the
+ * element being intro-animated.
  */
 const hasActiveAnimations = (element: HTMLElement): boolean => {
   const style = getComputedStyle(element);
-
-  // Check for CSS animations
-  const animationName = style.animationName;
-  const hasAnimation = Boolean(animationName && animationName !== "none");
-
-  // Check for CSS transitions
-  const transitionDuration = style.transitionDuration;
-  const hasTransition = Boolean(
-    transitionDuration &&
-    transitionDuration !== "0s" &&
-    transitionDuration !== "0ms",
-  );
-
-  return hasAnimation || hasTransition;
+  return hasCompletingAnimation(style) || hasTransitionThatWillFire(style);
 };
 
 /**
@@ -51,21 +110,18 @@ export const waitForAnimationEvent = (
   timeout: number = DEFAULT_TIMEOUT,
 ): Effect.Effect<AnimationEndResult> =>
   Effect.async<AnimationEndResult>((resume) => {
-    // Check if we should skip (no animations detected)
-    // Use requestAnimationFrame to ensure styles have been applied
+    // Shared cleanup handle so both the resolve path and Effect
+    // cancellation (e.g., a route change unmounting the element mid-
+    // animation) tear down the RAF, the listeners, and the timeout.
+    let cleanup = (): void => {};
+    let resolved = false;
+
     const rafId = requestAnimationFrame(() => {
       if (!hasActiveAnimations(element)) {
+        resolved = true;
         resume(Effect.succeed({ endedBy: "skip" }));
         return;
       }
-
-      let resolved = false;
-
-      const cleanup = () => {
-        element.removeEventListener("animationend", handleAnimationEnd);
-        element.removeEventListener("transitionend", handleTransitionEnd);
-        clearTimeout(timeoutId);
-      };
 
       const resolve = (result: AnimationEndResult) => {
         if (resolved) return;
@@ -96,13 +152,25 @@ export const waitForAnimationEvent = (
       element.addEventListener("transitionend", handleTransitionEnd, {
         once: true,
       });
-
       const timeoutId = setTimeout(handleTimeout, timeout);
+
+      cleanup = () => {
+        element.removeEventListener("animationend", handleAnimationEnd);
+        element.removeEventListener("transitionend", handleTransitionEnd);
+        clearTimeout(timeoutId);
+      };
     });
 
-    // Return cleanup function for Effect cancellation
+    // Runs on Effect cancellation. Cancels the pending RAF (in case
+    // interruption arrives before it fires) AND tears down anything the
+    // RAF might already have set up. `resolved` guards against double-
+    // resolving if the interrupt races with a real animationend.
     return Effect.sync(() => {
       cancelAnimationFrame(rafId);
+      if (!resolved) {
+        resolved = true;
+        cleanup();
+      }
     });
   });
 

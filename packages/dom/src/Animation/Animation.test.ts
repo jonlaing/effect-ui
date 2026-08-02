@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { runEnterAnimation, runExitAnimation } from "./core.js";
+import { waitForAnimationEvent } from "./helpers.js";
 import {
   calculateStaggerDelay,
   stagger,
@@ -308,6 +309,157 @@ describe("Animation", () => {
         const fn = (index: number, total: number) => index * total;
         expect(calculateStaggerDelay(fn, 3, 10)).toBe(30);
       });
+    });
+  });
+
+  describe("waitForAnimationEvent short-circuit", () => {
+    // Direct tests for the has-active-animation gate — the previous
+    // logic only checked `transitionDuration !== "0s"` and treated any
+    // `animationName !== "none"` as pending, which stalled the 5s
+    // timeout when a page had `transition-property: none`, a comma
+    // list of zero durations, or an infinite `animate-pulse`-style
+    // keyframe sitting on the element.
+
+    const withMockedStyles = async <A>(
+      styles: Partial<CSSStyleDeclaration>,
+      fn: () => Promise<A>,
+    ): Promise<A> => {
+      const original = window.getComputedStyle;
+      window.getComputedStyle = (() =>
+        ({
+          animationName: "none",
+          animationDuration: "0s",
+          animationIterationCount: "1",
+          transitionProperty: "all",
+          transitionDuration: "0s",
+          ...styles,
+        }) as CSSStyleDeclaration) as typeof window.getComputedStyle;
+      try {
+        return await fn();
+      } finally {
+        window.getComputedStyle = original;
+      }
+    };
+
+    it("skips when transitionProperty is 'none' even if duration is non-zero", async () => {
+      const el = document.createElement("div");
+      const start = Date.now();
+      const result = await withMockedStyles(
+        { transitionProperty: "none", transitionDuration: "0.5s" },
+        () =>
+          Effect.runPromise(
+            waitForAnimationEvent(el, 5000).pipe(Effect.map((r) => r.endedBy)),
+          ),
+      );
+      expect(result).toBe("skip");
+      expect(Date.now() - start).toBeLessThan(200);
+    });
+
+    it("skips when every transitionDuration entry is zero", async () => {
+      const el = document.createElement("div");
+      const result = await withMockedStyles(
+        { transitionDuration: "0s, 0s, 0s" },
+        () =>
+          Effect.runPromise(
+            waitForAnimationEvent(el, 5000).pipe(Effect.map((r) => r.endedBy)),
+          ),
+      );
+      expect(result).toBe("skip");
+    });
+
+    it("skips when the only active animation has infinite iteration count", async () => {
+      const el = document.createElement("div");
+      const start = Date.now();
+      const result = await withMockedStyles(
+        {
+          animationName: "pulse",
+          animationDuration: "2s",
+          animationIterationCount: "infinite",
+        },
+        () =>
+          Effect.runPromise(
+            waitForAnimationEvent(el, 5000).pipe(Effect.map((r) => r.endedBy)),
+          ),
+      );
+      expect(result).toBe("skip");
+      expect(Date.now() - start).toBeLessThan(200);
+    });
+
+    it("waits for animationend when a finite CSS animation is active", async () => {
+      const el = document.createElement("div");
+      const p = withMockedStyles(
+        {
+          animationName: "fade",
+          animationDuration: "0.05s",
+          animationIterationCount: "1",
+        },
+        () =>
+          Effect.runPromise(
+            waitForAnimationEvent(el, 5000).pipe(Effect.map((r) => r.endedBy)),
+          ),
+      );
+
+      // Give the RAF a moment to run, then dispatch the completion event.
+      await new Promise((r) => setTimeout(r, 20));
+      el.dispatchEvent(new Event("animationend"));
+      const endedBy = await p;
+      expect(endedBy).toBe("animation");
+    });
+
+    it("waits for transitionend when a finite transition is active", async () => {
+      const el = document.createElement("div");
+      const p = withMockedStyles(
+        { transitionProperty: "opacity", transitionDuration: "0.05s" },
+        () =>
+          Effect.runPromise(
+            waitForAnimationEvent(el, 5000).pipe(Effect.map((r) => r.endedBy)),
+          ),
+      );
+
+      await new Promise((r) => setTimeout(r, 20));
+      el.dispatchEvent(new Event("transitionend"));
+      const endedBy = await p;
+      expect(endedBy).toBe("transition");
+    });
+
+    it("removes its listeners when interrupted mid-flight (nav-away case)", async () => {
+      // Regression: nav-away during an animation used to leave the
+      // animationend/transitionend listeners and timeout dangling on the
+      // element being unmounted. The interrupt cleanup only cancelled the
+      // RAF. This test simulates the exact shape of the bug: start
+      // waiting, cancel the fiber (route change), assert the element
+      // has no residual listeners.
+      const el = document.createElement("div");
+      const addSpy = vi.spyOn(el, "addEventListener");
+      const removeSpy = vi.spyOn(el, "removeEventListener");
+
+      await withMockedStyles(
+        { transitionProperty: "opacity", transitionDuration: "0.5s" },
+        async () => {
+          const fiber = Effect.runFork(
+            Effect.scoped(waitForAnimationEvent(el, 5000).pipe(Effect.asVoid)),
+          );
+
+          // Let the RAF fire and listeners register.
+          await new Promise((r) => setTimeout(r, 30));
+          const addedEvents = addSpy.mock.calls.map((c) => c[0]);
+          expect(addedEvents).toContain("animationend");
+          expect(addedEvents).toContain("transitionend");
+
+          // Interrupt the way a route change would.
+          fiber.unsafeInterruptAsFork(fiber.id());
+
+          // Give cancellation a tick.
+          await new Promise((r) => setTimeout(r, 10));
+        },
+      );
+
+      const removedEvents = removeSpy.mock.calls.map((c) => c[0]);
+      expect(removedEvents).toContain("animationend");
+      expect(removedEvents).toContain("transitionend");
+
+      addSpy.mockRestore();
+      removeSpy.mockRestore();
     });
   });
 
