@@ -503,5 +503,61 @@ describe("Hydration", () => {
       );
       expect(container.querySelector("h1")?.textContent).toBe("Animated title");
     });
+
+    it("applies enterFrom on remount after hydration (route re-navigation)", async () => {
+      // The reported bug: hydrate a page, toggle away, toggle back,
+      // and the client-mode addSlot on the RE-mount should apply
+      // enterFrom to the fresh element before the animation fiber
+      // runs. Without this, the transition has no start state to
+      // move away from — `enterTo` sets the property to a value it
+      // already has, no transitionend fires, and every animation
+      // stalls to the timeout. The `when` here stands in for the
+      // Outlet reconcile on a route change.
+      let visibleSignal: Signal.Signal<boolean>;
+      const snapshots: string[] = [];
+
+      const App = () =>
+        Effect.gen(function* () {
+          visibleSignal = yield* Signal.make(true);
+          return yield* when(visibleSignal, {
+            onTrue: () =>
+              animated(
+                {
+                  animate: {
+                    enterFrom: "opacity-0",
+                    enterTo: "opacity-100",
+                    onBeforeEnter: (el) =>
+                      Effect.tap(el, (e) =>
+                        Effect.sync(() => {
+                          snapshots.push(e.className);
+                        }),
+                      ),
+                    timeout: 20,
+                  },
+                  intro: true,
+                },
+                () => $.span({ class: "target" }, $.of("Hi")),
+              ),
+            onFalse: () => $.div({ class: "gone" }, $.of("gone")),
+          });
+        });
+
+      container.innerHTML = await Effect.runPromise(renderToString(App()));
+      await hydrate(App(), container);
+      // Hydration path with intro: true re-runs enter — first snapshot.
+      await new Promise((r) => setTimeout(r, 30));
+      expect(snapshots.length).toBe(1);
+      expect(snapshots[0]).toContain("opacity-0");
+
+      // Toggle away (unmount) and back (re-mount via client path).
+      await Effect.runPromise(visibleSignal!.set(false));
+      await new Promise((r) => setTimeout(r, 10));
+      await Effect.runPromise(visibleSignal!.set(true));
+      await new Promise((r) => setTimeout(r, 30));
+
+      // Second snapshot must also see enterFrom applied.
+      expect(snapshots.length).toBe(2);
+      expect(snapshots[1]).toContain("opacity-0");
+    });
   });
 });

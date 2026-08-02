@@ -164,6 +164,27 @@ export const createHydrationRenderer = (
     setAttribute: (node: Node, key: string, value: unknown) =>
       Effect.sync(() => {
         const el = node as HTMLElement;
+
+        // Class attribute during hydration: merge the developer's classes
+        // with whatever is already on the element. SSR may have added
+        // classes on top of what the developer requested — most notably
+        // `enterFrom` classes for `intro: true` controls (see
+        // SSRControlCtx.addSlot). Overwriting the class here strips those
+        // extras before the enter animation fiber gets a chance to run
+        // its lifecycle, so the transition has no start state to move
+        // away from — enterTo sets a value the property already has, no
+        // transitionend fires, and every intro animation stalls until
+        // the timeout.
+        //
+        // Merging is safe: SSR and hydration render the same tree so the
+        // developer's `value` should be a subset of what's already there.
+        // Any developer classes not in the DOM get added; SSR extras stay.
+        if (key === "class" && typeof value === "string") {
+          const requested = value.split(/\s+/).filter(Boolean);
+          for (const cls of requested) el.classList.add(cls);
+          return;
+        }
+
         if (value === null || value === undefined) {
           el.removeAttribute(key);
         } else if (typeof value === "boolean") {
