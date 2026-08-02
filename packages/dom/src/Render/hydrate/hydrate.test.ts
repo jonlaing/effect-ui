@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Readable, Signal } from "@effex/core";
 
+import { Animation } from "../../Animation/index.js";
 import { Boundary } from "../../Boundary.js";
 import { collect } from "../../Collect.js";
 import { animated, each, match, when } from "../../Control/index.js";
@@ -558,6 +559,71 @@ describe("Hydration", () => {
       // Second snapshot must also see enterFrom applied.
       expect(snapshots.length).toBe(2);
       expect(snapshots[1]).toContain("opacity-0");
+    });
+
+    it("matches the reported portfolio shape: no-attrs wrapper div with image child + group", async () => {
+      // Faithful mirror of jonlaing-portfolio/src/components/Headline.ts's
+      // first `animated` block: the render returns `$.div($.img(...))`
+      // with no attrs on the wrapper. Verifies that enterFrom lands on
+      // the outer wrapper div on both the initial hydration mount AND
+      // the client re-mount that follows a route change.
+      let visibleSignal: Signal.Signal<boolean>;
+      const snapshots: string[] = [];
+
+      const App = () =>
+        Effect.gen(function* () {
+          visibleSignal = yield* Signal.make(true);
+          const [g0] = yield* Animation.sequence(1);
+          return yield* when(visibleSignal, {
+            onTrue: () =>
+              animated(
+                {
+                  animate: {
+                    enterFrom: "opacity-0 -rotate-45 -translate-y-[100px]",
+                    enterTo:
+                      "translate-y-0 -rotate-5 transition-all duration-500",
+                    group: g0,
+                    onBeforeEnter: (el) =>
+                      Effect.tap(el, (e) =>
+                        Effect.sync(() => {
+                          snapshots.push(e.className);
+                        }),
+                      ),
+                    timeout: 20,
+                  },
+                  intro: true,
+                },
+                () =>
+                  $.div(
+                    $.img({
+                      src: "/portrait.jpg",
+                      alt: "portrait",
+                      class: "portrait-base",
+                    }),
+                  ),
+              ),
+            onFalse: () => $.div({ class: "gone" }, $.of("gone")),
+          });
+        });
+
+      container.innerHTML = await Effect.runPromise(renderToString(App()));
+      await hydrate(App(), container);
+      await new Promise((r) => setTimeout(r, 30));
+      expect(snapshots.length).toBe(1);
+      expect(snapshots[0]).toContain("opacity-0");
+      expect(snapshots[0]).toContain("-rotate-45");
+      expect(snapshots[0]).toContain("-translate-y-[100px]");
+
+      // Toggle away and back — the route-navigation shape.
+      await Effect.runPromise(visibleSignal!.set(false));
+      await new Promise((r) => setTimeout(r, 10));
+      await Effect.runPromise(visibleSignal!.set(true));
+      await new Promise((r) => setTimeout(r, 30));
+
+      expect(snapshots.length).toBe(2);
+      expect(snapshots[1]).toContain("opacity-0");
+      expect(snapshots[1]).toContain("-rotate-45");
+      expect(snapshots[1]).toContain("-translate-y-[100px]");
     });
   });
 });
