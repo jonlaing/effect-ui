@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Context, Effect, Layer } from "effect";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Readable, Signal } from "@effex/core";
@@ -624,6 +624,52 @@ describe("Hydration", () => {
       expect(snapshots[1]).toContain("opacity-0");
       expect(snapshots[1]).toContain("-rotate-45");
       expect(snapshots[1]).toContain("-translate-y-[100px]");
+    });
+  });
+
+  describe("options.layers lifetime", () => {
+    // Regression: `Effect.provide(element, scopedLayer)` internally does
+    // `scopedWith(scope => ...)`, which scopes the layer to the effect's
+    // lifetime — since element functions return synchronously after
+    // building the DOM, the layer's finalizers used to fire immediately
+    // after hydrate. That tore down Navigation's popstate listener, the
+    // SubscriptionRef PubSub, and any other scoped resource before the
+    // user could interact. Hydrate must build options.layers in its OUTER
+    // program scope (kept alive by Effect.never) so finalizers only run
+    // on page unload.
+    it("does not run scoped-layer finalizers on the initial render", async () => {
+      class Marker extends Context.Tag("test/Marker")<
+        Marker,
+        { readonly value: string }
+      >() {}
+
+      const finalizer = vi.fn();
+      const markerLayer = Layer.scoped(
+        Marker,
+        Effect.gen(function* () {
+          yield* Effect.addFinalizer(() => Effect.sync(() => finalizer()));
+          return { value: "alive" };
+        }),
+      );
+
+      // Element that reads the service — proves hydration actually built
+      // the layer (rather than the scoped layer just being unused).
+      const element = Effect.gen(function* () {
+        const marker = yield* Marker;
+        return yield* $.div({ class: "marker" }, $.of(marker.value));
+      });
+
+      // Pre-populate matching SSR HTML so hydration doesn't warn.
+      container.innerHTML = `<div class="marker">alive</div>`;
+
+      await hydrate(element as never, container, { layers: markerLayer });
+      await new Promise((r) => setTimeout(r, 10));
+
+      expect(container.querySelector(".marker")?.textContent).toBe("alive");
+      // The scope is kept alive by Effect.never inside hydrate — the
+      // finalizer must NOT have fired yet. Before the fix it fired
+      // synchronously right after the element function returned.
+      expect(finalizer).not.toHaveBeenCalled();
     });
   });
 });

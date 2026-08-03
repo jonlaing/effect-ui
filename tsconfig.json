@@ -11,7 +11,8 @@
       "@effex/dom/server": ["packages/dom/src/Render/server/index.ts"],
       "@effex/dom/hydrate": ["packages/dom/src/Render/hydrate/index.ts"],
       "@effex/router": ["packages/router/src/index.ts"],
-      "@effex/form": ["packages/form/src/index.ts"]
+      "@effex/form": ["packages/form/src/index.ts"],
+      "@effex/vite-plugin": ["packages/vite-plugin/src/index.ts"]
     }
   },
   "include": ["packages/*/src", "src"]

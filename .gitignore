@@ -34,6 +34,7 @@ docs/api
 
 # Documentation drafts
 docs-notes
+dev_notes
 
 *.pem
 examples/chat
