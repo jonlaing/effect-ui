@@ -67,6 +67,14 @@ export const reconcile = <A, E, R>(
         const currentKeys = yield* ctx.getSlotKeys();
         const targetKeys = config.getTargetKeys(value);
         const targetSet = new Set(targetKeys);
+        if (typeof window !== "undefined") {
+          // eslint-disable-next-line no-console
+          console.log("[DIAG reconcile sync]", {
+            value,
+            currentKeys,
+            targetKeys,
+          });
+        }
 
         // Step 1: Remove slots not in target
         for (const key of currentKeys) {

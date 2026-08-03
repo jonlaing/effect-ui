@@ -255,9 +255,24 @@ export const make = <
     // Set up popstate listener for browser back/forward
     if (isBrowser) {
       const handlePopState = () => {
-        Effect.runSync(
-          updateState(window.location.pathname + window.location.search),
+        // eslint-disable-next-line no-console
+        console.log(
+          "[DIAG framework popstate] BEFORE runSync",
+          window.location.pathname,
         );
+        try {
+          Effect.runSync(
+            updateState(window.location.pathname + window.location.search),
+          );
+          // eslint-disable-next-line no-console
+          console.log(
+            "[DIAG framework popstate] AFTER runSync OK",
+            window.location.pathname,
+          );
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.error("[DIAG framework popstate] runSync THREW", e);
+        }
       };
 
       window.addEventListener("popstate", handlePopState);
