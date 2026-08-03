@@ -1,6 +1,6 @@
 {
   "name": "@effex/dom",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "DOM rendering for Effex - a reactive UI framework built on Effect.ts",
   "type": "module",
   "license": "MIT",
