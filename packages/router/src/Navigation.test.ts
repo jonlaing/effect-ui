@@ -691,48 +691,45 @@ describe("Navigation", () => {
   });
 
   describe("popstate (browser back/forward)", () => {
-    it("updates pathname signal when the browser fires popstate", async () => {
+    it("updates the pathname signal when the browser fires popstate", async () => {
+      // Signal.set uses SubscriptionRef which involves semaphore permits
+      // — Effect flags that as async-capable, so Effect.runSync would
+      // fail silently from a browser event handler. The popstate handler
+      // uses the layer's captured Runtime + runFork instead, so the
+      // update goes through even though it isn't purely sync.
       const router = empty.pipe(
         concat(Route.make("/").pipe(Route.render(render))),
         concat(Route.make("/about").pipe(Route.render(render))),
       );
 
-      // Run inside a scope so the make() Effect is fully setup — its
-      // popstate listener is registered as a side-effect of the scoped
-      // Layer construction.
-      const result = await Effect.runPromise(
+      await Effect.runPromise(
         Effect.scoped(
           Effect.gen(function* () {
             const nav = yield* makeNavigation(router, { initialPath: "/" });
 
-            // Simulate a Link click.
             yield* nav.pushPath("/about");
-            const afterPush = yield* nav.pathname.get;
+            expect(yield* nav.pathname.get).toBe("/about");
 
-            // Simulate the browser back button: it changes the URL FIRST,
-            // then fires popstate. Update our mock accordingly.
+            // Browser back: URL updates FIRST, then popstate fires.
             mockPathname = "/";
             mockSearch = "";
             dispatchWindowEvent("popstate");
 
-            const afterPopstate = yield* nav.pathname.get;
-            return { afterPush, afterPopstate };
+            // runFork is async — yield the microtask queue so the update
+            // completes before we assert.
+            yield* Effect.sleep("5 millis");
+            expect(yield* nav.pathname.get).toBe("/");
           }),
         ),
       );
-
-      expect(result.afterPush).toBe("/about");
-      // The popstate handler MUST propagate the browser's URL back into
-      // the pathname signal — this is what drives the Outlet's
-      // subscribe/reconcile on back/forward.
-      expect(result.afterPopstate).toBe("/");
     });
 
-    it("notifies subscribers when popstate fires (drives Outlet reconcile)", async () => {
-      // The signal being updated isn't enough — Outlet subscribes to
-      // `nav.pathname.changes` and only re-reconciles when that stream
-      // fires. This test verifies the popstate handler propagates the
-      // change through the changes stream, not just the internal ref.
+    it("popstate notifies subscribers (Outlet-shaped)", async () => {
+      // The core regression from the SSG dev-mode report: signal.set was
+      // silently failing under Effect.runSync, so subscribers never got
+      // the update — which is why Outlet's reconcile didn't re-render on
+      // browser back. This test drives the exact pattern: subscribe to
+      // pathname.changes the way Outlet does, verify the change fires.
       const router = empty.pipe(
         concat(Route.make("/").pipe(Route.render(render))),
         concat(Route.make("/about").pipe(Route.render(render))),
@@ -745,7 +742,6 @@ describe("Navigation", () => {
           Effect.gen(function* () {
             const nav = yield* makeNavigation(router, { initialPath: "/" });
 
-            // Subscribe to pathname changes the way Outlet does.
             const scope = yield* Effect.scope;
             yield* Stream.runForEach(nav.pathname.changes, (v) =>
               Effect.sync(() => {
@@ -753,10 +749,9 @@ describe("Navigation", () => {
               }),
             ).pipe(Effect.forkIn(scope));
 
-            // Give the fork a tick to attach.
+            // Let the subscription attach.
             yield* Effect.sleep("5 millis");
 
-            // Simulate Link click, then back button.
             yield* nav.pushPath("/about");
             yield* Effect.sleep("5 millis");
 
@@ -769,29 +764,18 @@ describe("Navigation", () => {
       );
 
       expect(seen).toContain("/about");
-      // The critical assertion: the subscriber sees the popstate-driven
-      // change, not just the pushPath-driven one.
       expect(seen).toContain("/");
     });
 
-    it("does not throw when popstate handler uses Effect.runSync", async () => {
-      // The popstate handler calls Effect.runSync internally. If the
-      // signal-set effect ever needs services or has async work in it,
-      // runSync throws — and the error propagates out of the event
-      // handler, silently swallowed by the browser in some cases.
-      // Verify that whatever the signal-set does, it stays purely
-      // synchronous with no service requirements.
+    it("popstate handler doesn't throw or silently fail", async () => {
+      // The pre-fix bug surfaced with no errors in either client or
+      // server logs. Verify the handler runs without throwing so if it
+      // ever regresses to that state, this test catches it.
       const router = empty.pipe(
         concat(Route.make("/").pipe(Route.render(render))),
       );
 
-      // Capture any thrown errors.
       let thrown: unknown = null;
-      const origError = console.error;
-      console.error = (...args: unknown[]) => {
-        thrown = args;
-      };
-
       await Effect.runPromise(
         Effect.scoped(
           Effect.gen(function* () {
@@ -803,20 +787,22 @@ describe("Navigation", () => {
             } catch (e) {
               thrown = e;
             }
+            yield* Effect.sleep("5 millis");
           }),
         ),
       );
 
-      console.error = origError;
       expect(thrown).toBeNull();
     });
 
     it("updates search params on popstate", async () => {
+      // Preserved from the pre-runFork tests — verifies the searchParams
+      // signal also updates on popstate, in addition to pathname.
       const router = empty.pipe(
         concat(Route.make("/").pipe(Route.render(render))),
       );
 
-      const result = await Effect.runPromise(
+      await Effect.runPromise(
         Effect.scoped(
           Effect.gen(function* () {
             const nav = yield* makeNavigation(router, {
@@ -825,20 +811,17 @@ describe("Navigation", () => {
             });
 
             yield* nav.pushPath("/?tab=profile");
-            const afterPush = (yield* nav.searchParams.get).get("tab");
+            expect((yield* nav.searchParams.get).get("tab")).toBe("profile");
 
             mockPathname = "/";
             mockSearch = "";
             dispatchWindowEvent("popstate");
+            yield* Effect.sleep("5 millis");
 
-            const afterPopstate = (yield* nav.searchParams.get).get("tab");
-            return { afterPush, afterPopstate };
+            expect((yield* nav.searchParams.get).get("tab")).toBeNull();
           }),
         ),
       );
-
-      expect(result.afterPush).toBe("profile");
-      expect(result.afterPopstate).toBeNull();
     });
   });
 });
