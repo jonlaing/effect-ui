@@ -159,6 +159,27 @@ export const forkSlotEnter = (
       if (grp) {
         yield* _awaitGate(grp);
       }
+      // Wait for the element to be attached to the document before the
+      // enter lifecycle starts. On client-mode re-mount (e.g. a router
+      // nav-back), the fiber is forked from inside addSlot while the
+      // ancestor chain is still being assembled bottom-up in memory —
+      // Effect's scheduler can hand this fiber control on the next
+      // microtask, before the outer flow appends the wrapper into the
+      // document. onBeforeEnter would then fire against a detached
+      // node, getComputedStyle would return empty strings, and the
+      // transition would never fire (browsers won't compute or
+      // transition styles on disconnected nodes).
+      //
+      // Yield microtasks until the element is connected, up to a small
+      // bound. In practice the outer flow finishes within one or two
+      // microtasks; the retry bound guards against callers that never
+      // insert their result (e.g. tests that yield an animated element
+      // without appending it to the document) — we proceed after a
+      // handful of tries even if still detached so the animation
+      // continues to be best-effort rather than hanging.
+      for (let i = 0; i < 3 && !element.isConnected; i++) {
+        yield* Effect.yieldNow();
+      }
       const run = runEnterAnimation(Effect.succeed(element), animate).pipe(
         Effect.ensuring(grp ? _complete(grp) : Effect.void),
       );
