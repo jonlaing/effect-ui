@@ -162,23 +162,30 @@ export const forkSlotEnter = (
       // Wait for the element to be attached to the document before the
       // enter lifecycle starts. On client-mode re-mount (e.g. a router
       // nav-back), the fiber is forked from inside addSlot while the
-      // ancestor chain is still being assembled bottom-up in memory —
-      // Effect's scheduler can hand this fiber control on the next
-      // microtask, before the outer flow appends the wrapper into the
-      // document. onBeforeEnter would then fire against a detached
-      // node, getComputedStyle would return empty strings, and the
-      // transition would never fire (browsers won't compute or
-      // transition styles on disconnected nodes).
+      // ancestor chain is still being assembled bottom-up in memory.
+      // The forked fiber can win the race against the outer flow, and
+      // `onBeforeEnter` would then fire against a detached node —
+      // `getComputedStyle` returns empty strings on disconnected nodes
+      // and browsers won't compute or transition styles against them,
+      // so the enter transition never fires and the animation stalls.
       //
-      // Yield microtasks until the element is connected, up to a small
-      // bound. In practice the outer flow finishes within one or two
-      // microtasks; the retry bound guards against callers that never
-      // insert their result (e.g. tests that yield an animated element
-      // without appending it to the document) — we proceed after a
-      // handful of tries even if still detached so the animation
-      // continues to be best-effort rather than hanging.
-      for (let i = 0; i < 3 && !element.isConnected; i++) {
-        yield* Effect.yieldNow();
+      // Effect.yieldNow is not enough — Effect's scheduler can
+      // reschedule the fiber right back if no other work is queued.
+      // Real browser microtasks (via queueMicrotask) DO defer past
+      // the current synchronous+microtask window, so the outer flow's
+      // DOM insertion completes before this fiber resumes.
+      if (!element.isConnected) {
+        yield* waitForConnection(element);
+      }
+      // Force a style/layout computation on the (now-connected)
+      // element. Some engines defer style computation for freshly-
+      // inserted nodes until it's needed; without this, forceReflow
+      // inside runEnterAnimation may end up recording the enterFrom-
+      // applied state as the initial snapshot for a node that hasn't
+      // been styled yet, leaving the browser without a valid "before"
+      // to interpolate the transition from.
+      if (element instanceof HTMLElement) {
+        void element.offsetHeight;
       }
       const run = runEnterAnimation(Effect.succeed(element), animate).pipe(
         Effect.ensuring(grp ? _complete(grp) : Effect.void),
@@ -189,6 +196,39 @@ export const forkSlotEnter = (
     }).pipe(Effect.forkIn(slotScope));
   }).pipe(Effect.asVoid);
 };
+
+/**
+ * Yield a real browser microtask. Different from `Effect.yieldNow` — that
+ * only reschedules the fiber inside Effect's queue and can re-run
+ * immediately when nothing else is queued. `queueMicrotask` guarantees
+ * the browser will finish the current task's remaining synchronous work
+ * and flush other pending microtasks before resuming.
+ */
+const yieldMicrotask: Effect.Effect<void> = Effect.async<void>((resume) => {
+  queueMicrotask(() => resume(Effect.void));
+});
+
+/**
+ * Wait for an element to become connected to the document. On client-mode
+ * re-mount, the enter fiber is forked from inside `addSlot` before the
+ * outer synchronous render flow has finished appending the wrapper's
+ * ancestor chain — but that flow runs entirely within the current task's
+ * synchronous+microtask window, so yielding real microtasks in a bounded
+ * loop lets it complete and the element becomes connected.
+ *
+ * The bound is generous (32 microtasks): each takes ~microseconds in
+ * modern engines, so a full spin is well under a millisecond even in the
+ * worst case, but it comfortably covers any realistic outer-flow depth.
+ * Callers that never insert their animated element (e.g. tests that yield
+ * `animated(...)` inline without appending) hit the bound and proceed
+ * anyway — best-effort rather than hanging.
+ */
+const waitForConnection = (element: HTMLElement): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    for (let i = 0; i < 32 && !element.isConnected; i++) {
+      yield* yieldMicrotask;
+    }
+  });
 
 /**
  * Fork the full slot-removal sequence into the parent scope:
