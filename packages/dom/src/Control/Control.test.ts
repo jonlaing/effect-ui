@@ -817,6 +817,77 @@ describe("Control", () => {
         }).pipe(Effect.provide(TestLayer)),
     );
 
+    it.scopedLive(
+      "onBeforeEnter fires against an attached element (nested remount)",
+      () =>
+        // Regression: on a nested-`animated` re-mount, the enter fiber
+        // was forked from inside the inner addSlot while the ancestor
+        // chain was still being assembled bottom-up in memory. Effect's
+        // scheduler could give the fiber control on the next microtask,
+        // before the outer flow appended the wrapper into the document.
+        // onBeforeEnter then fired against a detached node —
+        // getComputedStyle returned empty strings and the transition
+        // never fired. Verify the element is `isConnected` at onBeforeEnter.
+        Effect.gen(function* () {
+          const root = document.createElement("div");
+          document.body.appendChild(root);
+
+          const visible = yield* Signal.make(true);
+          const connectedFlags: boolean[] = [];
+
+          // Two levels of nesting under the `when` — mirrors the shape
+          // of Outlet → HomePage → Headline → animated in the report.
+          const view = yield* when(visible, {
+            onTrue: () =>
+              $.div(
+                { class: "outer" },
+                $.div(
+                  { class: "middle" },
+                  animated(
+                    {
+                      animate: {
+                        enterFrom: "opacity-0",
+                        enter: "transition-opacity duration-100",
+                        enterTo: "opacity-100",
+                        onBeforeEnter: (el) =>
+                          Effect.tap(el, (e) =>
+                            Effect.sync(() => {
+                              connectedFlags.push(e.isConnected);
+                            }),
+                          ),
+                        timeout: 20,
+                      },
+                    },
+                    () => $.div({ class: "target" }, $.of("Hi")),
+                  ),
+                ),
+              ),
+            onFalse: () => $.div({ class: "gone" }),
+          });
+
+          // Attach the top-level result under a real DOM root so
+          // `isConnected` propagates all the way down.
+          root.appendChild(view as HTMLElement);
+
+          // First mount — everything attached synchronously above.
+          yield* Effect.sleep("40 millis");
+          expect(connectedFlags.length).toBe(1);
+          expect(connectedFlags[0]).toBe(true);
+
+          // Toggle away and back — this is the failure shape from the
+          // portfolio report.
+          yield* visible.set(false);
+          yield* Effect.sleep("10 millis");
+          yield* visible.set(true);
+          yield* Effect.sleep("40 millis");
+
+          expect(connectedFlags.length).toBe(2);
+          expect(connectedFlags[1]).toBe(true);
+
+          document.body.removeChild(root);
+        }).pipe(Effect.provide(TestLayer)),
+    );
+
     it.scopedLive("gates on an AnimationGroup", () =>
       Effect.gen(function* () {
         // Two `animated` blocks in sequence — the second must not fire its
