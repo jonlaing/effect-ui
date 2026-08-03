@@ -1,4 +1,4 @@
-import { mount, type Element } from "@effex/dom";
+import { mount, runApp, type Element } from "@effex/dom";
 import { Navigation } from "@effex/router";
 
 import { App } from "./App.js";
@@ -9,6 +9,6 @@ if (!container) {
   throw new Error("Root element not found");
 }
 
-mount(App() as unknown as Element.Element<HTMLElement>, container, {
-  layers: Navigation.makeLayer(router),
+runApp(mount(App() as unknown as Element.Element<HTMLElement>, container), {
+  layer: Navigation.makeLayer(router),
 });

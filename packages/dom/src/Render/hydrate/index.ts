@@ -103,7 +103,15 @@ export const hydrate = <A extends HTMLElement | SVGElement>(
       elementLayers = Layer.merge(elementLayers, options.layers);
     }
 
-    yield* Effect.provide(element, elementLayers);
+    // Build elementLayers in the OUTER program scope (kept alive by
+    // Effect.never below), not in a per-element scope. Effect.provide
+    // with a scoped Layer wraps the effect in a fresh scope that closes
+    // as soon as the effect completes — since the element function
+    // returns synchronously after building the DOM, that would tear down
+    // Navigation's popstate listener, the SubscriptionRef PubSub, and
+    // any other scoped resources before the user can interact.
+    const context = yield* Layer.build(elementLayers);
+    yield* Effect.provide(element, context);
 
     // Keep the scope alive - subscriptions run in forked fibers that need to persist
     // Wait forever (until page unload) so subscription fibers stay alive
