@@ -153,23 +153,21 @@ The first command builds the client bundle. The second builds the SSR entry, and
 
 ## Client Hydration
 
-Static pages are hydrated on the client just like SSR pages. The client entry provides the Navigation layer:
+Static pages are hydrated on the client just like SSR pages. Pass the client layer via `options.layers` so `hydrate` builds it in its long-lived scope — baking it in via `Effect.provide(App(), layer)` would tear the layer down as soon as the element function returns, killing the popstate listener and reactive subscriptions:
 
 ```typescript
 // src/client.ts
-import { Effect } from "effect";
 import { hydrate } from "@effex/dom/hydrate";
-import { Navigation } from "@effex/router";
+import { Platform } from "@effex/platform";
 
 import { App } from "./app.js";
 import { router } from "./routes.js";
 
-const navLayer = Navigation.makeLayer(router);
-
-hydrate(
-  Effect.provide(App(), navLayer),
-  document.getElementById("root")!,
-);
+hydrate(App(), document.getElementById("root")!, {
+  layers: Platform.makeClientLayer(router),
+});
 ```
+
+`Platform.makeClientLayer` provides both `NavigationContext` and `RouteDataProvider` — the latter reads the SSG-embedded `window.__EFFEX_DATA__` on first load, then fetches `<path>?_data=1` for subsequent navigations (the Vite plugin strips loaders from the client bundle, so this fetch is how loader data reaches the client after hydration).
 
 After hydration, clicking a Link triggers client-side navigation — the browser doesn't reload the page.

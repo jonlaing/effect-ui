@@ -295,13 +295,17 @@ export const document = {
 
 ### Client hydration
 
-Like SSR, the client hydrates after the static HTML loads. But since there's no server at runtime, `Platform.makeClientLayer` isn't needed — route data is embedded in the HTML:
+Like SSR, the client hydrates after the static HTML loads. SSG still needs `Platform.makeClientLayer` — it provides `NavigationContext` (for `Outlet`/`Link`) and reads the SSG-embedded `window.__EFFEX_DATA__` on first load. On subsequent client-side navigations it fetches the matching HTML shell and pulls the embedded data out (the Vite plugin strips loaders from the client bundle, so this is how loader data reaches routes after hydration):
 
 ```typescript
-import { hydrate } from "@effex/dom";
+import { hydrate } from "@effex/dom/hydrate";
+import { Platform } from "@effex/platform";
 import { App } from "./App.js";
+import { router } from "./routes.js";
 
-hydrate(App(), document.getElementById("root")!);
+hydrate(App(), document.getElementById("root")!, {
+  layers: Platform.makeClientLayer(router),
+});
 ```
 
 ### Scripts
