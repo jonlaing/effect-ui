@@ -1,4 +1,4 @@
-import { Context, Effect, Layer, Option, Record, Scope } from "effect";
+import { Context, Effect, Layer, Option, Record, Runtime, Scope } from "effect";
 
 import { Readable, Signal } from "@effex/core";
 
@@ -252,12 +252,28 @@ export const make = <
         }
       });
 
-    // Set up popstate listener for browser back/forward
+    // Set up popstate listener for browser back/forward.
+    //
+    // Capture the current Runtime at Layer construction time and use it
+    // to run the popstate handler. Two reasons:
+    //
+    // 1. `updateState` calls Signal.set → SubscriptionRef.set, which
+    //    uses `semaphore.withPermits(1)` internally. Effect can flag
+    //    that as async-capable and Effect.runSync throws for anything
+    //    that isn't pure-sync — silently, from the browser's event
+    //    handler perspective. `Runtime.runFork` on the app's runtime
+    //    accepts async work and doesn't throw.
+    //
+    // 2. Running on the SAME runtime the app is using ensures the
+    //    signal update reaches subscribers that live in that runtime.
+    //    A fresh default runtime (as Effect.runSync creates) can miss
+    //    cross-runtime PubSub delivery timing in rare cases.
     if (isBrowser) {
+      const runtime = yield* Effect.runtime<never>();
+      const runFork = Runtime.runFork(runtime);
+
       const handlePopState = () => {
-        Effect.runSync(
-          updateState(window.location.pathname + window.location.search),
-        );
+        runFork(updateState(window.location.pathname + window.location.search));
       };
 
       window.addEventListener("popstate", handlePopState);
