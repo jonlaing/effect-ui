@@ -1,4 +1,4 @@
-import { Effect, Schema } from "effect";
+import { Effect, Schema, Stream } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -16,6 +16,7 @@ const render = () => Effect.succeed(document.createElement("div"));
 // Mock window and history for tests
 let mockPathname = "/";
 let mockSearch = "";
+const windowListeners = new Map<string, Set<EventListener>>();
 
 const mockWindow = {
   location: {
@@ -41,8 +42,22 @@ const mockWindow = {
     back: vi.fn(),
     forward: vi.fn(),
   },
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
+  addEventListener: vi.fn((type: string, listener: EventListener) => {
+    const set = windowListeners.get(type) ?? new Set();
+    set.add(listener);
+    windowListeners.set(type, set);
+  }),
+  removeEventListener: vi.fn((type: string, listener: EventListener) => {
+    windowListeners.get(type)?.delete(listener);
+  }),
+};
+
+// Simulate a browser event on the window mock.
+const dispatchWindowEvent = (type: string) => {
+  const listeners = windowListeners.get(type);
+  if (!listeners) return;
+  const evt = { type } as Event;
+  for (const l of Array.from(listeners)) l(evt);
 };
 
 // Replace global window
@@ -52,6 +67,7 @@ describe("Navigation", () => {
   beforeEach(() => {
     mockPathname = "/";
     mockSearch = "";
+    windowListeners.clear();
     vi.clearAllMocks();
   });
 
@@ -671,6 +687,158 @@ describe("Navigation", () => {
           expect(pathname).toBe("/users");
         }).pipe(Effect.provide(layer)),
       );
+    });
+  });
+
+  describe("popstate (browser back/forward)", () => {
+    it("updates pathname signal when the browser fires popstate", async () => {
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+        concat(Route.make("/about").pipe(Route.render(render))),
+      );
+
+      // Run inside a scope so the make() Effect is fully setup — its
+      // popstate listener is registered as a side-effect of the scoped
+      // Layer construction.
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const nav = yield* makeNavigation(router, { initialPath: "/" });
+
+            // Simulate a Link click.
+            yield* nav.pushPath("/about");
+            const afterPush = yield* nav.pathname.get;
+
+            // Simulate the browser back button: it changes the URL FIRST,
+            // then fires popstate. Update our mock accordingly.
+            mockPathname = "/";
+            mockSearch = "";
+            dispatchWindowEvent("popstate");
+
+            const afterPopstate = yield* nav.pathname.get;
+            return { afterPush, afterPopstate };
+          }),
+        ),
+      );
+
+      expect(result.afterPush).toBe("/about");
+      // The popstate handler MUST propagate the browser's URL back into
+      // the pathname signal — this is what drives the Outlet's
+      // subscribe/reconcile on back/forward.
+      expect(result.afterPopstate).toBe("/");
+    });
+
+    it("notifies subscribers when popstate fires (drives Outlet reconcile)", async () => {
+      // The signal being updated isn't enough — Outlet subscribes to
+      // `nav.pathname.changes` and only re-reconciles when that stream
+      // fires. This test verifies the popstate handler propagates the
+      // change through the changes stream, not just the internal ref.
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+        concat(Route.make("/about").pipe(Route.render(render))),
+      );
+
+      const seen: string[] = [];
+
+      await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const nav = yield* makeNavigation(router, { initialPath: "/" });
+
+            // Subscribe to pathname changes the way Outlet does.
+            const scope = yield* Effect.scope;
+            yield* Stream.runForEach(nav.pathname.changes, (v) =>
+              Effect.sync(() => {
+                seen.push(v);
+              }),
+            ).pipe(Effect.forkIn(scope));
+
+            // Give the fork a tick to attach.
+            yield* Effect.sleep("5 millis");
+
+            // Simulate Link click, then back button.
+            yield* nav.pushPath("/about");
+            yield* Effect.sleep("5 millis");
+
+            mockPathname = "/";
+            mockSearch = "";
+            dispatchWindowEvent("popstate");
+            yield* Effect.sleep("5 millis");
+          }),
+        ),
+      );
+
+      expect(seen).toContain("/about");
+      // The critical assertion: the subscriber sees the popstate-driven
+      // change, not just the pushPath-driven one.
+      expect(seen).toContain("/");
+    });
+
+    it("does not throw when popstate handler uses Effect.runSync", async () => {
+      // The popstate handler calls Effect.runSync internally. If the
+      // signal-set effect ever needs services or has async work in it,
+      // runSync throws — and the error propagates out of the event
+      // handler, silently swallowed by the browser in some cases.
+      // Verify that whatever the signal-set does, it stays purely
+      // synchronous with no service requirements.
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+      );
+
+      // Capture any thrown errors.
+      let thrown: unknown = null;
+      const origError = console.error;
+      console.error = (...args: unknown[]) => {
+        thrown = args;
+      };
+
+      await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            yield* makeNavigation(router, { initialPath: "/" });
+
+            mockPathname = "/other";
+            try {
+              dispatchWindowEvent("popstate");
+            } catch (e) {
+              thrown = e;
+            }
+          }),
+        ),
+      );
+
+      console.error = origError;
+      expect(thrown).toBeNull();
+    });
+
+    it("updates search params on popstate", async () => {
+      const router = empty.pipe(
+        concat(Route.make("/").pipe(Route.render(render))),
+      );
+
+      const result = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const nav = yield* makeNavigation(router, {
+              initialPath: "/",
+              initialSearch: "",
+            });
+
+            yield* nav.pushPath("/?tab=profile");
+            const afterPush = (yield* nav.searchParams.get).get("tab");
+
+            mockPathname = "/";
+            mockSearch = "";
+            dispatchWindowEvent("popstate");
+
+            const afterPopstate = (yield* nav.searchParams.get).get("tab");
+            return { afterPush, afterPopstate };
+          }),
+        ),
+      );
+
+      expect(result.afterPush).toBe("profile");
+      expect(result.afterPopstate).toBeNull();
     });
   });
 });
