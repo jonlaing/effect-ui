@@ -32,7 +32,7 @@ import { HydrationSuspenseBoundaryCtx } from "../../SuspenseBoundaryCtx/Hydratio
 import { makeHydrationContext } from "./HydrationContext.js";
 import { createHydrationRenderer } from "./HydrationRenderer.js";
 
-export interface HydrateOptions {
+export interface HydrateOptions<R = never> {
   /**
    * Called when a hydration mismatch is detected.
    * In development, you might want to log warnings.
@@ -41,38 +41,49 @@ export interface HydrateOptions {
   readonly onMismatch?: (message: string, node: Node | null) => void;
 
   /**
-   * Additional layers to provide to the element during hydration.
-   * Use this to provide services like LoaderContext that the element requires.
+   * Additional layers to provide to the element during hydration. Whatever
+   * services these layers produce show up in the element's `R` parameter, so
+   * you can pass e.g. `Platform.makeClientLayer(router)` and have `App()`
+   * require `NavigationContext | RouteDataProvider` without any casts.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  readonly layers?: Layer.Layer<any, never, never>;
+  readonly layers?: Layer.Layer<R, never, never>;
 }
 
 /**
  * Hydrate server-rendered HTML by attaching to existing DOM
  * and setting up reactive bindings.
  *
+ * `R` is inferred from `options.layers` — whatever services the layers
+ * provide are what the element is allowed to require on top of the
+ * framework-provided contexts. Pass the layers via `options.layers` rather
+ * than `Effect.provide(App(), layer)` before calling hydrate — the latter
+ * scopes the layer to the element's short-lived render.
+ *
  * @param element - The Element to hydrate (same component tree as SSR)
  * @param container - The DOM container with server-rendered HTML
- * @param options - Hydration options
+ * @param options - Hydration options; `layers` provides `R` to the element
  * @returns Promise that resolves when hydration is complete
  *
  * @example
  * ```ts
  * import { hydrate } from "@effex/dom/hydrate";
+ * import { Platform } from "@effex/platform";
  * import { App } from "./App";
+ * import { router } from "./routes";
  *
- * hydrate(App(), document.getElementById("root")!);
+ * hydrate(App(), document.getElementById("root")!, {
+ *   layers: Platform.makeClientLayer(router),
+ * });
  * ```
  */
-export const hydrate = <A extends HTMLElement | SVGElement>(
+export const hydrate = <A extends HTMLElement | SVGElement, R = never>(
   element: Element.Element<
     A,
     never,
-    RendererContext | ControlCtx | SuspenseBoundaryCtx
+    RendererContext | ControlCtx | SuspenseBoundaryCtx | R
   >,
   container: HTMLElement,
-  options: HydrateOptions = {},
+  options: HydrateOptions<R> = {},
 ): Promise<void> => {
   const renderer = createHydrationRenderer(container, options);
 
