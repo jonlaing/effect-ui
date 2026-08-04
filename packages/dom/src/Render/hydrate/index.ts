@@ -32,7 +32,9 @@ import { HydrationSuspenseBoundaryCtx } from "../../SuspenseBoundaryCtx/Hydratio
 import { makeHydrationContext } from "./HydrationContext.js";
 import { createHydrationRenderer } from "./HydrationRenderer.js";
 
-export interface HydrateOptions<R = never> {
+export interface HydrateOptions<
+  L extends Layer.Layer<never, never, never> = Layer.Layer<never, never, never>,
+> {
   /**
    * Called when a hydration mismatch is detected.
    * In development, you might want to log warnings.
@@ -42,11 +44,13 @@ export interface HydrateOptions<R = never> {
 
   /**
    * Additional layers to provide to the element during hydration. Whatever
-   * services these layers produce show up in the element's `R` parameter, so
-   * you can pass e.g. `Platform.makeClientLayer(router)` and have `App()`
-   * require `NavigationContext | RouteDataProvider` without any casts.
+   * services these layers produce show up in the element's `R` parameter,
+   * so you can pass e.g. `Platform.makeClientLayer(router)` and have
+   * `App()` require `NavigationContext | RouteDataProvider` without any
+   * casts. The default `Layer<never, never, never>` allows omitting the
+   * field for elements that need no user services.
    */
-  readonly layers?: Layer.Layer<R, never, never>;
+  readonly layers?: L;
 }
 
 /**
@@ -76,16 +80,28 @@ export interface HydrateOptions<R = never> {
  * });
  * ```
  */
-export const hydrate = <A extends HTMLElement | SVGElement, R = never>(
+export function hydrate<
+  A extends HTMLElement | SVGElement,
+  L extends Layer.Layer<never, never, never> = Layer.Layer<never, never, never>,
+>(
+  // `NoInfer` on the extracted layer type keeps TS from inferring L from
+  // the element's requirements. L is inferred solely from `options.layers`,
+  // then the element must fit `Framework | Layer.Success<L>` — passing an
+  // element that requires a service you forgot to provide via layers is a
+  // type error, not a silent runtime failure.
   element: Element.Element<
     A,
     never,
-    RendererContext | ControlCtx | SuspenseBoundaryCtx | R
+    | RendererContext
+    | ControlCtx
+    | SuspenseBoundaryCtx
+    | NoInfer<Layer.Layer.Success<L>>
   >,
   container: HTMLElement,
-  options: HydrateOptions<R> = {},
-): Promise<void> => {
-  const renderer = createHydrationRenderer(container, options);
+  options?: HydrateOptions<L>,
+): Promise<void> {
+  const opts = options ?? {};
+  const renderer = createHydrationRenderer(container, opts);
 
   const HydrationRendererLayer = Layer.succeed(
     RendererContext,
@@ -110,8 +126,11 @@ export const hydrate = <A extends HTMLElement | SVGElement, R = never>(
     let elementLayers = Layer.merge(hydrationContextLayer, ControlLayer);
     elementLayers = Layer.merge(elementLayers, suspenseLayer);
     elementLayers = Layer.merge(elementLayers, ClientAsyncCacheLayer);
-    if (options.layers) {
-      elementLayers = Layer.merge(elementLayers, options.layers);
+    if (opts.layers) {
+      elementLayers = Layer.merge(
+        elementLayers,
+        opts.layers as Layer.Layer<never, never, never>,
+      );
     }
 
     // Build elementLayers in the OUTER program scope (kept alive by
@@ -140,7 +159,7 @@ export const hydrate = <A extends HTMLElement | SVGElement, R = never>(
 
   // Return immediately - hydration setup is synchronous, subscriptions are async
   return Promise.resolve();
-};
+}
 
 export type { HydrationRenderer } from "./HydrationRenderer.js";
 export { createHydrationRenderer } from "./HydrationRenderer.js";
