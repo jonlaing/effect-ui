@@ -662,7 +662,7 @@ describe("Hydration", () => {
       // Pre-populate matching SSR HTML so hydration doesn't warn.
       container.innerHTML = `<div class="marker">alive</div>`;
 
-      await hydrate(element as never, container, { layers: markerLayer });
+      await hydrate(element, container, { layers: markerLayer });
       await new Promise((r) => setTimeout(r, 10));
 
       expect(container.querySelector(".marker")?.textContent).toBe("alive");

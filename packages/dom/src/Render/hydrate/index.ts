@@ -32,7 +32,9 @@ import { HydrationSuspenseBoundaryCtx } from "../../SuspenseBoundaryCtx/Hydratio
 import { makeHydrationContext } from "./HydrationContext.js";
 import { createHydrationRenderer } from "./HydrationRenderer.js";
 
-export interface HydrateOptions {
+export interface HydrateOptions<
+  L extends Layer.Layer<never, never, never> = Layer.Layer<never, never, never>,
+> {
   /**
    * Called when a hydration mismatch is detected.
    * In development, you might want to log warnings.
@@ -41,40 +43,65 @@ export interface HydrateOptions {
   readonly onMismatch?: (message: string, node: Node | null) => void;
 
   /**
-   * Additional layers to provide to the element during hydration.
-   * Use this to provide services like LoaderContext that the element requires.
+   * Additional layers to provide to the element during hydration. Whatever
+   * services these layers produce show up in the element's `R` parameter,
+   * so you can pass e.g. `Platform.makeClientLayer(router)` and have
+   * `App()` require `NavigationContext | RouteDataProvider` without any
+   * casts. The default `Layer<never, never, never>` allows omitting the
+   * field for elements that need no user services.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  readonly layers?: Layer.Layer<any, never, never>;
+  readonly layers?: L;
 }
 
 /**
  * Hydrate server-rendered HTML by attaching to existing DOM
  * and setting up reactive bindings.
  *
+ * `R` is inferred from `options.layers` — whatever services the layers
+ * provide are what the element is allowed to require on top of the
+ * framework-provided contexts. Pass the layers via `options.layers` rather
+ * than `Effect.provide(App(), layer)` before calling hydrate — the latter
+ * scopes the layer to the element's short-lived render.
+ *
  * @param element - The Element to hydrate (same component tree as SSR)
  * @param container - The DOM container with server-rendered HTML
- * @param options - Hydration options
+ * @param options - Hydration options; `layers` provides `R` to the element
  * @returns Promise that resolves when hydration is complete
  *
  * @example
  * ```ts
  * import { hydrate } from "@effex/dom/hydrate";
+ * import { Platform } from "@effex/platform";
  * import { App } from "./App";
+ * import { router } from "./routes";
  *
- * hydrate(App(), document.getElementById("root")!);
+ * hydrate(App(), document.getElementById("root")!, {
+ *   layers: Platform.makeClientLayer(router),
+ * });
  * ```
  */
-export const hydrate = <A extends HTMLElement | SVGElement>(
+export function hydrate<
+  A extends HTMLElement | SVGElement,
+  L extends Layer.Layer<never, never, never> = Layer.Layer<never, never, never>,
+>(
+  // `NoInfer` on the extracted layer type keeps TS from inferring L from
+  // the element's requirements. L is inferred solely from `options.layers`,
+  // then the element must fit `Framework | Layer.Success<L>` — passing an
+  // element that requires a service you forgot to provide via layers is a
+  // type error, not a silent runtime failure.
   element: Element.Element<
     A,
     never,
-    RendererContext | ControlCtx | SuspenseBoundaryCtx
+    | RendererContext
+    | ControlCtx
+    | SuspenseBoundaryCtx
+    | NoInfer<Layer.Layer.Success<L>>
   >,
   container: HTMLElement,
-  options: HydrateOptions = {},
-): Promise<void> => {
-  const renderer = createHydrationRenderer(container, options);
+  options?: HydrateOptions<L>,
+): Promise<void> {
+  const opts = options ?? {};
+  const renderer = createHydrationRenderer(container, opts);
 
   const HydrationRendererLayer = Layer.succeed(
     RendererContext,
@@ -99,8 +126,11 @@ export const hydrate = <A extends HTMLElement | SVGElement>(
     let elementLayers = Layer.merge(hydrationContextLayer, ControlLayer);
     elementLayers = Layer.merge(elementLayers, suspenseLayer);
     elementLayers = Layer.merge(elementLayers, ClientAsyncCacheLayer);
-    if (options.layers) {
-      elementLayers = Layer.merge(elementLayers, options.layers);
+    if (opts.layers) {
+      elementLayers = Layer.merge(
+        elementLayers,
+        opts.layers as Layer.Layer<never, never, never>,
+      );
     }
 
     // Build elementLayers in the OUTER program scope (kept alive by
@@ -129,7 +159,7 @@ export const hydrate = <A extends HTMLElement | SVGElement>(
 
   // Return immediately - hydration setup is synchronous, subscriptions are async
   return Promise.resolve();
-};
+}
 
 export type { HydrationRenderer } from "./HydrationRenderer.js";
 export { createHydrationRenderer } from "./HydrationRenderer.js";
