@@ -177,6 +177,21 @@ export const forkSlotEnter = (
       if (!element.isConnected) {
         yield* waitForConnection(element);
       }
+      // On hydration, wait for one paint before starting the enter
+      // lifecycle. Vite dev (and any setup that injects stylesheets via
+      // JS or defers <link> parsing) can have the module evaluated —
+      // and this fiber scheduled — before the browser has actually
+      // applied the transition-* CSS from the `enter` class. If that
+      // happens, runEnterAnimation's forceReflow captures a "before"
+      // state with no transition-property set, then the class swap
+      // happens instantly and transitionend never fires — the user
+      // sees a 5s timeout warning and no animation. One rAF is enough
+      // to guarantee all pending stylesheets have been parsed and
+      // applied, so the "before" snapshot is captured against the
+      // real post-enter-class computed styles.
+      if (opts?.hydrating) {
+        yield* waitForPaint;
+      }
       // Force a style/layout computation on the (now-connected)
       // element. Some engines defer style computation for freshly-
       // inserted nodes until it's needed; without this, forceReflow
@@ -206,6 +221,17 @@ export const forkSlotEnter = (
  */
 const yieldMicrotask: Effect.Effect<void> = Effect.async<void>((resume) => {
   queueMicrotask(() => resume(Effect.void));
+});
+
+/**
+ * Wait for the next browser paint. Guarantees any pending stylesheet
+ * parsing/application has completed — critical on first-load hydration
+ * where Vite dev's JS-injected styles may not yet be in effect when
+ * this fiber first gets scheduled.
+ */
+const waitForPaint: Effect.Effect<void> = Effect.async<void>((resume) => {
+  const id = requestAnimationFrame(() => resume(Effect.void));
+  return Effect.sync(() => cancelAnimationFrame(id));
 });
 
 /**
