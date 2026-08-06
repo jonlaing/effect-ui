@@ -58,6 +58,8 @@ export {
   matchEither,
   redraw,
   animated,
+  AnimationConfigCtx,
+  ClientControlCtx,
   HydrationMismatchError,
 } from "./Control/index.js";
 export type {
