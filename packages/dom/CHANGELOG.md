@@ -1,5 +1,57 @@
 # @effex/dom
 
+## 1.4.8
+
+### Patch Changes
+
+- 30f2c32: fix(animation): wait one paint before hydration enter animations
+
+  On cold first-load (new tab, no cache), the browser can schedule the
+  hydration fiber before it finishes parsing/applying stylesheets — either
+  `<link>` sheets that are still being fetched or Vite dev's JS-injected
+  styles that haven't been evaluated yet.
+
+  When that happened, `runEnterAnimation`'s `forceReflow` captured a
+  "before" state with no `transition-property` set, then the class swap
+  happened instantly — the transition-triggering moment passed without
+  transition-\* in effect, `transitionend` never fired, and the animation
+  system logged the "Animation timeout reached" warning after 5 seconds.
+  The affected element ended up at its enterTo state with no animation.
+  Refresh made the problem go away because stylesheets were already cached
+  and applied synchronously.
+
+  `forkSlotEnter` now waits for a single `requestAnimationFrame` on the
+  hydration path before starting the enter lifecycle. rAF runs just before
+  the browser's next paint, at which point all pending stylesheet parsing
+  is complete, so `forceReflow` captures the correct pre-transition state
+  and the class swap fires a proper transition.
+
+  The wait is scoped to hydration only; post-hydration animations (route
+  changes, list reconciles) don't pay the rAF cost.
+
+- 567a41c: fix(router): Outlet now actually applies its animation configuration
+
+  `OutletConfig.animate` was defined in the type but never read in the
+  implementation — the underlying `reconcile` call passed only
+  `getTargetKeys` and `renderSlot`, so nothing wired the animation config
+  through to the control ctx. Consumers configuring `animate` saw abrupt
+  route transitions regardless of what they set.
+
+  `Outlet` now provides `AnimationConfigCtx` (the same tag `when`/`match`/
+  `each` use) via `Effect.provideService`, matching the pattern those
+  combinators follow. `provideService` uses `provideContext` internally
+  rather than `provideSomeLayer`'s `scopedWith` — no scope is created and
+  no finalizer race is introduced (see #78 for the finalizer-race pattern
+  we're deliberately avoiding).
+
+  Also adds an `intro?: boolean` field to `OutletConfig`, so the initially
+  matched route can re-animate on hydration in cases like a decorative
+  opening scene. Same shape as `when`/`match`/`each`/`animated`.
+
+  `AnimationConfigCtx` and `ClientControlCtx` are now re-exported from
+  `@effex/dom`'s package root (they were exported from
+  `@effex/dom/Control/index.ts` but not lifted).
+
 ## 1.4.7
 
 ### Patch Changes
