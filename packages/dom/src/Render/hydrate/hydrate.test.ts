@@ -312,7 +312,10 @@ describe("Hydration", () => {
 
       container.innerHTML = await Effect.runPromise(renderToString(App()));
       await hydrate(App(), container);
-      await new Promise((r) => setTimeout(r, 20));
+      // Wait long enough that if the fork DID try to run the animation,
+      // we'd see it — protects the "no re-animate" assertion against
+      // late-firing regressions.
+      await new Promise((r) => setTimeout(r, 100));
 
       expect(onBeforeEnter).not.toHaveBeenCalled();
     });
@@ -339,8 +342,13 @@ describe("Hydration", () => {
 
       container.innerHTML = await Effect.runPromise(renderToString(App()));
       await hydrate(App(), container);
-      // Give forked enter animations a tick to invoke the hook.
-      await new Promise((r) => setTimeout(r, 20));
+      // Give forked enter animations time to invoke the hook. Hydration
+      // animations now wait one requestAnimationFrame before starting
+      // (see `forkSlotEnter` — needed to give stylesheets a chance to
+      // apply before forceReflow snapshots the pre-transition state),
+      // which in jsdom is ~16ms + queue drain. 20ms was too tight on
+      // slow CI runners.
+      await new Promise((r) => setTimeout(r, 100));
 
       expect(onBeforeEnter).toHaveBeenCalledTimes(letters().length);
     });
@@ -366,7 +374,7 @@ describe("Hydration", () => {
 
       container.innerHTML = await Effect.runPromise(renderToString(App()));
       await hydrate(App(), container);
-      await new Promise((r) => setTimeout(r, 20));
+      await new Promise((r) => setTimeout(r, 100));
 
       expect(onBeforeEnter).toHaveBeenCalledTimes(1);
     });
