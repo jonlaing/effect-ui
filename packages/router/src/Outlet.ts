@@ -1,7 +1,12 @@
-import { Effect, Option, Record } from "effect";
+import { Effect, Option, pipe, Record } from "effect";
 
 import { ControlCtx, reconcile } from "@effex/core";
-import { $, Element, type AnimationOptions } from "@effex/dom";
+import {
+  $,
+  AnimationConfigCtx,
+  Element,
+  type AnimationOptions,
+} from "@effex/dom";
 
 import { buildPath, NavigationContext, type Navigation } from "./Navigation.js";
 import { resolveMeta, type Route } from "./Route.js";
@@ -26,6 +31,12 @@ export interface OutletConfig<
   readonly router: Router<P, S, D, E, R>;
   /** Animation options for route transitions */
   readonly animate?: AnimationOptions;
+  /**
+   * When true, the enter animation also plays for the initially matched
+   * route on hydration. Default is to attach handlers to the SSR-rendered
+   * DOM without re-animating.
+   */
+  readonly intro?: boolean;
 }
 
 /**
@@ -231,33 +242,45 @@ export const Outlet = <
   E,
   R | NavigationContext | ControlCtx
 > =>
-  Effect.gen(function* () {
-    const nav = yield* NavigationContext;
-    const router = config.router;
-    const layouts = router.layouts;
+  pipe(
+    Effect.gen(function* () {
+      const nav = yield* NavigationContext;
+      const router = config.router;
+      const layouts = router.layouts;
 
-    // Use pathname as the reconcile key so param-only navigations
-    // (e.g. /users/alice → /users/bob) trigger a re-render.
-    return (yield* reconcile(nav.pathname, {
-      getTargetKeys: (pathname: string) => {
-        const matched = findMatch(router, pathname);
-        if (Option.isSome(matched)) return [pathname];
-        if (router.fallback) return ["__fallback__"];
-        return [];
-      },
-      renderSlot: (key: string) => {
-        if (key === "__fallback__") {
-          return router.fallback?.() ?? $.div();
-        }
-        // Find the route that matches this pathname
-        const matched = findMatch(router, key);
-        if (Option.isNone(matched)) {
-          return router.fallback?.() ?? $.div();
-        }
-        return renderRouteWithGuard(matched.value.route, nav, layouts);
-      },
-    })) as HTMLElement | SVGElement;
-  }) as Element.Element<
+      // Use pathname as the reconcile key so param-only navigations
+      // (e.g. /users/alice → /users/bob) trigger a re-render.
+      return (yield* reconcile(nav.pathname, {
+        getTargetKeys: (pathname: string) => {
+          const matched = findMatch(router, pathname);
+          if (Option.isSome(matched)) return [pathname];
+          if (router.fallback) return ["__fallback__"];
+          return [];
+        },
+        renderSlot: (key: string) => {
+          if (key === "__fallback__") {
+            return router.fallback?.() ?? $.div();
+          }
+          // Find the route that matches this pathname
+          const matched = findMatch(router, key);
+          if (Option.isNone(matched)) {
+            return router.fallback?.() ?? $.div();
+          }
+          return renderRouteWithGuard(matched.value.route, nav, layouts);
+        },
+      })) as HTMLElement | SVGElement;
+    }),
+    // Provide the animation config the way `match`/`when` do — reconcile's
+    // addSlot/removeSlot read `AnimationConfigCtx` lazily to drive enter/
+    // exit transitions between routes. Without this, `config.animate` and
+    // `config.intro` sit in the type but never reach the control ctx.
+    config.animate || config.intro
+      ? Effect.provideService(AnimationConfigCtx, {
+          single: config.animate,
+          intro: config.intro,
+        })
+      : (x) => x,
+  ) as Element.Element<
     HTMLElement | SVGElement,
     E,
     R | NavigationContext | ControlCtx
