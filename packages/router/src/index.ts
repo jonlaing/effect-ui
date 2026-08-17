@@ -68,6 +68,7 @@ export {
   forward as navForward,
   type Navigation as NavigationType,
   type NavigationOptions,
+  type NavigationSource,
   type RouteNavigateOptions,
   type CurrentMatch,
 } from "./Navigation.js";
@@ -85,3 +86,6 @@ export { Link, type LinkProps } from "./Link.js";
 
 // Outlet
 export { Outlet, type OutletConfig } from "./Outlet.js";
+
+// ScrollBehavior
+export { runScrollBehavior, type ScrollBehavior } from "./ScrollBehavior.js";
