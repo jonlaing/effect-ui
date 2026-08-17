@@ -11,6 +11,7 @@ import {
 import { Navigation } from "./Navigation.js";
 import { Outlet } from "./Outlet.js";
 import { Route } from "./Route.js";
+import { RouteDataProvider } from "./RouteData.js";
 import {
   concat,
   empty,
@@ -292,6 +293,161 @@ describe("Outlet", () => {
       );
 
       expect(scrollSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("RouteDataProvider visibility (regression: issue #50)", () => {
+    // Issue #50 reported that inside `reconcile`'s forked subscription
+    // fiber, `Effect.serviceOption(RouteDataProvider)` returned None even
+    // when the provider was provided at the top level. That silently
+    // routed Outlet through its "no provider" SPA fallback branch on
+    // client-side navigation, so a Route.static route rendered with
+    // `data === undefined` on subsequent nav.
+    //
+    // The root cause has since been fixed — most likely by #78 (hydrate
+    // now builds layers as a Context in its outer program scope, so
+    // context propagates correctly to fibers forked from the element).
+    // These tests pin the behavior so any regression re-surfaces at the
+    // level the original bug was reported: whether getRouteData is
+    // actually invoked on subsequent client-nav renders.
+
+    it("initial render sees RouteDataProvider", async () => {
+      const getRouteData = vi.fn(() =>
+        Effect.succeed({
+          data: { title: "Initial" },
+          loaderPath: "/?_data=1",
+          actions: {},
+        }),
+      );
+      const providerLayer = Layer.succeed(RouteDataProvider, { getRouteData });
+
+      const HomeRoute = Route.make("/").pipe(
+        Route.static({
+          load: () => Effect.succeed({ title: "Home" }),
+          render: (data) => $.div({ class: "home" }, $.of(data.title)),
+        }),
+      );
+
+      const router = empty.pipe(concat(HomeRoute));
+      const navLayer = Navigation.makeLayer(router, { initialPath: "/" });
+
+      await Effect.runPromise(
+        Effect.gen(function* () {
+          yield* Outlet({ router });
+          yield* Effect.sleep("10 millis");
+        }).pipe(
+          Effect.scoped,
+          Effect.provide(navLayer),
+          Effect.provide(providerLayer),
+          Effect.provide(TestLayer),
+        ),
+      );
+
+      // Initial render should have gone through the provider (not the SPA
+      // fallback branch). The provider's getRouteData is invoked with the
+      // matched route, its params, and its search params.
+      expect(getRouteData).toHaveBeenCalled();
+    });
+
+    it("subsequent client-nav render still sees RouteDataProvider", async () => {
+      // The bug from #50: after the initial hydration render, when the
+      // reconcile subscription fires on pushPath, the forked subscription
+      // fiber inside subscribeReconcile loses visibility of the top-level
+      // RouteDataProvider. This asserts that getRouteData is invoked with
+      // BOTH the initial and the post-nav route.
+      const invocations: string[] = [];
+      const getRouteData = vi.fn((route, _params, _searchParams) => {
+        invocations.push(route.path);
+        return Effect.succeed({
+          // Emulate what a real provider does: return data that matches the
+          // route's loader shape ({ title: string }) so the render fn
+          // doesn't crash on missing fields.
+          data: { title: route.path === "/" ? "Home" : "About" },
+          loaderPath: `${route.path}?_data=1`,
+          actions: {},
+        });
+      });
+      const providerLayer = Layer.succeed(RouteDataProvider, { getRouteData });
+
+      const HomeRoute = Route.make("/").pipe(
+        Route.static({
+          load: () => Effect.succeed({ title: "Home" }),
+          render: (data) => $.div({ class: "home" }, $.of(data.title)),
+        }),
+      );
+      const AboutRoute = Route.make("/about").pipe(
+        Route.static({
+          load: () => Effect.succeed({ title: "About" }),
+          render: (data) => $.div({ class: "about" }, $.of(data.title)),
+        }),
+      );
+
+      const router = empty.pipe(concat(HomeRoute), concat(AboutRoute));
+      const navLayer = Navigation.makeLayer(router, { initialPath: "/" });
+
+      await Effect.runPromise(
+        Effect.gen(function* () {
+          const nav = yield* Navigation.Context;
+          const outletEl = yield* Outlet({ router });
+          document.body.appendChild(outletEl);
+          yield* Effect.sleep("10 millis");
+          yield* nav.pushPath("/about");
+          // Reconcile is async — give the forked subscription fiber time to
+          // process the pathname change and re-render.
+          yield* Effect.sleep("50 millis");
+        }).pipe(
+          Effect.scoped,
+          Effect.provide(navLayer),
+          Effect.provide(providerLayer),
+          Effect.provide(TestLayer),
+        ),
+      );
+
+      // If the provider is visible only during initial render but not
+      // during reconcile-driven re-render, we'll see just "/". If both,
+      // we'll see "/" then "/about".
+      expect(invocations).toEqual(["/", "/about"]);
+    });
+
+    // Sanity: does Route.static crash on subsequent client-nav even when
+    // there's no provider (SPA fallback path)? If yes, the "provider-not-
+    // visible" story from #50 is masking a different bug — Route.static
+    // re-renders are just plain broken.
+    it("Route.static subsequent client-nav renders without a provider (SPA fallback)", async () => {
+      const HomeRoute = Route.make("/").pipe(
+        Route.static({
+          load: () => Effect.succeed({ title: "Home" }),
+          render: (data) => $.div({ class: "home" }, $.of(data.title)),
+        }),
+      );
+      const AboutRoute = Route.make("/about").pipe(
+        Route.static({
+          load: () => Effect.succeed({ title: "About" }),
+          render: (data) => $.div({ class: "about" }, $.of(data.title)),
+        }),
+      );
+
+      const router = empty.pipe(concat(HomeRoute), concat(AboutRoute));
+      const navLayer = Navigation.makeLayer(router, { initialPath: "/" });
+
+      await Effect.runPromise(
+        Effect.gen(function* () {
+          const nav = yield* Navigation.Context;
+          const outletEl = yield* Outlet({ router });
+          document.body.appendChild(outletEl);
+          yield* Effect.sleep("10 millis");
+          yield* nav.pushPath("/about");
+          yield* Effect.sleep("50 millis");
+        }).pipe(
+          Effect.scoped,
+          Effect.provide(navLayer),
+          Effect.provide(TestLayer),
+        ),
+      );
+
+      // If we crash before this point, there's a Route.static re-render bug
+      // independent of #50.
+      expect(document.querySelector(".about")?.textContent).toBe("About");
     });
   });
 });
