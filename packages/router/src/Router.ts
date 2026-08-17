@@ -10,6 +10,7 @@ import {
   routeSpecificity,
   type Route,
 } from "./Route.js";
+import type { ScrollBehavior } from "./ScrollBehavior.js";
 
 // =============================================================================
 // TypeId
@@ -37,7 +38,6 @@ export interface MatchOptions {
     readonly enter?: string;
     readonly exit?: string;
   };
-  readonly scrollRestoration?: boolean;
 }
 
 /**
@@ -60,6 +60,12 @@ export interface Router<
     | null;
   /** Layout wrappers to apply (in order, inside-out) */
   readonly layouts: ReadonlyArray<LayoutWrapper>;
+  /**
+   * Router-level default scroll behavior. Applied on push/replace when a
+   * matched route has no `_scrollBehavior` of its own. If unset, the
+   * framework default is `"top"`.
+   */
+  readonly scrollBehavior: ScrollBehavior | null;
 }
 
 // =============================================================================
@@ -81,6 +87,7 @@ export const empty: Router = Object.assign(Object.create(RouterProto), {
   routes: [],
   fallback: null,
   layouts: [],
+  scrollBehavior: null,
 });
 
 // =============================================================================
@@ -247,6 +254,38 @@ export const fallback =
       ...router,
       fallback: render,
     }) as Router<P, S, D, E | E2, R | R2>;
+  };
+
+/**
+ * Set the default scroll behavior for client-side navigation. Applies to
+ * every route in this router unless the route sets its own via
+ * `Route.scrollBehavior`. Only fires for `pushPath` / `replacePath` — the
+ * browser handles popstate.
+ *
+ * @example
+ * ```ts
+ * const router = Router.empty.pipe(
+ *   Router.concat(HomeRoute),
+ *   Router.concat(BlogRoute),
+ *   Router.scrollBehavior("top"),  // reset scroll on every push nav
+ * );
+ * ```
+ */
+export const scrollBehavior =
+  (behavior: ScrollBehavior) =>
+  <
+    P extends Record<string, unknown>,
+    S extends Record<string, unknown>,
+    D,
+    E,
+    R,
+  >(
+    router: Router<P, S, D, E, R>,
+  ): Router<P, S, D, E, R> => {
+    return Object.assign(Object.create(RouterProto), {
+      ...router,
+      scrollBehavior: behavior,
+    }) as Router<P, S, D, E, R>;
   };
 
 /**
@@ -653,6 +692,7 @@ export const Router = {
   fallback,
   guard,
   layout,
+  scrollBehavior,
   catchIf,
   catchTag,
   catchAll,

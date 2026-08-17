@@ -1,4 +1,4 @@
-import { Effect, Option, pipe, Record } from "effect";
+import { Effect, Option, pipe, Record, Stream } from "effect";
 
 import { ControlCtx, reconcile } from "@effex/core";
 import {
@@ -16,6 +16,7 @@ import {
   type RouteDataService,
 } from "./RouteData.js";
 import { findMatch, type LayoutWrapper, type Router } from "./Router.js";
+import { runScrollBehavior, type ScrollBehavior } from "./ScrollBehavior.js";
 
 /**
  * Configuration for the Outlet component.
@@ -247,6 +248,30 @@ export const Outlet = <
       const nav = yield* NavigationContext;
       const router = config.router;
       const layouts = router.layouts;
+      const scope = yield* Effect.scope;
+
+      // Scroll behavior subscription: apply the effective ScrollBehavior for
+      // the target route on push/replace navigations. Popstate is skipped —
+      // the browser's `history.scrollRestoration = "auto"` restores per-
+      // entry positions better than a URL-keyed cache could. lastSource is
+      // set before pathname publishes (see Navigation.ts), so reading it
+      // inside the subscriber reflects the source of the change.
+      let previousPathname = yield* nav.pathname.get;
+      yield* Stream.runForEach(nav.pathname.changes, (to) =>
+        Effect.gen(function* () {
+          const from = previousPathname;
+          previousPathname = to;
+          const source = yield* nav.lastSource.get;
+          if (source === "pop") return;
+          const matched = findMatch(router, to);
+          const routeBehavior: ScrollBehavior | null = Option.isSome(matched)
+            ? matched.value.route._scrollBehavior
+            : null;
+          const effective: ScrollBehavior =
+            routeBehavior ?? router.scrollBehavior ?? "top";
+          yield* runScrollBehavior(effective, from, to);
+        }),
+      ).pipe(Effect.forkIn(scope));
 
       // Use pathname as the reconcile key so param-only navigations
       // (e.g. /users/alice → /users/bob) trigger a re-render.

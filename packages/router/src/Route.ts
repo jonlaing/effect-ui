@@ -3,6 +3,8 @@ import { Context, Data, Effect, ParseResult, Pipeable, Schema } from "effect";
 import { Readable } from "@effex/core";
 import type { Element } from "@effex/dom";
 
+import type { ScrollBehavior } from "./ScrollBehavior.js";
+
 // =============================================================================
 // TypeId
 // =============================================================================
@@ -333,6 +335,13 @@ export interface Route<
    * Resolved at render time by Outlet (client) or Platform (SSR/SSG).
    */
   readonly _meta: MetaInput<Params, SearchParams, Data> | null;
+  /**
+   * Per-route override for scroll-on-navigation behavior. When set, this
+   * takes precedence over the Router's default and the framework's `"top"`.
+   * Only applied for push/replace navigations — popstate is left to the
+   * browser. See {@link ScrollBehavior} for the semantics of each variant.
+   */
+  readonly _scrollBehavior: ScrollBehavior | null;
 }
 
 // =============================================================================
@@ -413,6 +422,7 @@ export const make = <Path extends string>(
     _handlers: [],
     _staticConfig: null,
     _meta: null,
+    _scrollBehavior: null,
   });
 
   return route;
@@ -1004,6 +1014,41 @@ export const meta =
   };
 
 /**
+ * Override the scroll behavior for this route. Takes precedence over the
+ * Router-level default set via `Router.scrollBehavior`.
+ *
+ * @example
+ * ```ts
+ * // Don't reset scroll when navigating into a modal-style route
+ * Route.make("/photos/:id/detail").pipe(
+ *   Route.render(PhotoDetail),
+ *   Route.scrollBehavior("preserve"),
+ * );
+ *
+ * // Custom scroll target (e.g. focus a specific element)
+ * Route.make("/docs/*").pipe(
+ *   Route.render(DocsPage),
+ *   Route.scrollBehavior((_from, to) =>
+ *     Effect.sync(() => {
+ *       const hash = new URL(to, "http://x").hash.slice(1);
+ *       document.getElementById(hash)?.scrollIntoView();
+ *     }),
+ *   ),
+ * );
+ * ```
+ */
+export const scrollBehavior =
+  (behavior: ScrollBehavior) =>
+  <Path extends string, P, SP, D, E, R>(
+    route: Route<Path, P, SP, D, E, R>,
+  ): Route<Path, P, SP, D, E, R> => {
+    return Object.assign(Object.create(RouteProto), {
+      ...route,
+      _scrollBehavior: behavior,
+    });
+  };
+
+/**
  * Resolve a route's meta config into concrete string values.
  */
 export const resolveMeta = <P, SP, D, E, R>(
@@ -1091,6 +1136,7 @@ export const Route = {
   withAnimation,
   meta,
   resolveMeta,
+  scrollBehavior,
   lazy,
   isRoute,
   catchIf,

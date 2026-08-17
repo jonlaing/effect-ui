@@ -70,6 +70,16 @@ export interface CurrentMatch {
 }
 
 /**
+ * Which mechanism triggered the most recent navigation. Consumers (Outlet's
+ * scroll behavior, DevTools) use this to distinguish user actions from
+ * browser back/forward so they don't fight the browser's native scroll
+ * restoration.
+ *
+ * `null` on initial construction — no navigation has happened yet.
+ */
+export type NavigationSource = "push" | "replace" | "pop" | null;
+
+/**
  * Navigation service for managing browser history and route state.
  */
 export interface Navigation {
@@ -84,6 +94,14 @@ export interface Navigation {
 
   /** Current matched route (if any) */
   readonly currentMatch: Readable.Readable<CurrentMatch>;
+
+  /**
+   * Which mechanism drove the most recent pathname change. Updated *before*
+   * `pathname` publishes, so subscribers reading both can rely on
+   * `lastSource.get` reflecting the source of the change they were woken
+   * for. `null` until the first navigation.
+   */
+  readonly lastSource: Readable.Readable<NavigationSource>;
 
   /** Navigate to a path string */
   readonly pushPath: (path: string) => Effect.Effect<void>;
@@ -177,6 +195,10 @@ export const make = <
     const searchParamsState = yield* Signal.make(
       new URLSearchParams(initialSearch),
     );
+    // Nav source is set BEFORE the pathname update publishes so subscribers
+    // (Outlet's scroll behavior) can distinguish push/replace/pop when they
+    // wake up. Ordering matters — see updateState / handlePopState below.
+    const lastSourceState = yield* Signal.make<NavigationSource>(null);
 
     // Compute current match from pathname (derived readable)
     const currentMatch: Readable.Readable<CurrentMatch> = Readable.map(
@@ -189,7 +211,9 @@ export const make = <
       },
     );
 
-    // Update internal state from a full path (may include query string)
+    // Update internal state from a full path (may include query string).
+    // Callers set lastSource first, then updateState publishes the pathname
+    // change — subscribers reading lastSource see the correct source.
     const updateState = (fullPath: string): Effect.Effect<void> =>
       Effect.gen(function* () {
         const url = new URL(fullPath, "http://localhost");
@@ -200,6 +224,7 @@ export const make = <
     // Navigation methods
     const pushPath = (path: string): Effect.Effect<void> =>
       Effect.gen(function* () {
+        yield* lastSourceState.set("push");
         yield* updateState(path);
         if (isBrowser) {
           window.history.pushState(null, "", path);
@@ -208,6 +233,7 @@ export const make = <
 
     const replacePath = (path: string): Effect.Effect<void> =>
       Effect.gen(function* () {
+        yield* lastSourceState.set("replace");
         yield* updateState(path);
         if (isBrowser) {
           window.history.replaceState(null, "", path);
@@ -273,7 +299,18 @@ export const make = <
       const runFork = Runtime.runFork(runtime);
 
       const handlePopState = () => {
-        runFork(updateState(window.location.pathname + window.location.search));
+        // Set the source BEFORE running updateState. Both are runFork'd on
+        // the same runtime, so the semaphore inside SubscriptionRef.set
+        // serialises them — lastSource is guaranteed to be "pop" by the
+        // time pathname's subscribers wake up.
+        runFork(
+          Effect.gen(function* () {
+            yield* lastSourceState.set("pop");
+            yield* updateState(
+              window.location.pathname + window.location.search,
+            );
+          }),
+        );
       };
 
       window.addEventListener("popstate", handlePopState);
@@ -291,6 +328,7 @@ export const make = <
       pathname: pathnameState,
       searchParams: searchParamsState,
       currentMatch,
+      lastSource: lastSourceState,
       pushPath,
       replacePath,
       pushRoute,
