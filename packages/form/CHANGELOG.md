@@ -1,5 +1,13 @@
 # @effex/form
 
+## 1.0.4
+
+### Patch Changes
+
+- Updated dependencies [aa1dd5e]
+- Updated dependencies [edd707f]
+  - @effex/core@1.2.0
+
 ## 1.0.3
 
 ### Patch Changes
