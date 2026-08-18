@@ -6,14 +6,14 @@ order: 1
 
 # Components
 
-Effex components are just functions that return Elements. There's no special component class, no hooks rules, and no lifecycle methods. A component is either a plain function (for static content) or an Effect generator (for state and context).
+Stax components are just functions that return Elements. There's no special component class, no hooks rules, and no lifecycle methods. A component is either a plain function (for static content) or an Effect generator (for state and context).
 
 ## Simple Components
 
 Components without state or context requirements are plain functions:
 
 ```typescript
-import { $ } from "@effex/dom";
+import { $ } from "@stax-ui/dom";
 
 const Greeting = (props: { name: string }) =>
   $.h1({}, `Hello, ${props.name}!`);
@@ -24,7 +24,7 @@ const Greeting = (props: { name: string }) =>
 Use generics on `E` and `R` to propagate error and requirement types from children:
 
 ```typescript
-import { type Element } from "@effex/dom";
+import { type Element } from "@stax-ui/dom";
 
 const Card = <E, R>(
   props: { title: string },
@@ -44,7 +44,7 @@ Use `Effect.gen` when you need signals, context, or other Effects:
 
 ```typescript
 import { Effect } from "effect";
-import { $, Signal } from "@effex/dom";
+import { $, Signal } from "@stax-ui/dom";
 
 const Counter = () =>
   Effect.gen(function* () {
@@ -86,7 +86,7 @@ Use `provide` to supply context to children:
 
 ```typescript
 import { Context, Effect } from "effect";
-import { $, provide } from "@effex/dom";
+import { $, provide } from "@stax-ui/dom";
 
 class ThemeContext extends Context.Tag("ThemeContext")<
   ThemeContext,
@@ -118,7 +118,7 @@ Use `runApp` and `mount` to start your application:
 
 ```typescript
 import { Effect } from "effect";
-import { mount, runApp } from "@effex/dom";
+import { mount, runApp } from "@stax-ui/dom";
 
 runApp(
   Effect.gen(function* () {
@@ -130,7 +130,7 @@ runApp(
 `runApp` handles boilerplate: scoping, the signal registry, and keeping the process alive. You can pass additional layers:
 
 ```typescript
-import { Navigation } from "@effex/router";
+import { Navigation } from "@stax-ui/router";
 
 runApp(
   Effect.gen(function* () {

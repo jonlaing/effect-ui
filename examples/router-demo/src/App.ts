@@ -1,5 +1,5 @@
-import { $, Boundary, collect } from "@effex/dom";
-import { Link, Outlet } from "@effex/router";
+import { $, Boundary, collect } from "@stax-ui/dom";
+import { Link, Outlet } from "@stax-ui/router";
 
 import { router } from "./routes";
 

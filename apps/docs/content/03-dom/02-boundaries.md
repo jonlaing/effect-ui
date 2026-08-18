@@ -6,14 +6,14 @@ order: 2
 
 # Boundaries
 
-Components that fetch data or do async work need loading and error states. Effex provides two boundary types: **suspense** for async rendering and **error** for catching failures.
+Components that fetch data or do async work need loading and error states. Stax provides two boundary types: **suspense** for async rendering and **error** for catching failures.
 
 ## Suspense
 
 Wrap async components in a suspense boundary to show a fallback while they load:
 
 ```typescript
-import { Boundary } from "@effex/dom";
+import { Boundary } from "@stax-ui/dom";
 
 Boundary.suspense({
   render: () =>
@@ -31,7 +31,7 @@ The `delay` option prevents the fallback from showing if the async work complete
 
 ### How It Works
 
-1. Effex starts rendering the `render` function
+1. Stax starts rendering the `render` function
 2. If it encounters an async Effect that isn't resolved yet, it shows the `fallback`
 3. When the async work completes, the fallback is replaced with the real content
 4. If the async work fails, the `catch` handler renders instead

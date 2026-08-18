@@ -41,7 +41,7 @@ export interface RouteDataService {
  * }))
  * ```
  */
-export class RouteDataContext extends Context.Tag("@effex/router/RouteData")<
+export class RouteDataContext extends Context.Tag("@stax-ui/router/RouteData")<
   RouteDataContext,
   RouteDataService
 >() {}
@@ -55,7 +55,7 @@ export class RouteDataContext extends Context.Tag("@effex/router/RouteData")<
  *
  * Platform provides implementations:
  * - Server: executes the loader directly
- * - Client (hydration): reads from `window.__EFFEX_DATA__`
+ * - Client (hydration): reads from `window.__STAX_DATA__`
  * - Client (navigation): fetches from server via `?_data=1`
  */
 export interface RouteDataProviderService {
@@ -73,5 +73,5 @@ export interface RouteDataProviderService {
  * Only accessed when a route has `_loader` or `_handlers`.
  */
 export class RouteDataProvider extends Context.Tag(
-  "@effex/router/RouteDataProvider",
+  "@stax-ui/router/RouteDataProvider",
 )<RouteDataProvider, RouteDataProviderService>() {}

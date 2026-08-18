@@ -13,7 +13,7 @@ Complex UI often has states that should only transition in specific ways — a f
 A Transition takes a map of states to their allowed targets and an initial state:
 
 ```typescript
-import { Transition } from "@effex/dom";
+import { Transition } from "@stax-ui/dom";
 
 const status = yield* Transition.make(
   {
@@ -46,7 +46,7 @@ status.is("loading");  // Readable<boolean>
 status.canTransitionTo("success");  // Readable<boolean>
 ```
 
-All of these are Readables, so they work directly with Effex's control flow:
+All of these are Readables, so they work directly with Stax's control flow:
 
 ```typescript
 match(status.current, {

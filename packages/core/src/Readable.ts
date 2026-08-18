@@ -14,7 +14,7 @@ import { logDebug } from "./Debug.js";
 // TypeId
 // -----------------------------------------------------------------------------
 
-export const TypeId: unique symbol = Symbol.for("effex/Readable");
+export const TypeId: unique symbol = Symbol.for("stax/Readable");
 export type TypeId = typeof TypeId;
 
 // -----------------------------------------------------------------------------
@@ -183,10 +183,8 @@ export const fromStream = <A>(
 export const map: {
   <A, B>(f: (a: A) => B): (self: Readable<A>) => Readable<B>;
   <A, B>(self: Readable<A>, f: (a: A) => B): Readable<B>;
-} = Fn.dual(
-  2,
-  <A, B>(self: Readable<A>, f: (a: A) => B): Readable<B> =>
-    make(Effect.map(self.get, f), () => Stream.map(self.changes, f)),
+} = Fn.dual(2, <A, B>(self: Readable<A>, f: (a: A) => B): Readable<B> =>
+  make(Effect.map(self.get, f), () => Stream.map(self.changes, f)),
 );
 
 /**
@@ -236,10 +234,8 @@ export const flatMap: {
 export const zip: {
   <B>(that: Readable<B>): <A>(self: Readable<A>) => Readable<[A, B]>;
   <A, B>(self: Readable<A>, that: Readable<B>): Readable<[A, B]>;
-} = Fn.dual(
-  2,
-  <A, B>(self: Readable<A>, that: Readable<B>): Readable<[A, B]> =>
-    zipWith(self, that, (a, b) => [a, b] as [A, B]),
+} = Fn.dual(2, <A, B>(self: Readable<A>, that: Readable<B>): Readable<[A, B]> =>
+  zipWith(self, that, (a, b) => [a, b] as [A, B]),
 );
 
 /**
@@ -529,7 +525,7 @@ export const lift = <T extends Record<string, unknown>, R>(
 
 /**
  * Wrap a Readable-producing Effect to log its initial value and every
- * subsequent change under the `effex.readable` subsystem. The wrapped
+ * subsequent change under the `stax.readable` subsystem. The wrapped
  * Effect returns the original Readable unchanged — this is a
  * pass-through observer.
  *
@@ -544,8 +540,8 @@ export const lift = <T extends Record<string, unknown>, R>(
  * ```ts
  * const val = yield* Signal.make(0).pipe(Readable.debug("my-val"));
  * // Debug logs:
- * //   effex.readable  "initial value"  { id: "my-val", value: 0 }
- * //   effex.readable  "value changed"  { id: "my-val", value: 1 }
+ * //   stax.readable  "initial value"  { id: "my-val", value: 0 }
+ * //   stax.readable  "value changed"  { id: "my-val", value: 1 }
  * //   ...
  * ```
  *
@@ -561,13 +557,13 @@ export const debug =
     Effect.gen(function* () {
       const readable = yield* self;
       const initial = yield* readable.get;
-      yield* logDebug("initial value", "effex.readable", {
+      yield* logDebug("initial value", "stax.readable", {
         id,
         value: initial,
       });
       const scope = yield* Effect.scope;
       yield* Stream.runForEach(readable.changes, (value) =>
-        logDebug("value changed", "effex.readable", { id, value }),
+        logDebug("value changed", "stax.readable", { id, value }),
       ).pipe(Effect.forkIn(scope));
       return readable;
     });

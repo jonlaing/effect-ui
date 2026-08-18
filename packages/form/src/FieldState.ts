@@ -1,6 +1,6 @@
 import type { Effect, ParseResult } from "effect";
 
-import type { Readable, Signal } from "@effex/core";
+import type { Readable, Signal } from "@stax-ui/core";
 
 // -----------------------------------------------------------------------------
 // FieldState Types

@@ -1,5 +1,5 @@
-import { $, collect } from "@effex/dom";
-import { Link, Outlet } from "@effex/router";
+import { $, collect } from "@stax-ui/dom";
+import { Link, Outlet } from "@stax-ui/router";
 
 import { router } from "./routes.js";
 
@@ -15,7 +15,7 @@ export const App = () =>
             { class: "flex-1" },
             Link(
               { href: "/", class: "btn btn-ghost text-xl" },
-              $.of("Effex Twitter"),
+              $.of("Stax Twitter"),
             ),
           ),
           $.div(

@@ -20,7 +20,7 @@
 
 import { Effect, Stream } from "effect";
 
-import type { Readable } from "@effex/core";
+import type { Readable } from "@stax-ui/core";
 
 export const subscribeReconcile = <V, E, R>(
   readable: Readable.Readable<V>,

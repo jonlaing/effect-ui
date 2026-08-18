@@ -135,7 +135,7 @@ export const waitForAnimationEvent = (
       const handleTimeout = () => {
         if (process.env.NODE_ENV !== "production") {
           console.warn(
-            "[effex] Animation timeout reached. The transitionend/animationend event " +
+            "[stax] Animation timeout reached. The transitionend/animationend event " +
               "did not fire. This usually means your CSS classes are missing the " +
               "transition property. With Tailwind, ensure you have BOTH transition-* " +
               "(e.g., transition-opacity) AND duration-* (e.g., duration-150). " +

@@ -13,7 +13,7 @@ import { Readable, TypeId as ReadableTypeId } from "./Readable.js";
 // TypeId
 // -----------------------------------------------------------------------------
 
-export const SignalSetTypeId: unique symbol = Symbol.for("effex/SignalSet");
+export const SignalSetTypeId: unique symbol = Symbol.for("stax/SignalSet");
 export type SignalSetTypeId = typeof SignalSetTypeId;
 
 // -----------------------------------------------------------------------------

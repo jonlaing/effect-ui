@@ -1,14 +1,14 @@
 import { Effect } from "effect";
 
 /**
- * Subsystem tag for a framework debug log. The `effex.` prefix is enforced
+ * Subsystem tag for a framework debug log. The `stax.` prefix is enforced
  * at the type level so consumers filtering by annotation can rely on the
  * naming convention.
  */
-export type Subsystem = `effex.${string}`;
+export type Subsystem = `stax.${string}`;
 
 /**
- * Emit a debug log annotated with an Effex subsystem tag.
+ * Emit a debug log annotated with an Stax subsystem tag.
  *
  * Zero cost when the runtime log level is above Debug (the default) — the
  * formatter never runs, so message construction is skipped. Use freely at
@@ -17,7 +17,7 @@ export type Subsystem = `effex.${string}`;
  *
  * @example
  * ```ts
- * yield* logDebug("pushPath", "effex.nav", { from, to });
+ * yield* logDebug("pushPath", "stax.nav", { from, to });
  * ```
  */
 export const logDebug = (
@@ -33,7 +33,7 @@ export const logDebug = (
 };
 
 /**
- * Emit an error log annotated with an Effex subsystem tag.
+ * Emit an error log annotated with an Stax subsystem tag.
  *
  * Unlike {@link logDebug}, this always emits at Error level — users see
  * it without opting into debug logging, which matches how framework
@@ -43,7 +43,7 @@ export const logDebug = (
  *
  * @example
  * ```ts
- * yield* logError("reconcile handler failed", "effex.reconcile", {
+ * yield* logError("reconcile handler failed", "stax.reconcile", {
  *   value,
  *   cause: Cause.pretty(cause),
  * });

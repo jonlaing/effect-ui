@@ -1,16 +1,16 @@
 # Coming from Vue
 
-A guide for Vue developers learning Effex. This covers the key differences, concept mapping, and side-by-side examples to help you transition.
+A guide for Vue developers learning Stax. This covers the key differences, concept mapping, and side-by-side examples to help you transition.
 
 ## Why Switch?
 
-If you're already using [Effect](https://effect.website/) in your application, Effex lets you use the same patterns and mental model across your entire stack. No more context-switching between Vue's reactivity model and Effect's compositional approach.
+If you're already using [Effect](https://effect.website/) in your application, Stax lets you use the same patterns and mental model across your entire stack. No more context-switching between Vue's reactivity model and Effect's compositional approach.
 
 ### Typed Error Handling
 
 In Vue, component errors are runtime surprises. You catch them with `errorCaptured` hooks or global error handlers, but there's no compile-time visibility into what can fail.
 
-In Effex, every element has type `Element<E, R>` where `E` is the error channel. Errors propagate through the component tree, and you **must** handle them before mounting:
+In Stax, every element has type `Element<E, R>` where `E` is the error channel. Errors propagate through the component tree, and you **must** handle them before mounting:
 
 ```ts
 // This won't compile — UserProfile might fail with ApiError
@@ -30,10 +30,10 @@ TypeScript tells you at build time which components can fail and forces you to h
 
 ### Similar Reactivity, Different Execution
 
-Vue's Composition API and Effex share similar reactive concepts — both have signals (refs) and derived values (computed). The key difference is *when* things run:
+Vue's Composition API and Stax share similar reactive concepts — both have signals (refs) and derived values (computed). The key difference is *when* things run:
 
 - Vue: Template re-renders when refs change, computed values update lazily
-- Effex: DOM nodes subscribe directly to signals, updates are synchronous and targeted
+- Stax: DOM nodes subscribe directly to signals, updates are synchronous and targeted
 
 ```ts
 // Vue: Computed re-evaluates, template re-renders
@@ -41,7 +41,7 @@ const count = ref(0);
 const doubled = computed(() => count.value * 2);
 // Template: {{ doubled }} — entire template function runs
 
-// Effex: Only the text node updates
+// Stax: Only the text node updates
 const count = yield* Signal.make(0);
 const doubled = Readable.map(count, (c) => c * 2);
 // $.span({}, doubled) — only this span's text updates
@@ -49,7 +49,7 @@ const doubled = Readable.map(count, (c) => c * 2);
 
 ### No Template Compilation
 
-Vue uses a custom template syntax that compiles to render functions. Effex uses plain TypeScript function calls:
+Vue uses a custom template syntax that compiles to render functions. Stax uses plain TypeScript function calls:
 
 ```ts
 // Vue template
@@ -60,7 +60,7 @@ Vue uses a custom template syntax that compiles to render functions. Effex uses 
   </div>
 </template>
 
-// Effex
+// Stax
 $.div(
   { class: "card" },
   $.h1({}, title),
@@ -76,7 +76,7 @@ Benefits:
 
 ### Automatic Resource Cleanup
 
-Vue's `onUnmounted` and `watchEffect` cleanup are manual. Effex uses Effect's scope system — resources are automatically cleaned up when components unmount:
+Vue's `onUnmounted` and `watchEffect` cleanup are manual. Stax uses Effect's scope system — resources are automatically cleaned up when components unmount:
 
 ```ts
 // Vue: Manual cleanup registration
@@ -85,7 +85,7 @@ onMounted(() => {
   onUnmounted(() => subscription.unsubscribe());
 });
 
-// Effex: Automatic cleanup via scope
+// Stax: Automatic cleanup via scope
 yield* eventSource.pipe(
   Stream.runForEach(handler),
   Effect.forkIn(scope), // Cleaned up when scope closes
@@ -94,7 +94,7 @@ yield* eventSource.pipe(
 
 ### Better Async Integration
 
-Vue's `<Suspense>` is limited and doesn't integrate well with error handling. Effex has two approaches:
+Vue's `<Suspense>` is limited and doesn't integrate well with error handling. Stax has two approaches:
 
 ```ts
 // Option 1: Boundary.suspense (one-shot)
@@ -132,7 +132,7 @@ $.div(
 
 ## Concept Mapping
 
-| Vue (Composition API) | Effex | Notes |
+| Vue (Composition API) | Stax | Notes |
 |---|---|---|
 | `ref(initial)` | `Signal.make(initial)` | Must `yield*` to create |
 | `reactive(obj)` | `Signal.make(obj)` | Same as ref for objects |
@@ -170,7 +170,7 @@ const count = ref(0)
 ```
 
 ```ts
-// Effex
+// Stax
 const Counter = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0);
@@ -200,7 +200,7 @@ const total = computed(() =>
 ```
 
 ```ts
-// Effex
+// Stax
 const Cart = (props: { items: Readable.Readable<Item[]> }) =>
   Effect.gen(function* () {
     const total = Readable.map(props.items, (items) =>
@@ -226,7 +226,7 @@ const isLoggedIn = ref(false)
 ```
 
 ```ts
-// Effex
+// Stax
 const Auth = (props: { isLoggedIn: Readable.Readable<boolean> }) =>
   when(props.isLoggedIn, {
     onTrue: () => Dashboard(),
@@ -253,7 +253,7 @@ const todos = ref([])
 ```
 
 ```ts
-// Effex
+// Stax
 const TodoList = (props: { todos: Readable.Readable<Todo[]> }) =>
   each(props.todos, {
     container: () => $.ul(),
@@ -288,7 +288,7 @@ watch(title, (newTitle) => {
 ```
 
 ```ts
-// Effex
+// Stax
 const DocumentTitle = (props: {
   title: Readable.Readable<string>;
   unreadCount: Readable.Readable<number>;
@@ -331,7 +331,7 @@ const theme = inject('theme')
 ```
 
 ```ts
-// Effex
+// Stax
 class ThemeService extends Context.Tag("Theme")<ThemeService, string>() {}
 
 const Page = () =>
@@ -366,7 +366,7 @@ const text = ref('')
 ```
 
 ```ts
-// Effex
+// Stax
 const TextInput = () =>
   Effect.gen(function* () {
     const text = yield* Signal.make("");
@@ -393,7 +393,7 @@ const TextInput = () =>
 ```
 
 ```ts
-// Effex
+// Stax
 const Modal = () =>
   Portal(() =>
     $.div({ class: "modal" }, "Modal content"),
@@ -409,7 +409,7 @@ Portal({ target: "#modal-root" }, () =>
 
 1. **No template syntax** — Everything is TypeScript. `v-if` becomes `when()`, `v-for` becomes `each()`, `@click` becomes `onClick`.
 
-2. **Explicit sources** — Vue's `watchEffect` auto-tracks. Effex's `Readable.tap` requires an explicit readable to subscribe to.
+2. **Explicit sources** — Vue's `watchEffect` auto-tracks. Stax's `Readable.tap` requires an explicit readable to subscribe to.
 
 3. **Errors are values** — Instead of `errorCaptured` hooks, errors flow through the type system. Handle them explicitly with `Boundary.error`.
 
@@ -423,7 +423,7 @@ Portal({ target: "#modal-root" }, () =>
 
 In Vue, `watch` and `computed` use reference equality by default. You can pass `{ deep: true }` for deep comparison, but there's no custom equality.
 
-In Effex, equality is a first-class option on every reactive primitive:
+In Stax, equality is a first-class option on every reactive primitive:
 
 ```ts
 // Only trigger updates when the user ID changes, ignoring lastSeen timestamps
@@ -456,10 +456,10 @@ const handleFocus = () => {
 </template>
 ```
 
-In Effex, `ref()` creates a pipeable element reference:
+In Stax, `ref()` creates a pipeable element reference:
 
 ```ts
-// Effex
+// Stax
 const FocusInput = () =>
   Effect.gen(function* () {
     const inputRef = yield* ref<HTMLInputElement>();
@@ -477,7 +477,7 @@ const FocusInput = () =>
 
 ### Common Vue DOM Patterns
 
-| Vue Pattern | Effex Equivalent |
+| Vue Pattern | Stax Equivalent |
 |---|---|
 | `ref.value?.focus()` | `el.pipe(Element.focus)` |
 | `ref.value?.blur()` | `el.pipe(Element.blur)` |
@@ -493,7 +493,7 @@ const FocusInput = () =>
 
 ### Animation Hooks
 
-Effex's animation system passes elements to lifecycle hooks, letting you use Element helpers:
+Stax's animation system passes elements to lifecycle hooks, letting you use Element helpers:
 
 ```ts
 when(isModalOpen, {

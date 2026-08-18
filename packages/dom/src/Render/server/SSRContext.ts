@@ -20,7 +20,7 @@ export interface SSRContextService {
  * Components check for this context to determine if they're rendering on the server
  * and to generate hydration markers.
  */
-export class SSRContext extends Context.Tag("@effex/SSRContext")<
+export class SSRContext extends Context.Tag("@stax-ui/SSRContext")<
   SSRContext,
   SSRContextService
 >() {}

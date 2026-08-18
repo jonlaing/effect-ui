@@ -1,9 +1,9 @@
 /**
- * @effex/vite-plugin
+ * @stax-ui/vite-plugin
  *
- * Vite plugin for Effex Platform SSR applications.
+ * Vite plugin for Stax Platform SSR applications.
  *
- * `effexPlatform()` provides:
+ * `staxPlatform()` provides:
  * - Server-code stripping from client builds (loaders + handlers)
  * - SSR dev server with HMR (when `entry` is provided)
  *
@@ -11,11 +11,11 @@
  * ```ts
  * // vite.config.ts
  * import { defineConfig } from "vite";
- * import { effexPlatform } from "@effex/vite-plugin";
+ * import { staxPlatform } from "@stax-ui/vite-plugin";
  *
  * export default defineConfig({
  *   plugins: [
- *     effexPlatform({ entry: "src/server-entry.ts" }),
+ *     staxPlatform({ entry: "src/server-entry.ts" }),
  *   ],
  * });
  * ```
@@ -23,4 +23,4 @@
  * @packageDocumentation
  */
 
-export { effexPlatform, type EffexPlatformOptions } from "./plugin.js";
+export { staxPlatform, type StaxPlatformOptions } from "./plugin.js";

@@ -1,19 +1,19 @@
 ---
 title: "Chapter 1: Getting Started"
-description: "Set up a new Effex project and understand the project structure"
+description: "Set up a new Stax project and understand the project structure"
 order: 1
 ---
 
 # Chapter 1: Getting Started
 
-Let's create a new Effex project and get our development environment running.
+Let's create a new Stax project and get our development environment running.
 
 ## Create Your Project
 
 Open your terminal and run:
 
 ```bash
-pnpm create effex@latest todo-app
+pnpm create stax@latest todo-app
 ```
 
 When prompted, select:
@@ -28,7 +28,7 @@ pnpm install
 pnpm dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser. You should see the default Effex welcome page with a counter.
+Open [http://localhost:5173](http://localhost:5173) in your browser. You should see the default Stax welcome page with a counter.
 
 ## Project Structure
 
@@ -56,7 +56,7 @@ Open `src/main.ts`. You'll see something like:
 
 ```typescript
 import { Effect } from "effect";
-import { $, mount, runApp } from "@effex/dom";
+import { $, mount, runApp } from "@stax-ui/dom";
 
 runApp(
   Effect.gen(function* () {
@@ -78,14 +78,14 @@ For this tutorial, we'll start simpler. Replace the contents of `src/main.ts` wi
 
 ```typescript
 import { Effect } from "effect";
-import { $, mount, runApp } from "@effex/dom";
+import { $, mount, runApp } from "@stax-ui/dom";
 
 // Get the root element
 const container = document.getElementById("root");
 if (!container) throw new Error("Root element not found");
 
 // Our app - just a simple div for now
-const App = $.div({}, "Hello, Effex!");
+const App = $.div({}, "Hello, Stax!");
 
 // Mount it
 runApp(
@@ -96,13 +96,13 @@ runApp(
 );
 ```
 
-Save the file. Your browser should now show "Hello, Effex!"
+Save the file. Your browser should now show "Hello, Stax!"
 
 ## What Just Happened?
 
 Let's break it down:
 
-1. **`$.div({}, "Hello, Effex!")`** - Creates a div element with text content. The `$` object has methods for every HTML element (`$.div`, `$.span`, `$.button`, etc.). Strings can be passed directly as children.
+1. **`$.div({}, "Hello, Stax!")`** - Creates a div element with text content. The `$` object has methods for every HTML element (`$.div`, `$.span`, `$.button`, etc.). Strings can be passed directly as children.
 
 2. **`mount(App, container)`** - Takes our element and renders it into the DOM container
 
@@ -112,4 +112,4 @@ The `$` factory returns an Effect that, when run, creates a DOM element. Effects
 
 ## Next Steps
 
-You've got a working Effex app! In the next chapter, we'll explore the `$` factory in depth and build out the structure of our todo app.
+You've got a working Stax app! In the next chapter, we'll explore the `$` factory in depth and build out the structure of our todo app.

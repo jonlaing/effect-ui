@@ -1,12 +1,12 @@
-import { $ } from "@effex/dom";
-import { Link } from "@effex/router";
+import { $ } from "@stax-ui/dom";
+import { Link } from "@stax-ui/router";
 
-import logoSvg from "../assets/effex-logo-dark.svg?raw";
+import logoSvg from "../assets/stax-logo-dark.svg?raw";
 
 // ─── Code examples ──────────────────────────────────────────────────────────
 
 export const counterExample = `import { Effect } from "effect";
-import { $, Signal, mount, runApp } from "@effex/dom";
+import { $, Signal, mount, runApp } from "@stax-ui/dom";
 
 const Counter = () =>
   Effect.gen(function* () {
@@ -106,7 +106,7 @@ const storySection = (
 const packageCard = (name: string, description: string, pkg: string) =>
   $.a(
     {
-      href: `https://github.com/jonlaing/effex/tree/main/packages/${pkg}`,
+      href: `https://github.com/stax-ui/stax/tree/main/packages/${pkg}`,
       class: "card bg-base-300 shadow-sm hover:bg-neutral transition-colors",
       target: "_blank",
     },
@@ -178,7 +178,7 @@ export const HomePage = (props: {
                   "inline-block bg-neutral rounded-lg px-6 py-3 font-mono text-sm",
               },
               $.span({ class: "text-primary" }, "$ "),
-              $.span({}, "pnpm create effex my-app"),
+              $.span({}, "pnpm create stax my-app"),
             ),
           ),
         ),
@@ -251,7 +251,7 @@ export const HomePage = (props: {
         { class: "lg:max-w-6xl mx-auto px-4 space-y-20" },
         $.div(
           { class: "text-center pb-4" },
-          $.h2({ class: "text-5xl font-bold" }, "Why Effex?"),
+          $.h2({ class: "text-5xl font-bold" }, "Why Stax?"),
         ),
         storySection(
           "Signals, not hooks",
@@ -260,7 +260,7 @@ export const HomePage = (props: {
         ),
         storySection(
           "Errors you can see",
-          "Every element in Effex has the type Element<E, R> — where E is the error channel and R is the required context. If a component can fail, TypeScript tells you before you ship. If it needs a service, the compiler asks for it. Runtime surprises become compile-time conversations.",
+          "Every element in Stax has the type Element<E, R> — where E is the error channel and R is the required context. If a component can fail, TypeScript tells you before you ship. If it needs a service, the compiler asks for it. Runtime surprises become compile-time conversations.",
           errorsHtml,
           { reverse: true },
         ),
@@ -286,32 +286,32 @@ export const HomePage = (props: {
       $.div(
         { class: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" },
         packageCard(
-          "@effex/core",
+          "@stax-ui/core",
           "Reactive primitives — Signal, Readable, reactive collections, control flow, and transitions.",
           "core",
         ),
         packageCard(
-          "@effex/dom",
+          "@stax-ui/dom",
           "DOM rendering with the $ factory, animations, portals, virtual lists, and hydration.",
           "dom",
         ),
         packageCard(
-          "@effex/router",
+          "@stax-ui/router",
           "Type-safe routing with schema-validated params, data loaders, and mutation handlers.",
           "router",
         ),
         packageCard(
-          "@effex/form",
+          "@stax-ui/form",
           "Schema-first forms with per-field reactivity, validation, and nested structures.",
           "form",
         ),
         packageCard(
-          "@effex/platform",
+          "@stax-ui/platform",
           "Full-stack SSR integration with @effect/platform — server rendering, data serialization, and hydration.",
           "platform",
         ),
         packageCard(
-          "@effex/vite-plugin",
+          "@stax-ui/vite-plugin",
           "Vite plugin for SSR dev server, server-code stripping, and static site generation.",
           "vite-plugin",
         ),
@@ -330,7 +330,7 @@ export const HomePage = (props: {
               "inline-block bg-neutral rounded-lg px-6 py-3 font-mono text-sm",
           },
           $.span({ class: "text-primary" }, "$ "),
-          $.span({}, "pnpm create effex my-app"),
+          $.span({}, "pnpm create stax my-app"),
         ),
         $.div(
           { class: "flex gap-4 justify-center" },

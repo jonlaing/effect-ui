@@ -1,4 +1,4 @@
-import type { SignalStruct } from "@effex/dom";
+import type { SignalStruct } from "@stax-ui/dom";
 
 export type Status = "todo" | "in-progress" | "done";
 

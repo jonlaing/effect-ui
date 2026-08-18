@@ -10,7 +10,7 @@ import {
   SuspenseBoundaryCtx,
   type ISuspenseBoundaryCtx,
   type Renderer,
-} from "@effex/core";
+} from "@stax-ui/core";
 
 import { SSRContext } from "../Render/server/SSRContext.js";
 
@@ -41,11 +41,11 @@ export const SSRSuspenseBoundaryCtx: Layer.Layer<
           // Create container with hydration markers
           const el = (yield* renderer.createNode("div")) as HTMLElement;
           yield* renderer.setStyleProperty(el, "display", "contents");
-          yield* renderer.setAttribute(el, "data-effex-id", hydrationId);
-          yield* renderer.setAttribute(el, "data-effex-type", "suspense");
+          yield* renderer.setAttribute(el, "data-stax-id", hydrationId);
+          yield* renderer.setAttribute(el, "data-stax-type", "suspense");
           yield* renderer.setAttribute(
             el,
-            "data-effex-suspense-state",
+            "data-stax-suspense-state",
             "loading",
           );
 

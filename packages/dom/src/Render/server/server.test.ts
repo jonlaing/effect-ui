@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { Readable, Signal } from "@effex/core";
+import { Readable, Signal } from "@stax-ui/core";
 
 import { Boundary } from "../../Boundary.js";
 import { collect } from "../../Collect.js";
@@ -75,8 +75,8 @@ describe("SSR", () => {
         ),
       );
 
-      expect(html).toContain("data-effex-id=");
-      expect(html).toContain('data-effex-key="true"');
+      expect(html).toContain("data-stax-id=");
+      expect(html).toContain('data-stax-key="true"');
       expect(html).toContain("Visible");
       expect(html).not.toContain("Hidden");
     });
@@ -96,7 +96,7 @@ describe("SSR", () => {
         ),
       );
 
-      expect(html).toContain('data-effex-key="false"');
+      expect(html).toContain('data-stax-key="false"');
       expect(html).toContain("Hidden");
       expect(html).not.toContain("Visible");
     });
@@ -129,8 +129,8 @@ describe("SSR", () => {
         ),
       );
 
-      expect(html).toContain("data-effex-id=");
-      expect(html).toContain('data-effex-key="loading"');
+      expect(html).toContain("data-stax-id=");
+      expect(html).toContain('data-stax-key="loading"');
       expect(html).toContain("Loading...");
     });
 
@@ -177,9 +177,9 @@ describe("SSR", () => {
         ),
       );
 
-      expect(html).toContain("data-effex-id=");
-      expect(html).toContain('data-effex-key="1"');
-      expect(html).toContain('data-effex-key="2"');
+      expect(html).toContain("data-stax-id=");
+      expect(html).toContain('data-stax-key="1"');
+      expect(html).toContain('data-stax-key="2"');
       expect(html).toContain("<ul");
       expect(html).toContain("<li");
       expect(html).toContain("Alice");
@@ -204,7 +204,7 @@ describe("SSR", () => {
         ),
       );
 
-      expect(html).toContain("data-effex-id=");
+      expect(html).toContain("data-stax-id=");
       expect(html).not.toContain("<li");
     });
   });
@@ -261,9 +261,9 @@ describe("SSR", () => {
         ),
       );
 
-      expect(html).toContain("data-effex-id=");
-      expect(html).toContain('data-effex-type="suspense"');
-      expect(html).toContain('data-effex-suspense-state="loading"');
+      expect(html).toContain("data-stax-id=");
+      expect(html).toContain('data-stax-type="suspense"');
+      expect(html).toContain('data-stax-suspense-state="loading"');
       expect(html).toContain("Loading...");
       // Should NOT contain the async content during SSR
       expect(html).not.toContain("Loaded content");
@@ -284,7 +284,7 @@ describe("SSR", () => {
         ),
       );
 
-      expect(html).toContain('data-effex-type="suspense"');
+      expect(html).toContain('data-stax-type="suspense"');
       expect(html).toContain("Loading...");
     });
   });

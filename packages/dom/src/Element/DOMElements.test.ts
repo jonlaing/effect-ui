@@ -2,7 +2,7 @@ import { describe, it } from "@effect/vitest";
 import { Effect } from "effect";
 import { beforeEach, expect, vi } from "vitest";
 
-import { Signal } from "@effex/core";
+import { Signal } from "@stax-ui/core";
 
 import { collect } from "../Collect.js";
 import { DOMRendererLive } from "../Render/DOMRenderer.js";

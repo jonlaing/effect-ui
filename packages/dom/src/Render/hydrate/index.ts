@@ -1,9 +1,9 @@
 /**
- * Client-side hydration for Effex SSR.
+ * Client-side hydration for Stax SSR.
  *
  * @example
  * ```ts
- * import { hydrate } from "@effex/dom/hydrate";
+ * import { hydrate } from "@stax-ui/dom/hydrate";
  * import { App } from "./App";
  *
  * hydrate(App(), document.getElementById("root")!);
@@ -20,7 +20,7 @@ import {
   type ControlCtx,
   type Renderer,
   type SuspenseBoundaryCtx,
-} from "@effex/core";
+} from "@stax-ui/core";
 
 import { ClientAsyncCacheLayer } from "../../ClientAsyncCache.js";
 import {
@@ -70,8 +70,8 @@ export interface HydrateOptions<
  *
  * @example
  * ```ts
- * import { hydrate } from "@effex/dom/hydrate";
- * import { Platform } from "@effex/platform";
+ * import { hydrate } from "@stax-ui/dom/hydrate";
+ * import { Platform } from "@stax-ui/platform";
  * import { App } from "./App";
  * import { router } from "./routes";
  *

@@ -1,7 +1,7 @@
 import { Effect, Scope } from "effect";
 
-import { $, collect, ControlCtx, Element, RendererContext } from "@effex/dom";
-import { Link, NavigationContext, Route } from "@effex/router";
+import { $, collect, ControlCtx, Element, RendererContext } from "@stax-ui/dom";
+import { Link, NavigationContext, Route } from "@stax-ui/router";
 
 // Mock users data
 const usersMock = [

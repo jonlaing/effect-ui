@@ -9,7 +9,7 @@ import { generateDocument, serializeForHtml } from "./Platform.js";
  */
 const extractEmbeddedRouteData = (html: string): unknown => {
   const match = html.match(
-    /<script[^>]*>\s*window\.__EFFEX_DATA__\s*=\s*(.+?)\s*<\/script>/s,
+    /<script[^>]*>\s*window\.__STAX_DATA__\s*=\s*(.+?)\s*<\/script>/s,
   );
   if (!match) return undefined;
   try {
@@ -20,7 +20,7 @@ const extractEmbeddedRouteData = (html: string): unknown => {
 };
 
 describe("static-host data fallback (makeClientLayer)", () => {
-  it("extracts the embedded __EFFEX_DATA__ blob from generateDocument output", () => {
+  it("extracts the embedded __STAX_DATA__ blob from generateDocument output", () => {
     const payload = { data: { name: "Jon" }, actions: {} };
     const html = generateDocument("<div>hi</div>", payload);
 
@@ -45,13 +45,13 @@ describe("static-host data fallback (makeClientLayer)", () => {
     expect(extracted).toEqual(payload);
   });
 
-  it("returns undefined when no __EFFEX_DATA__ script is present", () => {
+  it("returns undefined when no __STAX_DATA__ script is present", () => {
     const html = "<html><body><div>no data here</div></body></html>";
     expect(extractEmbeddedRouteData(html)).toBeUndefined();
   });
 
   it("returns undefined when the script content is malformed JSON", () => {
-    const html = "<script>window.__EFFEX_DATA__=not-json</script>";
+    const html = "<script>window.__STAX_DATA__=not-json</script>";
     expect(extractEmbeddedRouteData(html)).toBeUndefined();
   });
 

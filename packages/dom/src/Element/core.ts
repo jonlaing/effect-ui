@@ -6,7 +6,7 @@
 import { Effect, Stream } from "effect";
 import { dual } from "effect/Function";
 
-import { Readable, RendererContext } from "@effex/core";
+import { Readable, RendererContext } from "@stax-ui/core";
 
 import { bindElementToRef, type ElementRef } from "./ref.js";
 import type { Child, ChildNode, Element } from "./types.js";

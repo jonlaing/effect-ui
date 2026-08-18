@@ -7,9 +7,9 @@ import {
   each,
   matchOption,
   Readable,
-} from "@effex/dom";
-import { Field, Form } from "@effex/form";
-import { RouteDataContext } from "@effex/router";
+} from "@stax-ui/dom";
+import { Field, Form } from "@stax-ui/form";
+import { RouteDataContext } from "@stax-ui/router";
 
 import { PostCard } from "../components/PostCard.js";
 import type { Post, User } from "../services/PostService.js";

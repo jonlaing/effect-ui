@@ -12,7 +12,7 @@ import {
   type IControlCtx,
   type Renderer,
   type SlotEntry,
-} from "@effex/core";
+} from "@stax-ui/core";
 
 import * as Element from "../Element/index.js";
 import { DOMRenderer } from "../Render/DOMRenderer.js";
@@ -34,7 +34,7 @@ interface DOMSlotEntry extends SlotEntry<DOMElement> {
  * Context for providing the hydration root element.
  */
 export class HydrationRootCtx extends Context.Tag(
-  "@effex/dom/HydrationRootCtx",
+  "@stax-ui/dom/HydrationRootCtx",
 )<HydrationRootCtx, DOMElement>() {}
 
 /**
@@ -255,7 +255,7 @@ const createHydrationControlCtx = (
   // Parse existing slots from DOM
   const children = Array.from(containerElement.children) as DOMElement[];
   for (const child of children) {
-    const key = child.getAttribute("data-effex-key");
+    const key = child.getAttribute("data-stax-key");
     if (key) {
       slots.set(key, {
         key,

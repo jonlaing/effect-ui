@@ -1,7 +1,7 @@
 import { Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { DOMRendererLive } from "@effex/dom";
+import { DOMRendererLive } from "@stax-ui/dom";
 
 import { Link, type LinkProps } from "./Link.js";
 import { Navigation } from "./Navigation.js";

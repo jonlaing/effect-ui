@@ -11,11 +11,11 @@ The `$` namespace is your entry point for creating DOM elements. Every element f
 ## Creating Elements
 
 ```typescript
-import { $ } from "@effex/dom";
+import { $ } from "@stax-ui/dom";
 
 yield* $.div({ class: "container" },
   $.h1({}, "Hello"),
-  $.p({}, "Welcome to Effex"),
+  $.p({}, "Welcome to Stax"),
 );
 ```
 
@@ -51,7 +51,7 @@ yield* $.span({}, count);  // Updates in place when count changes
 The `t` tagged template creates reactive strings from Readables:
 
 ```typescript
-import { t } from "@effex/dom";
+import { t } from "@stax-ui/dom";
 
 const name = yield* Signal.make("World");
 const count = yield* Signal.make(0);
@@ -93,7 +93,7 @@ $.input({
 });
 ```
 
-When you pass a Readable as an attribute value, Effex sets up a subscription — the DOM attribute updates in place whenever the Readable emits a new value. No re-rendering, no diffing.
+When you pass a Readable as an attribute value, Stax sets up a subscription — the DOM attribute updates in place whenever the Readable emits a new value. No re-rendering, no diffing.
 
 ## Event Handlers
 
@@ -112,7 +112,7 @@ $.button({
 });
 ```
 
-If the handler returns an Effect, Effex runs it. If it returns `void` or `undefined`, nothing extra happens. This means simple handlers stay simple, and complex ones get the full power of Effect.
+If the handler returns an Effect, Stax runs it. If it returns `void` or `undefined`, nothing extra happens. This means simple handlers stay simple, and complex ones get the full power of Effect.
 
 Supported events include `onClick`, `onInput`, `onChange`, `onSubmit`, `onKeyDown`, `onKeyUp`, `onFocus`, `onBlur`, `onMouseDown`, `onMouseUp`, `onMouseEnter`, `onMouseLeave`, `onPointerDown`, `onPointerUp`, `onPointerMove`, `onScroll`, `onWheel`, `onDragStart`, `onDrag`, `onDragEnd`, `onDrop`, `onDragOver`, `onTouchStart`, `onTouchMove`, `onTouchEnd`, `onAnimationEnd`, `onTransitionEnd`, and more.
 

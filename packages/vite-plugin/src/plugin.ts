@@ -4,9 +4,9 @@ import * as path from "node:path";
 import type { Plugin, ViteDevServer } from "vite";
 
 /**
- * Options for the Effex Platform Vite plugin.
+ * Options for the Stax Platform Vite plugin.
  */
-export interface EffexPlatformOptions {
+export interface StaxPlatformOptions {
   /**
    * Path to the SSR/SSG entry module.
    *
@@ -41,7 +41,7 @@ export interface EffexPlatformOptions {
 }
 
 /**
- * Vite plugin for @effex/platform SSR applications.
+ * Vite plugin for @stax-ui/platform SSR applications.
  *
  * Provides two capabilities:
  *
@@ -54,23 +54,23 @@ export interface EffexPlatformOptions {
  * 2. **SSR dev server** (dev mode, when `entry` is provided) — Intercepts requests,
  *    renders pages via `vite.ssrLoadModule`, and injects Vite's HMR client.
  *
- * Only needed when using @effex/platform for SSR. Pure SPAs that run loaders
+ * Only needed when using @stax-ui/platform for SSR. Pure SPAs that run loaders
  * client-side should NOT use this plugin.
  *
  * @example
  * ```ts
  * // vite.config.ts
  * import { defineConfig } from "vite";
- * import { effexPlatform } from "@effex/vite-plugin";
+ * import { staxPlatform } from "@stax-ui/vite-plugin";
  *
  * export default defineConfig({
  *   plugins: [
- *     effexPlatform({ entry: "src/server-entry.ts" }),
+ *     staxPlatform({ entry: "src/server-entry.ts" }),
  *   ],
  * });
  * ```
  */
-export const effexPlatform = (options: EffexPlatformOptions = {}): Plugin => {
+export const staxPlatform = (options: StaxPlatformOptions = {}): Plugin => {
   const include = options.include ?? /\.(tsx?|jsx?)$/;
   const exclude = options.exclude;
   const mode = options.mode ?? "ssr";
@@ -81,7 +81,7 @@ export const effexPlatform = (options: EffexPlatformOptions = {}): Plugin => {
   let entryPath: string | null = null;
 
   return {
-    name: "effex-platform",
+    name: "stax-platform",
 
     config(config) {
       // Prevent the SSR build from wiping the client build's output
@@ -231,7 +231,7 @@ export const effexPlatform = (options: EffexPlatformOptions = {}): Plugin => {
             }
           } catch (e) {
             server.ssrFixStacktrace(e as Error);
-            console.error("[effex-platform] Error:", e);
+            console.error("[stax-platform] Error:", e);
 
             res.statusCode = 500;
             res.setHeader("Content-Type", "text/html");
@@ -260,9 +260,9 @@ export const effexPlatform = (options: EffexPlatformOptions = {}): Plugin => {
       try {
         // Dynamically import the built SSG entry.
         // The entry must export: { router, app?, document?, layers? }
-        // Dynamic import — @effex/platform is an optional peer dependency
+        // Dynamic import — @stax-ui/platform is an optional peer dependency
         // only needed for SSG mode at build time
-        const platformModule = "@effex/platform";
+        const platformModule = "@stax-ui/platform";
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { buildStaticSite } = (await import(platformModule)) as any;
 
@@ -324,7 +324,7 @@ export const effexPlatform = (options: EffexPlatformOptions = {}): Plugin => {
           layers: entryModule.layers,
         });
       } catch (e) {
-        console.error("[effex-platform] SSG build failed:", e);
+        console.error("[stax-platform] SSG build failed:", e);
         throw e;
       }
     },

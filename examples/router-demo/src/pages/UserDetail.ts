@@ -1,7 +1,7 @@
 import { Effect, Schema } from "effect";
 
-import { $, collect } from "@effex/dom";
-import { Link, Route } from "@effex/router";
+import { $, collect } from "@stax-ui/dom";
+import { Link, Route } from "@stax-ui/router";
 
 // Mock users data
 const users: Record<number, { id: number; name: string; email: string }> = {

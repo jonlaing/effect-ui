@@ -1,7 +1,7 @@
 {
-  "name": "@effex/dom",
-  "version": "1.5.0",
-  "description": "DOM rendering for Effex - a reactive UI framework built on Effect.ts",
+  "name": "@stax-ui/dom",
+  "version": "0.1.0",
+  "description": "DOM rendering for Stax - a reactive UI framework built on Effect.ts",
   "type": "module",
   "license": "MIT",
   "publishConfig": {
@@ -10,7 +10,7 @@
   "author": "Jon Laing",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jonlaing/effex.git",
+    "url": "https://github.com/stax-ui/stax.git",
     "directory": "packages/dom"
   },
   "keywords": [
@@ -57,7 +57,7 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@effex/core": "workspace:*"
+    "@stax-ui/core": "workspace:*"
   },
   "peerDependencies": {
     "effect": "^3.0.0"

@@ -6,5 +6,5 @@ export default defineConfig({
   dts: true,
   clean: true,
   sourcemap: true,
-  external: ["vite", "@effex/router", "fast-glob"],
+  external: ["vite", "@stax-ui/router", "fast-glob"],
 });

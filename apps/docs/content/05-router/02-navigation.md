@@ -13,8 +13,8 @@ The Navigation service manages browser history and exposes reactive state for th
 Provide the Navigation layer at your app's root:
 
 ```typescript
-import { Navigation } from "@effex/router";
-import { runApp, mount } from "@effex/dom";
+import { Navigation } from "@stax-ui/router";
+import { runApp, mount } from "@stax-ui/dom";
 import { Effect } from "effect";
 
 runApp(
@@ -34,7 +34,7 @@ Once provided, any component in the tree can navigate or read the current route.
 Use `Navigation.pushRoute` to navigate with type-safe params:
 
 ```typescript
-import { Navigation } from "@effex/router";
+import { Navigation } from "@stax-ui/router";
 
 // Params are inferred from the route definition
 yield* Navigation.pushRoute(UserRoute, {
@@ -105,8 +105,8 @@ const match = yield* Navigation.currentMatch;
 For declarative navigation in the UI, use the `Link` component:
 
 ```typescript
-import { Link } from "@effex/router";
-import { $ } from "@effex/dom";
+import { Link } from "@stax-ui/router";
+import { $ } from "@stax-ui/dom";
 
 // Path-based
 Link({ href: "/users" }, "Users");
@@ -164,8 +164,8 @@ Link renders a real `<a>` element. Modified clicks (Ctrl+click, Cmd+click, middl
 The `Outlet` component renders the currently matched route:
 
 ```typescript
-import { Outlet } from "@effex/router";
-import { $ } from "@effex/dom";
+import { Outlet } from "@stax-ui/router";
+import { $ } from "@stax-ui/dom";
 
 const App = () =>
   $.div(

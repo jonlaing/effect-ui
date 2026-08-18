@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { $, collect, Readable } from "@effex/dom";
+import { $, collect, Readable } from "@stax-ui/dom";
 
 export interface Todo {
   id: number;

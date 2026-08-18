@@ -201,7 +201,7 @@ export interface Renderer<Node> {
  * Context tag for the Renderer service.
  * Components access the renderer through this context.
  */
-export class RendererContext extends Context.Tag("@effex/Renderer")<
+export class RendererContext extends Context.Tag("@stax-ui/Renderer")<
   RendererContext,
   Renderer<unknown>
 >() {}

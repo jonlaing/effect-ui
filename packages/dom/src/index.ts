@@ -3,7 +3,7 @@
 
 import type { Effect, Scope } from "effect";
 
-import type { Readable, RendererContext } from "@effex/core";
+import type { Readable, RendererContext } from "@stax-ui/core";
 
 import * as ElementCore from "./Element/index.js";
 
@@ -30,8 +30,8 @@ export const Element = {
   ...ElementCore,
 };
 
-// Re-export everything from core so users can import from @effex/dom
-export * from "@effex/core";
+// Re-export everything from core so users can import from @stax-ui/dom
+export * from "@stax-ui/core";
 
 // DOM Renderer
 export { DOMRenderer, DOMRendererLive } from "./Render/DOMRenderer.js";

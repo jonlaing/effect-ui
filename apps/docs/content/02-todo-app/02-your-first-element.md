@@ -6,7 +6,7 @@ order: 2
 
 # Chapter 2: Your First Element
 
-The `$` factory is how you create HTML elements in Effex. Let's explore how it works and build the basic structure of our todo app.
+The `$` factory is how you create HTML elements in Stax. Let's explore how it works and build the basic structure of our todo app.
 
 ## The $ Factory
 
@@ -67,7 +67,7 @@ Let's create the basic HTML structure for our todo app. Update `src/main.ts`:
 
 ```typescript
 import { Effect } from "effect";
-import { $, mount, runApp } from "@effex/dom";
+import { $, mount, runApp } from "@stax-ui/dom";
 
 const container = document.getElementById("root");
 if (!container) throw new Error("Root element not found");
@@ -89,7 +89,7 @@ const App = () => $.div({ class: "todo-app" },
       // We'll make this dynamic later
       $.li({ class: "todo-item" },
         $.input({ type: "checkbox", class: "toggle" }),
-        $.span({ class: "todo-text" }, "Learn Effex"),
+        $.span({ class: "todo-text" }, "Learn Stax"),
       ),
       $.li({ class: "todo-item" },
         $.input({ type: "checkbox", class: "toggle" }),

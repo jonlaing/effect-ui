@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { mount, runApp } from "@effex/dom";
+import { mount, runApp } from "@stax-ui/dom";
 
 import { App } from "./App.js";
 

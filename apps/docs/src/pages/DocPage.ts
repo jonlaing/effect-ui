@@ -1,5 +1,5 @@
-import { $ } from "@effex/dom";
-import { Link } from "@effex/router";
+import { $ } from "@stax-ui/dom";
+import { Link } from "@stax-ui/router";
 
 import GithubIcon from "../assets/github.svg?raw";
 import { DocToc } from "../components/DocToc.js";
@@ -54,7 +54,7 @@ export const DocPage = (props: {
       $.div(
         { class: "p-4 flex justify-end" },
         $.a({
-          href: "https://github.com/jonlaing/effex",
+          href: "https://github.com/stax-ui/stax",
           class:
             "[&_svg]:fill-base-content/50 [&_svg]:hover:fill-primary [&_svg]:transition-colors [&_svg]:w-8 [&_svg]:h-8",
           target: "_blank",

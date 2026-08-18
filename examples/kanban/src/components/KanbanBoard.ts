@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { $, collect } from "@effex/dom";
+import { $, collect } from "@stax-ui/dom";
 
 import { columns } from "../types.js";
 import { Column } from "./Column.js";

@@ -2,7 +2,7 @@ import { describe, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 import { beforeEach, expect } from "vitest";
 
-import { Readable, Signal } from "@effex/core";
+import { Readable, Signal } from "@stax-ui/core";
 
 import { Animation } from "../Animation/index.js";
 import { collect } from "../Collect.js";

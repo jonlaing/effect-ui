@@ -1,12 +1,12 @@
 ---
 title: "Signals & Readables"
-description: "The foundation of Effex's reactivity system — mutable Signals and composable Readables."
+description: "The foundation of Stax's reactivity system — mutable Signals and composable Readables."
 order: 0
 ---
 
 # Signals & Readables
 
-Effex's reactivity is built on two primitives: **Signals** (mutable reactive values) and **Readables** (observable values that can be derived, combined, and composed). Every reactive behavior in Effex traces back to these two types.
+Stax's reactivity is built on two primitives: **Signals** (mutable reactive values) and **Readables** (observable values that can be derived, combined, and composed). Every reactive behavior in Stax traces back to these two types.
 
 ## Signals
 
@@ -14,7 +14,7 @@ A Signal holds a value that can be read and written. When the value changes, any
 
 ```typescript
 import { Effect } from "effect";
-import { Signal } from "@effex/dom";
+import { Signal } from "@stax-ui/dom";
 
 const count = yield* Signal.make(0);
 
@@ -68,7 +68,7 @@ Readables are the read-only side of reactivity. Every Signal is a Readable, but 
 `Readable.map` transforms a Readable's value:
 
 ```typescript
-import { Readable, Signal } from "@effex/dom";
+import { Readable, Signal } from "@stax-ui/dom";
 
 const firstName = yield* Signal.make("John");
 const lastName = yield* Signal.make("Doe");
@@ -134,7 +134,7 @@ If you use utility libraries like [class-variance-authority](https://cva.style/d
 
 ```typescript
 import { cva } from "class-variance-authority";
-import { Signal, Readable } from "@effex/dom";
+import { Signal, Readable } from "@stax-ui/dom";
 
 const buttonStyles = cva("btn font-medium rounded", {
   variants: {
@@ -178,7 +178,7 @@ const logged = Readable.tap(count, (n) => console.log("count is now", n));
 For cases where you need a mutable reference that's set later — like a DOM element ref — use `Ref`:
 
 ```typescript
-import { Ref } from "@effex/dom";
+import { Ref } from "@stax-ui/dom";
 
 const inputRef = yield* Ref.make<HTMLInputElement>();
 

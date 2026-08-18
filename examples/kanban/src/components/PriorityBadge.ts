@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { $, Readable } from "@effex/dom";
+import { $, Readable } from "@stax-ui/dom";
 
 import type { Priority } from "../types.js";
 

@@ -6,14 +6,14 @@ order: 4
 
 # Animation
 
-Effex uses CSS-based animations for enter/exit transitions. Animations are configured on control flow primitives — `when`, `match`, `each` — so they happen automatically when the reactive state changes.
+Stax uses CSS-based animations for enter/exit transitions. Animations are configured on control flow primitives — `when`, `match`, `each` — so they happen automatically when the reactive state changes.
 
 ## Enter/Exit Animations
 
 Add an `animate` option to any control flow primitive:
 
 ```typescript
-import { when } from "@effex/dom";
+import { when } from "@stax-ui/dom";
 
 when(isOpen, {
   onTrue: () => Modal(),
@@ -38,14 +38,14 @@ When `isOpen` becomes `true`, the entering element starts with the `enterFrom` c
 | `exit` | Classes applied during the entire exit transition |
 | `exitTo` | Classes applied after `exit`, element removed when transition ends |
 
-This follows the same model as Vue and Alpine.js transitions — you define CSS classes, and Effex manages the timing.
+This follows the same model as Vue and Alpine.js transitions — you define CSS classes, and Stax manages the timing.
 
 ## List Animations
 
 Animate items entering and leaving a list:
 
 ```typescript
-import { each, stagger } from "@effex/dom";
+import { each, stagger } from "@stax-ui/dom";
 
 each(items, {
   key: (item) => item.id,
@@ -72,7 +72,7 @@ import {
   delay,
   sequence,
   parallel,
-} from "@effex/dom";
+} from "@stax-ui/dom";
 ```
 
 | Function | Description |
@@ -101,7 +101,7 @@ Items in the middle of the list animate first, then the animation ripples outwar
 
 ## CSS Setup
 
-Effex applies classes but doesn't include any CSS. Define your transitions in your stylesheet:
+Stax applies classes but doesn't include any CSS. Define your transitions in your stylesheet:
 
 ```css
 /* Fade in */

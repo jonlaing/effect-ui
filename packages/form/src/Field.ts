@@ -4,7 +4,7 @@ import type { Schema } from "effect";
 // TypeId
 // -----------------------------------------------------------------------------
 
-export const FieldTypeId: unique symbol = Symbol.for("effex/form/Field");
+export const FieldTypeId: unique symbol = Symbol.for("stax/form/Field");
 export type FieldTypeId = typeof FieldTypeId;
 
 // -----------------------------------------------------------------------------
@@ -196,8 +196,7 @@ export function make<F extends Record<string, Field<any, any>>>(
 
 export function make(
   schemaOrFields:
-    | Schema.Schema<unknown, unknown>
-    | Record<string, Field<any, any>>,
+    Schema.Schema<unknown, unknown> | Record<string, Field<any, any>>,
   config: FieldConfig = {},
 ): Field<any, any> {
   // Check if it's a record of fields (struct)

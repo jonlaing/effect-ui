@@ -1,7 +1,7 @@
 import { Effect, Fiber, Stream } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { Readable, Signal } from "@effex/core";
+import { Readable, Signal } from "@stax-ui/core";
 
 import { t } from "./Template.js";
 

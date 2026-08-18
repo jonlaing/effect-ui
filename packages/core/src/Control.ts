@@ -69,7 +69,7 @@ export const reconcile = <A, E, R>(
         const targetKeys = config.getTargetKeys(value);
         const targetSet = new Set(targetKeys);
 
-        yield* logDebug("reconcile sync", "effex.reconcile", {
+        yield* logDebug("reconcile sync", "stax.reconcile", {
           value,
           currentKeys,
           targetKeys,
@@ -130,7 +130,7 @@ export const reconcile = <A, E, R>(
     yield* ctx.finalizeContainer();
 
     // Wrap sync for the subscribe path: log every failure with an
-    // effex.reconcile subsystem tag and swallow the cause so the
+    // stax.reconcile subsystem tag and swallow the cause so the
     // subscription fiber survives. Without this, one bad update freezes
     // all future updates too — a user who navigates to a broken route
     // can't recover by navigating away. The wrapping lives in core
@@ -140,7 +140,7 @@ export const reconcile = <A, E, R>(
     const safeSync = (value: A) =>
       sync(value).pipe(
         Effect.tapErrorCause((cause) =>
-          logError("reconcile handler failed", "effex.reconcile", {
+          logError("reconcile handler failed", "stax.reconcile", {
             value,
             cause: Cause.pretty(cause),
           }),

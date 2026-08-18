@@ -1,7 +1,7 @@
 import { Effect, Schema } from "effect";
 
-import { $, collect, Portal, Readable, redraw, when } from "@effex/dom";
-import { Field, Form } from "@effex/form";
+import { $, collect, Portal, Readable, redraw, when } from "@stax-ui/dom";
+import { Field, Form } from "@stax-ui/form";
 
 import { KanbanService } from "../services/KanbanService.js";
 import type { Priority } from "../types.js";

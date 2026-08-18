@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@effex/dom": "workspace:*",
+    "@stax-ui/dom": "workspace:*",
     "@tailwindcss/vite": "^4.1.18",
     "effect": "^3.0.0",
     "tailwindcss": "^4.1.18"

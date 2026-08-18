@@ -11,7 +11,7 @@ import {
   Signal,
   type IControlCtx,
   type SlotEntry,
-} from "@effex/core";
+} from "@stax-ui/core";
 
 import type { AnimationOptions } from "../Animation/index.js";
 import * as Element from "../Element/index.js";
@@ -34,14 +34,14 @@ const createSSRControlCtx = (): IControlCtx<DOMElement> => {
   // Fresh state per context instance
   const slots = new Map<string, DOMSlotEntry>();
   let containerElement: DOMElement | null = null;
-  const hydrationId = `effex-${++ssrIdCounter}`;
+  const hydrationId = `stax-${++ssrIdCounter}`;
 
   const defaultContainer: Element.Element<DOMElement, never, never> =
     Effect.gen(function* () {
       const renderer = yield* RendererContext;
       const container = yield* renderer.createNode("div");
       yield* renderer.setStyleProperty(container, "display", "contents");
-      yield* renderer.setAttribute(container, "data-effex-id", hydrationId);
+      yield* renderer.setAttribute(container, "data-stax-id", hydrationId);
       return container as DOMElement;
     });
 
@@ -59,7 +59,7 @@ const createSSRControlCtx = (): IControlCtx<DOMElement> => {
         const container = create
           ? yield* create()
           : yield* defaultContainer as Element.Element<DOMElement, E, R>;
-        yield* renderer.setAttribute(container, "data-effex-id", hydrationId);
+        yield* renderer.setAttribute(container, "data-stax-id", hydrationId);
         containerElement = container;
         return container;
       }) as Element.Element<DOMElement, E, R>,
@@ -91,7 +91,7 @@ const createSSRControlCtx = (): IControlCtx<DOMElement> => {
           Effect.provideService(Scope.Scope, slotScope),
         )) as DOMElement;
 
-        yield* renderer.setAttribute(element, "data-effex-key", key);
+        yield* renderer.setAttribute(element, "data-stax-key", key);
 
         // FOUC prevention: when the control opted into intro re-animation,
         // emit the `enterFrom` classes on the SSR/SSG output so the browser
@@ -103,8 +103,7 @@ const createSSRControlCtx = (): IControlCtx<DOMElement> => {
         const animConfig = Option.getOrUndefined(animConfigOpt);
         if (animConfig?.intro) {
           const animate = (animConfig.list ?? animConfig.single) as
-            | AnimationOptions
-            | undefined;
+            AnimationOptions | undefined;
           const enterFrom = animate?.enterFrom;
           if (enterFrom) {
             for (const cls of enterFrom.split(/\s+/).filter(Boolean)) {

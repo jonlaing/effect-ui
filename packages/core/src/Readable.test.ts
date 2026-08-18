@@ -532,7 +532,7 @@ describe("Readable", () => {
       return { sink, layer };
     };
 
-    it("logs the initial value under effex.readable at Debug level", async () => {
+    it("logs the initial value under stax.readable at Debug level", async () => {
       const { sink, layer } = capture();
       await Effect.runPromise(
         Effect.scoped(
@@ -546,7 +546,7 @@ describe("Readable", () => {
       );
       const initial = sink.find(
         (l) =>
-          l.subsystem === "effex.readable" &&
+          l.subsystem === "stax.readable" &&
           String(l.message).includes("initial value"),
       );
       expect(initial).toBeDefined();
@@ -572,7 +572,7 @@ describe("Readable", () => {
       );
       const changes = sink.filter(
         (l) =>
-          l.subsystem === "effex.readable" &&
+          l.subsystem === "stax.readable" &&
           String(l.message).includes("value changed"),
       );
       expect(changes).toHaveLength(2);
@@ -606,9 +606,7 @@ describe("Readable", () => {
           }),
         ).pipe(Effect.provide(layer)),
       );
-      const frameworkLogs = sink.filter(
-        (l) => l.subsystem === "effex.readable",
-      );
+      const frameworkLogs = sink.filter((l) => l.subsystem === "stax.readable");
       expect(frameworkLogs).toEqual([]);
     });
   });

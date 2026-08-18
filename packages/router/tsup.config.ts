@@ -6,5 +6,5 @@ export default defineConfig({
   dts: true,
   clean: true,
   sourcemap: true,
-  external: ["effect", "@effex/dom", "@effex/core"],
+  external: ["effect", "@stax-ui/dom", "@stax-ui/core"],
 });

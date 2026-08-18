@@ -1,22 +1,22 @@
 ---
 title: "Coming from React"
-description: "A guide for React developers learning Effex — key differences, concept mapping, and side-by-side examples."
+description: "A guide for React developers learning Stax — key differences, concept mapping, and side-by-side examples."
 order: 1
 ---
 
 # Coming from React
 
-A guide for React developers learning Effex. This covers the key differences, concept mapping, and side-by-side examples to help you transition.
+A guide for React developers learning Stax. This covers the key differences, concept mapping, and side-by-side examples to help you transition.
 
 ## Why Switch?
 
-If you're already using [Effect](https://effect.website/) in your application, Effex lets you use the same patterns and mental model across your entire stack. No more context-switching between React's hooks model and Effect's compositional approach.
+If you're already using [Effect](https://effect.website/) in your application, Stax lets you use the same patterns and mental model across your entire stack. No more context-switching between React's hooks model and Effect's compositional approach.
 
 ### Typed Error Handling
 
 In React, component errors are runtime surprises. You catch them with error boundaries, but there's no compile-time visibility into what can fail.
 
-In Effex, every element has type `Element<E, R>` where `E` is the error channel. Errors propagate through the component tree, and you **must** handle them before mounting:
+In Stax, every element has type `Element<E, R>` where `E` is the error channel. Errors propagate through the component tree, and you **must** handle them before mounting:
 
 ```ts
 // This won't compile — UserProfile might fail with ApiError
@@ -38,7 +38,7 @@ TypeScript tells you at build time which components can fail and forces you to h
 
 React re-renders entire component subtrees when state changes, then diffs a virtual DOM to find what actually changed. This works, but it's wasteful.
 
-Effex uses signals. When a signal updates, only the DOM nodes that actually depend on that signal update. No diffing, no wasted renders:
+Stax uses signals. When a signal updates, only the DOM nodes that actually depend on that signal update. No diffing, no wasted renders:
 
 ```ts
 // React: Changing count re-renders the entire component
@@ -48,7 +48,7 @@ function Counter() {
   return <div>{count}</div>;
 }
 
-// Effex: Only the text node updates
+// Stax: Only the text node updates
 const Counter = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0);
@@ -66,7 +66,7 @@ React hooks have rules you must memorize:
 - Stale closure bugs when you forget a dependency
 - `useCallback` and `useMemo` everywhere for performance
 
-Effex has none of this. Create signals wherever you want. Use them wherever you want. The reactivity system tracks dependencies automatically:
+Stax has none of this. Create signals wherever you want. Use them wherever you want. The reactivity system tracks dependencies automatically:
 
 ```ts
 // React: Must memoize, manage deps, avoid stale closures
@@ -75,7 +75,7 @@ const handleAdd = useCallback(() => {
   setItems((prev) => [...prev, newItem]); // Must use prev, not items!
 }, []); // Stale closure if you use items directly
 
-// Effex: Just write code
+// Stax: Just write code
 const items = yield* Signal.make([]);
 const handleAdd = () => items.update((current) => [...current, newItem]); // Always fresh
 ```
@@ -84,7 +84,7 @@ const handleAdd = () => items.update((current) => [...current, newItem]); // Alw
 
 React's `useEffect` cleanup is manual and easy to get wrong. Forget to clean up a subscription? Memory leak. Return a non-function? Runtime error.
 
-Effex uses Effect's scope system. Resources are automatically cleaned up when components unmount:
+Stax uses Effect's scope system. Resources are automatically cleaned up when components unmount:
 
 ```ts
 // React: Manual cleanup, easy to forget
@@ -93,7 +93,7 @@ useEffect(() => {
   return () => subscription.unsubscribe(); // Don't forget!
 }, []);
 
-// Effex: Automatic cleanup via scope
+// Stax: Automatic cleanup via scope
 yield* eventSource.pipe(
   Stream.runForEach(handler),
   Effect.forkIn(scope), // Cleaned up when scope closes
@@ -104,7 +104,7 @@ yield* eventSource.pipe(
 
 In React, when a parent re-renders, all children re-render too (unless wrapped in `React.memo`). This leads to prop drilling `memo` everywhere or using context for everything.
 
-In Effex, signal updates only notify actual subscribers. Parent "re-renders" don't exist:
+In Stax, signal updates only notify actual subscribers. Parent "re-renders" don't exist:
 
 ```ts
 // React: Parent re-render causes child re-render
@@ -113,7 +113,7 @@ function Parent() {
   return <Child />; // Unless wrapped in memo()
 }
 
-// Effex: Parent signal doesn't affect unrelated children
+// Stax: Parent signal doesn't affect unrelated children
 const Parent = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0); // Child doesn't care
@@ -123,7 +123,7 @@ const Parent = () =>
 
 ### Better Async
 
-React's Suspense requires experimental features for data fetching, and error handling is separate from loading states. In Effex, it's unified:
+React's Suspense requires experimental features for data fetching, and error handling is separate from loading states. In Stax, it's unified:
 
 ```ts
 Boundary.suspense({
@@ -140,7 +140,7 @@ Boundary.suspense({
 
 ## Concept Mapping
 
-| React | Effex | Notes |
+| React | Stax | Notes |
 |---|---|---|
 | `useState(initial)` | `Signal.make(initial)` | Must `yield*` to create |
 | `useMemo(() => x, deps)` | `Readable.map(dep, (v) => x)` | Auto-tracked, no dep arrays |
@@ -169,7 +169,7 @@ function Counter() {
   return <button onClick={() => setCount((c) => c + 1)}>{count}</button>;
 }
 
-// Effex
+// Stax
 const Counter = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0);
@@ -192,7 +192,7 @@ function Cart({ items }) {
   return <div>Total: ${total}</div>;
 }
 
-// Effex
+// Stax
 const Cart = (props: { items: Readable.Readable<Item[]> }) =>
   Effect.gen(function* () {
     const total = Readable.map(props.items, (items) =>
@@ -210,7 +210,7 @@ function Auth({ isLoggedIn }) {
   return isLoggedIn ? <Dashboard /> : <Login />;
 }
 
-// Effex
+// Stax
 const Auth = (props: { isLoggedIn: Readable.Readable<boolean> }) =>
   when(props.isLoggedIn, {
     onTrue: () => Dashboard(),
@@ -232,7 +232,7 @@ function TodoList({ todos }) {
   );
 }
 
-// Effex
+// Stax
 const TodoList = (props: { todos: Readable.Readable<Todo[]> }) =>
   each(props.todos, {
     container: () => $.ul(),
@@ -252,7 +252,7 @@ function UserProfile({ id }) {
 }
 // Wrapped in error boundary + suspense elsewhere...
 
-// Effex — Option 1: Boundary.suspense (one-shot)
+// Stax — Option 1: Boundary.suspense (one-shot)
 const UserProfile = (props: { id: string }) =>
   Boundary.suspense({
     render: () =>
@@ -264,7 +264,7 @@ const UserProfile = (props: { id: string }) =>
     catch: (e) => $.div({}, `Error: ${e}`),
   });
 
-// Effex — Option 2: AsyncReadable (reactive, with refetch)
+// Stax — Option 2: AsyncReadable (reactive, with refetch)
 const UserProfileAsync = (props: { id: string }) =>
   Effect.gen(function* () {
     const userData = yield* AsyncReadable.make(() => fetchUser(props.id));
@@ -304,7 +304,7 @@ function Page() {
   return <div className={theme}>...</div>;
 }
 
-// Effex
+// Stax
 class ThemeService extends Context.Tag("Theme")<ThemeService, string>() {}
 
 const Page = () =>
@@ -339,7 +339,7 @@ function DocumentTitle({ title, unreadCount }) {
   return <h1>{title}</h1>;
 }
 
-// Effex
+// Stax
 const DocumentTitle = (props: {
   title: Readable.Readable<string>;
   unreadCount: Readable.Readable<number>;
@@ -381,7 +381,7 @@ Key differences:
 
 In React, `useMemo` and `useEffect` use dependency arrays with shallow comparison, and there's no built-in way to customize equality.
 
-In Effex, equality is a first-class option on every reactive primitive:
+In Stax, equality is a first-class option on every reactive primitive:
 
 ```ts
 // Only trigger updates when the user ID changes, ignoring lastSeen timestamps
@@ -410,10 +410,10 @@ function FocusInput() {
 }
 ```
 
-In Effex, `ref()` creates a pipeable element reference:
+In Stax, `ref()` creates a pipeable element reference:
 
 ```ts
-// Effex
+// Stax
 const FocusInput = () =>
   Effect.gen(function* () {
     const inputRef = yield* ref<HTMLInputElement>();
@@ -431,7 +431,7 @@ const FocusInput = () =>
 
 ### Common React DOM Patterns
 
-| React Pattern | Effex Equivalent |
+| React Pattern | Stax Equivalent |
 |---|---|
 | `ref.current?.focus()` | `el.pipe(Element.focus)` |
 | `ref.current?.blur()` | `el.pipe(Element.blur)` |
@@ -448,7 +448,7 @@ const FocusInput = () =>
 
 ### Animation Hooks
 
-Effex's animation system passes elements to lifecycle hooks, letting you use Element helpers:
+Stax's animation system passes elements to lifecycle hooks, letting you use Element helpers:
 
 ```ts
 when(isModalOpen, {

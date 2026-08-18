@@ -1,7 +1,7 @@
 import { Effect, Layer } from "effect";
 
-import { DOMRendererLive, Element, mount, runApp } from "@effex/dom";
-import { Navigation } from "@effex/router";
+import { DOMRendererLive, Element, mount, runApp } from "@stax-ui/dom";
+import { Navigation } from "@stax-ui/router";
 
 import { App } from "./App";
 import { router } from "./routes";

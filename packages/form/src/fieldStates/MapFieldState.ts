@@ -1,6 +1,6 @@
 import { Effect, Scope } from "effect";
 
-import { Readable, Signal } from "@effex/core";
+import { Readable, Signal } from "@stax-ui/core";
 
 import type { Field, FieldConfig, MapField, TypeOf } from "../Field.js";
 import type { MapFieldState } from "../FieldState.js";
@@ -115,8 +115,7 @@ export const createMapFieldState = <K, F extends Field<any, any>>(
     // Set the entire map value
     const set = (
       newEntries:
-        | ReadonlyMap<K, EntryValue>
-        | Iterable<readonly [K, EntryValue]>,
+        ReadonlyMap<K, EntryValue> | Iterable<readonly [K, EntryValue]>,
     ): Effect.Effect<void> =>
       Effect.gen(function* () {
         const entriesMap =

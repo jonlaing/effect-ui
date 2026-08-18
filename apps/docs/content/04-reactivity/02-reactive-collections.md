@@ -6,14 +6,14 @@ order: 2
 
 # Reactive Collections
 
-In React, updating a Map or Set requires cloning the entire collection on every mutation because the framework detects changes by reference. Effex takes a different approach: reactive collections allow in-place mutations that automatically notify observers.
+In React, updating a Map or Set requires cloning the entire collection on every mutation because the framework detects changes by reference. Stax takes a different approach: reactive collections allow in-place mutations that automatically notify observers.
 
 ```tsx
 // React (clone on every mutation)
 setMap(new Map(map).set(key, value));
 setSet(new Set(set).add(item));
 
-// Effex (mutate in place, O(1))
+// Stax (mutate in place, O(1))
 yield* users.set(key, value);
 yield* tags.add(item);
 ```
@@ -26,7 +26,7 @@ A reactive array with familiar mutation methods:
 const todos = yield* Signal.Array.make<Todo>([]);
 
 // In-place mutations — no cloning
-yield* todos.push({ id: 1, text: "Learn Effex", done: false });
+yield* todos.push({ id: 1, text: "Learn Stax", done: false });
 yield* todos.unshift(firstItem);
 yield* todos.pop();
 yield* todos.shift();

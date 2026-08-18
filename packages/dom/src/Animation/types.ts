@@ -1,6 +1,6 @@
 import type { Effect, Scope } from "effect";
 
-import type { RendererContext } from "@effex/core";
+import type { RendererContext } from "@stax-ui/core";
 
 import type { AnimationGroup } from "./groups.js";
 

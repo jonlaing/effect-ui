@@ -1,6 +1,6 @@
 import type { ParseResult } from "effect";
 
-import { Readable } from "@effex/core";
+import { Readable } from "@stax-ui/core";
 
 import type {
   ArrayFieldState,

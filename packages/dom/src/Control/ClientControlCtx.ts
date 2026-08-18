@@ -12,7 +12,7 @@ import {
   type IControlCtx,
   type Renderer,
   type SlotEntry,
-} from "@effex/core";
+} from "@stax-ui/core";
 
 import * as Element from "../Element/index.js";
 import { DOMRenderer } from "../Render/DOMRenderer.js";

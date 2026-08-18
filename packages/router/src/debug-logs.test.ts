@@ -1,7 +1,7 @@
 import { Effect, HashMap, Layer, Logger, LogLevel } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { $, ClientControlCtx, DOMRendererLive } from "@effex/dom";
+import { $, ClientControlCtx, DOMRendererLive } from "@stax-ui/dom";
 
 import { Navigation } from "./Navigation.js";
 import { Outlet } from "./Outlet.js";
@@ -50,7 +50,7 @@ describe("framework debug logs", () => {
       Effect.provide(makeCapturingLogger(logs)),
     );
 
-  it("emits an effex.nav log on pushPath with from/to", async () => {
+  it("emits an stax.nav log on pushPath with from/to", async () => {
     const HomeRoute = Route.make("/").pipe(
       Route.render(() => $.div({ class: "home" }, $.of("Home"))),
     );
@@ -77,12 +77,12 @@ describe("framework debug logs", () => {
       ),
     );
 
-    const navLogs = logs.filter((l) => l.subsystem === "effex.nav");
+    const navLogs = logs.filter((l) => l.subsystem === "stax.nav");
     expect(navLogs.length).toBeGreaterThan(0);
     expect(navLogs.some((l) => l.message.includes("pushPath"))).toBe(true);
   });
 
-  it("emits an effex.route-data log with the source that was chosen", async () => {
+  it("emits an stax.route-data log with the source that was chosen", async () => {
     // With a provider installed, the log should say "fetching route data via provider".
     const providerLayer = Layer.succeed(RouteDataProvider, {
       getRouteData: () =>
@@ -116,7 +116,7 @@ describe("framework debug logs", () => {
       ),
     );
 
-    const dataLogs = logs.filter((l) => l.subsystem === "effex.route-data");
+    const dataLogs = logs.filter((l) => l.subsystem === "stax.route-data");
     expect(dataLogs.length).toBeGreaterThan(0);
     expect(
       dataLogs.some((l) =>
@@ -125,7 +125,7 @@ describe("framework debug logs", () => {
     ).toBe(true);
   });
 
-  it("emits an effex.route-data log for the SPA fallback branch too", async () => {
+  it("emits an stax.route-data log for the SPA fallback branch too", async () => {
     // No provider — the log should identify which branch was chosen.
     const HomeRoute = Route.make("/").pipe(
       Route.static({
@@ -149,15 +149,15 @@ describe("framework debug logs", () => {
       ),
     );
 
-    const dataLogs = logs.filter((l) => l.subsystem === "effex.route-data");
+    const dataLogs = logs.filter((l) => l.subsystem === "stax.route-data");
     expect(dataLogs.length).toBeGreaterThan(0);
     expect(dataLogs.some((l) => l.message.includes("SPA fallback"))).toBe(true);
   });
 
-  it("logs an effex.reconcile error when a route render fails and keeps the subscription alive", async () => {
+  it("logs an stax.reconcile error when a route render fails and keeps the subscription alive", async () => {
     // The wrapping lives in core's `reconcile` — a failing render on
     // subsequent nav is logged at Error level with subsystem
-    // "effex.reconcile" and the fiber survives so the next nav still
+    // "stax.reconcile" and the fiber survives so the next nav still
     // renders. Without this, one broken route freezes all future
     // updates. This exercises the wrapping through the whole stack:
     // Outlet → reconcile → ctx.subscribe → subscribeReconcile.
@@ -199,7 +199,7 @@ describe("framework debug logs", () => {
     );
 
     const errorLogs = logs.filter(
-      (l) => l.subsystem === "effex.reconcile" && l.level === "ERROR",
+      (l) => l.subsystem === "stax.reconcile" && l.level === "ERROR",
     );
     expect(errorLogs.length).toBeGreaterThan(0);
     expect(
@@ -239,7 +239,7 @@ describe("framework debug logs", () => {
       ),
     );
 
-    const frameworkLogs = logs.filter((l) => l.subsystem?.startsWith("effex."));
+    const frameworkLogs = logs.filter((l) => l.subsystem?.startsWith("stax."));
     expect(frameworkLogs).toEqual([]);
   });
 });

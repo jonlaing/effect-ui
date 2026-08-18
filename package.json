@@ -1,5 +1,5 @@
 {
-  "name": "effex-monorepo",
+  "name": "stax-monorepo",
   "version": "0.0.1",
   "private": true,
   "description": "A reactive UI framework built on Effect.ts primitives",
@@ -9,7 +9,7 @@
   "author": "Jon Laing",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jonlaing/effex.git"
+    "url": "https://github.com/stax-ui/stax.git"
   },
   "scripts": {
     "build": "pnpm -r build",

@@ -1,32 +1,32 @@
-# @effex/platform
+# @stax-ui/platform
 
-Server-side rendering, static site generation, and hydration utilities for Effex applications. Supports two output modes:
+Server-side rendering, static site generation, and hydration utilities for Stax applications. Supports two output modes:
 
-- **SSR** — Convert an Effex Router into `@effect/platform` HTTP handlers; renders pages per-request, handles data requests and mutations.
+- **SSR** — Convert an Stax Router into `@effect/platform` HTTP handlers; renders pages per-request, handles data requests and mutations.
 - **SSG** — Pre-render all routes at build time into static HTML files for deployment to any static host.
 
 ## Installation
 
 ```bash
-pnpm add @effex/platform @effect/platform effect
+pnpm add @stax-ui/platform @effect/platform effect
 ```
 
-`@effex/dom` and `@effex/router` are peer dependencies — install them separately:
+`@stax-ui/dom` and `@stax-ui/router` are peer dependencies — install them separately:
 
 ```bash
-pnpm add @effex/dom @effex/router
+pnpm add @stax-ui/dom @stax-ui/router
 ```
 
-> `@effex/dom` re-exports `@effex/core`, so you don't need to install core separately.
+> `@stax-ui/dom` re-exports `@stax-ui/core`, so you don't need to install core separately.
 
 ## Overview
 
-`@effex/platform` is a server-side package that bridges Effex's UI layer with `@effect/platform`'s HTTP server (for SSR) and a build-time static-site generator (for SSG). It does not re-export dom or router — import those directly:
+`@stax-ui/platform` is a server-side package that bridges Stax's UI layer with `@effect/platform`'s HTTP server (for SSR) and a build-time static-site generator (for SSG). It does not re-export dom or router — import those directly:
 
 ```ts
-import { $, collect, Readable } from "@effex/dom";          // UI primitives
-import { Route, Router, Outlet, Link } from "@effex/router"; // Routing
-import { Platform, RedirectError } from "@effex/platform";   // SSR + SSG utilities
+import { $, collect, Readable } from "@stax-ui/dom";          // UI primitives
+import { Route, Router, Outlet, Link } from "@stax-ui/router"; // Routing
+import { Platform, RedirectError } from "@stax-ui/platform";   // SSR + SSG utilities
 ```
 
 ## SSR vs. SSG — which to use
@@ -50,8 +50,8 @@ Both modes produce fully hydratable output — the same client bundle picks up t
 ```ts
 // routes.ts
 import { Effect, Schema } from "effect";
-import { Route, Router } from "@effex/router";
-import { RedirectError } from "@effex/platform";
+import { Route, Router } from "@stax-ui/router";
+import { RedirectError } from "@stax-ui/platform";
 
 import { UserPage } from "./pages/User.js";
 import { FeedPage } from "./pages/Feed.js";
@@ -101,12 +101,12 @@ import { createServer } from "node:http";
 import { HttpRouter, HttpServer, HttpServerResponse } from "@effect/platform";
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node";
 import { Layer } from "effect";
-import { Platform } from "@effex/platform";
+import { Platform } from "@stax-ui/platform";
 
 import { App } from "./App.js";
 import { router } from "./routes.js";
 
-const effexRoutes = Platform.toHttpRoutes(router, {
+const staxRoutes = Platform.toHttpRoutes(router, {
   app: App,
   document: {
     title: "My App",
@@ -117,7 +117,7 @@ const effexRoutes = Platform.toHttpRoutes(router, {
 
 const httpApp = HttpRouter.empty.pipe(
   HttpRouter.get("/api/health", HttpServerResponse.json({ ok: true })),
-  HttpRouter.concat(effexRoutes),
+  HttpRouter.concat(staxRoutes),
 );
 
 const ServerLive = httpApp.pipe(
@@ -132,9 +132,9 @@ NodeRuntime.runMain(Layer.launch(ServerLive));
 
 ```ts
 // client.ts
-import type { Element } from "@effex/dom";
-import { hydrate } from "@effex/dom/hydrate";
-import { Platform } from "@effex/platform";
+import type { Element } from "@stax-ui/dom";
+import { hydrate } from "@stax-ui/dom/hydrate";
+import { Platform } from "@stax-ui/platform";
 
 import { App } from "./App.js";
 import { router } from "./routes.js";
@@ -152,8 +152,8 @@ The app component is shared between server and client. It should contain an `Out
 
 ```ts
 // App.ts
-import { $ } from "@effex/dom";
-import { Link, Outlet } from "@effex/router";
+import { $ } from "@stax-ui/dom";
+import { Link, Outlet } from "@stax-ui/router";
 import { router } from "./routes.js";
 
 export const App = () =>
@@ -173,7 +173,7 @@ Routes opt into static generation via `Route.static({ paths, load, render })`. T
 ```ts
 // routes.ts
 import { Effect, Schema } from "effect";
-import { Route, Router } from "@effex/router";
+import { Route, Router } from "@stax-ui/router";
 
 import { HomePage } from "./pages/Home.js";
 import { PostPage } from "./pages/Post.js";
@@ -215,7 +215,7 @@ export const router = Router.empty.pipe(
 ### SSG Build Entry
 
 ```ts
-// entry.ts — consumed by @effex/vite-plugin in ssg mode
+// entry.ts — consumed by @stax-ui/vite-plugin in ssg mode
 import { Layer } from "effect";
 
 import { App } from "./App.js";
@@ -236,10 +236,10 @@ export const layers = FileSystemLive; // services needed by load() functions
 ```ts
 // vite.config.ts
 import { defineConfig } from "vite";
-import { effexPlatform } from "@effex/vite-plugin";
+import { staxPlatform } from "@stax-ui/vite-plugin";
 
 export default defineConfig({
-  plugins: [effexPlatform({ mode: "ssg", entry: "src/entry.ts" })],
+  plugins: [staxPlatform({ mode: "ssg", entry: "src/entry.ts" })],
 });
 ```
 
@@ -268,12 +268,12 @@ dist/
 
 ### Hydration
 
-Same client entry as SSR. The static HTML embeds loader data via `window.__EFFEX_DATA__`, which the client picks up via `Platform.makeClientLayer`:
+Same client entry as SSR. The static HTML embeds loader data via `window.__STAX_DATA__`, which the client picks up via `Platform.makeClientLayer`:
 
 ```ts
 // client.ts
-import { hydrate } from "@effex/dom/hydrate";
-import { Platform } from "@effex/platform";
+import { hydrate } from "@stax-ui/dom/hydrate";
+import { Platform } from "@stax-ui/platform";
 
 import { App } from "./App.js";
 import { router } from "./routes.js";
@@ -289,13 +289,13 @@ After hydration, the site behaves identically to an SSR-rendered page — Signal
 
 ### `Platform.toHttpRoutes(router, options?)`
 
-Converts an Effex Router into an `@effect/platform` HttpRouter. For each route:
+Converts an Stax Router into an `@effect/platform` HttpRouter. For each route:
 
 - **GET** — Runs the loader, SSR renders the component, returns full HTML document. If `?_data=1` is present, returns loader data as JSON (used for client-side navigation).
 - **POST / PUT / DELETE** — Dispatches to the handler matching `?_action=key`, executes it with the parsed request body, returns JSON. No component rendering.
 
 ```ts
-const effexRoutes = Platform.toHttpRoutes(router, {
+const staxRoutes = Platform.toHttpRoutes(router, {
   app: App,                        // Root component (should contain Outlet)
   document: {
     title: "My App",
@@ -313,7 +313,7 @@ The returned HttpRouter composes with any `@effect/platform` router via `HttpRou
 Throw from loaders or mutation handlers to trigger a redirect:
 
 ```ts
-import { RedirectError } from "@effex/platform";
+import { RedirectError } from "@stax-ui/platform";
 
 Route.make("/users/me").pipe(
   Route.get(
@@ -348,7 +348,7 @@ Produces:
   </head>
   <body>
     <div id="root"><div>Hello</div></div>
-    <script>window.__EFFEX_DATA__={...}</script>
+    <script>window.__STAX_DATA__={...}</script>
     <script type="module" src="/client.js"></script>
   </body>
 </html>
@@ -360,7 +360,7 @@ Safely serializes JSON for embedding in HTML `<script>` tags. Escapes `<`, `>`, 
 
 ### `generateLoaderDataScript(loaderData)`
 
-Generates a `<script>` tag that sets `window.__EFFEX_DATA__`. Returns empty string if no data.
+Generates a `<script>` tag that sets `window.__STAX_DATA__`. Returns empty string if no data.
 
 ## Client API
 
@@ -368,12 +368,12 @@ Generates a `<script>` tag that sets `window.__EFFEX_DATA__`. Returns empty stri
 
 Creates an Effect Layer providing `NavigationContext` and `RouteDataProvider` for the client.
 
-- **First render (hydration):** Reads data from `window.__EFFEX_DATA__` embedded by the server
+- **First render (hydration):** Reads data from `window.__STAX_DATA__` embedded by the server
 - **Subsequent navigations:** Fetches data from the server via `?_data=1`
 
 ```ts
-import { hydrate } from "@effex/dom/hydrate";
-import { Platform } from "@effex/platform";
+import { hydrate } from "@stax-ui/dom/hydrate";
+import { Platform } from "@stax-ui/platform";
 
 hydrate(App() as unknown as Element.Element<HTMLElement>, root, {
   layers: Platform.makeClientLayer(router),
@@ -390,7 +390,7 @@ GET /users/123
   -> Run loader: getUser("123")
   -> Build RouteDataService: { data, loaderPath, actions }
   -> SSR render component tree
-  -> Embed data in window.__EFFEX_DATA__
+  -> Embed data in window.__STAX_DATA__
   -> Return full HTML document
 ```
 
@@ -399,7 +399,7 @@ GET /users/123
 ```
 Browser loads HTML
   -> hydrate() attaches to existing DOM
-  -> makeClientLayer reads window.__EFFEX_DATA__
+  -> makeClientLayer reads window.__STAX_DATA__
   -> Component tree hydrates with server data
 ```
 
@@ -436,21 +436,21 @@ const apiRoutes = HttpRouter.empty.pipe(
 
 const app = HttpRouter.empty.pipe(
   HttpRouter.concat(apiRoutes),           // API routes first
-  HttpRouter.concat(effexRoutes),          // Effex pages catch the rest
+  HttpRouter.concat(staxRoutes),          // Stax pages catch the rest
 );
 ```
 
 ## Vite Plugin
 
-The `@effex/vite-plugin` package provides dev server integration and client build optimization:
+The `@stax-ui/vite-plugin` package provides dev server integration and client build optimization:
 
 ```ts
 // vite.config.ts
-import { effexPlatform } from "@effex/vite-plugin";
+import { staxPlatform } from "@stax-ui/vite-plugin";
 
 export default defineConfig({
   plugins: [
-    effexPlatform({ entry: "src/vite-entry.ts" }),
+    staxPlatform({ entry: "src/vite-entry.ts" }),
   ],
 });
 ```
@@ -467,7 +467,7 @@ export default defineConfig({
 
 | Function | Description |
 |---|---|
-| `Platform.toHttpRoutes(router, options?)` | Convert Effex Router to `@effect/platform` HttpRouter (SSR) |
+| `Platform.toHttpRoutes(router, options?)` | Convert Stax Router to `@effect/platform` HttpRouter (SSR) |
 | `Platform.buildStaticSite(options)` | Pre-render all `Route.static` routes to static HTML files (SSG) |
 | `Platform.makeClientLayer(router)` | Create client-side Layer for hydration and navigation |
 | `Platform.generateDocument(html, data, options?)` | Wrap HTML in full document with hydration data |

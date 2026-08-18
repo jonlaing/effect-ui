@@ -18,7 +18,7 @@ import {
   redraw as coreRedraw,
   when as coreWhen,
   Readable,
-} from "@effex/core";
+} from "@stax-ui/core";
 
 import * as Element from "../Element/index.js";
 import { AnimationConfigCtx } from "./AnimationConfigCtx.js";

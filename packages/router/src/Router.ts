@@ -1,7 +1,7 @@
 import { Effect, Option, Pipeable, Record, Schema } from "effect";
 
-import { Readable } from "@effex/core";
-import type { Element } from "@effex/dom";
+import { Readable } from "@stax-ui/core";
+import type { Element } from "@stax-ui/dom";
 
 import {
   isRoute,
@@ -16,7 +16,7 @@ import type { ScrollBehavior } from "./ScrollBehavior.js";
 // TypeId
 // =============================================================================
 
-export const TypeId: unique symbol = Symbol.for("@effex/router/Router");
+export const TypeId: unique symbol = Symbol.for("@stax-ui/router/Router");
 export type TypeId = typeof TypeId;
 
 // =============================================================================
@@ -56,8 +56,7 @@ export interface Router<
   readonly routes: ReadonlyArray<Route<string, P, S, D, E, R>>;
   /** Fallback render function when no route matches */
   readonly fallback:
-    | (() => Element.Element<HTMLElement | SVGElement, E, R>)
-    | null;
+    (() => Element.Element<HTMLElement | SVGElement, E, R>) | null;
   /** Layout wrappers to apply (in order, inside-out) */
   readonly layouts: ReadonlyArray<LayoutWrapper>;
   /**

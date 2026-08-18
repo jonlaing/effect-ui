@@ -146,7 +146,7 @@ export interface IControlCtx<A> {
  * Context tag for control flow operations.
  * Uses `unknown` as the base element type - live implementations narrow this.
  */
-export class ControlCtx extends Context.Tag("@effex/core/ControlCtx")<
+export class ControlCtx extends Context.Tag("@stax-ui/core/ControlCtx")<
   ControlCtx,
   IControlCtx<unknown>
 >() {}

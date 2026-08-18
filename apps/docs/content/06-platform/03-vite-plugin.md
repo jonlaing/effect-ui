@@ -1,23 +1,23 @@
 ---
 title: "Vite Plugin"
-description: "Dev server SSR, server-code stripping, and SSG build integration with @effex/vite-plugin."
+description: "Dev server SSR, server-code stripping, and SSG build integration with @stax-ui/vite-plugin."
 order: 3
 ---
 
 # Vite Plugin
 
-`@effex/vite-plugin` provides three capabilities:
+`@stax-ui/vite-plugin` provides three capabilities:
 
 1. **SSR dev server** — intercepts requests in dev mode, renders pages with HMR
 2. **Server-code stripping** — removes loader and handler bodies from client builds
 3. **SSG build hook** — runs `buildStaticSite` after the SSR build completes
 
-You only need this plugin when using `@effex/platform` for SSR or SSG. Pure SPAs don't need it.
+You only need this plugin when using `@stax-ui/platform` for SSR or SSG. Pure SPAs don't need it.
 
 ## Installation
 
 ```bash
-pnpm add -D @effex/vite-plugin
+pnpm add -D @stax-ui/vite-plugin
 ```
 
 ## Configuration
@@ -25,11 +25,11 @@ pnpm add -D @effex/vite-plugin
 ```typescript
 // vite.config.ts
 import { defineConfig } from "vite";
-import { effexPlatform } from "@effex/vite-plugin";
+import { staxPlatform } from "@stax-ui/vite-plugin";
 
 export default defineConfig({
   plugins: [
-    effexPlatform({
+    staxPlatform({
       entry: "src/entry.ts",
       mode: "ssr",  // or "ssg"
     }),
@@ -53,17 +53,17 @@ When `entry` is provided and Vite is in dev mode, the plugin intercepts incoming
 ```typescript
 // src/entry.ts (SSR mode)
 import { HttpApp, HttpRouter } from "@effect/platform";
-import { Platform } from "@effex/platform";
+import { Platform } from "@stax-ui/platform";
 
 import { App } from "./app.js";
 import { router } from "./routes.js";
 
-const effexRoutes = Platform.toHttpRoutes(router, {
+const staxRoutes = Platform.toHttpRoutes(router, {
   app: App,
   document: { title: "My App", scripts: ["/src/client.ts"] },
 });
 
-const httpApp = HttpRouter.empty.pipe(HttpRouter.concat(effexRoutes));
+const httpApp = HttpRouter.empty.pipe(HttpRouter.concat(staxRoutes));
 const handler = HttpApp.toWebHandler(httpApp);
 
 export async function render(request: Request): Promise<Response> {
@@ -101,7 +101,7 @@ Stripping only happens in **client builds** — SSR builds and dev mode keep the
 In SSG mode, the plugin runs `Platform.buildStaticSite` after the SSR build completes:
 
 ```typescript
-effexPlatform({ mode: "ssg", entry: "src/entry.ts" })
+staxPlatform({ mode: "ssg", entry: "src/entry.ts" })
 ```
 
 The build sequence is:

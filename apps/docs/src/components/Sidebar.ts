@@ -1,9 +1,9 @@
 import { ExternalLink, NotebookText } from "lucide-static";
 
-import { $ } from "@effex/dom";
-import { Link } from "@effex/router";
+import { $ } from "@stax-ui/dom";
+import { Link } from "@stax-ui/router";
 
-import logoSvg from "../assets/effex-logo-dark.svg?raw";
+import logoSvg from "../assets/stax-logo-dark.svg?raw";
 import type { DocSection } from "../content.js";
 
 export const Sidebar = (props: { readonly sections: readonly DocSection[] }) =>
@@ -67,7 +67,7 @@ export const Sidebar = (props: { readonly sections: readonly DocSection[] }) =>
         ),
         $.a(
           {
-            href: "https://effex-api.pages.dev",
+            href: "https://stax-api.pages.dev",
             class:
               "mt-4 text-sm text-base-content/50 hover:text-primary transition-colors flex items-center gap-2",
           },

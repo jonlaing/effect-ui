@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { $, collect, each, Readable, Signal } from "@effex/dom";
+import { $, collect, each, Readable, Signal } from "@stax-ui/dom";
 
 export interface StatProps {
   label: string;

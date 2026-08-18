@@ -1,7 +1,7 @@
 {
-  "name": "@effex/router",
-  "version": "1.4.0",
-  "description": "Router for Effex applications",
+  "name": "@stax-ui/router",
+  "version": "0.1.0",
+  "description": "Router for Stax applications",
   "type": "module",
   "license": "MIT",
   "publishConfig": {
@@ -10,7 +10,7 @@
   "author": "Jon Laing",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jonlaing/effex.git",
+    "url": "https://github.com/stax-ui/stax.git",
     "directory": "packages/router"
   },
   "keywords": [
@@ -39,8 +39,8 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@effex/core": "workspace:*",
-    "@effex/dom": "workspace:*"
+    "@stax-ui/core": "workspace:*",
+    "@stax-ui/dom": "workspace:*"
   },
   "peerDependencies": {
     "effect": "^3.0.0"

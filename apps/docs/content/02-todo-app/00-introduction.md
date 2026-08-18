@@ -1,12 +1,12 @@
 ---
-title: "Build a Todo App with Effex"
-description: "Learn Effex fundamentals by building a complete todo application from scratch"
+title: "Build a Todo App with Stax"
+description: "Learn Stax fundamentals by building a complete todo application from scratch"
 order: 0
 ---
 
-# Build a Todo App with Effex
+# Build a Todo App with Stax
 
-In this tutorial, you'll build a fully-functional todo application while learning the core concepts of Effex. By the end, you'll understand:
+In this tutorial, you'll build a fully-functional todo application while learning the core concepts of Stax. By the end, you'll understand:
 
 - How to create elements with the `$` factory
 - Reactive state with Signals
@@ -33,7 +33,7 @@ A todo app with the ability to:
 
 ## A Quick Note on Effect
 
-Effex is built on [Effect](https://effect.website), a powerful TypeScript library for building robust applications. You don't need to understand Effect deeply to use Effex—we'll introduce concepts gradually as they become relevant.
+Stax is built on [Effect](https://effect.website), a powerful TypeScript library for building robust applications. You don't need to understand Effect deeply to use Stax—we'll introduce concepts gradually as they become relevant.
 
 For now, just know that when you see `yield*`, think of it like `await`:
 
@@ -50,7 +50,7 @@ Effect.gen(function* () {
   return result;
 });
 
-// Effect.gen (what you'll see most in Effex)
+// Effect.gen (what you'll see most in Stax)
 const MyComponent = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0);

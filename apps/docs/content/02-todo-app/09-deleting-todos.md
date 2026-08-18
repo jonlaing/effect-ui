@@ -24,7 +24,7 @@ This filters out the todo with the matching ID, effectively removing it. The fun
 Update `src/components/TodoItem.ts` to accept an `onDelete` callback:
 
 ```typescript
-import { $, Readable } from "@effex/dom";
+import { $, Readable } from "@stax-ui/dom";
 import { Effect } from "effect";
 
 interface Todo {

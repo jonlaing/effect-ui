@@ -1,7 +1,7 @@
 import { Effect, Scope } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { RendererContext, Signal } from "@effex/core";
+import { RendererContext, Signal } from "@stax-ui/core";
 
 import { DOMRendererLive } from "../Render/DOMRenderer.js";
 import * as Core from "./core.js";

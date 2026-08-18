@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * Sync @effex/* dependency versions in create-effex templates with the
+ * Sync @stax-ui/* dependency versions in create-stax templates with the
  * current workspace versions.
  *
- * Reads the version field from each workspace @effex package, then walks
- * every package.json under packages/create-effex/templates/ and rewrites
- * matching @effex/* entries under `dependencies` and `devDependencies`
+ * Reads the version field from each workspace @stax-ui package, then walks
+ * every package.json under packages/create-stax/templates/ and rewrites
+ * matching @stax-ui/* entries under `dependencies` and `devDependencies`
  * to `^MAJOR.MINOR.PATCH`.
  *
  * Run as part of the release flow (after `changeset version`) so generated
@@ -25,13 +25,13 @@ const PACKAGES_DIR = join(repoRoot, "packages");
 const TEMPLATES_DIR = join(
   repoRoot,
   "packages",
-  "create-effex",
+  "create-stax",
   "templates",
 );
 
 /**
  * Read every workspace package.json under packages/ and return a map of
- * { "@effex/<name>": "1.2.3" } for those that publish under @effex/*.
+ * { "@stax-ui/<name>": "1.2.3" } for those that publish under @stax-ui/*.
  */
 const readWorkspaceVersions = async () => {
   const entries = await readdir(PACKAGES_DIR);
@@ -46,7 +46,7 @@ const readWorkspaceVersions = async () => {
       continue; // not every dir has a package.json
     }
     const pkg = JSON.parse(raw);
-    if (typeof pkg.name === "string" && pkg.name.startsWith("@effex/")) {
+    if (typeof pkg.name === "string" && pkg.name.startsWith("@stax-ui/")) {
       versions[pkg.name] = pkg.version;
     }
   }
@@ -55,16 +55,16 @@ const readWorkspaceVersions = async () => {
 };
 
 /**
- * Rewrite @effex/* entries in a deps object to ^version. Mutates input.
+ * Rewrite @stax-ui/* entries in a deps object to ^version. Mutates input.
  * Returns true if anything changed.
  */
 const rewriteDepsBlock = (deps, versions) => {
   if (!deps || typeof deps !== "object") return false;
   let changed = false;
   for (const name of Object.keys(deps)) {
-    if (!name.startsWith("@effex/")) continue;
+    if (!name.startsWith("@stax-ui/")) continue;
     const target = versions[name];
-    if (!target) continue; // unknown @effex package — leave alone
+    if (!target) continue; // unknown @stax-ui package — leave alone
     const desired = `^${target}`;
     if (deps[name] !== desired) {
       deps[name] = desired;
@@ -75,7 +75,7 @@ const rewriteDepsBlock = (deps, versions) => {
 };
 
 /**
- * Find every package.json under templates/, rewrite @effex/* deps to
+ * Find every package.json under templates/, rewrite @stax-ui/* deps to
  * pinned-to-workspace versions, and write back. Returns the list of
  * files that were updated.
  */
@@ -120,7 +120,7 @@ const main = async () => {
   const known = Object.entries(versions);
 
   if (known.length === 0) {
-    console.error("[sync-template-versions] No @effex/* packages found");
+    console.error("[sync-template-versions] No @stax-ui/* packages found");
     process.exit(1);
   }
 

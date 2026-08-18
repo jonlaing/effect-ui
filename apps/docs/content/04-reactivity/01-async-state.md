@@ -6,14 +6,14 @@ order: 1
 
 # Async State
 
-Real applications need to fetch data, submit forms, and handle loading and error states. Effex provides three primitives for this: **AsyncReadable** for data that loads automatically, **Mutation** for operations you trigger manually, and **AsyncCache** for coordinating data across your app.
+Real applications need to fetch data, submit forms, and handle loading and error states. Stax provides three primitives for this: **AsyncReadable** for data that loads automatically, **Mutation** for operations you trigger manually, and **AsyncCache** for coordinating data across your app.
 
 ## AsyncReadable
 
 An AsyncReadable wraps an async operation and exposes reactive state for loading, value, and error:
 
 ```typescript
-import { AsyncReadable } from "@effex/dom";
+import { AsyncReadable } from "@stax-ui/dom";
 
 const userData = yield* AsyncReadable.make(() =>
   Effect.gen(function* () {
@@ -70,10 +70,10 @@ When `userId` changes from `"alice"` to `"bob"`, the profile refetches automatic
 
 ### Rendering Async State
 
-Async state works naturally with Effex's control flow primitives:
+Async state works naturally with Stax's control flow primitives:
 
 ```typescript
-import { when, matchOption } from "@effex/dom";
+import { when, matchOption } from "@stax-ui/dom";
 
 // Show loading spinner
 when(userData.isLoading, {
@@ -93,7 +93,7 @@ matchOption(userData.value, {
 Unlike AsyncReadable, a Mutation doesn't run until you tell it to. Use it for form submissions, API calls, or any operation triggered by user action:
 
 ```typescript
-import { Mutation } from "@effex/dom";
+import { Mutation } from "@stax-ui/dom";
 
 const createUser = yield* Mutation.make((input: CreateUserInput) =>
   Effect.gen(function* () {
@@ -156,7 +156,7 @@ const createAndVerify = Mutation.flatMap(createUser, (user) =>
 AsyncCache coordinates async data across your application. It deduplicates requests, caches results, and supports hierarchical invalidation.
 
 ```typescript
-import { AsyncCache } from "@effex/dom";
+import { AsyncCache } from "@stax-ui/dom";
 
 const cache = yield* AsyncCache;
 

@@ -1,7 +1,7 @@
 {
-  "name": "@effex/vite-plugin",
-  "version": "1.1.2",
-  "description": "Vite plugin for Effex applications",
+  "name": "@stax-ui/vite-plugin",
+  "version": "0.1.0",
+  "description": "Vite plugin for Stax applications",
   "type": "module",
   "license": "MIT",
   "publishConfig": {
@@ -10,7 +10,7 @@
   "author": "Jon Laing",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jonlaing/effex.git",
+    "url": "https://github.com/stax-ui/stax.git",
     "directory": "packages/vite-plugin"
   },
   "keywords": [
@@ -39,11 +39,11 @@
     "build": "tsup"
   },
   "peerDependencies": {
-    "@effex/platform": "workspace:^",
+    "@stax-ui/platform": "workspace:^",
     "vite": "^5.0.0 || ^6.0.0 || ^7.0.0"
   },
   "peerDependenciesMeta": {
-    "@effex/platform": {
+    "@stax-ui/platform": {
       "optional": true
     }
   },

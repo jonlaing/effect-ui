@@ -9,9 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@effex/core": "workspace:*",
-    "@effex/dom": "workspace:*",
-    "@effex/router": "workspace:*",
+    "@stax-ui/core": "workspace:*",
+    "@stax-ui/dom": "workspace:*",
+    "@stax-ui/router": "workspace:*",
     "@tailwindcss/vite": "^4.1.18",
     "effect": "^3.0.0",
     "tailwindcss": "^4.1.18"

@@ -53,7 +53,7 @@ Now we need a derived value that filters todos based on the current filter. We c
 For combining multiple signals, use `Readable.zipWith`:
 
 ```typescript
-import { $, each, Readable, Signal, when } from "@effex/dom";
+import { $, each, Readable, Signal, when } from "@stax-ui/dom";
 
 // Inside App component:
 const filteredTodos = Readable.zipWith(todos, filter, (todoList, currentFilter) => {
@@ -218,7 +218,7 @@ If you've used other frameworks:
 - **Solid**: It's like `createMemo()`
 - **Svelte**: It's like `$:` reactive statements
 
-The key difference: Effex derivations are explicit and type-safe. You always know what depends on what.
+The key difference: Stax derivations are explicit and type-safe. You always know what depends on what.
 
 ## Key Takeaways
 

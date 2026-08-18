@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { $, collect, each, Readable, Signal, when } from "@effex/dom";
+import { $, collect, each, Readable, Signal, when } from "@stax-ui/dom";
 
 import {
   FilterTab,
@@ -87,7 +87,7 @@ export const App = () =>
           collect(
             $.h1(
               { class: "text-4xl font-bold text-primary" },
-              $.of("Effex Todo"),
+              $.of("Stax Todo"),
             ),
           ),
         ),

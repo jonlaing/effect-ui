@@ -1,9 +1,9 @@
 /**
- * Client-side mounting for Effex applications.
+ * Client-side mounting for Stax applications.
  *
  * @example
  * ```ts
- * import { mount, runApp } from "@effex/dom/client";
+ * import { mount, runApp } from "@stax-ui/dom/client";
  * import { App } from "./App";
  *
  * runApp(

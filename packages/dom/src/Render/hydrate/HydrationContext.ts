@@ -38,7 +38,7 @@ export interface HydrationContextService {
  * Components check for this context to determine if they're hydrating
  * and to look up existing DOM elements.
  */
-export class HydrationContext extends Context.Tag("@effex/HydrationContext")<
+export class HydrationContext extends Context.Tag("@stax-ui/HydrationContext")<
   HydrationContext,
   HydrationContextService
 >() {}
@@ -60,20 +60,18 @@ export const makeHydrationContext = (
       root,
 
       findById: (id: string) =>
-        Effect.sync(() => root.querySelector(`[data-effex-id="${id}"]`)),
+        Effect.sync(() => root.querySelector(`[data-stax-id="${id}"]`)),
 
       findSuspense: (id: string) =>
         Effect.sync(() => {
           const container = root.querySelector<HTMLElement | SVGElement>(
-            `[data-effex-id="${id}"][data-effex-type="suspense"]`,
+            `[data-stax-id="${id}"][data-stax-type="suspense"]`,
           );
           if (!container) return null;
 
           const state =
-            (container.getAttribute("data-effex-suspense-state") as
-              | "loading"
-              | "loaded"
-              | "error") ?? "loading";
+            (container.getAttribute("data-stax-suspense-state") as
+              "loading" | "loaded" | "error") ?? "loading";
 
           // The fallback is the first child of the container
           const fallback = container.firstChild;

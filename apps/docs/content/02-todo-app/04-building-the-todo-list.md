@@ -13,7 +13,7 @@ Our todos are stored in a Signal, but we're still rendering hardcoded items. Let
 To render a list reactively, we use `each`:
 
 ```typescript
-import { each } from "@effex/dom";
+import { each } from "@stax-ui/dom";
 
 each(itemsSignal, {
   key: (item) => item.id,  // Unique identifier
@@ -32,7 +32,7 @@ The `each` helper:
 First, let's create a component for individual todo items. Create a new file `src/components/TodoItem.ts`:
 
 ```typescript
-import { $, Readable } from "@effex/dom";
+import { $, Readable } from "@stax-ui/dom";
 
 interface Todo {
   id: number;
@@ -68,7 +68,7 @@ Now update `src/main.ts`:
 ```typescript
 import "./styles.css";
 import { Effect } from "effect";
-import { $, each, mount, Readable, runApp, Signal, t } from "@effex/dom";
+import { $, each, mount, Readable, runApp, Signal, t } from "@stax-ui/dom";
 import { TodoItem } from "./components/TodoItem";
 
 const container = document.getElementById("root");
@@ -83,7 +83,7 @@ interface Todo {
 const App = () =>
   Effect.gen(function* () {
     const todos = yield* Signal.Array.make<Todo>([
-      { id: 1, text: "Learn Effex", completed: false },
+      { id: 1, text: "Learn Stax", completed: false },
       { id: 2, text: "Build a todo app", completed: false },
       { id: 3, text: "Ship it!", completed: false },
     ]);
