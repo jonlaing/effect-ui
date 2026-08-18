@@ -1,6 +1,6 @@
 import { Context, Effect, Layer, Option, Record, Runtime, Scope } from "effect";
 
-import { Readable, Signal } from "@effex/core";
+import { logDebug, Readable, Signal } from "@effex/core";
 
 import type { Route } from "./Route.js";
 import { findMatch, type Router } from "./Router.js";
@@ -225,9 +225,7 @@ export const make = <
     const pushPath = (path: string): Effect.Effect<void> =>
       Effect.gen(function* () {
         const from = yield* pathnameState.get;
-        yield* Effect.logDebug("pushPath", { from, to: path }).pipe(
-          Effect.annotateLogs("subsystem", "effex.nav"),
-        );
+        yield* logDebug("pushPath", "effex.nav", { from, to: path });
         yield* lastSourceState.set("push");
         yield* updateState(path);
         if (isBrowser) {
@@ -238,9 +236,7 @@ export const make = <
     const replacePath = (path: string): Effect.Effect<void> =>
       Effect.gen(function* () {
         const from = yield* pathnameState.get;
-        yield* Effect.logDebug("replacePath", { from, to: path }).pipe(
-          Effect.annotateLogs("subsystem", "effex.nav"),
-        );
+        yield* logDebug("replacePath", "effex.nav", { from, to: path });
         yield* lastSourceState.set("replace");
         yield* updateState(path);
         if (isBrowser) {
@@ -315,9 +311,7 @@ export const make = <
         runFork(
           Effect.gen(function* () {
             const from = yield* pathnameState.get;
-            yield* Effect.logDebug("popstate", { from, to: target }).pipe(
-              Effect.annotateLogs("subsystem", "effex.nav"),
-            );
+            yield* logDebug("popstate", "effex.nav", { from, to: target });
             yield* lastSourceState.set("pop");
             yield* updateState(target);
           }),

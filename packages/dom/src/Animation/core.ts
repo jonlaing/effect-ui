@@ -1,5 +1,7 @@
 import { Effect } from "effect";
 
+import { logDebug } from "@effex/core";
+
 import * as Element from "../Element/index.js";
 import {
   forceReflow,
@@ -67,12 +69,12 @@ const runAnimation = <E, R>(
       triggerClasses.every((c) => !c);
 
     if (shouldSkip) {
-      yield* Effect.logDebug(`${kind} animation: skipped`, {
+      yield* logDebug(`${kind} animation: skipped`, "effex.animation", {
         reason:
           respectReducedMotion && prefersReducedMotion()
             ? "reduced-motion"
             : "no-trigger-classes",
-      }).pipe(Effect.annotateLogs("subsystem", "effex.animation"));
+      });
       yield* runHook(onBefore, element);
       if (skipFinalClass) {
         yield* Element.addClass(element, ...parseClasses(skipFinalClass));
@@ -82,10 +84,10 @@ const runAnimation = <E, R>(
     }
 
     // Run the animation
-    yield* Effect.logDebug(`${kind} animation: begin`, {
+    yield* logDebug(`${kind} animation: begin`, "effex.animation", {
       addBeforeReflow: addBeforeReflow.filter(Boolean),
       addAfterReflow: addAfterReflow.filter(Boolean),
-    }).pipe(Effect.annotateLogs("subsystem", "effex.animation"));
+    });
 
     yield* runHook(onBefore, element);
 
@@ -123,9 +125,9 @@ const runAnimation = <E, R>(
 
     yield* runHook(onAfter, element);
 
-    yield* Effect.logDebug(`${kind} animation: end`, {
+    yield* logDebug(`${kind} animation: end`, "effex.animation", {
       endedBy: outcome.endedBy,
-    }).pipe(Effect.annotateLogs("subsystem", "effex.animation"));
+    });
   }) as Effect.Effect<void, E, R>;
 
 /**

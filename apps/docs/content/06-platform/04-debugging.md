@@ -53,3 +53,16 @@ Effect.runFork(
 ## Cost when disabled
 
 Zero rendering work — messages are only built into strings by the formatter, and when the level is above `Debug`, the formatter never runs. Message arguments (the objects passed to `Effect.logDebug`) are constructed regardless — that's why the framework only logs at low-volume framework boundaries. High-volume paths like `Signal.set` do NOT emit debug logs; those will get structured inspector hooks in a future release.
+
+## Adding your own debug logs
+
+The `logDebug` helper is exported from `@effex/core` for your own instrumentation. The `subsystem` argument is typed as `` `effex.${string}` `` so custom framework extensions can slot into the same filter mechanism.
+
+```typescript
+import { logDebug } from "@effex/core";
+
+// Inside an Effect
+yield* logDebug("cache miss", "effex.my-extension", { key });
+```
+
+App-level logs don't need the `effex.` prefix — use `Effect.logDebug` and `Effect.annotateLogs` directly with whatever subsystem convention you like.

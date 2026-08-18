@@ -1,6 +1,7 @@
 import { Clock, Effect, Either, Option } from "effect";
 
 import { ControlCtx } from "./ControlCtx.js";
+import { logDebug } from "./Debug.js";
 import type { Element } from "./Element.js";
 import { Readable } from "./Readable.js";
 import type { Signal } from "./Signal.js";
@@ -67,6 +68,12 @@ export const reconcile = <A, E, R>(
         const currentKeys = yield* ctx.getSlotKeys();
         const targetKeys = config.getTargetKeys(value);
         const targetSet = new Set(targetKeys);
+
+        yield* logDebug("reconcile sync", "effex.reconcile", {
+          value,
+          currentKeys,
+          targetKeys,
+        });
 
         // Step 1: Remove slots not in target
         for (const key of currentKeys) {

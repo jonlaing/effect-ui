@@ -1,6 +1,6 @@
 import { Effect, Option, pipe, Record, Stream } from "effect";
 
-import { ControlCtx, reconcile } from "@effex/core";
+import { ControlCtx, logDebug, reconcile } from "@effex/core";
 import {
   $,
   AnimationConfigCtx,
@@ -89,18 +89,18 @@ const renderRouteWithGuard = <E, R>(
     if (!allowed && route.guardOptions) {
       // Guard blocked - handle based on options
       if ("redirect" in route.guardOptions) {
-        yield* Effect.logDebug("guard blocked, redirecting", {
+        yield* logDebug("guard blocked, redirecting", "effex.outlet", {
           route: route.path,
           redirect: route.guardOptions.redirect,
-        }).pipe(Effect.annotateLogs("subsystem", "effex.outlet"));
+        });
         // Redirect to another path
         yield* nav.pushPath(route.guardOptions.redirect);
         // Return empty div while redirecting
         return yield* $.div();
       } else if ("fallback" in route.guardOptions) {
-        yield* Effect.logDebug("guard blocked, rendering fallback", {
+        yield* logDebug("guard blocked, rendering fallback", "effex.outlet", {
           route: route.path,
-        }).pipe(Effect.annotateLogs("subsystem", "effex.outlet"));
+        });
         // Render fallback component
         return yield* route.guardOptions.fallback();
       }
@@ -111,11 +111,11 @@ const renderRouteWithGuard = <E, R>(
     const currentSearchParams = yield* nav.searchParams.get;
     const searchParamsObj = Object.fromEntries(currentSearchParams.entries());
 
-    yield* Effect.logDebug("resolving route", {
+    yield* logDebug("resolving route", "effex.outlet", {
       route: route.path,
       params: currentMatch.params,
       searchParams: searchParamsObj,
-    }).pipe(Effect.annotateLogs("subsystem", "effex.outlet"));
+    });
 
     // Build loaderPath preserving current search params alongside _data=1
     const resolvedPath = buildPath(route, currentMatch.params);
@@ -137,10 +137,10 @@ const renderRouteWithGuard = <E, R>(
     const maybeProvider = yield* Effect.serviceOption(RouteDataProvider);
 
     if (Option.isSome(maybeProvider)) {
-      yield* Effect.logDebug("fetching route data via provider", {
+      yield* logDebug("fetching route data via provider", "effex.route-data", {
         route: route.path,
         loaderPath,
-      }).pipe(Effect.annotateLogs("subsystem", "effex.route-data"));
+      });
       routeData = yield* maybeProvider.value.getRouteData(
         route,
         currentMatch.params,
@@ -151,10 +151,10 @@ const renderRouteWithGuard = <E, R>(
       // as { _redirect: url } when the server returns a redirect for data requests
       const maybeRedirect = routeData as unknown as { _redirect?: string };
       if (maybeRedirect._redirect) {
-        yield* Effect.logDebug("provider signaled redirect", {
+        yield* logDebug("provider signaled redirect", "effex.route-data", {
           from: route.path,
           to: maybeRedirect._redirect,
-        }).pipe(Effect.annotateLogs("subsystem", "effex.route-data"));
+        });
         yield* nav.pushPath(maybeRedirect._redirect);
         return yield* $.div();
       }
@@ -169,14 +169,18 @@ const renderRouteWithGuard = <E, R>(
       const hasHooks =
         hasLoader || (route._handlers && route._handlers.length > 0);
 
-      yield* Effect.logDebug("SPA fallback: no route-data provider", {
-        route: route.path,
-        source: route._loader
-          ? "loader"
-          : route._staticConfig?.load
-            ? "static.load"
-            : "none",
-      }).pipe(Effect.annotateLogs("subsystem", "effex.route-data"));
+      yield* logDebug(
+        "SPA fallback: no route-data provider",
+        "effex.route-data",
+        {
+          route: route.path,
+          source: route._loader
+            ? "loader"
+            : route._staticConfig?.load
+              ? "static.load"
+              : "none",
+        },
+      );
 
       if (hasHooks) {
         const data = route._loader
