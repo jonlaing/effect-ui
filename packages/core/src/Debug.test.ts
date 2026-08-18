@@ -1,7 +1,7 @@
 import { Effect, HashMap, Logger, LogLevel, Option } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { logDebug } from "./Debug.js";
+import { logDebug, logError } from "./Debug.js";
 
 interface Captured {
   readonly level: string;
@@ -57,6 +57,20 @@ describe("Debug.logDebug", () => {
       ),
     );
     expect(sink).toHaveLength(1);
+    expect(sink[0].subsystem).toBe("effex.test");
+  });
+
+  it("logError emits at Error level with the subsystem — visible without opting into Debug", async () => {
+    // Unlike logDebug, logError should be visible at the default log level
+    // so users see framework error paths without any Logger configuration.
+    const { sink, layer } = capture();
+    await Effect.runPromise(
+      logError("kaboom", "effex.test", { key: "value" }).pipe(
+        Effect.provide(layer),
+      ),
+    );
+    expect(sink).toHaveLength(1);
+    expect(sink[0].level).toBe("ERROR");
     expect(sink[0].subsystem).toBe("effex.test");
   });
 });

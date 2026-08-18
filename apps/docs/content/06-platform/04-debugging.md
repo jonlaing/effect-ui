@@ -56,13 +56,15 @@ Zero rendering work — messages are only built into strings by the formatter, a
 
 ## Adding your own debug logs
 
-The `logDebug` helper is exported from `@effex/core` for your own instrumentation. The `subsystem` argument is typed as `` `effex.${string}` `` so custom framework extensions can slot into the same filter mechanism.
+`logDebug` and `logError` are exported from `@effex/core` for your own instrumentation. The `subsystem` argument is typed as `` `effex.${string}` `` so custom framework extensions can slot into the same filter mechanism.
 
 ```typescript
-import { logDebug } from "@effex/core";
+import { logDebug, logError } from "@effex/core";
 
-// Inside an Effect
 yield* logDebug("cache miss", "effex.my-extension", { key });
+yield* logError("cache failure", "effex.my-extension", { cause });
 ```
 
-App-level logs don't need the `effex.` prefix — use `Effect.logDebug` and `Effect.annotateLogs` directly with whatever subsystem convention you like.
+`logDebug` is filtered by the runtime log level (opt-in visibility). `logError` always emits so users see failures without needing to configure anything.
+
+App-level logs don't need the `effex.` prefix — use `Effect.logDebug` / `Effect.logError` and `Effect.annotateLogs` directly with whatever subsystem convention you like.

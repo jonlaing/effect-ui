@@ -154,6 +154,62 @@ describe("framework debug logs", () => {
     expect(dataLogs.some((l) => l.message.includes("SPA fallback"))).toBe(true);
   });
 
+  it("logs an effex.reconcile error when a route render fails and keeps the subscription alive", async () => {
+    // The wrapping lives in core's `reconcile` — a failing render on
+    // subsequent nav is logged at Error level with subsystem
+    // "effex.reconcile" and the fiber survives so the next nav still
+    // renders. Without this, one broken route freezes all future
+    // updates. This exercises the wrapping through the whole stack:
+    // Outlet → reconcile → ctx.subscribe → subscribeReconcile.
+    const BoomRoute = Route.make("/boom").pipe(
+      Route.render(() => Effect.fail(new Error("route render exploded"))),
+    );
+    const OKRoute = Route.make("/ok").pipe(
+      Route.render(() => $.div({ class: "ok" }, $.of("OK"))),
+    );
+    const HomeRoute = Route.make("/").pipe(
+      Route.render(() => $.div({ class: "home" }, $.of("Home"))),
+    );
+    const router = empty.pipe(
+      concat(HomeRoute),
+      concat(BoomRoute),
+      concat(OKRoute),
+    );
+    const navLayer = Navigation.makeLayer(router, { initialPath: "/" });
+
+    // No withMinimumLogLevel — Error logs are visible at every level, so
+    // this exercises the "user sees the error without opting into debug"
+    // guarantee.
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const nav = yield* Navigation.Context;
+        const outletEl = yield* Outlet({ router });
+        document.body.appendChild(outletEl);
+        yield* Effect.sleep("10 millis");
+        yield* nav.pushPath("/boom"); // fails
+        yield* Effect.sleep("20 millis");
+        yield* nav.pushPath("/ok"); // must still render
+        yield* Effect.sleep("20 millis");
+      }).pipe(
+        Effect.scoped,
+        Effect.provide(navLayer),
+        Effect.provide(makeCapturingLogger(logs)),
+        Effect.provide(TestLayer),
+      ),
+    );
+
+    const errorLogs = logs.filter(
+      (l) => l.subsystem === "effex.reconcile" && l.level === "ERROR",
+    );
+    expect(errorLogs.length).toBeGreaterThan(0);
+    expect(
+      errorLogs.some((l) => l.message.includes("reconcile handler failed")),
+    ).toBe(true);
+
+    // The subscription survived — /ok rendered after the failure.
+    expect(document.querySelector(".ok")?.textContent).toBe("OK");
+  });
+
   it("emits nothing at debug subsystems when the log level is above Debug", async () => {
     // Guards against accidentally logging at higher levels — users who
     // haven't opted in shouldn't see any of this noise.
