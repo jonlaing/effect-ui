@@ -1,5 +1,68 @@
 # @effex/core
 
+## 1.2.0
+
+### Minor Changes
+
+- aa1dd5e: feat: framework debug logs via Effect.logDebug
+
+  Effex now emits structured debug logs at key framework boundaries — navigation, route resolution, data fetches, animation lifecycle, and reconcile handler invocations. Enable them with the standard Effect Logger pattern:
+
+  ```ts
+  Effect.runFork(
+    program.pipe(
+      Logger.withMinimumLogLevel(LogLevel.Debug),
+      Effect.provide(Logger.pretty),
+    ),
+  );
+  ```
+
+  Every message carries a `subsystem` annotation so consumers can filter by area:
+  - `effex.nav` — `pushPath`, `replacePath`, popstate handler
+  - `effex.outlet` — route resolution, guard eval, redirects
+  - `effex.route-data` — which fetch branch was chosen (provider / SPA fallback), redirect signals
+  - `effex.animation` — enter/exit begin/end, skip reason, how `transitionend` resolved (`transition` / `animation` / `timeout` / `skip`)
+  - `effex.reconcile` — every `reconcile` sync pass with the triggering value and the resolved current/target slot keys
+
+  New `logDebug` and `logError` helpers exported from `@effex/core` for framework use and any downstream extensions that want to plug into the same filter mechanism:
+
+  ```ts
+  import { logDebug, logError } from "@effex/core";
+
+  yield * logDebug("cache miss", "effex.my-extension", { key });
+  yield * logError("cache failure", "effex.my-extension", { cause });
+  ```
+
+  The `subsystem` argument is typed as `` `effex.${string}` `` — enforces the prefix at the type level. `logDebug` is filtered at the default log level (opt-in visibility for framework internals); `logError` always emits (user sees framework error paths without opting in).
+
+  Also moves the reconcile handler's error wrapping — previously in `@effex/dom`'s `subscribeReconcile`, using `Console.error` — into core's `reconcile` where the semantics belong. Failed handlers on subsequent-value updates now emit an `effex.reconcile` Error log through the Logger system and the subscription fiber survives (subsequent updates still fire). `subscribeReconcile` is now trivially the fork/forEach pattern.
+
+  Zero cost when the level is above Debug (the default): the message-formatting layer never runs. Only low-volume framework events get logged this way — high-volume paths (`Signal.set`, per-slot animation phase) will get structured inspector hooks in a future release (#86 / #87 / #88).
+
+  Closes #95.
+
+- edd707f: feat(core): `Readable.debug(id)` combinator for per-value observation
+
+  Adds a lightweight pass-through combinator that wraps a Readable-producing Effect and emits one Debug log per state read / change under the `effex.readable` subsystem:
+
+  ```ts
+  const cart =
+    yield * Signal.make({ items: 0, total: 0 }).pipe(Readable.debug("cart"));
+  // [DEBUG] [effex.readable] initial value  { id: "cart", value: { items: 0, total: 0 } }
+  // [DEBUG] [effex.readable] value changed  { id: "cart", value: { items: 1, total: 999 } }
+  // ...
+  ```
+
+  Behavior:
+  - Reads the initial value via `readable.get` and emits an "initial value" Debug log with `{ id, value }`.
+  - Forks a subscriber on `readable.changes` into the enclosing scope. Each emission produces a "value changed" Debug log with `{ id, value }`.
+  - Returns the original Readable unchanged — a transparent observer, drop-in and drop-out with no other code changes.
+  - Zero cost at the default log level (the formatter never runs).
+
+  The type shape (`R extends Readable<A>`) preserves the concrete subtype, so `Signal.make(0).pipe(Readable.debug("x"))` still yields a `Signal<number>` — `.set` / `.update` continue to work through the pipe.
+
+  A lightweight stepping-stone toward the Signal DevTools story (#86) — gets users the observability they most commonly want without committing to a UI panel design.
+
 ## 1.1.2
 
 ### Patch Changes
