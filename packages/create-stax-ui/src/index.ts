@@ -21,7 +21,7 @@ const TEMPLATES = {
 
 async function main() {
   console.log();
-  console.log(pc.bold(pc.cyan("  create-stax")));
+  console.log(pc.bold(pc.cyan("  create-stax-ui")));
   console.log(pc.dim("  Scaffold a new Stax application"));
   console.log();
 

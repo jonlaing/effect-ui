@@ -6,18 +6,18 @@ order: 1
 
 # Quick Start
 
-The fastest way to start an Stax project is with `create-stax`. It scaffolds a working app with routing, reactive state, and all the tooling configured.
+The fastest way to start an Stax project is with `create-stax-ui`. It scaffolds a working app with routing, reactive state, and all the tooling configured.
 
 ```bash
-pnpm create stax my-app
+pnpm create stax-ui my-app
 ```
 
 You can also use npm, yarn, or bun:
 
 ```bash
-npx create-stax my-app
-yarn create stax my-app
-bunx create-stax my-app
+npx create-stax-ui my-app
+yarn create stax-ui my-app
+bunx create-stax-ui my-app
 ```
 
 The CLI will ask you to pick a template:
@@ -42,7 +42,7 @@ The rest of this guide walks through what each template gives you and when to pi
 ## SPA (Single Page Application)
 
 ```bash
-pnpm create stax my-app --spa
+pnpm create stax-ui my-app --spa
 ```
 
 The simplest setup. Everything runs in the browser — no server, no build-time rendering. Good for dashboards, internal tools, or anything that doesn't need SEO.
@@ -126,7 +126,7 @@ export const router = Router.empty.pipe(
 ## SSR (Server-Side Rendering)
 
 ```bash
-pnpm create stax my-app --ssr
+pnpm create stax-ui my-app --ssr
 ```
 
 Full-stack rendering. The server renders HTML on each request using Effect's HTTP platform, then the client hydrates it. Use this when you need SEO, fast initial page loads, or server-side data loading.
@@ -221,7 +221,7 @@ export default defineConfig({
 ## SSG (Static Site Generation)
 
 ```bash
-pnpm create stax my-app --ssg
+pnpm create stax-ui my-app --ssg
 ```
 
 Pages are pre-rendered to HTML at build time. No server at runtime — just static files you can deploy anywhere. Use this for docs sites, blogs, marketing pages, or anything where the content is known ahead of time.
