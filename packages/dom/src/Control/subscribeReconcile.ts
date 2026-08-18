@@ -43,18 +43,23 @@ export const subscribeReconcile = <V, E, R>(
     const scope = yield* Effect.scope;
     yield* readable.changes.pipe(
       Stream.runForEach((value) =>
-        handler(value).pipe(
-          Effect.tapErrorCause((cause) =>
-            Console.error(
-              `[@effex/dom] Reconcile handler failed for value:`,
-              value,
-              `\nCause:\n${Cause.pretty(cause)}`,
+        Effect.gen(function* () {
+          yield* Effect.logDebug("reconcile: handler invoked", { value }).pipe(
+            Effect.annotateLogs("subsystem", "effex.reconcile"),
+          );
+          yield* handler(value).pipe(
+            Effect.tapErrorCause((cause) =>
+              Console.error(
+                `[@effex/dom] Reconcile handler failed for value:`,
+                value,
+                `\nCause:\n${Cause.pretty(cause)}`,
+              ),
             ),
-          ),
-          // Swallow so the subscription survives; the error is already
-          // logged, and subsequent updates should still be applied.
-          Effect.catchAllCause(() => Effect.void),
-        ),
+            // Swallow so the subscription survives; the error is already
+            // logged, and subsequent updates should still be applied.
+            Effect.catchAllCause(() => Effect.void),
+          );
+        }),
       ),
       Effect.forkIn(scope),
     );

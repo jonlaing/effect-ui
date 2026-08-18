@@ -224,6 +224,10 @@ export const make = <
     // Navigation methods
     const pushPath = (path: string): Effect.Effect<void> =>
       Effect.gen(function* () {
+        const from = yield* pathnameState.get;
+        yield* Effect.logDebug("pushPath", { from, to: path }).pipe(
+          Effect.annotateLogs("subsystem", "effex.nav"),
+        );
         yield* lastSourceState.set("push");
         yield* updateState(path);
         if (isBrowser) {
@@ -233,6 +237,10 @@ export const make = <
 
     const replacePath = (path: string): Effect.Effect<void> =>
       Effect.gen(function* () {
+        const from = yield* pathnameState.get;
+        yield* Effect.logDebug("replacePath", { from, to: path }).pipe(
+          Effect.annotateLogs("subsystem", "effex.nav"),
+        );
         yield* lastSourceState.set("replace");
         yield* updateState(path);
         if (isBrowser) {
@@ -303,12 +311,15 @@ export const make = <
         // the same runtime, so the semaphore inside SubscriptionRef.set
         // serialises them — lastSource is guaranteed to be "pop" by the
         // time pathname's subscribers wake up.
+        const target = window.location.pathname + window.location.search;
         runFork(
           Effect.gen(function* () {
-            yield* lastSourceState.set("pop");
-            yield* updateState(
-              window.location.pathname + window.location.search,
+            const from = yield* pathnameState.get;
+            yield* Effect.logDebug("popstate", { from, to: target }).pipe(
+              Effect.annotateLogs("subsystem", "effex.nav"),
             );
+            yield* lastSourceState.set("pop");
+            yield* updateState(target);
           }),
         );
       };

@@ -16,6 +16,8 @@ const DEFAULT_TIMEOUT = 5000;
  * Internal configuration for running an animation.
  */
 interface AnimationConfig {
+  /** Which lifecycle this is — surfaced in debug logs so callers can trace enter vs exit */
+  readonly kind: "enter" | "exit";
   /** Classes to check - if all are missing, skip animation */
   readonly triggerClasses: readonly (string | undefined)[];
   /** Class to apply even when skipping (for final state) */
@@ -47,6 +49,7 @@ const runAnimation = <E, R>(
 ): Effect.Effect<void, E, R> =>
   Effect.gen(function* () {
     const {
+      kind,
       triggerClasses,
       skipFinalClass,
       addBeforeReflow,
@@ -64,6 +67,12 @@ const runAnimation = <E, R>(
       triggerClasses.every((c) => !c);
 
     if (shouldSkip) {
+      yield* Effect.logDebug(`${kind} animation: skipped`, {
+        reason:
+          respectReducedMotion && prefersReducedMotion()
+            ? "reduced-motion"
+            : "no-trigger-classes",
+      }).pipe(Effect.annotateLogs("subsystem", "effex.animation"));
       yield* runHook(onBefore, element);
       if (skipFinalClass) {
         yield* Element.addClass(element, ...parseClasses(skipFinalClass));
@@ -73,6 +82,11 @@ const runAnimation = <E, R>(
     }
 
     // Run the animation
+    yield* Effect.logDebug(`${kind} animation: begin`, {
+      addBeforeReflow: addBeforeReflow.filter(Boolean),
+      addAfterReflow: addAfterReflow.filter(Boolean),
+    }).pipe(Effect.annotateLogs("subsystem", "effex.animation"));
+
     yield* runHook(onBefore, element);
 
     // Add classes before reflow
@@ -98,7 +112,7 @@ const runAnimation = <E, R>(
     }
 
     // Wait for animation to complete
-    yield* waitForAnimationEnd(element, timeout);
+    const outcome = yield* waitForAnimationEnd(element, timeout);
 
     // Cleanup animation classes
     for (const cls of removeAfterAnimation) {
@@ -108,6 +122,10 @@ const runAnimation = <E, R>(
     }
 
     yield* runHook(onAfter, element);
+
+    yield* Effect.logDebug(`${kind} animation: end`, {
+      endedBy: outcome.endedBy,
+    }).pipe(Effect.annotateLogs("subsystem", "effex.animation"));
   }) as Effect.Effect<void, E, R>;
 
 /**
@@ -139,6 +157,7 @@ export const runEnterAnimation = <E, R>(
   } = options;
 
   return runAnimation(element, {
+    kind: "enter",
     triggerClasses: [enter, enterFrom],
     skipFinalClass: enterTo,
     addBeforeReflow: [enterFrom, enter],
@@ -181,6 +200,7 @@ export const runExitAnimation = <E, R>(
   } = options;
 
   return runAnimation(element, {
+    kind: "exit",
     triggerClasses: [exit, exitTo],
     skipFinalClass: undefined,
     addBeforeReflow: [exit],
