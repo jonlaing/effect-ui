@@ -1,24 +1,24 @@
 ---
 title: "Coming from Svelte"
-description: "A guide for Svelte developers learning Effex — key differences, concept mapping, and side-by-side examples."
+description: "A guide for Svelte developers learning Stax — key differences, concept mapping, and side-by-side examples."
 order: 2
 ---
 
 # Coming from Svelte
 
-A guide for Svelte developers learning Effex. This covers the key differences, concept mapping, and side-by-side examples to help you transition.
+A guide for Svelte developers learning Stax. This covers the key differences, concept mapping, and side-by-side examples to help you transition.
 
 This guide covers both Svelte 4 (reactive statements, stores) and Svelte 5 (runes).
 
 ## Why Switch?
 
-If you're already using [Effect](https://effect.website/) in your application, Effex lets you use the same patterns and mental model across your entire stack. No more context-switching between Svelte's compiler magic and Effect's compositional approach.
+If you're already using [Effect](https://effect.website/) in your application, Stax lets you use the same patterns and mental model across your entire stack. No more context-switching between Svelte's compiler magic and Effect's compositional approach.
 
 ### Typed Error Handling
 
 In Svelte, component errors are runtime surprises. There's no built-in error boundary mechanism, and you typically rely on try/catch in event handlers or global error handling.
 
-In Effex, every element has type `Element<E, R>` where `E` is the error channel. Errors propagate through the component tree, and you **must** handle them before mounting:
+In Stax, every element has type `Element<E, R>` where `E` is the error channel. Errors propagate through the component tree, and you **must** handle them before mounting:
 
 ```ts
 // This won't compile — UserProfile might fail with ApiError
@@ -54,10 +54,10 @@ Svelte's power comes from its compiler — `$:` reactive statements, automatic s
 </script>
 ```
 
-Effex is explicit — what you write is what runs:
+Stax is explicit — what you write is what runs:
 
 ```ts
-// Effex: No transformation
+// Stax: No transformation
 const count = yield* Signal.make(0);
 const doubled = Readable.map(count, (c) => c * 2);
 ```
@@ -70,9 +70,9 @@ Benefits:
 
 ### Similar Reactivity Model
 
-Both Svelte and Effex use fine-grained reactivity (not virtual DOM diffing). The concepts map fairly directly:
+Both Svelte and Stax use fine-grained reactivity (not virtual DOM diffing). The concepts map fairly directly:
 
-| Svelte 5 Rune | Svelte 4 | Effex |
+| Svelte 5 Rune | Svelte 4 | Stax |
 |---|---|---|
 | `$state()` | `let x = ...` | `Signal.make()` |
 | `$derived()` | `$: x = ...` | `Readable.map()` |
@@ -93,7 +93,7 @@ Both Svelte and Effex use fine-grained reactivity (not virtual DOM diffing). The
 ```
 
 ```ts
-// Effex — Option 1: Boundary.suspense (one-shot)
+// Stax — Option 1: Boundary.suspense (one-shot)
 Boundary.suspense({
   render: () =>
     Effect.gen(function* () {
@@ -105,7 +105,7 @@ Boundary.suspense({
   delay: "200 millis", // Avoid loading flash — Svelte can't do this
 });
 
-// Effex — Option 2: AsyncReadable (reactive, with refetch)
+// Stax — Option 2: AsyncReadable (reactive, with refetch)
 const userData = yield* AsyncReadable.make(() => fetchUser(id));
 
 // AsyncReadable has separate Readables for fine-grained reactivity
@@ -130,7 +130,7 @@ The `delay` option on `Boundary.suspense` prevents flash of loading state for fa
 
 ### Automatic Resource Cleanup
 
-Svelte's `onDestroy` requires manual cleanup registration. Effex uses Effect's scope system:
+Svelte's `onDestroy` requires manual cleanup registration. Stax uses Effect's scope system:
 
 ```svelte
 <!-- Svelte -->
@@ -143,7 +143,7 @@ Svelte's `onDestroy` requires manual cleanup registration. Effex uses Effect's s
 ```
 
 ```ts
-// Effex: Automatic cleanup via scope
+// Stax: Automatic cleanup via scope
 yield* eventSource.pipe(
   Stream.runForEach(handler),
   Effect.forkIn(scope), // Cleaned up when scope closes
@@ -152,7 +152,7 @@ yield* eventSource.pipe(
 
 ## Concept Mapping
 
-| Svelte 5 | Svelte 4 | Effex | Notes |
+| Svelte 5 | Svelte 4 | Stax | Notes |
 |---|---|---|---|
 | `$state(initial)` | `let x = initial` | `Signal.make(initial)` | Must `yield*` to create |
 | `$derived(expr)` | `$: x = expr` | `Readable.map(dep, fn)` | Derives from a readable |
@@ -192,7 +192,7 @@ yield* eventSource.pipe(
 ```
 
 ```ts
-// Effex
+// Stax
 const Counter = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0);
@@ -224,7 +224,7 @@ const Counter = () =>
 ```
 
 ```ts
-// Effex
+// Stax
 const Cart = (props: { items: Readable.Readable<Item[]> }) =>
   Effect.gen(function* () {
     const total = Readable.map(props.items, (items) =>
@@ -250,7 +250,7 @@ const Cart = (props: { items: Readable.Readable<Item[]> }) =>
 ```
 
 ```ts
-// Effex
+// Stax
 const Auth = (props: { isLoggedIn: Readable.Readable<boolean> }) =>
   when(props.isLoggedIn, {
     onTrue: () => Dashboard(),
@@ -274,7 +274,7 @@ const Auth = (props: { isLoggedIn: Readable.Readable<boolean> }) =>
 ```
 
 ```ts
-// Effex
+// Stax
 const TodoList = (props: { todos: Readable.Readable<Todo[]> }) =>
   each(props.todos, {
     container: () => $.ul(),
@@ -316,7 +316,7 @@ const TodoList = (props: { todos: Readable.Readable<Todo[]> }) =>
 ```
 
 ```ts
-// Effex
+// Stax
 const DocumentTitle = (props: {
   title: Readable.Readable<string>;
   unreadCount: Readable.Readable<number>;
@@ -356,7 +356,7 @@ const DocumentTitle = (props: {
 ```
 
 ```ts
-// Effex
+// Stax
 class ThemeService extends Context.Tag("Theme")<ThemeService, string>() {}
 
 const Page = () =>
@@ -388,7 +388,7 @@ $.div(
 ```
 
 ```ts
-// Effex
+// Stax
 const TextInput = () =>
   Effect.gen(function* () {
     const text = yield* Signal.make("");
@@ -419,7 +419,7 @@ const TextInput = () =>
 ```
 
 ```ts
-// Effex
+// Stax
 const Counter = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0);
@@ -450,7 +450,7 @@ const Counter = () =>
 ```
 
 ```ts
-// Effex
+// Stax
 const Card = <E, R>(props: {
   header?: Element.Element<HTMLElement, E, R>;
   children: Element.Element<HTMLElement, E, R>;
@@ -482,7 +482,7 @@ Card({
 ```
 
 ```ts
-// Effex
+// Stax
 Boundary.suspense({
   render: () =>
     Effect.gen(function* () {
@@ -496,9 +496,9 @@ Boundary.suspense({
 
 ## Key Mindset Shifts
 
-1. **No compiler magic** — Svelte's `$:`, `$state`, `$derived` are compiler transforms. Effex is plain TypeScript — what you write is what runs.
+1. **No compiler magic** — Svelte's `$:`, `$state`, `$derived` are compiler transforms. Stax is plain TypeScript — what you write is what runs.
 
-2. **Explicit sources** — Svelte auto-tracks dependencies through compilation. Effex's `Readable.map` and `Readable.tap` require explicit readables to derive from or subscribe to.
+2. **Explicit sources** — Svelte auto-tracks dependencies through compilation. Stax's `Readable.map` and `Readable.tap` require explicit readables to derive from or subscribe to.
 
 3. **No special file format** — No `.svelte` files with `<script>`, `<style>`, and template sections. Just TypeScript.
 
@@ -514,7 +514,7 @@ Boundary.suspense({
 
 In Svelte, reactivity is based on assignment. For objects, you often need to reassign to trigger updates, and there's no way to customize equality checking.
 
-In Effex, equality is a first-class option on every reactive primitive:
+In Stax, equality is a first-class option on every reactive primitive:
 
 ```ts
 // Only trigger updates when the user ID changes, ignoring lastSeen timestamps
@@ -526,7 +526,7 @@ const currentUser = yield* Signal.make<User>(
 
 ## Transitions and Animations
 
-Svelte has built-in transition directives. Effex uses CSS-first animations:
+Svelte has built-in transition directives. Stax uses CSS-first animations:
 
 ```svelte
 <!-- Svelte -->
@@ -540,7 +540,7 @@ Svelte has built-in transition directives. Effex uses CSS-first animations:
 ```
 
 ```ts
-// Effex
+// Stax
 when(visible, {
   onTrue: () => $.div({}, "Fading content"),
   onFalse: () => $.span(),
@@ -551,7 +551,7 @@ when(visible, {
 });
 ```
 
-Effex's approach:
+Stax's approach:
 - Uses standard CSS animations (better performance, GPU-accelerated)
 - Works with any CSS framework (Tailwind, etc.)
 - Supports staggered list animations
@@ -576,10 +576,10 @@ In Svelte, you use `bind:this` to get DOM element references:
 <input bind:this={inputEl} on:click={handleFocus} />
 ```
 
-In Effex, `ref()` creates a pipeable element reference:
+In Stax, `ref()` creates a pipeable element reference:
 
 ```ts
-// Effex
+// Stax
 const FocusInput = () =>
   Effect.gen(function* () {
     const inputRef = yield* ref<HTMLInputElement>();
@@ -597,7 +597,7 @@ const FocusInput = () =>
 
 ### Common Svelte DOM Patterns
 
-| Svelte Pattern | Effex Equivalent |
+| Svelte Pattern | Stax Equivalent |
 |---|---|
 | `el?.focus()` | `el.pipe(Element.focus)` |
 | `el?.blur()` | `el.pipe(Element.blur)` |
@@ -613,7 +613,7 @@ const FocusInput = () =>
 
 ### Animation Hooks with Element Helpers
 
-Effex's animation system passes elements to lifecycle hooks, letting you use Element helpers:
+Stax's animation system passes elements to lifecycle hooks, letting you use Element helpers:
 
 ```ts
 when(isModalOpen, {

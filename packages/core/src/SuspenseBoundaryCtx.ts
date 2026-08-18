@@ -68,5 +68,5 @@ export interface ISuspenseBoundaryCtx<N> {
  * Uses `unknown` as the base element type - implementations narrow this.
  */
 export class SuspenseBoundaryCtx extends Context.Tag(
-  "@effex/core/SuspenseBoundaryCtx",
+  "@stax-ui/core/SuspenseBoundaryCtx",
 )<SuspenseBoundaryCtx, ISuspenseBoundaryCtx<unknown>>() {}

@@ -14,7 +14,7 @@ import { Readable, TypeId as ReadableTypeId } from "./Readable.js";
 // TypeId
 // -----------------------------------------------------------------------------
 
-export const SignalMapTypeId: unique symbol = Symbol.for("effex/SignalMap");
+export const SignalMapTypeId: unique symbol = Symbol.for("stax/SignalMap");
 export type SignalMapTypeId = typeof SignalMapTypeId;
 
 // -----------------------------------------------------------------------------

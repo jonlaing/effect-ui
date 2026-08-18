@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import type { Renderer, Slot } from "@effex/core";
+import type { Renderer, Slot } from "@stax-ui/core";
 
 import { warnIfInvalidNesting } from "../validateNesting.js";
 import {
@@ -213,7 +213,7 @@ export const StringRenderer: Renderer<VNode> = {
 
   createSlot: () =>
     Effect.sync((): Slot<VNode> => {
-      const marker = vComment("effex-slot");
+      const marker = vComment("stax-slot");
       let currentContent: VNode | null = null;
 
       // Helper to find parent and index of marker

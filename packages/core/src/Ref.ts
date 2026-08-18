@@ -1,6 +1,6 @@
 import { Deferred, Effect, Predicate, Scope } from "effect";
 
-export const TypeId = Symbol.for("@effex/Ref");
+export const TypeId = Symbol.for("@stax-ui/Ref");
 export type TypeId = typeof TypeId;
 
 /**

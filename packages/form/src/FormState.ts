@@ -1,6 +1,6 @@
 import { Effect, Either, ParseResult, Schema, Scope } from "effect";
 
-import { Readable, Signal } from "@effex/core";
+import { Readable, Signal } from "@stax-ui/core";
 
 import { isLeafField, type Field } from "./Field.js";
 import type {

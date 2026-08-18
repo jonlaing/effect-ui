@@ -9,7 +9,7 @@ export default {
     "",
     "<THIRD_PARTY_MODULES>", // External packages
     "",
-    "^@effex/(.*)$", // Internal @effex packages
+    "^@stax-ui/(.*)$", // Internal @stax-ui packages
     "",
     "^[./]", // Relative imports
   ],

@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { logDebug } from "@effex/core";
+import { logDebug } from "@stax-ui/core";
 
 import * as Element from "../Element/index.js";
 import {
@@ -69,7 +69,7 @@ const runAnimation = <E, R>(
       triggerClasses.every((c) => !c);
 
     if (shouldSkip) {
-      yield* logDebug(`${kind} animation: skipped`, "effex.animation", {
+      yield* logDebug(`${kind} animation: skipped`, "stax.animation", {
         reason:
           respectReducedMotion && prefersReducedMotion()
             ? "reduced-motion"
@@ -84,7 +84,7 @@ const runAnimation = <E, R>(
     }
 
     // Run the animation
-    yield* logDebug(`${kind} animation: begin`, "effex.animation", {
+    yield* logDebug(`${kind} animation: begin`, "stax.animation", {
       addBeforeReflow: addBeforeReflow.filter(Boolean),
       addAfterReflow: addAfterReflow.filter(Boolean),
     });
@@ -125,7 +125,7 @@ const runAnimation = <E, R>(
 
     yield* runHook(onAfter, element);
 
-    yield* logDebug(`${kind} animation: end`, "effex.animation", {
+    yield* logDebug(`${kind} animation: end`, "stax.animation", {
       endedBy: outcome.endedBy,
     });
   }) as Effect.Effect<void, E, R>;

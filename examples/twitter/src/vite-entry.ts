@@ -1,20 +1,20 @@
 /**
  * Vite SSR entry point.
  *
- * Exports a `render` function that the effexPlatform plugin's
+ * Exports a `render` function that the staxPlatform plugin's
  * dev server calls to handle incoming requests.
  */
 
 import { HttpApp, HttpRouter } from "@effect/platform";
 import { Layer } from "effect";
 
-import { Platform } from "@effex/platform";
+import { Platform } from "@stax-ui/platform";
 
 import { App } from "./App.js";
 import { router } from "./routes.js";
 import { PostService, PostServiceLive } from "./services/PostService.js";
 
-const effexRoutes = Platform.toHttpRoutes(router, {
+const staxRoutes = Platform.toHttpRoutes(router, {
   app: App,
   document: {
     title: "Twitter Demo",
@@ -23,7 +23,7 @@ const effexRoutes = Platform.toHttpRoutes(router, {
   },
 });
 
-const app = HttpRouter.empty.pipe(HttpRouter.concat(effexRoutes));
+const app = HttpRouter.empty.pipe(HttpRouter.concat(staxRoutes));
 
 const PostServiceLayer = Layer.scoped(PostService, PostServiceLive);
 

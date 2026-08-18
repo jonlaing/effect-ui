@@ -15,7 +15,7 @@ import { Signal, SignalTypeId } from "./Signal.js";
 // -----------------------------------------------------------------------------
 
 export const SignalStructTypeId: unique symbol =
-  Symbol.for("effex/SignalStruct");
+  Symbol.for("stax/SignalStruct");
 export type SignalStructTypeId = typeof SignalStructTypeId;
 
 // -----------------------------------------------------------------------------

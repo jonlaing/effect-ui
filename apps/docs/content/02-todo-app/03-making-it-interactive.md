@@ -6,14 +6,14 @@ order: 3
 
 # Chapter 3: Making It Interactive
 
-Static HTML is nice, but we need our app to respond to user input. Enter **Signals**—Effex's reactive primitives.
+Static HTML is nice, but we need our app to respond to user input. Enter **Signals**—Stax's reactive primitives.
 
 ## What's a Signal?
 
 A Signal is a reactive container for a value. When the value changes, anything that depends on it automatically updates.
 
 ```typescript
-import { Signal } from "@effex/dom";
+import { Signal } from "@stax-ui/dom";
 
 // Create a signal with initial value 0
 const count = yield* Signal.make(0);
@@ -40,7 +40,7 @@ Right now, our app has hardcoded todos. We want to:
 
 To use Signals, we need to wrap our app in `Effect.gen`. This gives us a place to create and use reactive state.
 
-There are currently 4 types of Signals in Effex:
+There are currently 4 types of Signals in Stax:
 - `Signal<T>`: Holds a single value of type T
 - `Signal.Array<T>`: Holds an array of type T with array-specific methods
 - `Signal.Set<T>`: Holds a set of type T with set-specific methods
@@ -53,7 +53,7 @@ Update `src/main.ts`:
 ```typescript
 import "./styles.css";
 import { Effect } from "effect";
-import { $, mount, Readable, runApp, Signal, t } from "@effex/dom";
+import { $, mount, Readable, runApp, Signal, t } from "@stax-ui/dom";
 
 const container = document.getElementById("root");
 if (!container) throw new Error("Root element not found");
@@ -70,7 +70,7 @@ const App = () =>
   Effect.gen(function* () {
     // Create a signal to hold our todos
     const todos = yield* Signal.Array.make<Todo>([
-      { id: 1, text: "Learn Effex", completed: false },
+      { id: 1, text: "Learn Stax", completed: false },
       { id: 2, text: "Build a todo app", completed: false },
     ]);
 
@@ -92,7 +92,7 @@ const App = () =>
           // Still hardcoded for now - we'll fix this next chapter
           $.li({ class: "todo-item" },
             $.input({ type: "checkbox", class: "toggle" }),
-            $.span({ class: "todo-text" }, "Learn Effex"),
+            $.span({ class: "todo-text" }, "Learn Stax"),
           ),
         ),
       ),

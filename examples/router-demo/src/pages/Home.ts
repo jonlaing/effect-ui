@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 
-import { $, collect } from "@effex/dom";
-import { Link, Route } from "@effex/router";
+import { $, collect } from "@stax-ui/dom";
+import { Link, Route } from "@stax-ui/router";
 
 export const HomeRoute = Route.make("/").pipe(Route.render(() => HomePage()));
 
@@ -13,7 +13,7 @@ const HomePage = () =>
         $.h1({ class: "text-3xl font-bold" }, $.of("Welcome to Router Demo")),
         $.p(
           { class: "text-gray-600" },
-          $.of("This demo shows off the @effex/router package."),
+          $.of("This demo shows off the @stax-ui/router package."),
         ),
         $.div(
           { class: "flex gap-4" },

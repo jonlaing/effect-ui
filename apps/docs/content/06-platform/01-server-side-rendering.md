@@ -1,24 +1,24 @@
 ---
 title: "Server-Side Rendering"
-description: "Convert an Effex Router into an Effect HttpRouter with SSR, data loading, and mutation handling."
+description: "Convert an Stax Router into an Effect HttpRouter with SSR, data loading, and mutation handling."
 order: 1
 ---
 
 # Server-Side Rendering
 
-`@effex/platform` bridges Effex's router to Effect's HTTP platform. The core function, `Platform.toHttpRoutes`, converts your Effex Router into an `@effect/platform` HttpRouter that handles SSR rendering, data loading, and mutation execution.
+`@stax-ui/platform` bridges Stax's router to Effect's HTTP platform. The core function, `Platform.toHttpRoutes`, converts your Stax Router into an `@effect/platform` HttpRouter that handles SSR rendering, data loading, and mutation execution.
 
 ## Setup
 
 ```typescript
 import { Effect } from "effect";
 import { HttpRouter, HttpServer } from "@effect/platform";
-import { Platform } from "@effex/platform";
+import { Platform } from "@stax-ui/platform";
 
 import { App } from "./app.js";
 import { router } from "./routes.js";
 
-const effexRoutes = Platform.toHttpRoutes(router, {
+const staxRoutes = Platform.toHttpRoutes(router, {
   app: App,
   document: {
     title: "My App",
@@ -28,7 +28,7 @@ const effexRoutes = Platform.toHttpRoutes(router, {
 });
 
 const httpApp = HttpRouter.empty.pipe(
-  HttpRouter.concat(effexRoutes),
+  HttpRouter.concat(staxRoutes),
 );
 ```
 
@@ -111,7 +111,7 @@ In client builds, the Vite plugin strips the handler bodies so server-only depen
 Throw a `RedirectError` from any loader or handler to trigger an HTTP redirect:
 
 ```typescript
-import { Platform } from "@effex/platform";
+import { Platform } from "@stax-ui/platform";
 
 Route.get(
   ({ params }) =>
@@ -140,7 +140,7 @@ Platform.toHttpRoutes(router, {
     title: "My App",
     scripts: ["/assets/client.js"],
     styles: ["/assets/styles.css"],
-    head: '<meta name="description" content="My Effex app">',
+    head: '<meta name="description" content="My Stax app">',
     htmlAttrs: { lang: "en", "data-theme": "dark" },
   },
 });
@@ -177,8 +177,8 @@ If `app` is omitted, the platform renders just the matched route with its layout
 On the client, use `Platform.makeClientLayer` to set up navigation and data fetching:
 
 ```typescript
-import { hydrate } from "@effex/dom/hydrate";
-import { Platform } from "@effex/platform";
+import { hydrate } from "@stax-ui/dom/hydrate";
+import { Platform } from "@stax-ui/platform";
 
 import { App } from "./app.js";
 import { router } from "./routes.js";
@@ -191,6 +191,6 @@ hydrate(App(), document.getElementById("root")!, {
 `makeClientLayer` provides two things:
 
 1. **NavigationContext** — browser history management and route matching
-2. **RouteDataProvider** — on the first load (hydration), reads data from `window.__EFFEX_DATA__` embedded by the server. On subsequent navigations, fetches from the server via `?_data=1`
+2. **RouteDataProvider** — on the first load (hydration), reads data from `window.__STAX_DATA__` embedded by the server. On subsequent navigations, fetches from the server via `?_data=1`
 
 After hydration, all navigation is client-side. Only data is fetched from the server — no full page reloads.

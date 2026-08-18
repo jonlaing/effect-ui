@@ -1,6 +1,6 @@
 import { Context, Effect, Scope, type ParseResult } from "effect";
 
-import { MergePropsCtx } from "@effex/core";
+import { MergePropsCtx } from "@stax-ui/core";
 
 import {
   type ArrayField,
@@ -29,7 +29,7 @@ import { createFormState } from "./FormState.js";
 // TypeId
 // -----------------------------------------------------------------------------
 
-export const FormTypeId: unique symbol = Symbol.for("effex/form/Form");
+export const FormTypeId: unique symbol = Symbol.for("stax/form/Form");
 export type FormTypeId = typeof FormTypeId;
 
 // -----------------------------------------------------------------------------
@@ -221,7 +221,7 @@ export const make = <
 
   // Create a unique context tag for this form
   const FormContext = Context.GenericTag<FormContextValue<Fields>>(
-    `effex/form/FormContext/${Symbol().toString()}`,
+    `stax/form/FormContext/${Symbol().toString()}`,
   );
 
   // Infer the context identifier type

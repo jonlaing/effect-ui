@@ -13,7 +13,7 @@ A Router aggregates routes and adds cross-cutting concerns like layouts, guards,
 Use `Router.concat` to add routes one at a time:
 
 ```typescript
-import { Router } from "@effex/router";
+import { Router } from "@stax-ui/router";
 
 const router = Router.empty.pipe(
   Router.concat(HomeRoute),
@@ -153,7 +153,7 @@ Router.catchAll((error) => ErrorPage({ error }));
 ## Full Example
 
 ```typescript
-import { Router } from "@effex/router";
+import { Router } from "@stax-ui/router";
 
 // Public routes
 const publicRouter = Router.empty.pipe(

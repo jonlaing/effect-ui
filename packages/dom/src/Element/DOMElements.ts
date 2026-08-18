@@ -6,7 +6,7 @@
 import { Effect, Option, Stream } from "effect";
 import { isEffect } from "effect/Effect";
 
-import { MergePropsCtx, Readable, RendererContext } from "@effex/core";
+import { MergePropsCtx, Readable, RendererContext } from "@stax-ui/core";
 
 import * as Core from "./core.js";
 import type { ElementRef } from "./ref.js";
@@ -59,8 +59,7 @@ export type AttributeValue =
 export interface BaseElementAttributes<T extends HTMLElement | SVGElement> {
   readonly class?: ClassValue;
   readonly style?:
-    | Record<string, StyleValue>
-    | Readable.Readable<Record<string, string>>;
+    Record<string, StyleValue> | Readable.Readable<Record<string, string>>;
   readonly id?: string | Readable.Readable<string>;
   readonly role?: string | Readable.Readable<string>;
   readonly ref?: ElementRef<T>;
@@ -168,9 +167,7 @@ export type SVGAttributes<T extends SVGElement = SVGElement> =
       readonly fill?: string | Readable.Readable<string>;
       readonly stroke?: string | Readable.Readable<string>;
       readonly strokeWidth?:
-        | string
-        | number
-        | Readable.Readable<string | number>;
+        string | number | Readable.Readable<string | number>;
       readonly d?: string | Readable.Readable<string>;
       readonly x?: string | number | Readable.Readable<string | number>;
       readonly y?: string | number | Readable.Readable<string | number>;
@@ -319,9 +316,9 @@ export type SVGElementFactory<K extends keyof SVGElementTagNameMap> = {
 // Context for asChild pattern
 // =============================================================================
 
-// MergePropsCtx is imported from @effex/core
+// MergePropsCtx is imported from @stax-ui/core
 // Re-export it for backwards compatibility
-export { MergePropsCtx } from "@effex/core";
+export { MergePropsCtx } from "@stax-ui/core";
 
 // =============================================================================
 // Attribute Application using Core functions

@@ -1,22 +1,22 @@
-# @effex/dom
+# @stax-ui/dom
 
-DOM rendering for Effex applications. This package provides elements, components, control flow primitives, animation, SSR/hydration, and mounting utilities.
+DOM rendering for Stax applications. This package provides elements, components, control flow primitives, animation, SSR/hydration, and mounting utilities.
 
-> **Note:** This package re-exports everything from `@effex/core`. You don't need to install both.
+> **Note:** This package re-exports everything from `@stax-ui/core`. You don't need to install both.
 
 ## Installation
 
 ```bash
-pnpm add @effex/dom effect
+pnpm add @stax-ui/dom effect
 ```
 
 ## Subpath Exports
 
 | Import Path | Purpose |
 |-------------|---------|
-| `@effex/dom` | Main export — elements, control flow, utilities, and all of `@effex/core` |
-| `@effex/dom/server` | Server-side rendering (`renderToString`) |
-| `@effex/dom/hydrate` | Client-side hydration (`hydrate`) |
+| `@stax-ui/dom` | Main export — elements, control flow, utilities, and all of `@stax-ui/core` |
+| `@stax-ui/dom/server` | Server-side rendering (`renderToString`) |
+| `@stax-ui/dom/hydrate` | Client-side hydration (`hydrate`) |
 
 ## Basic Usage
 
@@ -25,13 +25,13 @@ pnpm add @effex/dom effect
 Components without state or context requirements can be plain functions:
 
 ```ts
-import { $ } from "@effex/dom";
+import { $ } from "@stax-ui/dom";
 
 const Greeting = (props: { name: string }) =>
   $.div(
     { class: "greeting" },
     $.h1({}, `Hello, ${props.name}!`),
-    $.p({}, "Welcome to Effex"),
+    $.p({}, "Welcome to Stax"),
   );
 ```
 
@@ -41,7 +41,7 @@ Components that need signals, context, or other Effects use `Effect.gen`:
 
 ```ts
 import { Effect } from "effect";
-import { $, Signal } from "@effex/dom";
+import { $, Signal } from "@stax-ui/dom";
 
 const Counter = () =>
   Effect.gen(function* () {
@@ -62,7 +62,7 @@ Use `runApp` and `mount` to start your application:
 
 ```ts
 import { Effect } from "effect";
-import { mount, runApp } from "@effex/dom";
+import { mount, runApp } from "@stax-ui/dom";
 
 runApp(
   Effect.gen(function* () {
@@ -182,7 +182,7 @@ $.svg({ viewBox: "0 0 24 24", width: 24, height: 24 },
 The `t` tagged template creates reactive strings from Readables:
 
 ```ts
-import { t } from "@effex/dom";
+import { t } from "@stax-ui/dom";
 
 const name = yield* Signal.make("World");
 const count = yield* Signal.make(0);
@@ -242,7 +242,7 @@ const UserBadge = () =>
 
 ```ts
 import { Context, Effect } from "effect";
-import { $, provide } from "@effex/dom";
+import { $, provide } from "@stax-ui/dom";
 
 class ThemeContext extends Context.Tag("ThemeContext")<ThemeContext, Theme>() {}
 
@@ -266,7 +266,7 @@ $.div({}, provide(ThemeContext, theme, ThemedButton({ label: "Click" })));
 Conditionally render based on a reactive boolean:
 
 ```ts
-import { when } from "@effex/dom";
+import { when } from "@stax-ui/dom";
 
 when(isLoggedIn, {
   onTrue: () => $.div({}, "Welcome back!"),
@@ -279,7 +279,7 @@ when(isLoggedIn, {
 Pattern match on a reactive value:
 
 ```ts
-import { match } from "@effex/dom";
+import { match } from "@stax-ui/dom";
 
 match(status, {
   cases: [
@@ -296,7 +296,7 @@ match(status, {
 Render a list with automatic keying and reconciliation:
 
 ```ts
-import { each } from "@effex/dom";
+import { each } from "@stax-ui/dom";
 
 each(todos, {
   key: (todo) => todo.id,
@@ -312,7 +312,7 @@ The `render` callback receives `Readable<T>` items and `Readable<number>` indice
 Match on Option or Either values. The inner value is unwrapped as a Readable:
 
 ```ts
-import { matchOption, matchEither } from "@effex/dom";
+import { matchOption, matchEither } from "@stax-ui/dom";
 
 // userData.value is Readable<Option<User>>
 matchOption(userData.value, {
@@ -331,7 +331,7 @@ matchEither(result, {
 Completely rebuild the component subtree whenever a Readable changes (use sparingly — `when`/`match`/`each` are usually better):
 
 ```ts
-import { redraw } from "@effex/dom";
+import { redraw } from "@stax-ui/dom";
 
 redraw(locale, {
   render: (currentLocale) => LocalizedApp({ locale: currentLocale }),
@@ -345,7 +345,7 @@ redraw(locale, {
 Handle async rendering with loading states:
 
 ```ts
-import { Boundary } from "@effex/dom";
+import { Boundary } from "@stax-ui/dom";
 
 Boundary.suspense({
   render: () =>
@@ -373,7 +373,7 @@ Boundary.error(
 ### renderToString
 
 ```ts
-import { renderToString } from "@effex/dom/server";
+import { renderToString } from "@stax-ui/dom/server";
 
 const handler = Effect.gen(function* () {
   const html = yield* renderToString(App());
@@ -395,7 +395,7 @@ Options:
 ### Hydration
 
 ```ts
-import { hydrate } from "@effex/dom/hydrate";
+import { hydrate } from "@stax-ui/dom/hydrate";
 import { App } from "./App";
 
 hydrate(App(), document.getElementById("root")!);
@@ -417,7 +417,7 @@ Hydration attaches to server-rendered HTML and sets up reactive bindings without
 The `Element` namespace provides pipeable functions for imperative DOM manipulation. These are useful for refs and one-off operations:
 
 ```ts
-import { Element, ref } from "@effex/dom";
+import { Element, ref } from "@stax-ui/dom";
 
 const buttonRef = yield* ref<HTMLButtonElement>();
 
@@ -522,7 +522,7 @@ yield* el.pipe(Element.tapEffect((node) => Effect.log("mounted")));
 CSS-based animations for control flow transitions:
 
 ```ts
-import { when, each, stagger } from "@effex/dom";
+import { when, each, stagger } from "@stax-ui/dom";
 
 // Enter/exit animations
 when(isOpen, {
@@ -563,7 +563,7 @@ each(items, {
 For large lists (1000+ items), use `virtualEach` to only render visible items:
 
 ```ts
-import { virtualEach, VirtualListRef } from "@effex/dom";
+import { virtualEach, VirtualListRef } from "@stax-ui/dom";
 
 // Basic usage
 virtualEach(items, {
@@ -605,7 +605,7 @@ control.totalItems;     // Readable<number>
 Render children into a different DOM node:
 
 ```ts
-import { Portal } from "@effex/dom";
+import { Portal } from "@stax-ui/dom";
 
 // Render into document.body (default)
 Portal(() => Modal({ title: "Hello" }));
@@ -622,7 +622,7 @@ Portal({ target: existingElement }, () => Tooltip());
 Create refs to DOM elements for imperative access:
 
 ```ts
-import { ref } from "@effex/dom";
+import { ref } from "@stax-ui/dom";
 
 const inputRef = yield* ref<HTMLInputElement>();
 
@@ -641,7 +641,7 @@ inputRef.isConnected;  // Readable<boolean>
 Trap focus within a container (for modals, dialogs):
 
 ```ts
-import { FocusTrap } from "@effex/dom";
+import { FocusTrap } from "@stax-ui/dom";
 
 yield* FocusTrap.make({
   container: dialogElement,
@@ -656,7 +656,7 @@ yield* FocusTrap.make({
 Prevent body scrolling (for modals). Accounts for scrollbar width to prevent layout shift:
 
 ```ts
-import { ScrollLock } from "@effex/dom";
+import { ScrollLock } from "@stax-ui/dom";
 
 yield* ScrollLock.lock;
 // Body scroll is locked until scope closes
@@ -667,7 +667,7 @@ yield* ScrollLock.lock;
 Generate unique IDs for ARIA relationships:
 
 ```ts
-import { UniqueId } from "@effex/dom";
+import { UniqueId } from "@stax-ui/dom";
 
 const labelId = yield* UniqueId.make("label");
 const inputId = yield* UniqueId.make("input");
@@ -698,8 +698,8 @@ yield* $.div(
 |--------|-------------|
 | `mount(element, container)` | Mount an element into a DOM container |
 | `runApp(program, options?)` | Run an application with scoping and lifecycle |
-| `renderToString(element, options?)` | SSR — from `@effex/dom/server` |
-| `hydrate(element, container, options?)` | Hydration — from `@effex/dom/hydrate` |
+| `renderToString(element, options?)` | SSR — from `@stax-ui/dom/server` |
+| `hydrate(element, container, options?)` | Hydration — from `@stax-ui/dom/hydrate` |
 
 ### Control Flow
 

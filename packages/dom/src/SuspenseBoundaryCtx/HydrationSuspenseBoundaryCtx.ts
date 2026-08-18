@@ -10,7 +10,7 @@ import {
   SuspenseBoundaryCtx,
   type ISuspenseBoundaryCtx,
   type Renderer,
-} from "@effex/core";
+} from "@stax-ui/core";
 
 import { ClientControlCtx } from "../Control/ClientControlCtx.js";
 import { DOMRenderer } from "../Render/DOMRenderer.js";
@@ -94,7 +94,7 @@ export const HydrationSuspenseBoundaryCtx: Layer.Layer<
               Effect.sync(() => {
                 // Update state attribute
                 currentContainer.setAttribute(
-                  "data-effex-suspense-state",
+                  "data-stax-suspense-state",
                   "loaded",
                 );
 
@@ -114,7 +114,7 @@ export const HydrationSuspenseBoundaryCtx: Layer.Layer<
                   Effect.tap((errorElement) =>
                     Effect.sync(() => {
                       currentContainer.setAttribute(
-                        "data-effex-suspense-state",
+                        "data-stax-suspense-state",
                         "error",
                       );
                       if (fallback) {

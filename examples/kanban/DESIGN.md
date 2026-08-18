@@ -1,6 +1,6 @@
 # Kanban Board - Design Document
 
-A drag-and-drop Kanban board built with Effex.
+A drag-and-drop Kanban board built with Stax.
 
 ## Data Model
 
@@ -44,7 +44,7 @@ All state lives in a service that components access via context:
 
 ```typescript
 import { Context, Effect } from "effect";
-import { Signal } from "@effex/core";
+import { Signal } from "@stax-ui/core";
 
 export class KanbanService extends Context.Tag("KanbanService")<
   KanbanService,
@@ -156,7 +156,7 @@ App
 ## Drag and Drop Implementation
 
 ### Key Insight
-Effex event handlers are called synchronously - only the returned Effect runs async. This means `e.preventDefault()` and `e.dataTransfer.setData()` work correctly.
+Stax event handlers are called synchronously - only the returned Effect runs async. This means `e.preventDefault()` and `e.dataTransfer.setData()` work correctly.
 
 ### Drag State Management
 
@@ -385,7 +385,7 @@ const KanbanBoard = () =>
 ## App Entry Point
 
 ```typescript
-import { provide, runApp, collect } from "@effex/dom";
+import { provide, runApp, collect } from "@stax-ui/dom";
 
 const App = () =>
   Effect.gen(function* () {
@@ -451,7 +451,7 @@ Reuse the animation pattern from todo-app for card enter/exit:
 Define a form for editing card details:
 
 ```typescript
-import { Form, Field } from "@effex/form";
+import { Form, Field } from "@stax-ui/form";
 import { Schema } from "effect";
 
 // Form definition for editing a card

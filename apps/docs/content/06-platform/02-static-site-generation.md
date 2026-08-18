@@ -15,7 +15,7 @@ Use `Route.static` to declare which paths to generate and how to load data for e
 ```typescript
 import { Effect } from "effect";
 import { Schema } from "effect";
-import { Route } from "@effex/router";
+import { Route } from "@stax-ui/router";
 
 const BlogRoute = Route.make("/blog/:slug").pipe(
   Route.params(Schema.Struct({ slug: Schema.String })),
@@ -50,7 +50,7 @@ On the client, the Vite plugin strips `paths` and `load` from the bundle — onl
 `Platform.buildStaticSite` runs the SSG build programmatically:
 
 ```typescript
-import { Platform } from "@effex/platform";
+import { Platform } from "@stax-ui/platform";
 
 await Platform.buildStaticSite({
   router,
@@ -134,11 +134,11 @@ export const document = {
 ```typescript
 // vite.config.ts
 import { defineConfig } from "vite";
-import { effexPlatform } from "@effex/vite-plugin";
+import { staxPlatform } from "@stax-ui/vite-plugin";
 
 export default defineConfig({
   plugins: [
-    effexPlatform({ mode: "ssg", entry: "src/entry.ts" }),
+    staxPlatform({ mode: "ssg", entry: "src/entry.ts" }),
   ],
 });
 ```
@@ -157,8 +157,8 @@ Static pages are hydrated on the client just like SSR pages. Pass the client lay
 
 ```typescript
 // src/client.ts
-import { hydrate } from "@effex/dom/hydrate";
-import { Platform } from "@effex/platform";
+import { hydrate } from "@stax-ui/dom/hydrate";
+import { Platform } from "@stax-ui/platform";
 
 import { App } from "./app.js";
 import { router } from "./routes.js";
@@ -168,6 +168,6 @@ hydrate(App(), document.getElementById("root")!, {
 });
 ```
 
-`Platform.makeClientLayer` provides both `NavigationContext` and `RouteDataProvider` — the latter reads the SSG-embedded `window.__EFFEX_DATA__` on first load, then fetches `<path>?_data=1` for subsequent navigations (the Vite plugin strips loaders from the client bundle, so this fetch is how loader data reaches the client after hydration).
+`Platform.makeClientLayer` provides both `NavigationContext` and `RouteDataProvider` — the latter reads the SSG-embedded `window.__STAX_DATA__` on first load, then fetches `<path>?_data=1` for subsequent navigations (the Vite plugin strips loaders from the client bundle, so this fetch is how loader data reaches the client after hydration).
 
 After hydration, clicking a Link triggers client-side navigation — the browser doesn't reload the page.

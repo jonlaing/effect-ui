@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 
-import { $, collect } from "@effex/dom";
-import { Link, NavigationContext, Route } from "@effex/router";
+import { $, collect } from "@stax-ui/dom";
+import { Link, NavigationContext, Route } from "@stax-ui/router";
 
 import { login } from "../auth";
 

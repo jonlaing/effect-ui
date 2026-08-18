@@ -1,6 +1,6 @@
 import { Effect, Scope } from "effect";
 
-import { Readable, RendererContext } from "@effex/core";
+import { Readable, RendererContext } from "@stax-ui/core";
 
 // =============================================================================
 // Types
@@ -69,8 +69,7 @@ export type ChildLeaf<E = never, R = never> =
  * children to a primitive.
  */
 export type ChildInput<E = never, R = never> =
-  | ChildLeaf<E, R>
-  | ReadonlyArray<ChildLeaf<E, R>>;
+  ChildLeaf<E, R> | ReadonlyArray<ChildLeaf<E, R>>;
 
 // =============================================================================
 // Component-author aliases

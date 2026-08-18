@@ -1,6 +1,6 @@
 import { Context, Effect, Scope } from "effect";
 
-import { Signal, type SignalArray } from "@effex/dom";
+import { Signal, type SignalArray } from "@stax-ui/dom";
 
 import type { Card, Priority, Status } from "../types.js";
 

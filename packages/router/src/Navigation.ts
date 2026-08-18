@@ -1,6 +1,6 @@
 import { Context, Effect, Layer, Option, Record, Runtime, Scope } from "effect";
 
-import { logDebug, Readable, Signal } from "@effex/core";
+import { logDebug, Readable, Signal } from "@stax-ui/core";
 
 import type { Route } from "./Route.js";
 import { findMatch, type Router } from "./Router.js";
@@ -135,10 +135,9 @@ export interface Navigation {
 /**
  * Context tag for the Navigation service.
  */
-export class NavigationContext extends Context.Tag("@effex/router/Navigation")<
-  NavigationContext,
-  Navigation
->() {}
+export class NavigationContext extends Context.Tag(
+  "@stax-ui/router/Navigation",
+)<NavigationContext, Navigation>() {}
 
 // =============================================================================
 // Navigation Options
@@ -225,7 +224,7 @@ export const make = <
     const pushPath = (path: string): Effect.Effect<void> =>
       Effect.gen(function* () {
         const from = yield* pathnameState.get;
-        yield* logDebug("pushPath", "effex.nav", { from, to: path });
+        yield* logDebug("pushPath", "stax.nav", { from, to: path });
         yield* lastSourceState.set("push");
         yield* updateState(path);
         if (isBrowser) {
@@ -236,7 +235,7 @@ export const make = <
     const replacePath = (path: string): Effect.Effect<void> =>
       Effect.gen(function* () {
         const from = yield* pathnameState.get;
-        yield* logDebug("replacePath", "effex.nav", { from, to: path });
+        yield* logDebug("replacePath", "stax.nav", { from, to: path });
         yield* lastSourceState.set("replace");
         yield* updateState(path);
         if (isBrowser) {
@@ -311,7 +310,7 @@ export const make = <
         runFork(
           Effect.gen(function* () {
             const from = yield* pathnameState.get;
-            yield* logDebug("popstate", "effex.nav", { from, to: target });
+            yield* logDebug("popstate", "stax.nav", { from, to: target });
             yield* lastSourceState.set("pop");
             yield* updateState(target);
           }),

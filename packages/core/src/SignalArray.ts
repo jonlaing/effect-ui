@@ -21,7 +21,7 @@ import { Signal, SignalTypeId } from "./Signal.js";
  * const todos = yield* Signal.Array.make<Todo>([]);
  *
  * // In-place mutations
- * yield* todos.push({ id: 1, text: "Learn Effex", done: false });
+ * yield* todos.push({ id: 1, text: "Learn Stax", done: false });
  * yield* todos.removeAt(0);
  *
  * // Transform entire array (inherited from Signal)

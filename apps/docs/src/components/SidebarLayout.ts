@@ -1,4 +1,4 @@
-import { $, Element } from "@effex/dom";
+import { $, Element } from "@stax-ui/dom";
 
 import type { DocSection } from "../content.js";
 import { Sidebar } from "./Sidebar.js";

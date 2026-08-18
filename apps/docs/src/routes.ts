@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { Route, Router } from "@effex/router";
+import { Route, Router } from "@stax-ui/router";
 
 import { getAdjacentPages, getSections } from "./content.js";
 import {
@@ -44,7 +44,7 @@ const HomeRoute = Route.make("/").pipe(
       }),
     render: (data) => HomePage(data),
   }),
-  Route.meta({ title: "Effex | Reactive UI Built on Effect.ts" }),
+  Route.meta({ title: "Stax | Reactive UI Built on Effect.ts" }),
 );
 
 // ─── Doc pages ───────────────────────────────────────────────────────────────
@@ -82,7 +82,7 @@ const DocRoute = Route.make("/docs/*").pipe(
       }),
   }),
   Route.meta(({ data }) => ({
-    title: `${data.page.title} | Effex Docs`,
+    title: `${data.page.title} | Stax Docs`,
     description: data.page.description,
   })),
 );

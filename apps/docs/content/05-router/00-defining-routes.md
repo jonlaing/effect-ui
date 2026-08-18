@@ -6,15 +6,15 @@ order: 0
 
 # Defining Routes
 
-Routes are the building blocks of an Effex application's URL structure. A route connects a URL pattern to a component, optionally with typed parameters, data loading, and error handling.
+Routes are the building blocks of an Stax application's URL structure. A route connects a URL pattern to a component, optionally with typed parameters, data loading, and error handling.
 
 ## Basic Routes
 
 Create a route with `Route.make` and add a render function with `Route.render`:
 
 ```typescript
-import { Route } from "@effex/router";
-import { $ } from "@effex/dom";
+import { Route } from "@stax-ui/router";
+import { $ } from "@stax-ui/dom";
 
 const HomeRoute = Route.make("/").pipe(
   Route.render(() => $.h1({}, "Welcome home")),
@@ -29,7 +29,7 @@ URL parameters like `/users/:id` are strings by default. Use `Route.params` with
 
 ```typescript
 import { Schema } from "effect";
-import { Route } from "@effex/router";
+import { Route } from "@stax-ui/router";
 
 const UserRoute = Route.make("/users/:id").pipe(
   Route.params(Schema.Struct({ id: Schema.NumberFromString })),

@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { $, Readable, Signal } from "@effex/dom";
+import { $, Readable, Signal } from "@stax-ui/dom";
 
 export type Filter = "all" | "active" | "completed";
 

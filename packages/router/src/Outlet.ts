@@ -1,12 +1,12 @@
 import { Effect, Option, pipe, Record, Stream } from "effect";
 
-import { ControlCtx, logDebug, reconcile } from "@effex/core";
+import { ControlCtx, logDebug, reconcile } from "@stax-ui/core";
 import {
   $,
   AnimationConfigCtx,
   Element,
   type AnimationOptions,
-} from "@effex/dom";
+} from "@stax-ui/dom";
 
 import { buildPath, NavigationContext, type Navigation } from "./Navigation.js";
 import { resolveMeta, type Route } from "./Route.js";
@@ -89,7 +89,7 @@ const renderRouteWithGuard = <E, R>(
     if (!allowed && route.guardOptions) {
       // Guard blocked - handle based on options
       if ("redirect" in route.guardOptions) {
-        yield* logDebug("guard blocked, redirecting", "effex.outlet", {
+        yield* logDebug("guard blocked, redirecting", "stax.outlet", {
           route: route.path,
           redirect: route.guardOptions.redirect,
         });
@@ -98,7 +98,7 @@ const renderRouteWithGuard = <E, R>(
         // Return empty div while redirecting
         return yield* $.div();
       } else if ("fallback" in route.guardOptions) {
-        yield* logDebug("guard blocked, rendering fallback", "effex.outlet", {
+        yield* logDebug("guard blocked, rendering fallback", "stax.outlet", {
           route: route.path,
         });
         // Render fallback component
@@ -111,7 +111,7 @@ const renderRouteWithGuard = <E, R>(
     const currentSearchParams = yield* nav.searchParams.get;
     const searchParamsObj = Object.fromEntries(currentSearchParams.entries());
 
-    yield* logDebug("resolving route", "effex.outlet", {
+    yield* logDebug("resolving route", "stax.outlet", {
       route: route.path,
       params: currentMatch.params,
       searchParams: searchParamsObj,
@@ -137,7 +137,7 @@ const renderRouteWithGuard = <E, R>(
     const maybeProvider = yield* Effect.serviceOption(RouteDataProvider);
 
     if (Option.isSome(maybeProvider)) {
-      yield* logDebug("fetching route data via provider", "effex.route-data", {
+      yield* logDebug("fetching route data via provider", "stax.route-data", {
         route: route.path,
         loaderPath,
       });
@@ -151,7 +151,7 @@ const renderRouteWithGuard = <E, R>(
       // as { _redirect: url } when the server returns a redirect for data requests
       const maybeRedirect = routeData as unknown as { _redirect?: string };
       if (maybeRedirect._redirect) {
-        yield* logDebug("provider signaled redirect", "effex.route-data", {
+        yield* logDebug("provider signaled redirect", "stax.route-data", {
           from: route.path,
           to: maybeRedirect._redirect,
         });
@@ -171,7 +171,7 @@ const renderRouteWithGuard = <E, R>(
 
       yield* logDebug(
         "SPA fallback: no route-data provider",
-        "effex.route-data",
+        "stax.route-data",
         {
           route: route.path,
           source: route._loader

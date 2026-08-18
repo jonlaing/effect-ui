@@ -1,6 +1,6 @@
 import type { Deferred, Effect, Scope } from "effect";
 
-import type { Readable, Signal } from "@effex/core";
+import type { Readable, Signal } from "@stax-ui/core";
 
 import type { ListAnimationOptions } from "../Animation/index.js";
 import type * as Element from "../Element/index.js";

@@ -10,9 +10,9 @@
   },
   "dependencies": {
     "@effect/platform": "^0.94.0",
-    "@effex/dom": "workspace:*",
-    "@effex/platform": "workspace:*",
-    "@effex/router": "workspace:*",
+    "@stax-ui/dom": "workspace:*",
+    "@stax-ui/platform": "workspace:*",
+    "@stax-ui/router": "workspace:*",
     "@shikijs/markdown-it": "^4.0.2",
     "@tailwindcss/vite": "^4.2.1",
     "daisyui": "^5.5.19",
@@ -23,7 +23,7 @@
     "tailwindcss": "^4.2.1"
   },
   "devDependencies": {
-    "@effex/vite-plugin": "workspace:*",
+    "@stax-ui/vite-plugin": "workspace:*",
     "@types/markdown-it": "^14.1.2",
     "typescript": "~5.9.3",
     "vite": "^7.0.0"

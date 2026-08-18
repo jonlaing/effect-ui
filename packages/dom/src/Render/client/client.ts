@@ -1,9 +1,9 @@
 /**
- * Client-side mounting for Effex applications.
+ * Client-side mounting for Stax applications.
  *
  * @example
  * ```ts
- * import { mount, runApp } from "@effex/dom/client";
+ * import { mount, runApp } from "@stax-ui/dom/client";
  * import { App } from "./App";
  *
  * runApp(
@@ -24,7 +24,7 @@ import {
   type ControlCtx,
   type Renderer,
   type SuspenseBoundaryCtx,
-} from "@effex/core";
+} from "@stax-ui/core";
 
 import { ClientAsyncCacheLayer } from "../../ClientAsyncCache.js";
 import { ClientControlCtx } from "../../Control/ClientControlCtx.js";
@@ -44,10 +44,10 @@ import { DOMRenderer } from "../DOMRenderer.js";
  *
  * @example
  * ```ts
- * import { $, collect, mount } from "@effex/dom"
+ * import { $, collect, mount } from "@stax-ui/dom"
  *
  * const app = $.div({}, collect(
- *   $.h1({}, $.of("Hello, Effex!"))
+ *   $.h1({}, $.of("Hello, Stax!"))
  * ))
  *
  * // Mount the app and run it
@@ -126,7 +126,7 @@ export const mount = (
   });
 
 /**
- * Run an Effex application. This is the main entry point for Effex apps.
+ * Run an Stax application. This is the main entry point for Stax apps.
  *
  * Handles all the boilerplate:
  * - Scopes the effect for proper resource cleanup

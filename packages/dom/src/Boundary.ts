@@ -12,7 +12,7 @@ import {
   Boundary as CoreBoundary,
   SuspenseBoundaryCtx,
   type BoundarySuspenseOptions as CoreSuspenseOptions,
-} from "@effex/core";
+} from "@stax-ui/core";
 
 import * as Element from "./Element/index.js";
 

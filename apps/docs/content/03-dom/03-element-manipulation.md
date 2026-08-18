@@ -13,7 +13,7 @@ The `Element` namespace provides pipeable functions for imperative DOM operation
 Use `ref` to create a reference you can manipulate later:
 
 ```typescript
-import { ref, Element } from "@effex/dom";
+import { ref, Element } from "@stax-ui/dom";
 
 const buttonRef = yield* ref<HTMLButtonElement>();
 

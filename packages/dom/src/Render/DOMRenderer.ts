@@ -1,6 +1,6 @@
 import { Effect, Layer } from "effect";
 
-import { RendererContext, type Renderer, type Slot } from "@effex/core";
+import { RendererContext, type Renderer, type Slot } from "@stax-ui/core";
 
 import { toKebabCase } from "../helpers/index.js";
 import { warnIfInvalidNesting } from "./validateNesting.js";
@@ -126,7 +126,7 @@ export const DOMRenderer: Renderer<Node> = {
     Effect.sync((): Slot<Node> => {
       // Use a fragment to hold marker and initial content before DOM insertion
       const fragment = document.createDocumentFragment();
-      const marker = document.createComment("effex-slot");
+      const marker = document.createComment("stax-slot");
       fragment.appendChild(marker);
       let currentContent: Node | null = null;
       console.log("create slot, marker created:", marker);

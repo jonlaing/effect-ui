@@ -64,7 +64,7 @@ describe("warnIfInvalidNesting", () => {
   it("emits a console.warn on invalid nesting", () => {
     warn("p", "div");
     expect(warnSpy).toHaveBeenCalledTimes(1);
-    expect(warnSpy.mock.calls[0][0]).toMatch(/\[@effex\/dom\]/);
+    expect(warnSpy.mock.calls[0][0]).toMatch(/\[@stax-ui\/dom\]/);
     expect(warnSpy.mock.calls[0][0]).toMatch(/<div> inside <p>/);
   });
 

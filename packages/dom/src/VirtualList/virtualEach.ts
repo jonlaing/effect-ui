@@ -1,6 +1,6 @@
 import { Effect, Exit, Scope } from "effect";
 
-import { Readable, RendererContext, Signal } from "@effex/core";
+import { Readable, RendererContext, Signal } from "@stax-ui/core";
 
 import * as Element from "../Element/index.js";
 import {

@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 
-import { $, collect } from "@effex/dom";
-import { Link, Route } from "@effex/router";
+import { $, collect } from "@stax-ui/dom";
+import { Link, Route } from "@stax-ui/router";
 
 export const AboutRoute = Route.make("/about").pipe(
   Route.render(() => AboutPage()),
@@ -16,7 +16,7 @@ const AboutPage = () =>
         $.p(
           { class: "text-gray-600" },
           $.of(
-            "This is a simple demo application to test the Effex router package.",
+            "This is a simple demo application to test the Stax router package.",
           ),
         ),
         $.p(

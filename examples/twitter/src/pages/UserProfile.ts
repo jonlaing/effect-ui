@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 
-import { $, collect, each, Readable } from "@effex/dom";
-import { Link } from "@effex/router";
+import { $, collect, each, Readable } from "@stax-ui/dom";
+import { Link } from "@stax-ui/router";
 
 import { PostCard } from "../components/PostCard.js";
 import type { Post, User } from "../services/PostService.js";

@@ -11,7 +11,7 @@ import {
   type ISuspenseBoundaryCtx,
   type Renderer,
   type Slot,
-} from "@effex/core";
+} from "@stax-ui/core";
 
 type DOMElement = HTMLElement | SVGElement;
 

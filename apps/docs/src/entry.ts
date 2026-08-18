@@ -7,13 +7,13 @@
 
 import { HttpApp, HttpRouter } from "@effect/platform";
 
-import { Platform } from "@effex/platform";
+import { Platform } from "@stax-ui/platform";
 
 import { DocLayout } from "./layout.js";
 import { router } from "./routes.js";
 
 const documentOptions = {
-  title: "Effex Docs",
+  title: "Stax Docs",
   scripts: ["/src/client.ts"],
   styles: ["/src/styles.css"],
   htmlAttrs: { lang: "en", "data-theme": "dark" },
@@ -25,12 +25,12 @@ export const app = DocLayout;
 export const document = documentOptions;
 
 // Used by the dev server during development
-const effexRoutes = Platform.toHttpRoutes(router, {
+const staxRoutes = Platform.toHttpRoutes(router, {
   app: DocLayout,
   document: documentOptions,
 });
 
-const httpApp = HttpRouter.empty.pipe(HttpRouter.concat(effexRoutes));
+const httpApp = HttpRouter.empty.pipe(HttpRouter.concat(staxRoutes));
 const handler = HttpApp.toWebHandler(httpApp);
 
 export async function render(request: Request): Promise<Response> {

@@ -1,6 +1,6 @@
 import { Effect, Stream } from "effect";
 
-import { Readable } from "@effex/core";
+import { Readable } from "@stax-ui/core";
 
 /**
  * Tagged template literal for creating reactive strings.

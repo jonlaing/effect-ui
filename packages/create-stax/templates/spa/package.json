@@ -1,0 +1,20 @@
+{
+  "name": "stax-app",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@stax-ui/dom": "^1.1.0",
+    "@stax-ui/router": "^1.2.0",
+    "effect": "^3.19.13"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vite": "^7.0.0"
+  }
+}

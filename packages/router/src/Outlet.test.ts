@@ -6,7 +6,7 @@ import {
   AnimationConfigCtx,
   ClientControlCtx,
   DOMRendererLive,
-} from "@effex/dom";
+} from "@stax-ui/dom";
 
 import { Navigation } from "./Navigation.js";
 import { Outlet } from "./Outlet.js";

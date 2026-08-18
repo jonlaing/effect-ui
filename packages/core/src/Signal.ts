@@ -26,7 +26,7 @@ import {
 // TypeId
 // -----------------------------------------------------------------------------
 
-export const SignalTypeId: unique symbol = Symbol.for("effex/Signal");
+export const SignalTypeId: unique symbol = Symbol.for("stax/Signal");
 export type SignalTypeId = typeof SignalTypeId;
 
 // -----------------------------------------------------------------------------
@@ -291,7 +291,7 @@ export const fromReactive = <A>(
 /**
  * Context service for creating and managing Signals within a scope.
  */
-export class SignalRegistry extends Context.Tag("effex/SignalRegistry")<
+export class SignalRegistry extends Context.Tag("stax/SignalRegistry")<
   SignalRegistry,
   {
     readonly make: <A>(

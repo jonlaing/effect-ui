@@ -23,7 +23,7 @@ Update `src/main.ts` to add a Signal for the input value:
 const App = () =>
   Effect.gen(function* () {
     const todos = yield* Signal.Array.make<Todo>([
-      { id: 1, text: "Learn Effex", completed: false },
+      { id: 1, text: "Learn Stax", completed: false },
       { id: 2, text: "Build a todo app", completed: false },
       { id: 3, text: "Ship it!", completed: false },
     ]);
@@ -125,7 +125,7 @@ Here's the full `src/main.ts`:
 ```typescript
 import "./styles.css";
 import { Effect } from "effect";
-import { $, each, mount, Readable, runApp, Signal } from "@effex/dom";
+import { $, each, mount, Readable, runApp, Signal } from "@stax-ui/dom";
 import { TodoItem } from "./components/TodoItem";
 
 const container = document.getElementById("root");
@@ -140,7 +140,7 @@ interface Todo {
 const App = () =>
   Effect.gen(function* () {
     const todos = yield* Signal.Array.make<Todo>([
-      { id: 1, text: "Learn Effex", completed: false },
+      { id: 1, text: "Learn Stax", completed: false },
       { id: 2, text: "Build a todo app", completed: false },
       { id: 3, text: "Ship it!", completed: false },
     ]);

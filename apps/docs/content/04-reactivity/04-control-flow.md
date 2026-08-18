@@ -6,14 +6,14 @@ order: 4
 
 # Control Flow
 
-Effex doesn't use JSX or templates. Instead, it provides reactive control flow primitives — functions that take Readables and produce elements that update automatically when the source values change.
+Stax doesn't use JSX or templates. Instead, it provides reactive control flow primitives — functions that take Readables and produce elements that update automatically when the source values change.
 
 ## when
 
 Conditional rendering based on a boolean Readable:
 
 ```typescript
-import { when } from "@effex/dom";
+import { when } from "@stax-ui/dom";
 
 when(isLoggedIn, {
   onTrue: () => Dashboard(),
@@ -28,7 +28,7 @@ When `isLoggedIn` changes, the previous branch is unmounted and the new one is r
 Pattern matching on a Readable value. Like a reactive `switch`:
 
 ```typescript
-import { match } from "@effex/dom";
+import { match } from "@stax-ui/dom";
 
 match(status.current, {
   cases: [
@@ -48,7 +48,7 @@ Only one case renders at a time. When the value changes, the active case is swap
 Unwrap an `Option<T>` reactively:
 
 ```typescript
-import { matchOption } from "@effex/dom";
+import { matchOption } from "@stax-ui/dom";
 
 matchOption(userData.value, {
   onSome: (user) => UserCard({ user }),  // user is Readable<User>
@@ -63,7 +63,7 @@ The key detail: inside `onSome`, the value is a `Readable<User>`, not a `User`. 
 Same idea, for `Either<L, R>`:
 
 ```typescript
-import { matchEither } from "@effex/dom";
+import { matchEither } from "@stax-ui/dom";
 
 matchEither(result, {
   onRight: (value) => SuccessView({ value }),  // value is Readable<A>
@@ -76,7 +76,7 @@ matchEither(result, {
 Keyed list rendering with efficient reconciliation:
 
 ```typescript
-import { each } from "@effex/dom";
+import { each } from "@stax-ui/dom";
 
 each(todos, {
   key: (todo) => todo.id,
@@ -85,7 +85,7 @@ each(todos, {
 });
 ```
 
-The `key` function is required. It tells Effex how to track items across updates. When the list changes:
+The `key` function is required. It tells Stax how to track items across updates. When the list changes:
 
 - **New items** are created and inserted at the correct position
 - **Removed items** are unmounted and their DOM nodes removed
@@ -119,7 +119,7 @@ each(items, {
 For cases where the entire subtree depends on the value and should be rebuilt from scratch on every change:
 
 ```typescript
-import { redraw } from "@effex/dom";
+import { redraw } from "@stax-ui/dom";
 
 redraw(theme, {
   render: (currentTheme) => ThemedApp({ theme: currentTheme }),

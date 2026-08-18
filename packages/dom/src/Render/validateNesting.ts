@@ -5,7 +5,7 @@ import { Console, Effect } from "effect";
  *
  * Browsers silently normalize invalid HTML nesting — the classic case being
  * `<p>` inside `<p>`, which the parser auto-closes so the inner element ends
- * up as a sibling of the outer, not a child. When Effex's SSR emits a tree
+ * up as a sibling of the outer, not a child. When Stax's SSR emits a tree
  * the browser then reshapes on parse, the hydration walker finds a DOM shape
  * that doesn't match the virtual tree and reports a confusing "Expected <X>
  * but not found in Y" mismatch.
@@ -124,5 +124,5 @@ export const warnIfInvalidNesting = (
   const message = checkNesting(p, c);
   if (!message) return Effect.void;
   warned.add(key);
-  return Console.warn(`[@effex/dom] ${message}`);
+  return Console.warn(`[@stax-ui/dom] ${message}`);
 };

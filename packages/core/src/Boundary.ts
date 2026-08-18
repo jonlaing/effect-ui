@@ -51,7 +51,7 @@ export interface SuspenseOptions<N, E, R1, RF, RC> {
  *
  * @example
  * ```ts
- * // Simple - show fallback immediately (using @effex/dom)
+ * // Simple - show fallback immediately (using @stax-ui/dom)
  * Boundary.suspense({
  *   render: () => fetchAndRenderUser(userId),
  *   fallback: () => $.div({}, $.of("Loading...")),
@@ -108,7 +108,7 @@ export const suspense: {
  *
  * @example
  * ```ts
- * // Using @effex/dom
+ * // Using @stax-ui/dom
  * Boundary.error(
  *   () => riskyComponent(),
  *   (error) => $.div({}, $.of(`Something went wrong: ${String(error)}`))
@@ -134,7 +134,7 @@ export const error = <N, E, R1 = never, R2 = never>(
  *
  * @example
  * ```ts
- * // Suspense boundary for async loading (using @effex/dom)
+ * // Suspense boundary for async loading (using @stax-ui/dom)
  * Boundary.suspense({
  *   render: () => fetchAndRenderData(),
  *   fallback: () => $.div({}, $.of("Loading...")),

@@ -1,7 +1,7 @@
 import { Effect, Schema, Scope } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { MergePropsCtx } from "@effex/core";
+import { MergePropsCtx } from "@stax-ui/core";
 
 import { Field } from "./Field.js";
 import { Form, FormTypeId, isForm, make as makeForm } from "./Form.js";

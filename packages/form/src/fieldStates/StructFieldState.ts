@@ -1,6 +1,6 @@
 import { Effect, Scope } from "effect";
 
-import { Readable, Signal } from "@effex/core";
+import { Readable, Signal } from "@stax-ui/core";
 
 import type { Field, FieldConfig, StructField, TypeOf } from "../Field.js";
 import type { StructFieldState } from "../FieldState.js";

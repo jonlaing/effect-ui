@@ -1,4 +1,4 @@
-import type { Readable } from "@effex/core";
+import type { Readable } from "@stax-ui/core";
 
 import type {
   AnimationOptions,

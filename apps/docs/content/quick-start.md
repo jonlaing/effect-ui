@@ -1,23 +1,23 @@
 ---
 title: "Quick Start"
-description: "Set up a new Effex project as an SPA, SSR app, or static site in under a minute."
+description: "Set up a new Stax project as an SPA, SSR app, or static site in under a minute."
 order: 1
 ---
 
 # Quick Start
 
-The fastest way to start an Effex project is with `create-effex`. It scaffolds a working app with routing, reactive state, and all the tooling configured.
+The fastest way to start an Stax project is with `create-stax`. It scaffolds a working app with routing, reactive state, and all the tooling configured.
 
 ```bash
-pnpm create effex my-app
+pnpm create stax my-app
 ```
 
 You can also use npm, yarn, or bun:
 
 ```bash
-npx create-effex my-app
-yarn create effex my-app
-bunx create-effex my-app
+npx create-stax my-app
+yarn create stax my-app
+bunx create-stax my-app
 ```
 
 The CLI will ask you to pick a template:
@@ -42,7 +42,7 @@ The rest of this guide walks through what each template gives you and when to pi
 ## SPA (Single Page Application)
 
 ```bash
-pnpm create effex my-app --spa
+pnpm create stax my-app --spa
 ```
 
 The simplest setup. Everything runs in the browser — no server, no build-time rendering. Good for dashboards, internal tools, or anything that doesn't need SEO.
@@ -68,8 +68,8 @@ my-app/
 
 ```typescript
 import { Effect } from "effect";
-import { mount, runApp } from "@effex/dom";
-import { Navigation } from "@effex/router";
+import { mount, runApp } from "@stax-ui/dom";
+import { Navigation } from "@stax-ui/router";
 
 import { App } from "./App.js";
 import { router } from "./routes.js";
@@ -89,8 +89,8 @@ runApp(
 Routes are plain functions that return Effects:
 
 ```typescript
-import { Route, Router } from "@effex/router";
-import { $, Signal } from "@effex/dom";
+import { Route, Router } from "@stax-ui/router";
+import { $, Signal } from "@stax-ui/dom";
 
 const Home = Route.make("/").pipe(
   Route.render(() =>
@@ -98,7 +98,7 @@ const Home = Route.make("/").pipe(
       const count = yield* Signal.make(0);
       return yield* $.div(
         {},
-        $.h1({}, "Welcome to Effex"),
+        $.h1({}, "Welcome to Stax"),
         $.button(
           { onClick: () => count.update((n) => n + 1) },
           count,
@@ -126,7 +126,7 @@ export const router = Router.empty.pipe(
 ## SSR (Server-Side Rendering)
 
 ```bash
-pnpm create effex my-app --ssr
+pnpm create stax my-app --ssr
 ```
 
 Full-stack rendering. The server renders HTML on each request using Effect's HTTP platform, then the client hydrates it. Use this when you need SEO, fast initial page loads, or server-side data loading.
@@ -149,18 +149,18 @@ my-app/
 
 ### Server entry
 
-`src/server.ts` is a Node.js server built on `@effect/platform`. It serves static assets and delegates everything else to Effex's SSR:
+`src/server.ts` is a Node.js server built on `@effect/platform`. It serves static assets and delegates everything else to Stax's SSR:
 
 ```typescript
 import { Effect } from "effect";
 import { HttpRouter, HttpServer } from "@effect/platform";
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node";
-import { Platform } from "@effex/platform";
+import { Platform } from "@stax-ui/platform";
 
 import { App } from "./app.js";
 import { router } from "./routes.js";
 
-const effexRoutes = Platform.toHttpRoutes(router, {
+const staxRoutes = Platform.toHttpRoutes(router, {
   app: App,
   document: {
     title: "My App",
@@ -171,7 +171,7 @@ const effexRoutes = Platform.toHttpRoutes(router, {
 
 // Compose with other routes if needed
 const httpApp = HttpRouter.empty.pipe(
-  HttpRouter.concat(effexRoutes),
+  HttpRouter.concat(staxRoutes),
 );
 ```
 
@@ -180,8 +180,8 @@ const httpApp = HttpRouter.empty.pipe(
 `src/client.ts` hydrates the server-rendered HTML:
 
 ```typescript
-import { hydrate } from "@effex/dom";
-import { Platform } from "@effex/platform";
+import { hydrate } from "@stax-ui/dom";
+import { Platform } from "@stax-ui/platform";
 
 import { App } from "./app.js";
 import { router } from "./routes.js";
@@ -195,15 +195,15 @@ After hydration, navigation is client-side. Data for new pages is fetched as JSO
 
 ### Vite plugin
 
-The SSR template uses `@effex/vite-plugin` to handle dev-time SSR:
+The SSR template uses `@stax-ui/vite-plugin` to handle dev-time SSR:
 
 ```typescript
 import { defineConfig } from "vite";
-import { effexPlatform } from "@effex/vite-plugin";
+import { staxPlatform } from "@stax-ui/vite-plugin";
 
 export default defineConfig({
   plugins: [
-    effexPlatform({ entry: "src/vite-entry.ts" }),
+    staxPlatform({ entry: "src/vite-entry.ts" }),
   ],
 });
 ```
@@ -221,7 +221,7 @@ export default defineConfig({
 ## SSG (Static Site Generation)
 
 ```bash
-pnpm create effex my-app --ssg
+pnpm create stax my-app --ssg
 ```
 
 Pages are pre-rendered to HTML at build time. No server at runtime — just static files you can deploy anywhere. Use this for docs sites, blogs, marketing pages, or anything where the content is known ahead of time.
@@ -247,8 +247,8 @@ SSG routes use `Route.static()` to declare which paths to generate and how to lo
 
 ```typescript
 import { Effect } from "effect";
-import { Route, Router } from "@effex/router";
-import { $ } from "@effex/dom";
+import { Route, Router } from "@stax-ui/router";
+import { $ } from "@stax-ui/dom";
 
 const DocsRoute = Route.make("/docs/:slug").pipe(
   Route.static({
@@ -295,11 +295,11 @@ export const document = {
 
 ### Client hydration
 
-Like SSR, the client hydrates after the static HTML loads. SSG still needs `Platform.makeClientLayer` — it provides `NavigationContext` (for `Outlet`/`Link`) and reads the SSG-embedded `window.__EFFEX_DATA__` on first load. On subsequent client-side navigations it fetches the matching HTML shell and pulls the embedded data out (the Vite plugin strips loaders from the client bundle, so this is how loader data reaches routes after hydration):
+Like SSR, the client hydrates after the static HTML loads. SSG still needs `Platform.makeClientLayer` — it provides `NavigationContext` (for `Outlet`/`Link`) and reads the SSG-embedded `window.__STAX_DATA__` on first load. On subsequent client-side navigations it fetches the matching HTML shell and pulls the embedded data out (the Vite plugin strips loaders from the client bundle, so this is how loader data reaches routes after hydration):
 
 ```typescript
-import { hydrate } from "@effex/dom/hydrate";
-import { Platform } from "@effex/platform";
+import { hydrate } from "@stax-ui/dom/hydrate";
+import { Platform } from "@stax-ui/platform";
 import { App } from "./App.js";
 import { router } from "./routes.js";
 

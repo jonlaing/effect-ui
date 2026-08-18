@@ -12,7 +12,7 @@ import type { RendererContext } from "./Renderer.js";
  *
  * @example
  * ```ts
- * // DOM element (using @effex/dom)
+ * // DOM element (using @stax-ui/dom)
  * const myButton: Element<HTMLButtonElement> = button({ class: "primary" }, $.of("Click me"))
  *
  * // Function that can fail

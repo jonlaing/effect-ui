@@ -146,7 +146,7 @@ export interface IAsyncCache {
  * yield* cache.invalidate(['posts']);
  * ```
  */
-export class AsyncCache extends Context.Tag("@effex/core/AsyncCache")<
+export class AsyncCache extends Context.Tag("@stax-ui/core/AsyncCache")<
   AsyncCache,
   IAsyncCache
 >() {}

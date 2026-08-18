@@ -6,14 +6,14 @@ order: 6
 
 # Utilities
 
-Effex includes several DOM utilities for common UI patterns: rendering into portals, trapping focus in modals, locking scroll, and generating unique IDs.
+Stax includes several DOM utilities for common UI patterns: rendering into portals, trapping focus in modals, locking scroll, and generating unique IDs.
 
 ## Portal
 
 Render children into a different DOM node, outside the current component tree. Useful for modals, tooltips, and dropdowns that need to escape `overflow: hidden` or `z-index` stacking contexts:
 
 ```typescript
-import { Portal } from "@effex/dom";
+import { Portal } from "@stax-ui/dom";
 
 // Render into document.body (default)
 Portal(() => Modal({ title: "Hello" }));
@@ -32,7 +32,7 @@ The portaled content participates in the same Effect scope as the parent — con
 Trap keyboard focus within a container. When the user presses Tab at the last focusable element, focus wraps to the first one. Essential for accessible modals and dialogs:
 
 ```typescript
-import { FocusTrap } from "@effex/dom";
+import { FocusTrap } from "@stax-ui/dom";
 
 yield* FocusTrap.make({
   container: dialogElement,
@@ -49,7 +49,7 @@ When the scope finalizes (e.g., the modal unmounts), the focus trap is released 
 Prevent body scrolling while a modal or overlay is open. Handles scrollbar width compensation to prevent layout shift:
 
 ```typescript
-import { ScrollLock } from "@effex/dom";
+import { ScrollLock } from "@stax-ui/dom";
 
 yield* ScrollLock.lock;
 // Body scroll is locked until the scope closes
@@ -62,7 +62,7 @@ When locked, the body gets `overflow: hidden` and a padding-right equal to the s
 Generate unique IDs for linking related elements — labels to inputs, ARIA attributes, etc.:
 
 ```typescript
-import { UniqueId } from "@effex/dom";
+import { UniqueId } from "@stax-ui/dom";
 
 const labelId = yield* UniqueId.make("label");
 const inputId = yield* UniqueId.make("input");
@@ -80,7 +80,7 @@ IDs are unique within the application and include the optional prefix for readab
 Create a reference to a DOM element for later imperative access:
 
 ```typescript
-import { ref } from "@effex/dom";
+import { ref } from "@stax-ui/dom";
 
 const inputRef = yield* ref<HTMLInputElement>();
 
@@ -94,4 +94,4 @@ yield* inputRef.pipe(Element.focus);
 inputRef.isConnected;  // Readable<boolean>
 ```
 
-`ref` is built on `Ref` from `@effex/core` — it's a deferred value that resolves when the element mounts. Accessing `inputRef.pipe(...)` before the element exists will wait until it's available.
+`ref` is built on `Ref` from `@stax-ui/core` — it's a deferred value that resolves when the element mounts. Accessing `inputRef.pipe(...)` before the element exists will wait until it's available.

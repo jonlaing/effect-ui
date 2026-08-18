@@ -1,7 +1,7 @@
 /**
  * Platform utilities for SSR integration.
  *
- * Provides `toHttpRoutes` which converts an Effex Router into an
+ * Provides `toHttpRoutes` which converts an Stax Router into an
  * `@effect/platform` HttpRouter, handling SSR rendering, data requests
  * (`?_data=1`), and action execution (`POST/PUT/DELETE ?_action=key`).
  *
@@ -39,20 +39,20 @@ import {
   RendererContext,
   type ControlCtx,
   type SuspenseBoundaryCtx,
-} from "@effex/core";
-import { Element } from "@effex/dom";
-import { renderToString } from "@effex/dom/server";
+} from "@stax-ui/core";
+import { Element } from "@stax-ui/dom";
+import { renderToString } from "@stax-ui/dom/server";
 import {
   Navigation,
   NavigationContext,
   resolveMeta,
   RouteDataContext,
   RouteDataProvider,
-  type Router as EffexRouter,
   type RouteDataProviderService,
   type RouteDataService,
   type RouteType,
-} from "@effex/router";
+  type Router as StaxRouter,
+} from "@stax-ui/router";
 
 // =============================================================================
 // Types
@@ -126,7 +126,7 @@ export const generateLoaderDataScript = (
   loaderData: Record<string, unknown>,
 ): string => {
   if (Object.keys(loaderData).length === 0) return "";
-  return `<script>window.__EFFEX_DATA__=${serializeForHtml(loaderData)}</script>`;
+  return `<script>window.__STAX_DATA__=${serializeForHtml(loaderData)}</script>`;
 };
 
 /**
@@ -262,9 +262,9 @@ const catchRedirects = (
 // =============================================================================
 
 /**
- * Convert an Effex Router into an `@effect/platform` HttpRouter.
+ * Convert an Stax Router into an `@effect/platform` HttpRouter.
  *
- * For each route in the Effex Router, registers method-specific handlers:
+ * For each route in the Stax Router, registers method-specific handlers:
  *
  * - **GET**: Runs the route's loader (if any), provides data via RouteDataContext,
  *   SSR renders the component. If `?_data=1`, returns data as JSON.
@@ -279,7 +279,7 @@ export const toHttpRoutes = <
   D,
   R,
 >(
-  router: EffexRouter<P, S, D, never, R>,
+  router: StaxRouter<P, S, D, never, R>,
   options?: ToHttpRoutesOptions,
 ): HttpRouter.HttpRouter<
   RedirectError | RouteNotFound,
@@ -617,20 +617,20 @@ export const toHttpRoutes = <
 // =============================================================================
 
 declare const window: Window & {
-  __EFFEX_DATA__?: Record<string, unknown>;
+  __STAX_DATA__?: Record<string, unknown>;
 };
 
 /**
  * Create a client-side Layer that provides NavigationContext and RouteDataProvider.
  *
- * On the first call (hydration), reads data from `window.__EFFEX_DATA__`.
+ * On the first call (hydration), reads data from `window.__STAX_DATA__`.
  * On subsequent calls (client-side navigation), fetches from the server
  * via `?_data=1`.
  *
  * @example
  * ```ts
- * import { hydrate } from "@effex/dom"
- * import { Platform } from "@effex/platform"
+ * import { hydrate } from "@stax-ui/dom"
+ * import { Platform } from "@stax-ui/platform"
  * import { router } from "./routes"
  *
  * const program = Effect.gen(function* () {
@@ -643,7 +643,7 @@ declare const window: Window & {
  * ```
  */
 /**
- * Extract embedded `window.__EFFEX_DATA__` from a page's HTML.
+ * Extract embedded `window.__STAX_DATA__` from a page's HTML.
  *
  * SSG deploys serve the same HTML for `<path>` and `<path>?_data=1`, so when
  * `makeClientLayer`'s data fetch gets HTML back, we scan for the loader-data
@@ -653,7 +653,7 @@ declare const window: Window & {
  */
 const extractEmbeddedRouteData = (html: string): unknown => {
   const match = html.match(
-    /<script[^>]*>\s*window\.__EFFEX_DATA__\s*=\s*(.+?)\s*<\/script>/s,
+    /<script[^>]*>\s*window\.__STAX_DATA__\s*=\s*(.+?)\s*<\/script>/s,
   );
   if (!match) return undefined;
   try {
@@ -673,7 +673,7 @@ export const makeClientLayer = <
   E,
   R,
 >(
-  router: EffexRouter<P, S, D, E, R>,
+  router: StaxRouter<P, S, D, E, R>,
 ): Layer.Layer<NavigationContext | RouteDataProvider, never, never> => {
   const dataProviderLayer = Layer.scoped(
     RouteDataProvider,
@@ -692,7 +692,7 @@ export const makeClientLayer = <
               // Hydration: read embedded data from SSR
               const embedded =
                 typeof window !== "undefined"
-                  ? window.__EFFEX_DATA__
+                  ? window.__STAX_DATA__
                   : undefined;
 
               if (embedded) {
@@ -705,7 +705,7 @@ export const makeClientLayer = <
             // On an SSR server this hits the `?_data=1` handler and returns
             // JSON. On a static host (SSG output on any file server) the
             // query string is ignored and the same page HTML comes back — we
-            // fall back to extracting the embedded `window.__EFFEX_DATA__`
+            // fall back to extracting the embedded `window.__STAX_DATA__`
             // from the HTML shell. Both modes look the same to callers.
             const path = substituteParams(route.path, params);
             const qs = new URLSearchParams(searchParams);
@@ -727,14 +727,13 @@ export const makeClientLayer = <
             // adding a synthetic loaderPath.
             const html = yield* Effect.tryPromise(() => response.text());
             const embeddedBlob = extractEmbeddedRouteData(html) as
-              | { data: unknown; actions?: Record<string, unknown> }
-              | undefined;
+              { data: unknown; actions?: Record<string, unknown> } | undefined;
             if (embeddedBlob === undefined) {
               // Static host served HTML but we couldn't find the data blob.
               // Not fatal — some routes may legitimately have no loader data
               // — but log it so a broken build/deploy doesn't sit invisible.
               yield* Console.warn(
-                `[@effex/platform] Fetched HTML for ${path} but couldn't find window.__EFFEX_DATA__. ` +
+                `[@stax-ui/platform] Fetched HTML for ${path} but couldn't find window.__STAX_DATA__. ` +
                   `Continuing with data: undefined.`,
               );
             }
@@ -751,7 +750,7 @@ export const makeClientLayer = <
             // browser console, so error trackers still see it.
             Effect.tapError((err) =>
               Console.error(
-                `[@effex/platform] Failed to load route data for ${substituteParams(route.path, params)}. ` +
+                `[@stax-ui/platform] Failed to load route data for ${substituteParams(route.path, params)}. ` +
                   `Outlet will render empty.`,
                 err,
               ),
@@ -776,12 +775,12 @@ export const makeClientLayer = <
 export interface BuildStaticSiteOptions {
   /** The router containing routes to build */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  readonly router: EffexRouter<any, any, any, any, any>;
+  readonly router: StaxRouter<any, any, any, any, any>;
   /**
    * Root app component. If provided, each page renders through this
    * (same component tree the client would hydrate).
    */
-  readonly app?: () => import("@effex/dom").Element.Element<
+  readonly app?: () => import("@stax-ui/dom").Element.Element<
     HTMLElement | SVGElement,
     never,
     never

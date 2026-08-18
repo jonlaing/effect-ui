@@ -1,18 +1,18 @@
-# @effex/form
+# @stax-ui/form
 
-Type-safe form handling for Effex applications with Effect Schema validation.
+Type-safe form handling for Stax applications with Effect Schema validation.
 
 ## Installation
 
 ```bash
-pnpm add @effex/form effect
+pnpm add @stax-ui/form effect
 ```
 
-> `@effex/dom` re-exports `@effex/core`, so you don't need to install core separately.
+> `@stax-ui/dom` re-exports `@stax-ui/core`, so you don't need to install core separately.
 
 ## Overview
 
-Forms in `@effex/form` are defined separately from their runtime state. This separation allows you to:
+Forms in `@stax-ui/form` are defined separately from their runtime state. This separation allows you to:
 
 - Define forms at module level (like routers)
 - Reuse form definitions across components
@@ -23,8 +23,8 @@ Forms in `@effex/form` are defined separately from their runtime state. This sep
 
 ```ts
 import { Effect, Schema } from "effect";
-import { $, collect, Readable, when } from "@effex/dom";
-import { Field, Form } from "@effex/form";
+import { $, collect, Readable, when } from "@stax-ui/dom";
+import { Field, Form } from "@stax-ui/form";
 
 // 1. Define the form at module level
 const LoginForm = Form.make({
@@ -124,7 +124,7 @@ const LoginPage = () =>
 Fields wrap Effect Schemas with UI configuration:
 
 ```ts
-import { Field } from "@effex/form";
+import { Field } from "@stax-ui/form";
 import { Schema } from "effect";
 
 // Basic field
@@ -369,7 +369,7 @@ interface SubmitContext<Encoded, Decoded> {
 
 ## Progressive Enhancement
 
-When using `@effex/platform`, forms can work without JavaScript via the `action` property:
+When using `@stax-ui/platform`, forms can work without JavaScript via the `action` property:
 
 ```ts
 MyForm.provide(

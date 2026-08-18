@@ -50,7 +50,7 @@ Now the implementation using localStorage:
 
 ```typescript
 // LocalStorage implementation
-const STORAGE_KEY = "effex-todos";
+const STORAGE_KEY = "stax-todos";
 
 const TodoStorageLive = {
   load: Effect.try({
@@ -93,7 +93,7 @@ import {
   Readable,
   Signal,
   when
-} from "@effex/dom";
+} from "@stax-ui/dom";
 
 import { TodoItem } from "./components/TodoItem";
 import { TodoStorage, TodoStorageLive } from "./services/TodoStorage";
@@ -285,7 +285,7 @@ Check the browser's DevTools → Application → Local Storage to see the saved 
 
 ## Congratulations!
 
-You've built a complete todo application with Effex! You learned:
+You've built a complete todo application with Stax! You learned:
 
 - **Elements** with the `$` factory
 - **Signals** for reactive state

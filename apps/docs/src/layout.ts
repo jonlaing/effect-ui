@@ -1,5 +1,5 @@
-import { $ } from "@effex/dom";
-import { Outlet } from "@effex/router";
+import { $ } from "@stax-ui/dom";
+import { Outlet } from "@stax-ui/router";
 
 import { router } from "./routes.js";
 

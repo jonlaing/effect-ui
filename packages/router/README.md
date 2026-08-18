@@ -1,11 +1,11 @@
-# @effex/router
+# @stax-ui/router
 
-Type-safe routing for Effex applications built on Effect.
+Type-safe routing for Stax applications built on Effect.
 
 ## Installation
 
 ```bash
-pnpm add @effex/router @effex/dom effect
+pnpm add @stax-ui/router @stax-ui/dom effect
 ```
 
 ## Overview
@@ -22,8 +22,8 @@ The router is built around five main concepts:
 
 ```ts
 import { Effect } from "effect";
-import { $, collect, Signal, mount, runApp } from "@effex/dom";
-import { Route, Router, Navigation, Link, Outlet } from "@effex/router";
+import { $, collect, Signal, mount, runApp } from "@stax-ui/dom";
+import { Route, Router, Navigation, Link, Outlet } from "@stax-ui/router";
 
 // Define routes
 const HomeRoute = Route.make("/").pipe(
@@ -69,7 +69,7 @@ Routes are defined using `Route.make(path)` and configured with pipeable combina
 ### Basic Routes
 
 ```ts
-import { Route } from "@effex/router";
+import { Route } from "@stax-ui/router";
 
 const HomeRoute = Route.make("/").pipe(
   Route.render(() => HomePage()),
@@ -148,7 +148,7 @@ const SearchRoute = Route.make("/search").pipe(
 
 ### Loaders (Data Fetching)
 
-Use `Route.get()` to add a loader and render function. In SPA apps, the loader runs client-side. When using `@effex/platform` for SSR, the loader runs server-side and its data is serialized to the client. Either way, the render function receives the loader's return value directly:
+Use `Route.get()` to add a loader and render function. In SPA apps, the loader runs client-side. When using `@stax-ui/platform` for SSR, the loader runs server-side and its data is serialized to the client. Either way, the render function receives the loader's return value directly:
 
 ```ts
 const UsersRoute = Route.make("/users").pipe(
@@ -202,7 +202,7 @@ const UserRoute = Route.make("/users/:id").pipe(
 
 Handler keys (e.g., `"updateProfile"`) become action endpoints accessible via `RouteDataContext.actions` in the component.
 
-> **Note:** Mutation handlers are only executed by `@effex/platform` on the server. In SPA mode, `Route.post`/`put`/`delete` register action URL paths but there is no server to handle them — use mutations or direct API calls instead.
+> **Note:** Mutation handlers are only executed by `@stax-ui/platform` on the server. In SPA mode, `Route.post`/`put`/`delete` register action URL paths but there is no server to handle them — use mutations or direct API calls instead.
 
 ### Route Guards
 
@@ -277,7 +277,7 @@ Compose routes using the pipeable Router API.
 ### Basic Composition
 
 ```ts
-import { Router } from "@effex/router";
+import { Router } from "@stax-ui/router";
 
 const router = Router.empty.pipe(
   Router.concat(HomeRoute),
@@ -381,7 +381,7 @@ const router = Router.empty.pipe(
 ### Route Matching
 
 ```ts
-import { Router } from "@effex/router";
+import { Router } from "@stax-ui/router";
 
 const match = Router.findMatch(router, "/users/123");
 // Option<{ route: Route, params: { id: "123" } }>
@@ -392,7 +392,7 @@ const match = Router.findMatch(router, "/users/123");
 The `Outlet` component renders the currently matched route. It handles guard enforcement, layout application, data loading, and route transitions:
 
 ```ts
-import { Outlet } from "@effex/router";
+import { Outlet } from "@stax-ui/router";
 
 const App = () =>
   $.div(
@@ -416,7 +416,7 @@ The Navigation service provides reactive state and programmatic navigation.
 ### Setup
 
 ```ts
-import { Navigation } from "@effex/router";
+import { Navigation } from "@stax-ui/router";
 
 // Create a layer to provide to your app
 const navLayer = Navigation.makeLayer(router, {
@@ -436,7 +436,7 @@ runApp(
 ### Reactive State
 
 ```ts
-import { NavigationContext } from "@effex/router";
+import { NavigationContext } from "@stax-ui/router";
 
 Effect.gen(function* () {
   const nav = yield* NavigationContext;
@@ -475,7 +475,7 @@ Effect.gen(function* () {
 Convenience effects that access `NavigationContext` internally:
 
 ```ts
-import { Navigation } from "@effex/router";
+import { Navigation } from "@stax-ui/router";
 
 const path = yield* Navigation.pathname;
 const params = yield* Navigation.searchParams;
@@ -507,7 +507,7 @@ The Link component provides declarative navigation with automatic active state.
 ### Basic Usage
 
 ```ts
-import { Link } from "@effex/router";
+import { Link } from "@stax-ui/router";
 
 Link({ href: "/about" }, $.of("About Us"))
 
@@ -570,7 +570,7 @@ Route data context provides loader results and action endpoints to components.
 Access loader data, the loader refetch URL, and mutation action URLs inside a route's render function:
 
 ```ts
-import { RouteDataContext } from "@effex/router";
+import { RouteDataContext } from "@stax-ui/router";
 
 const FeedPage = (data: { posts: Post[] }) =>
   Effect.gen(function* () {
@@ -591,7 +591,7 @@ const FeedPage = (data: { posts: Post[] }) =>
 
 ### RouteDataProvider
 
-In SSR mode, `@effex/platform` provides a `RouteDataProvider` that handles server-side loader execution and client-side data fetching via `?_data=1` requests. In SPA mode (without platform), the Outlet runs loaders directly on the client.
+In SSR mode, `@stax-ui/platform` provides a `RouteDataProvider` that handles server-side loader execution and client-side data fetching via `?_data=1` requests. In SPA mode (without platform), the Outlet runs loaders directly on the client.
 
 ## API Reference
 

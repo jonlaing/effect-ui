@@ -15,9 +15,8 @@ import { make as makeSignal } from "./Signal.js";
 // TypeId
 // -----------------------------------------------------------------------------
 
-export const AsyncReadableTypeId: unique symbol = Symbol.for(
-  "effex/AsyncReadable",
-);
+export const AsyncReadableTypeId: unique symbol =
+  Symbol.for("stax/AsyncReadable");
 export type AsyncReadableTypeId = typeof AsyncReadableTypeId;
 
 // -----------------------------------------------------------------------------

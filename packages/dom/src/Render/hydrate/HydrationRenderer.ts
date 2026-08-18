@@ -4,7 +4,7 @@
 
 import { Effect } from "effect";
 
-import type { Renderer, Slot } from "@effex/core";
+import type { Renderer, Slot } from "@stax-ui/core";
 
 import type { HydrateOptions } from "./index.js";
 
@@ -34,7 +34,7 @@ export const createHydrationRenderer = (
     options.onMismatch ??
     ((message, _node) => {
       if (typeof console !== "undefined") {
-        console.warn(`[Effex Hydration] ${message}`);
+        console.warn(`[Stax Hydration] ${message}`);
       }
     });
 
@@ -107,7 +107,7 @@ export const createHydrationRenderer = (
           } else if (
             child.nodeType === Node.ELEMENT_NODE &&
             (child as Element).tagName.toLowerCase() === "span" &&
-            (child as Element).hasAttribute("data-effex-text")
+            (child as Element).hasAttribute("data-stax-text")
           ) {
             // Reactive text is wrapped in a span
             node = child.firstChild ?? document.createTextNode(text);
@@ -299,7 +299,7 @@ export const createHydrationRenderer = (
           const child = children[ctx.childIndex];
           if (
             child.nodeType === Node.COMMENT_NODE &&
-            (child as Comment).textContent === "effex-slot"
+            (child as Comment).textContent === "stax-slot"
           ) {
             marker = child as Comment;
             ctx.childIndex++;
@@ -310,7 +310,7 @@ export const createHydrationRenderer = (
 
         // Fallback: create a new marker if not found
         if (!marker) {
-          marker = document.createComment("effex-slot");
+          marker = document.createComment("stax-slot");
         }
 
         let currentContent: Node | null = null;

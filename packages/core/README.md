@@ -1,13 +1,13 @@
-# @effex/core
+# @stax-ui/core
 
-Reactive primitives for Effex applications. This package provides the foundational reactivity system: Signals, Readables, async state management, reactive collections, state machines, and control flow primitives.
+Reactive primitives for Stax applications. This package provides the foundational reactivity system: Signals, Readables, async state management, reactive collections, state machines, and control flow primitives.
 
-> **Note:** `@effex/dom` re-exports everything from this package. If you're using `@effex/dom`, you don't need to install this separately.
+> **Note:** `@stax-ui/dom` re-exports everything from this package. If you're using `@stax-ui/dom`, you don't need to install this separately.
 
 ## Installation
 
 ```bash
-pnpm add @effex/core effect
+pnpm add @stax-ui/core effect
 ```
 
 ## Signals
@@ -16,7 +16,7 @@ Signals are reactive values that can be read and updated:
 
 ```ts
 import { Effect } from "effect";
-import { Signal } from "@effex/core";
+import { Signal } from "@stax-ui/core";
 
 const count = yield* Signal.make(0);
 
@@ -52,14 +52,14 @@ This is useful for:
 
 ## Readable
 
-Readables are the foundation of Effex's reactivity. They represent values that can be observed for changes. Signals are Readables, but you can also create derived Readables using combinators.
+Readables are the foundation of Stax's reactivity. They represent values that can be observed for changes. Signals are Readables, but you can also create derived Readables using combinators.
 
 ### Derived Values
 
 Use `Readable.map` to create derived values that automatically update:
 
 ```ts
-import { Readable, Signal } from "@effex/core";
+import { Readable, Signal } from "@stax-ui/core";
 
 const firstName = yield* Signal.make("John");
 const lastName = yield* Signal.make("Doe");
@@ -123,7 +123,7 @@ When using utility libraries like [class-variance-authority (CVA)](https://cva.s
 
 ```ts
 import { cva } from "class-variance-authority";
-import { Signal, Readable } from "@effex/core";
+import { Signal, Readable } from "@stax-ui/core";
 
 const buttonStyles = cva("btn font-medium rounded", {
   variants: {
@@ -146,7 +146,7 @@ const className = reactiveButtonStyles({ variant, size: "md" });
 Mutable references with deferred resolution, similar to React's `useRef` but with Effect integration:
 
 ```ts
-import { Ref } from "@effex/core";
+import { Ref } from "@stax-ui/core";
 
 // Create a ref for a DOM element
 const inputRef = yield* Ref.make<HTMLInputElement>();
@@ -165,7 +165,7 @@ yield* inputRef.value.pipe(
 For async operations like data fetching, use `AsyncReadable`. It provides reactive state for loading, value, and error:
 
 ```ts
-import { AsyncReadable } from "@effex/core";
+import { AsyncReadable } from "@stax-ui/core";
 
 const userData = yield* AsyncReadable.make(() =>
   Effect.gen(function* () {
@@ -215,7 +215,7 @@ const profile = yield* AsyncReadable.fromReadable(
 Use with control flow primitives:
 
 ```ts
-import { when, matchOption } from "@effex/core";
+import { when, matchOption } from "@stax-ui/core";
 
 // Show loading spinner
 when(userData.isLoading, {
@@ -235,7 +235,7 @@ matchOption(userData.value, {
 A caching layer for async operations. Entries are keyed by hierarchical paths and can be invalidated by prefix. Ideal for data fetching in apps with loaders and mutations.
 
 ```ts
-import { AsyncCache } from "@effex/core";
+import { AsyncCache } from "@stax-ui/core";
 
 const cache = yield* AsyncCache;
 
@@ -314,7 +314,7 @@ const FeedPage = (data: { posts: Post[] }) =>
 For explicit async operations (like form submissions, API calls), use `Mutation`. Unlike AsyncReadable, mutations are triggered manually:
 
 ```ts
-import { Mutation } from "@effex/core";
+import { Mutation } from "@stax-ui/core";
 
 const createUser = yield* Mutation.make((input: CreateUserInput) =>
   Effect.gen(function* () {
@@ -352,7 +352,7 @@ const createUser = yield* Mutation.tryPromise(
 
 ## Reactive Collections
 
-Effex provides reactive versions of Array, Map, Set, and Struct. Unlike in React where you must clone collections on every mutation, these allow in-place mutations that automatically trigger reactive updates.
+Stax provides reactive versions of Array, Map, Set, and Struct. Unlike in React where you must clone collections on every mutation, these allow in-place mutations that automatically trigger reactive updates.
 
 ### Signal.Array
 
@@ -362,7 +362,7 @@ A reactive array with in-place mutation methods:
 const todos = yield* Signal.Array.make<Todo>([]);
 
 // In-place mutations (no cloning needed!)
-yield* todos.push({ id: 1, text: "Learn Effex", done: false });
+yield* todos.push({ id: 1, text: "Learn Stax", done: false });
 yield* todos.unshift(firstItem);
 yield* todos.pop();
 yield* todos.shift();
@@ -454,7 +454,7 @@ setMap(new Map(map).set(key, value));
 setSet(new Set(set).add(item));
 ```
 
-With Effex's reactive collections, mutations are O(1) and automatically trigger updates.
+With Stax's reactive collections, mutations are O(1) and automatically trigger updates.
 
 ### Signal.Struct
 
@@ -490,7 +490,7 @@ address.keys;  // readonly ["street", "city", "zip"]
 `Transition` provides declarative state machines with type-safe transitions and reactive guards:
 
 ```ts
-import { Transition } from "@effex/core";
+import { Transition } from "@stax-ui/core";
 
 const status = yield* Transition.make(
   {
@@ -565,7 +565,7 @@ Reactive control flow primitives for conditional and list rendering. These work 
 Conditional rendering based on a boolean Readable:
 
 ```ts
-import { when } from "@effex/core";
+import { when } from "@stax-ui/core";
 
 when(isLoggedIn, {
   onTrue: () => Dashboard(),
@@ -578,7 +578,7 @@ when(isLoggedIn, {
 Pattern matching on a Readable value:
 
 ```ts
-import { match } from "@effex/core";
+import { match } from "@stax-ui/core";
 
 match(status.current, {
   cases: [
@@ -595,7 +595,7 @@ match(status.current, {
 Handle `Option` and `Either` values reactively:
 
 ```ts
-import { matchOption, matchEither } from "@effex/core";
+import { matchOption, matchEither } from "@stax-ui/core";
 
 matchOption(userData.value, {
   onSome: (user) => UserCard({ user }),  // user is Readable<User>
@@ -613,7 +613,7 @@ matchEither(result, {
 Keyed list rendering with efficient reconciliation:
 
 ```ts
-import { each } from "@effex/core";
+import { each } from "@stax-ui/core";
 
 each(todos, {
   key: (todo) => todo.id,
@@ -627,7 +627,7 @@ each(todos, {
 Complete redraw on every change (useful when the whole subtree depends on the value):
 
 ```ts
-import { redraw } from "@effex/core";
+import { redraw } from "@stax-ui/core";
 
 redraw(theme, {
   render: (currentTheme) => ThemedApp({ theme: currentTheme }),

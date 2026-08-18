@@ -1,0 +1,43 @@
+{
+  "name": "create-stax",
+  "version": "0.1.0",
+  "description": "Create a new Stax application",
+  "type": "module",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "Jon Laing",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stax-ui/stax.git",
+    "directory": "packages/create-stax"
+  },
+  "keywords": [
+    "stax",
+    "effect",
+    "effect-ts",
+    "create",
+    "scaffold",
+    "cli"
+  ],
+  "bin": {
+    "create-stax": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "templates",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "dependencies": {
+    "picocolors": "^1.1.0",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/prompts": "^2.4.9"
+  }
+}

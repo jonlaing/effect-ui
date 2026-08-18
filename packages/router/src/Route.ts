@@ -1,7 +1,7 @@
 import { Context, Data, Effect, ParseResult, Pipeable, Schema } from "effect";
 
-import { Readable } from "@effex/core";
-import type { Element } from "@effex/dom";
+import { Readable } from "@stax-ui/core";
+import type { Element } from "@stax-ui/dom";
 
 import type { ScrollBehavior } from "./ScrollBehavior.js";
 
@@ -9,7 +9,7 @@ import type { ScrollBehavior } from "./ScrollBehavior.js";
 // TypeId
 // =============================================================================
 
-export const TypeId: unique symbol = Symbol.for("@effex/router/Route");
+export const TypeId: unique symbol = Symbol.for("@stax-ui/router/Route");
 export type TypeId = typeof TypeId;
 
 // =============================================================================
@@ -215,8 +215,7 @@ export interface MetaArgs<P = unknown, SP = unknown, D = unknown> {
  * A single meta field — either a static string or a function of route args.
  */
 export type MetaField<P, SP, D> =
-  | string
-  | ((args: MetaArgs<P, SP, D>) => string);
+  string | ((args: MetaArgs<P, SP, D>) => string);
 
 /**
  * Object form of meta input — each field can be a string or function.
@@ -231,8 +230,7 @@ export interface MetaObject<P, SP, D> {
  * or a function that returns the full meta object.
  */
 export type MetaInput<P, SP, D> =
-  | MetaObject<P, SP, D>
-  | ((args: MetaArgs<P, SP, D>) => RouteMeta);
+  MetaObject<P, SP, D> | ((args: MetaArgs<P, SP, D>) => RouteMeta);
 
 /**
  * A handler entry for POST/PUT/DELETE mutations.
@@ -396,7 +394,7 @@ export const make = <Path extends string>(
   // Create a unique context tag for this route
   const ParamsTag = Context.GenericTag<
     RouteContext<Record<string, string>, Record<string, string>>
-  >(`@effex/router/Route(${path})`);
+  >(`@stax-ui/router/Route(${path})`);
 
   const route: Route<
     Path,
@@ -453,7 +451,7 @@ export const params =
   ): Route<Path, P, SP, D, E | ParseResult.ParseError, R> => {
     // Create a new context tag with the updated params type
     const ParamsTag = Context.GenericTag<RouteContext<P, SP>>(
-      `@effex/router/Route(${route.path})`,
+      `@stax-ui/router/Route(${route.path})`,
     );
 
     return Object.assign(Object.create(RouteProto), {
@@ -489,7 +487,7 @@ export const searchParams =
     route: Route<Path, P, OldSP, D, E, R>,
   ): Route<Path, P, SP, D, E | ParseResult.ParseError, R> => {
     const ParamsTag = Context.GenericTag<RouteContext<P, SP>>(
-      `@effex/router/Route(${route.path})`,
+      `@stax-ui/router/Route(${route.path})`,
     );
 
     return Object.assign(Object.create(RouteProto), {
@@ -522,7 +520,7 @@ export const rawParams = <Path extends string, OldP, SP, D, E, R>(
 ): Route<Path, Record<string, string>, SP, D, E, R> => {
   const ParamsTag = Context.GenericTag<
     RouteContext<Record<string, string>, SP>
-  >(`@effex/router/Route(${route.path})`);
+  >(`@stax-ui/router/Route(${route.path})`);
 
   return Object.assign(Object.create(RouteProto), {
     ...route,
@@ -945,7 +943,7 @@ export const lazy = <Path extends string>(
   // Create a placeholder route that will be replaced when loaded
   const segments = parsePath(path);
   const ParamsTag = Context.GenericTag<RouteContext<unknown, unknown>>(
-    `@effex/router/Route(${path})`,
+    `@stax-ui/router/Route(${path})`,
   );
 
   const route: Route<Path, unknown, unknown, unknown, never, never> =

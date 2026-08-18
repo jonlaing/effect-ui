@@ -1,10 +1,10 @@
 /**
- * Server-side rendering for Effex.
+ * Server-side rendering for Stax.
  *
  * @example
  * ```ts
  * import { Effect } from "effect";
- * import { renderToString } from "@effex/dom/server";
+ * import { renderToString } from "@stax-ui/dom/server";
  * import { App } from "./App";
  *
  * const handler = Effect.gen(function* () {
@@ -31,7 +31,7 @@ import {
   type ControlCtx,
   type Renderer,
   type SuspenseBoundaryCtx,
-} from "@effex/core";
+} from "@stax-ui/core";
 
 import { SSRControlCtx } from "../../Control/SSRControlCtx.js";
 import * as Element from "../../Element/index.js";

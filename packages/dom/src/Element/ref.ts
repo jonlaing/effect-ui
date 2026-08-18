@@ -1,13 +1,13 @@
 import { Data, Effect, Predicate, Stream } from "effect";
 
-import { Readable } from "@effex/core";
+import { Readable } from "@stax-ui/core";
 
 // -----------------------------------------------------------------------------
 // TypeId
 // -----------------------------------------------------------------------------
 
 export const ElementRefTypeId: unique symbol = Symbol.for(
-  "effex/dom/ElementRef",
+  "stax/dom/ElementRef",
 );
 export type ElementRefTypeId = typeof ElementRefTypeId;
 

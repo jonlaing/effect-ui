@@ -1,7 +1,7 @@
 {
-  "name": "@effex/core",
-  "version": "1.2.0",
-  "description": "Platform-agnostic reactivity primitives for Effex",
+  "name": "@stax-ui/core",
+  "version": "0.1.0",
+  "description": "Platform-agnostic reactivity primitives for Stax",
   "type": "module",
   "license": "MIT",
   "publishConfig": {
@@ -10,7 +10,7 @@
   "author": "Jon Laing",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jonlaing/effex.git",
+    "url": "https://github.com/stax-ui/stax.git",
     "directory": "packages/core"
   },
   "keywords": [

@@ -6,7 +6,7 @@ import {
   type ClassValue,
   type Element,
   type PermissiveChildren,
-} from "@effex/dom";
+} from "@stax-ui/dom";
 
 import { buildPath, NavigationContext } from "./Navigation.js";
 import type { Route } from "./Route.js";

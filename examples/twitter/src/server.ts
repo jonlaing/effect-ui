@@ -4,14 +4,14 @@ import { HttpRouter, HttpServer, HttpServerResponse } from "@effect/platform";
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node";
 import { Layer } from "effect";
 
-import { Platform } from "@effex/platform";
+import { Platform } from "@stax-ui/platform";
 
 import { App } from "./App.js";
 import { router } from "./routes.js";
 import { PostService, PostServiceLive } from "./services/PostService.js";
 
-// Build effex HTTP routes from the router
-const effexRoutes = Platform.toHttpRoutes(router, {
+// Build stax HTTP routes from the router
+const staxRoutes = Platform.toHttpRoutes(router, {
   app: App,
   document: {
     title: "Twitter Demo",
@@ -23,7 +23,7 @@ const effexRoutes = Platform.toHttpRoutes(router, {
 // Compose the full HTTP app
 const app = HttpRouter.empty.pipe(
   HttpRouter.get("/api/health", HttpServerResponse.json({ ok: true })),
-  HttpRouter.concat(effexRoutes),
+  HttpRouter.concat(staxRoutes),
 );
 
 const PostServiceLayer = Layer.scoped(PostService, PostServiceLive);

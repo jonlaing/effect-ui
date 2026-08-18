@@ -1,8 +1,8 @@
 import { Effect, Schema } from "effect";
 
-import { $ } from "@effex/dom";
-import { RedirectError } from "@effex/platform";
-import { Route, Router } from "@effex/router";
+import { $ } from "@stax-ui/dom";
+import { RedirectError } from "@stax-ui/platform";
+import { Route, Router } from "@stax-ui/router";
 
 import { AppLayout } from "./components/AppLayout.js";
 import { FeedPage } from "./pages/Feed.js";

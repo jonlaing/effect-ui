@@ -6,7 +6,7 @@
 
 import { Effect, Layer, Scope, Stream } from "effect";
 
-import { RendererContext, type Readable } from "@effex/core";
+import { RendererContext, type Readable } from "@stax-ui/core";
 
 import { calculateItemOffset } from "./helpers.js";
 import { VirtualListCtx, type IVirtualListCtx } from "./VirtualListCtx.js";

@@ -1,5 +1,5 @@
-import { $, collect } from "@effex/dom";
-import { Link } from "@effex/router";
+import { $, collect } from "@stax-ui/dom";
+import { Link } from "@stax-ui/router";
 
 import type { Post, User } from "../services/PostService.js";
 

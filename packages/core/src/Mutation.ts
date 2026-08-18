@@ -7,7 +7,7 @@ import { make as makeSignal } from "./Signal.js";
 // TypeId
 // -----------------------------------------------------------------------------
 
-export const MutationTypeId: unique symbol = Symbol.for("effex/Mutation");
+export const MutationTypeId: unique symbol = Symbol.for("stax/Mutation");
 export type MutationTypeId = typeof MutationTypeId;
 
 // -----------------------------------------------------------------------------

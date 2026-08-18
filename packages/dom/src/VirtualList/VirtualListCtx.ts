@@ -5,7 +5,7 @@
 
 import { Context, Effect, Scope } from "effect";
 
-import type { Readable, RendererContext } from "@effex/core";
+import type { Readable, RendererContext } from "@stax-ui/core";
 
 /**
  * Internal state for a rendered virtual item.
@@ -130,7 +130,7 @@ export interface IVirtualListCtx {
 /**
  * Context tag for virtual list operations.
  */
-export class VirtualListCtx extends Context.Tag("@effex/dom/VirtualListCtx")<
+export class VirtualListCtx extends Context.Tag("@stax-ui/dom/VirtualListCtx")<
   VirtualListCtx,
   IVirtualListCtx
 >() {}

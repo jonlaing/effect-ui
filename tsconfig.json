@@ -5,14 +5,14 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@effex/core": ["packages/core/src/index.ts"],
-      "@effex/dom": ["packages/dom/src/index.ts"],
-      "@effex/dom/client": ["packages/dom/src/Render/client/index.ts"],
-      "@effex/dom/server": ["packages/dom/src/Render/server/index.ts"],
-      "@effex/dom/hydrate": ["packages/dom/src/Render/hydrate/index.ts"],
-      "@effex/router": ["packages/router/src/index.ts"],
-      "@effex/form": ["packages/form/src/index.ts"],
-      "@effex/vite-plugin": ["packages/vite-plugin/src/index.ts"]
+      "@stax-ui/core": ["packages/core/src/index.ts"],
+      "@stax-ui/dom": ["packages/dom/src/index.ts"],
+      "@stax-ui/dom/client": ["packages/dom/src/Render/client/index.ts"],
+      "@stax-ui/dom/server": ["packages/dom/src/Render/server/index.ts"],
+      "@stax-ui/dom/hydrate": ["packages/dom/src/Render/hydrate/index.ts"],
+      "@stax-ui/router": ["packages/router/src/index.ts"],
+      "@stax-ui/form": ["packages/form/src/index.ts"],
+      "@stax-ui/vite-plugin": ["packages/vite-plugin/src/index.ts"]
     }
   },
   "include": ["packages/*/src", "src"]

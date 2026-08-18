@@ -8,7 +8,7 @@
 
 import { Layer } from "effect";
 
-import { AsyncCache, makeAsyncCache } from "@effex/core";
+import { AsyncCache, makeAsyncCache } from "@stax-ui/core";
 
 export const ClientAsyncCacheLayer = Layer.succeed(
   AsyncCache,

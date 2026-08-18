@@ -11,7 +11,7 @@ import type { ChildNode } from "./Element/types.js";
  *
  * @example
  * ```ts
- * import { $, collect } from "@effex/dom"
+ * import { $, collect } from "@stax-ui/dom"
  *
  * // Multiple static children
  * div({}, collect(

@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { $, collect, provide } from "@effex/dom";
+import { $, collect, provide } from "@stax-ui/dom";
 
 import { CardDetailDialog, KanbanBoard } from "./components/index.js";
 import { KanbanService, makeKanbanService } from "./services/KanbanService.js";
@@ -19,7 +19,7 @@ export const App = () =>
             { class: "navbar bg-base-100 shadow-sm" },
             $.h1(
               { class: "text-xl font-bold px-4" },
-              $.of("Effex Kanban Board"),
+              $.of("Stax Kanban Board"),
             ),
           ),
           KanbanBoard(),

@@ -1,7 +1,7 @@
 import { Context, Effect, Layer } from "effect";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { Readable, Signal } from "@effex/core";
+import { Readable, Signal } from "@stax-ui/core";
 
 import { Animation } from "../../Animation/index.js";
 import { Boundary } from "../../Boundary.js";
@@ -146,7 +146,7 @@ describe("Hydration", () => {
 
       expect(container.innerHTML).toContain("Loading...");
       expect(container.innerHTML).toContain(
-        'data-effex-suspense-state="loading"',
+        'data-stax-suspense-state="loading"',
       );
       expect(resolved).toBe(false);
 
@@ -159,7 +159,7 @@ describe("Hydration", () => {
       expect(resolved).toBe(true);
       expect(container.innerHTML).toContain("Loaded content");
       expect(container.innerHTML).toContain(
-        'data-effex-suspense-state="loaded"',
+        'data-stax-suspense-state="loaded"',
       );
     });
 
@@ -188,9 +188,7 @@ describe("Hydration", () => {
       await new Promise((r) => setTimeout(r, 50));
 
       expect(container.innerHTML).toContain("Error: Something went wrong");
-      expect(container.innerHTML).toContain(
-        'data-effex-suspense-state="error"',
-      );
+      expect(container.innerHTML).toContain('data-stax-suspense-state="error"');
     });
 
     it("should handle nested when inside suspense", async () => {
@@ -267,11 +265,11 @@ describe("Hydration", () => {
       const html = await Effect.runPromise(renderToString(App()));
       container.innerHTML = html;
 
-      // Should have effex-id markers for control flow containers
-      expect(container.innerHTML).toContain("data-effex-id=");
+      // Should have stax-id markers for control flow containers
+      expect(container.innerHTML).toContain("data-stax-id=");
       // Should have keys for the rendered slots
-      expect(container.innerHTML).toContain('data-effex-key="true"');
-      expect(container.innerHTML).toContain('data-effex-key="false"');
+      expect(container.innerHTML).toContain('data-stax-key="true"');
+      expect(container.innerHTML).toContain('data-stax-key="false"');
 
       // Hydrate
       await hydrate(App(), container);

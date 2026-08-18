@@ -1,7 +1,7 @@
 import { Effect, Fiber, Scope, Stream } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { Readable } from "@effex/core";
+import { Readable } from "@stax-ui/core";
 
 import { bindElementToRef, make } from "./ref.js";
 

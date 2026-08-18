@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { $, collect, each, Readable } from "@effex/dom";
+import { $, collect, each, Readable } from "@stax-ui/dom";
 
 import { KanbanService } from "../services/KanbanService.js";
 import type { Column as ColumnType } from "../types.js";

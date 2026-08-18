@@ -13,7 +13,7 @@ Sometimes you need to show or hide parts of your UI based on state. Let's add a 
 The `when` helper conditionally renders elements:
 
 ```typescript
-import { when } from "@effex/dom";
+import { when } from "@stax-ui/dom";
 
 when(condition, {
   onTrue: () => $.div({}, "Shown when true"),
@@ -49,7 +49,7 @@ const clearCompleted = () =>
 Now use `when` in the footer:
 
 ```typescript
-import { $, each, Readable, Signal, when } from "@effex/dom";
+import { $, each, Readable, Signal, when } from "@stax-ui/dom";
 
 // In the footer:
 $.footer({ class: "footer" },
@@ -222,7 +222,7 @@ when(condition, {
 })
 ```
 
-We won't cover animations in depth here, but know that Effex supports CSS-based animations for conditional elements.
+We won't cover animations in depth here, but know that Stax supports CSS-based animations for conditional elements.
 
 ## Key Takeaways
 

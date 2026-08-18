@@ -11,7 +11,7 @@ For lists with thousands of items, rendering everything at once is too slow. `vi
 ## Basic Usage
 
 ```typescript
-import { virtualEach } from "@effex/dom";
+import { virtualEach } from "@stax-ui/dom";
 
 virtualEach(items, {
   key: (item) => item.id,
@@ -29,7 +29,7 @@ The `itemHeight` and `height` are in pixels. `itemHeight` is the height of each 
 Use `VirtualListRef` to programmatically control scrolling:
 
 ```typescript
-import { virtualEach, VirtualListRef } from "@effex/dom";
+import { virtualEach, VirtualListRef } from "@stax-ui/dom";
 
 const listRef = yield* VirtualListRef.make();
 

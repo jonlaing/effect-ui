@@ -24,7 +24,7 @@ First, update the props interface and component in `src/components/TodoItem.ts`:
 
 ```typescript
 import { Effect } from "effect";
-import { $, Readable } from "@effex/dom";
+import { $, Readable } from "@stax-ui/dom";
 
 interface Todo {
   id: number;
@@ -72,7 +72,7 @@ Now update `src/main.ts` to create the toggle function and pass it down:
 ```typescript
 import "./styles.css";
 import { Effect } from "effect";
-import { $, each, mount, Readable, runApp, Signal } from "@effex/dom";
+import { $, each, mount, Readable, runApp, Signal } from "@stax-ui/dom";
 import { TodoItem } from "./components/TodoItem";
 
 const container = document.getElementById("root");
@@ -87,7 +87,7 @@ interface Todo {
 const App = () =>
   Effect.gen(function* () {
     const todos = yield* Signal.Array.make<Todo>([
-      { id: 1, text: "Learn Effex", completed: false },
+      { id: 1, text: "Learn Stax", completed: false },
       { id: 2, text: "Build a todo app", completed: false },
       { id: 3, text: "Ship it!", completed: false },
     ]);

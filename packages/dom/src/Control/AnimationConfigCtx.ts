@@ -35,5 +35,5 @@ export interface AnimationConfig {
  * Optional - control flows work without it, just without animations.
  */
 export class AnimationConfigCtx extends Context.Tag(
-  "@effex/dom/AnimationConfigCtx",
+  "@stax-ui/dom/AnimationConfigCtx",
 )<AnimationConfigCtx, AnimationConfig>() {}

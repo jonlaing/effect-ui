@@ -1,11 +1,11 @@
-# @effex/vite-plugin
+# @stax-ui/vite-plugin
 
-Vite plugin for Effex SSR applications. Provides server-code stripping for client builds and an SSR dev server with HMR.
+Vite plugin for Stax SSR applications. Provides server-code stripping for client builds and an SSR dev server with HMR.
 
 ## Installation
 
 ```bash
-pnpm add -D @effex/vite-plugin
+pnpm add -D @stax-ui/vite-plugin
 ```
 
 ## Quick Start
@@ -13,16 +13,16 @@ pnpm add -D @effex/vite-plugin
 ```ts
 // vite.config.ts
 import { defineConfig } from "vite";
-import { effexPlatform } from "@effex/vite-plugin";
+import { staxPlatform } from "@stax-ui/vite-plugin";
 
 export default defineConfig({
   plugins: [
-    effexPlatform({ entry: "src/vite-entry.ts" }),
+    staxPlatform({ entry: "src/vite-entry.ts" }),
   ],
 });
 ```
 
-> Only needed when using `@effex/platform` for SSR. Pure SPA apps don't need this plugin.
+> Only needed when using `@stax-ui/platform` for SSR. Pure SPA apps don't need this plugin.
 
 ## What It Does
 
@@ -83,12 +83,12 @@ The entry file must export a `render` function:
 // src/vite-entry.ts
 import { HttpApp, HttpRouter } from "@effect/platform";
 import { Layer } from "effect";
-import { Platform } from "@effex/platform";
+import { Platform } from "@stax-ui/platform";
 
 import { App } from "./App.js";
 import { router } from "./routes.js";
 
-const effexRoutes = Platform.toHttpRoutes(router, {
+const staxRoutes = Platform.toHttpRoutes(router, {
   app: App,
   document: {
     title: "My App",
@@ -97,7 +97,7 @@ const effexRoutes = Platform.toHttpRoutes(router, {
   },
 });
 
-const app = HttpRouter.empty.pipe(HttpRouter.concat(effexRoutes));
+const app = HttpRouter.empty.pipe(HttpRouter.concat(staxRoutes));
 
 const { handler } = HttpApp.toWebHandlerLayer(app, MyServiceLayer);
 
@@ -111,7 +111,7 @@ The `render` function receives a standard Web `Request` and must return a `Respo
 ## Options
 
 ```ts
-effexPlatform({
+staxPlatform({
   // Path to SSR entry module. Enables the dev server when provided.
   entry: "src/vite-entry.ts",
 
@@ -133,5 +133,5 @@ effexPlatform({
 
 | Export | Description |
 |---|---|
-| `effexPlatform(options?)` | Create the Vite plugin |
+| `staxPlatform(options?)` | Create the Vite plugin |
 | `stripServerCode(code)` | Strip server code from a string (exported for testing) |

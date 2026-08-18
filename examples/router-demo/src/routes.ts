@@ -1,5 +1,5 @@
-import { $ } from "@effex/dom";
-import { Router } from "@effex/router";
+import { $ } from "@stax-ui/dom";
+import { Router } from "@stax-ui/router";
 
 import { AboutRoute } from "./pages/About";
 import { AdminRoute } from "./pages/Admin";
@@ -11,7 +11,7 @@ import { UsersRoute } from "./pages/Users";
 
 // Simple page wrapper layout
 const PageLayout = <A extends HTMLElement | SVGElement, E, R>(
-  children: import("@effex/dom").Element.Element<A, E, R>,
+  children: import("@stax-ui/dom").Element.Element<A, E, R>,
 ) => $.div({ class: "p-6 bg-gray-50 rounded-lg shadow-sm" }, children);
 
 // Router constructed from co-located route definitions

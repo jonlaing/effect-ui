@@ -6,7 +6,7 @@ order: 2
 
 # Effect in 2 Minutes
 
-You don't need to be an Effect expert to use Effex. This page gives you just enough to be productive.
+You don't need to be an Effect expert to use Stax. This page gives you just enough to be productive.
 
 ## The Mental Model
 ### Promises with Superpowers
@@ -101,7 +101,7 @@ const effect = httpGet("/api");  // Nothing happens yet
 Effect.runPromise(effect);       // NOW it runs
 ```
 
-This laziness lets Effex render the same component on server or client, cancel unnecessary work, and batch operations.
+This laziness lets Stax render the same component on server or client, cancel unnecessary work, and batch operations.
 
 **3. Dependencies are explicit**
 ```typescript
@@ -173,7 +173,7 @@ This makes testing trivial—swap `DatabaseLive` for `DatabaseTest` with no code
 ## Effect.gen
 ### Where You'll See This Most
 
-In Effex, you'll mostly use `Effect.gen`:
+In Stax, you'll mostly use `Effect.gen`:
 
 ```typescript
 const Counter = () =>
@@ -203,14 +203,14 @@ Effect<A, E, R>
 - **`E`** (Error): What errors can occur (`never` = infallible)
 - **`R`** (Requirements): What services it needs (`never` = none)
 
-In Effex:
+In Stax:
 - Elements are `Effect<HTMLElement, E, R>`
 - Signals are created with `Effect<Signal<T>, never, Scope>`
 - Components return `Effect<HTMLElement, E, R>`
 
 ## You Don't Need to Know More (Yet)
 
-This covers what you need for building Effex apps. Effex handles most Effect complexity for you—you'll rarely need to think about `Scope`, `Layer`, or advanced error handling.
+This covers what you need for building Stax apps. Stax handles most Effect complexity for you—you'll rarely need to think about `Scope`, `Layer`, or advanced error handling.
 
 As you grow, explore:
 - [Effect Documentation](https://effect.website/docs/introduction)

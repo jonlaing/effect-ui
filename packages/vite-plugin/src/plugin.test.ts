@@ -53,13 +53,13 @@ const B = Route.make("/b").pipe(
 
     it("preserves code outside Route.get", () => {
       const input = `
-import { Route } from "@effex/router";
+import { Route } from "@stax-ui/router";
 const FeedRoute = Route.make("/").pipe(
   Route.get(() => loadData(), (d) => Page(d)),
 );
 export { FeedRoute };`;
       const result = stripServerCode(input);
-      expect(result).toContain('import { Route } from "@effex/router"');
+      expect(result).toContain('import { Route } from "@stax-ui/router"');
       expect(result).toContain('Route.make("/")');
       expect(result).toContain("export { FeedRoute }");
     });
@@ -170,10 +170,10 @@ export const FeedRoute = Route.make("/").pipe(
       // site like `$.div(...)` is bordered by whitespace on the left and
       // `.` on the right — so `\b$\b` couldn't match a real usage, and
       // `$`-only imports were misclassified as dead.
-      const input = `import { $ } from "@effex/dom";
+      const input = `import { $ } from "@stax-ui/dom";
 const App = () => $.div({}, "hi");`;
       const result = stripServerCode(input);
-      expect(result).toContain('import { $ } from "@effex/dom"');
+      expect(result).toContain('import { $ } from "@stax-ui/dom"');
     });
 
     it("preserves `$` when it shares an import line with a used specifier", () => {
@@ -181,17 +181,17 @@ const App = () => $.div({}, "hi");`;
       // (e.g. `collect`) sat next to `$` on the same import line, because
       // the "all dead" check short-circuits when any one specifier looks
       // used.
-      const input = `import { $, when } from "@effex/dom";
+      const input = `import { $, when } from "@stax-ui/dom";
 const App = () => $.div({}, when(cond, { onTrue: () => Yes(), onFalse: () => No() }));`;
       const result = stripServerCode(input);
-      expect(result).toContain('import { $, when } from "@effex/dom"');
+      expect(result).toContain('import { $, when } from "@stax-ui/dom"');
     });
 
     it("still strips a truly dead `$`-only import", () => {
-      const input = `import { $ } from "@effex/dom";
+      const input = `import { $ } from "@stax-ui/dom";
 const x = 1;`;
       const result = stripServerCode(input);
-      expect(result).not.toContain('import { $ } from "@effex/dom"');
+      expect(result).not.toContain('import { $ } from "@stax-ui/dom"');
     });
   });
 
