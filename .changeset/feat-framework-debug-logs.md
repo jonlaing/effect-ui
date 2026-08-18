@@ -36,6 +36,17 @@ The `subsystem` argument is typed as `` `effex.${string}` `` — enforces the pr
 
 Also moves the reconcile handler's error wrapping — previously in `@effex/dom`'s `subscribeReconcile`, using `Console.error` — into core's `reconcile` where the semantics belong. Failed handlers on subsequent-value updates now emit an `effex.reconcile` Error log through the Logger system and the subscription fiber survives (subsequent updates still fire). `subscribeReconcile` is now trivially the fork/forEach pattern.
 
+New `Readable.debug(id)` combinator for scoped, per-value observation of any Readable-producing Effect. Logs the initial value and every subsequent change under `effex.readable`:
+
+```ts
+const val = yield* Signal.make(0).pipe(Readable.debug("my-val"));
+// [DEBUG] [effex.readable] initial value  { id: "my-val", value: 0 }
+// [DEBUG] [effex.readable] value changed  { id: "my-val", value: 1 }
+// ...
+```
+
+Pass-through — the returned Readable is unchanged. Subscription is forked into the current scope. A lightweight stepping-stone toward the Signal DevTools story (#86).
+
 Zero cost when the level is above Debug (the default): the message-formatting layer never runs. Only low-volume framework events get logged this way — high-volume paths (`Signal.set`, per-slot animation phase) will get structured inspector hooks in a future release (#86 / #87 / #88).
 
 Closes #95.

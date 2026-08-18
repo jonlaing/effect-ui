@@ -1,4 +1,12 @@
-import { Chunk, Effect, Stream } from "effect";
+import {
+  Chunk,
+  Effect,
+  HashMap,
+  Logger,
+  LogLevel,
+  Option,
+  Stream,
+} from "effect";
 import { describe, expect, it } from "vitest";
 
 import * as Readable from "./Readable.js";
@@ -498,6 +506,110 @@ describe("Readable", () => {
 
       const value = await Effect.runPromise(result.get);
       expect(value).toBe(42);
+    });
+  });
+
+  describe("debug", () => {
+    interface Captured {
+      readonly level: string;
+      readonly message: unknown;
+      readonly subsystem: string | undefined;
+    }
+
+    const capture = () => {
+      const sink: Captured[] = [];
+      const layer = Logger.replace(
+        Logger.defaultLogger,
+        Logger.make((opts) => {
+          const sub = HashMap.get(opts.annotations, "subsystem");
+          sink.push({
+            level: opts.logLevel.label,
+            message: opts.message,
+            subsystem: Option.isSome(sub) ? String(sub.value) : undefined,
+          });
+        }),
+      );
+      return { sink, layer };
+    };
+
+    it("logs the initial value under effex.readable at Debug level", async () => {
+      const { sink, layer } = capture();
+      await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            yield* Signal.make(42).pipe(Readable.debug("counter"));
+          }),
+        ).pipe(
+          Logger.withMinimumLogLevel(LogLevel.Debug),
+          Effect.provide(layer),
+        ),
+      );
+      const initial = sink.find(
+        (l) =>
+          l.subsystem === "effex.readable" &&
+          String(l.message).includes("initial value"),
+      );
+      expect(initial).toBeDefined();
+      expect(initial?.level).toBe("DEBUG");
+    });
+
+    it("logs every subsequent change", async () => {
+      const { sink, layer } = capture();
+      await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const sig = yield* Signal.make(0).pipe(Readable.debug("counter"));
+            // Give the forked subscriber a tick to attach.
+            yield* Effect.sleep("5 millis");
+            yield* sig.set(1);
+            yield* sig.set(2);
+            yield* Effect.sleep("15 millis");
+          }),
+        ).pipe(
+          Logger.withMinimumLogLevel(LogLevel.Debug),
+          Effect.provide(layer),
+        ),
+      );
+      const changes = sink.filter(
+        (l) =>
+          l.subsystem === "effex.readable" &&
+          String(l.message).includes("value changed"),
+      );
+      expect(changes).toHaveLength(2);
+    });
+
+    it("returns the original Readable unchanged", async () => {
+      // Debug is a pass-through — the value flowing through it must
+      // still be usable as a Signal (not lose its concrete type).
+      const { layer } = capture();
+      const finalValue = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const sig = yield* Signal.make(10).pipe(Readable.debug("value"));
+            yield* sig.set(99);
+            return yield* sig.get;
+          }),
+        ).pipe(Effect.provide(layer)),
+      );
+      expect(finalValue).toBe(99);
+    });
+
+    it("emits nothing when the log level is above Debug", async () => {
+      const { sink, layer } = capture();
+      await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const sig = yield* Signal.make(0).pipe(Readable.debug("counter"));
+            yield* Effect.sleep("5 millis");
+            yield* sig.set(1);
+            yield* Effect.sleep("15 millis");
+          }),
+        ).pipe(Effect.provide(layer)),
+      );
+      const frameworkLogs = sink.filter(
+        (l) => l.subsystem === "effex.readable",
+      );
+      expect(frameworkLogs).toEqual([]);
     });
   });
 });

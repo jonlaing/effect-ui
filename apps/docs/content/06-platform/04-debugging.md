@@ -27,7 +27,8 @@ Every framework log carries a `subsystem` annotation so you can filter by area.
 | `effex.outlet` | Route resolution, guard evaluations, redirects |
 | `effex.route-data` | Which fetch branch was taken (provider vs SPA fallback vs static config), redirect signals from the provider |
 | `effex.animation` | Enter/exit lifecycle begin/end, whether the animation was skipped, how `transitionend` resolved (`transition` / `animation` / `timeout` / `skip`) |
-| `effex.reconcile` | Every reconcile handler invocation with the value that triggered it |
+| `effex.reconcile` | Every reconcile sync pass with the triggering value; error-level entries for failed reconcile handlers |
+| `effex.readable` | Emitted by `Readable.debug(id)` — one initial-value line plus a line per subsequent change |
 
 ## Filter to one subsystem
 
@@ -53,6 +54,20 @@ Effect.runFork(
 ## Cost when disabled
 
 Zero rendering work — messages are only built into strings by the formatter, and when the level is above `Debug`, the formatter never runs. Message arguments (the objects passed to `Effect.logDebug`) are constructed regardless — that's why the framework only logs at low-volume framework boundaries. High-volume paths like `Signal.set` do NOT emit debug logs; those will get structured inspector hooks in a future release.
+
+## Observe a specific Readable
+
+`Readable.debug(id)` wraps any Readable-producing Effect so its initial value and every subsequent change are logged under `effex.readable`. Useful when you have a running app and just want to answer "what value does this Signal hold right now, and when does it change?"
+
+```typescript
+import { Signal, Readable } from "@effex/core";
+
+const cart = yield* Signal.make({ items: 0, total: 0 }).pipe(
+  Readable.debug("cart"),
+);
+```
+
+Pass-through — the returned Readable is unchanged, so debug can be added and removed without any code refactoring. The internal subscription is forked into the enclosing scope and cleaned up automatically.
 
 ## Adding your own debug logs
 
