@@ -85,3 +85,6 @@ export {
   each,
   redraw,
 } from "./Control.js";
+
+// Debug logging
+export { logDebug, logError, type Subsystem } from "./Debug.js";

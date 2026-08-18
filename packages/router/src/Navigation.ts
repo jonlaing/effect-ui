@@ -1,6 +1,6 @@
 import { Context, Effect, Layer, Option, Record, Runtime, Scope } from "effect";
 
-import { Readable, Signal } from "@effex/core";
+import { logDebug, Readable, Signal } from "@effex/core";
 
 import type { Route } from "./Route.js";
 import { findMatch, type Router } from "./Router.js";
@@ -224,6 +224,8 @@ export const make = <
     // Navigation methods
     const pushPath = (path: string): Effect.Effect<void> =>
       Effect.gen(function* () {
+        const from = yield* pathnameState.get;
+        yield* logDebug("pushPath", "effex.nav", { from, to: path });
         yield* lastSourceState.set("push");
         yield* updateState(path);
         if (isBrowser) {
@@ -233,6 +235,8 @@ export const make = <
 
     const replacePath = (path: string): Effect.Effect<void> =>
       Effect.gen(function* () {
+        const from = yield* pathnameState.get;
+        yield* logDebug("replacePath", "effex.nav", { from, to: path });
         yield* lastSourceState.set("replace");
         yield* updateState(path);
         if (isBrowser) {
@@ -303,12 +307,13 @@ export const make = <
         // the same runtime, so the semaphore inside SubscriptionRef.set
         // serialises them — lastSource is guaranteed to be "pop" by the
         // time pathname's subscribers wake up.
+        const target = window.location.pathname + window.location.search;
         runFork(
           Effect.gen(function* () {
+            const from = yield* pathnameState.get;
+            yield* logDebug("popstate", "effex.nav", { from, to: target });
             yield* lastSourceState.set("pop");
-            yield* updateState(
-              window.location.pathname + window.location.search,
-            );
+            yield* updateState(target);
           }),
         );
       };

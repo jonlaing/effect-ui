@@ -1,6 +1,7 @@
-import { Clock, Effect, Either, Option } from "effect";
+import { Cause, Clock, Effect, Either, Option } from "effect";
 
 import { ControlCtx } from "./ControlCtx.js";
+import { logDebug, logError } from "./Debug.js";
 import type { Element } from "./Element.js";
 import { Readable } from "./Readable.js";
 import type { Signal } from "./Signal.js";
@@ -68,6 +69,12 @@ export const reconcile = <A, E, R>(
         const targetKeys = config.getTargetKeys(value);
         const targetSet = new Set(targetKeys);
 
+        yield* logDebug("reconcile sync", "effex.reconcile", {
+          value,
+          currentKeys,
+          targetKeys,
+        });
+
         // Step 1: Remove slots not in target
         for (const key of currentKeys) {
           if (!targetSet.has(key)) {
@@ -112,15 +119,37 @@ export const reconcile = <A, E, R>(
         }
       });
 
-    // Initial sync
+    // Initial sync — errors here are load-bearing (the whole tree failed
+    // to render) so let them propagate to the caller. Subsequent syncs
+    // driven by subscribe are wrapped below so a single bad update
+    // doesn't kill the subscription.
     const initialValue = yield* readable.get;
     yield* sync(initialValue);
 
     // Pop the container from the hydration stack (no-op in client/SSR)
     yield* ctx.finalizeContainer();
 
+    // Wrap sync for the subscribe path: log every failure with an
+    // effex.reconcile subsystem tag and swallow the cause so the
+    // subscription fiber survives. Without this, one bad update freezes
+    // all future updates too — a user who navigates to a broken route
+    // can't recover by navigating away. The wrapping lives in core
+    // rather than each ControlCtx's subscribe impl because the semantics
+    // are inherent to reconcile (any subscribe strategy needs this),
+    // not to any particular DOM/hydration wiring.
+    const safeSync = (value: A) =>
+      sync(value).pipe(
+        Effect.tapErrorCause((cause) =>
+          logError("reconcile handler failed", "effex.reconcile", {
+            value,
+            cause: Cause.pretty(cause),
+          }),
+        ),
+        Effect.catchAllCause(() => Effect.void),
+      );
+
     // Subscribe to future changes
-    yield* ctx.subscribe(readable, sync);
+    yield* ctx.subscribe(readable, safeSync);
 
     return container;
   }) as Element<unknown, E, R | ControlCtx>;
