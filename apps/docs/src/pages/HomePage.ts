@@ -178,7 +178,7 @@ export const HomePage = (props: {
                   "inline-block bg-neutral rounded-lg px-6 py-3 font-mono text-sm",
               },
               $.span({ class: "text-primary" }, "$ "),
-              $.span({}, "pnpm create stax my-app"),
+              $.span({}, "pnpm create stax-ui my-app"),
             ),
           ),
         ),
@@ -330,7 +330,7 @@ export const HomePage = (props: {
               "inline-block bg-neutral rounded-lg px-6 py-3 font-mono text-sm",
           },
           $.span({ class: "text-primary" }, "$ "),
-          $.span({}, "pnpm create stax my-app"),
+          $.span({}, "pnpm create stax-ui my-app"),
         ),
         $.div(
           { class: "flex gap-4 justify-center" },

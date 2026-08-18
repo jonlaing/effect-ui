@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * Sync @stax-ui/* dependency versions in create-stax templates with the
+ * Sync @stax-ui/* dependency versions in create-stax-ui templates with the
  * current workspace versions.
  *
  * Reads the version field from each workspace @stax-ui package, then walks
- * every package.json under packages/create-stax/templates/ and rewrites
+ * every package.json under packages/create-stax-ui/templates/ and rewrites
  * matching @stax-ui/* entries under `dependencies` and `devDependencies`
  * to `^MAJOR.MINOR.PATCH`.
  *
@@ -25,7 +25,7 @@ const PACKAGES_DIR = join(repoRoot, "packages");
 const TEMPLATES_DIR = join(
   repoRoot,
   "packages",
-  "create-stax",
+  "create-stax-ui",
   "templates",
 );
 

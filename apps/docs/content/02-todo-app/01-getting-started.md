@@ -13,7 +13,7 @@ Let's create a new Stax project and get our development environment running.
 Open your terminal and run:
 
 ```bash
-pnpm create stax@latest todo-app
+pnpm create stax-ui@latest todo-app
 ```
 
 When prompted, select:

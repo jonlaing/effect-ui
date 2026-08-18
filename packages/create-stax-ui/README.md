@@ -1,4 +1,4 @@
-# create-stax
+# create-stax-ui
 
 CLI to scaffold new Stax projects.
 
@@ -6,13 +6,13 @@ CLI to scaffold new Stax projects.
 
 ```bash
 # With pnpm
-pnpm create stax my-app
+pnpm create stax-ui my-app
 
 # With npm
-npm create stax my-app
+npm create stax-ui my-app
 
 # With yarn
-yarn create stax my-app
+yarn create stax-ui my-app
 ```
 
 The CLI prompts for a project name (if not provided), template selection, and whether to install dependencies.
@@ -24,7 +24,7 @@ The CLI prompts for a project name (if not provided), template selection, and wh
 A client-side only application with routing:
 
 ```bash
-pnpm create stax my-app --spa
+pnpm create stax-ui my-app --spa
 ```
 
 Includes:
@@ -38,7 +38,7 @@ Includes:
 A full-stack application with server-side rendering and hydration:
 
 ```bash
-pnpm create stax my-app --ssr
+pnpm create stax-ui my-app --ssr
 ```
 
 Includes:
@@ -55,7 +55,7 @@ Includes:
 A pre-rendered static site with client-side hydration. Good for portfolios, marketing sites, documentation, and blogs:
 
 ```bash
-pnpm create stax my-app --ssg
+pnpm create stax-ui my-app --ssg
 ```
 
 Includes:
@@ -154,7 +154,7 @@ The build outputs static HTML pages plus a hashed client bundle to `dist/`. Depl
 ## CLI Options
 
 ```
-create-stax <project-name> [options]
+create-stax-ui <project-name> [options]
 
 Options:
   --spa          Use SPA template

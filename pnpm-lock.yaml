@@ -139,7 +139,7 @@ importers:
         specifier: 3.19.19
         version: 3.19.19
 
-  packages/create-stax:
+  packages/create-stax-ui:
     dependencies:
       picocolors:
         specifier: ^1.1.0

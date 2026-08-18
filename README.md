@@ -80,7 +80,7 @@ All three produce interactive, hydrated pages — SSG output behaves identically
 
 ```bash
 # Create a new project — prompts you to pick SPA, SSR, or SSG
-pnpm create stax my-app
+pnpm create stax-ui my-app
 cd my-app
 pnpm install
 pnpm dev
@@ -89,9 +89,9 @@ pnpm dev
 Skip the prompt with a template flag:
 
 ```bash
-pnpm create stax my-app --spa   # SPA
-pnpm create stax my-app --ssr   # SSR
-pnpm create stax my-app --ssg   # SSG
+pnpm create stax-ui my-app --spa   # SPA
+pnpm create stax-ui my-app --ssr   # SSR
+pnpm create stax-ui my-app --ssg   # SSG
 ```
 
 Or install packages individually:
@@ -383,7 +383,7 @@ See [`@stax-ui/platform`](./packages/platform) for the full `buildStaticSite` AP
 | [`@stax-ui/form`](./packages/form) | Schema-validated forms with reactive field state |
 | [`@stax-ui/platform`](./packages/platform) | Server-side rendering, hydration, and data loading |
 | [`@stax-ui/vite-plugin`](./packages/vite-plugin) | Vite plugin: SSR dev server + server-code stripping |
-| [`create-stax`](./packages/create-stax) | CLI to scaffold new projects (SPA, SSR, or SSG) |
+| [`create-stax-ui`](./packages/create-stax-ui) | CLI to scaffold new projects (SPA, SSR, or SSG) |
 
 **Import conventions:**
 - `@stax-ui/dom` re-exports everything from `@stax-ui/core` — no need to install core separately
