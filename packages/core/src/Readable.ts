@@ -8,6 +8,8 @@ import {
   Stream,
 } from "effect";
 
+import { logDebug } from "./Debug.js";
+
 // -----------------------------------------------------------------------------
 // TypeId
 // -----------------------------------------------------------------------------
@@ -525,6 +527,51 @@ export const lift = <T extends Record<string, unknown>, R>(
   };
 };
 
+/**
+ * Wrap a Readable-producing Effect to log its initial value and every
+ * subsequent change under the `effex.readable` subsystem. The wrapped
+ * Effect returns the original Readable unchanged — this is a
+ * pass-through observer.
+ *
+ * Zero cost at the default log level. Enable with
+ * `Logger.withMinimumLogLevel(LogLevel.Debug)` to see emissions. A
+ * lightweight stepping-stone toward the full Signal DevTools story
+ * (#86) — useful for quickly answering "what value does this Readable
+ * hold right now, and when does it change?" without wiring up a
+ * temporary subscriber.
+ *
+ * @example
+ * ```ts
+ * const val = yield* Signal.make(0).pipe(Readable.debug("my-val"));
+ * // Debug logs:
+ * //   effex.readable  "initial value"  { id: "my-val", value: 0 }
+ * //   effex.readable  "value changed"  { id: "my-val", value: 1 }
+ * //   ...
+ * ```
+ *
+ * The subscription is forked into the current scope, so it's cleaned
+ * up when the enclosing effect's scope closes — no manual teardown
+ * needed.
+ */
+export const debug =
+  (id: string) =>
+  <A, R extends Readable<A>, E, Ctx>(
+    self: Effect.Effect<R, E, Ctx>,
+  ): Effect.Effect<R, E, Ctx | Scope.Scope> =>
+    Effect.gen(function* () {
+      const readable = yield* self;
+      const initial = yield* readable.get;
+      yield* logDebug("initial value", "effex.readable", {
+        id,
+        value: initial,
+      });
+      const scope = yield* Effect.scope;
+      yield* Stream.runForEach(readable.changes, (value) =>
+        logDebug("value changed", "effex.readable", { id, value }),
+      ).pipe(Effect.forkIn(scope));
+      return readable;
+    });
+
 // -----------------------------------------------------------------------------
 // Namespace Export
 // -----------------------------------------------------------------------------
@@ -548,4 +595,5 @@ export const Readable = {
   dedupe,
   dedupeWith,
   lift,
+  debug,
 };
