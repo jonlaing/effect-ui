@@ -1,3 +1,8 @@
+---
+title: "Debugging"
+description: "Strategies for debugging Stax apps, including structured framework logs and Readable debug wrappers."
+order: 4
+---
 # Debugging
 
 Stax emits structured debug logs at key framework boundaries — navigation, route resolution, data fetches, animation lifecycle, and reconcile handler invocations. Enable them by lowering Effect's log level to `Debug`.

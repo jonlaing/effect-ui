@@ -5,37 +5,72 @@
 @plugin "daisyui";
 
 @plugin "daisyui/theme" {
-  name: "dark";
-  default: true;
-  prefersdark: false;
+  name: "night";
+  default: false;
+  prefersdark: true;
   color-scheme: "dark";
-  --color-base-100: oklch(25.33% 0.016 252.42);
-  --color-base-200: oklch(23.26% 0.014 253.1);
-  --color-base-300: oklch(21.15% 0.012 254.09);
-  --color-base-content: oklch(97.807% 0.029 256.847);
-  --color-primary: oklch(58% 0.233 277.117);
-  --color-primary-content: oklch(96% 0.018 272.314);
-  --color-secondary: oklch(65% 0.241 354.308);
-  --color-secondary-content: oklch(94% 0.028 342.258);
-  --color-accent: oklch(77% 0.152 181.912);
-  --color-accent-content: oklch(38% 0.063 188.416);
-  --color-neutral: oklch(14% 0.005 285.823);
-  --color-neutral-content: oklch(92% 0.004 286.32);
-  --color-info: oklch(74% 0.16 232.661);
-  --color-info-content: oklch(29% 0.066 243.157);
-  --color-success: oklch(76% 0.177 163.223);
-  --color-success-content: oklch(37% 0.077 168.94);
-  --color-warning: oklch(82% 0.189 84.429);
-  --color-warning-content: oklch(41% 0.112 45.904);
-  --color-error: oklch(71% 0.194 13.428);
-  --color-error-content: oklch(27% 0.105 12.094);
-  --radius-selector: 0.5rem;
-  --radius-field: 0.25rem;
-  --radius-box: 0.5rem;
+  --color-base-100: oklch(20.768% 0.039 265.754);
+  --color-base-200: oklch(19.314% 0.037 265.754);
+  --color-base-300: oklch(17.86% 0.034 265.754);
+  --color-base-content: oklch(84.153% 0.007 265.754);
+  --color-primary: oklch(75.351% 0.138 232.661);
+  --color-primary-content: oklch(15.07% 0.027 232.661);
+  --color-secondary: oklch(68.011% 0.158 276.934);
+  --color-secondary-content: oklch(13.602% 0.031 276.934);
+  --color-accent: oklch(72.36% 0.176 350.048);
+  --color-accent-content: oklch(14.472% 0.035 350.048);
+  --color-neutral: oklch(27.949% 0.036 260.03);
+  --color-neutral-content: oklch(85.589% 0.007 260.03);
+  --color-info: oklch(68.455% 0.148 237.251);
+  --color-info-content: oklch(0% 0 0);
+  --color-success: oklch(78.452% 0.132 181.911);
+  --color-success-content: oklch(15.69% 0.026 181.911);
+  --color-warning: oklch(83.242% 0.139 82.95);
+  --color-warning-content: oklch(16.648% 0.027 82.95);
+  --color-error: oklch(71.785% 0.17 13.118);
+  --color-error-content: oklch(14.357% 0.034 13.118);
+  --radius-selector: 0.25rem;
+  --radius-field: 0.5rem;
+  --radius-box: 1rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
-  --depth: 1;
+  --depth: 0;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "cmyk";
+  default: true;
+  prefersdark: false;
+  color-scheme: "light";
+  --color-base-100: oklch(100% 0 0);
+  --color-base-200: oklch(95% 0 0);
+  --color-base-300: oklch(90% 0 0);
+  --color-base-content: oklch(20% 0 0);
+  --color-primary: oklch(71.772% 0.133 239.443);
+  --color-primary-content: oklch(14.354% 0.026 239.443);
+  --color-secondary: oklch(64.476% 0.202 359.339);
+  --color-secondary-content: oklch(12.895% 0.04 359.339);
+  --color-accent: oklch(62% 0.19 125);
+  --color-accent-content: oklch(97% 0.008 125);
+  --color-neutral: oklch(21.778% 0 0);
+  --color-neutral-content: oklch(84.355% 0 0);
+  --color-info: oklch(68.475% 0.094 217.284);
+  --color-info-content: oklch(13.695% 0.018 217.284);
+  --color-success: oklch(46.949% 0.162 321.406);
+  --color-success-content: oklch(89.389% 0.032 321.406);
+  --color-warning: oklch(71.236% 0.159 52.023);
+  --color-warning-content: oklch(14.247% 0.031 52.023);
+  --color-error: oklch(62.013% 0.208 28.717);
+  --color-error-content: oklch(12.402% 0.041 28.717);
+  --radius-selector: 1rem;
+  --radius-field: 0.5rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
   --noise: 0;
 }
 
@@ -57,11 +92,11 @@ a[data-active-exact="true"] {
 }
 
 .prose h2 {
-  @apply text-3xl mt-10 mb-3 text-primary-content;
+  @apply text-3xl mt-10 mb-3 text-primary;
 }
 
 .prose h3 {
-  @apply text-xl mt-8 mb-4 text-primary-content;
+  @apply text-xl mt-8 mb-4 text-primary;
 }
 
 .prose p {
@@ -130,8 +165,113 @@ a[data-active-exact="true"] {
   @apply border-none border-t border-base-300 my-8;
 }
 
-.prose a {
+[data-theme="night"] .prose a {
   @apply text-accent hover:underline;
+}
+
+[data-theme="cmyk"] .prose a {
+  @apply text-info hover:underline;
+}
+
+[data-theme="night"] .shiki,
+[data-theme="night"] .shiki span {
+  background-color: var(--shiki-dark-bg) !important;
+  color: var(--shiki-dark) !important;
+}
+
+/*
+ * hero-pizzazz — decorative backdrop for the homepage hero.
+ *
+ *   ::before  Three soft, blurred radial-gradient blobs in the
+ *             theme's primary / secondary / accent colors. Extends
+ *             beyond the container (inset: -20%) so the blur
+ *             falloff doesn't hard-edge at the viewport corners.
+ *
+ *   ::after   Subtle dot-grid texture painted in `currentColor`
+ *             at very low opacity — felt more than seen.
+ *
+ * Both layers are `pointer-events: none` and z-index 0. Direct
+ * children of `.hero-pizzazz` get `z-index: 1` so the actual hero
+ * content stays on top. All colors resolve through daisyUI theme
+ * vars, so the effect adapts to both light and dark themes.
+ */
+.hero-pizzazz {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-pizzazz::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(
+      circle at 15% 20%,
+      var(--color-primary) 0%,
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at 85% 70%,
+      var(--color-secondary) 0%,
+      transparent 40%
+    ),
+    radial-gradient(circle at 50% 110%, var(--color-accent) 0%, transparent 50%);
+  opacity: 0.35;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero-pizzazz::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(currentColor 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.06;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/*
+ * Wrap the parent selector in :where() so this rule has zero
+ * specificity — any Tailwind positioning utility (`.absolute`,
+ * `.fixed`, `z-20`, …) on a direct child wins by source order.
+ * Without :where(), an `.absolute top-4 right-4` child would still
+ * paint at `position: relative` and land in the flow.
+ */
+:where(.hero-pizzazz) > * {
+  position: relative;
+  z-index: 1;
+}
+
+/*
+ * Theme-toggle icon swap — both icons render in the DOM; CSS hides
+ * whichever one doesn't correspond to the currently-active theme.
+ * Done in pure CSS so the button is safe to SSR: no hydration
+ * mismatch when the pre-paint script flips data-theme before hydration.
+ *
+ * Convention: show the icon of the destination theme (currently in
+ * dark → sun icon, click to go light; currently in light → moon icon).
+ */
+[data-theme="night"] .theme-icon-moon {
+  display: none;
+}
+[data-theme="cmyk"] .theme-icon-sun {
+  display: none;
+}
+
+/*
+ * StaxLogo theme swap — every piece renders both the dark-theme and
+ * light-theme SVG variants stacked at the same absolute origin; the
+ * rule below hides the pair that doesn't match the active theme.
+ * Same tactic as the theme-toggle icons: pure CSS, SSR-safe.
+ */
+[data-theme="night"] .stax-logo-light {
+  display: none;
+}
+[data-theme="cmyk"] .stax-logo-dark {
+  display: none;
 }
 
 @keyframes logo-in {
@@ -158,10 +298,6 @@ a[data-active-exact="true"] {
     opacity: 0;
     transform: translateY(-100px);
   }
-  50% {
-    opacity: 0;
-    transform: translateY(-100px);
-  }
   75% {
     opacity: 1;
     transform: translateY(20px);
@@ -173,15 +309,12 @@ a[data-active-exact="true"] {
 }
 
 .animate-subhead-fade-in {
-  animation: subhead-fade-in 1.5s ease-in-out;
+  animation: subhead-fade-in 0.75s ease-in-out;
   animation-fill-mode: forwards;
 }
 
 @keyframes slow-fade-in {
   0% {
-    opacity: 0;
-  }
-  75% {
     opacity: 0;
   }
   100% {
@@ -190,6 +323,66 @@ a[data-active-exact="true"] {
 }
 
 .animate-slow-fade-in {
-  animation: slow-fade-in 2s ease-in-out;
+  animation: slow-fade-in 1s ease-in-out;
   animation-fill-mode: forwards;
+}
+
+/*
+ * hop-in — element enters from below the baseline, arcs above it, then
+ * falls back with a small undershoot and settles. Per-keyframe timing
+ * functions model gravity: ease-out (decelerating) on ascending
+ * segments, ease-in (accelerating) on descending segments.
+ *
+ * Positions in `lh` so the animation scales with the caller's font
+ * size / SVG height when applied to text or icon-shaped elements.
+ */
+@keyframes hop-in {
+  0% {
+    opacity: 0;
+    transform: translateY(1lh);
+    animation-timing-function: cubic-bezier(
+      0.33,
+      1,
+      0.68,
+      1
+    ); /* ease-out cubic — decel while climbing */
+  }
+  35% {
+    opacity: 1;
+    transform: translateY(-1.5lh);
+    animation-timing-function: cubic-bezier(
+      0.32,
+      0,
+      0.67,
+      0
+    ); /* ease-in cubic — accel while falling */
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(0.5lh);
+    animation-timing-function: cubic-bezier(
+      0.33,
+      1,
+      0.68,
+      1
+    ); /* decel on the small second climb */
+  }
+  85% {
+    opacity: 1;
+    transform: translateY(-0.15lh);
+    animation-timing-function: cubic-bezier(
+      0.32,
+      0,
+      0.67,
+      0
+    ); /* accel down to rest */
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-hop-in {
+  animation: hop-in 900ms both;
 }

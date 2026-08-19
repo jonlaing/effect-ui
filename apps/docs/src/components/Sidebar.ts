@@ -3,8 +3,10 @@ import { ExternalLink, NotebookText } from "lucide-static";
 import { $ } from "@stax-ui/dom";
 import { Link } from "@stax-ui/router";
 
-import logoSvg from "../assets/stax-logo-dark.svg?raw";
+import logoDarkSvg from "../assets/stax-logo-dark.svg?raw";
+import logoLightSvg from "../assets/stax-logo-light.svg?raw";
 import type { DocSection } from "../content.js";
+import { ThemeToggle } from "./ThemeToggle.js";
 
 export const Sidebar = (props: { readonly sections: readonly DocSection[] }) =>
   $.div(
@@ -13,13 +15,18 @@ export const Sidebar = (props: { readonly sections: readonly DocSection[] }) =>
     $.div(
       { class: "pt-6 bg-base-200 h-screen flex flex-col" },
       $.div(
-        { class: "pb-6 px-4 border-b border-neutral-500/50" },
+        { class: "pb-6 px-4 border-b border-neutral-500/50 flex items-center" },
         Link(
-          { href: "/", class: "flex gap-2 items-center group" },
+          { href: "/", class: "flex gap-2 items-center group flex-1" },
           $.div({
             class:
-              "[&_svg]:h-8 [&_svg]:w-auto group-hover:-translate-y-1 transition-transform",
-            innerHTML: logoSvg,
+              "[&_svg]:h-8 [&_svg]:w-auto group-hover:-translate-y-1 transition-transform stax-logo-dark",
+            innerHTML: logoDarkSvg,
+          }),
+          $.div({
+            class:
+              "[&_svg]:h-8 [&_svg]:w-auto group-hover:-translate-y-1 transition-transform stax-logo-light",
+            innerHTML: logoLightSvg,
           }),
           $.div(
             {
@@ -31,6 +38,7 @@ export const Sidebar = (props: { readonly sections: readonly DocSection[] }) =>
             "Docs",
           ),
         ),
+        ThemeToggle(),
       ),
       $.nav(
         { class: "flex-1 overflow-y-auto p-4" },
