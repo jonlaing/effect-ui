@@ -1,14 +1,20 @@
-import { $, stagger } from "@stax-ui/dom";
+import { $, AnimationGroup, stagger } from "@stax-ui/dom";
 
-import aSvg from "../assets/stax-logo-dark/a.svg?raw";
-import iconSvg from "../assets/stax-logo-dark/icon.svg?raw";
-import sSvg from "../assets/stax-logo-dark/s.svg?raw";
-import tSvg from "../assets/stax-logo-dark/t.svg?raw";
-import xSvg from "../assets/stax-logo-dark/x.svg?raw";
+import aDark from "../assets/stax-logo-dark/a.svg?raw";
+import iconDark from "../assets/stax-logo-dark/icon.svg?raw";
+import sDark from "../assets/stax-logo-dark/s.svg?raw";
+import tDark from "../assets/stax-logo-dark/t.svg?raw";
+import xDark from "../assets/stax-logo-dark/x.svg?raw";
+import aLight from "../assets/stax-logo-light/a.svg?raw";
+import iconLight from "../assets/stax-logo-light/icon.svg?raw";
+import sLight from "../assets/stax-logo-light/s.svg?raw";
+import tLight from "../assets/stax-logo-light/t.svg?raw";
+import xLight from "../assets/stax-logo-light/x.svg?raw";
 import { StaggerElements } from "./StaggerElements.js";
 
 export interface StaxLogoProps {
   readonly class?: string;
+  readonly group?: AnimationGroup;
   readonly intro?: boolean;
 }
 
@@ -23,11 +29,25 @@ export interface StaxLogoProps {
  * an explicit size on every consumer.
  */
 export const StaxLogo = (props: StaxLogoProps = {}) => {
-  const pieces = [iconSvg, sSvg, tSvg, aSvg, xSvg].map((svg) =>
+  // Each piece stacks BOTH themes' SVGs at the same absolute origin;
+  // CSS in styles.css hides whichever doesn't match the active
+  // `[data-theme]`. No signal wiring, no hydration flash — the same
+  // pattern used by ThemeToggle for its Sun/Moon swap.
+  const pieces = [
+    [iconDark, iconLight],
+    [sDark, sLight],
+    [tDark, tLight],
+    [aDark, aLight],
+    [xDark, xLight],
+  ].map(([dark, light]) =>
     $.div(
       $.div({
-        class: "absolute top-0 [&_svg]:w-full [&_svg]:h-full",
-        innerHTML: svg,
+        class: "stax-logo-dark absolute top-0 [&_svg]:w-full [&_svg]:h-full",
+        innerHTML: dark,
+      }),
+      $.div({
+        class: "stax-logo-light absolute top-0 [&_svg]:w-full [&_svg]:h-full",
+        innerHTML: light,
       }),
     ),
   );
@@ -44,6 +64,7 @@ export const StaxLogo = (props: StaxLogoProps = {}) => {
         enter: "opacity-100 block",
         enterTo: "block animate-hop-in",
         stagger: stagger(100),
+        group: props.group,
       },
       intro: props.intro,
     }),
