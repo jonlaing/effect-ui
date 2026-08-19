@@ -47,7 +47,11 @@ const mdPromise = (async () => {
 
   md.use(
     await shikiPlugin({
-      theme: "one-dark-pro",
+      themes: {
+        dark: "aurora-x",
+        light: "ayu-light",
+      },
+      theme: "dark",
     }),
   );
 

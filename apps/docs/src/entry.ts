@@ -16,7 +16,7 @@ const documentOptions = {
   title: "Stax Docs",
   scripts: ["/src/client.ts"],
   styles: ["/src/styles.css"],
-  htmlAttrs: { lang: "en", "data-theme": "dark" },
+  htmlAttrs: { lang: "en", "data-theme": "night" },
   head: [
     '<link rel="icon" type="image/x-icon" href="/favicon.ico">',
     '<link rel="icon" type="image/svg+xml" href="/favicon.svg">',

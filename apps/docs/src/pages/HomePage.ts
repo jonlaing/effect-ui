@@ -1,7 +1,7 @@
 import { $ } from "@stax-ui/dom";
 import { Link } from "@stax-ui/router";
 
-import logoSvg from "../assets/stax-logo-dark.svg?raw";
+import { StaxLogo } from "../components/StaxLogo.js";
 
 // ─── Code examples ──────────────────────────────────────────────────────────
 
@@ -91,8 +91,8 @@ const storySection = (
     },
     $.div(
       { class: "space-y-4" },
-      $.h3({ class: "text-2xl font-bold" }, heading),
-      $.p({ class: "text-base-content/70 leading-relaxed" }, description),
+      $.h3({ class: "text-2xl font-bold text-primary" }, heading),
+      $.p({ class: "text-base-content leading-relaxed" }, description),
     ),
     $.div({
       class:
@@ -140,11 +140,13 @@ export const HomePage = (props: {
         { class: "hero-content text-center" },
         $.div(
           {},
-          $.h1({
-            class:
-              "text-4xl font-bold mb-2 animate-logo-in [&_svg]:w-full md:[&_svg]:w-auto flex justify-center",
-            innerHTML: logoSvg,
-          }),
+          $.h1(
+            { class: "mb-2 flex justify-center" },
+            StaxLogo({
+              class: "w-full max-w-md md:max-w-lg",
+              intro: true,
+            }),
+          ),
           $.div(
             {
               class: "text-lg text-base-content animate-subhead-fade-in mb-8",
@@ -153,7 +155,7 @@ export const HomePage = (props: {
             $.div(
               {
                 class:
-                  "inline-block p-1 rounded bg-secondary text-secondary-content mx-1 font-bold -skew-y-2 shadow",
+                  "inline-block p-1 rounded bg-accent text-accent-content mx-1 font-bold -skew-y-2 shadow",
               },
               "Effect.ts",
             ),
@@ -175,10 +177,13 @@ export const HomePage = (props: {
             $.div(
               {
                 class:
-                  "inline-block bg-neutral rounded-lg px-6 py-3 font-mono text-sm",
+                  "inline-block bg-base-100 rounded-lg px-6 py-3 font-mono text-sm",
               },
-              $.span({ class: "text-primary" }, "$ "),
-              $.span({}, "pnpm create stax-ui my-app"),
+              $.span({ class: "text-accent" }, "$ "),
+              $.span(
+                { class: "text-base-content" },
+                "pnpm create stax-ui my-app",
+              ),
             ),
           ),
         ),
@@ -327,10 +332,10 @@ export const HomePage = (props: {
         $.div(
           {
             class:
-              "inline-block bg-neutral rounded-lg px-6 py-3 font-mono text-sm",
+              "inline-block bg-base-100 rounded-lg px-6 py-3 font-mono text-sm",
           },
-          $.span({ class: "text-primary" }, "$ "),
-          $.span({}, "pnpm create stax-ui my-app"),
+          $.span({ class: "text-accent" }, "$ "),
+          $.span({ class: "text-base-content" }, "pnpm create stax-ui my-app"),
         ),
         $.div(
           { class: "flex gap-4 justify-center" },
