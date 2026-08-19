@@ -175,6 +175,22 @@ a[data-active-exact="true"] {
   color: var(--shiki-dark) !important;
 }
 
+/*
+ * Theme-toggle icon swap — both icons render in the DOM; CSS hides
+ * whichever one doesn't correspond to the currently-active theme.
+ * Done in pure CSS so the button is safe to SSR: no hydration
+ * mismatch when the pre-paint script flips data-theme before hydration.
+ *
+ * Convention: show the icon of the destination theme (currently in
+ * dark → sun icon, click to go light; currently in light → moon icon).
+ */
+[data-theme="night"] .theme-icon-moon {
+  display: none;
+}
+[data-theme="cmyk"] .theme-icon-sun {
+  display: none;
+}
+
 @keyframes logo-in {
   0% {
     opacity: 0;

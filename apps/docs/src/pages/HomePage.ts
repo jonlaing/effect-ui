@@ -141,9 +141,9 @@ export const HomePage = (props: {
         $.div(
           {},
           $.h1(
-            { class: "mb-2 flex justify-center" },
+            { class: "mb-8 flex justify-center" },
             StaxLogo({
-              class: "w-full max-w-md md:max-w-lg",
+              class: "w-[333px]",
               intro: true,
             }),
           ),
@@ -151,7 +151,7 @@ export const HomePage = (props: {
             {
               class: "text-lg text-base-content animate-subhead-fade-in mb-8",
             },
-            "A reactive UI framework built on",
+            $.span("A reactive UI framework built on"),
             $.div(
               {
                 class:
@@ -159,7 +159,7 @@ export const HomePage = (props: {
               },
               "Effect.ts",
             ),
-            "primitives.",
+            $.span("primitives."),
           ),
           $.div(
             { class: "animate-slow-fade-in space-y-10" },

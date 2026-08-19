@@ -16,13 +16,18 @@ const documentOptions = {
   title: "Stax Docs",
   scripts: ["/src/client.ts"],
   styles: ["/src/styles.css"],
-  htmlAttrs: { lang: "en", "data-theme": "night" },
+  htmlAttrs: { lang: "en" },
   head: [
     '<link rel="icon" type="image/x-icon" href="/favicon.ico">',
     '<link rel="icon" type="image/svg+xml" href="/favicon.svg">',
     '<link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">',
     '<link rel="apple-touch-icon" href="/apple-touch-icon.png">',
     '<link rel="manifest" href="/site.webmanifest">',
+    // Pre-paint theme resolution: read stored preference (if any),
+    // else fall back to system `prefers-color-scheme`. Runs inline
+    // during head parsing so `data-theme` is settled before the CSS
+    // paints — no theme flash on first load.
+    `<script>(function(){try{var s=localStorage.getItem('stax-theme');var t=(s==='night'||s==='cmyk')?s:(window.matchMedia('(prefers-color-scheme: dark)').matches?'night':'cmyk');document.documentElement.setAttribute('data-theme',t)}catch(e){}})();</script>`,
   ].join("\n    "),
 };
 

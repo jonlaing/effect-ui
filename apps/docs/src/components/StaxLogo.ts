@@ -24,22 +24,25 @@ export interface StaxLogoProps {
  */
 export const StaxLogo = (props: StaxLogoProps = {}) => {
   const pieces = [iconSvg, sSvg, tSvg, aSvg, xSvg].map((svg) =>
-    $.div({
-      class: "absolute inset-0 [&_svg]:w-full [&_svg]:h-full",
-      innerHTML: svg,
-    }),
+    $.div(
+      $.div({
+        class: "absolute top-0 [&_svg]:w-full [&_svg]:h-full",
+        innerHTML: svg,
+      }),
+    ),
   );
 
   return $.div(
     {
-      class: ["relative aspect-[333/104]", props.class ?? ""],
+      class: ["relative h-[104px]", props.class ?? ""],
       "aria-label": "Stax",
     },
     StaggerElements({
       items: pieces,
       animate: {
-        enterFrom: "opacity-0",
-        enter: "animate-hop-in",
+        enterFrom: "opacity-0 hidden",
+        enter: "opacity-100 block",
+        enterTo: "block animate-hop-in",
         stagger: stagger(100),
       },
       intro: props.intro,
