@@ -31,7 +31,7 @@ const contactLink = (href: string, text: string, external = true) =>
 export const ContactPage = () =>
   Effect.gen(function* () {
     return yield* $.div(
-      { class: "flex flex-col lg:flex-row" },
+      { class: "flex flex-col lg:flex-row min-h-screen" },
       $.div({ class: "lg:border-r" }, Nav()),
       $.main(
         { class: "flex-1 flex flex-col text-base-content" },
