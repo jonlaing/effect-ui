@@ -1,6 +1,8 @@
 import { $ } from "@stax-ui/dom";
 import { Outlet } from "@stax-ui/router";
 
+import "@fontsource-variable/inter/wght.css";
+
 import { router } from "./routes.js";
 
 export const DocLayout = () =>

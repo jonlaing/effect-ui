@@ -27,7 +27,7 @@ const documentOptions = {
     // else fall back to system `prefers-color-scheme`. Runs inline
     // during head parsing so `data-theme` is settled before the CSS
     // paints — no theme flash on first load.
-    `<script>(function(){try{var s=localStorage.getItem('stax-theme');var t=(s==='night'||s==='cmyk')?s:(window.matchMedia('(prefers-color-scheme: dark)').matches?'night':'cmyk');document.documentElement.setAttribute('data-theme',t)}catch(e){}})();</script>`,
+    `<script>(function(){try{var s=localStorage.getItem('stax-theme');var t=(s==='dark'||s==='light')?s:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t)}catch(e){}})();</script>`,
   ].join("\n    "),
 };
 

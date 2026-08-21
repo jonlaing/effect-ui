@@ -4,8 +4,8 @@ import { Moon, Sun } from "lucide-static";
 import { $ } from "@stax-ui/dom";
 
 const STORAGE_KEY = "stax-theme";
-const DARK = "night";
-const LIGHT = "cmyk";
+const DARK = "dark";
+const LIGHT = "light";
 
 /**
  * Two-icon theme toggle. Both icons render into the DOM; CSS in
@@ -18,7 +18,7 @@ const LIGHT = "cmyk";
 export const ThemeToggle = () =>
   $.button(
     {
-      class: "btn btn-ghost btn-sm btn-square",
+      class: "cursor-pointer opacity-60 hover:opacity-100 transition-opacity",
       "aria-label": "Toggle theme",
       onClick: () =>
         Effect.sync(() => {
@@ -31,11 +31,11 @@ export const ThemeToggle = () =>
         }),
     },
     $.span({
-      class: "theme-icon-sun [&_svg]:w-4 [&_svg]:h-4",
+      class: "hidden dark:block [&_svg]:w-4 [&_svg]:h-4",
       innerHTML: Sun,
     }),
     $.span({
-      class: "theme-icon-moon [&_svg]:w-4 [&_svg]:h-4",
+      class: "hidden light:block [&_svg]:w-4 [&_svg]:h-4",
       innerHTML: Moon,
     }),
   );

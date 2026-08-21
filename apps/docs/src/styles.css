@@ -2,105 +2,191 @@
 @import url("https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap");
 @import "tailwindcss";
 
-@plugin "daisyui";
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+@custom-variant light (&:where([data-theme=light], [data-theme=light] *));
 
-@plugin "daisyui/theme" {
-  name: "night";
-  default: false;
-  prefersdark: true;
-  color-scheme: "dark";
-  --color-base-100: oklch(20.768% 0.039 265.754);
-  --color-base-200: oklch(19.314% 0.037 265.754);
-  --color-base-300: oklch(17.86% 0.034 265.754);
-  --color-base-content: oklch(84.153% 0.007 265.754);
-  --color-primary: oklch(75.351% 0.138 232.661);
-  --color-primary-content: oklch(15.07% 0.027 232.661);
-  --color-secondary: oklch(68.011% 0.158 276.934);
-  --color-secondary-content: oklch(13.602% 0.031 276.934);
-  --color-accent: oklch(72.36% 0.176 350.048);
-  --color-accent-content: oklch(14.472% 0.035 350.048);
-  --color-neutral: oklch(27.949% 0.036 260.03);
-  --color-neutral-content: oklch(85.589% 0.007 260.03);
-  --color-info: oklch(68.455% 0.148 237.251);
-  --color-info-content: oklch(0% 0 0);
-  --color-success: oklch(78.452% 0.132 181.911);
-  --color-success-content: oklch(15.69% 0.026 181.911);
-  --color-warning: oklch(83.242% 0.139 82.95);
-  --color-warning-content: oklch(16.648% 0.027 82.95);
-  --color-error: oklch(71.785% 0.17 13.118);
-  --color-error-content: oklch(14.357% 0.034 13.118);
-  --radius-selector: 0.25rem;
-  --radius-field: 0.5rem;
-  --radius-box: 1rem;
-  --size-selector: 0.25rem;
-  --size-field: 0.25rem;
-  --border: 1px;
-  --depth: 0;
-  --noise: 0;
-}
-
-@plugin "daisyui/theme" {
-  name: "cmyk";
-  default: true;
-  prefersdark: false;
-  color-scheme: "light";
-  --color-base-100: oklch(100% 0 0);
-  --color-base-200: oklch(95% 0 0);
-  --color-base-300: oklch(90% 0 0);
-  --color-base-content: oklch(20% 0 0);
-  --color-primary: oklch(71.772% 0.133 239.443);
-  --color-primary-content: oklch(14.354% 0.026 239.443);
-  --color-secondary: oklch(64.476% 0.202 359.339);
-  --color-secondary-content: oklch(12.895% 0.04 359.339);
-  --color-accent: oklch(62% 0.19 125);
-  --color-accent-content: oklch(97% 0.008 125);
-  --color-neutral: oklch(21.778% 0 0);
-  --color-neutral-content: oklch(84.355% 0 0);
-  --color-info: oklch(68.475% 0.094 217.284);
-  --color-info-content: oklch(13.695% 0.018 217.284);
-  --color-success: oklch(46.949% 0.162 321.406);
-  --color-success-content: oklch(89.389% 0.032 321.406);
-  --color-warning: oklch(71.236% 0.159 52.023);
-  --color-warning-content: oklch(14.247% 0.031 52.023);
-  --color-error: oklch(62.013% 0.208 28.717);
-  --color-error-content: oklch(12.402% 0.041 28.717);
-  --radius-selector: 1rem;
-  --radius-field: 0.5rem;
-  --radius-box: 1rem;
-  --size-selector: 0.25rem;
-  --size-field: 0.25rem;
-  --border: 1px;
-  --depth: 0;
-  --noise: 0;
-}
+/*
+ * Palette derived from the Figma sketch (light-mode source of truth):
+ *
+ *   Row 1  black · charcoal · orange · red · silver · white · off-white
+ *   Row 2  amber · slate blue · pale ice blue · near-white blue ·
+ *          mid gray · pale cool gray · off-white cool
+ *   Row 3  deep navy · steel blue
+ *
+ * Role mapping:
+ *   primary   → deep navy         (row 3 col 1)
+ *   secondary → steel blue        (row 3 col 2)
+ *   accent    → orange            (row 1 col 3)
+ *   neutral   → warm charcoal     (row 1 col 2)
+ *   info      → pale ice blue     (row 2 col 3, deepened for legibility)
+ *   warning   → amber             (row 2 col 1)
+ *   error     → red               (row 1 col 4)
+ *   success   → NOT IN PALETTE — placeholder muted teal-green derived
+ *               to sit near the cool-blue family. Swap when you decide.
+ *
+ * daisyUI is gone. Tokens are registered via Tailwind v4's `@theme`
+ * block (light is the default) and swapped at runtime by overriding
+ * the same CSS custom properties inside a `[data-theme="dark"]`
+ * selector. Because `@theme` emits the tokens as CSS variables on
+ * `:root` (not inlined literals), the cascade override just works —
+ * every `bg-primary` / `text-accent` / etc. flips when the attribute
+ * on `<html>` changes.
+ *
+ * Dark palette applies the "flip the L channel" rule (Lᴅ ≈ 100 − Lʟ)
+ * at the same hue and chroma. Surface tokens are pinned to comfortable
+ * dark ranges (15% / 85%) rather than a strict 0% / 100% — pure black
+ * bg reads harsh on OLED. Accent holds `L=67` across themes so the
+ * orange stays vivid in both.
+ */
 
 @theme {
+  /* Typography */
   --font-serif: "Noto Serif", serif;
-  --font-sans: "Noto Sans", sans-serif;
+  --font-sans: "Inter", sans-serif;
+
+  /* ─── Light palette (default) ────────────────────────────────────── */
+
+  /* Surface */
+  --color-base-100: oklch(100% 0 0); /* white */
+  --color-base-200: oklch(97% 0 0); /* off-white */
+  --color-base-300: oklch(92% 0.03 220); /* pale ice blue */
+  --color-base-content: oklch(
+    32% 0.005 250
+  ); /* dark gray — softer than pure near-black */
+
+  /* Brand */
+  --color-primary: oklch(30% 0.06 250); /* deep navy */
+  --color-primary-content: oklch(97% 0.005 250);
+  --color-secondary: oklch(55% 0.09 250); /* steel blue */
+  --color-secondary-content: oklch(97% 0.005 250);
+  --color-accent: oklch(67% 0.18 45); /* orange */
+  --color-accent-content: oklch(15% 0.02 45);
+
+  /* Neutral */
+  --color-neutral: oklch(42% 0.02 60); /* warm charcoal */
+  --color-neutral-content: oklch(94% 0 0);
+
+  /* Border — pure black at 10% alpha; wired up as the default below */
+  --color-border: oklch(0% 0 0 / 0.1);
+
+  /* Code surface — TerminalCommand + potential code-block bg (≈#E8EBEF) */
+  --color-code: oklch(94% 0.005 240);
+
+  /* Semantic */
+  --color-info: oklch(65% 0.08 220); /* pale ice blue, deepened */
+  --color-info-content: oklch(15% 0.02 220);
+  --color-success: oklch(60% 0.12 155); /* placeholder — not in palette */
+  --color-success-content: oklch(97% 0 0);
+  --color-warning: oklch(74% 0.14 65); /* amber */
+  --color-warning-content: oklch(20% 0.03 65);
+  --color-error: oklch(58% 0.22 28); /* red */
+  --color-error-content: oklch(97% 0 0);
+
+  /* ─── Typography ────────────────────────────────────── */
+
+  --text-heading: clamp(1.875rem, 4.7vw, 3.75rem); /* 30px → 60px */
+  --text-heading--line-height: 1.1;
+
+  --text-heading-2: clamp(1.5rem, 2.34vw, 1.875rem); /* 24px → 30px */
+  --text-heading-2--line-height: 1.2;
+
+  --text-heading-3: 1.375rem;
+  --text-heading-3--line-height: 1.2;
+
+  --text-paragraph: clamp(1rem, 1.4vw, 1.125rem); /* 16px → 18px */
+  --text-paragraph--line-height: 1.5;
+
+  --text-caption: clamp(1rem, 2.34vw, 1.875rem); /* 16px → 30px */
+  --text-caption--line-height: 1.2;
+
+  --text-caption-2: 0.813rem;
+  --text-caption-2--line-height: 1.2;
+
+  --text-nav: clamp(0.813rem, 1.17vw, 0.93rem); /* 13px → 15px */
+  --text-nav--line-height: 1.2;
+
+  --text-display: 0.625rem;
+  --text-display--line-height: 1.2;
 }
 
-/* ─── Sidebar active link ──────────────────────────────────────────────── */
+/* ─── Dark palette overrides ──────────────────────────────────────── */
+[data-theme="dark"] {
+  color-scheme: dark;
 
-a[data-active-exact="true"] {
-  @apply text-primary font-semibold;
+  /* Surface — bg/text pinned instead of strict-flipped (0%/100% is harsh) */
+  --color-base-100: oklch(15% 0.005 250); /* strict flip: 0% */
+  --color-base-200: oklch(12% 0.005 250); /* strict flip: 3% */
+  --color-base-300: oklch(20% 0.03 220); /* strict flip: 8% */
+  --color-base-content: oklch(76% 0.005 250); /* off-white, less glaring */
+
+  /* Brand */
+  --color-primary: oklch(70% 0.06 250); /* flip 30 → 70 */
+  --color-primary-content: oklch(15% 0.005 250);
+  --color-secondary: oklch(45% 0.09 250); /* flip 55 → 45 */
+  --color-secondary-content: oklch(97% 0.005 250);
+  --color-accent: oklch(67% 0.18 45); /* holds — vivid on both */
+  --color-accent-content: oklch(15% 0.02 45);
+
+  /* Neutral */
+  --color-neutral: oklch(58% 0.02 60); /* flip 42 → 58 */
+  --color-neutral-content: oklch(15% 0 0);
+
+  /* Border — pure white at 10% alpha */
+  --color-border: oklch(100% 0 0 / 0.1);
+
+  /* Code surface — sits lighter than base-100 (15%) so it reads as a raised
+     panel; a strict flip of 94→6% would be almost invisibly close to black */
+  --color-code: oklch(22% 0.005 240);
+
+  /* Semantic */
+  --color-info: oklch(35% 0.08 220); /* flip 65 → 35 */
+  --color-info-content: oklch(85% 0.02 220);
+  --color-success: oklch(40% 0.12 155); /* flip 60 → 40 */
+  --color-success-content: oklch(97% 0 0);
+  --color-warning: oklch(26% 0.14 65); /* flip 74 → 26 */
+  --color-warning-content: oklch(80% 0.03 65);
+  --color-error: oklch(42% 0.22 28); /* flip 58 → 42 */
+  --color-error-content: oklch(97% 0 0);
+}
+
+/* Light gets `color-scheme: light` for form controls / scrollbars */
+:root:not([data-theme="dark"]) {
+  color-scheme: light;
+}
+
+/*
+ * Wire the border token in as the default color for every `border`
+ * utility (Tailwind v4 defaults to `currentColor` otherwise, which
+ * paints inherited-text-colored strokes on every card and divider).
+ * Individual `border-primary` / `border-info` / etc. utilities still
+ * win by specificity.
+ */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-border);
+  }
 }
 
 /* ─── Prose (markdown content) ─────────────────────────────────────────── */
 
 .prose h1 {
-  @apply text-5xl font-thin mb-4 pb-4 border-b border-base-content/50;
+  @apply text-heading mb-4 pb-4 border-b font-thin border-base-content/50 text-pretty;
 }
 
 .prose h2 {
-  @apply text-3xl mt-10 mb-3 text-primary;
+  @apply text-heading-2 mt-10 mb-3 text-secondary;
 }
 
 .prose h3 {
-  @apply text-xl mt-8 mb-4 text-primary;
+  @apply text-heading-3 mt-8 mb-4 text-accent;
 }
 
 .prose p {
-  @apply mb-4 leading-7 font-serif font-light text-base-content/75;
+  @apply mb-4 leading-7 font-serif text-base-content/75;
 }
 
 .prose ul,
@@ -120,8 +206,9 @@ a[data-active-exact="true"] {
   @apply mb-4 font-serif text-base-content/75;
 }
 
+code.prose,
 .prose code {
-  @apply font-mono text-[0.9em] bg-base-300 px-1.5 py-0.5 rounded;
+  @apply font-mono text-[0.8em] bg-base-300 px-1.5 py-0.5 rounded;
 }
 
 .prose pre {
@@ -165,166 +252,111 @@ a[data-active-exact="true"] {
   @apply border-none border-t border-base-300 my-8;
 }
 
-[data-theme="night"] .prose a {
+[data-theme="dark"] .prose a {
   @apply text-accent hover:underline;
 }
 
-[data-theme="cmyk"] .prose a {
+[data-theme="light"] .prose a {
   @apply text-info hover:underline;
 }
 
-[data-theme="night"] .shiki,
-[data-theme="night"] .shiki span {
+.shiki {
+  font-size: 0.875rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow: auto;
+  width: 100%;
+}
+
+[data-theme="dark"] .shiki,
+[data-theme="dark"] .shiki span {
   background-color: var(--shiki-dark-bg) !important;
   color: var(--shiki-dark) !important;
 }
 
 /*
- * hero-pizzazz — decorative backdrop for the homepage hero.
+ * hero-pattern — repeating 11×11 pattern texture as a hero backdrop.
  *
- *   ::before  Three soft, blurred radial-gradient blobs in the
- *             theme's primary / secondary / accent colors. Extends
- *             beyond the container (inset: -20%) so the blur
- *             falloff doesn't hard-edge at the viewport corners.
+ * The source PNGs are 11px square with the mark occupying only the
+ * center; the surrounding pixels are transparent. Setting
+ * `background-size: 16.5px` (150% of the natural tile) scales the
+ * whole tile up by 1.5×, which spreads the mark centers to 16.5px
+ * apart — i.e. one full tile of blank space between each visible
+ * instance. Bump the number for a sparser field or drop it for
+ * tighter.
  *
- *   ::after   Subtle dot-grid texture painted in `currentColor`
- *             at very low opacity — felt more than seen.
- *
- * Both layers are `pointer-events: none` and z-index 0. Direct
- * children of `.hero-pizzazz` get `z-index: 1` so the actual hero
- * content stays on top. All colors resolve through daisyUI theme
- * vars, so the effect adapts to both light and dark themes.
+ * Light and dark variants live in `apps/docs/src/assets/`; Vite
+ * URL-rewrites both at build.
  */
-.hero-pizzazz {
-  position: relative;
-  overflow: hidden;
-}
-
-.hero-pizzazz::before {
-  content: "";
-  position: absolute;
-  inset: -20%;
-  background:
-    radial-gradient(
-      circle at 15% 20%,
-      var(--color-primary) 0%,
-      transparent 40%
-    ),
-    radial-gradient(
-      circle at 85% 70%,
-      var(--color-secondary) 0%,
-      transparent 40%
-    ),
-    radial-gradient(circle at 50% 110%, var(--color-accent) 0%, transparent 50%);
-  opacity: 0.35;
-  filter: blur(80px);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.hero-pizzazz::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(currentColor 1px, transparent 1px);
-  background-size: 24px 24px;
-  opacity: 0.06;
-  pointer-events: none;
-  z-index: 0;
-}
-
 /*
- * Wrap the parent selector in :where() so this rule has zero
- * specificity — any Tailwind positioning utility (`.absolute`,
- * `.fixed`, `z-20`, …) on a direct child wins by source order.
- * Without :where(), an `.absolute top-4 right-4` child would still
- * paint at `position: relative` and land in the flow.
+ * The pattern lives on an oversized absolutely-positioned pseudo-
+ * element (::before) inside the hero, and drifts via `transform:
+ * translate()` — which is compositor-accelerated, unlike an
+ * animated `background-position` (repaints the entire element each
+ * frame). The parent clips with `overflow: hidden` so the extra
+ * area outside the container stays invisible.
+ *
+ * Direction: 10 o'clock. Translation is `−2 tiles x, −1 tile y`
+ * per cycle — `atan(11/22)` ≈ 26.6° above horizontal, i.e. ~63°
+ * from vertical, which lands right around the 10 o'clock hand.
+ * Both legs are integer multiples of the 11px natural tile, so the
+ * loop is seamless: after one cycle the pattern lines up exactly
+ * where it started.
  */
-:where(.hero-pizzazz) > * {
+
+.hero-bg {
+  content: "";
+  position: absolute;
+  inset: -25px;
+  background-image: url("./assets/pattern-light.png");
+  background-repeat: repeat;
+  animation: hero-pattern-drift 5s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+  /* Hint the compositor. */
+  will-change: transform;
+}
+
+[data-theme="dark"] .hero-bg {
+  background-image: url("./assets/pattern-dark.png");
+}
+
+/* Hero content sits above the pattern layer. Zero-specificity via
+   :where() so any child that wants explicit positioning still wins. */
+:where(.hero-pattern) > * {
   position: relative;
   z-index: 1;
 }
 
-/*
- * Theme-toggle icon swap — both icons render in the DOM; CSS hides
- * whichever one doesn't correspond to the currently-active theme.
- * Done in pure CSS so the button is safe to SSR: no hydration
- * mismatch when the pre-paint script flips data-theme before hydration.
- *
- * Convention: show the icon of the destination theme (currently in
- * dark → sun icon, click to go light; currently in light → moon icon).
- */
-[data-theme="night"] .theme-icon-moon {
-  display: none;
-}
-[data-theme="cmyk"] .theme-icon-sun {
-  display: none;
+@keyframes hero-pattern-drift {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(-25px, -25px);
+  }
 }
 
-/*
- * StaxLogo theme swap — every piece renders both the dark-theme and
- * light-theme SVG variants stacked at the same absolute origin; the
- * rule below hides the pair that doesn't match the active theme.
- * Same tactic as the theme-toggle icons: pure CSS, SSR-safe.
- */
-[data-theme="night"] .stax-logo-light {
-  display: none;
+@media (prefers-reduced-motion: reduce) {
+  .hero-pattern::before {
+    animation: none;
+  }
 }
-[data-theme="cmyk"] .stax-logo-dark {
+
+.stax-logo-light {
+  display: block;
+}
+
+.stax-logo-dark {
   display: none;
 }
 
-@keyframes logo-in {
-  0% {
-    opacity: 0;
-    transform: translateY(20rem) rotate(-30deg);
-  }
-  50% {
-    opacity: 1;
-    transform: translateY(-40px) rotate(15deg);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) rotate(0);
-  }
+[data-theme="dark"] .stax-logo-light {
+  display: none;
 }
 
-.animate-logo-in {
-  animation: logo-in 1s ease-in-out;
-}
-
-@keyframes subhead-fade-in {
-  0% {
-    opacity: 0;
-    transform: translateY(-100px);
-  }
-  75% {
-    opacity: 1;
-    transform: translateY(20px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-subhead-fade-in {
-  animation: subhead-fade-in 0.75s ease-in-out;
-  animation-fill-mode: forwards;
-}
-
-@keyframes slow-fade-in {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-
-.animate-slow-fade-in {
-  animation: slow-fade-in 1s ease-in-out;
-  animation-fill-mode: forwards;
+[data-theme="dark"] .stax-logo-dark {
+  display: block;
 }
 
 /*
