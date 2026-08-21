@@ -34,16 +34,26 @@ export const Nav = () =>
               "md:border-b-none lg:border-b",
             ],
           },
-          Link(
-            { href: "/" },
-            $.div({
-              class: "[&_svg]:h-4 [&_svg]:w-auto stax-logo-light",
-              innerHTML: logoLightSvg,
-            }),
-            $.div({
-              class: "[&_svg]:h-4 [&_svg]:w-auto stax-logo-dark",
-              innerHTML: logoDarkSvg,
-            }),
+          $.div(
+            { class: "flex items-end gap-2" },
+            Link(
+              { href: "/" },
+              $.div({
+                class: "[&_svg]:h-4 [&_svg]:w-auto stax-logo-light",
+                innerHTML: logoLightSvg,
+              }),
+              $.div({
+                class: "[&_svg]:h-4 [&_svg]:w-auto stax-logo-dark",
+                innerHTML: logoDarkSvg,
+              }),
+            ),
+            $.span(
+              {
+                class:
+                  "text-[10px] text-base-content/50 uppercase leading-none -translate-y-0.5 tracking-wider",
+              },
+              "beta",
+            ),
           ),
           ThemeToggle(),
           $.div(
@@ -105,7 +115,7 @@ export const Nav = () =>
             class: [
               "col-start-1 row-start-3 md:col-start-2 md:row-start-1 lg:col-start-1 lg:row-start-3",
               "grid grid-rows-[0fr] md:block data-[menu-open=true]:grid-rows-[1fr] transition-all",
-              "border-b md:border-b-none",
+              "border-b md:border-b-0",
             ],
             "data-menu-open": menuOpen,
           },
