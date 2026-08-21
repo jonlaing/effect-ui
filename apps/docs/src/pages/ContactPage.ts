@@ -36,7 +36,7 @@ export const ContactPage = () =>
       $.main(
         { class: "flex-1 flex flex-col text-base-content" },
         $.section(
-          { class: "px-8 py-16 max-w-2xl" },
+          { class: "px-8 py-16 max-w-2xl mx-auto w-full" },
           $.h1(
             { class: "text-heading tracking-tight mb-8" },
             $.span("Get in "),
@@ -44,11 +44,11 @@ export const ContactPage = () =>
           ),
           $.p(
             { class: "text-paragraph text-base-content/75 mb-6" },
-            "Stax is a fully open-source project, developed in the open on GitHub. Contributors are welcome — bug reports, feature discussions, and pull requests all land in the same public repo. If you're using Stax and something feels rough, filing an issue is the fastest way to get it on the table.",
+            "Stax is a fully open-source project, developed in the open on GitHub. Contributors are welcome. Bug reports, feature discussions, and pull requests all land in the same public repo. If you're using Stax and something feels rough, filing an issue is the fastest way to get it on the table.",
           ),
           $.p(
             { class: "text-paragraph text-base-content/75 mb-10" },
-            "For everything else — questions, collaborations, licensing, or just to say hi — email is best.",
+            "Email is the best way to reach me for questions, collaborations, licensing, or just to say hi.",
           ),
           $.dl(
             { class: "space-y-6" },
