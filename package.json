@@ -5,7 +5,7 @@
   "description": "A reactive UI framework built on Effect.ts primitives",
   "type": "module",
   "packageManager": "pnpm@10.14.0",
-  "license": "MIT",
+  "license": "MPL-2.0",
   "author": "Jon Laing",
   "repository": {
     "type": "git",

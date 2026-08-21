@@ -435,4 +435,8 @@ Migration guides with concept mapping and side-by-side examples:
 
 ## License
 
-MIT
+[Mozilla Public License 2.0](./LICENSE)
+
+Stax is copyleft at the file level: modifications to Stax's own source files must be released under MPL 2.0, so the framework itself stays open forever. Code that *uses* Stax as a dependency can be licensed however you like — proprietary, commercial, or another open-source license. Build whatever you want on top; keep the framework itself open when you patch it.
+
+Package versions published as `0.1.x` were released under MIT and remain MIT forever. Versions `0.2.0` onward ship under MPL 2.0.
