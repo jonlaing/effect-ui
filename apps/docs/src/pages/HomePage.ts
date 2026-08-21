@@ -1,43 +1,61 @@
 import { Effect } from "effect";
 
-import { $, animated, Animation, stagger } from "@stax-ui/dom";
-import { Link } from "@stax-ui/router";
+import { $ } from "@stax-ui/dom";
 
-import { StaggerElements } from "../components/StaggerElements.js";
-import { StaxLogo } from "../components/StaxLogo.js";
-import { ThemeToggle } from "../components/ThemeToggle.js";
+import { ContentSection } from "../components/ContentSection.js";
+import { Counter } from "../components/Counter.js";
+import { Hero } from "../components/Hero.js";
+import { Nav } from "../components/Nav.js";
 
 // ─── Code examples ──────────────────────────────────────────────────────────
 
 export const counterExample = `import { Effect } from "effect";
-import { $, Signal, mount, runApp } from "@stax-ui/dom";
+import { $, Signal, when } from "@stax-ui/dom";
 
-const Counter = () =>
+export const Counter = () =>
   Effect.gen(function* () {
     const count = yield* Signal.make(0);
+    const isBlocked = yield* Signal.make(false);
+
+    const handleUpdate = (delta: number) => () =>
+      Effect.gen(function* () {
+        const blocked = yield* isBlocked.get;
+
+        if (!blocked) {
+          yield* count.update((n) => n + delta);
+          yield* isBlocked.set(true);
+          yield* Effect.sleep("2 seconds").pipe(
+            Effect.andThen(() => isBlocked.set(false)),
+            Effect.forkDaemon,
+          );
+        }
+      });
 
     return yield* $.div(
-      { class: "flex items-center gap-4" },
-      $.button(
-        {
-          class: "btn btn-primary",
-          onClick: () => count.update((n) => n - 1),
-        },
-        "-",
+      $.div(
+        $.button(
+          {
+            onClick: handleUpdate(-1),
+            disabled: isBlocked
+          },
+          "-",
+        ),
+        $.span(count),
+        $.button(
+          {
+            onClick: handleUpdate(1),
+            disabled: isBlocked
+          },
+          "+",
+        ),
       ),
-      $.span({ class: "text-2xl tabular-nums" }, count),
-      $.button(
-        {
-          class: "btn btn-primary",
-          onClick: () => count.update((n) => n + 1),
-        },
-        "+",
-      ),
+      when(isBlocked, {
+        onTrue: () =>
+          $.span("Please wait..."),
+        onFalse: () => $.span(),
+      }),
     );
-  });
-
-// Run the app!
-runApp(mount(Counter(), document.getElementById("root")!));`;
+  });`;
 
 export const signalsExample = `// Signals are references, not snapshots.
 // No stale closures, no dependency arrays.
@@ -52,16 +70,63 @@ const upper = Readable.map(name, (n) => n.toUpperCase());
 const shout = yield* $.p({}, upper);`;
 
 export const errorsExample = `// This component can fail — the error type says so.
-const UserProfile = (id: string): Element<HttpError, ApiClient> =>
-  Effect.gen(function* () {
-    const api = yield* ApiClient;
-    const user = yield* api.getUser(id);
-    return yield* $.div({}, user.name);
-  });
+const UserProfile = 
+  (id: string): Element<HTMLDivElement, HttpError, ApiClient> =>
+    Effect.gen(function* () {
+      const api = yield* ApiClient;
+      const user = yield* api.getUser(id);
+      return yield* $.div({}, user.name);
+    });
 
 // TypeScript won't let you mount this without
 // handling HttpError and providing ApiClient.
 // Errors are visible in the types, not hidden at runtime.`;
+
+export const effectExample = `const handleUpdate = (delta: number) => () =>
+  Effect.gen(function* () {
+    const blocked = yield* isBlocked.get;
+
+    if (!blocked) {
+      yield* count.update((n) => n + delta);
+      yield* isBlocked.set(true);
+
+      // The update is blocked for 2 seconds, then unblocked.
+      yield* Effect.sleep("2 seconds").pipe(
+        Effect.andThen(() => isBlocked.set(false)),
+        Effect.forkDaemon,
+      );
+    }
+  });`;
+
+export const reactiveExample = `import { $, Signal, Readable } from "@stax-ui/dom";
+
+const name = yield* Signal.make("hello");
+
+yield* name.update((n) => n + " world");
+
+// The h1 updates its innerHTML when the signal changes.
+yield* $.h1(name); // "hello world"
+
+// Derived values react too, no extra plumbing.
+const shout = Readable.map(name, (n) => n.toUpperCase());
+yield* $.p( shout); // "HELLO WORLD"`;
+
+export const familiarExample = `import { Effect } from "effect";
+import { $, Signal } from "@stax-ui/dom";
+
+// Components are just functions.
+// Props are just arguments.
+const Greeting = (props: { name: string }) =>
+  Effect.gen(function* () {
+    const count = yield* Signal.make(0);
+    return yield* $.div(
+      $.h1({}, \`Hello, \${props.name}!\`),
+      $.button(
+        { onClick: () => count.update((n) => n + 1) },
+        count,
+      ),
+    );
+  });`;
 
 export const fullstackExample = `// Same component, three targets.
 
@@ -81,44 +146,36 @@ Route.static({
   render: (data) => DocPage(data),
 });`;
 
-// ─── Helper to build a story section ────────────────────────────────────────
-
-const storySection = (
-  heading: string,
-  description: string,
-  codeHtml: string,
-  options?: { reverse?: boolean },
-) =>
-  $.div(
-    {
-      class: `grid grid-cols-1 lg:grid-cols-2 gap-8 items-center ${options?.reverse ? "lg:[direction:rtl] lg:[&>*]:[direction:ltr]" : ""}`,
-    },
-    $.div(
-      { class: "space-y-4" },
-      $.h3({ class: "text-2xl font-bold text-primary" }, heading),
-      $.p({ class: "text-base-content leading-relaxed" }, description),
-    ),
-    $.div({
-      class:
-        "rounded-xl shadow-lg overflow-hidden [&_pre]:!rounded-none [&_pre]:!m-0 [&_pre]:!p-6 [&_pre]:!text-xs",
-      innerHTML: codeHtml,
-    }),
-  );
-
 // ─── Package card ───────────────────────────────────────────────────────────
 
 const packageCard = (name: string, description: string, pkg: string) =>
   $.a(
     {
       href: `https://github.com/stax-ui/stax/tree/main/packages/${pkg}`,
-      class: "card bg-base-300 shadow-sm hover:bg-base-200 transition-colors",
+      class:
+        "card bg-code shadow-sm hover:bg-base-200 transition-colors rounded-lg",
       target: "_blank",
     },
     $.div(
       { class: "card-body p-5" },
-      $.h3({ class: "font-mono text-sm text-primary font-semibold" }, name),
+      $.h3(
+        { class: "font-mono text-sm text-secondary font-semibold pb-2" },
+        name,
+      ),
       $.p({ class: "text-base-content/70 text-sm" }, description),
     ),
+  );
+
+const ContentLink = (href: string, text: string) =>
+  $.a(
+    {
+      href,
+      class: [
+        "text-caption text-base-content hover:text-accent font-normal",
+        "transition-colors pl-2",
+      ],
+    },
+    text,
   );
 
 // ─── Page ───────────────────────────────────────────────────────────────────
@@ -126,315 +183,326 @@ const packageCard = (name: string, description: string, pkg: string) =>
 export const HomePage = (props: {
   readonly codeExamples: {
     counterHtml: string;
-    signalsHtml: string;
     errorsHtml: string;
     fullstackHtml: string;
+    effectHtml: string;
+    reactiveHtml: string;
+    familiarHtml: string;
   };
 }) =>
   Effect.gen(function* () {
-    const { counterHtml, signalsHtml, errorsHtml, fullstackHtml } =
-      props.codeExamples;
-
-    const [chips, logo, subhead, cta, terminal] = yield* Animation.sequence(5);
+    const {
+      counterHtml,
+      errorsHtml,
+      fullstackHtml,
+      effectHtml,
+      reactiveHtml,
+      familiarHtml,
+    } = props.codeExamples;
 
     return yield* $.div(
-      // ── 1. Hero ─────────────────────────────────────────────────────────
-      $.div(
-        {
-          class:
-            "hero hero-pizzazz bg-base-300 pt-4 pb-8 md:pb-16 overflow-hidden relative",
-        },
-        $.div({ class: "!absolute top-0 right-4 z-20" }, ThemeToggle()),
-        $.div(
-          { class: "hero-content text-center" },
+      { class: "flex flex-col lg:flex-row" },
+      $.div({ class: "lg:border-r" }, Nav()),
+      $.main(
+        { class: "flex-1 flex flex-col text-base-content" },
+        Hero(),
+        ContentSection(
           $.div(
-            {},
-            StaggerElements({
-              items: [
-                $.div(
-                  {
-                    class:
-                      "bg-base-300 text-success px-3 py-1 rounded text-xs uppercase",
-                  },
-                  "Single Page Apps",
-                ),
-                $.div(
-                  {
-                    class:
-                      "bg-base-300 text-info px-3 py-1 rounded text-xs uppercase",
-                  },
-                  "Server-Side Rendering",
-                ),
-                $.div(
-                  {
-                    class:
-                      "bg-base-300 text-warning px-3 py-1 rounded text-xs uppercase",
-                  },
-                  "Static Site Generation",
-                ),
-              ],
-              class: "flex gap-4 justify-center mb-10",
-              animate: {
-                enterFrom: "opacity-0 translate-y-12",
-                enter:
-                  "transition-all duration-500 ease-[cubic-bezier(0.68,-0.55,0.265,1.55)]",
-                enterTo: "opacity-100 translate-y-0",
-                stagger: stagger(100),
-                group: chips,
-              },
-              intro: true,
-            }),
-            $.h1(
-              { class: "mb-8 flex justify-center" },
-              StaxLogo({
-                class: "w-[333px]",
-                intro: true,
-                group: logo,
-              }),
+            { class: "flex flex-col gap-8" },
+            $.h2(
+              { class: "text-heading tracking-tight" },
+              $.span("Frontend"),
+              $.br(),
+              $.span({ class: "text-accent" }, "Correctness"),
             ),
-            animated(
-              {
-                animate: {
-                  enterFrom: "opacity-0 -translate-y-12",
-                  enter:
-                    "transition-all duration-500 ease-[cubic-bezier(0.68,-0.55,0.265,1.55)]",
-                  enterTo: "opacity-100 translate-y-0",
-                  group: subhead,
-                },
-                intro: true,
-              },
-              () =>
-                $.div(
-                  {
-                    class: "text-lg text-base-content mb-8",
-                  },
-                  $.span("A reactive UI framework built on"),
-                  $.div(
-                    {
-                      class:
-                        "inline-block p-1 rounded bg-accent text-accent-content mx-1 font-bold -skew-y-2 shadow",
-                    },
-                    "Effect.ts",
-                  ),
-                  $.span("primitives."),
-                ),
+            $.h3(
+              { class: "text-heading-2 font-thin text-neutral/70 max-w-100" },
+              $.span("Robust utilities for building "),
+              $.span({ class: "text-accent" }, "serious "),
+              $.span("web applications"),
             ),
-            animated(
-              {
-                animate: {
-                  enterFrom: "opacity-0 blur-lg",
-                  enter: "transition-all duration-300 ease-out",
-                  enterTo: "opacity-100 blur-0",
-                  group: cta,
-                },
-                intro: true,
-              },
-              () =>
-                $.div(
-                  { class: "mb-4" },
-                  $.div(
-                    { class: "flex gap-4 justify-center" },
-                    Link(
-                      { href: "/docs/quick-start", class: "btn btn-primary" },
-                      "Quick Start Guide",
-                    ),
-                    Link(
-                      { href: "/docs/introduction", class: "btn btn-base-300" },
-                      "Documentation",
-                    ),
-                  ),
-                ),
+            $.p(
+              { class: "text-paragraph max-w-100 text-neutral/60" },
+              "Probably not the quickest way to build a todo app, but the right way to build a production-ready app that solves real-world problems reliably.",
             ),
-            animated(
-              {
-                animate: {
-                  enterFrom: "opacity-0 translate-y-12",
-                  enter:
-                    "transition-all duration-500 ease-[cubic-bezier(0.68,-0.55,0.265,1.55)]",
-                  enterTo: "opacity-100 translate-y-0",
-                  group: terminal,
-                },
-                intro: true,
-              },
-              () =>
-                $.div(
-                  {
-                    class:
-                      "inline-block bg-base-100 rounded-lg px-6 py-3 font-mono text-sm mt-4",
-                  },
-                  $.span({ class: "text-accent" }, "$ "),
-                  $.span(
-                    { class: "text-base-content" },
-                    "pnpm create stax-ui my-app",
-                  ),
-                ),
+          ),
+          $.div(
+            { class: "space-y-4 text-paragraph" },
+            $.p(
+              "Stax gives you reactive state without the ceremony. Signals are mutable references that track their own subscribers — read one inside an element, and that element updates when the signal changes. No dependency arrays, no memoization hooks, no stale-closure bugs waiting to bite you three renders later.",
+            ),
+            $.p(
+              $.span("Every component has the type "),
+              $.code({ class: "prose" }, "Element<E, R>"),
+              $.span(
+                " — an error channel and a dependency channel. If a component can fail, TypeScript tells you before you ship. If it needs a service, the compiler asks for it. Runtime surprises become compile-time conversations.",
+              ),
+            ),
+            $.p(
+              "Write your components once. Run them as an SPA, server-render with hydration, or pre-render to static HTML. The same signals, the same router, the same component model — the entry point is the only thing that changes.",
             ),
           ),
         ),
-      ),
-
-      // ── 2. Code Example + Callouts ──────────────────────────────────────
-      $.div(
-        {
-          class:
-            "lg:max-w-6xl mx-auto py-8 md:py-16 px-4 space-y-16 flex flex-col-reverse md:flex-row gap-4",
-        },
-        $.div(
-          { class: "flex flex-col gap-4 flex-1" },
+        ContentSection(
           $.div(
-            { class: "card shadow-sm bg-base-300 overflow-hidden flex-1" },
-            $.div(
-              { class: "card-body border-l-4 border-l-success" },
-              $.h2({ class: "card-title" }, "Fully Typesafe"),
-              $.p(
-                { class: "text-base-content/75" },
-                "Every element carries its error and dependency types. TypeScript catches unhandled failures and missing context at compile time — not in production.",
-              ),
+            { class: "flex flex-col gap-6 flex-1" },
+            $.h2(
+              { class: "text-heading tracking-tight" },
+              $.span("Stax in "),
+              $.br(),
+              $.span({ class: "text-accent" }, "Real Life"),
             ),
-          ),
-          $.div(
-            { class: "card shadow-sm bg-base-300 overflow-hidden flex-1" },
-            $.div(
-              { class: "card-body border-l-4 border-l-info" },
-              $.h2({ class: "card-title" }, "Full Stack Reactivity"),
-              $.p(
-                { class: "text-base-content/75" },
-                "The same signals, components, and router work across SPAs, server-rendered apps, and static sites. One model from prototype to production.",
-              ),
+            $.p(
+              { class: "text-paragraph max-w-200 text-neutral/60" },
+              "The following example is a simple counter component. It demonstrates how to use signals, effects, and reactive state in Stax.",
             ),
-          ),
-          $.div(
-            { class: "card shadow-sm bg-base-300 overflow-hidden flex-1" },
             $.div(
-              { class: "card-body border-l-4 border-l-warning" },
-              $.h2(
-                { class: "card-title" },
-                $.span({}, "Built on the power of "),
-                $.a(
-                  { href: "https://effect.website", class: "text-secondary" },
-                  "Effect.ts",
+              { class: "flex-1 flex justify-end" },
+              $.div(
+                {
+                  class:
+                    "w-full flex flex-col gap-6 items-center justify-center p-8 border rounded-lg",
+                },
+                $.h3(
+                  { class: "text-heading-2 text-neutral" },
+                  "Counter Example",
                 ),
-              ),
-              $.p(
-                { class: "text-base-content/75" },
-                "Structured concurrency, typed errors, dependency injection, and automatic resource cleanup — all built in. No extra libraries required.",
+                Counter(),
               ),
             ),
           ),
-        ),
-        $.div(
-          { class: "md:flex-1" },
           $.div({
-            class:
-              "rounded-xl shadow-lg overflow-hidden [&_pre]:!rounded-none [&_pre]:!m-0 [&_pre]:!p-6 [&_pre]:!text-xs [&_pre]:flex [&_pre]:justify-center",
+            class: "flex-1 overflow-y-auto max-h-[600px]",
             innerHTML: counterHtml,
           }),
         ),
-      ),
-
-      // ── 3. Story Sections ───────────────────────────────────────────────
-      $.div(
-        { class: "bg-base-200 py-16" },
-        $.div(
-          { class: "lg:max-w-6xl mx-auto px-4 space-y-20" },
-          $.div(
-            { class: "text-center pb-4" },
-            $.h2({ class: "text-5xl font-bold" }, "Why Stax?"),
+        ContentSection(
+          $.h2(
+            { class: "text-heading tracking-tight" },
+            $.span("What is "),
+            $.span({ class: "text-accent" }, "Stax"),
+            $.span("?"),
           ),
-          storySection(
-            "Signals, not hooks",
-            "Signals are mutable references that track their own subscribers. Read a signal inside an element, and that element updates when the signal changes — automatically. No dependency arrays to maintain, no useCallback to remember, no stale closure bugs to chase down.",
-            signalsHtml,
-          ),
-          storySection(
-            "Errors you can see",
-            "Every element in Stax has the type Element<E, R> — where E is the error channel and R is the required context. If a component can fail, TypeScript tells you before you ship. If it needs a service, the compiler asks for it. Runtime surprises become compile-time conversations.",
-            errorsHtml,
-            { reverse: true },
-          ),
-          storySection(
-            "One framework, every target",
-            "Write your components once. Run them client-side as an SPA, server-render with hydration, or pre-render as a static site. The same router, the same signals, the same component model — just a different entry point.",
-            fullstackHtml,
-          ),
-        ),
-      ),
-
-      // ── 4. Ecosystem ────────────────────────────────────────────────────
-      $.div(
-        { class: "lg:max-w-6xl mx-auto py-16 px-4" },
-        $.div(
-          { class: "text-center mb-10" },
-          $.h2({ class: "text-3xl font-bold mb-2" }, "The full picture"),
-          $.p(
-            { class: "text-base-content/70" },
-            "A complete set of packages that work together — or independently.",
-          ),
-        ),
-        $.div(
-          { class: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" },
-          packageCard(
-            "@stax-ui/core",
-            "Reactive primitives — Signal, Readable, reactive collections, control flow, and transitions.",
-            "core",
-          ),
-          packageCard(
-            "@stax-ui/dom",
-            "DOM rendering with the $ factory, animations, portals, virtual lists, and hydration.",
-            "dom",
-          ),
-          packageCard(
-            "@stax-ui/router",
-            "Type-safe routing with schema-validated params, data loaders, and mutation handlers.",
-            "router",
-          ),
-          packageCard(
-            "@stax-ui/form",
-            "Schema-first forms with per-field reactivity, validation, and nested structures.",
-            "form",
-          ),
-          packageCard(
-            "@stax-ui/platform",
-            "Full-stack SSR integration with @effect/platform — server rendering, data serialization, and hydration.",
-            "platform",
-          ),
-          packageCard(
-            "@stax-ui/vite-plugin",
-            "Vite plugin for SSR dev server, server-code stripping, and static site generation.",
-            "vite-plugin",
-          ),
-        ),
-      ),
-
-      // ── 5. Final CTA ────────────────────────────────────────────────────
-      $.div(
-        { class: "bg-base-200 py-16" },
-        $.div(
-          { class: "text-center space-y-6" },
-          $.h2({ class: "text-3xl font-bold" }, "Get started in seconds"),
-          $.div(
+          $.ol(
             {
               class:
-                "inline-block bg-base-100 rounded-lg px-6 py-3 font-mono text-sm",
+                "space-y-3 text-paragraph font-black text-neutral/30 list-[decimal-leading-zero] tracking-tight",
             },
-            $.span({ class: "text-accent" }, "$ "),
-            $.span(
-              { class: "text-base-content" },
-              "pnpm create stax-ui my-app",
+            $.li(ContentLink("#environment", "Environment Agnostic")),
+            $.li(ContentLink("#effect", "Effect Native")),
+            $.li(ContentLink("#reactive", "Reactive State")),
+            $.li(ContentLink("#familiar", "Familiar Style")),
+            $.li(ContentLink("#confidence", "Confident Development")),
+            $.li(ContentLink("#suite", "Package Suite")),
+          ),
+        ),
+        ContentSection(
+          $.div(
+            { class: "flex-1 flex flex-col gap-6" },
+            $.h2(
+              { class: "text-heading tracking-tight" },
+              $.span("Environment"),
+              $.br(),
+              $.span({ class: "text-accent" }, "Agnostic"),
+            ),
+            $.dl(
+              { class: "text-base-content/70" },
+              $.dd({ class: "font-bold" }, "Single Page Apps (SPA)"),
+              $.dd(
+                { class: "pb-8" },
+                "Client-side rendering with Stax is direct. Signals drive the DOM without a virtual tree, Effect handles asynchrony and lifecycle, and the router keeps navigation type-safe. Point Vite at your entry file and you're done — no framework-specific build ceremony.",
+              ),
+              $.dd({ class: "font-bold" }, "Server-side Rendering"),
+              $.dd(
+                { class: "pb-8" },
+                $.span("Server-side rendering piggybacks on "),
+                $.code({ class: "prose" }, "@effect/platform"),
+                $.span(
+                  ". Rather than shipping our own HTTP server, Stax integrates with the primitives you'd already reach for building any Effect service. Your rendered app and your data layer share one runtime, one context system, one story for errors.",
+                ),
+              ),
+              $.dd({ class: "font-bold" }, "Static Site Generation"),
+              $.dd(
+                { class: "pb-8" },
+                "SSG is a first-class output. Route loaders run at build time, pages render to HTML, and hydration wires the same components back up in the browser. This site — the one you're reading — is built with Stax's SSG pipeline.",
+              ),
             ),
           ),
+          $.div({ class: "flex-1 flex", innerHTML: fullstackHtml }),
+          "environment",
+        ),
+        ContentSection(
           $.div(
-            { class: "flex gap-4 justify-center" },
-            Link(
-              {
-                href: "/docs/02-todo-app/00-introduction",
-                class: "btn btn-primary",
-              },
-              "Follow the Tutorial",
+            { class: "flex-1 flex flex-col gap-6" },
+            $.h2(
+              { class: "text-heading tracking-tight" },
+              $.span("Effect "),
+              $.span({ class: "text-accent" }, "Native"),
             ),
-            Link(
-              { href: "/docs/introduction", class: "btn btn-neutral" },
-              "Read the Docs",
+            $.div(
+              { class: "text-paragraph space-y-4" },
+              $.p(
+                "Every Stax component is an Effect. Typed errors, dependency injection, structured concurrency, resource cleanup — you don't reach for a wrapper library, you just use Effect. If you know how to write a service in Effect, you already know how to write a component in Stax.",
+              ),
+              $.p(
+                $.span("Components can "),
+                $.code(
+                  {
+                    class: "prose",
+                  },
+                  "yield*",
+                ),
+                $.span(
+                  " services the same way any other Effect can. The same ",
+                ),
+                $.code(
+                  {
+                    class: "prose",
+                  },
+                  "Layer",
+                ),
+                $.span(
+                  " that provides your API client to a server route provides it to a UI component — no adapter, no duplicated wiring.",
+                ),
+              ),
+            ),
+          ),
+          $.div({ innerHTML: effectHtml }),
+          "effect",
+        ),
+        ContentSection(
+          $.div(
+            { class: "flex-1 flex flex-col gap-6" },
+            $.h2(
+              { class: "text-heading tracking-tight" },
+              $.span("Reactive "),
+              $.span({ class: "text-accent" }, "State"),
+            ),
+            $.div(
+              { class: "text-paragraph space-y-4" },
+              $.p(
+                $.span(
+                  "Signals in Stax are references, not snapshots. Create one with ",
+                ),
+                $.code({ class: "prose" }, "Signal.make"),
+                $.span(", read it with "),
+                $.code({ class: "prose" }, ".get"),
+                $.span(", update it with "),
+                $.code({ class: "prose" }, ".set"),
+                $.span(" or "),
+                $.code({ class: "prose" }, ".update"),
+                $.span(
+                  ". Pass a signal directly as an attribute or a child, and Stax subscribes on your behalf — the DOM updates automatically as the value changes.",
+                ),
+              ),
+              $.p(
+                $.span("Derived values come from "),
+                $.code({ class: "prose" }, "Readable.map"),
+                $.span(
+                  " and friends. They stay in sync with their inputs without a dependency-tracking runtime and without you thinking about it. If your state model is a tree of signals and readables, your UI is already reactive.",
+                ),
+              ),
+            ),
+          ),
+          $.div({ class: "flex flex-1", innerHTML: reactiveHtml }),
+          "reactive",
+        ),
+        ContentSection(
+          $.div(
+            { class: "flex-1 flex flex-col gap-6" },
+            $.h2(
+              { class: "text-heading tracking-tight" },
+              $.span("Familiar "),
+              $.span({ class: "text-accent" }, "Style"),
+            ),
+            $.div(
+              { class: "text-paragraph space-y-4" },
+              $.p(
+                "If you've written React, Solid, or Vue, Stax will feel familiar. Components are functions that return trees of elements, composition works the way you'd expect, and props are just arguments. There's no JSX transform, no virtual DOM, no reconciler — the tree you build is the tree that renders.",
+              ),
+              $.p(
+                $.span("The "),
+                $.code({ class: "prose" }, "$"),
+                $.span(
+                  " factory replaces JSX with plain function calls that read as cleanly. Attributes go in the first argument, children follow. If a React refactor is muscle memory for you, moving to Stax rewires very little.",
+                ),
+              ),
+            ),
+          ),
+
+          $.div({ class: "flex flex-1", innerHTML: familiarHtml }),
+          "familiar",
+        ),
+        ContentSection(
+          $.h2(
+            { class: "text-heading tracking-tight" },
+            $.span("Confident"),
+            $.br(),
+            $.span({ class: "text-accent" }, "Development"),
+          ),
+          $.div(
+            { class: "text-paragraph space-y-4" },
+            $.p(
+              $.span(
+                "Every element in Stax carries its error and dependency types in its signature. ",
+              ),
+              $.code({ class: "prose" }, "Element<HttpError, ApiClient>"),
+              $.span(" says: this component might fail with an "),
+              $.code({ class: "prose" }, "HttpError"),
+              $.span(", and it needs an "),
+              $.code({ class: "prose" }, "ApiClient"),
+              $.span(
+                ". TypeScript refuses to mount it until you handle the error and provide the service.",
+              ),
+            ),
+            $.p(
+              "Deployment stops being a leap of faith. The compiler tells you when a route is missing context, when a Layer isn't wired up, when an error case slipped past. What ships is what typechecked.",
+            ),
+            $.div({ innerHTML: errorsHtml }),
+          ),
+          "confidence",
+        ),
+        $.div(
+          { class: "px-8 py-12 border-t flex flex-col gap-8" },
+          $.a({
+            id: "suite",
+          }),
+          $.h2({ class: "text-heading tracking-tight" }, "Package Suite"),
+          $.p(
+            { class: "text-paragraph max-w-200 text-neutral" },
+            "Stax is a suite of packages that work together to provide a full-stack development experience. Each package is focused on a specific area, and they can be used independently or together.",
+          ),
+          $.div(
+            { class: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" },
+            packageCard(
+              "@stax-ui/core",
+              "Platform-agnostic reactivity primitives: Signal, Readable, reactive collections, control flow, and transitions.",
+              "core",
+            ),
+            packageCard(
+              "@stax-ui/dom",
+              "DOM renderer: the $ element factory, animations, portals, virtual lists, and hydration.",
+              "dom",
+            ),
+            packageCard(
+              "@stax-ui/router",
+              "Type-safe routing with schema-validated params, data loaders, and mutation handlers.",
+              "router",
+            ),
+            packageCard(
+              "@stax-ui/form",
+              "Schema-first forms with per-field reactivity, validation, and nested structures.",
+              "form",
+            ),
+            packageCard(
+              "@stax-ui/platform",
+              "Full-stack SSR + SSG integration built on @effect/platform — server rendering, data serialization, hydration.",
+              "platform",
+            ),
+            packageCard(
+              "@stax-ui/vite-plugin",
+              "Vite plugin for the SSR dev server, server-code stripping, and static site generation.",
+              "vite-plugin",
             ),
           ),
         ),

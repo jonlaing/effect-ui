@@ -12,10 +12,12 @@ import {
 import { DocPage } from "./pages/DocPage.js";
 import {
   counterExample,
+  effectExample,
   errorsExample,
+  familiarExample,
   fullstackExample,
   HomePage,
-  signalsExample,
+  reactiveExample,
 } from "./pages/HomePage.js";
 import { NotFoundPage } from "./pages/NotFoundPage.js";
 
@@ -25,20 +27,30 @@ const HomeRoute = Route.make("/").pipe(
   Route.static({
     load: () =>
       Effect.gen(function* () {
-        const [counterHtml, signalsHtml, errorsHtml, fullstackHtml] =
-          yield* Effect.all([
-            renderCode(counterExample, "typescript"),
-            renderCode(signalsExample, "typescript"),
-            renderCode(errorsExample, "typescript"),
-            renderCode(fullstackExample, "typescript"),
-          ]);
+        const [
+          counterHtml,
+          errorsHtml,
+          fullstackHtml,
+          effectHtml,
+          reactiveHtml,
+          familiarHtml,
+        ] = yield* Effect.all([
+          renderCode(counterExample, "typescript"),
+          renderCode(errorsExample, "typescript"),
+          renderCode(fullstackExample, "typescript"),
+          renderCode(effectExample, "typescript"),
+          renderCode(reactiveExample, "typescript"),
+          renderCode(familiarExample, "typescript"),
+        ]);
 
         return {
           codeExamples: {
             counterHtml,
-            signalsHtml,
             errorsHtml,
             fullstackHtml,
+            effectHtml,
+            reactiveHtml,
+            familiarHtml,
           },
         };
       }),

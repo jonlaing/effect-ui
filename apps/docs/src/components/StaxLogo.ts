@@ -42,11 +42,13 @@ export const StaxLogo = (props: StaxLogoProps = {}) => {
   ].map(([dark, light]) =>
     $.div(
       $.div({
-        class: "stax-logo-dark absolute top-0 [&_svg]:w-full [&_svg]:h-full",
+        class:
+          "stax-logo-dark absolute top-0 [&_svg]:w-full [&_svg]:h-full [&_svg]:drop-shadow-md/50",
         innerHTML: dark,
       }),
       $.div({
-        class: "stax-logo-light absolute top-0 [&_svg]:w-full [&_svg]:h-full",
+        class:
+          "stax-logo-light absolute top-0 [&_svg]:w-full [&_svg]:h-full [&_svg]:drop-shadow-md/50",
         innerHTML: light,
       }),
     ),
@@ -54,7 +56,7 @@ export const StaxLogo = (props: StaxLogoProps = {}) => {
 
   return $.div(
     {
-      class: ["relative h-[104px]", props.class ?? ""],
+      class: ["relative w-[333px] h-[104px]", props.class ?? ""],
       "aria-label": "Stax",
     },
     StaggerElements({
