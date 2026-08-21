@@ -30,18 +30,25 @@ export type EventHandler<E extends Event> = (
 export type StyleValue = string | number | Readable.Readable<string | number>;
 
 /**
- * Individual class item.
+ * A single class-list entry that may appear in a class tree. Recursive so
+ * arrays of arrays can be composed freely (e.g. defaults ++ overrides), and
+ * `undefined | null | false` are permitted so callers can pass through
+ * optional class props without a `?? ""` dance.
  */
-export type ClassItem = string | Readable.Readable<string>;
+export type ClassItem =
+  | string
+  | undefined
+  | null
+  | false
+  | Readable.Readable<string>
+  | readonly ClassItem[];
 
 /**
- * Valid class value types.
+ * Valid class value types. Either a class tree (see {@link ClassItem}) or a
+ * top-level `Readable` that emits the entire class list at once (as a string
+ * or a `readonly string[]`).
  */
-export type ClassValue =
-  | string
-  | readonly ClassItem[]
-  | Readable.Readable<string>
-  | Readable.Readable<readonly string[]>;
+export type ClassValue = ClassItem | Readable.Readable<readonly string[]>;
 
 /**
  * Data/ARIA attribute value.
@@ -328,14 +335,41 @@ const classValueToString = (value: string | readonly string[]): string =>
   typeof value === "string" ? value : value.join(" ");
 
 /**
+ * Walk a class tree and collect the leaf items — plain strings and
+ * `Readable<string>` — while stripping `undefined | null | false | ""`.
+ * Nested arrays are flattened; the input tree is never mutated.
+ */
+const flattenClassValue = (
+  value: ClassValue,
+): (string | Readable.Readable<string>)[] => {
+  const out: (string | Readable.Readable<string>)[] = [];
+  const walk = (v: ClassValue): void => {
+    if (v == null || v === false) return;
+    if (typeof v === "string") {
+      if (v.length > 0) out.push(v);
+      return;
+    }
+    if (Array.isArray(v)) {
+      for (const item of v) walk(item as ClassValue);
+      return;
+    }
+    // Nested Readables are only supported as Readable<string>; a
+    // Readable<readonly string[]> must appear at the top level.
+    out.push(v as Readable.Readable<string>);
+  };
+  walk(value);
+  return out;
+};
+
+/**
  * Apply class attribute to an element using Core functions.
  */
 const applyClass = <A extends HTMLElement | SVGElement>(
   el: Element<A>,
   value: ClassValue,
 ): Element<A> => {
+  // Fast path: top-level Readable (of a string, or of a full class list).
   if (Readable.isReadable(value)) {
-    // For reactive class that's a string/array, we need to handle it specially
     return Effect.gen(function* () {
       const element = yield* el;
       const renderer = yield* RendererContext;
@@ -348,54 +382,62 @@ const applyClass = <A extends HTMLElement | SVGElement>(
       ).pipe(Effect.forkIn(scope));
       return element;
     }) as Element<A>;
-  } else if (typeof value === "string") {
-    return Core.setClass(el, value);
-  } else if (Array.isArray(value)) {
-    // Array of class items - check if any are reactive
-    const hasReactive = value.some(Readable.isReadable);
-
-    if (!hasReactive) {
-      return Core.setClass(el, (value as string[]).join(" "));
-    } else {
-      // Mixed array with reactive items - need custom handling
-      return Effect.gen(function* () {
-        const element = yield* el;
-        const renderer = yield* RendererContext;
-        const currentValues: string[] = new Array(value.length).fill("");
-
-        const updateClassName = () =>
-          renderer.setClassName(
-            element,
-            currentValues.filter((s) => s.length > 0).join(" "),
-          );
-
-        for (let i = 0; i < value.length; i++) {
-          const item = value[i];
-          if (Readable.isReadable(item)) {
-            const initial = yield* (item as Readable.Readable<string>).get;
-            currentValues[i] = initial;
-            const index = i;
-            const scope = yield* Effect.scope;
-            yield* Stream.runForEach(
-              (item as Readable.Readable<string>).changes,
-              (v) =>
-                Effect.gen(function* () {
-                  currentValues[index] = v;
-                  yield* updateClassName();
-                }),
-            ).pipe(Effect.forkIn(scope));
-          } else {
-            currentValues[i] = item as string;
-          }
-        }
-
-        yield* updateClassName();
-        return element;
-      }) as Element<A>;
-    }
   }
 
-  return el;
+  // Fast path: plain string.
+  if (typeof value === "string") {
+    return value.length > 0 ? Core.setClass(el, value) : el;
+  }
+
+  // Top-level falsy (undefined | null | false) — no classes to apply.
+  if (value == null || value === false) return el;
+
+  // Otherwise it's a (possibly nested) tree — flatten to a flat item list
+  // of `string | Readable<string>` and process from there.
+  const items = flattenClassValue(value);
+  if (items.length === 0) return el;
+
+  const hasReactive = items.some(Readable.isReadable);
+  if (!hasReactive) {
+    return Core.setClass(el, (items as string[]).join(" "));
+  }
+
+  // Mixed array with reactive items — subscribe per-item and re-serialize
+  // the class list whenever any of them change.
+  return Effect.gen(function* () {
+    const element = yield* el;
+    const renderer = yield* RendererContext;
+    const currentValues: string[] = new Array(items.length).fill("");
+
+    const updateClassName = () =>
+      renderer.setClassName(
+        element,
+        currentValues.filter((s) => s.length > 0).join(" "),
+      );
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (Readable.isReadable(item)) {
+        const initial = yield* (item as Readable.Readable<string>).get;
+        currentValues[i] = initial;
+        const index = i;
+        const scope = yield* Effect.scope;
+        yield* Stream.runForEach(
+          (item as Readable.Readable<string>).changes,
+          (v) =>
+            Effect.gen(function* () {
+              currentValues[index] = v;
+              yield* updateClassName();
+            }),
+        ).pipe(Effect.forkIn(scope));
+      } else {
+        currentValues[i] = item as string;
+      }
+    }
+
+    yield* updateClassName();
+    return element;
+  }) as Element<A>;
 };
 
 /**

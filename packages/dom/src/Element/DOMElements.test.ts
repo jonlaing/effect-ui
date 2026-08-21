@@ -221,6 +221,46 @@ describe("DOMElements", () => {
         expect(el.className).toBe("updated");
       }).pipe(Effect.provide(TestLayer)),
     );
+
+    it.scopedLive("should skip undefined / null / false in a class array", () =>
+      Effect.gen(function* () {
+        const el = yield* div({
+          class: ["foo", undefined, "bar", null, false, ""],
+        });
+        expect(el.className).toBe("foo bar");
+      }).pipe(Effect.provide(TestLayer)),
+    );
+
+    it.scopedLive("should flatten nested class arrays", () =>
+      Effect.gen(function* () {
+        const defaults = ["base", "block"];
+        const overrides: string | undefined = "override";
+        const el = yield* div({ class: ["outer", defaults, [overrides]] });
+        expect(el.className).toBe("outer base block override");
+      }).pipe(Effect.provide(TestLayer)),
+    );
+
+    it.scopedLive("should accept a top-level undefined class as a no-op", () =>
+      Effect.gen(function* () {
+        const el = yield* div({ class: undefined });
+        expect(el.className).toBe("");
+      }).pipe(Effect.provide(TestLayer)),
+    );
+
+    it.scopedLive("should update a reactive item nested inside an array", () =>
+      Effect.gen(function* () {
+        const dynamic = yield* Signal.make("one");
+        const el = yield* div({
+          class: ["static", ["nested-static", dynamic], undefined],
+        });
+        expect(el.className).toBe("static nested-static one");
+
+        yield* Effect.sleep("20 millis");
+        yield* dynamic.set("two");
+        yield* Effect.sleep("20 millis");
+        expect(el.className).toBe("static nested-static two");
+      }).pipe(Effect.provide(TestLayer)),
+    );
   });
 
   describe("style attribute", () => {
