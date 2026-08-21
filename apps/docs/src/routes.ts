@@ -9,6 +9,7 @@ import {
   loadPage,
   renderCode,
 } from "./content.server.js";
+import { ContactPage } from "./pages/ContactPage.js";
 import { DocPage } from "./pages/DocPage.js";
 import {
   counterExample,
@@ -99,10 +100,21 @@ const DocRoute = Route.make("/docs/*").pipe(
   })),
 );
 
+// ─── Contact page ────────────────────────────────────────────────────────────
+
+const ContactRoute = Route.make("/contact").pipe(
+  Route.static({
+    load: () => Effect.succeed({}),
+    render: () => ContactPage(),
+  }),
+  Route.meta({ title: "Contact | Stax" }),
+);
+
 // ─── Router ──────────────────────────────────────────────────────────────────
 
 export const router = Router.empty.pipe(
   Router.concat(HomeRoute),
   Router.concat(DocRoute),
+  Router.concat(ContactRoute),
   Router.fallback(() => NotFoundPage()),
 );
