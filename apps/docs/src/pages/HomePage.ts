@@ -286,7 +286,7 @@ export const HomePage = (props: {
           $.ol(
             {
               class:
-                "space-y-3 text-paragraph font-black text-neutral/30 list-[decimal-leading-zero] tracking-tight",
+                "space-y-3 list-inside text-paragraph font-black text-neutral/30 list-[decimal-leading-zero] tracking-tight",
             },
             $.li(ContentLink("#environment", "Environment Agnostic")),
             $.li(ContentLink("#effect", "Effect Native")),
@@ -434,32 +434,35 @@ export const HomePage = (props: {
           "familiar",
         ),
         ContentSection(
-          $.h2(
-            { class: "text-heading tracking-tight" },
-            $.span("Confident"),
-            $.br(),
-            $.span({ class: "text-accent" }, "Development"),
-          ),
           $.div(
-            { class: "text-paragraph space-y-4" },
-            $.p(
-              $.span(
-                "Every element in Stax carries its error and dependency types in its signature. ",
+            { class: "flex-1 flex flex-col gap-6" },
+            $.h2(
+              { class: "text-heading tracking-tight" },
+              $.span("Confident"),
+              $.br(),
+              $.span({ class: "text-accent" }, "Development"),
+            ),
+            $.div(
+              { class: "text-paragraph space-y-4" },
+              $.p(
+                $.span(
+                  "Every element in Stax carries its error and dependency types in its signature. ",
+                ),
+                $.code({ class: "prose" }, "Element<HttpError, ApiClient>"),
+                $.span(" says: this component might fail with an "),
+                $.code({ class: "prose" }, "HttpError"),
+                $.span(", and it needs an "),
+                $.code({ class: "prose" }, "ApiClient"),
+                $.span(
+                  ". TypeScript refuses to mount it until you handle the error and provide the service.",
+                ),
               ),
-              $.code({ class: "prose" }, "Element<HttpError, ApiClient>"),
-              $.span(" says: this component might fail with an "),
-              $.code({ class: "prose" }, "HttpError"),
-              $.span(", and it needs an "),
-              $.code({ class: "prose" }, "ApiClient"),
-              $.span(
-                ". TypeScript refuses to mount it until you handle the error and provide the service.",
+              $.p(
+                "Deployment stops being a leap of faith. The compiler tells you when a route is missing context, when a Layer isn't wired up, when an error case slipped past. What ships is what typechecked.",
               ),
             ),
-            $.p(
-              "Deployment stops being a leap of faith. The compiler tells you when a route is missing context, when a Layer isn't wired up, when an error case slipped past. What ships is what typechecked.",
-            ),
-            $.div({ innerHTML: errorsHtml }),
           ),
+          $.div({ innerHTML: errorsHtml }),
           "confidence",
         ),
         $.div(
