@@ -50,9 +50,9 @@ export const DocPage = (props: {
   return SidebarLayout(
     { sections: props.sections },
     $.div(
-      { class: "flex flex-col gap-8" },
+      { class: "flex flex-col lg:gap-8" },
       $.div(
-        { class: "p-4 flex justify-end" },
+        { class: "hidden lg:flex p-4 justify-end" },
         $.a({
           href: "https://github.com/stax-ui/stax",
           class:
@@ -63,11 +63,11 @@ export const DocPage = (props: {
         }),
       ),
       $.div(
-        { class: "flex gap-8" },
+        { class: "flex gap-8 pt-6 lg:pt-0" },
         $.div(
           { class: "flex-1" },
           $.article({
-            class: "prose max-w-[40rem] mx-auto",
+            class: "prose lg:max-w-[40rem] mx-auto",
             innerHTML: props.page.html,
           }),
           pagination,
