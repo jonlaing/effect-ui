@@ -1,10 +1,10 @@
 ---
-title: "Chapter 6: Adding New Todos"
+title: "Adding New Todos"
 description: "Handle form input to add new todos to the list"
 order: 6
 ---
 
-# Chapter 6: Adding New Todos
+# Adding New Todos
 
 Time to make that input field work! We'll capture user input and add new todos to our list.
 

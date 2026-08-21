@@ -1,10 +1,10 @@
 ---
-title: "Chapter 8: Conditional Rendering"
+title: "Conditional Rendering"
 description: "Show and hide elements with when and add a 'Clear Completed' button"
 order: 8
 ---
 
-# Chapter 8: Conditional Rendering
+# Conditional Rendering
 
 Sometimes you need to show or hide parts of your UI based on state. Let's add a "Clear Completed" button that only appears when there are completed todos.
 

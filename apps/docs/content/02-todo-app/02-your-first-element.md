@@ -1,10 +1,10 @@
 ---
-title: "Chapter 2: Your First Element"
+title: "Your First Element"
 description: "Learn how to create and compose elements with the $ factory"
 order: 2
 ---
 
-# Chapter 2: Your First Element
+# Your First Element
 
 The `$` factory is how you create HTML elements in Stax. Let's explore how it works and build the basic structure of our todo app.
 

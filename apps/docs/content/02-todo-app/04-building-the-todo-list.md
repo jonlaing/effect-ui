@@ -1,10 +1,10 @@
 ---
-title: "Chapter 4: Building the Todo List"
+title: "Building the Todo List"
 description: "Render lists reactively with each and create reusable components"
 order: 4
 ---
 
-# Chapter 4: Building the Todo List
+# Building the Todo List
 
 Our todos are stored in a Signal, but we're still rendering hardcoded items. Let's make the list dynamic using the `each` helper and create a reusable `TodoItem` component.
 

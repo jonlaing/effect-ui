@@ -1,10 +1,10 @@
 ---
-title: "Chapter 9: Deleting Todos"
+title: "Deleting Todos"
 description: "Add delete buttons to remove individual todos"
 order: 9
 ---
 
-# Chapter 9: Deleting Todos
+# Deleting Todos
 
 Let's add a delete button to each todo so users can remove items one at a time.
 

@@ -1,10 +1,10 @@
 ---
-title: "Chapter 7: Derived State"
+title: "Derived State"
 description: "Compute values from signals with Readable.map and Readable.zipWith"
 order: 7
 ---
 
-# Chapter 7: Derived State
+# Derived State
 
 We've been using `Readable.map` to transform signal values. Now let's go deeper into derived state and add filtering to our todo app.
 

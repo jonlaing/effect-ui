@@ -1,10 +1,10 @@
 ---
-title: "Chapter 10: Persistence"
+title: "Persistence"
 description: "Save todos to localStorage using a proper Effect-based persistence layer"
 order: 10
 ---
 
-# Chapter 10: Persistence
+# Persistence
 
 Our todo app works great, but todos disappear on refresh. Let's fix that with a proper persistence layer that follows Effect patterns.
 

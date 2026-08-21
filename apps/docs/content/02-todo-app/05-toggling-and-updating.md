@@ -1,10 +1,10 @@
 ---
-title: "Chapter 5: Toggling and Updating"
+title: "Toggling and Updating"
 description: "Handle user interactions to toggle todo completion status"
 order: 5
 ---
 
-# Chapter 5: Toggling and Updating
+# Toggling and Updating
 
 Our todo list displays items, but clicking the checkbox doesn't do anything. Let's make it interactive by handling the toggle action.
 

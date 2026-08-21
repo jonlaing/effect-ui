@@ -1,10 +1,10 @@
 ---
-title: "Chapter 1: Getting Started"
+title: "Getting Started"
 description: "Set up a new Stax project and understand the project structure"
 order: 1
 ---
 
-# Chapter 1: Getting Started
+# Getting Started
 
 Let's create a new Stax project and get our development environment running.
 

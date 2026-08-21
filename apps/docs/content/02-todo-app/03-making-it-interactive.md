@@ -1,10 +1,10 @@
 ---
-title: "Chapter 3: Making It Interactive"
+title: "Making It Interactive"
 description: "Add reactivity to your app with Signals"
 order: 3
 ---
 
-# Chapter 3: Making It Interactive
+# Making It Interactive
 
 Static HTML is nice, but we need our app to respond to user input. Enter **Signals**—Stax's reactive primitives.
 
