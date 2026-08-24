@@ -22,6 +22,7 @@ export const Animation = {
   group: Groups.group,
   sequence: Groups.sequence,
   parallel: Groups.parallel,
+  skip: Groups.skip,
 } as const;
 
 // Re-export core functions

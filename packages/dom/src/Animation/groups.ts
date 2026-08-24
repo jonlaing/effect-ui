@@ -31,11 +31,21 @@
  *   });
  * ```
  *
- * A group's `done` signal fires the first time its pending count returns
- * to zero after having been non-zero. Late registrations that arrive after
- * the group is already done run immediately without gating and don't
- * re-open the signal — intended for one-shot intros where new items added
- * after the sequence completes should behave like ordinary animations.
+ * A group's `done` signal fires when its pending count reaches zero
+ * with the gate open. Empty groups (no registrations by the time the
+ * gate opens and one tick has elapsed) complete automatically — a
+ * downstream sequence step doesn't stall waiting on animations that
+ * were never mounted (e.g. a desktop-only branch omitted on mobile).
+ *
+ * Late registrations that arrive after the group is already done run
+ * immediately without gating and don't re-open the signal — intended
+ * for one-shot intros where new items added after the sequence
+ * completes should behave like ordinary animations.
+ *
+ * Consumers can also force completion explicitly with `Animation.skip`
+ * — useful for "skip intro" buttons, reduced-motion escape hatches,
+ * or any orchestrator logic that wants to advance a sequence beyond
+ * what its registered animations dictate.
  */
 
 import { Deferred, Effect } from "effect";
@@ -219,6 +229,64 @@ const openGate = (g: AnimationGroup): Effect.Effect<void> =>
     if (g._state.gateResolved) return;
     g._state.gateResolved = true;
     yield* Deferred.succeed(g._gate, void 0);
+    // Empty-group fast-path. If no one has registered by the next tick
+    // (all synchronous `_register` calls from the render fiber have
+    // drained), fire `_done` so the downstream sequence step doesn't
+    // stall waiting on animations that will never arrive. Registrations
+    // arriving AFTER this point — reactive controls, late-mounted
+    // children — still run their animations; they just don't gate
+    // downstream, matching the existing "late arrivals don't re-open
+    // the signal" contract.
+    yield* Effect.forkDaemon(
+      Effect.sleep(0).pipe(
+        Effect.andThen(() =>
+          Effect.gen(function* () {
+            if (
+              g._state.pending === 0 &&
+              g._state.gateResolved &&
+              !g._state.doneResolved
+            ) {
+              g._state.doneResolved = true;
+              yield* Deferred.succeed(g._done, void 0);
+            }
+          }),
+        ),
+      ),
+    );
+  });
+
+/**
+ * Force a group's `_done` to fire without waiting for any registered
+ * animations to finish. Useful when a downstream sequence step should
+ * advance even though the current step's animations aren't going to
+ * run — e.g. a mobile branch that skips a desktop-only animated block,
+ * a "skip intro" button, or a reduced-motion escape hatch. Idempotent —
+ * safe to call any number of times; only the first call fires `_done`.
+ *
+ * Does NOT cancel in-flight animation fibers. Animations that are
+ * already running continue to their natural end; they just no longer
+ * gate anything downstream because the group has been sealed.
+ *
+ * @example
+ * ```ts
+ * const [logo, chips, cta] = yield* Animation.sequence(3);
+ * if (yield* isMobile.get) {
+ *   yield* Animation.skip(chips);
+ * }
+ * ```
+ */
+export const skip = (g: AnimationGroup): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    if (g._state.doneResolved) return;
+    g._state.doneResolved = true;
+    // If the gate hasn't opened yet, open it too — a downstream step
+    // sequenced on this group would otherwise wait for both the gate
+    // and the done signal, and skipping should unblock everything.
+    if (!g._state.gateResolved) {
+      g._state.gateResolved = true;
+      yield* Deferred.succeed(g._gate, void 0);
+    }
+    yield* Deferred.succeed(g._done, void 0);
   });
 
 /**
@@ -233,9 +301,15 @@ export const _register = (g: AnimationGroup): void => {
 };
 
 /**
- * Signal that a registered animation has finished. When the pending count
- * hits zero (having previously been non-zero), the group's `_done` fires.
- * Idempotent past the first zero-crossing. Internal.
+ * Signal that a registered animation has finished. When the pending
+ * count returns to zero after having been non-zero, the group's `_done`
+ * fires. Idempotent past the first firing. Internal.
+ *
+ * `_complete` deliberately doesn't require the gate to be open — a
+ * caller using `group()` directly can drive `_register` / `_complete`
+ * manually without ever opening the gate, and the done signal should
+ * still fire once the pending count balances. Gate-driven empty
+ * completion happens on a separate path inside `openGate`.
  */
 export const _complete = (g: AnimationGroup): Effect.Effect<void> =>
   Effect.gen(function* () {

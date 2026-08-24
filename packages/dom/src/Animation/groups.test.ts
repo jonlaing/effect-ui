@@ -8,6 +8,7 @@ import {
   group,
   parallel,
   sequence,
+  skip,
 } from "./groups.js";
 
 describe("Animation groups", () => {
@@ -424,12 +425,16 @@ describe("Animation groups", () => {
           const parent = yield* group();
           const [c0, c1] = yield* parallel(2, { group: parent });
 
+          // Register BEFORE opening the parent gate so the empty-group
+          // fast-path on the children doesn't fire before we get a
+          // chance to attach real animations.
+          _register(c0);
+          _register(c1);
+
           yield* Deferred.succeed(parent._gate, void 0);
           parent._state.gateResolved = true;
           yield* Effect.sleep(2);
 
-          _register(c0);
-          _register(c1);
           yield* _complete(c0);
           yield* Effect.sleep(2);
           const afterOne = yield* Deferred.isDone(parent._done);
@@ -457,6 +462,180 @@ describe("Animation groups", () => {
         }),
       );
       expect(parentState).toEqual({ pending: 0, started: false });
+    });
+  });
+
+  describe("empty groups", () => {
+    it("completes automatically when nothing registers by the next tick", async () => {
+      const done = await Effect.runPromise(
+        Effect.gen(function* () {
+          const [g0] = yield* sequence(1);
+          // Nobody registers. `_done` should fire once the empty-group
+          // check runs on the next tick.
+          yield* Effect.sleep(5);
+          return yield* Deferred.isDone(g0._done);
+        }),
+      );
+      expect(done).toBe(true);
+    });
+
+    it("unblocks a downstream sequence step when the current step is empty", async () => {
+      const events = await Effect.runPromise(
+        Effect.gen(function* () {
+          const [g0, g1, g2] = yield* sequence(3);
+          const log: string[] = [];
+
+          const watch = (label: string, g: typeof g0) =>
+            Effect.fork(
+              Effect.gen(function* () {
+                yield* _awaitGate(g);
+                log.push(label);
+              }),
+            );
+
+          const w0 = yield* watch("g0", g0);
+          const w1 = yield* watch("g1", g1);
+          const w2 = yield* watch("g2", g2);
+
+          // g0's gate is already open. Register + complete a normal
+          // animation on it.
+          yield* w0.await;
+          _register(g0);
+          yield* _complete(g0);
+
+          // g1 opens next. Nothing registers on it — empty-group
+          // completion should fire and cascade to g2.
+          yield* w1.await;
+          yield* w2.await;
+
+          return log;
+        }),
+      );
+      expect(events).toEqual(["g0", "g1", "g2"]);
+    });
+
+    it("does not fire done prematurely when a registration arrives synchronously after gate open", async () => {
+      const done = await Effect.runPromise(
+        Effect.gen(function* () {
+          const [g0] = yield* sequence(1);
+          // Register synchronously — same fiber, same tick as sequence()
+          // returning. The empty-group check (forked on Effect.sleep(0))
+          // must observe pending > 0 by the time it runs.
+          _register(g0);
+          yield* Effect.sleep(5);
+          // Still pending — animation hasn't completed yet.
+          return yield* Deferred.isDone(g0._done);
+        }),
+      );
+      expect(done).toBe(false);
+    });
+
+    it("empty middle group in a longer sequence still advances", async () => {
+      const events = await Effect.runPromise(
+        Effect.gen(function* () {
+          const [g0, g1, g2, g3] = yield* sequence(4);
+          const log: string[] = [];
+
+          const watch = (label: string, g: typeof g0) =>
+            Effect.fork(
+              Effect.gen(function* () {
+                yield* _awaitGate(g);
+                log.push(label);
+              }),
+            );
+
+          const w0 = yield* watch("g0", g0);
+          const w1 = yield* watch("g1", g1);
+          const w2 = yield* watch("g2", g2);
+          const w3 = yield* watch("g3", g3);
+
+          yield* w0.await;
+          _register(g0);
+          yield* _complete(g0);
+
+          // g1 is empty — cascades through.
+          yield* w1.await;
+          yield* w2.await;
+          _register(g2);
+          yield* _complete(g2);
+
+          // g3 opens after g2 completes.
+          yield* w3.await;
+
+          return log;
+        }),
+      );
+      expect(events).toEqual(["g0", "g1", "g2", "g3"]);
+    });
+  });
+
+  describe("skip()", () => {
+    it("fires done immediately without needing a registration", async () => {
+      const done = await Effect.runPromise(
+        Effect.gen(function* () {
+          const g = yield* group();
+          yield* skip(g);
+          return yield* Deferred.isDone(g._done);
+        }),
+      );
+      expect(done).toBe(true);
+    });
+
+    it("also opens a closed gate so downstream sequencing unblocks", async () => {
+      const state = await Effect.runPromise(
+        Effect.gen(function* () {
+          const g = yield* group();
+          expect(yield* Deferred.isDone(g._gate)).toBe(false);
+          yield* skip(g);
+          return {
+            gate: yield* Deferred.isDone(g._gate),
+            done: yield* Deferred.isDone(g._done),
+          };
+        }),
+      );
+      expect(state).toEqual({ gate: true, done: true });
+    });
+
+    it("is idempotent — safe to call multiple times", async () => {
+      const done = await Effect.runPromise(
+        Effect.gen(function* () {
+          const g = yield* group();
+          yield* skip(g);
+          yield* skip(g);
+          yield* skip(g);
+          return yield* Deferred.isDone(g._done);
+        }),
+      );
+      expect(done).toBe(true);
+    });
+
+    it("advances a sequence step past pending animations without cancelling them", async () => {
+      const state = await Effect.runPromise(
+        Effect.gen(function* () {
+          const [g0, g1] = yield* sequence(2);
+
+          // Register on g0 but don't complete — an animation is "in flight".
+          _register(g0);
+          expect(g0._state.pending).toBe(1);
+
+          // Explicitly skip — g0's done fires despite pending > 0.
+          yield* skip(g0);
+          yield* Effect.sleep(2);
+
+          const g1Open = yield* Deferred.isDone(g1._gate);
+
+          // The still-pending animation can complete later without
+          // side effects.
+          yield* _complete(g0);
+
+          return {
+            g0Done: yield* Deferred.isDone(g0._done),
+            g1Open,
+            g0PendingAfter: g0._state.pending,
+          };
+        }),
+      );
+      expect(state).toEqual({ g0Done: true, g1Open: true, g0PendingAfter: 0 });
     });
   });
 });
