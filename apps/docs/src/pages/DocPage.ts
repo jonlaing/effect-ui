@@ -65,7 +65,10 @@ export const DocPage = (props: {
       $.div(
         { class: "flex gap-8 pt-6 lg:pt-0" },
         $.div(
-          { class: "flex-1" },
+          // `min-w-0` — same reason as SidebarLayout's `<main>`: a
+          // long code block scrolls inside its `.prose pre` container
+          // instead of growing this flex column past the viewport.
+          { class: "flex-1 min-w-0" },
           $.article({
             class: "prose lg:max-w-[40rem] mx-auto",
             innerHTML: props.page.html,
