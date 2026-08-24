@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.0
+
+### Patch Changes
+
+- Updated dependencies [db36abb]
+- Updated dependencies [5b11e9d]
+  - @stax-ui/dom@0.3.0
+
 ## 1.0.0
 
 ### Minor Changes
