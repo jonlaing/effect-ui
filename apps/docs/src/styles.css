@@ -171,10 +171,25 @@
   }
 }
 
+/*
+ * `.scrollbar-none` — scroll behavior intact, scrollbar chrome hidden.
+ * Uses the three cross-browser knobs:
+ *   • `scrollbar-width: none`      — Firefox
+ *   • `-ms-overflow-style: none`   — legacy Edge / IE
+ *   • `::-webkit-scrollbar { display: none }` — Blink, WebKit
+ */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 /* ─── Prose (markdown content) ─────────────────────────────────────────── */
 
 .prose h1 {
-  @apply text-heading mb-4 pb-4 border-b font-thin border-base-content/50 text-pretty;
+  @apply text-heading mb-4 pb-4 border-b font-thin border-base-content/50 text-pretty tracking-tight;
 }
 
 .prose h2 {

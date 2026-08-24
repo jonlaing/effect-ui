@@ -81,8 +81,11 @@ export const Sidebar = (props: { readonly sections: readonly DocSection[] }) =>
         // ─── Doc-page list ──────────────────────────────────────────
         // `overflow-hidden` clips when the row is 0fr; `md:overflow-y-auto`
         // restores scrolling when the desktop layout gives it a `1fr` row.
+        // `scrollbar-none` hides the browser scrollbar chrome — the
+        // sidebar still scrolls with wheel/touch/keyboard, it just
+        // doesn't render the scroll gutter.
         $.nav(
-          { class: "overflow-y-auto " },
+          { class: "overflow-y-auto scrollbar-none" },
           $.div(
             {
               class: ["p-4 pt-6", "lg:pl-8 lg:pr-5 lg:pb-7"],

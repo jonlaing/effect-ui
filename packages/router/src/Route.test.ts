@@ -117,6 +117,15 @@ describe("routeSpecificity", () => {
     const shorter = parsePath("/users/list");
     expect(routeSpecificity(longer)).toBeGreaterThan(routeSpecificity(shorter));
   });
+
+  it("ranks a static-only route higher than a catch-all one that could match the same URL", () => {
+    // `/docs/*` matches `/docs` with an empty `*` capture. Both routes
+    // succeed on the URL `/docs`, and the router picks by specificity —
+    // the exact-match route should win.
+    const exact = parsePath("/docs");
+    const catchAll = parsePath("/docs/*");
+    expect(routeSpecificity(exact)).toBeGreaterThan(routeSpecificity(catchAll));
+  });
 });
 
 describe("Route.make", () => {

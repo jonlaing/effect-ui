@@ -11,6 +11,7 @@ import {
 } from "./content.server.js";
 import { ContactPage } from "./pages/ContactPage.js";
 import { DocPage } from "./pages/DocPage.js";
+import { DocsIndexPage } from "./pages/DocsIndexPage.js";
 import {
   counterExample,
   effectExample,
@@ -58,6 +59,23 @@ const HomeRoute = Route.make("/").pipe(
     render: (data) => HomePage(data),
   }),
   Route.meta({ title: "Stax | Reactive UI Built on Effect.ts" }),
+);
+
+// ─── Docs index ──────────────────────────────────────────────────────────────
+
+const DocsIndexRoute = Route.make("/docs").pipe(
+  Route.static({
+    load: () =>
+      Effect.gen(function* () {
+        const allPages = yield* discoverPages();
+        return { sections: getSections(allPages) };
+      }),
+    render: (data) => DocsIndexPage({ sections: data.sections }),
+  }),
+  Route.meta({
+    title: "Docs | Stax",
+    description: "Everything you need to build with Stax.",
+  }),
 );
 
 // ─── Doc pages ───────────────────────────────────────────────────────────────
@@ -114,6 +132,7 @@ const ContactRoute = Route.make("/contact").pipe(
 
 export const router = Router.empty.pipe(
   Router.concat(HomeRoute),
+  Router.concat(DocsIndexRoute),
   Router.concat(DocRoute),
   Router.concat(ContactRoute),
   Router.fallback(() => NotFoundPage()),

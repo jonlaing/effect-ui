@@ -16,7 +16,11 @@ export const SidebarLayout = <E, R>(
     { class: "flex flex-col lg:flex-row" },
     $.div({ class: "lg:border-r" }, Sidebar({ sections: props.sections })),
     $.main(
-      { class: "flex-1 flex flex-col text-base-content" },
+      // `min-w-0` lets this flex child shrink below its intrinsic
+      // content width, so an overly-wide code block scrolls inside
+      // its own `overflow-x-auto` container instead of pushing the
+      // whole page wider than the viewport on mobile.
+      { class: "flex-1 min-w-0 flex flex-col text-base-content" },
       $.div({ class: "pt-22 lg:pt-0 px-8 pb-8" }, child),
     ),
   );

@@ -95,7 +95,13 @@ export const routeSpecificity = (segments: readonly PathSegment[]): number => {
     } else if (segment.type === "param") {
       score += 2;
     } else if (segment.type === "catchAll") {
-      score += 1;
+      // Catch-all segments score negative — a route with a catch-all
+      // should lose to an equivalent-length route without one when both
+      // match the same URL. Without this, `/docs/*` (which happily
+      // matches `/docs` with an empty `*` capture) beats an exact
+      // `/docs` route by the segment-count bonus, and downstream code
+      // gets handed the wrong route.
+      score -= 1;
     }
   }
   score += segments.length * 0.1;
