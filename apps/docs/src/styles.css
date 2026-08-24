@@ -189,7 +189,7 @@
 /* ─── Prose (markdown content) ─────────────────────────────────────────── */
 
 .prose h1 {
-  @apply text-heading mb-4 pb-4 border-b font-thin border-base-content/50 text-pretty;
+  @apply text-heading mb-4 pb-4 border-b font-thin border-base-content/50 text-pretty tracking-tight;
 }
 
 .prose h2 {

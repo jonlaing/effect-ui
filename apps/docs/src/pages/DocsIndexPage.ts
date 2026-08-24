@@ -18,10 +18,13 @@ export const DocsIndexPage = (props: {
   SidebarLayout(
     { sections: props.sections },
     $.div(
-      { class: "max-w-5xl mx-auto" },
+      { class: "max-w-5xl mx-auto py-18" },
       $.header(
         { class: "mb-12 max-w-2xl" },
-        $.h1({ class: "text-heading tracking-tight mb-4" }, $.span("Docs")),
+        $.h1(
+          { class: "text-heading tracking-tight mb-4 font-thin" },
+          $.span("Documentation"),
+        ),
         $.p(
           { class: "text-paragraph text-base-content/75" },
           "Everything you need to build with Stax, grouped by topic. New here? Start with the tutorial, then dip into the reference sections as questions come up.",
