@@ -109,6 +109,13 @@ export {
   calculateStaggerDelay,
 } from "./Animation/index.js";
 
+// Screen (viewport, media queries, display metrics)
+export * as Screen from "./Screen/index.js";
+export type {
+  MatchOptions as ScreenMatchOptions,
+  OrientationSnapshot,
+} from "./Screen/index.js";
+
 // Mounting
 export { mount, runApp } from "./Render/client/index.js";
 
