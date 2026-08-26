@@ -100,8 +100,12 @@ export interface IControlCtx<A> {
   /**
    * Remove a slot from the container.
    * Noop in SSR, handles exit animations in client mode.
+   *
+   * Requires `Scope.Scope` — Client mode forks the exit animation into
+   * the ambient scope so `removeSlot` can return before it finishes,
+   * and so container unmount interrupts an in-flight exit.
    */
-  readonly removeSlot: (key: string) => Effect.Effect<void>;
+  readonly removeSlot: (key: string) => Effect.Effect<void, never, Scope.Scope>;
 
   /**
    * Get a slot by its key.
@@ -147,8 +151,12 @@ export interface IControlCtx<A> {
    * bounding rect, computes the delta against the {@link beginSync}
    * snapshot, and forks the FLIP invert-then-release animation for any
    * slot that moved. Hydration and SSR treat it as a no-op.
+   *
+   * Requires `Scope.Scope` — Client mode forks the FLIP release into
+   * the ambient scope so container unmount interrupts an in-flight
+   * animation.
    */
-  readonly endSync: () => Effect.Effect<void>;
+  readonly endSync: () => Effect.Effect<void, never, Scope.Scope>;
 
   /**
    * Subscribe to a Readable and run handler on each change.

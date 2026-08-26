@@ -196,7 +196,7 @@ const createClientLikeControlCtx = (
       return Effect.void;
     },
 
-    removeSlot: (key: string): Effect.Effect<void> =>
+    removeSlot: (key: string): Effect.Effect<void, never, Scope.Scope> =>
       Effect.gen(function* () {
         const entry = slots.get(key);
         if (!entry) return;
@@ -381,7 +381,7 @@ const createHydrationControlCtx = (
     // No-op — container was provided externally, not found via hydration walker
     finalizeContainer: () => Effect.void,
 
-    removeSlot: (key: string): Effect.Effect<void> =>
+    removeSlot: (key: string): Effect.Effect<void, never, Scope.Scope> =>
       Effect.gen(function* () {
         const entry = slots.get(key);
         if (!entry) return;

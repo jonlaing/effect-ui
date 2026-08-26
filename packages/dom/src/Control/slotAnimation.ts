@@ -339,70 +339,68 @@ export const computeMoveDelta = (
  *
  * Reduced-motion users skip the animation and just get the layout jump.
  *
- * Fires into the parent scope so it survives past the reconcile call
- * that scheduled it. If the container is unmounted mid-play, its scope
- * closes and the fork is interrupted.
+ * Forks into the ambient scope via `Effect.forkScoped` — when reconcile
+ * runs, that scope is the container's, so if the container unmounts
+ * mid-play the fiber is interrupted.
  */
 export const forkSlotMove = (
   element: DOMElement,
   delta: MoveDelta,
   move: MoveAnimation,
-): Effect.Effect<void> => {
+): Effect.Effect<void, never, Scope.Scope> => {
   if (!(element instanceof HTMLElement)) return Effect.void;
-  return Effect.gen(function* () {
-    const parentScope = yield* Effect.scope;
-    yield* Effect.gen(function* () {
-      if (prefersReducedMotion()) return;
+  if (prefersReducedMotion()) return Effect.void;
 
-      const transitionClasses = move.transition
-        .split(/\s+/)
-        .filter((c) => c.length > 0);
-      const invert = move.transform(delta);
+  const body = Effect.gen(function* () {
+    const transitionClasses = move.transition
+      .split(/\s+/)
+      .filter((c) => c.length > 0);
+    const invert = move.transform(delta);
 
-      // Preserve any transform the element already had. Two sources
-      // matter and they compose differently:
-      //  * `priorInline` — a value the user set via `style.transform`
-      //    (or a prop that maps to it). We'll restore this by hand on
-      //    release; `removeProperty` would drop it.
-      //  * `computed` — the transform the browser is currently
-      //    applying, which folds in class-based transforms
-      //    (`rotate-1`, hover states, etc.) via the cascade. We prepend
-      //    the invert to it so the "invert" frame doesn't visually
-      //    lose them. Comes back as `matrix(...)` for any real
-      //    transform, `"none"` for none.
-      // The release then either restores `priorInline` or clears the
-      // property — the class-based part re-enters via the cascade
-      // automatically. In both cases the browser transitions
-      // `transform` from `composed` to the correct steady-state value.
-      const priorInline = element.style.transform;
-      const computed = window.getComputedStyle(element).transform;
-      const composed =
-        computed && computed !== "none" ? `${invert} ${computed}` : invert;
+    // Preserve any transform the element already had. Two sources
+    // matter and they compose differently:
+    //  * `priorInline` — a value the user set via `style.transform`
+    //    (or a prop that maps to it). We'll restore this by hand on
+    //    release; `removeProperty` would drop it.
+    //  * `computed` — the transform the browser is currently
+    //    applying, which folds in class-based transforms
+    //    (`rotate-1`, hover states, etc.) via the cascade. We prepend
+    //    the invert to it so the "invert" frame doesn't visually
+    //    lose them. Comes back as `matrix(...)` for any real
+    //    transform, `"none"` for none.
+    // The release then either restores `priorInline` or clears the
+    // property — the class-based part re-enters via the cascade
+    // automatically. In both cases the browser transitions
+    // `transform` from `composed` to the correct steady-state value.
+    const priorInline = element.style.transform;
+    const computed = window.getComputedStyle(element).transform;
+    const composed =
+      computed && computed !== "none" ? `${invert} ${computed}` : invert;
 
-      element.style.transform = composed;
+    element.style.transform = composed;
 
-      // Commit the invert as a discrete style change — no transition
-      // class is on the element yet, so the browser jumps to `composed`
-      // instantly. Reading `offsetHeight` forces the reflow. This is the
-      // "invert" frame of FLIP.
-      void element.offsetHeight;
+    // Commit the invert as a discrete style change — no transition
+    // class is on the element yet, so the browser jumps to `composed`
+    // instantly. Reading `offsetHeight` forces the reflow. This is the
+    // "invert" frame of FLIP.
+    void element.offsetHeight;
 
-      // Add the transition setup, then release to the base. The browser
-      // sees `style.transform` change from `composed` to `priorInline`
-      // (or to unset when there was no inline base — the class-based
-      // transform then re-applies via the cascade) and animates the
-      // property under the freshly-added transition rule.
-      element.classList.add(...transitionClasses);
-      if (priorInline) {
-        element.style.transform = priorInline;
-      } else {
-        element.style.removeProperty("transform");
-      }
+    // Add the transition setup, then release to the base. The browser
+    // sees `style.transform` change from `composed` to `priorInline`
+    // (or to unset when there was no inline base — the class-based
+    // transform then re-applies via the cascade) and animates the
+    // property under the freshly-added transition rule.
+    element.classList.add(...transitionClasses);
+    if (priorInline) {
+      element.style.transform = priorInline;
+    } else {
+      element.style.removeProperty("transform");
+    }
 
-      yield* awaitTransformEnd(element);
-      element.classList.remove(...transitionClasses);
-    }).pipe(Effect.forkIn(parentScope));
-  }) as unknown as Effect.Effect<void>;
+    yield* awaitTransformEnd(element);
+    element.classList.remove(...transitionClasses);
+  });
+  return Effect.asVoid(Effect.forkScoped(body));
 };
 
 /**
@@ -487,7 +485,7 @@ export const flipMovedSlots = (
     readonly key: string;
     readonly element: DOMElement;
   }>,
-): Effect.Effect<void> =>
+): Effect.Effect<void, never, Scope.Scope> =>
   Effect.gen(function* () {
     const move = yield* readMoveConfig();
     if (!move) return;
@@ -504,7 +502,7 @@ export const flipMovedSlots = (
   });
 
 /**
- * Fork the full slot-removal sequence into the parent scope:
+ * Fork the full slot-removal sequence:
  * 1. Close the slot's scope (interrupts any in-flight enter animation).
  * 2. Play the exit animation (if configured).
  * 3. Call `removeFromDom` to detach the element.
@@ -513,8 +511,10 @@ export const flipMovedSlots = (
  * DOM before their scopes are populated by addSlot; a slot removed in
  * that intermediate state has nothing to close.
  *
- * The Scope.Scope required by `Effect.scope` is stripped from the returned
- * signature; callers (removeSlot) always run inside a scope from reconcile.
+ * Forks into the ambient scope via `Effect.forkScoped` — the container
+ * scope when called from reconcile — so removeSlot returns right away
+ * and the exit continues even if a fresh slot re-uses the same key
+ * immediately, and so a container unmount interrupts everything.
  */
 export const forkSlotRemoval = (
   entry: {
@@ -522,23 +522,22 @@ export const forkSlotRemoval = (
     readonly scope: Scope.CloseableScope | null;
   },
   removeFromDom: () => void,
-): Effect.Effect<void> =>
-  Effect.gen(function* () {
-    const parentScope = yield* Effect.scope;
-    yield* Effect.gen(function* () {
-      if (entry.scope) {
-        yield* Scope.close(entry.scope, Exit.void);
+): Effect.Effect<void, never, Scope.Scope> => {
+  const body = Effect.gen(function* () {
+    if (entry.scope) {
+      yield* Scope.close(entry.scope, Exit.void);
+    }
+    if (entry.element instanceof HTMLElement) {
+      const resolved =
+        yield* readAnimation<Parameters<typeof runExitAnimation>[1]>();
+      if (resolved) {
+        yield* runExitAnimation(
+          Effect.succeed(entry.element),
+          resolved.animate,
+        );
       }
-      if (entry.element instanceof HTMLElement) {
-        const resolved =
-          yield* readAnimation<Parameters<typeof runExitAnimation>[1]>();
-        if (resolved) {
-          yield* runExitAnimation(
-            Effect.succeed(entry.element),
-            resolved.animate,
-          );
-        }
-      }
-      removeFromDom();
-    }).pipe(Effect.forkIn(parentScope));
-  }) as unknown as Effect.Effect<void>;
+    }
+    removeFromDom();
+  });
+  return Effect.asVoid(Effect.forkScoped(body));
+};

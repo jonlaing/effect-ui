@@ -135,7 +135,7 @@ const createClientControlCtx = (): IControlCtx<DOMElement> => {
 
     finalizeContainer: () => Effect.void,
 
-    removeSlot: (key: string): Effect.Effect<void> =>
+    removeSlot: (key: string): Effect.Effect<void, never, Scope.Scope> =>
       Effect.gen(function* () {
         const entry = slots.get(key);
         if (!entry) return;
@@ -183,7 +183,7 @@ const createClientControlCtx = (): IControlCtx<DOMElement> => {
     // Close the batch: measure each still-present slot's new rect,
     // fork the FLIP release for anything that moved. No-op when no
     // `move` config is provided by AnimationConfigCtx.
-    endSync: (): Effect.Effect<void> =>
+    endSync: (): Effect.Effect<void, never, Scope.Scope> =>
       Effect.gen(function* () {
         const before = beforeRects;
         beforeRects = null;
