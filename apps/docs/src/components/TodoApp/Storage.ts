@@ -88,16 +88,31 @@ export const StorageLive = Layer.succeed(
 );
 
 /**
- * No-op implementation — returns a plain signal seeded with the
- * defaults, and drops writes. Use for SSG (there's no `localStorage`
- * on the server anyway) or in tests where persistence isn't the
- * behavior under test.
+ * No-op implementation — returns a plain signal / array with no
+ * hydration data. Use for SSG (there's no `localStorage` on the
+ * server anyway) or in tests where persistence isn't the behavior
+ * under test.
+ *
+ * **Why `persistArray` returns EMPTY here, ignoring `defaults`:**
+ * on SSR, we have no idea what the client's actual `localStorage`
+ * contains — it could be the defaults, or user-modified state
+ * from a prior session, or empty (private window). If we seeded
+ * the SSR render with `defaults` and the client's real state
+ * differed, `each`'s keyed reconciliation would tear down and
+ * rebuild the list on hydration. Rendering empty on SSR is the
+ * honest signal: "I don't know your state yet; the client will
+ * fill this in." The trade-off is a brief empty-list flash before
+ * hydration — acceptable for a demo.
+ *
+ * (The scalar `persist` still seeds with `defaults` because
+ * scalars have no equivalent "empty" that a component can
+ * meaningfully render.)
  */
 export const StorageNoOp = Layer.succeed(
   Storage,
   Storage.of({
     persist: <T>(_key: string, defaults: T) => Signal.make<T>(defaults),
-    persistArray: <T>(_key: string, defaults: readonly T[]) =>
-      Signal.Array.make<T>(defaults),
+    persistArray: <T>(_key: string, _defaults: readonly T[]) =>
+      Signal.Array.make<T>([]),
   }),
 );
