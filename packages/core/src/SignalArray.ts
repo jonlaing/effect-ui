@@ -262,9 +262,7 @@ export const make = <T>(
         Effect.gen(function* () {
           const arr = yield* SubscriptionRef.get(ref);
           if (index < 0 || index >= arr.length) {
-            return yield* Effect.fail(
-              new OutOfBoundsError({ index, length: arr.length }),
-            );
+            return yield* new OutOfBoundsError({ index, length: arr.length });
           }
           arr[index] = item;
           yield* notify;
@@ -274,9 +272,7 @@ export const make = <T>(
         Effect.gen(function* () {
           const arr = yield* SubscriptionRef.get(ref);
           if (index < 0 || index >= arr.length) {
-            return yield* Effect.fail(
-              new OutOfBoundsError({ index, length: arr.length }),
-            );
+            return yield* new OutOfBoundsError({ index, length: arr.length });
           }
           arr[index] = f(arr[index]);
           yield* notify;

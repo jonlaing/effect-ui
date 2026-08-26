@@ -277,7 +277,7 @@ export const make = <K, V>(
         Effect.gen(function* () {
           const current = yield* SubscriptionRef.get(ref);
           if (!current.has(key)) {
-            return yield* Effect.fail(new KeyNotFoundError<K>({ key }));
+            return yield* new KeyNotFoundError<K>({ key });
           }
           const next = new Map(current);
           next.set(key, f(current.get(key) as V));
