@@ -49,7 +49,14 @@ const staxRoutes = Platform.toHttpRoutes(router, {
 });
 
 const httpApp = HttpRouter.empty.pipe(HttpRouter.concat(staxRoutes));
-const handler = HttpApp.toWebHandler(httpApp);
+
+// Dev-server SSR runs the same routes as SSG, so it needs the same
+// service layers — Storage on the server is a no-op, since there's
+// no real `localStorage` and pre-hydration renders don't persist.
+// `toWebHandlerLayer` peels those requirements off the HttpApp so
+// the resulting handler only needs `Scope`, which the runtime
+// supplies.
+const { handler } = HttpApp.toWebHandlerLayer(httpApp, layers);
 
 export async function render(request: Request): Promise<Response> {
   return handler(request);
