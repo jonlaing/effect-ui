@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { Plus } from "lucide-static";
 
-import { $, each, Signal } from "@stax-ui/dom";
+import { $, each, Readable, Signal } from "@stax-ui/dom";
 
 import { Storage } from "./Storage.js";
 import { TodoItem, type Todo } from "./TodoItem.js";
@@ -49,6 +49,18 @@ export const TodoApp = () =>
         yield* draft.set("");
       });
 
+    const toggle = (id: string) =>
+      todos.update((list) =>
+        list.map((t) => (t.id === id ? { ...t, done: !t.done } : t)),
+      );
+
+    const remove = (id: string) =>
+      todos.update((list) => list.filter((t) => t.id !== id));
+
+    const orderedTodos = Readable.map(todos, (list) =>
+      [...list].sort((a, b) => Number(a.done) - Number(b.done)),
+    );
+
     return yield* $.div(
       { class: "flex flex-col gap-3 w-full max-w-sm" },
       $.form(
@@ -88,16 +100,15 @@ export const TodoApp = () =>
           }),
         ),
       ),
-      $.ul(
-        { class: "flex flex-col" },
-        each(todos, {
-          key: (t) => t.id,
-          render: (item) =>
-            Effect.gen(function* () {
-              const t = yield* item.get;
-              return yield* TodoItem({ id: t.id, todos });
-            }),
-        }),
-      ),
+      each(orderedTodos, {
+        key: (t) => t.id,
+        container: () => $.ul({ class: "flex flex-col" }),
+        render: (item) =>
+          TodoItem({
+            todo: item,
+            onToggle: toggle,
+            onRemove: remove,
+          }),
+      }),
     );
   });

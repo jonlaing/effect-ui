@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { Trash2 } from "lucide-static";
 
-import { $, Readable, Signal } from "@stax-ui/dom";
+import { $, Readable } from "@stax-ui/dom";
 
 export interface Todo {
   readonly id: string;
@@ -9,42 +9,29 @@ export interface Todo {
   readonly done: boolean;
 }
 
-/**
- * A single row: checkbox, text, delete button. Doesn't own state —
- * receives the parent's `Signal<Todo[]>` and the row's own id, and
- * mutates by writing an updated list back.
- */
 export const TodoItem = (props: {
-  readonly id: string;
-  readonly todos: Signal.Signal<readonly Todo[]>;
+  readonly todo: Readable.Reactive<Todo>;
+  readonly onToggle: (id: string) => Effect.Effect<void, never, never>;
+  readonly onRemove: (id: string) => Effect.Effect<void, never, never>;
 }) =>
   Effect.gen(function* () {
-    const toggle = () =>
-      props.todos.update((list) =>
-        list.map((t) => (t.id === props.id ? { ...t, done: !t.done } : t)),
-      );
+    const { todo, onToggle, onRemove } = props;
 
-    const remove = () =>
-      props.todos.update((list) => list.filter((t) => t.id !== props.id));
-
-    // Read the row's current data reactively — the parent's list
-    // changes, and this Readable emits the new row.
-    const row = props.todos.pipe(
-      Readable.map((list) => list.find((t) => t.id === props.id)),
-    );
+    const row = Readable.normalize(todo);
+    const id = (yield* row.get).id;
 
     return yield* $.li(
       {
         class: [
           "flex items-center gap-3 py-2 px-3 rounded-md",
-          "hover:bg-base-200/60 transition-colors",
+          "hover:bg-base-200/60 transition-all",
         ],
       },
       $.input({
         type: "checkbox",
         class: "cursor-pointer accent-primary",
-        checked: row.pipe(Readable.map((r) => r?.done ?? false)),
-        onChange: () => toggle(),
+        checked: Readable.map(row, (r) => r?.done ?? false),
+        onChange: () => onToggle(id),
       }),
       $.span(
         {
@@ -53,11 +40,9 @@ export const TodoItem = (props: {
             "data-[done=true]:line-through data-[done=true]:opacity-50",
             "transition-opacity",
           ],
-          "data-done": row.pipe(
-            Readable.map((r) => (r?.done ? "true" : "false")),
-          ),
+          "data-done": Readable.map(row, (r) => (r?.done ? "true" : "false")),
         },
-        row.pipe(Readable.map((r) => r?.text ?? "")),
+        Readable.map(row, (r) => r?.text ?? ""),
       ),
       $.button(
         {
@@ -68,7 +53,7 @@ export const TodoItem = (props: {
             "cursor-pointer text-error",
           ],
           "aria-label": "Delete todo",
-          onClick: () => remove(),
+          onClick: () => onRemove(id),
         },
         $.span({
           class: "[&_svg]:w-4 [&_svg]:h-4 block",
