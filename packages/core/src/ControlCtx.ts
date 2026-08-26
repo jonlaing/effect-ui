@@ -161,11 +161,14 @@ export interface IControlCtx<A> {
   /**
    * Subscribe to a Readable and run handler on each change.
    * Noop in SSR, forks stream subscription in client/hydration.
+   *
+   * Requires `Scope.Scope` — Client/Hydration modes fork the stream
+   * into the ambient scope so container unmount cancels it.
    */
   readonly subscribe: <V, E, R>(
     readable: Readable.Readable<V>,
     handler: (value: V) => Effect.Effect<void, E, R>,
-  ) => Effect.Effect<void, E, R>;
+  ) => Effect.Effect<void, E, R | Scope.Scope>;
 }
 
 // -----------------------------------------------------------------------------
