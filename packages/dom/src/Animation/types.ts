@@ -226,4 +226,68 @@ export interface ListAnimationOptions extends AnimationOptions {
    * - StaggerFunction: Custom function to calculate delay per item
    */
   stagger?: number | StaggerFunction;
+
+  /**
+   * Reorder (FLIP) animation config. When set, `each` animates items
+   * that change position within a reactive update — the classic
+   * "toggle-and-sort" case where a row slides to its new slot instead
+   * of teleporting.
+   *
+   * Two fields, mirroring the enter/exit split of `enterFrom`/`enter`:
+   *
+   * - `transform`: given the delta between the element's old and new
+   *   positions, return the CSS `transform` value that puts the element
+   *   *back* at its old spot. Applied inline, prepended to any
+   *   existing computed transform so class-based transforms are preserved.
+   *   Use one of the built-in helpers (`Animation.moveTranslate3d`, etc.)
+   *   or supply your own function for exotic effects (rotation-on-move,
+   *   overshoot, etc.).
+   * - `transition`: CSS class(es) that carry the `transition-*` /
+   *   `duration-*` / `easing` for the release. Matches the enter/exit
+   *   convention — a class rather than an inline transition string so
+   *   Tailwind / your design system stays in charge of timings.
+   *
+   * @example
+   * ```ts
+   * move: {
+   *   transform: Animation.moveTranslate3d,
+   *   transition: "transition-transform duration-300 ease-out",
+   * }
+   * ```
+   *
+   * For clean composition with `enter` / `exit` in the same batch, keep
+   * the move `duration` / `easing` matched to the enter/exit ones — the
+   * two animations sum layout-wise, and mismatched timings drift out of
+   * phase mid-play.
+   */
+  move?: MoveAnimation;
+}
+
+/**
+ * FLIP reorder animation config. See {@link ListAnimationOptions.move}.
+ */
+export interface MoveAnimation {
+  /**
+   * Return the CSS `transform` value that inverts an element from its
+   * new position back to its old one. Called once per moved element
+   * per batch, with the delta the reconciler measured.
+   */
+  readonly transform: (delta: MoveDelta) => string;
+
+  /**
+   * CSS class(es) applied for the release. Must include the
+   * `transition-*` / `duration-*` / `easing` setup — same convention
+   * as the `enter` / `exit` classes.
+   */
+  readonly transition: string;
+}
+
+/**
+ * Delta between an element's old and new positions within its container,
+ * measured in pixels. Positive `y` means the element moved *down*, so
+ * the inverting transform should translate upward by the same amount.
+ */
+export interface MoveDelta {
+  readonly x: number;
+  readonly y: number;
 }

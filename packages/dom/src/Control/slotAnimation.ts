@@ -25,10 +25,13 @@ import {
   _register,
   type AnimationGroup,
 } from "../Animation/groups.js";
+import { prefersReducedMotion } from "../Animation/helpers.js";
 import {
   runEnterAnimation,
   runExitAnimation,
   type ListAnimationOptions,
+  type MoveAnimation,
+  type MoveDelta,
   type StaggerFunction,
 } from "../Animation/index.js";
 import { AnimationConfigCtx } from "./AnimationConfigCtx.js";
@@ -58,8 +61,7 @@ const readAnimation = <T>(): Effect.Effect<ResolvedAnimation<T> | undefined> =>
     const config = Option.getOrUndefined(configOpt);
     if (!config) return undefined;
     const animate = (config.list ?? config.single) as
-      | AnimateWithGroup<T>
-      | undefined;
+      AnimateWithGroup<T> | undefined;
     if (!animate) return undefined;
     return { animate, intro: config.intro === true };
   });
@@ -253,6 +255,251 @@ const waitForConnection = (element: HTMLElement): Effect.Effect<void> =>
   Effect.gen(function* () {
     for (let i = 0; i < 32 && !element.isConnected; i++) {
       yield* yieldMicrotask;
+    }
+  });
+
+/**
+ * Read the FLIP `move` config off the ambient AnimationConfigCtx, if any.
+ * Same lazy-lookup pattern as `readAnimation` — nested contexts see the
+ * config their parent provided.
+ */
+const readMoveConfig = (): Effect.Effect<MoveAnimation | undefined> =>
+  Effect.gen(function* () {
+    const configOpt = yield* Effect.serviceOption(AnimationConfigCtx);
+    const config = Option.getOrUndefined(configOpt);
+    return config?.list?.move;
+  });
+
+/**
+ * FLIP measurement result for a single slot. `key` is copied so the
+ * caller can look the slot back up in its own map after DOM mutations.
+ */
+export interface SlotRectSnapshot {
+  readonly key: string;
+  readonly rect: DOMRect;
+}
+
+/**
+ * Capture bounding rects for a set of slot entries. Called by
+ * `ClientControlCtx.beginSync` before any batch mutation runs, so
+ * `endSync` can compute per-slot deltas against a pre-mutation view of
+ * the container.
+ *
+ * SVG-only slots are skipped — the FLIP release path applies a CSS
+ * transform via `element.style`, which doesn't compose cleanly with
+ * SVG element styling (attribute-based `transform` etc.).
+ */
+export const captureSlotRects = (
+  entries: Iterable<{ readonly key: string; readonly element: DOMElement }>,
+): Map<string, DOMRect> => {
+  const rects = new Map<string, DOMRect>();
+  for (const entry of entries) {
+    if (entry.element instanceof HTMLElement) {
+      rects.set(entry.key, entry.element.getBoundingClientRect());
+    }
+  }
+  return rects;
+};
+
+/**
+ * Compute the delta from a snapshot rect to the element's current rect.
+ * `x` / `y` are (old − new) so translating by (dx, dy) puts the element
+ * back at its old spot — the "invert" step of FLIP.
+ *
+ * Returns undefined when the delta is zero (below a 0.5px threshold to
+ * ignore sub-pixel jitter), so callers can skip the whole FLIP dance
+ * for elements that didn't actually move.
+ */
+export const computeMoveDelta = (
+  before: DOMRect,
+  after: DOMRect,
+): MoveDelta | undefined => {
+  const dx = before.left - after.left;
+  const dy = before.top - after.top;
+  if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return undefined;
+  return { x: dx, y: dy };
+};
+
+/**
+ * Fork the FLIP release for a single moved element.
+ *
+ * The sequence:
+ * 1. Read the element's current computed `transform` so any class-based
+ *    transform (Tailwind `rotate-[-1deg]`, hover states, etc.) survives
+ *    the release — we compose the invert *on top of* it rather than
+ *    clobbering `style.transform`.
+ * 2. Set `style.transform` to the invert value composed with the base,
+ *    parking the element visually at its old spot.
+ * 3. Force reflow so the browser commits the invert without transition.
+ * 4. Add the transition class from the config.
+ * 5. Clear `style.transform` — this triggers the CSS transition back to
+ *    the base (class-only) value.
+ * 6. Wait for `transitionend` (or a bounded timeout, matching the enter
+ *    /exit lifecycle) and remove the transition class.
+ *
+ * Reduced-motion users skip the animation and just get the layout jump.
+ *
+ * Fires into the parent scope so it survives past the reconcile call
+ * that scheduled it. If the container is unmounted mid-play, its scope
+ * closes and the fork is interrupted.
+ */
+export const forkSlotMove = (
+  element: DOMElement,
+  delta: MoveDelta,
+  move: MoveAnimation,
+): Effect.Effect<void> => {
+  if (!(element instanceof HTMLElement)) return Effect.void;
+  return Effect.gen(function* () {
+    const parentScope = yield* Effect.scope;
+    yield* Effect.gen(function* () {
+      if (prefersReducedMotion()) return;
+
+      const transitionClasses = move.transition
+        .split(/\s+/)
+        .filter((c) => c.length > 0);
+      const invert = move.transform(delta);
+
+      // Preserve any transform the element already had. Two sources
+      // matter and they compose differently:
+      //  * `priorInline` — a value the user set via `style.transform`
+      //    (or a prop that maps to it). We'll restore this by hand on
+      //    release; `removeProperty` would drop it.
+      //  * `computed` — the transform the browser is currently
+      //    applying, which folds in class-based transforms
+      //    (`rotate-1`, hover states, etc.) via the cascade. We prepend
+      //    the invert to it so the "invert" frame doesn't visually
+      //    lose them. Comes back as `matrix(...)` for any real
+      //    transform, `"none"` for none.
+      // The release then either restores `priorInline` or clears the
+      // property — the class-based part re-enters via the cascade
+      // automatically. In both cases the browser transitions
+      // `transform` from `composed` to the correct steady-state value.
+      const priorInline = element.style.transform;
+      const computed = window.getComputedStyle(element).transform;
+      const composed =
+        computed && computed !== "none" ? `${invert} ${computed}` : invert;
+
+      element.style.transform = composed;
+
+      // Commit the invert as a discrete style change — no transition
+      // class is on the element yet, so the browser jumps to `composed`
+      // instantly. Reading `offsetHeight` forces the reflow. This is the
+      // "invert" frame of FLIP.
+      void element.offsetHeight;
+
+      // Add the transition setup, then release to the base. The browser
+      // sees `style.transform` change from `composed` to `priorInline`
+      // (or to unset when there was no inline base — the class-based
+      // transform then re-applies via the cascade) and animates the
+      // property under the freshly-added transition rule.
+      element.classList.add(...transitionClasses);
+      if (priorInline) {
+        element.style.transform = priorInline;
+      } else {
+        element.style.removeProperty("transform");
+      }
+
+      yield* awaitTransformEnd(element);
+      element.classList.remove(...transitionClasses);
+    }).pipe(Effect.forkIn(parentScope));
+  }) as unknown as Effect.Effect<void>;
+};
+
+/**
+ * Wait for a `transitionend` for the `transform` property, with a
+ * bounded timeout so a missed event (transition never fires because
+ * the property didn't change, another selector cancelled it, etc.)
+ * doesn't leak the transition class on the element forever.
+ *
+ * Duration is read from computed style — `transition-duration` +
+ * `transition-delay`, whichever transform-column is present — and a
+ * 100ms safety margin is added so we don't beat the event by a hair.
+ * If the computed duration is zero we resolve on the next microtask.
+ */
+const awaitTransformEnd = (element: HTMLElement): Effect.Effect<void> =>
+  Effect.async<void>((resume) => {
+    const style = window.getComputedStyle(element);
+    const durationMs = maxTransitionMs(
+      style.transitionProperty,
+      style.transitionDuration,
+      style.transitionDelay,
+    );
+    if (durationMs <= 0) {
+      queueMicrotask(() => resume(Effect.void));
+      return;
+    }
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      element.removeEventListener("transitionend", onEnd);
+      clearTimeout(timeoutId);
+      resume(Effect.void);
+    };
+    const onEnd = (e: TransitionEvent) => {
+      if (e.propertyName === "transform" && e.target === element) finish();
+    };
+    element.addEventListener("transitionend", onEnd);
+    const timeoutId = setTimeout(finish, durationMs + 100);
+    return Effect.sync(() => {
+      element.removeEventListener("transitionend", onEnd);
+      clearTimeout(timeoutId);
+    });
+  });
+
+/**
+ * Parse the transition columns for the `transform` property and return
+ * total duration in ms (duration + delay). If `transition-property` is
+ * `all` or doesn't list `transform`, we fall back to the first entry.
+ */
+const maxTransitionMs = (
+  properties: string,
+  durations: string,
+  delays: string,
+): number => {
+  const props = properties.split(",").map((s) => s.trim());
+  const durs = durations.split(",").map((s) => s.trim());
+  const dels = delays.split(",").map((s) => s.trim());
+  const parseMs = (v: string): number => {
+    if (!v) return 0;
+    const n = parseFloat(v);
+    if (Number.isNaN(n)) return 0;
+    return v.endsWith("ms") ? n : n * 1000;
+  };
+  let column = props.findIndex((p) => p === "transform" || p === "all");
+  if (column < 0) column = 0;
+  const dur = parseMs(durs[column] ?? durs[0] ?? "");
+  const del = parseMs(dels[column] ?? dels[0] ?? "");
+  return dur + del;
+};
+
+/**
+ * Full end-of-batch FLIP orchestrator. Given the pre-batch rect
+ * snapshot (from {@link captureSlotRects}) and the current live slots,
+ * compute deltas for each still-present slot and fork the release for
+ * any that moved. No-op when no `move` config is provided.
+ *
+ * Called from `ClientControlCtx.endSync`.
+ */
+export const flipMovedSlots = (
+  before: Map<string, DOMRect>,
+  currentSlots: Iterable<{
+    readonly key: string;
+    readonly element: DOMElement;
+  }>,
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    const move = yield* readMoveConfig();
+    if (!move) return;
+
+    for (const entry of currentSlots) {
+      const oldRect = before.get(entry.key);
+      if (!oldRect) continue; // Entered this batch — enter anim handles it
+      if (!(entry.element instanceof HTMLElement)) continue;
+      const newRect = entry.element.getBoundingClientRect();
+      const delta = computeMoveDelta(oldRect, newRect);
+      if (!delta) continue;
+      yield* forkSlotMove(entry.element, delta, move);
     }
   });
 

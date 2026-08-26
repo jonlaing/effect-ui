@@ -18,6 +18,8 @@ import * as Element from "../Element/index.js";
 import { DOMRenderer } from "../Render/DOMRenderer.js";
 import {
   applyPreInsertEnterFrom,
+  captureSlotRects,
+  flipMovedSlots,
   forkSlotEnter,
   forkSlotRemoval,
 } from "./slotAnimation.js";
@@ -38,6 +40,10 @@ const createClientControlCtx = (): IControlCtx<DOMElement> => {
   // Fresh state per context instance
   const slots = new Map<string, DOMSlotEntry>();
   let containerElement: DOMElement | null = null;
+  // Rect snapshot captured by beginSync so endSync can compute FLIP
+  // deltas per slot. Null between batches. See slotAnimation.ts for the
+  // release mechanics.
+  let beforeRects: Map<string, DOMRect> | null = null;
 
   const defaultContainer: Element.Element<DOMElement, never, never> =
     Effect.gen(function* () {
@@ -162,6 +168,27 @@ const createClientControlCtx = (): IControlCtx<DOMElement> => {
 
         const refChild = children[toIndex] ?? null;
         containerElement.insertBefore(entry.element, refChild);
+      }),
+
+    // Snapshot every current slot's bounding rect BEFORE removes/moves
+    // run this batch. `endSync` uses this to compute per-slot deltas
+    // for the FLIP release. Elements that get added this batch have no
+    // pre-batch rect and so are excluded from FLIP — their enter
+    // animation owns them.
+    beginSync: (): Effect.Effect<void> =>
+      Effect.sync(() => {
+        beforeRects = captureSlotRects(slots.values());
+      }),
+
+    // Close the batch: measure each still-present slot's new rect,
+    // fork the FLIP release for anything that moved. No-op when no
+    // `move` config is provided by AnimationConfigCtx.
+    endSync: (): Effect.Effect<void> =>
+      Effect.gen(function* () {
+        const before = beforeRects;
+        beforeRects = null;
+        if (!before) return;
+        yield* flipMovedSlots(before, slots.values());
       }),
 
     subscribe: subscribeReconcile,

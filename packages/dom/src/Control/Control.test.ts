@@ -293,6 +293,277 @@ describe("Control", () => {
     );
   });
 
+  // FLIP reorder animation. jsdom has no layout engine, so we stub
+  // `getBoundingClientRect` to report position based on each row's
+  // current DOM index — the reorder itself is what makes rects change,
+  // which is exactly what FLIP measures. That lets the reconcile path
+  // exercise beginSync → mutate → endSync end-to-end.
+  describe("each — FLIP reorder", () => {
+    const ROW_HEIGHT = 40;
+
+    /**
+     * Stub `getBoundingClientRect` on every element via prototype so
+     * children of a rendered `each` container get index-based rects
+     * without per-element setup. Cleaned up between tests via
+     * `beforeEach`'s `innerHTML = ""` — the prototype patch itself
+     * survives, but no tests care about real rects.
+     */
+    const stubIndexedRects = () => {
+      HTMLElement.prototype.getBoundingClientRect = function () {
+        const parent = this.parentElement;
+        const idx = parent ? Array.from(parent.children).indexOf(this) : 0;
+        return {
+          top: idx * ROW_HEIGHT,
+          left: 0,
+          bottom: (idx + 1) * ROW_HEIGHT,
+          right: 100,
+          width: 100,
+          height: ROW_HEIGHT,
+          x: 0,
+          y: idx * ROW_HEIGHT,
+          toJSON: () => ({}),
+        } as DOMRect;
+      };
+    };
+
+    beforeEach(() => {
+      stubIndexedRects();
+    });
+
+    it.scopedLive("invokes move.transform with the layout delta", () =>
+      Effect.gen(function* () {
+        const deltas: Array<{ x: number; y: number; from: string }> = [];
+        const items = yield* Signal.make([
+          { id: "1", name: "Alice" },
+          { id: "2", name: "Bob" },
+          { id: "3", name: "Charlie" },
+        ]);
+
+        const el = yield* each(items, {
+          key: (item) => item.id,
+          render: (item, _index) =>
+            $.li(
+              { "data-id": Readable.map(item, (i) => i.id) },
+              $.of(Readable.map(item, (i) => i.name)),
+            ),
+          animate: {
+            move: {
+              transform: (d) => {
+                // Anchor the delta to the row's current data-id so the
+                // assertion can name-check who moved.
+                const row = document.querySelector(
+                  `[style*="translate"]`,
+                ) as HTMLElement | null;
+                deltas.push({
+                  x: d.x,
+                  y: d.y,
+                  from: row?.dataset.id ?? "?",
+                });
+                return `translateY(${d.y}px)`;
+              },
+              transition: "transition-transform",
+            },
+          },
+        });
+
+        // Anchor the container into the document so children's parent
+        // walk terminates at the container (rect stub reads parent).
+        document.body.appendChild(el);
+
+        yield* Effect.sleep("20 millis");
+
+        // Reverse: [1, 2, 3] → [3, 2, 1]. Row "1" moves down 2 slots
+        // (dy = -80), row "3" moves up 2 slots (dy = +80), row "2"
+        // stays put.
+        yield* items.set([
+          { id: "3", name: "Charlie" },
+          { id: "2", name: "Bob" },
+          { id: "1", name: "Alice" },
+        ]);
+        yield* Effect.sleep("30 millis");
+
+        // Row "2" was stable → no invert. Rows "1" and "3" each moved
+        // by 2 * ROW_HEIGHT (in opposite directions).
+        expect(deltas.length).toBe(2);
+        const ys = deltas.map((d) => d.y).sort((a, b) => a - b);
+        expect(ys).toEqual([-2 * ROW_HEIGHT, 2 * ROW_HEIGHT]);
+      }).pipe(Effect.provide(TestLayer)),
+    );
+
+    it.scopedLive("excludes newly-entered items from FLIP", () =>
+      Effect.gen(function* () {
+        const called: Array<{ x: number; y: number }> = [];
+        const items = yield* Signal.make([
+          { id: "1", name: "Alice" },
+          { id: "2", name: "Bob" },
+        ]);
+
+        const el = yield* each(items, {
+          key: (item) => item.id,
+          render: (item, _index) =>
+            $.li({}, $.of(Readable.map(item, (i) => i.name))),
+          animate: {
+            move: {
+              transform: (d) => {
+                called.push({ x: d.x, y: d.y });
+                return `translateY(${d.y}px)`;
+              },
+              transition: "transition-transform",
+            },
+          },
+        });
+        document.body.appendChild(el);
+
+        yield* Effect.sleep("20 millis");
+
+        // Insert a new row at index 0. Existing rows shift down by
+        // ROW_HEIGHT; the new row has no pre-batch rect so it must
+        // not be FLIP'd.
+        yield* items.set([
+          { id: "0", name: "Zed" },
+          { id: "1", name: "Alice" },
+          { id: "2", name: "Bob" },
+        ]);
+        yield* Effect.sleep("30 millis");
+
+        // Rows "1" and "2" shifted DOWN by one row; row "0" is new and
+        // excluded. Delta = old - new, so a downward shift gives a
+        // negative dy — the invert translate then puts them visually
+        // back UP at their old spot, and the release transitions them
+        // down to their new one.
+        expect(called.length).toBe(2);
+        expect(called.every((d) => d.y === -ROW_HEIGHT)).toBe(true);
+      }).pipe(Effect.provide(TestLayer)),
+    );
+
+    it.scopedLive(
+      "leaves style.transform untouched when no move config is provided",
+      () =>
+        Effect.gen(function* () {
+          const items = yield* Signal.make([
+            { id: "1", name: "Alice" },
+            { id: "2", name: "Bob" },
+          ]);
+
+          const el = yield* each(items, {
+            key: (item) => item.id,
+            render: (item, _index) =>
+              $.li({}, $.of(Readable.map(item, (i) => i.name))),
+          });
+          document.body.appendChild(el);
+
+          yield* Effect.sleep("20 millis");
+          yield* items.set([
+            { id: "2", name: "Bob" },
+            { id: "1", name: "Alice" },
+          ]);
+          yield* Effect.sleep("30 millis");
+
+          // Nothing wrote to style.transform on either row.
+          for (const child of Array.from(el.children)) {
+            expect((child as HTMLElement).style.transform).toBe("");
+          }
+        }).pipe(Effect.provide(TestLayer)),
+    );
+
+    it.scopedLive("does not FLIP when items are unchanged", () =>
+      Effect.gen(function* () {
+        let calls = 0;
+        const items = yield* Signal.make([
+          { id: "1", name: "Alice" },
+          { id: "2", name: "Bob" },
+        ]);
+
+        const el = yield* each(items, {
+          key: (item) => item.id,
+          render: (item, _index) =>
+            $.li({}, $.of(Readable.map(item, (i) => i.name))),
+          animate: {
+            move: {
+              transform: (d) => {
+                calls++;
+                return `translateY(${d.y}px)`;
+              },
+              transition: "transition-transform",
+            },
+          },
+        });
+        document.body.appendChild(el);
+
+        yield* Effect.sleep("20 millis");
+
+        // Same shape, same order — no-op reconcile.
+        yield* items.set([
+          { id: "1", name: "Alice" },
+          { id: "2", name: "Bob" },
+        ]);
+        yield* Effect.sleep("30 millis");
+
+        expect(calls).toBe(0);
+      }).pipe(Effect.provide(TestLayer)),
+    );
+
+    it.scopedLive(
+      "restores a prior inline `style.transform` after the release",
+      () =>
+        Effect.gen(function* () {
+          const items = yield* Signal.make([
+            { id: "1", name: "Alice" },
+            { id: "2", name: "Bob" },
+          ]);
+
+          const el = yield* each(items, {
+            key: (item) => item.id,
+            render: (item, _index) =>
+              $.li(
+                { "data-id": Readable.map(item, (i) => i.id) },
+                $.of(Readable.map(item, (i) => i.name)),
+              ),
+            animate: {
+              move: {
+                transform: (d) => `translateY(${d.y}px)`,
+                transition: "transition-transform",
+              },
+            },
+          });
+          document.body.appendChild(el);
+
+          // Pre-decorate row "1" with an inline transform the user
+          // set themselves. FLIP must leave this intact after release.
+          const rowOne = el.querySelector(
+            '[data-id="1"]',
+          ) as HTMLElement | null;
+          if (!rowOne) throw new Error("row 1 not found");
+          rowOne.style.transform = "rotate(3deg)";
+
+          yield* Effect.sleep("20 millis");
+          yield* items.set([
+            { id: "2", name: "Bob" },
+            { id: "1", name: "Alice" },
+          ]);
+          // jsdom has no CSS transitions, so awaitTransformEnd resolves
+          // on the next microtask — a small sleep is enough for the
+          // release to finish and cleanup to run.
+          yield* Effect.sleep("30 millis");
+
+          expect(rowOne.style.transform).toBe("rotate(3deg)");
+        }).pipe(Effect.provide(TestLayer)),
+    );
+
+    it.scopedLive("uses helpers via Animation namespace", () =>
+      Effect.gen(function* () {
+        const invert = Animation.moveTranslate3d({ x: 5, y: -7 });
+        expect(invert).toBe("translate3d(5px, -7px, 0)");
+        expect(Animation.moveTranslateY({ x: 5, y: -7 })).toBe(
+          "translateY(-7px)",
+        );
+        expect(Animation.moveTranslate({ x: 5, y: -7 })).toBe(
+          "translate(5px, -7px)",
+        );
+      }).pipe(Effect.provide(TestLayer)),
+    );
+  });
+
   describe("nested control functions", () => {
     it.scopedLive("should handle when inside when", () =>
       Effect.gen(function* () {

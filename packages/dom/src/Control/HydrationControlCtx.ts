@@ -231,6 +231,9 @@ const createClientLikeControlCtx = (
         containerElement.insertBefore(entry.element, refChild);
       }),
 
+    beginSync: (): Effect.Effect<void> => Effect.void,
+    endSync: (): Effect.Effect<void> => Effect.void,
+
     subscribe: subscribeReconcile,
   };
 
@@ -409,6 +412,9 @@ const createHydrationControlCtx = (
         const refChild = containerChildren[toIndex] ?? null;
         containerElement.insertBefore(entry.element, refChild);
       }),
+
+    beginSync: (): Effect.Effect<void> => Effect.void,
+    endSync: (): Effect.Effect<void> => Effect.void,
 
     subscribe: subscribeReconcile,
   };
