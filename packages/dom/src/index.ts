@@ -46,6 +46,7 @@ export type {
   Children,
   ClassItem,
   ClassValue,
+  EventHandler,
   PermissiveChildren,
 } from "./Element/index.js";
 
