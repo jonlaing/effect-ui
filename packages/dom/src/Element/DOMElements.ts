@@ -553,7 +553,17 @@ const applyAttribute = <A extends HTMLElement | SVGElement>(
     return Core.bindAttribute(el, key, value as Readable.Readable<unknown>);
   }
   if (typeof value === "boolean") {
-    return value ? Core.setAttribute(el, key, "") : el; // Don't set false boolean attributes
+    // HTML boolean-attribute semantics (`disabled`, `checked`, etc.):
+    // presence-only — `true` sets an empty string, `false` removes the
+    // attribute. For any other attribute — notably `data-*` and
+    // `aria-*` — a boolean value should stringify to `"true"` /
+    // `"false"`. ARIA states are specified that way, and `data-*`
+    // attributes are typically read as strings by CSS selectors and
+    // JS consumers.
+    if (BOOLEAN_ATTRIBUTES.has(key)) {
+      return value ? Core.setAttribute(el, key, "") : el;
+    }
+    return Core.setAttribute(el, key, String(value));
   }
   return Core.setAttribute(el, key, String(value));
 };

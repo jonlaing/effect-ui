@@ -782,5 +782,42 @@ describe("DOMElements", () => {
         expect(el.getAttribute("aria-expanded")).toBe("false");
       }).pipe(Effect.provide(TestLayer)),
     );
+
+    it.scopedLive(
+      "should stringify boolean data-* values to 'true' / 'false'",
+      () =>
+        Effect.gen(function* () {
+          const el = yield* div({
+            "data-active": true,
+            "data-hidden": false,
+          });
+          expect(el.getAttribute("data-active")).toBe("true");
+          expect(el.getAttribute("data-hidden")).toBe("false");
+        }).pipe(Effect.provide(TestLayer)),
+    );
+
+    it.scopedLive(
+      "should stringify boolean aria-* values to 'true' / 'false'",
+      () =>
+        Effect.gen(function* () {
+          const el = yield* button({
+            "aria-expanded": true,
+            "aria-pressed": false,
+          });
+          expect(el.getAttribute("aria-expanded")).toBe("true");
+          expect(el.getAttribute("aria-pressed")).toBe("false");
+        }).pipe(Effect.provide(TestLayer)),
+    );
+
+    it.scopedLive(
+      "should preserve HTML boolean-attribute semantics for `disabled` / `checked` / etc.",
+      () =>
+        Effect.gen(function* () {
+          const on = yield* button({ disabled: true });
+          const off = yield* button({ disabled: false });
+          expect(on.getAttribute("disabled")).toBe(""); // present, empty
+          expect(off.hasAttribute("disabled")).toBe(false); // absent
+        }).pipe(Effect.provide(TestLayer)),
+    );
   });
 });
