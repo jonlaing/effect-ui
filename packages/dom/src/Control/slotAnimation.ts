@@ -377,19 +377,29 @@ export const forkSlotMove = (
     const composed =
       computed && computed !== "none" ? `${invert} ${computed}` : invert;
 
+    // Set the invert. No transition rule is on the element yet, so
+    // the browser jumps to `composed` instantly for the invert frame.
     element.style.transform = composed;
 
-    // Commit the invert as a discrete style change — no transition
-    // class is on the element yet, so the browser jumps to `composed`
-    // instantly. Reading `offsetHeight` forces the reflow. This is the
-    // "invert" frame of FLIP.
-    void element.offsetHeight;
+    // Wait for two `requestAnimationFrame` ticks before adding the
+    // transition class and clearing the invert. One rAF only fires
+    // *before* the next paint, so any style changes inside a
+    // single-rAF callback are batched into the SAME paint as the
+    // invert — the browser never actually renders the invert state,
+    // sees no change on the transform property between painted
+    // frames, and skips the transition (visible as a snap). Double
+    // rAF guarantees a frame paints with `transform: composed` in
+    // between, so the second callback's `removeProperty` sits
+    // against a real "previously-used" invert value and the
+    // transition rule interpolates from there. Same idea most
+    // FLIP libraries land on after chasing the same bug.
+    yield* waitForPaint;
+    yield* waitForPaint;
 
-    // Add the transition setup, then release to the base. The browser
-    // sees `style.transform` change from `composed` to `priorInline`
-    // (or to unset when there was no inline base — the class-based
-    // transform then re-applies via the cascade) and animates the
-    // property under the freshly-added transition rule.
+    // Add the transition rule and release. Browser sees
+    // `transform: composed` in the previous painted frame,
+    // `transform: <base>` now, with `transition-transform` active
+    // → interpolates over the configured duration.
     element.classList.add(...transitionClasses);
     if (priorInline) {
       element.style.transform = priorInline;

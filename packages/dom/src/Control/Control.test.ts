@@ -541,10 +541,10 @@ describe("Control", () => {
             { id: "2", name: "Bob" },
             { id: "1", name: "Alice" },
           ]);
-          // jsdom has no CSS transitions, so awaitTransformEnd resolves
-          // on the next microtask — a small sleep is enough for the
-          // release to finish and cleanup to run.
-          yield* Effect.sleep("30 millis");
+          // Wait long enough for the double-rAF (jsdom pumps rAF via
+          // setTimeout(16), so two ticks are ~32ms), the release, and
+          // the microtask-resolved `awaitTransformEnd` cleanup.
+          yield* Effect.sleep("100 millis");
 
           expect(rowOne.style.transform).toBe("rotate(3deg)");
         }).pipe(Effect.provide(TestLayer)),

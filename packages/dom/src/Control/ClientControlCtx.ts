@@ -161,7 +161,20 @@ const createClientControlCtx = (): IControlCtx<DOMElement> => {
         const entry = slots.get(key);
         if (!entry || !containerElement) return;
 
-        const children = Array.from(containerElement.children);
+        // Filter DOM children down to active slots — exiting rows are
+        // still in the DOM while their exit animation plays, but they
+        // were removed from the `slots` map by `removeSlot`. Treating
+        // them as siblings for index math would shove them around
+        // (typically off the end of the DOM) before their exit
+        // finishes, producing a visible "flash to the wrong spot"
+        // before the fade. Filtering makes the exiting row hold its
+        // position while the exit collapses it in place.
+        const active = new Set<Element>(
+          Array.from(slots.values()).map((e) => e.element),
+        );
+        const children = Array.from(containerElement.children).filter((c) =>
+          active.has(c),
+        );
         const currentIndex = children.indexOf(entry.element);
 
         if (currentIndex === toIndex) return;
