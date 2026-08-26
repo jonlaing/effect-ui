@@ -36,6 +36,12 @@ yield* todos.removeAt(index);
 yield* todos.remove(specificItem);  // By reference
 yield* todos.clear();
 
+// Positional updates — fail with `OutOfBoundsError` if the index
+// is outside `[0, length)`. Use `modifyAt` when the new value
+// depends on the old one; `replaceAt` when you already have it.
+yield* todos.replaceAt(index, newTodo);
+yield* todos.modifyAt(index, (t) => ({ ...t, done: !t.done }));
+
 // Reordering
 yield* todos.move(fromIndex, toIndex);  // Great for drag-and-drop
 yield* todos.swap(indexA, indexB);
@@ -76,6 +82,11 @@ yield* users.delete("u1");
 yield* users.clear();
 yield* users.replace(newMap);
 yield* users.update((m) => new Map([...m, ["u2", bob]]));
+
+// Keyed update — fails with `KeyNotFoundError` if the key isn't
+// in the map. Prefer over `set` when the new value depends on
+// the old one.
+yield* users.modifyAt("u1", (u) => ({ ...u, role: "moderator" }));
 ```
 
 ### Reading Values

@@ -610,4 +610,49 @@ describe("Readable", () => {
       expect(frameworkLogs).toEqual([]);
     });
   });
+
+  describe("valuesAt", () => {
+    it("returns a per-key record of Readables derived from the source", async () => {
+      const source = Readable.make(
+        Effect.succeed({ name: "Ada", age: 36, city: "London" }),
+        () => Stream.empty,
+      );
+      const { name, age } = Readable.valuesAt(source, ["name", "age"]);
+      expect(await Effect.runPromise(name.get)).toBe("Ada");
+      expect(await Effect.runPromise(age.get)).toBe(36);
+    });
+
+    it("per-key Readables react when the source emits a change", async () => {
+      let push: (value: { count: number; label: string }) => void = () => {};
+      const changes = Stream.async<{ count: number; label: string }>((emit) => {
+        push = (v) => emit.single(v);
+        return Effect.void;
+      });
+      const source = Readable.make(
+        Effect.succeed({ count: 0, label: "start" }),
+        () => changes,
+      );
+
+      const { count } = Readable.valuesAt(source, ["count"]);
+      const fiber = Effect.runFork(
+        count.changes.pipe(Stream.take(2), Stream.runCollect),
+      );
+      await new Promise((r) => setTimeout(r, 5));
+
+      push({ count: 1, label: "start" });
+      push({ count: 2, label: "start" });
+
+      const collected = await Effect.runPromise(Effect.fromFiber(fiber));
+      expect([...collected]).toEqual([1, 2]);
+    });
+
+    it("only exposes the requested keys — extras are not touched", () => {
+      const source = Readable.make(
+        Effect.succeed({ a: 1, b: 2, c: 3 }),
+        () => Stream.empty,
+      );
+      const record = Readable.valuesAt(source, ["a", "c"]);
+      expect(Object.keys(record).sort()).toEqual(["a", "c"]);
+    });
+  });
 });

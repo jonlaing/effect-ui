@@ -568,6 +568,39 @@ export const debug =
       return readable;
     });
 
+/**
+ * Given a `Readable<T>` whose value is an object, and a list of keys,
+ * return a record whose values are per-key `Readable`s derived from
+ * the source. Each derived `Readable` emits when its field changes;
+ * fields not listed in `keys` are simply not exposed.
+ *
+ * Synchronous — no Effect wrap. Keys are explicit (you decide which
+ * fields to expose), so the shape can't drift out of sync with the
+ * source object if new fields appear later.
+ *
+ * @example
+ * ```ts
+ * const state = yield* Signal.make({ name: "Ada", age: 36 });
+ * const { name, age } = Readable.valuesAt(state, ["name", "age"]);
+ * // name: Readable<string>
+ * // age: Readable<number>
+ * ```
+ *
+ * A common case: passing individual fields of a struct-shaped state
+ * into different children as reactive props without exposing the
+ * whole object.
+ */
+export const valuesAt = <T, K extends keyof T>(
+  source: Readable<T>,
+  keys: readonly K[],
+): { readonly [P in K]: Readable<T[P]> } => {
+  const result = {} as { [P in K]: Readable<T[P]> };
+  for (const key of keys) {
+    result[key] = map(source, (value) => value[key]);
+  }
+  return result;
+};
+
 // -----------------------------------------------------------------------------
 // Namespace Export
 // -----------------------------------------------------------------------------
@@ -592,4 +625,5 @@ export const Readable = {
   dedupeWith,
   lift,
   debug,
+  valuesAt,
 };
