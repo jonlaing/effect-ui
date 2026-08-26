@@ -1,4 +1,5 @@
 import {
+  Data,
   Effect,
   Option,
   Pipeable,
@@ -9,6 +10,19 @@ import {
 
 import { Readable, TypeId as ReadableTypeId } from "./Readable.js";
 import { Signal, SignalTypeId } from "./Signal.js";
+
+/**
+ * Raised by index-typed mutators (`modifyAt`, `replaceAt`) when the
+ * given index is outside `[0, length)`. Carries the offending index
+ * and the array's length at the time of the call so callers can log
+ * or recover with real numbers.
+ */
+export class OutOfBoundsError extends Data.TaggedError(
+  "stax/SignalArray/OutOfBoundsError",
+)<{
+  readonly index: number;
+  readonly length: number;
+}> {}
 
 /**
  * A reactive array that extends Signal with array-specific mutation methods.
@@ -71,6 +85,28 @@ export interface SignalArray<T> extends Signal.Signal<readonly T[]> {
    * Remove the element at a specific index, returning Option.none() if out of bounds.
    */
   readonly removeAt: (index: number) => Effect.Effect<Option.Option<T>>;
+
+  /**
+   * Replace the element at a specific index with a new value.
+   * Fails with `OutOfBoundsError` if the index is outside `[0, length)`.
+   */
+  readonly replaceAt: (
+    index: number,
+    item: T,
+  ) => Effect.Effect<void, OutOfBoundsError>;
+
+  /**
+   * Update the element at a specific index by applying a function to it.
+   * Fails with `OutOfBoundsError` if the index is outside `[0, length)`.
+   *
+   * Prefer `modifyAt` over `replaceAt` when the new value depends on the
+   * old one — the function receives the current value and returns the
+   * next one without a round-trip through `get`.
+   */
+  readonly modifyAt: (
+    index: number,
+    f: (item: T) => T,
+  ) => Effect.Effect<void, OutOfBoundsError>;
 
   /**
    * Remove the first occurrence of an element (by reference equality).
@@ -222,6 +258,26 @@ export const make = <T>(
           return Option.some(removed);
         }),
 
+      replaceAt: (index, item) =>
+        Effect.gen(function* () {
+          const arr = yield* SubscriptionRef.get(ref);
+          if (index < 0 || index >= arr.length) {
+            return yield* new OutOfBoundsError({ index, length: arr.length });
+          }
+          arr[index] = item;
+          yield* notify;
+        }),
+
+      modifyAt: (index, f) =>
+        Effect.gen(function* () {
+          const arr = yield* SubscriptionRef.get(ref);
+          if (index < 0 || index >= arr.length) {
+            return yield* new OutOfBoundsError({ index, length: arr.length });
+          }
+          arr[index] = f(arr[index]);
+          yield* notify;
+        }),
+
       remove: (item) =>
         Effect.gen(function* () {
           const arr = yield* SubscriptionRef.get(ref);
@@ -300,4 +356,5 @@ export const make = <T>(
  */
 export const SignalArray = {
   make,
+  OutOfBoundsError,
 };

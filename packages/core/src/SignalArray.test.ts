@@ -184,6 +184,88 @@ describe("Signal.Array", () => {
       ));
   });
 
+  describe("replaceAt", () => {
+    it("should replace the element at a specific index", () =>
+      runTest(
+        Effect.gen(function* () {
+          const arr = yield* Signal.Array.make([1, 2, 3]);
+          yield* arr.replaceAt(1, 20).pipe(Effect.orDie);
+          const value = yield* arr.get;
+          expect(value).toEqual([1, 20, 3]);
+        }),
+      ));
+
+    it("should fail with OutOfBoundsError when index is out of range", () =>
+      runTest(
+        Effect.gen(function* () {
+          const arr = yield* Signal.Array.make([1, 2]);
+          const result = yield* Effect.exit(arr.replaceAt(5, 99));
+          expect(result._tag).toBe("Failure");
+          const cause = result._tag === "Failure" ? result.cause : null;
+          expect(String(cause)).toContain("stax/SignalArray/OutOfBoundsError");
+        }),
+      ));
+
+    it("should fail on negative indices too", () =>
+      runTest(
+        Effect.gen(function* () {
+          const arr = yield* Signal.Array.make([1]);
+          const result = yield* Effect.exit(arr.replaceAt(-1, 99));
+          expect(result._tag).toBe("Failure");
+        }),
+      ));
+  });
+
+  describe("modifyAt", () => {
+    it("should apply the function to the element at a specific index", () =>
+      runTest(
+        Effect.gen(function* () {
+          const arr = yield* Signal.Array.make([1, 2, 3]);
+          yield* arr.modifyAt(1, (n) => n * 10).pipe(Effect.orDie);
+          const value = yield* arr.get;
+          expect(value).toEqual([1, 20, 3]);
+        }),
+      ));
+
+    it("should fail with OutOfBoundsError when index is out of range", () =>
+      runTest(
+        Effect.gen(function* () {
+          const arr = yield* Signal.Array.make([1, 2]);
+          const result = yield* Effect.exit(arr.modifyAt(5, (n) => n * 2));
+          expect(result._tag).toBe("Failure");
+          const cause = result._tag === "Failure" ? result.cause : null;
+          expect(String(cause)).toContain("stax/SignalArray/OutOfBoundsError");
+        }),
+      ));
+
+    it("should trigger a reactive change on success", () =>
+      runTest(
+        Effect.gen(function* () {
+          const arr = yield* Signal.Array.make([{ done: false }]);
+          const seen: readonly { done: boolean }[][] = [];
+
+          const scope = yield* Effect.scope;
+          yield* Effect.forkIn(
+            arr.changes.pipe(
+              Stream.runForEach((v) =>
+                Effect.sync(() => {
+                  (seen as { done: boolean }[][]).push([...v]);
+                }),
+              ),
+            ),
+            scope,
+          );
+          yield* Effect.sleep("10 millis");
+
+          yield* arr
+            .modifyAt(0, (t) => ({ ...t, done: true }))
+            .pipe(Effect.orDie);
+          yield* Effect.sleep("10 millis");
+          expect(seen.at(-1)).toEqual([{ done: true }]);
+        }),
+      ));
+  });
+
   describe("remove", () => {
     it("should remove first occurrence", () =>
       runTest(

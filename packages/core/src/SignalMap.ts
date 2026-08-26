@@ -1,4 +1,5 @@
 import {
+  Data,
   Effect,
   Option,
   Pipeable,
@@ -16,6 +17,16 @@ import { Readable, TypeId as ReadableTypeId } from "./Readable.js";
 
 export const SignalMapTypeId: unique symbol = Symbol.for("stax/SignalMap");
 export type SignalMapTypeId = typeof SignalMapTypeId;
+
+/**
+ * Raised by `modifyAt` when the given key is not present in the map.
+ * Carries the offending key so callers can log or recover.
+ */
+export class KeyNotFoundError<K = unknown> extends Data.TaggedError(
+  "stax/SignalMap/KeyNotFoundError",
+)<{
+  readonly key: K;
+}> {}
 
 // -----------------------------------------------------------------------------
 // Type Guards
@@ -124,6 +135,19 @@ export interface SignalMap<K, V> extends Readable.Readable<ReadonlyMap<K, V>> {
       map: ReadonlyMap<K, V>,
     ) => ReadonlyMap<K, V> | Iterable<readonly [K, V]>,
   ) => Effect.Effect<void>;
+
+  /**
+   * Update the value at a specific key by applying a function to it.
+   * Fails with `KeyNotFoundError` if the key is not present in the map.
+   *
+   * Prefer `modifyAt` over `set` when the new value depends on the old
+   * one — the function receives the current value and returns the next
+   * one without a round-trip through `at`/`atEffect`.
+   */
+  readonly modifyAt: (
+    key: K,
+    f: (value: V) => V,
+  ) => Effect.Effect<void, KeyNotFoundError<K>>;
 
   /**
    * Reactive size of the map.
@@ -249,6 +273,17 @@ export const make = <K, V>(
           yield* SubscriptionRef.set(ref, new Map(next as Iterable<[K, V]>));
         }),
 
+      modifyAt: (key, f) =>
+        Effect.gen(function* () {
+          const current = yield* SubscriptionRef.get(ref);
+          if (!current.has(key)) {
+            return yield* new KeyNotFoundError<K>({ key });
+          }
+          const next = new Map(current);
+          next.set(key, f(current.get(key) as V));
+          yield* SubscriptionRef.set(ref, next);
+        }),
+
       // Derived readables
       size: readable.pipe(Readable.map((map) => map.size)),
       entries: readable.pipe(Readable.map((map) => [...map.entries()])),
@@ -266,4 +301,5 @@ export const SignalMap = {
   SignalMapTypeId,
   isSignalMap,
   make,
+  KeyNotFoundError,
 };

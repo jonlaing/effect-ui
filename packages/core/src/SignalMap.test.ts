@@ -310,6 +310,64 @@ describe("Signal.Map", () => {
       ));
   });
 
+  describe("modifyAt", () => {
+    it("should apply the function to the value at the given key", () =>
+      runTest(
+        Effect.gen(function* () {
+          const map = yield* Signal.Map.make<string, number>([
+            ["a", 1],
+            ["b", 2],
+          ]);
+          yield* map.modifyAt("a", (n) => n + 10).pipe(Effect.orDie);
+          const a = yield* map.atEffect("a");
+          expect(Option.getOrThrow(a)).toBe(11);
+        }),
+      ));
+
+    it("should fail with KeyNotFoundError when the key is missing", () =>
+      runTest(
+        Effect.gen(function* () {
+          const map = yield* Signal.Map.make<string, number>([["a", 1]]);
+          const result = yield* Effect.exit(
+            map.modifyAt("missing", (n) => n + 1),
+          );
+          expect(result._tag).toBe("Failure");
+          const cause = result._tag === "Failure" ? result.cause : null;
+          expect(String(cause)).toContain("stax/SignalMap/KeyNotFoundError");
+        }),
+      ));
+
+    it("should trigger a reactive change on success", () =>
+      runTest(
+        Effect.gen(function* () {
+          const map = yield* Signal.Map.make<string, { done: boolean }>([
+            ["a", { done: false }],
+          ]);
+          const seen: readonly boolean[] = [];
+
+          const scope = yield* Effect.scope;
+          yield* Effect.forkIn(
+            map.entries.changes.pipe(
+              Stream.runForEach((entries) =>
+                Effect.sync(() => {
+                  const item = entries.find(([k]) => k === "a")?.[1];
+                  if (item) (seen as boolean[]).push(item.done);
+                }),
+              ),
+            ),
+            scope,
+          );
+          yield* Effect.sleep("10 millis");
+
+          yield* map
+            .modifyAt("a", (v) => ({ ...v, done: true }))
+            .pipe(Effect.orDie);
+          yield* Effect.sleep("10 millis");
+          expect(seen.at(-1)).toBe(true);
+        }),
+      ));
+  });
+
   describe("size", () => {
     it("should be a reactive readable", () =>
       runTest(

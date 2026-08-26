@@ -90,6 +90,22 @@ const both = Readable.zipAll([firstName, lastName]);
 
 Derived Readables update automatically when their sources change. There's no manual subscription management.
 
+### Destructuring an Object-Shaped Readable
+
+`Readable.valuesAt` takes a `Readable<T>` whose value is an object, plus a list of keys, and returns a record of per-key Readables:
+
+```typescript
+const state = yield* Signal.make({ name: "Ada", age: 36, city: "London" });
+
+const { name, age } = Readable.valuesAt(state, ["name", "age"]);
+// name: Readable<string>
+// age: Readable<number>
+```
+
+Each derived Readable emits when its field changes. Handy for passing individual fields into different children as reactive props without exposing the whole object.
+
+Keys are explicit — you decide which fields to expose, and the shape can't drift out of sync if new fields appear on the source object later.
+
 ### Constants and Streams
 
 ```typescript
