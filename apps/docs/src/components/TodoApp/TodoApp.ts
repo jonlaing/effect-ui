@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { Plus } from "lucide-static";
 
-import { $, each, Readable, Signal } from "@stax-ui/dom";
+import { $, Animation, each, Readable, Signal } from "@stax-ui/dom";
 
 import { Storage } from "./Storage.js";
 import { TodoItem, type Todo } from "./TodoItem.js";
@@ -129,6 +129,36 @@ export const TodoApp = () =>
             onToggle: toggle,
             onRemove: remove,
           }),
+        // Three animations, one budget:
+        //  * enter: collapse `grid-template-rows: 0fr → 1fr` (the row
+        //    grows from zero height) alongside `opacity: 0 → 1`.
+        //  * exit: mirror image.
+        //  * move: FLIP translate3d — when an item toggles done and
+        //    the sort moves it to the bottom, existing items slide to
+        //    their new positions instead of teleporting.
+        //
+        // `!` marks the enterFrom / exitTo values as important so they
+        // beat the base classes (`grid-rows-[1fr]`) during the
+        // transition; the enter/exit classes carry the transition
+        // setup, and the base has none for `transform` / `opacity` /
+        // `grid-template-rows`, so the FLIP invert frame lands
+        // instantly (writing `style.transform` to the base state
+        // wouldn't animate) and the release then transitions under
+        // the just-added `transition-transform` rule.
+        //
+        // All three durations match at 300ms — grid-rows + FLIP
+        // compose exactly when their timings match; mismatched
+        // timings drift out of phase mid-play.
+        animate: {
+          enterFrom: "!grid-rows-[0fr] !opacity-0",
+          enter: "transition-all duration-300 ease-out",
+          exit: "transition-all duration-300 ease-out",
+          exitTo: "!grid-rows-[0fr] !opacity-0",
+          move: {
+            transform: Animation.moveTranslate3d,
+            transition: "transition-all duration-300 ease-out",
+          },
+        },
       }),
     );
   });
