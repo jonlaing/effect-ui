@@ -9,6 +9,15 @@ export interface Todo {
   readonly done: boolean;
 }
 
+/**
+ * A single row: checkbox, text, delete button.
+ *
+ * Doesn't own state — receives its `Todo` as a `Readable.Reactive`
+ * (either a plain `Todo` or a `Readable<Todo>`), plus the parent's
+ * `onToggle` / `onRemove` callbacks. Reactive fields are broken out
+ * from the row with `Readable.valuesAt` so we don't map through the
+ * whole row for each attribute.
+ */
 export const TodoItem = (props: {
   readonly todo: Readable.Reactive<Todo>;
   readonly onToggle: (id: string) => Effect.Effect<void, never, never>;
@@ -18,6 +27,9 @@ export const TodoItem = (props: {
     const { todo, onToggle, onRemove } = props;
 
     const row = Readable.normalize(todo);
+    const { text, done } = Readable.valuesAt(row, ["text", "done"]);
+
+    // Id is captured up front — doesn't change over the row's lifetime.
     const id = (yield* row.get).id;
 
     return yield* $.li(
@@ -30,7 +42,7 @@ export const TodoItem = (props: {
       $.input({
         type: "checkbox",
         class: "cursor-pointer accent-primary",
-        checked: Readable.map(row, (r) => r?.done ?? false),
+        checked: done,
         onChange: () => onToggle(id),
       }),
       $.span(
@@ -40,9 +52,11 @@ export const TodoItem = (props: {
             "data-[done=true]:line-through data-[done=true]:opacity-50",
             "transition-opacity",
           ],
-          "data-done": Readable.map(row, (r) => (r?.done ? "true" : "false")),
+          // Boolean data-* attributes now stringify to "true" / "false"
+          // automatically — no need for a `Readable.map(v => v ? "true" : "false")`.
+          "data-done": done,
         },
-        Readable.map(row, (r) => r?.text ?? ""),
+        text,
       ),
       $.button(
         {

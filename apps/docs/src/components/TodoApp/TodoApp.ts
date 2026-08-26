@@ -13,25 +13,30 @@ const DEFAULT_TODOS: readonly Todo[] = [
 ];
 
 /**
- * Todo list demo — hydrates a `Signal<Todo[]>` from `Storage`, wires
- * an input for adding new items, and renders each row via `TodoItem`.
+ * Todo list demo — hydrates a `Signal.Array<Todo>` from `Storage`,
+ * wires an input for adding new items, and renders each row via
+ * `TodoItem`.
  *
  * The interesting thing is the first line of the body:
  *
  * ```ts
- * const todos = yield* storage.persist("stax-todos", DEFAULT_TODOS);
+ * const todos = yield* storage.persistArray("stax-todos", DEFAULT_TODOS);
  * ```
  *
  * ...and it's the whole reactive persistence story. The component
  * doesn't know whether persistence is real (client) or a no-op
- * (SSG); it just asks for a signal. The `Storage` service is
- * declared as a required dependency in the component's type, so
+ * (SSG); it just asks for a persisted array. The `Storage` service
+ * is declared as a required dependency in the component's type, so
  * mounting without a Layer wouldn't typecheck.
+ *
+ * Todos are stored as a `Signal.Array`, so mutations use the array-
+ * specific methods (`push`, `modifyAt`, `removeAt`) rather than
+ * full-list `update((list) => list.map(...))` closures.
  */
 export const TodoApp = () =>
   Effect.gen(function* () {
     const storage = yield* Storage;
-    const todos = yield* storage.persist<readonly Todo[]>(
+    const todos = yield* storage.persistArray<Todo>(
       "stax-todos",
       DEFAULT_TODOS,
     );
@@ -42,21 +47,36 @@ export const TodoApp = () =>
       Effect.gen(function* () {
         const text = (yield* draft.get).trim();
         if (!text) return;
-        yield* todos.update((list) => [
-          ...list,
-          { id: crypto.randomUUID(), text, done: false },
-        ]);
+        yield* todos.push({
+          id: crypto.randomUUID(),
+          text,
+          done: false,
+        });
         yield* draft.set("");
       });
 
     const toggle = (id: string) =>
-      todos.update((list) =>
-        list.map((t) => (t.id === id ? { ...t, done: !t.done } : t)),
-      );
+      Effect.gen(function* () {
+        const list = yield* todos.get;
+        const index = list.findIndex((t) => t.id === id);
+        if (index === -1) return;
+        // Index was just discovered from the current list, so the
+        // OutOfBoundsError branch is unreachable — `orDie` treats it
+        // as a defect if the invariant is ever violated.
+        yield* todos
+          .modifyAt(index, (t) => ({ ...t, done: !t.done }))
+          .pipe(Effect.orDie);
+      });
 
     const remove = (id: string) =>
-      todos.update((list) => list.filter((t) => t.id !== id));
+      Effect.gen(function* () {
+        const list = yield* todos.get;
+        const index = list.findIndex((t) => t.id === id);
+        if (index === -1) return;
+        yield* todos.removeAt(index);
+      });
 
+    // Done items sink to the bottom of the visible list.
     const orderedTodos = Readable.map(todos, (list) =>
       [...list].sort((a, b) => Number(a.done) - Number(b.done)),
     );

@@ -1,22 +1,27 @@
 import { Context, Effect, Layer, Scope, Stream } from "effect";
 
-import { Signal } from "@stax-ui/dom";
+import { Signal, type SignalArray } from "@stax-ui/dom";
 
 /**
  * A storage service that hands back a persisted Signal — hydrated
  * from wherever "storage" happens to live, and auto-writing back
  * on every change.
  *
- * The consumer just asks for a signal:
+ * Two variants: `persist` for scalar state, `persistArray` for
+ * collection state. The array variant returns a `Signal.Array`, so
+ * downstream code can reach for `.push` / `.modifyAt` / `.removeAt`
+ * instead of full-list `.update` closures:
  *
  * ```ts
- * const todos = yield* storage.persist("todos", DEFAULT_TODOS);
+ * const todos = yield* storage.persistArray("todos", DEFAULT_TODOS);
+ * yield* todos.push(newTodo);
+ * yield* todos.modifyAt(index, (t) => ({ ...t, done: !t.done }));
  * ```
  *
- * ...and doesn't care whether persistence actually happens. That
- * decision is the Layer's — `StorageLive` reads and writes real
- * localStorage; `StorageNoOp` seeds the signal from the defaults
- * and drops writes on the floor (fine for SSG and tests).
+ * ...and it doesn't care whether persistence actually happens.
+ * That decision is the Layer's — `StorageLive` reads and writes
+ * real localStorage; `StorageNoOp` seeds the signal from the
+ * defaults and drops writes on the floor (fine for SSG and tests).
  *
  * This is the shape most demos of Effect Context want to be:
  * services aren't just wrappers around a primitive, they're a
@@ -30,6 +35,11 @@ export class Storage extends Context.Tag("stax-docs/TodoApp/Storage")<
       key: string,
       defaults: T,
     ) => Effect.Effect<Signal.Signal<T>, never, Scope.Scope>;
+
+    readonly persistArray: <T>(
+      key: string,
+      defaults: readonly T[],
+    ) => Effect.Effect<SignalArray<T>, never, Scope.Scope>;
   }
 >() {}
 
@@ -58,6 +68,22 @@ export const StorageLive = Layer.succeed(
         ).pipe(Effect.forkScoped);
         return signal;
       }),
+
+    persistArray: <T>(key: string, defaults: readonly T[]) =>
+      Effect.gen(function* () {
+        const raw = localStorage.getItem(key);
+        const initial: readonly T[] = raw ? (JSON.parse(raw) as T[]) : defaults;
+        if (!raw) {
+          localStorage.setItem(key, JSON.stringify(defaults));
+        }
+        const arr = yield* Signal.Array.make<T>(initial);
+        yield* Stream.runForEach(arr.changes, (value) =>
+          Effect.sync(() => {
+            localStorage.setItem(key, JSON.stringify(value));
+          }),
+        ).pipe(Effect.forkScoped);
+        return arr;
+      }),
   }),
 );
 
@@ -71,5 +97,7 @@ export const StorageNoOp = Layer.succeed(
   Storage,
   Storage.of({
     persist: <T>(_key: string, defaults: T) => Signal.make<T>(defaults),
+    persistArray: <T>(_key: string, defaults: readonly T[]) =>
+      Signal.Array.make<T>(defaults),
   }),
 );
