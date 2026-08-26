@@ -3,6 +3,21 @@ import { Context, Effect, Layer, Scope, Stream } from "effect";
 import { Signal, type SignalArray } from "@stax-ui/dom";
 
 /**
+ * Populated by the pre-paint snapshot script in `entry.ts`. Every
+ * `stax-*` key in `localStorage` is parsed once and stashed here
+ * before the client bundle executes, so `StorageLive` can source
+ * hydration values synchronously without a second read.
+ */
+declare global {
+  interface Window {
+    __STAX_STORAGE__?: Record<string, unknown>;
+  }
+}
+
+const readSnapshot = (key: string): unknown =>
+  typeof window === "undefined" ? undefined : window.__STAX_STORAGE__?.[key];
+
+/**
  * A storage service that hands back a persisted Signal — hydrated
  * from wherever "storage" happens to live, and auto-writing back
  * on every change.
@@ -44,11 +59,20 @@ export class Storage extends Context.Tag("stax-docs/TodoApp/Storage")<
 >() {}
 
 /**
- * Live implementation — reads/writes `window.localStorage`. First
- * read hydrates from the stored value if any; if nothing is
- * stored, seeds the defaults into localStorage so subsequent loads
- * see the same data. Persist-on-change is forked into the enclosing
- * scope so it unmounts cleanly.
+ * Live implementation — reads/writes `window.localStorage`.
+ *
+ * Scalar `persist` hydrates synchronously (SSR seeds with the
+ * `defaults` too, so the initial value is the same on both sides).
+ *
+ * `persistArray` seeds empty and defers the real hydration onto a
+ * forked fiber so it lands on the microtask after mount. That
+ * matches the SSR-empty pass and turns "populate the list" into a
+ * reactive append rather than a keyed-list reconciliation. The
+ * pre-paint snapshot in `entry.ts` (see `window.__STAX_STORAGE__`)
+ * makes the deferred read free — the JSON is already parsed.
+ *
+ * Persist-on-change is forked into the enclosing scope so it
+ * unmounts cleanly.
  */
 export const StorageLive = Layer.succeed(
   Storage,
@@ -71,12 +95,33 @@ export const StorageLive = Layer.succeed(
 
     persistArray: <T>(key: string, defaults: readonly T[]) =>
       Effect.gen(function* () {
-        const raw = localStorage.getItem(key);
-        const initial: readonly T[] = raw ? (JSON.parse(raw) as T[]) : defaults;
-        if (!raw) {
-          localStorage.setItem(key, JSON.stringify(defaults));
-        }
-        const arr = yield* Signal.Array.make<T>(initial);
+        // Seed empty to match what the SSR pass rendered — see the
+        // note on `StorageNoOp.persistArray` below. The real data
+        // is set on a forked fiber a microtask after hydration
+        // finishes, so `each` sees an empty-to-populated reactive
+        // update instead of a keyed-list reconciliation.
+        const arr = yield* Signal.Array.make<T>([]);
+
+        yield* Effect.fork(
+          Effect.gen(function* () {
+            yield* Effect.sleep("0 millis");
+            const cached = readSnapshot(key);
+            let initial: readonly T[];
+            if (Array.isArray(cached)) {
+              initial = cached as readonly T[];
+            } else {
+              const raw = localStorage.getItem(key);
+              if (raw) {
+                initial = JSON.parse(raw) as T[];
+              } else {
+                initial = defaults;
+                localStorage.setItem(key, JSON.stringify(defaults));
+              }
+            }
+            yield* arr.set(initial);
+          }),
+        );
+
         yield* Stream.runForEach(arr.changes, (value) =>
           Effect.sync(() => {
             localStorage.setItem(key, JSON.stringify(value));

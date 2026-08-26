@@ -29,6 +29,12 @@ const documentOptions = {
     // during head parsing so `data-theme` is settled before the CSS
     // paints — no theme flash on first load.
     `<script>(function(){try{var s=localStorage.getItem('stax-theme');var t=(s==='dark'||s==='light')?s:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t)}catch(e){}})();</script>`,
+    // Pre-paint storage snapshot: parse every `stax-*` key from
+    // localStorage into a plain object on `window.__STAX_STORAGE__`.
+    // `StorageLive` reads from this cache during hydration instead
+    // of hitting localStorage directly — one JSON parse per key,
+    // available synchronously before the client bundle boots.
+    `<script>(function(){try{var d={};for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('stax-')===0){try{d[k]=JSON.parse(localStorage.getItem(k))}catch(e){}}}window.__STAX_STORAGE__=d}catch(e){window.__STAX_STORAGE__={}}})();</script>`,
   ].join("\n    "),
 };
 
