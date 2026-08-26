@@ -18,6 +18,8 @@ import * as Element from "../Element/index.js";
 import { DOMRenderer } from "../Render/DOMRenderer.js";
 import {
   applyPreInsertEnterFrom,
+  captureSlotRects,
+  flipMovedSlots,
   forkSlotEnter,
   forkSlotRemoval,
 } from "./slotAnimation.js";
@@ -56,6 +58,7 @@ const createClientLikeControlCtx = (
   // After finalizeContainer, future addSlot calls use DOMRenderer.
   // When startInClientMode is true, skip the hydration phase entirely.
   let hydrationDone = startInClientMode;
+  let beforeRects: Map<string, DOMRect> | null = null;
 
   const defaultContainer: Element.Element<DOMElement, never, never> =
     Effect.gen(function* () {
@@ -196,7 +199,7 @@ const createClientLikeControlCtx = (
       return Effect.void;
     },
 
-    removeSlot: (key: string): Effect.Effect<void> =>
+    removeSlot: (key: string): Effect.Effect<void, never, Scope.Scope> =>
       Effect.gen(function* () {
         const entry = slots.get(key);
         if (!entry) return;
@@ -222,13 +225,42 @@ const createClientLikeControlCtx = (
         const entry = slots.get(key);
         if (!entry || !containerElement) return;
 
-        const children = Array.from(containerElement.children);
+        // See the note in ClientControlCtx — exiting rows must be
+        // filtered out of the sibling list so they don't get shoved
+        // around before their exit animation plays.
+        const active = new Set<Element>(
+          Array.from(slots.values()).map((e) => e.element),
+        );
+        const children = Array.from(containerElement.children).filter((c) =>
+          active.has(c),
+        );
         const currentIndex = children.indexOf(entry.element);
 
         if (currentIndex === toIndex) return;
 
         const refChild = children[toIndex] ?? null;
         containerElement.insertBefore(entry.element, refChild);
+      }),
+
+    // Snapshot every current slot's bounding rect BEFORE removes/moves
+    // run this batch. `endSync` uses this to compute per-slot deltas
+    // for the FLIP release. Elements that get added this batch have no
+    // pre-batch rect and so are excluded from FLIP — their enter
+    // animation owns them.
+    beginSync: (): Effect.Effect<void> =>
+      Effect.sync(() => {
+        beforeRects = captureSlotRects(slots.values());
+      }),
+
+    // Close the batch: measure each still-present slot's new rect,
+    // fork the FLIP release for anything that moved. No-op when no
+    // `move` config is provided by AnimationConfigCtx.
+    endSync: (): Effect.Effect<void, never, Scope.Scope> =>
+      Effect.gen(function* () {
+        const before = beforeRects;
+        beforeRects = null;
+        if (!before) return;
+        yield* flipMovedSlots(before, slots.values());
       }),
 
     subscribe: subscribeReconcile,
@@ -251,6 +283,13 @@ const createHydrationControlCtx = (
   // Tracks whether the initial hydration pass is complete.
   // Once true, fork() returns client-mode contexts.
   let hydrationComplete = false;
+  // Rect snapshot captured by beginSync so endSync can compute FLIP
+  // deltas per slot. Populated on every batch — during the initial
+  // hydration pass the deltas will be zero (SSR DOM already matches
+  // the initial value), but once `hydrationComplete` flips true this
+  // is the same code path that handles reactive reorder animations
+  // for hydration-root `each`s. See ClientControlCtx for details.
+  let beforeRects: Map<string, DOMRect> | null = null;
 
   // Parse existing slots from DOM
   const children = Array.from(containerElement.children) as DOMElement[];
@@ -378,7 +417,7 @@ const createHydrationControlCtx = (
     // No-op — container was provided externally, not found via hydration walker
     finalizeContainer: () => Effect.void,
 
-    removeSlot: (key: string): Effect.Effect<void> =>
+    removeSlot: (key: string): Effect.Effect<void, never, Scope.Scope> =>
       Effect.gen(function* () {
         const entry = slots.get(key);
         if (!entry) return;
@@ -401,13 +440,39 @@ const createHydrationControlCtx = (
         const entry = slots.get(key);
         if (!entry) return;
 
-        const containerChildren = Array.from(containerElement.children);
+        // See the note in ClientControlCtx — exiting rows must be
+        // filtered out of the sibling list so they don't get shoved
+        // around before their exit animation plays.
+        const active = new Set<Element>(
+          Array.from(slots.values()).map((e) => e.element),
+        );
+        const containerChildren = Array.from(containerElement.children).filter(
+          (c) => active.has(c),
+        );
         const currentIndex = containerChildren.indexOf(entry.element);
 
         if (currentIndex === toIndex) return;
 
         const refChild = containerChildren[toIndex] ?? null;
         containerElement.insertBefore(entry.element, refChild);
+      }),
+
+    // Snapshot every current slot's bounding rect BEFORE removes/moves
+    // run this batch. Mirrors `ClientControlCtx.beginSync` — the same
+    // ctx serves both the initial hydration pass (deltas end up zero,
+    // no FLIP fires) and post-hydration reactive updates (real reorder
+    // moves fire the FLIP release).
+    beginSync: (): Effect.Effect<void> =>
+      Effect.sync(() => {
+        beforeRects = captureSlotRects(slots.values());
+      }),
+
+    endSync: (): Effect.Effect<void, never, Scope.Scope> =>
+      Effect.gen(function* () {
+        const before = beforeRects;
+        beforeRects = null;
+        if (!before) return;
+        yield* flipMovedSlots(before, slots.values());
       }),
 
     subscribe: subscribeReconcile,

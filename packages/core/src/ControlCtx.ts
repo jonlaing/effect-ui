@@ -100,8 +100,12 @@ export interface IControlCtx<A> {
   /**
    * Remove a slot from the container.
    * Noop in SSR, handles exit animations in client mode.
+   *
+   * Requires `Scope.Scope` — Client mode forks the exit animation into
+   * the ambient scope so `removeSlot` can return before it finishes,
+   * and so container unmount interrupts an in-flight exit.
    */
-  readonly removeSlot: (key: string) => Effect.Effect<void>;
+  readonly removeSlot: (key: string) => Effect.Effect<void, never, Scope.Scope>;
 
   /**
    * Get a slot by its key.
@@ -129,13 +133,42 @@ export interface IControlCtx<A> {
   readonly finalizeContainer: () => Effect.Effect<void>;
 
   /**
+   * Bracket the start of a reconcile batch. Called by {@link reconcile}
+   * before any `removeSlot` / `addSlot` / `moveSlot` in the batch fires.
+   *
+   * The Client implementation uses this to snapshot each existing slot's
+   * bounding rect for FLIP reorder animation. Hydration and SSR treat it
+   * as a no-op.
+   */
+  readonly beginSync: () => Effect.Effect<void>;
+
+  /**
+   * Bracket the end of a reconcile batch. Called by {@link reconcile}
+   * after every `removeSlot` / `addSlot` / `moveSlot` in the batch has
+   * completed and the DOM is in its post-batch shape.
+   *
+   * The Client implementation re-measures each still-present slot's
+   * bounding rect, computes the delta against the {@link beginSync}
+   * snapshot, and forks the FLIP invert-then-release animation for any
+   * slot that moved. Hydration and SSR treat it as a no-op.
+   *
+   * Requires `Scope.Scope` — Client mode forks the FLIP release into
+   * the ambient scope so container unmount interrupts an in-flight
+   * animation.
+   */
+  readonly endSync: () => Effect.Effect<void, never, Scope.Scope>;
+
+  /**
    * Subscribe to a Readable and run handler on each change.
    * Noop in SSR, forks stream subscription in client/hydration.
+   *
+   * Requires `Scope.Scope` — Client/Hydration modes fork the stream
+   * into the ambient scope so container unmount cancels it.
    */
   readonly subscribe: <V, E, R>(
     readable: Readable.Readable<V>,
     handler: (value: V) => Effect.Effect<void, E, R>,
-  ) => Effect.Effect<void, E, R>;
+  ) => Effect.Effect<void, E, R | Scope.Scope>;
 }
 
 // -----------------------------------------------------------------------------

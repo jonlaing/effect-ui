@@ -75,6 +75,12 @@ export const reconcile = <A, E, R>(
           targetKeys,
         });
 
+        // Bracket the batch so ControlCtx implementations that need a
+        // pre-mutation view of the container (Client mode's FLIP snapshot)
+        // get a chance to capture it before removes/moves start. Hydration
+        // and SSR are no-ops.
+        yield* ctx.beginSync();
+
         // Step 1: Remove slots not in target
         for (const key of currentKeys) {
           if (!targetSet.has(key)) {
@@ -117,6 +123,11 @@ export const reconcile = <A, E, R>(
             );
           }
         }
+
+        // Close the batch — Client mode measures deltas and forks the
+        // FLIP release here. Runs after every add/move so the DOM has
+        // fully settled into its post-batch shape.
+        yield* ctx.endSync();
       });
 
     // Initial sync — errors here are load-bearing (the whole tree failed

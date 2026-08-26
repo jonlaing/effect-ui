@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 
 import * as Groups from "./groups.js";
-import type { StaggerFunction } from "./types.js";
+import type { MoveDelta, StaggerFunction } from "./types.js";
 
 // Re-export types
 export type {
@@ -10,19 +10,45 @@ export type {
   AnimationOptions,
   EnterOnlyAnimationOptions,
   ListAnimationOptions,
+  MoveAnimation,
+  MoveDelta,
   StaggerFunction,
 } from "./types.js";
 
 export type { AnimationGroup } from "./groups.js";
 
 /**
+ * FLIP invert helper — the vanilla 2D translate.
+ * `(delta) => \`translate(${delta.x}px, ${delta.y}px)\``
+ */
+const moveTranslate = (delta: MoveDelta): string =>
+  `translate(${delta.x}px, ${delta.y}px)`;
+
+/**
+ * FLIP invert helper — 3D translate, promotes the element to its own
+ * compositor layer for smoother playback on long lists. Preferred default.
+ */
+const moveTranslate3d = (delta: MoveDelta): string =>
+  `translate3d(${delta.x}px, ${delta.y}px, 0)`;
+
+/**
+ * FLIP invert helper — vertical-only translate. Good pick for column
+ * layouts (checklists, feeds) where horizontal drift would be noise.
+ */
+const moveTranslateY = (delta: MoveDelta): string => `translateY(${delta.y}px)`;
+
+/**
  * Group choreography primitives — see `./groups.ts` for the full contract.
+ * Plus the built-in FLIP invert helpers used with `each({ animate: { move } })`.
  */
 export const Animation = {
   group: Groups.group,
   sequence: Groups.sequence,
   parallel: Groups.parallel,
   skip: Groups.skip,
+  moveTranslate,
+  moveTranslate3d,
+  moveTranslateY,
 } as const;
 
 // Re-export core functions

@@ -140,6 +140,9 @@ const createSSRControlCtx = (): IControlCtx<DOMElement> => {
 
     moveSlot: (): Effect.Effect<void> => Effect.void,
 
+    beginSync: (): Effect.Effect<void> => Effect.void,
+    endSync: (): Effect.Effect<void> => Effect.void,
+
     subscribe: (): Effect.Effect<void> => Effect.void,
   };
 

@@ -18,6 +18,8 @@ import * as Element from "../Element/index.js";
 import { DOMRenderer } from "../Render/DOMRenderer.js";
 import {
   applyPreInsertEnterFrom,
+  captureSlotRects,
+  flipMovedSlots,
   forkSlotEnter,
   forkSlotRemoval,
 } from "./slotAnimation.js";
@@ -38,6 +40,10 @@ const createClientControlCtx = (): IControlCtx<DOMElement> => {
   // Fresh state per context instance
   const slots = new Map<string, DOMSlotEntry>();
   let containerElement: DOMElement | null = null;
+  // Rect snapshot captured by beginSync so endSync can compute FLIP
+  // deltas per slot. Null between batches. See slotAnimation.ts for the
+  // release mechanics.
+  let beforeRects: Map<string, DOMRect> | null = null;
 
   const defaultContainer: Element.Element<DOMElement, never, never> =
     Effect.gen(function* () {
@@ -129,7 +135,7 @@ const createClientControlCtx = (): IControlCtx<DOMElement> => {
 
     finalizeContainer: () => Effect.void,
 
-    removeSlot: (key: string): Effect.Effect<void> =>
+    removeSlot: (key: string): Effect.Effect<void, never, Scope.Scope> =>
       Effect.gen(function* () {
         const entry = slots.get(key);
         if (!entry) return;
@@ -155,13 +161,47 @@ const createClientControlCtx = (): IControlCtx<DOMElement> => {
         const entry = slots.get(key);
         if (!entry || !containerElement) return;
 
-        const children = Array.from(containerElement.children);
+        // Filter DOM children down to active slots — exiting rows are
+        // still in the DOM while their exit animation plays, but they
+        // were removed from the `slots` map by `removeSlot`. Treating
+        // them as siblings for index math would shove them around
+        // (typically off the end of the DOM) before their exit
+        // finishes, producing a visible "flash to the wrong spot"
+        // before the fade. Filtering makes the exiting row hold its
+        // position while the exit collapses it in place.
+        const active = new Set<Element>(
+          Array.from(slots.values()).map((e) => e.element),
+        );
+        const children = Array.from(containerElement.children).filter((c) =>
+          active.has(c),
+        );
         const currentIndex = children.indexOf(entry.element);
 
         if (currentIndex === toIndex) return;
 
         const refChild = children[toIndex] ?? null;
         containerElement.insertBefore(entry.element, refChild);
+      }),
+
+    // Snapshot every current slot's bounding rect BEFORE removes/moves
+    // run this batch. `endSync` uses this to compute per-slot deltas
+    // for the FLIP release. Elements that get added this batch have no
+    // pre-batch rect and so are excluded from FLIP — their enter
+    // animation owns them.
+    beginSync: (): Effect.Effect<void> =>
+      Effect.sync(() => {
+        beforeRects = captureSlotRects(slots.values());
+      }),
+
+    // Close the batch: measure each still-present slot's new rect,
+    // fork the FLIP release for anything that moved. No-op when no
+    // `move` config is provided by AnimationConfigCtx.
+    endSync: (): Effect.Effect<void, never, Scope.Scope> =>
+      Effect.gen(function* () {
+        const before = beforeRects;
+        beforeRects = null;
+        if (!before) return;
+        yield* flipMovedSlots(before, slots.values());
       }),
 
     subscribe: subscribeReconcile,
