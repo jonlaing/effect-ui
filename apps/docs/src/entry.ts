@@ -9,6 +9,7 @@ import { HttpApp, HttpRouter } from "@effect/platform";
 
 import { Platform } from "@stax-ui/platform";
 
+import { StorageNoOp } from "./components/TodoApp/index.js";
 import { DocLayout } from "./layout.js";
 import { router } from "./routes.js";
 
@@ -35,6 +36,11 @@ const documentOptions = {
 export { router };
 export const app = DocLayout;
 export const document = documentOptions;
+// SSG-time layer stack. `StorageNoOp` seeds every `Storage.persist`
+// call with its defaults and drops writes on the floor — there's no
+// real `localStorage` on the server, and pre-hydration renders
+// wouldn't be persisting anyway.
+export const layers = StorageNoOp;
 
 // Used by the dev server during development
 const staxRoutes = Platform.toHttpRoutes(router, {

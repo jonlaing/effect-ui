@@ -186,6 +186,16 @@
   display: none;
 }
 
+/*
+ * CodeTabs panel hide/show — inactive panels get `data-active="false"`
+ * from a signal-driven attribute on the div; hiding is pure CSS so the
+ * initial paint (and SSR HTML) doesn't need to know which panel is
+ * active until hydration syncs the value.
+ */
+.code-tab-panel[data-active="false"] {
+  display: none;
+}
+
 /* ─── Prose (markdown content) ─────────────────────────────────────────── */
 
 .prose h1 {

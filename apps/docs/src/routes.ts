@@ -6,6 +6,7 @@ import { getAdjacentPages, getSections } from "./content.js";
 import {
   discoverPages,
   extractToc,
+  loadComponentFiles,
   loadPage,
   renderCode,
 } from "./content.server.js";
@@ -13,7 +14,6 @@ import { ContactPage } from "./pages/ContactPage.js";
 import { DocPage } from "./pages/DocPage.js";
 import { DocsIndexPage } from "./pages/DocsIndexPage.js";
 import {
-  counterExample,
   effectExample,
   errorsExample,
   familiarExample,
@@ -30,29 +30,33 @@ const HomeRoute = Route.make("/").pipe(
     load: () =>
       Effect.gen(function* () {
         const [
-          counterHtml,
           errorsHtml,
           fullstackHtml,
           effectHtml,
           reactiveHtml,
           familiarHtml,
+          todoFiles,
         ] = yield* Effect.all([
-          renderCode(counterExample, "typescript"),
           renderCode(errorsExample, "typescript"),
           renderCode(fullstackExample, "typescript"),
           renderCode(effectExample, "typescript"),
           renderCode(reactiveExample, "typescript"),
           renderCode(familiarExample, "typescript"),
+          loadComponentFiles("TodoApp", [
+            "TodoApp.ts",
+            "TodoItem.ts",
+            "Storage.ts",
+          ]),
         ]);
 
         return {
           codeExamples: {
-            counterHtml,
             errorsHtml,
             fullstackHtml,
             effectHtml,
             reactiveHtml,
             familiarHtml,
+            todoFiles,
           },
         };
       }),

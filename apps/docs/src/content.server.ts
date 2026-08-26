@@ -133,6 +133,43 @@ const CONTENT_DIR = path.resolve(
   "content",
 );
 
+// At SSG time this file executes from `apps/docs/dist/entry.js`, so
+// walk out to the project root and back down into `src/components/` —
+// the same directory tree `apps/docs/content/` lives at, only for
+// TypeScript source rather than markdown.
+const COMPONENTS_DIR = path.resolve(
+  import.meta.dirname ?? path.dirname(new URL(import.meta.url).pathname),
+  "..",
+  "src",
+  "components",
+);
+
+/**
+ * Load real source files from a subdirectory of `apps/docs/src/components/`,
+ * shiki-highlight each, and return the `{ filename, html }` list in the
+ * caller-provided order.
+ *
+ * Used by the homepage to display the TodoApp demo's source without a
+ * copy/paste layer: the code showing on the marketing page is the exact
+ * code that runs the live demo next to it.
+ */
+export const loadComponentFiles = (
+  relDir: string,
+  filenames: readonly string[],
+): Effect.Effect<{ readonly filename: string; readonly html: string }[]> =>
+  Effect.gen(function* () {
+    const dir = path.join(COMPONENTS_DIR, relDir);
+    return yield* Effect.all(
+      filenames.map((filename) =>
+        Effect.gen(function* () {
+          const raw = fs.readFileSync(path.join(dir, filename), "utf-8");
+          const html = yield* renderCode(raw, "typescript");
+          return { filename, html };
+        }),
+      ),
+    );
+  });
+
 /**
  * Load a single markdown file and return a DocPage.
  */
