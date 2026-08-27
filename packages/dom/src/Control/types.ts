@@ -8,22 +8,37 @@ import type {
 import type * as Element from "../Element/index.js";
 
 /**
- * Configuration for the `when` control flow (DOM-specific with animation support).
+ * DOM element type. Every control-flow container returns something
+ * within this union. `N extends DOMElement` type parameters on the
+ * config interfaces let a concrete container type (say
+ * `HTMLUListElement` from `$.ul(...)`) flow through as the return
+ * type of the control function, so `mount(each(...), root)` doesn't
+ * need a cast.
  */
-export interface WhenConfig<E1 = never, R1 = never, E2 = never, R2 = never> {
+type DOMElement = HTMLElement | SVGElement;
+
+/**
+ * Configuration for the `when` control flow (DOM-specific with animation support).
+ *
+ * @template N - The container element type. Inferred from `container` if
+ *   provided; defaults to `HTMLElement | SVGElement` otherwise.
+ */
+export interface WhenConfig<
+  E1 = never,
+  R1 = never,
+  E2 = never,
+  R2 = never,
+  N extends DOMElement = DOMElement,
+> {
   /**
    * Optional custom container element. If not provided, defaults to a div
    * with `display: contents`.
    */
-  readonly container?: () => Element.Element<
-    HTMLElement | SVGElement,
-    never,
-    never
-  >;
+  readonly container?: () => Element.Element<N, never, never>;
   /** Element to render when condition is true */
-  readonly onTrue: () => Element.Element<HTMLElement | SVGElement, E1, R1>;
+  readonly onTrue: () => Element.Element<DOMElement, E1, R1>;
   /** Element to render when condition is false */
-  readonly onFalse: () => Element.Element<HTMLElement | SVGElement, E2, R2>;
+  readonly onFalse: () => Element.Element<DOMElement, E2, R2>;
   /** Optional animation configuration */
   readonly animate?: AnimationOptions;
   /**
@@ -38,26 +53,32 @@ export interface WhenConfig<E1 = never, R1 = never, E2 = never, R2 = never> {
  */
 export interface MatchCase<A, E = never, R = never> {
   readonly pattern: A;
-  readonly render: () => Element.Element<HTMLElement | SVGElement, E, R>;
+  readonly render: () => Element.Element<DOMElement, E, R>;
 }
 
 /**
  * Configuration for the `match` control flow (DOM-specific with animation support).
+ *
+ * @template N - The container element type. Inferred from `container` if
+ *   provided; defaults to `HTMLElement | SVGElement` otherwise.
  */
-export interface MatchConfig<A, E = never, R = never, E2 = never, R2 = never> {
+export interface MatchConfig<
+  A,
+  E = never,
+  R = never,
+  E2 = never,
+  R2 = never,
+  N extends DOMElement = DOMElement,
+> {
   /**
    * Optional custom container element. If not provided, defaults to a div
    * with `display: contents`.
    */
-  readonly container?: () => Element.Element<
-    HTMLElement | SVGElement,
-    never,
-    never
-  >;
+  readonly container?: () => Element.Element<N, never, never>;
   /** Array of pattern-render pairs */
   readonly cases: readonly MatchCase<A, E, R>[];
   /** Optional fallback if no pattern matches */
-  readonly fallback?: () => Element.Element<HTMLElement | SVGElement, E2, R2>;
+  readonly fallback?: () => Element.Element<DOMElement, E2, R2>;
   /** Optional animation configuration */
   readonly animate?: AnimationOptions;
   /**
@@ -83,6 +104,9 @@ export interface MatchConfig<A, E = never, R = never, E2 = never, R2 = never> {
 
 /**
  * Configuration for `matchOption` control flow.
+ *
+ * @template N - The container element type. Inferred from `container` if
+ *   provided; defaults to `HTMLElement | SVGElement` otherwise.
  */
 export interface MatchOptionConfig<
   A,
@@ -90,22 +114,17 @@ export interface MatchOptionConfig<
   R1 = never,
   E2 = never,
   R2 = never,
+  N extends DOMElement = DOMElement,
 > {
   /**
    * Optional custom container element. If not provided, defaults to a div
    * with `display: contents`.
    */
-  readonly container?: () => Element.Element<
-    HTMLElement | SVGElement,
-    never,
-    never
-  >;
+  readonly container?: () => Element.Element<N, never, never>;
   /** Render when Option is Some. Receives unwrapped value as a Readable. */
-  readonly onSome: (
-    value: Readable<A>,
-  ) => Element.Element<HTMLElement | SVGElement, E1, R1>;
+  readonly onSome: (value: Readable<A>) => Element.Element<DOMElement, E1, R1>;
   /** Render when Option is None */
-  readonly onNone: () => Element.Element<HTMLElement | SVGElement, E2, R2>;
+  readonly onNone: () => Element.Element<DOMElement, E2, R2>;
   /** Optional animation configuration */
   readonly animate?: AnimationOptions;
   /**
@@ -117,6 +136,9 @@ export interface MatchOptionConfig<
 
 /**
  * Configuration for `matchEither` control flow.
+ *
+ * @template N - The container element type. Inferred from `container` if
+ *   provided; defaults to `HTMLElement | SVGElement` otherwise.
  */
 export interface MatchEitherConfig<
   A,
@@ -125,24 +147,17 @@ export interface MatchEitherConfig<
   R1 = never,
   E2 = never,
   R2 = never,
+  N extends DOMElement = DOMElement,
 > {
   /**
    * Optional custom container element. If not provided, defaults to a div
    * with `display: contents`.
    */
-  readonly container?: () => Element.Element<
-    HTMLElement | SVGElement,
-    never,
-    never
-  >;
+  readonly container?: () => Element.Element<N, never, never>;
   /** Render when Either is Right. Receives unwrapped value as a Readable. */
-  readonly onRight: (
-    value: Readable<A>,
-  ) => Element.Element<HTMLElement | SVGElement, E1, R1>;
+  readonly onRight: (value: Readable<A>) => Element.Element<DOMElement, E1, R1>;
   /** Render when Either is Left. Receives unwrapped error as a Readable. */
-  readonly onLeft: (
-    error: Readable<E>,
-  ) => Element.Element<HTMLElement | SVGElement, E2, R2>;
+  readonly onLeft: (error: Readable<E>) => Element.Element<DOMElement, E2, R2>;
   /** Optional animation configuration */
   readonly animate?: AnimationOptions;
   /**
@@ -162,17 +177,16 @@ export interface MatchEitherConfig<
  * EnterOnlyAnimationOptions}. Group membership lives inside `animate.group`
  * (same shape as `each`/`when`/`match`) so a pure-CSS element that only
  * wants to sequence writes `{ animate: { group: g0 } }`.
+ *
+ * @template N - The container element type. Inferred from `container` if
+ *   provided; defaults to `HTMLElement | SVGElement` otherwise.
  */
-export interface AnimatedConfig {
+export interface AnimatedConfig<N extends DOMElement = DOMElement> {
   /**
    * Optional custom container element. If not provided, defaults to a div
    * with `display: contents`.
    */
-  readonly container?: () => Element.Element<
-    HTMLElement | SVGElement,
-    never,
-    never
-  >;
+  readonly container?: () => Element.Element<N, never, never>;
   /** Enter-lifecycle animation options (no exit). */
   readonly animate?: EnterOnlyAnimationOptions;
   /**
@@ -184,17 +198,21 @@ export interface AnimatedConfig {
 
 /**
  * Configuration for the `each` control flow (DOM-specific with animation support).
+ *
+ * @template N - The container element type. Inferred from `container` if
+ *   provided; defaults to `HTMLElement | SVGElement` otherwise.
  */
-export interface EachConfig<A, E = never, R = never> {
+export interface EachConfig<
+  A,
+  E = never,
+  R = never,
+  N extends DOMElement = DOMElement,
+> {
   /**
    * Optional custom container element. If not provided, defaults to a div
    * with `display: contents`.
    */
-  readonly container?: () => Element.Element<
-    HTMLElement | SVGElement,
-    never,
-    never
-  >;
+  readonly container?: () => Element.Element<N, never, never>;
   /** Function to extract a unique key from each item */
   readonly key: (item: A) => string;
   /**
@@ -205,7 +223,7 @@ export interface EachConfig<A, E = never, R = never> {
   readonly render: (
     item: Readable<A>,
     index: Readable<number>,
-  ) => Element.Element<HTMLElement | SVGElement, E, R>;
+  ) => Element.Element<DOMElement, E, R>;
   /** Optional animation configuration */
   readonly animate?: ListAnimationOptions;
   /**
@@ -242,24 +260,26 @@ type ExtractReadableValue<T extends Readable<unknown>> =
  * whenever any of the input Readables change. The render callback must not
  * return errors and can only require Scope and RendererContext (which are
  * provided automatically).
+ *
+ * @template N - The container element type. Inferred from `container` if
+ *   provided; defaults to `HTMLElement | SVGElement` otherwise.
  */
-export interface RedrawConfig<T extends Readable<unknown>> {
+export interface RedrawConfig<
+  T extends Readable<unknown>,
+  N extends DOMElement = DOMElement,
+> {
   /**
    * Optional custom container element. If not provided, defaults to a div
    * with `display: contents`.
    */
-  readonly container?: () => Element.Element<
-    HTMLElement | SVGElement,
-    never,
-    never
-  >;
+  readonly container?: () => Element.Element<N, never, never>;
   /**
    * Function to render the content. Called with current values from all
    * Readables whenever any of them change.
    */
   readonly render: (
     values: ExtractReadableValue<T>,
-  ) => Element.Element<HTMLElement | SVGElement, never, never>;
+  ) => Element.Element<DOMElement, never, never>;
   /** Optional animation configuration */
   readonly animate?: AnimationOptions;
   /**

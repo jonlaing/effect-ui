@@ -82,10 +82,16 @@ type DOMElement = HTMLElement | SVGElement;
  * })
  * ```
  */
-export const when = <E1 = never, R1 = never, E2 = never, R2 = never>(
+export const when = <
+  E1 = never,
+  R1 = never,
+  E2 = never,
+  R2 = never,
+  N extends DOMElement = DOMElement,
+>(
   condition: Readable.Readable<boolean>,
-  config: WhenConfig<E1, R1, E2, R2>,
-): Element.Element<DOMElement, E1 | E2, R1 | R2 | ControlCtx> =>
+  config: WhenConfig<E1, R1, E2, R2, N>,
+): Element.Element<N, E1 | E2, R1 | R2 | ControlCtx> =>
   pipe(
     coreWhen(condition, {
       onTrue: config.onTrue,
@@ -98,7 +104,7 @@ export const when = <E1 = never, R1 = never, E2 = never, R2 = never>(
           intro: config.intro,
         })
       : (x) => x,
-  ) as Element.Element<DOMElement, E1 | E2, R1 | R2 | ControlCtx>;
+  ) as Element.Element<N, E1 | E2, R1 | R2 | ControlCtx>;
 
 /**
  * Pattern match on a reactive value and render the corresponding element.
@@ -126,10 +132,17 @@ export const when = <E1 = never, R1 = never, E2 = never, R2 = never>(
  * })
  * ```
  */
-export const match = <A, E = never, R = never, E2 = never, R2 = never>(
+export const match = <
+  A,
+  E = never,
+  R = never,
+  E2 = never,
+  R2 = never,
+  N extends DOMElement = DOMElement,
+>(
   value: Readable.Readable<A>,
-  config: MatchConfig<A, E, R, E2, R2>,
-): Element.Element<DOMElement, E | E2, R | R2 | ControlCtx> =>
+  config: MatchConfig<A, E, R, E2, R2, N>,
+): Element.Element<N, E | E2, R | R2 | ControlCtx> =>
   pipe(
     coreMatch(value, {
       cases: config.cases,
@@ -142,7 +155,7 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
           intro: config.intro,
         })
       : (x) => x,
-  ) as Element.Element<DOMElement, E | E2, R | R2 | ControlCtx>;
+  ) as Element.Element<N, E | E2, R | R2 | ControlCtx>;
 
 /**
  * Render a list of items with efficient updates using keys.
@@ -166,10 +179,15 @@ export const match = <A, E = never, R = never, E2 = never, R2 = never>(
  * })
  * ```
  */
-export const each = <A, E = never, R = never>(
+export const each = <
+  A,
+  E = never,
+  R = never,
+  N extends DOMElement = DOMElement,
+>(
   items: Readable.Readable<readonly A[]>,
-  config: EachConfig<A, E, R>,
-): Element.Element<DOMElement, E, R | ControlCtx> =>
+  config: EachConfig<A, E, R, N>,
+): Element.Element<N, E, R | ControlCtx> =>
   pipe(
     coreEach(items, {
       key: config.key,
@@ -182,7 +200,7 @@ export const each = <A, E = never, R = never>(
           intro: config.intro,
         })
       : (x) => x,
-  ) as Element.Element<DOMElement, E, R | ControlCtx>;
+  ) as Element.Element<N, E, R | ControlCtx>;
 
 /**
  * Match on an Option and render different elements for Some/None cases.
@@ -205,10 +223,17 @@ export const each = <A, E = never, R = never>(
  * })
  * ```
  */
-export const matchOption = <A, E1 = never, R1 = never, E2 = never, R2 = never>(
+export const matchOption = <
+  A,
+  E1 = never,
+  R1 = never,
+  E2 = never,
+  R2 = never,
+  N extends DOMElement = DOMElement,
+>(
   option: Readable.Readable<Option.Option<A>>,
-  config: MatchOptionConfig<A, E1, R1, E2, R2>,
-): Element.Element<DOMElement, E1 | E2, R1 | R2 | ControlCtx> =>
+  config: MatchOptionConfig<A, E1, R1, E2, R2, N>,
+): Element.Element<N, E1 | E2, R1 | R2 | ControlCtx> =>
   pipe(
     coreMatchOption(option, {
       onSome: config.onSome,
@@ -221,7 +246,7 @@ export const matchOption = <A, E1 = never, R1 = never, E2 = never, R2 = never>(
           intro: config.intro,
         })
       : (x) => x,
-  ) as Element.Element<DOMElement, E1 | E2, R1 | R2 | ControlCtx>;
+  ) as Element.Element<N, E1 | E2, R1 | R2 | ControlCtx>;
 
 /**
  * Match on an Either and render different elements for Right/Left cases.
@@ -241,10 +266,11 @@ export const matchEither = <
   R1 = never,
   E2 = never,
   R2 = never,
+  N extends DOMElement = DOMElement,
 >(
   either: Readable.Readable<Either.Either<A, E>>,
-  config: MatchEitherConfig<A, E, E1, R1, E2, R2>,
-): Element.Element<DOMElement, E1 | E2, R1 | R2 | ControlCtx> =>
+  config: MatchEitherConfig<A, E, E1, R1, E2, R2, N>,
+): Element.Element<N, E1 | E2, R1 | R2 | ControlCtx> =>
   pipe(
     coreMatchEither(either, {
       onRight: config.onRight,
@@ -257,7 +283,7 @@ export const matchEither = <
           intro: config.intro,
         })
       : (x) => x,
-  ) as Element.Element<DOMElement, E1 | E2, R1 | R2 | ControlCtx>;
+  ) as Element.Element<N, E1 | E2, R1 | R2 | ControlCtx>;
 
 /**
  * Re-render a component whenever any of the provided Readables change.
@@ -275,10 +301,13 @@ export const matchEither = <
  * })
  * ```
  */
-export const redraw = <T extends Readable.Readable<unknown>>(
+export const redraw = <
+  T extends Readable.Readable<unknown>,
+  N extends DOMElement = DOMElement,
+>(
   readables: T,
-  config: RedrawConfig<T>,
-): Element.Element<DOMElement, never, ControlCtx> =>
+  config: RedrawConfig<T, N>,
+): Element.Element<N, never, ControlCtx> =>
   pipe(
     coreRedraw(readables, {
       render: config.render,
@@ -290,7 +319,7 @@ export const redraw = <T extends Readable.Readable<unknown>>(
           intro: config.intro,
         })
       : (x) => x,
-  ) as Element.Element<DOMElement, never, ControlCtx>;
+  ) as Element.Element<N, never, ControlCtx>;
 
 /**
  * Mount-once wrapper for a single element with animation support.
@@ -344,10 +373,14 @@ export const redraw = <T extends Readable.Readable<unknown>>(
  *   });
  * ```
  */
-export const animated = <E = never, R = never>(
-  config: AnimatedConfig,
+export const animated = <
+  E = never,
+  R = never,
+  N extends DOMElement = DOMElement,
+>(
+  config: AnimatedConfig<N>,
   render: () => Element.Element<DOMElement, E, R>,
-): Element.Element<DOMElement, E, R | ControlCtx> =>
+): Element.Element<N, E, R | ControlCtx> =>
   pipe(
     Effect.gen(function* () {
       const parentCtx = yield* ControlCtx;
@@ -360,11 +393,11 @@ export const animated = <E = never, R = never>(
       });
       yield* ctx.finalizeContainer();
       return container;
-    }) as Element.Element<DOMElement, E, R | ControlCtx>,
+    }) as Element.Element<N, E, R | ControlCtx>,
     config.animate || config.intro
       ? Effect.provideService(AnimationConfigCtx, {
           single: config.animate,
           intro: config.intro,
         })
       : (x) => x,
-  ) as Element.Element<DOMElement, E, R | ControlCtx>;
+  ) as Element.Element<N, E, R | ControlCtx>;
