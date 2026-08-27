@@ -40,13 +40,11 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@stax-ui/core": "workspace:*"
+    "@stax-ui/dom": "workspace:^",
+    "@stax-ui/router": "workspace:^"
   },
   "peerDependencies": {
     "@effect/platform": "^0.94.0",
-    "@stax-ui/dom": "workspace:^",
-    "@stax-ui/router": "workspace:^",
     "effect": "^3.0.0"
-  },
-  "peerDependenciesMeta": {}
+  }
 }

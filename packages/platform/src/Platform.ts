@@ -35,12 +35,12 @@ import {
 
 import {
   AsyncCache,
+  Element,
   makeAsyncCache,
   RendererContext,
   type ControlCtx,
   type SuspenseBoundaryCtx,
-} from "@stax-ui/core";
-import { Element } from "@stax-ui/dom";
+} from "@stax-ui/dom";
 import { renderToString } from "@stax-ui/dom/server";
 import {
   Navigation,

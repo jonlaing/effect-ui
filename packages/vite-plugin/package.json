@@ -38,14 +38,11 @@
   "scripts": {
     "build": "tsup"
   },
-  "peerDependencies": {
-    "@stax-ui/platform": "workspace:^",
-    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0"
+  "dependencies": {
+    "@stax-ui/platform": "workspace:^"
   },
-  "peerDependenciesMeta": {
-    "@stax-ui/platform": {
-      "optional": true
-    }
+  "peerDependencies": {
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0"
   },
   "devDependencies": {
     "vite": "^7.0.0"
