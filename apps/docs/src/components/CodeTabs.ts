@@ -26,7 +26,10 @@ export const CodeTabs = (props: {
 
     return yield* $.div(
       {
-        class: ["rounded-lg overflow-hidden bg-code border", props.class ?? ""],
+        class: [
+          "rounded-lg overflow-hidden bg-code border grid grid-rows-[auto_1fr]",
+          props.class ?? "",
+        ],
       },
       // ─── Tab bar ─────────────────────────────────────────────
       $.div(
@@ -58,14 +61,10 @@ export const CodeTabs = (props: {
       ),
       // ─── Panels ──────────────────────────────────────────────
       $.div(
-        { class: "relative" },
+        { class: "relative overflow-hidden flex flex-col" },
         props.files.map((file) =>
           $.div({
-            class: [
-              "code-tab-panel",
-              "[&_pre]:!m-0 [&_pre]:!p-6 [&_pre]:!bg-transparent",
-              "[&_pre]:!text-xs overflow-x-auto",
-            ],
+            class: ["code-tab-panel overflow-hidden flex-1 flex flex-col"],
             "data-active": Readable.map(active, (a) =>
               a === file.filename ? "true" : "false",
             ),

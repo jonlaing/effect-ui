@@ -292,12 +292,24 @@ code.prose,
   overflow: auto;
   width: 100%;
   border: 1px solid var(--color-border);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.shiki::-webkit-scrollbar {
+  display: none;
 }
 
 [data-theme="dark"] .shiki,
 [data-theme="dark"] .shiki span {
   background-color: var(--shiki-dark-bg) !important;
   color: var(--shiki-dark) !important;
+}
+
+.code-tab-panel .shiki {
+  border: none;
+  border-radius: 0;
+  flex: 1 1 auto;
 }
 
 /*

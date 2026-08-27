@@ -1,7 +1,15 @@
 import { Effect } from "effect";
 import { Plus } from "lucide-static";
 
-import { $, Animation, each, Readable, Signal } from "@stax-ui/dom";
+import {
+  $,
+  Animation,
+  each,
+  EventHandler,
+  Readable,
+  Signal,
+  SignalArray,
+} from "@stax-ui/dom";
 
 import { Storage } from "./Storage.js";
 import { TodoItem, type Todo } from "./TodoItem.js";
@@ -12,39 +20,21 @@ const DEFAULT_TODOS: readonly Todo[] = [
   { id: "3", text: "Wire up a real service via Effect Context", done: false },
 ];
 
-/**
- * Todo list demo — hydrates a `Signal.Array<Todo>` from `Storage`,
- * wires an input for adding new items, and renders each row via
- * `TodoItem`.
- *
- * The interesting thing is the first line of the body:
- *
- * ```ts
- * const todos = yield* storage.persistArray("stax-todos", DEFAULT_TODOS);
- * ```
- *
- * ...and it's the whole reactive persistence story. The component
- * doesn't know whether persistence is real (client) or a no-op
- * (SSG); it just asks for a persisted array. The `Storage` service
- * is declared as a required dependency in the component's type, so
- * mounting without a Layer wouldn't typecheck.
- *
- * Todos are stored as a `Signal.Array`, so mutations use the array-
- * specific methods (`push`, `modifyAt`, `removeAt`) rather than
- * full-list `update((list) => list.map(...))` closures.
- */
 export const TodoApp = () =>
   Effect.gen(function* () {
     const storage = yield* Storage;
-    const todos = yield* storage.persistArray<Todo>(
+
+    // reactive collection, persisted to localStorage
+    const todos: SignalArray<Todo> = yield* storage.persistArray<Todo>(
       "stax-todos",
       DEFAULT_TODOS,
     );
 
     const draft = yield* Signal.make("");
 
-    const submit = () =>
+    const submit: EventHandler<SubmitEvent> = (e) =>
       Effect.gen(function* () {
+        yield* Effect.sync(() => e.preventDefault());
         const text = (yield* draft.get).trim();
         if (!text) return;
         yield* todos.push({
@@ -60,9 +50,7 @@ export const TodoApp = () =>
         const list = yield* todos.get;
         const index = list.findIndex((t) => t.id === id);
         if (index === -1) return;
-        // Index was just discovered from the current list, so the
-        // OutOfBoundsError branch is unreachable — `orDie` treats it
-        // as a defect if the invariant is ever violated.
+
         yield* todos
           .modifyAt(index, (t) => ({ ...t, done: !t.done }))
           .pipe(Effect.orDie);
@@ -81,16 +69,14 @@ export const TodoApp = () =>
       [...list].sort((a, b) => Number(a.done) - Number(b.done)),
     );
 
+    // This runs only once on mount. State changes from Readables (SignalArray, Signal)
+    // will trigger surgical DOM maniuplations rather than full re-renders.
     return yield* $.div(
       { class: "flex flex-col gap-3 w-full max-w-sm" },
       $.form(
         {
           class: "flex items-center gap-2",
-          onSubmit: (e) =>
-            Effect.gen(function* () {
-              yield* Effect.sync(() => e.preventDefault());
-              yield* submit();
-            }),
+          onSubmit: submit,
         },
         $.input({
           type: "text",
@@ -129,26 +115,7 @@ export const TodoApp = () =>
             onToggle: toggle,
             onRemove: remove,
           }),
-        // Three animations, one budget:
-        //  * enter: collapse `grid-template-rows: 0fr → 1fr` (the row
-        //    grows from zero height) alongside `opacity: 0 → 1`.
-        //  * exit: mirror image.
-        //  * move: FLIP translate3d — when an item toggles done and
-        //    the sort moves it to the bottom, existing items slide to
-        //    their new positions instead of teleporting.
-        //
-        // `!` marks the enterFrom / exitTo values as important so they
-        // beat the base classes (`grid-rows-[1fr]`) during the
-        // transition; the enter/exit classes carry the transition
-        // setup, and the base has none for `transform` / `opacity` /
-        // `grid-template-rows`, so the FLIP invert frame lands
-        // instantly (writing `style.transform` to the base state
-        // wouldn't animate) and the release then transitions under
-        // the just-added `transition-transform` rule.
-        //
-        // All three durations match at 300ms — grid-rows + FLIP
-        // compose exactly when their timings match; mismatched
-        // timings drift out of phase mid-play.
+        // enter, exit and move animations for the list items
         animate: {
           enterFrom: "!grid-rows-[0fr] !opacity-0",
           enter: "transition-all duration-300 ease-out",

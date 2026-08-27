@@ -227,7 +227,7 @@ export const HomePage = (props: {
             { class: "flex-1 min-w-0" },
             CodeTabs({
               files: todoFiles,
-              class: "max-h-[600px] overflow-y-auto",
+              class: "max-h-[600px]",
             }),
           ),
         ),
