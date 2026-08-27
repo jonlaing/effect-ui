@@ -65,7 +65,7 @@ export interface RouteNavigateOptions<P, SP> {
  * The current match result from the router.
  */
 export interface CurrentMatch {
-  readonly route: Route<string, unknown, unknown, unknown, unknown, unknown>;
+  readonly route: Route<string, unknown, unknown, never, unknown, unknown>;
   readonly params: Record<string, string>;
 }
 
@@ -111,13 +111,13 @@ export interface Navigation {
 
   /** Navigate to a route with type-safe params */
   readonly pushRoute: <P, SP>(
-    route: Route<string, P, SP, unknown, unknown, unknown>,
+    route: Route<string, P, SP, never, unknown, unknown>,
     options?: RouteNavigateOptions<P, SP>,
   ) => Effect.Effect<void>;
 
   /** Navigate to a route, replacing current history entry */
   readonly replaceRoute: <P, SP>(
-    route: Route<string, P, SP, unknown, unknown, unknown>,
+    route: Route<string, P, SP, never, unknown, unknown>,
     options?: RouteNavigateOptions<P, SP>,
   ) => Effect.Effect<void>;
 
@@ -244,7 +244,7 @@ export const make = <
       });
 
     const pushRoute = <P, SP>(
-      route: Route<string, P, SP, unknown, unknown, unknown>,
+      route: Route<string, P, SP, never, unknown, unknown>,
       opts?: RouteNavigateOptions<P, SP>,
     ): Effect.Effect<void> => {
       const path = buildPath(
@@ -256,7 +256,7 @@ export const make = <
     };
 
     const replaceRoute = <P, SP>(
-      route: Route<string, P, SP, unknown, unknown, unknown>,
+      route: Route<string, P, SP, never, unknown, unknown>,
       opts?: RouteNavigateOptions<P, SP>,
     ): Effect.Effect<void> => {
       const path = buildPath(
