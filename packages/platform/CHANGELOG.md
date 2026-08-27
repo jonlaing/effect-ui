@@ -1,6 +1,28 @@
 # Changelog
 
+## 0.5.0
+
+### Patch Changes
+
+- Updated dependencies [36b1d20]
+- Updated dependencies [3065684]
+- Updated dependencies [2644592]
+- Updated dependencies [05f94f9]
+- Updated dependencies [c5fd56a]
+  - @stax-ui/dom@0.4.0
+  - @stax-ui/core@0.3.0
+  - @stax-ui/router@0.3.0
+
 ## 2.0.0
+
+> **⚠ Published in error and deprecated on npm.** This version was
+> released while the rest of the `@stax-ui/*` family was still at
+> `0.x`, falsely implying API stability. Rewound to the `0.x` track
+> starting with `0.4.0` — see the [version rewind PR][rewind] for
+> the reasoning. Any consumer on `1.x` or `2.x` should downgrade to
+> the latest `0.x`.
+>
+> [rewind]: https://github.com/stax-ui/stax/pull/125
 
 ### Patch Changes
 
@@ -9,6 +31,9 @@
   - @stax-ui/dom@0.3.0
 
 ## 1.0.0
+
+> **⚠ Published in error and deprecated on npm.** See the note on
+> `2.0.0` above.
 
 ### Minor Changes
 
