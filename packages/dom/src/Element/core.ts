@@ -1047,26 +1047,18 @@ export const on: {
       const renderer = yield* RendererContext;
       const el = yield* self;
 
-      // Track if scope is still active to prevent stale handler calls
-      let isActive = true;
-
+      // Renderer.addEventListener is scope-managed via `acquireRelease`
+      // — when the enclosing scope closes, the DOM listener is removed.
+      // No stale-guard flag needed; the listener genuinely leaves the
+      // event target.
       const wrappedHandler = (e: unknown) => {
-        if (isActive) {
-          const effect = handler(e as HTMLElementEventMap[K]);
-          if (effect && Effect.isEffect(effect)) {
-            Effect.runPromise(effect);
-          }
+        const effect = handler(e as HTMLElementEventMap[K]);
+        if (effect && Effect.isEffect(effect)) {
+          Effect.runPromise(effect);
         }
       };
 
       yield* renderer.addEventListener(el, event, wrappedHandler);
-
-      // Clean up on scope finalization
-      yield* Effect.addFinalizer(() =>
-        Effect.sync(() => {
-          isActive = false;
-        }),
-      );
 
       return el;
     }) as Element<A, E, R>,
@@ -1096,36 +1088,29 @@ export const once: {
       const renderer = yield* RendererContext;
       const el = yield* self;
 
-      // Track if scope is still active to prevent stale handler calls
-      let isActive = true;
-
+      // `{ once: true }` handles the auto-remove-on-first-fire semantic
+      // at the DOM level; the renderer's scope-managed cleanup handles
+      // removal if the scope closes BEFORE the event ever fires.
       const wrappedHandler = (e: unknown) => {
-        if (isActive) {
-          isActive = false;
-          const effect = handler(e as HTMLElementEventMap[K]);
-          if (effect && Effect.isEffect(effect)) {
-            Effect.runPromise(effect);
-          }
+        const effect = handler(e as HTMLElementEventMap[K]);
+        if (effect && Effect.isEffect(effect)) {
+          Effect.runPromise(effect);
         }
       };
 
-      yield* renderer.addEventListener(el, event, wrappedHandler);
-
-      // Clean up on scope finalization
-      yield* Effect.addFinalizer(() =>
-        Effect.sync(() => {
-          isActive = false;
-        }),
-      );
+      yield* renderer.addEventListener(el, event, wrappedHandler, {
+        once: true,
+      });
 
       return el;
     }) as Element<A, E, R>,
 );
 
 /**
- * Add an event listener to the element (low-level).
- * Unlike `on`, this doesn't automatically clean up - you must call removeEventListener.
- * Useful for manual event management in Effect.async patterns.
+ * Add an event listener to the element (low-level, plain-function
+ * handler). Scope-managed: the listener is removed when the enclosing
+ * scope closes. Useful in `Effect.async` patterns where the handler
+ * is a plain `resume` callback rather than an Effect.
  */
 export const addEventListener: {
   <K extends keyof HTMLElementEventMap>(
@@ -1145,7 +1130,7 @@ export const addEventListener: {
     self: Element<A, E, R>,
     event: K,
     handler: (e: HTMLElementEventMap[K]) => void,
-    _options?: AddEventListenerOptions,
+    options?: AddEventListenerOptions,
   ): Element<A, E, R> =>
     Effect.gen(function* () {
       const renderer = yield* RendererContext;
@@ -1154,6 +1139,7 @@ export const addEventListener: {
         el,
         event,
         handler as (event: unknown) => void,
+        options,
       );
       return el;
     }) as Element<A, E, R>,

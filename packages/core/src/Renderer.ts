@@ -1,4 +1,4 @@
-import { Context, Effect } from "effect";
+import { Context, Effect, Scope } from "effect";
 
 /**
  * A slot is a swappable content placeholder.
@@ -148,15 +148,23 @@ export interface Renderer<Node> {
   readonly setInputValue: (node: Node, value: string) => Effect.Effect<void>;
 
   /**
-   * Add an event listener to a node.
-   * Returns a cleanup function to remove the listener.
-   * Note: This may be a no-op for non-interactive renderers (SSR).
+   * Add an event listener to a node. Scoped — the listener is removed
+   * when the enclosing `Scope` closes. Callers don't need to register
+   * their own finalizer.
+   *
+   * `options` is passed through to the underlying `addEventListener`
+   * (matters for `once`, `capture`, `passive`); the same values are
+   * passed to `removeEventListener` in the finalizer so the listener
+   * is correctly identified for removal.
+   *
+   * Non-interactive renderers (SSR) treat this as a no-op.
    */
   readonly addEventListener: (
     node: Node,
     event: string,
     handler: (event: unknown) => void,
-  ) => Effect.Effect<void>;
+    options?: AddEventListenerOptions,
+  ) => Effect.Effect<void, never, Scope.Scope>;
 
   /**
    * Get children of a node (for traversal during hydration).
