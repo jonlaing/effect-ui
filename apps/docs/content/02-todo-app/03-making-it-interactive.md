@@ -53,7 +53,7 @@ Update `src/main.ts`:
 ```typescript
 import "./styles.css";
 import { Effect } from "effect";
-import { $, mount, Readable, runApp, Signal, t } from "@stax-ui/dom";
+import { $, mount, Readable, Signal, t } from "@stax-ui/dom";
 
 const container = document.getElementById("root");
 if (!container) throw new Error("Root element not found");
@@ -107,11 +107,7 @@ const App = () =>
     );
   });
 
-runApp(
-  Effect.gen(function* () {
-    yield* mount(yield* App(), container);
-  }),
-);
+mount(App(), container);
 ```
 
 ## What Changed?

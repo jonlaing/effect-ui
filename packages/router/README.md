@@ -21,8 +21,7 @@ The router is built around five main concepts:
 ## Quick Start
 
 ```ts
-import { Effect } from "effect";
-import { $, collect, Signal, mount, runApp } from "@stax-ui/dom";
+import { $, collect, Signal, mount } from "@stax-ui/dom";
 import { Route, Router, Navigation, Link, Outlet } from "@stax-ui/router";
 
 // Define routes
@@ -54,12 +53,9 @@ const App = () =>
   );
 
 // Run the app
-runApp(
-  Effect.gen(function* () {
-    yield* mount(App(), document.getElementById("root")!);
-  }),
-  { layer: Navigation.makeLayer(router) },
-);
+mount(App(), document.getElementById("root")!, {
+  layers: Navigation.makeLayer(router),
+});
 ```
 
 ## Route
@@ -424,13 +420,8 @@ const navLayer = Navigation.makeLayer(router, {
   initialSearch: "",      // Optional
 });
 
-// Provide via runApp
-runApp(
-  Effect.gen(function* () {
-    yield* mount(App(), root);
-  }),
-  { layer: navLayer },
-);
+// Provide via mount
+mount(App(), root, { layers: navLayer });
 ```
 
 ### Reactive State

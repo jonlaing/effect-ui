@@ -1,1 +1,1 @@
-export { mount, runApp } from "../Render/client/index.js";
+export { mount } from "../Render/client/index.js";

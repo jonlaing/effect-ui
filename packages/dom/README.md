@@ -58,28 +58,20 @@ const Counter = () =>
 
 ### Running Your App
 
-Use `runApp` and `mount` to start your application:
+Use `mount` to start your application:
 
 ```ts
-import { Effect } from "effect";
-import { mount, runApp } from "@stax-ui/dom";
+import { mount } from "@stax-ui/dom";
 
-runApp(
-  Effect.gen(function* () {
-    yield* mount(App(), document.getElementById("root")!);
-  }),
-);
+mount(App(), document.getElementById("root")!);
 ```
 
-`runApp` handles boilerplate: scoping, SignalRegistry, and keeping the app alive. You can also pass a `layer` option for additional services:
+`mount` handles all the boilerplate: scoping, `SignalRegistry`, the client-side rendering layers, and keeping the app alive for the lifetime of the page. Pass `options.layers` for additional services (typically a router, plus anything else the app needs):
 
 ```ts
-runApp(
-  Effect.gen(function* () {
-    yield* mount(App(), document.getElementById("root")!);
-  }),
-  { layer: Navigation.makeLayer(router) },
-);
+mount(App(), document.getElementById("root")!, {
+  layers: Navigation.makeLayer(router),
+});
 ```
 
 ## Elements
@@ -696,8 +688,7 @@ yield* $.div(
 
 | Export | Description |
 |--------|-------------|
-| `mount(element, container)` | Mount an element into a DOM container |
-| `runApp(program, options?)` | Run an application with scoping and lifecycle |
+| `mount(element, container, options?)` | Start a client-side application: mounts the element and stays alive for the lifetime of the page |
 | `renderToString(element, options?)` | SSR — from `@stax-ui/dom/server` |
 | `hydrate(element, container, options?)` | Hydration — from `@stax-ui/dom/hydrate` |
 

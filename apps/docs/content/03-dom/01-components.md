@@ -114,28 +114,21 @@ $.div({},
 
 ## Running Your App
 
-Use `runApp` and `mount` to start your application:
+Use `mount` to start your application:
 
 ```typescript
-import { Effect } from "effect";
-import { mount, runApp } from "@stax-ui/dom";
+import { mount } from "@stax-ui/dom";
 
-runApp(
-  Effect.gen(function* () {
-    yield* mount(App(), document.getElementById("root")!);
-  }),
-);
+mount(App(), document.getElementById("root")!);
 ```
 
-`runApp` handles boilerplate: scoping, the signal registry, and keeping the process alive. You can pass additional layers:
+`mount` handles boilerplate: scoping, the signal registry, and keeping the process alive. You can pass additional layers:
 
 ```typescript
+import { mount } from "@stax-ui/dom";
 import { Navigation } from "@stax-ui/router";
 
-runApp(
-  Effect.gen(function* () {
-    yield* mount(App(), document.getElementById("root")!);
-  }),
-  { layer: Navigation.makeLayer(router) },
-);
+mount(App(), document.getElementById("root")!, {
+  layers: Navigation.makeLayer(router),
+});
 ```

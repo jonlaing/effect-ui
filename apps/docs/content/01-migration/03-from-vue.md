@@ -347,7 +347,7 @@ const Page = () =>
   });
 
 // Provide at mount
-runApp(mount(Page().pipe(Effect.provideService(ThemeService, "dark")), root));
+mount(Page().pipe(Effect.provideService(ThemeService, "dark")), root);
 
 // Or provide inline
 $.div(

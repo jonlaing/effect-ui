@@ -212,11 +212,9 @@ if (!container) throw new Error("Root element not found");
 // Create the storage layer
 const StorageLayer = Layer.succeed(TodoStorage, TodoStorageLive);
 
-runApp(
-  mount(
-    App().pipe(Effect.provide(StorageLayer)),
-    container
-  );
+mount(
+  App().pipe(Effect.provide(StorageLayer)),
+  container,
 );
 ```
 

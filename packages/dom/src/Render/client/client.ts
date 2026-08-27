@@ -3,14 +3,23 @@
  *
  * @example
  * ```ts
- * import { mount, runApp } from "@stax-ui/dom/client";
+ * import { mount } from "@stax-ui/dom/client";
  * import { App } from "./App";
  *
- * runApp(
- *   Effect.gen(function* () {
- *     yield* mount(App(), document.getElementById("root")!)
- *   })
- * )
+ * mount(App(), document.getElementById("root")!);
+ * ```
+ *
+ * @example
+ * ```ts
+ * // With a router / other client layers
+ * import { mount } from "@stax-ui/dom/client";
+ * import { Navigation } from "@stax-ui/router";
+ * import { App } from "./App";
+ * import { router } from "./routes";
+ *
+ * mount(App(), document.getElementById("root")!, {
+ *   layers: Navigation.makeLayer(router),
+ * });
  * ```
  *
  * @module
@@ -33,64 +42,19 @@ import { ClientSuspenseBoundaryCtx } from "../../SuspenseBoundaryCtx/ClientSuspe
 import { DOMRenderer } from "../DOMRenderer.js";
 
 /**
- * Mount an Element into a DOM container. Automatically cleans up when the scope closes.
+ * Provides the client-side rendering layers (Renderer, ControlCtx,
+ * SuspenseBoundary, AsyncCache) to an element, renders it, and
+ * inserts it into the container. Registers a scoped finalizer to
+ * pull the element back out when the scope closes.
  *
- * The element must have no errors and no unsatisfied requirements (Element.Element<never, never>).
- * If your component can fail, handle all errors before mounting using ErrorBoundary or Effect.catchAll.
- * If your component has context requirements, provide them using Effect.provide before mounting.
+ * The scoped variant that {@link mount} builds on top of, exported
+ * for tests that want to observe DOM after insertion without the
+ * fiber getting parked on `Effect.never`. Real applications should
+ * use `mount` directly.
  *
- * @param element - The Element to mount (must be error-free with all requirements satisfied)
- * @param container - The DOM container to mount into
- *
- * @example
- * ```ts
- * import { $, collect, mount } from "@stax-ui/dom"
- *
- * const app = $.div({}, collect(
- *   $.h1({}, $.of("Hello, Stax!"))
- * ))
- *
- * // Mount the app and run it
- * Effect.runPromise(
- *   Effect.scoped(
- *     mount(app, document.getElementById("root")!)
- *   )
- * )
- * ```
- *
- * @example
- * ```ts
- * // Handle errors before mounting
- * const riskyApp = fetchAndRenderData() // Element<..., FetchError, ...>
- *
- * const safeApp = Boundary.error(
- *   () => riskyApp,
- *   (error) => $.div({}, $.of(`Failed to load: ${String(error)}`))
- * ) // Element<..., never, ...>
- *
- * Effect.runPromise(
- *   Effect.scoped(
- *     mount(safeApp, document.getElementById("root")!)
- *   )
- * )
- * ```
- *
- * @example
- * ```ts
- * // Provide context before mounting
- * const appWithRouter = Link({ href: "/home" }, $.of("Home")) // Element<..., never, RouterContext>
- *
- * Effect.runPromise(
- *   Effect.scoped(
- *     mount(
- *       appWithRouter.pipe(Effect.provide(routerLayer)),
- *       document.getElementById("root")!
- *     )
- *   )
- * )
- * ```
+ * @internal
  */
-export const mount = (
+export const _mountScoped = (
   element: Element.Element<
     HTMLElement,
     never,
@@ -99,7 +63,6 @@ export const mount = (
   container: HTMLElement,
 ): Effect.Effect<void, never, Scope.Scope> =>
   Effect.gen(function* () {
-    // Build the layers for client-side rendering
     const rendererLayer = Layer.succeed(
       RendererContext,
       DOMRenderer as Renderer<unknown>,
@@ -126,78 +89,92 @@ export const mount = (
   });
 
 /**
- * Run an Stax application. This is the main entry point for Stax apps.
+ * Mount a Stax application into a DOM container.
  *
- * Handles all the boilerplate:
- * - Scopes the effect for proper resource cleanup
- * - Provides the SignalRegistry
- * - Keeps the app alive until page unload
- * - Optionally provides additional layers (like router context)
+ * Handles every piece of client-side app startup:
  *
- * @param program - An effect that sets up and mounts the app
- * @param options - Optional configuration
- * @param options.layer - Additional layer to provide (e.g., router context)
+ * - Provides the client-side rendering layers (Renderer, ControlCtx,
+ *   SuspenseBoundary, AsyncCache) plus `SignalRegistry`.
+ * - Optionally merges caller-supplied layers (typically the Navigation
+ *   layer from `@stax-ui/router`, plus anything else the app needs).
+ * - Renders the element and appends it to the container.
+ * - Keeps the fiber alive until page unload so scoped subscriptions —
+ *   signals, streams, popstate listeners — stay live.
  *
- * @example
+ * The element must be error-free (`Element<A, never, ...>`) — handle
+ * failures with `Boundary.error` before mounting. Any layer requirements
+ * beyond the built-in client layers must be supplied via `options.layers`.
+ *
+ * The returned Promise never resolves — that's intentional. Mount is a
+ * terminal operation: it stakes out the fiber that owns the page's
+ * reactive lifetime.
+ *
+ * @example Simple app
  * ```ts
- * // Simple app without routing
- * runApp(
- *   Effect.gen(function* () {
- *     yield* mount(App(), document.getElementById("root")!)
- *   })
- * )
+ * import { mount } from "@stax-ui/dom";
+ * import { App } from "./App";
+ *
+ * mount(App(), document.getElementById("root")!);
  * ```
  *
- * @example
+ * @example App with a router
  * ```ts
- * // App with router
- * runApp(
- *   Effect.gen(function* () {
- *     const router = yield* Router.make(routes)
- *     yield* mount(
- *       App().pipe(Effect.provide(makeRouterLayer(router))),
- *       document.getElementById("root")!
- *     )
- *   })
- * )
+ * import { mount } from "@stax-ui/dom";
+ * import { Navigation } from "@stax-ui/router";
+ * import { App } from "./App";
+ * import { router } from "./routes";
+ *
+ * mount(App(), document.getElementById("root")!, {
+ *   layers: Navigation.makeLayer(router),
+ * });
  * ```
  *
- * @example
+ * @example App with multiple layers
  * ```ts
- * // App with custom layer
- * const appLayer = Layer.merge(
- *   makeRouterLayer(router),
- *   Layer.succeed(MyContext, myService)
- * )
- *
- * runApp(
- *   Effect.gen(function* () {
- *     yield* mount(App().pipe(Effect.provide(appLayer)), root)
- *   })
- * )
+ * mount(App(), root, {
+ *   layers: Layer.mergeAll(
+ *     Navigation.makeLayer(router),
+ *     Layer.succeed(MyContext, myService),
+ *   ),
+ * });
  * ```
  */
-export const runApp = <E, R>(
-  program: Effect.Effect<void, E, Scope.Scope | R>,
+export const mount = <R = never>(
+  element: Element.Element<
+    HTMLElement,
+    never,
+    RendererContext | ControlCtx | SuspenseBoundaryCtx | R
+  >,
+  container: HTMLElement,
   options?: {
-    layer?: Layer.Layer<R, never, never>;
+    readonly layers?: Layer.Layer<R, never, never>;
   },
 ): Promise<void> => {
-  const fullProgram = Effect.gen(function* () {
-    yield* program;
-    // Keep the app alive until page unload
+  const program = Effect.gen(function* () {
+    yield* _mountScoped(
+      element as Element.Element<
+        HTMLElement,
+        never,
+        RendererContext | ControlCtx | SuspenseBoundaryCtx
+      >,
+      container,
+    );
+    // Terminal: hold the fiber open so scoped resources (subscription
+    // streams, popstate listeners, PubSubs) live for the page's lifetime.
     yield* Effect.never;
   });
 
-  let effect = Effect.scoped(fullProgram).pipe(
+  let effect: Effect.Effect<void, never, R> = Effect.scoped(program).pipe(
     Effect.provide(SignalRegistry.Live),
-  );
+  ) as Effect.Effect<void, never, R>;
 
-  if (options?.layer) {
-    effect = effect.pipe(
-      Effect.provide(options.layer as Layer.Layer<R, never, never>),
-    );
+  if (options?.layers) {
+    effect = effect.pipe(Effect.provide(options.layers)) as Effect.Effect<
+      void,
+      never,
+      R
+    >;
   }
 
-  return Effect.runPromise(effect as Effect.Effect<void, E, never>);
+  return Effect.runPromise(effect as Effect.Effect<void, never, never>);
 };

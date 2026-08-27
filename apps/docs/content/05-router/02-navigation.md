@@ -14,15 +14,11 @@ Provide the Navigation layer at your app's root:
 
 ```typescript
 import { Navigation } from "@stax-ui/router";
-import { runApp, mount } from "@stax-ui/dom";
-import { Effect } from "effect";
+import { mount } from "@stax-ui/dom";
 
-runApp(
-  Effect.gen(function* () {
-    yield* mount(App(), document.getElementById("root")!);
-  }),
-  { layer: Navigation.makeLayer(router) },
-);
+mount(App(), document.getElementById("root")!, {
+  layers: Navigation.makeLayer(router),
+});
 ```
 
 Once provided, any component in the tree can navigate or read the current route.

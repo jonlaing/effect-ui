@@ -68,7 +68,7 @@ Now update `src/main.ts`:
 ```typescript
 import "./styles.css";
 import { Effect } from "effect";
-import { $, each, mount, Readable, runApp, Signal, t } from "@stax-ui/dom";
+import { $, each, mount, Readable, Signal, t } from "@stax-ui/dom";
 import { TodoItem } from "./components/TodoItem";
 
 const container = document.getElementById("root");
@@ -116,7 +116,7 @@ const App = () =>
     );
   });
 
-runApp(mount(App(), container));
+mount(App(), container);
 ```
 
 The key change is:
