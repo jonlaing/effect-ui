@@ -24,11 +24,19 @@ export type TypeId = typeof TypeId;
 // =============================================================================
 
 /**
- * Layout wrapper function - must be transparent to E/R.
+ * Layout wrapper function — must be transparent to E and R.
+ *
+ * A layout takes a rendered element and returns it wrapped in some
+ * structural chrome (a sidebar, an app shell). The wrapper's own
+ * outer element type isn't preserved — the caller decides what
+ * chrome to add (a `<div>`, an `<article>`, an SVG group) — but the
+ * child's `E` and `R` must flow through unchanged. The wrapper
+ * isn't allowed to swallow errors or introduce new context
+ * requirements.
  */
 export type LayoutWrapper = <A extends HTMLElement | SVGElement, E, R>(
   children: Element.Element<A, E, R>,
-) => Element.Element<HTMLElement, E, R>;
+) => Element.Element<HTMLElement | SVGElement, E, R>;
 
 /**
  * Options for Router.match
@@ -362,24 +370,27 @@ export const guard =
  * ```
  */
 export const layout =
-  <E, R>(
-    wrapper: <A extends HTMLElement | SVGElement, E, R>(
-      children: Element.Element<A, E, R>,
-    ) => Element.Element<HTMLElement, E, R>,
-  ) =>
+  (wrapper: LayoutWrapper) =>
   <
     P extends Record<string, unknown> | never,
     S extends Record<string, unknown> | never,
     D,
-    E2,
-    R2,
+    E,
+    R,
   >(
-    router: Router<P, S, D, E2, R2>,
-  ): Router<P, S, D, E | E2, R | R2> => {
+    router: Router<P, S, D, E, R>,
+  ): Router<P, S, D, E, R> => {
+    // `LayoutWrapper` is transparent to E/R by contract (see its type
+    // definition) — it takes children with some E, R and returns a
+    // wrapped element with the same E, R. So the returned router's
+    // E and R are identical to the input's, no widening. The earlier
+    // signature added its own `<E, R>` generics that never got bound
+    // and fell back to `unknown`, silently collapsing every downstream
+    // consumer's E and R to `unknown`.
     return Object.assign(Object.create(RouterProto), {
       ...router,
       layouts: [...router.layouts, wrapper],
-    }) as Router<P, S, D, E | E2, R | R2>;
+    }) as Router<P, S, D, E, R>;
   };
 
 // =============================================================================
