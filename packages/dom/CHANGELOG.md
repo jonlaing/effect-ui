@@ -1,5 +1,153 @@
 # Changelog
 
+## 0.5.0
+
+### Minor Changes
+
+- 6750110: feat(dom): add `Keyboard` module for declarative keyboard bindings
+
+  Phase 1 of the a11y-primitives push. Ships a scoped, cross-platform
+  keyboard-binding API that handles the load-bearing details users get
+  wrong when writing ad-hoc: cleanup, cross-platform modifier
+  mapping, and the "shortcut vs. typing in a text field" collision.
+
+  ```ts
+  import { Effect } from "effect";
+
+  import { Keyboard } from "@stax-ui/dom";
+
+  // Global — bound to `document`
+  yield * Keyboard.on("mod+k", () => Effect.sync(() => paletteOpen.set(true)));
+
+  // Element-local via ElementRef — auto (re)attaches on
+  // mount/unmount, no manual bookkeeping.
+  yield *
+    Keyboard.on("Escape", () => Effect.sync(() => close()), {
+      target: containerRef,
+    });
+
+  // Multiple bindings, one handler
+  yield *
+    Keyboard.on(["ArrowDown", "j"], moveDown, {
+      target: containerRef,
+    });
+  ```
+
+  ## What's in the module
+  - **`Keyboard.on(binding, handler, options?)`** — Effect-scoped
+    binding. Auto-cleanup on scope close.
+
+  - **Handler type is `(KeyboardEvent) => Effect<void, never, never>`.**
+    Deliberately does NOT accept plain `() => void` — plain-function
+    handlers are exactly where uncaught exceptions and un-typed side
+    effects sneak in. Wrap DOM writes in `Effect.sync` (small cost,
+    big norm-shift toward error-typed code).
+
+  - **Binding syntax.** `[modifier+]*key`. Modifiers: `mod`
+    (platform-normalized — `meta` on macOS, `ctrl` elsewhere), `meta`,
+    `ctrl`, `alt`, `shift`. Keys follow `KeyboardEvent.key` values,
+    case-insensitive.
+
+    One documented alias: `"Space"` (any casing) → `" "`. The literal
+    `" "` also works because it's the canonical `KeyboardEvent.key`
+    value — the alias exists only because `" "` is invisible in
+    source and code-review-hostile.
+
+  - **`parseBinding(string)`** — exported for callers building
+    bindings dynamically. Returns `Effect<ParsedBinding,
+KeyboardBindingError>`. `Keyboard.on` uses this internally with
+    `Effect.orDie` so its E channel stays `never` — a bad binding
+    string is a programmer bug, not a runtime failure a caller should
+    handle. Dynamic-binding consumers can call `parseBinding` first
+    and catch the typed error.
+
+  - **Targets:** `"document"` (default), any `HTMLElement`, or an
+    `ElementRef`. Ref targets subscribe to `isConnected` so the
+    listener follows the element's mount lifecycle without manual
+    bookkeeping.
+
+  - **`preventDefault`** as `boolean | (KeyboardEvent) => boolean`.
+    Omit for a smart default that skips preventDefault when the event
+    target is an editable element (text `<input>`, `<textarea>`,
+    contenteditable) — so global bindings like `"j"` for feed nav
+    don't block typing in a search box.
+
+  - **`stopPropagation`** off by default so a parent Keyboard binding
+    for the same key still fires; opt in when a child scope should
+    consume the event.
+
+  - Named predicates exported alongside: `outsideInputs` (the
+    default), `withModifier`, and the underlying `isEditableTarget`
+    helper.
+
+  ## Not shipped in this PR
+  - `Keyboard.format` for rendering bindings as `⌘K` / `Ctrl+K` in
+    UI. A display-side concern separate from binding; will land in a
+    follow-up when we have a real widget consumer for it.
+  - Multi-key sequences and chords.
+  - Global shortcut registry / cheatsheet.
+
+  ## Unlocks
+
+  `Escape.on`, `RovingTabIndex`, and eventually the headless-widget
+  `Dialog` all compose on top of this.
+
+### Patch Changes
+
+- b1f07e5: fix(dom): stop leaking DOM event listeners on component unmount
+
+  `Element.on` and `Element.once` registered a scope finalizer that
+  flipped an internal `isActive` flag but never called
+  `removeEventListener` — the DOM listener stayed attached to the
+  element forever after the enclosing scope closed. Every mount/unmount
+  cycle (dialog, route change, list-item update) leaked one native
+  listener per binding. Handlers didn't visibly fire because the
+  `isActive` gate short-circuited them, but the leak was real and
+  compounded.
+
+  The bare `Element.addEventListener` was affected too: it was
+  documented as "you must call `removeEventListener`" but the low-level
+  `Renderer.addEventListener` didn't return a cleanup handle, so
+  manual removal was structurally impossible.
+
+  ## What changed
+  - **`Renderer.addEventListener`** now returns `Effect<void, never,
+Scope.Scope>` and accepts `AddEventListenerOptions`. Uses
+    `Effect.acquireRelease` internally so the DOM listener is properly
+    detached when the enclosing scope closes. The `options` param means
+    `Element.once` can pass `{ once: true }` for correct native
+    auto-remove-on-first-fire semantics.
+  - **DOMRenderer / HydrationRenderer** updated to `acquireRelease`.
+    `StringRenderer` stays `Effect.void` (SSR still no-ops).
+  - **`Element.on` / `Element.once` / `Element.addEventListener`** drop
+    their `isActive`-flag pattern. Cleanup is now handled uniformly by
+    the scoped renderer contract.
+
+  ## Audit
+
+  Full sweep of `packages/dom/src/Element/core.ts` for similar
+  resource-lifecycle bugs. Only the three event-listener call sites
+  above were affected. Every other resource in the file (streams
+  subscribed by `bindAttribute`, `bindClass`, `bindStyle`, `bindData`,
+  `bindTextContent`) uses `Effect.forkIn(scope)` correctly.
+
+  ## Tests
+
+  Five new tests in `Element/events.test.ts` that dispatch events after
+  the scope closes and verify the handler doesn't fire. These would
+  have failed under the pre-fix code.
+
+  ## Compatibility
+
+  `core` gets a **minor** bump because the `Renderer` interface signature
+  changed. Custom `Renderer` implementations (rare — meant for framework
+  integrators) need to widen their `addEventListener` return to
+  `Effect<void, never, Scope.Scope>` and accept the optional `options`
+  param. The DOM package's own three renderers are updated in this PR.
+
+- Updated dependencies [b1f07e5]
+  - @stax-ui/core@0.4.0
+
 ## 0.4.0
 
 ### Minor Changes

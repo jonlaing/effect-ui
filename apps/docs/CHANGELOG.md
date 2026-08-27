@@ -1,5 +1,16 @@
 # docs
 
+## 0.0.38
+
+### Patch Changes
+
+- Updated dependencies [6750110]
+- Updated dependencies [b1f07e5]
+- Updated dependencies [9142686]
+  - @stax-ui/dom@0.5.0
+  - @stax-ui/platform@0.5.1
+  - @stax-ui/router@0.3.1
+
 ## 0.0.37
 
 ### Patch Changes
