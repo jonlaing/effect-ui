@@ -125,7 +125,7 @@ Here's the full `src/main.ts`:
 ```typescript
 import "./styles.css";
 import { Effect } from "effect";
-import { $, each, mount, Readable, runApp, Signal } from "@stax-ui/dom";
+import { $, each, mount, Readable, Signal } from "@stax-ui/dom";
 import { TodoItem } from "./components/TodoItem";
 
 const container = document.getElementById("root");
@@ -203,7 +203,7 @@ const App = () =>
     );
   });
 
-runApp(mount(yield* App(), container));
+mount(App(), container);
 ```
 
 ## Try It Out

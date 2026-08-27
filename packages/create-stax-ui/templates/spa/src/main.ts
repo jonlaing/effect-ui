@@ -1,4 +1,4 @@
-import { mount, runApp, type Element } from "@stax-ui/dom";
+import { mount } from "@stax-ui/dom";
 import { Navigation } from "@stax-ui/router";
 
 import { App } from "./App.js";
@@ -9,6 +9,6 @@ if (!container) {
   throw new Error("Root element not found");
 }
 
-runApp(mount(App() as unknown as Element.Element<HTMLElement>, container), {
-  layer: Navigation.makeLayer(router),
+mount(App(), container, {
+  layers: Navigation.makeLayer(router),
 });

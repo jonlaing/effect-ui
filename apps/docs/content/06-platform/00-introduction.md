@@ -84,15 +84,12 @@ The plugin is the only piece with opinions about tooling. Everything else is jus
 If you're building a pure SPA — no server rendering, no server-side data loading — you don't need `@stax-ui/platform` at all. Use `Navigation.makeLayer(router)` directly and run loaders client-side:
 
 ```typescript
-import { runApp, mount } from "@stax-ui/dom";
+import { mount } from "@stax-ui/dom";
 import { Navigation } from "@stax-ui/router";
 
-runApp(
-  Effect.gen(function* () {
-    yield* mount(App(), document.getElementById("root")!);
-  }),
-  { layer: Navigation.makeLayer(router) },
-);
+mount(App(), document.getElementById("root")!, {
+  layers: Navigation.makeLayer(router),
+});
 ```
 
 Platform is for when you want the server involved — SSR, SSG, or server-side data loading.

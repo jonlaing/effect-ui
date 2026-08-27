@@ -66,8 +66,7 @@ Common attributes:
 Let's create the basic HTML structure for our todo app. Update `src/main.ts`:
 
 ```typescript
-import { Effect } from "effect";
-import { $, mount, runApp } from "@stax-ui/dom";
+import { $, mount } from "@stax-ui/dom";
 
 const container = document.getElementById("root");
 if (!container) throw new Error("Root element not found");
@@ -104,11 +103,7 @@ const App = () => $.div({ class: "todo-app" },
   ),
 );
 
-runApp(
-  Effect.gen(function* () {
-    yield* mount(App(), container);
-  }),
-);
+mount(App(), container);
 ```
 
 Save and check your browser. You should see a basic todo app structure!
@@ -172,7 +167,6 @@ Import it in your `src/main.ts`:
 
 ```typescript
 import "./styles.css";
-import { Effect } from "effect";
 // ... rest of imports
 ```
 

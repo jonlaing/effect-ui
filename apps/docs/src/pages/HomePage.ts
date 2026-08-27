@@ -131,7 +131,7 @@ const Greeting = (props: { name: string }) =>
 export const fullstackExample = `// Same component, three targets.
 
 // SPA — client-side only
-runApp(mount(App(), root));
+mount(App(), root);
 
 // SSR — server renders, client hydrates
 // server:

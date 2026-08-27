@@ -67,8 +67,7 @@ my-app/
 `src/main.ts` mounts the app and provides the router's Navigation layer:
 
 ```typescript
-import { Effect } from "effect";
-import { mount, runApp } from "@stax-ui/dom";
+import { mount } from "@stax-ui/dom";
 import { Navigation } from "@stax-ui/router";
 
 import { App } from "./App.js";
@@ -76,12 +75,7 @@ import { router } from "./routes.js";
 
 const root = document.getElementById("root")!;
 
-runApp(
-  Effect.gen(function* () {
-    const app = yield* App();
-    yield* mount(app, root);
-  }).pipe(Effect.provide(Navigation.layer(router))),
-);
+mount(App(), root, { layers: Navigation.layer(router) });
 ```
 
 ### Defining routes

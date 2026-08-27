@@ -118,7 +118,7 @@ export type {
 } from "./Screen/index.js";
 
 // Mounting
-export { mount, runApp } from "./Render/client/index.js";
+export { mount } from "./Render/client/index.js";
 
 // Template helpers
 export { t } from "./Template.js";

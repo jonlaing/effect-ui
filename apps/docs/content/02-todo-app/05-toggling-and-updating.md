@@ -72,7 +72,7 @@ Now update `src/main.ts` to create the toggle function and pass it down:
 ```typescript
 import "./styles.css";
 import { Effect } from "effect";
-import { $, each, mount, Readable, runApp, Signal } from "@stax-ui/dom";
+import { $, each, mount, Readable, Signal } from "@stax-ui/dom";
 import { TodoItem } from "./components/TodoItem";
 
 const container = document.getElementById("root");
@@ -134,7 +134,7 @@ const App = () =>
     );
   });
 
-runApp(mount(App(), container));
+mount(App(), container);
 ```
 
 The key addition is `toggleTodo`:

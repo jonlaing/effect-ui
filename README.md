@@ -110,7 +110,7 @@ pnpm add @stax-ui/dom @stax-ui/router @stax-ui/platform @effect/platform effect
 
 ```ts
 import { Effect } from "effect";
-import { $, Signal, mount, runApp } from "@stax-ui/dom";
+import { $, Signal, mount } from "@stax-ui/dom";
 
 const Counter = () =>
   Effect.gen(function* () {
@@ -124,11 +124,7 @@ const Counter = () =>
     );
   });
 
-runApp(
-  Effect.gen(function* () {
-    yield* mount(Counter(), document.getElementById("root")!);
-  }),
-);
+mount(Counter(), document.getElementById("root")!);
 ```
 
 ## Reactive Primitives

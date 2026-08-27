@@ -55,30 +55,19 @@ The key files:
 Open `src/main.ts`. You'll see something like:
 
 ```typescript
-import { Effect } from "effect";
-import { $, mount, runApp } from "@stax-ui/dom";
+import { $, mount } from "@stax-ui/dom";
 
-runApp(
-  Effect.gen(function* () {
-    const app = yield* App();
-    yield* mount(app, container);
-  }),
-);
+mount(App(), container);
 ```
 
-Don't worry about understanding all of this yet. The key points:
-
-1. **`runApp`** starts the application
-2. **`Effect.gen`** is like an async function (we use `yield*` instead of `await`)
-3. **`mount`** attaches our app to the DOM
+Don't worry about understanding all of this yet. The key point: `mount` starts the application and attaches it to the DOM.
 
 ## Simplify for Learning
 
 For this tutorial, we'll start simpler. Replace the contents of `src/main.ts` with:
 
 ```typescript
-import { Effect } from "effect";
-import { $, mount, runApp } from "@stax-ui/dom";
+import { $, mount } from "@stax-ui/dom";
 
 // Get the root element
 const container = document.getElementById("root");
@@ -88,12 +77,7 @@ if (!container) throw new Error("Root element not found");
 const App = $.div({}, "Hello, Stax!");
 
 // Mount it
-runApp(
-  Effect.gen(function* () {
-    yield* mount(App, container);
-    console.log("App mounted!");
-  }),
-);
+mount(App, container);
 ```
 
 Save the file. Your browser should now show "Hello, Stax!"
@@ -104,11 +88,9 @@ Let's break it down:
 
 1. **`$.div({}, "Hello, Stax!")`** - Creates a div element with text content. The `$` object has methods for every HTML element (`$.div`, `$.span`, `$.button`, etc.). Strings can be passed directly as children.
 
-2. **`mount(App, container)`** - Takes our element and renders it into the DOM container
+2. **`mount(App, container)`** - Takes our element, renders it, attaches it to the DOM container, and keeps the app alive for the lifetime of the page.
 
-3. **`runApp(Effect.gen(...))`** - Runs our Effect, which mounts the app
-
-The `$` factory returns an Effect that, when run, creates a DOM element. Effects are lazy—they describe *what* to do, not *when* to do it. The `mount` function runs the Effect and attaches the result to the DOM.
+The `$` factory returns an Effect that, when run, creates a DOM element. Effects are lazy—they describe *what* to do, not *when* to do it. `mount` handles all the setup (rendering layers, the signal registry, keeping subscriptions alive) so your entry file stays a one-liner.
 
 ## Next Steps
 
