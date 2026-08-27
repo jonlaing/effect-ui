@@ -210,11 +210,22 @@ export interface RouteMeta {
 
 /**
  * Arguments passed to meta field functions.
+ *
+ * `data` is conditional on whether the route has a loader:
+ *
+ * * No loader → `D = never` → `data: undefined` (nothing to read).
+ * * With loader → `D` is the loader's return type → `data: D` (the
+ *   loaded value).
+ *
+ * Meta functions declared on loader-having routes see `data` as
+ * the concrete type without the `| undefined` mixed in — the fact
+ * that a bare route's data is `undefined` at runtime doesn't leak
+ * into every consumer.
  */
 export interface MetaArgs<P = unknown, SP = unknown, D = unknown> {
   readonly params: P;
   readonly searchParams: SP;
-  readonly data: D;
+  readonly data: [D] extends [never] ? undefined : D;
 }
 
 /**
@@ -391,7 +402,7 @@ export const make = <Path extends string>(
   Path,
   Record<string, string>,
   Record<string, string>,
-  unknown,
+  never,
   NoRenderError,
   never
 > => {
@@ -402,11 +413,17 @@ export const make = <Path extends string>(
     RouteContext<Record<string, string>, Record<string, string>>
   >(`@stax-ui/router/Route(${path})`);
 
+  // A newly-made route has no data loader — its D is `never`, and
+  // any `Route.data(...)` combinator widens D at the site it's
+  // added. Previously `D = unknown`, which was a bomb: every route
+  // in a router unioned to `unknown` in D, and that widened into
+  // Outlet's requirements via `Router<..., D, E, R>` inference,
+  // silently collapsing downstream consumers' types.
   const route: Route<
     Path,
     Record<string, string>,
     Record<string, string>,
-    unknown,
+    never,
     NoRenderError,
     never
   > = Object.assign(Object.create(RouteProto), {

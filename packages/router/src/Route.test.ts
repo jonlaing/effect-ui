@@ -146,8 +146,12 @@ describe("Route.make", () => {
     // Element carries Scope | RendererContext in R; these tests exercise
     // render's Effect-level behaviour without touching the DOM, so the cast
     // to a fully-resolved Effect is safe.
+    // `Route.make` produces `Route<..., D = never, ...>` — routes with no
+    // loader can't accept data at the type level. This test exercises the
+    // runtime failure that fires when render is invoked despite that, so
+    // we cast the argument through `never` to force the call.
     const result = await Effect.runPromiseExit(
-      route.render(undefined) as never,
+      route.render(undefined as never) as never,
     );
     expect(result._tag).toBe("Failure");
   });
@@ -177,7 +181,9 @@ describe("Route.render", () => {
       Route.render(() => Effect.succeed(div)),
     );
 
-    const result = await Effect.runPromise(route.render(undefined) as never);
+    const result = await Effect.runPromise(
+      route.render(undefined as never) as never,
+    );
     expect(result).toBe(div);
   });
 });

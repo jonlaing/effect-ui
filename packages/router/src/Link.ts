@@ -24,7 +24,12 @@ export interface LinkProps {
   readonly href?: string;
 
   /** Route to navigate to (type-safe alternative to href) */
-  readonly to?: Route<string, unknown, unknown, unknown, unknown, unknown>;
+  // `D = never` accepts routes with any concrete data type because
+  // `render: (data: D) => ...` uses D contravariantly — a route with
+  // `D = never` is not a supertype of one with `D = Foo`, so the
+  // widest-common-supertype has to sit at `never`. E and R stay
+  // `unknown` (covariant slots, widen upward).
+  readonly to?: Route<string, unknown, unknown, never, unknown, unknown>;
 
   /** Params for route-based navigation */
   readonly params?: Record<string, unknown>;
