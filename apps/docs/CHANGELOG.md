@@ -10,7 +10,7 @@
 - Updated dependencies [c5fd56a]
   - @stax-ui/dom@0.4.0
   - @stax-ui/router@0.3.0
-  - @stax-ui/platform@1.0.0
+  - @stax-ui/platform@0.5.0
 
 ## 0.0.36
 
