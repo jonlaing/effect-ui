@@ -143,5 +143,13 @@ export { UniqueId } from "./UniqueId.js";
 export type { FocusTrapOptions } from "./FocusTrap/index.js";
 export { FocusTrap } from "./FocusTrap/index.js";
 
+// Keyboard
+export type {
+  KeyboardHandler,
+  KeyboardOptions,
+  PreventDefaultRule,
+} from "./Keyboard/index.js";
+export { Keyboard, KeyboardBindingError } from "./Keyboard/index.js";
+
 // Scroll Lock
 export { ScrollLock } from "./ScrollLock/index.js";

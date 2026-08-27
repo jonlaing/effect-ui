@@ -643,6 +643,28 @@ yield* FocusTrap.make({
 // Focus is trapped until scope closes
 ```
 
+### Keyboard
+
+Declarative keyboard shortcuts. Cross-platform modifier handling (`mod` → `Meta` on Mac, `Ctrl` elsewhere), automatic cleanup, and a smart default that skips `preventDefault` when the event target is an editable element (so global bindings don't block typing in inputs):
+
+```ts
+import { Effect } from "effect";
+import { Keyboard } from "@stax-ui/dom";
+
+// Global
+yield* Keyboard.on("mod+k", () => Effect.sync(() => open.set(true)));
+
+// Element-local via ElementRef — follows the mount/unmount lifecycle
+yield* Keyboard.on("Escape", () => Effect.sync(() => close()), {
+  target: containerRef,
+});
+
+// Multiple bindings, one handler
+yield* Keyboard.on(["ArrowDown", "j"], moveDown, { target: containerRef });
+```
+
+Handler must return `Effect<void, never, never>` — plain-function handlers are refused so uncaught side-effects can't sneak in. Bindings follow the canonical `KeyboardEvent.key` values (case-insensitive); the one alias is `"Space"` for the literal space character.
+
 ### ScrollLock
 
 Prevent body scrolling (for modals). Accounts for scrollbar width to prevent layout shift:
@@ -734,6 +756,7 @@ yield* $.div(
 |--------|-------------|
 | `ref<T>()` | Create element ref |
 | `FocusTrap.make(options)` | Trap focus in container |
+| `Keyboard.on(binding, handler, options?)` | Bind a keyboard shortcut |
 | `ScrollLock.lock` | Lock body scroll |
 | `UniqueId.make(prefix?)` | Generate unique ID |
 | `Portal(options?, children)` | Render to different DOM node |
