@@ -2,60 +2,13 @@ import { Effect } from "effect";
 
 import { $ } from "@stax-ui/dom";
 
+import { CodeFile, CodeTabs } from "../components/CodeTabs.js";
 import { ContentSection } from "../components/ContentSection.js";
-import { Counter } from "../components/Counter.js";
 import { Hero } from "../components/Hero.js";
 import { Nav } from "../components/Nav.js";
+import { TodoApp } from "../components/TodoApp/index.js";
 
 // ─── Code examples ──────────────────────────────────────────────────────────
-
-export const counterExample = `import { Effect } from "effect";
-import { $, Signal, when } from "@stax-ui/dom";
-
-export const Counter = () =>
-  Effect.gen(function* () {
-    const count = yield* Signal.make(0);
-    const isBlocked = yield* Signal.make(false);
-
-    const handleUpdate = (delta: number) => () =>
-      Effect.gen(function* () {
-        const blocked = yield* isBlocked.get;
-
-        if (!blocked) {
-          yield* count.update((n) => n + delta);
-          yield* isBlocked.set(true);
-          yield* Effect.sleep("2 seconds").pipe(
-            Effect.andThen(() => isBlocked.set(false)),
-            Effect.forkDaemon,
-          );
-        }
-      });
-
-    return yield* $.div(
-      $.div(
-        $.button(
-          {
-            onClick: handleUpdate(-1),
-            disabled: isBlocked
-          },
-          "-",
-        ),
-        $.span(count),
-        $.button(
-          {
-            onClick: handleUpdate(1),
-            disabled: isBlocked
-          },
-          "+",
-        ),
-      ),
-      when(isBlocked, {
-        onTrue: () =>
-          $.span("Please wait..."),
-        onFalse: () => $.span(),
-      }),
-    );
-  });`;
 
 export const signalsExample = `// Signals are references, not snapshots.
 // No stale closures, no dependency arrays.
@@ -182,22 +135,22 @@ const ContentLink = (href: string, text: string) =>
 
 export const HomePage = (props: {
   readonly codeExamples: {
-    counterHtml: string;
     errorsHtml: string;
     fullstackHtml: string;
     effectHtml: string;
     reactiveHtml: string;
     familiarHtml: string;
+    todoFiles: readonly CodeFile[];
   };
 }) =>
   Effect.gen(function* () {
     const {
-      counterHtml,
       errorsHtml,
       fullstackHtml,
       effectHtml,
       reactiveHtml,
       familiarHtml,
+      todoFiles,
     } = props.codeExamples;
 
     return yield* $.div(
@@ -254,27 +207,29 @@ export const HomePage = (props: {
             ),
             $.p(
               { class: "text-paragraph max-w-200 text-neutral/60" },
-              "The following example is a simple counter component. It demonstrates how to use signals, effects, and reactive state in Stax.",
+              "A small todo app, split across three files. State hydrates through an Effect Context — the component doesn't know whether it's talking to localStorage or an in-memory default; the Layer decides.",
             ),
             $.div(
               { class: "flex-1 flex justify-end" },
               $.div(
                 {
-                  class:
-                    "w-full flex flex-col gap-6 items-center justify-center p-8 border rounded-lg",
+                  class: [
+                    "w-full flex flex-col gap-6",
+                    "items-center justify-center p-8 border rounded-lg",
+                  ],
                 },
-                $.h3(
-                  { class: "text-heading-2 text-neutral" },
-                  "Counter Example",
-                ),
-                Counter(),
+                $.h3({ class: "text-heading-2 text-neutral" }, "Todo App"),
+                TodoApp(),
               ),
             ),
           ),
-          $.div({
-            class: "flex-1 overflow-y-auto max-h-[600px]",
-            innerHTML: counterHtml,
-          }),
+          $.div(
+            { class: "flex-1 min-w-0" },
+            CodeTabs({
+              files: todoFiles,
+              class: "max-h-[600px]",
+            }),
+          ),
         ),
         ContentSection(
           $.h2(

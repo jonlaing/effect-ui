@@ -79,7 +79,7 @@
   --color-success-content: oklch(97% 0 0);
   --color-warning: oklch(74% 0.14 65); /* amber */
   --color-warning-content: oklch(20% 0.03 65);
-  --color-error: oklch(58% 0.22 28); /* red */
+  --color-error: oklch(42% 0.22 28); /* flip 58 → 42 */
   --color-error-content: oklch(97% 0 0);
 
   /* ─── Typography ────────────────────────────────────── */
@@ -145,7 +145,7 @@
   --color-success-content: oklch(97% 0 0);
   --color-warning: oklch(26% 0.14 65); /* flip 74 → 26 */
   --color-warning-content: oklch(80% 0.03 65);
-  --color-error: oklch(42% 0.22 28); /* flip 58 → 42 */
+  --color-error: oklch(58% 0.22 28); /* red */
   --color-error-content: oklch(97% 0 0);
 }
 
@@ -185,6 +185,13 @@
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
+/*
+ * CodeTabs panel hide/show — inactive panels get `data-active="false"`
+ * from a signal-driven attribute on the div; hiding is pure CSS so the
+ * initial paint (and SSR HTML) doesn't need to know which panel is
+ * active until hydration syncs the value.
+ */
 
 /* ─── Prose (markdown content) ─────────────────────────────────────────── */
 
@@ -282,6 +289,12 @@ code.prose,
   overflow: auto;
   width: 100%;
   border: 1px solid var(--color-border);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.shiki::-webkit-scrollbar {
+  display: none;
 }
 
 [data-theme="dark"] .shiki,

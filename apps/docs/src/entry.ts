@@ -9,6 +9,7 @@ import { HttpApp, HttpRouter } from "@effect/platform";
 
 import { Platform } from "@stax-ui/platform";
 
+import { StorageNoOp } from "./components/TodoApp/index.js";
 import { DocLayout } from "./layout.js";
 import { router } from "./routes.js";
 
@@ -28,6 +29,12 @@ const documentOptions = {
     // during head parsing so `data-theme` is settled before the CSS
     // paints — no theme flash on first load.
     `<script>(function(){try{var s=localStorage.getItem('stax-theme');var t=(s==='dark'||s==='light')?s:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t)}catch(e){}})();</script>`,
+    // Pre-paint storage snapshot: parse every `stax-*` key from
+    // localStorage into a plain object on `window.__STAX_STORAGE__`.
+    // `StorageLive` reads from this cache during hydration instead
+    // of hitting localStorage directly — one JSON parse per key,
+    // available synchronously before the client bundle boots.
+    `<script>(function(){try{var d={};for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('stax-')===0){try{d[k]=JSON.parse(localStorage.getItem(k))}catch(e){}}}window.__STAX_STORAGE__=d}catch(e){window.__STAX_STORAGE__={}}})();</script>`,
   ].join("\n    "),
 };
 
@@ -35,6 +42,11 @@ const documentOptions = {
 export { router };
 export const app = DocLayout;
 export const document = documentOptions;
+// SSG-time layer stack. `StorageNoOp` seeds every `Storage.persist`
+// call with its defaults and drops writes on the floor — there's no
+// real `localStorage` on the server, and pre-hydration renders
+// wouldn't be persisting anyway.
+export const layers = StorageNoOp;
 
 // Used by the dev server during development
 const staxRoutes = Platform.toHttpRoutes(router, {
@@ -43,7 +55,14 @@ const staxRoutes = Platform.toHttpRoutes(router, {
 });
 
 const httpApp = HttpRouter.empty.pipe(HttpRouter.concat(staxRoutes));
-const handler = HttpApp.toWebHandler(httpApp);
+
+// Dev-server SSR runs the same routes as SSG, so it needs the same
+// service layers — Storage on the server is a no-op, since there's
+// no real `localStorage` and pre-hydration renders don't persist.
+// `toWebHandlerLayer` peels those requirements off the HttpApp so
+// the resulting handler only needs `Scope`, which the runtime
+// supplies.
+const { handler } = HttpApp.toWebHandlerLayer(httpApp, layers);
 
 export async function render(request: Request): Promise<Response> {
   return handler(request);
