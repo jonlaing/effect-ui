@@ -9,14 +9,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@stax-ui/dom": "^1.1.0",
-    "@stax-ui/platform": "^1.2.0",
-    "@stax-ui/router": "^1.2.0",
+    "@stax-ui/dom": "^0.3.0",
+    "@stax-ui/platform": "^0.4.0",
+    "@stax-ui/router": "^0.2.1",
     "@effect/platform": "^0.94.0",
     "effect": "^3.19.13"
   },
   "devDependencies": {
-    "@stax-ui/vite-plugin": "^1.1.0",
+    "@stax-ui/vite-plugin": "^0.4.0",
     "typescript": "~5.9.3",
     "vite": "^7.0.0"
   }

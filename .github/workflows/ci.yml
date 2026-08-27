@@ -21,6 +21,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Verify no package has moved off the 0.x track
+        run: pnpm check-versions
+
       - run: pnpm typecheck
 
       - run: pnpm build

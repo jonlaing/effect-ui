@@ -22,7 +22,8 @@
     "changeset": "changeset",
     "version": "changeset version && pnpm sync-template-versions",
     "sync-template-versions": "node scripts/sync-template-versions.mjs",
-    "release": "pnpm build && changeset publish",
+    "check-versions": "node scripts/check-versions.mjs",
+    "release": "pnpm check-versions && pnpm build && changeset publish",
     "docs:gen": "rm -rf docs && typedoc",
     "prepare": "husky"
   },
