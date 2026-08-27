@@ -9,6 +9,7 @@ import {
   Readable,
   Signal,
   SignalArray,
+  when,
 } from "@stax-ui/dom";
 
 import { Storage } from "./Storage.js";
@@ -24,6 +25,7 @@ export const TodoApp = () =>
   Effect.gen(function* () {
     const storage = yield* Storage;
 
+    const isLoading = storage.isLoading;
     // reactive collection, persisted to localStorage
     const todos: SignalArray<Todo> = yield* storage.persistArray<Todo>(
       "stax-todos",
@@ -106,26 +108,44 @@ export const TodoApp = () =>
           }),
         ),
       ),
-      each(orderedTodos, {
-        key: (t) => t.id,
-        container: () => $.ul({ class: "flex flex-col" }),
-        render: (item) =>
-          TodoItem({
-            todo: item,
-            onToggle: toggle,
-            onRemove: remove,
+      when(isLoading, {
+        onTrue: () =>
+          $.div(
+            {
+              class: ["flex items-center justify-center py-4"],
+            },
+            $.div(
+              {
+                class: [
+                  "w-4 h-4 border-2 border-t-transparent border-primary rounded-full",
+                  "animate-spin",
+                ],
+              },
+              "",
+            ),
+          ),
+        onFalse: () =>
+          each(orderedTodos, {
+            key: (t) => t.id,
+            container: () => $.ul({ class: "flex flex-col" }),
+            render: (item) =>
+              TodoItem({
+                todo: item,
+                onToggle: toggle,
+                onRemove: remove,
+              }),
+            // enter, exit and move animations for the list items
+            animate: {
+              enterFrom: "!grid-rows-[0fr] !opacity-0",
+              enter: "transition-all duration-300 ease-out",
+              exit: "transition-all duration-300 ease-out",
+              exitTo: "!grid-rows-[0fr] !opacity-0",
+              move: {
+                transform: Animation.moveTranslate3d,
+                transition: "transition-all duration-300 ease-out",
+              },
+            },
           }),
-        // enter, exit and move animations for the list items
-        animate: {
-          enterFrom: "!grid-rows-[0fr] !opacity-0",
-          enter: "transition-all duration-300 ease-out",
-          exit: "transition-all duration-300 ease-out",
-          exitTo: "!grid-rows-[0fr] !opacity-0",
-          move: {
-            transform: Animation.moveTranslate3d,
-            transition: "transition-all duration-300 ease-out",
-          },
-        },
       }),
     );
   });

@@ -1,6 +1,6 @@
 import { Context, Effect, Layer, Scope, Stream } from "effect";
 
-import { Signal, type SignalArray } from "@stax-ui/dom";
+import { Readable, Signal, type SignalArray } from "@stax-ui/dom";
 
 /**
  * Populated by the pre-paint snapshot script in `entry.ts`. Every
@@ -22,11 +22,6 @@ const readSnapshot = (key: string): unknown =>
  * from wherever "storage" happens to live, and auto-writing back
  * on every change.
  *
- * Two variants: `persist` for scalar state, `persistArray` for
- * collection state. The array variant returns a `Signal.Array`, so
- * downstream code can reach for `.push` / `.modifyAt` / `.removeAt`
- * instead of full-list `.update` closures:
- *
  * ```ts
  * const todos = yield* storage.persistArray("todos", DEFAULT_TODOS);
  * yield* todos.push(newTodo);
@@ -46,11 +41,7 @@ const readSnapshot = (key: string): unknown =>
 export class Storage extends Context.Tag("stax-docs/TodoApp/Storage")<
   Storage,
   {
-    readonly persist: <T>(
-      key: string,
-      defaults: T,
-    ) => Effect.Effect<Signal.Signal<T>, never, Scope.Scope>;
-
+    readonly isLoading: Readable.Readable<boolean>;
     readonly persistArray: <T>(
       key: string,
       defaults: readonly T[],
@@ -60,9 +51,6 @@ export class Storage extends Context.Tag("stax-docs/TodoApp/Storage")<
 
 /**
  * Live implementation — reads/writes `window.localStorage`.
- *
- * Scalar `persist` hydrates synchronously (SSR seeds with the
- * `defaults` too, so the initial value is the same on both sides).
  *
  * `persistArray` seeds empty and defers the real hydration onto a
  * forked fiber so it lands on the microtask after mount. That
@@ -74,61 +62,50 @@ export class Storage extends Context.Tag("stax-docs/TodoApp/Storage")<
  * Persist-on-change is forked into the enclosing scope so it
  * unmounts cleanly.
  */
-export const StorageLive = Layer.succeed(
+export const StorageLive = Layer.effect(
   Storage,
-  Storage.of({
-    persist: <T>(key: string, defaults: T) =>
-      Effect.gen(function* () {
-        const raw = localStorage.getItem(key);
-        const initial: T = raw ? (JSON.parse(raw) as T) : defaults;
-        if (!raw) {
-          localStorage.setItem(key, JSON.stringify(defaults));
-        }
-        const signal = yield* Signal.make<T>(initial);
-        yield* Stream.runForEach(signal.changes, (value) =>
-          Effect.sync(() => {
-            localStorage.setItem(key, JSON.stringify(value));
-          }),
-        ).pipe(Effect.forkScoped);
-        return signal;
-      }),
+  Effect.gen(function* () {
+    const isLoading = yield* Signal.make(true);
+    return {
+      isLoading,
+      persistArray: <T>(key: string, defaults: readonly T[]) =>
+        Effect.gen(function* () {
+          // Seed empty to match what the SSR pass rendered — see the
+          // note on `StorageNoOp.persistArray` below. The real data
+          // is set on a forked fiber a microtask after hydration
+          // finishes, so `each` sees an empty-to-populated reactive
+          // update instead of a keyed-list reconciliation.
+          const arr = yield* Signal.Array.make<T>([]);
 
-    persistArray: <T>(key: string, defaults: readonly T[]) =>
-      Effect.gen(function* () {
-        // Seed empty to match what the SSR pass rendered — see the
-        // note on `StorageNoOp.persistArray` below. The real data
-        // is set on a forked fiber a microtask after hydration
-        // finishes, so `each` sees an empty-to-populated reactive
-        // update instead of a keyed-list reconciliation.
-        const arr = yield* Signal.Array.make<T>([]);
-
-        yield* Effect.fork(
-          Effect.gen(function* () {
-            yield* Effect.sleep("0 millis");
-            const cached = readSnapshot(key);
-            let initial: readonly T[];
-            if (Array.isArray(cached)) {
-              initial = cached as readonly T[];
-            } else {
-              const raw = localStorage.getItem(key);
-              if (raw) {
-                initial = JSON.parse(raw) as T[];
+          yield* Effect.fork(
+            Effect.gen(function* () {
+              yield* Effect.sleep("0 millis");
+              const cached = readSnapshot(key);
+              let initial: readonly T[];
+              if (Array.isArray(cached)) {
+                initial = cached as readonly T[];
               } else {
-                initial = defaults;
-                localStorage.setItem(key, JSON.stringify(defaults));
+                const raw = localStorage.getItem(key);
+                if (raw) {
+                  initial = JSON.parse(raw) as T[];
+                } else {
+                  initial = defaults;
+                  localStorage.setItem(key, JSON.stringify(defaults));
+                }
               }
-            }
-            yield* arr.set(initial);
-          }),
-        );
+              yield* arr.set(initial);
+              yield* isLoading.set(false);
+            }),
+          );
 
-        yield* Stream.runForEach(arr.changes, (value) =>
-          Effect.sync(() => {
-            localStorage.setItem(key, JSON.stringify(value));
-          }),
-        ).pipe(Effect.forkScoped);
-        return arr;
-      }),
+          yield* Stream.runForEach(arr.changes, (value) =>
+            Effect.sync(() => {
+              localStorage.setItem(key, JSON.stringify(value));
+            }),
+          ).pipe(Effect.forkScoped);
+          return arr;
+        }),
+    };
   }),
 );
 
@@ -148,15 +125,11 @@ export const StorageLive = Layer.succeed(
  * honest signal: "I don't know your state yet; the client will
  * fill this in." The trade-off is a brief empty-list flash before
  * hydration — acceptable for a demo.
- *
- * (The scalar `persist` still seeds with `defaults` because
- * scalars have no equivalent "empty" that a component can
- * meaningfully render.)
  */
 export const StorageNoOp = Layer.succeed(
   Storage,
   Storage.of({
-    persist: <T>(_key: string, defaults: T) => Signal.make<T>(defaults),
+    isLoading: Readable.of(true),
     persistArray: <T>(_key: string, _defaults: readonly T[]) =>
       Signal.Array.make<T>([]),
   }),

@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { $, Readable, Signal } from "@stax-ui/dom";
+import { $, match, Readable, Signal } from "@stax-ui/dom";
 
 export interface CodeFile {
   readonly filename: string;
@@ -50,9 +50,7 @@ export const CodeTabs = (props: {
                 "data-[active=true]:text-primary data-[active=true]:bg-base-100",
                 "data-[active=true]:font-semibold",
               ],
-              "data-active": Readable.map(active, (a) =>
-                a === file.filename ? "true" : "false",
-              ),
+              "data-active": Readable.map(active, (a) => a === file.filename),
               onClick: () => active.set(file.filename),
             },
             file.filename,
@@ -60,17 +58,29 @@ export const CodeTabs = (props: {
         ),
       ),
       // ─── Panels ──────────────────────────────────────────────
-      $.div(
-        { class: "relative overflow-hidden flex flex-col" },
-        props.files.map((file) =>
-          $.div({
-            class: ["code-tab-panel overflow-hidden flex-1 flex flex-col"],
-            "data-active": Readable.map(active, (a) =>
-              a === file.filename ? "true" : "false",
-            ),
-            innerHTML: file.html,
-          }),
-        ),
-      ),
+      match(active, {
+        container: () =>
+          $.div({ class: "relative overflow-hidden flex flex-col" }),
+        cases: props.files.map((file) => ({
+          pattern: file.filename,
+          render: () =>
+            $.div({
+              class: [
+                "overflow-hidden flex-1 flex flex-col [&_pre]:!border-none [&_pre]:!rounded-none",
+              ],
+              "data-active": Readable.map(active, (a) =>
+                a === file.filename ? "true" : "false",
+              ),
+              innerHTML: file.html,
+            }),
+        })),
+        animate: {
+          enterFrom: "!opacity-0",
+          enter: "transition-opacity duration-200",
+          enterTo: "opacity-100",
+          exit: "transition-opacity duration-200",
+          exitTo: "!opacity-0 absolute inset-0",
+        },
+      }),
     );
   });
