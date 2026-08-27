@@ -20,26 +20,32 @@ type DOMElement = HTMLElement | SVGElement;
 
 /**
  * Options for the suspense boundary (DOM-specialized version).
+ *
+ * The `N` parameter is the element type all three branches share.
+ * Inferred from the callbacks, defaults to `HTMLElement | SVGElement`.
+ * When all three branches return the same concrete element type (say
+ * `HTMLDivElement`), the return type of {@link suspense} preserves it
+ * — no cast needed at `mount(...)` sites.
  */
-export interface SuspenseOptions<E, R1, RF, RC> {
+export interface SuspenseOptions<N extends DOMElement, E, R1, RF, RC> {
   /**
    * Async function that returns the final element.
    * Can fail with error type E if `catch` is provided.
    */
-  readonly render: () => Element.Element<DOMElement, E, R1>;
+  readonly render: () => Element.Element<N, E, R1>;
 
   /**
    * Function to render the loading/fallback state.
    * Must have no requirements (will be rendered in detached context if delay > 0).
    */
-  readonly fallback: () => Element.Element<DOMElement, never, RF>;
+  readonly fallback: () => Element.Element<N, never, RF>;
 
   /**
    * Optional error handler. If provided, errors from render are caught
    * and this function is called to render an error state.
    * Must have no requirements.
    */
-  readonly catch?: (error: E) => Element.Element<DOMElement, never, RC>;
+  readonly catch?: (error: E) => Element.Element<N, never, RC>;
 
   /**
    * Delay before showing the fallback.
@@ -98,33 +104,44 @@ export interface SuspenseOptions<E, R1, RF, RC> {
  */
 export const suspense: {
   // Overload 1: No catch, render cannot fail
-  <R1 = never, RF = never>(
-    options: SuspenseOptions<never, R1, RF, never> & { catch?: never },
-  ): Element.Element<DOMElement, never, R1 | RF | SuspenseBoundaryCtx>;
+  <N extends DOMElement = DOMElement, R1 = never, RF = never>(
+    options: SuspenseOptions<N, never, R1, RF, never> & { catch?: never },
+  ): Element.Element<N, never, R1 | RF | SuspenseBoundaryCtx>;
 
   // Overload 2: With catch, render can fail
-  <E, R1 = never, RF = never, RC = never>(
-    options: SuspenseOptions<E, R1, RF, RC> & {
-      catch: (error: E) => Element.Element<DOMElement, never, RC>;
+  <
+    N extends DOMElement = DOMElement,
+    E = never,
+    R1 = never,
+    RF = never,
+    RC = never,
+  >(
+    options: SuspenseOptions<N, E, R1, RF, RC> & {
+      catch: (error: E) => Element.Element<N, never, RC>;
     },
-  ): Element.Element<DOMElement, never, R1 | RF | RC | SuspenseBoundaryCtx>;
-} = <E, R1 = never, RF = never, RC = never>(
-  options: SuspenseOptions<E, R1, RF, RC>,
-): Element.Element<DOMElement, never, R1 | RF | RC | SuspenseBoundaryCtx> => {
-  // Delegate to core - the context handles environment-specific behavior
-  // Use intermediate cast to avoid overload resolution issues
+  ): Element.Element<N, never, R1 | RF | RC | SuspenseBoundaryCtx>;
+} = <
+  N extends DOMElement = DOMElement,
+  E = never,
+  R1 = never,
+  RF = never,
+  RC = never,
+>(
+  options: SuspenseOptions<N, E, R1, RF, RC>,
+): Element.Element<N, never, R1 | RF | RC | SuspenseBoundaryCtx> => {
+  // Delegate to core — the context handles environment-specific behavior.
   const coreSuspense = CoreBoundary.suspense as <
-    N extends HTMLElement | SVGElement,
+    N2 extends DOMElement,
     E2,
     R1_2,
     RF2,
     RC2,
   >(
-    opts: CoreSuspenseOptions<N, E2, R1_2, RF2, RC2>,
-  ) => Element.Element<N, never, R1_2 | RF2 | RC2 | SuspenseBoundaryCtx>;
+    opts: CoreSuspenseOptions<N2, E2, R1_2, RF2, RC2>,
+  ) => Element.Element<N2, never, R1_2 | RF2 | RC2 | SuspenseBoundaryCtx>;
 
   return coreSuspense(
-    options as unknown as CoreSuspenseOptions<DOMElement, E, R1, RF, RC>,
+    options as unknown as CoreSuspenseOptions<N, E, R1, RF, RC>,
   );
 };
 
@@ -142,10 +159,10 @@ export const suspense: {
  * )
  * ```
  */
-export const error = <E, R1 = never, R2 = never>(
-  tryRender: () => Element.Element<DOMElement, E, R1>,
-  catchRender: (error: E) => Element.Element<DOMElement, never, R2>,
-): Element.Element<DOMElement, never, R1 | R2> =>
+export const error = <N extends DOMElement, E, R1 = never, R2 = never>(
+  tryRender: () => Element.Element<N, E, R1>,
+  catchRender: (error: E) => Element.Element<N, never, R2>,
+): Element.Element<N, never, R1 | R2> =>
   CoreBoundary.error(tryRender, catchRender);
 
 /**
