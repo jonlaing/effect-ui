@@ -254,10 +254,17 @@ export const createHydrationRenderer = (
       node: Node,
       event: string,
       handler: (event: unknown) => void,
+      options?: AddEventListenerOptions,
     ) =>
-      Effect.sync(() => {
-        (node as HTMLElement).addEventListener(event, handler);
-      }),
+      Effect.acquireRelease(
+        Effect.sync(() => {
+          (node as HTMLElement).addEventListener(event, handler, options);
+        }),
+        () =>
+          Effect.sync(() => {
+            (node as HTMLElement).removeEventListener(event, handler, options);
+          }),
+      ),
 
     getChildren: (node: Node) => Effect.sync(() => Array.from(node.childNodes)),
 
