@@ -1,5 +1,187 @@
 # Changelog
 
+## 0.4.0
+
+### Minor Changes
+
+- 36b1d20: BREAKING: unify `runApp` + `mount` into a single `mount` for SPA startup
+
+  (Marked `minor` — Stax is still pre-1.0, so we're using minor bumps
+  for breaking changes. Once we hit `1.0.0` this would be `major`.)
+
+  `runApp` is removed. Its responsibilities — providing `SignalRegistry`,
+  merging caller layers, keeping the fiber alive via `Effect.never`, and
+  pumping into a Promise — fold into `mount`. The new signature mirrors
+  `hydrate`, so the two SPA entry points read as parallel intents rather
+  than two different plumbing shapes:
+
+  ```ts
+  // SPA
+  mount(App(), root, { layers: Navigation.makeLayer(router) });
+
+  // SSR + hydration
+  hydrate(App(), root, { layers: Navigation.makeLayer(router) });
+  ```
+
+  ## Migration
+
+  Before:
+
+  ```ts
+  import { mount, runApp } from "@stax-ui/dom";
+
+  runApp(
+    Effect.gen(function* () {
+      yield* mount(App(), document.getElementById("root")!);
+    }),
+  );
+  ```
+
+  After:
+
+  ```ts
+  import { mount } from "@stax-ui/dom";
+
+  mount(App(), document.getElementById("root")!);
+  ```
+
+  With a layer:
+
+  ```ts
+  // Before
+  runApp(mount(App(), root), { layer: Navigation.makeLayer(router) });
+
+  // After
+  mount(App(), root, { layers: Navigation.makeLayer(router) });
+  ```
+
+  Note that `options.layer` (singular) becomes `options.layers` (plural),
+  matching `hydrate`. Compose multiple layers with `Layer.merge` or
+  `Layer.mergeAll` as before.
+
+  ## Why
+
+  Every SPA in-tree did the same `runApp(Effect.gen(function* () { yield*
+mount(App(), root) }))` dance — an `Effect.gen` wrapper that did one
+  thing. The two-function form pushed a plumbing decision on every user
+  of `mount` (they always chose the same one) and made SPA startup read
+  differently than SSR hydration for no gained expressive power.
+
+  The returned Promise from `mount` never resolves — this is intentional
+  and matches the previous behavior of `runApp`. Mount is a terminal
+  operation; it stakes out the fiber that owns the page's reactive
+  lifetime.
+
+- 3065684: feat(dom): preserve concrete element types through control-flow and Boundary wrappers
+
+  Every DOM control-flow wrapper (`when`, `match`, `each`, `matchOption`,
+  `matchEither`, `redraw`, `animated`) and both `Boundary.error` /
+  `Boundary.suspense` used to pin their return element type to
+  `HTMLElement | SVGElement`. Now the element type flows through:
+
+  ```ts
+  // Before
+  each(todos, {
+    container: () => $.ul({}), // ← Element<HTMLUListElement>
+    key: (t) => t.id,
+    render: (t) => $.li({}, t.text),
+  });
+  // inferred: Element<HTMLElement | SVGElement, ...>  — widened
+
+  // After
+  // inferred: Element<HTMLUListElement, ...>  — preserved
+  ```
+
+  For `Boundary.error`, the type unifies across both branches, so a
+  `try`+`catch` that both return `Element<HTMLDivElement>` come back as
+  `Element<HTMLDivElement>` — no more cast at `mount(App(), root)` sites.
+
+  ## How it works
+
+  Each config interface gains a trailing `N extends DOMElement = DOMElement`
+  type parameter with a default. Container factories are typed
+  `() => Element<N, never, never>`, so N is inferred from the container's
+  concrete return type. Child branches (`onTrue`, `onFalse`, `onSome`, ...)
+  keep the wider `Element<DOMElement, ...>` type — children can be any DOM
+  element, only the container's type matters for the wrapper's return.
+
+  Boundaries are different: `Boundary.error` and `Boundary.suspense` share
+  N across all their branches (try, catch, render, fallback), because any
+  of them can be the actually-rendered element. Inference unifies them at
+  the call site.
+
+  ## Back-compat
+
+  Additive. The new type parameter has a default, so:
+
+  - Existing callers that don't specify a container still get the same
+    `Element<DOMElement, ...>` return type — behavior unchanged.
+  - `EachConfig<Item, Error, Deps>` and other config annotations keep
+    resolving; N falls back to `DOMElement`.
+  - No runtime change. The generated JS is identical to before.
+
+  ## Why
+
+  Every user of `each`, `when`, `Boundary.error`, etc. previously had to
+  either accept `HTMLElement | SVGElement` at every boundary or drop
+  `as Element.Element<HTMLDivElement>` casts to narrow it. The casts
+  weren't hiding bugs — they were papering over an artificial widening
+  in the wrapper signatures. Removing the widening removes the casts.
+
+### Patch Changes
+
+- 05f94f9: fix(dom): stringify boolean `data-*` / `aria-*` values instead of using HTML boolean-attribute semantics
+
+  `applyAttribute` was treating every boolean value as an HTML
+  boolean-attribute — `true` set an empty string, `false` skipped the
+  attribute entirely. That's correct for `disabled` / `checked` /
+  `hidden` / etc., but wrong for `data-*` and `aria-*`, where consumers
+  (CSS selectors, JS reads, ARIA state) expect the literal strings
+  `"true"` and `"false"`.
+
+  Fix: static boolean values only follow HTML boolean-attribute
+  semantics when the key is in the fixed `BOOLEAN_ATTRIBUTES` set
+  (`disabled`, `checked`, `selected`, `required`, `readonly`,
+  `multiple`, `hidden`, `open`, `autofocus`, `autoplay`, `controls`,
+  `default`, `defer`, `ismap`, `loop`, `muted`, `novalidate`,
+  `reversed`). Everything else stringifies via `String(value)`.
+
+  Before:
+
+  ```ts
+  $.div({ "data-active": true }); // <div data-active="">
+  $.div({ "data-active": false }); // <div>              — attribute missing
+  ```
+
+  After:
+
+  ```ts
+  $.div({ "data-active": true }); // <div data-active="true">
+  $.div({ "data-active": false }); // <div data-active="false">
+  ```
+
+  Also lifts the `EventHandler` type to the top-level `@stax-ui/dom`
+  export so users writing typed `onClick` / `onSubmit` / etc. handlers
+  don't have to reach into subpath modules.
+
+  Callers that were working around the boolean-stringify gap with
+  `Readable.map(v => v ? "true" : "false")` can drop the map entirely:
+
+  ```ts
+  // Before
+  "data-active": Readable.map(active, (a) => (a === file.filename ? "true" : "false"))
+
+  // After
+  "data-active": Readable.map(active, (a) => a === file.filename)
+  ```
+
+  The `Readable<boolean>` path already stringifies via
+  `Core.bindAttribute` — this change makes the static-boolean path
+  consistent with that.
+
+- Updated dependencies [2644592]
+  - @stax-ui/core@0.3.0
+
 ## 0.3.0
 
 ### Minor Changes

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0
+
+### Patch Changes
+
+- @stax-ui/platform@1.0.0
+
 ## 2.0.0
 
 ### Patch Changes
