@@ -260,8 +260,10 @@ export const staxPlatform = (options: StaxPlatformOptions = {}): Plugin => {
       try {
         // Dynamically import the built SSG entry.
         // The entry must export: { router, app?, document?, layers? }
-        // Dynamic import — @stax-ui/platform is an optional peer dependency
-        // only needed for SSG mode at build time
+        // Dynamic import — `@stax-ui/platform` is only used in SSG mode
+        // at build time, so we don't want to pay the load cost for SPA
+        // builds. It's a regular dep (installed for every vite-plugin
+        // user) but only pulled into memory when actually needed.
         const platformModule = "@stax-ui/platform";
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { buildStaticSite } = (await import(platformModule)) as any;
