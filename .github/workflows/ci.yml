@@ -28,4 +28,7 @@ jobs:
 
       - run: pnpm build
 
+      - name: Verify create-stax-ui templates still build
+        run: pnpm build:templates
+
       - run: pnpm test -- --run
