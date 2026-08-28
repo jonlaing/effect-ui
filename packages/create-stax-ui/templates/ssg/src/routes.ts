@@ -1,7 +1,11 @@
 import { Effect, Schema } from "effect";
 
-import { $, collect } from "@stax-ui/dom";
-import { Link, Route, Router } from "@stax-ui/router";
+import { Route, Router } from "@stax-ui/router";
+
+import { AboutPage } from "./pages/AboutPage.js";
+import { DocsPage } from "./pages/DocsPage.js";
+import { HomePage } from "./pages/HomePage.js";
+import { NotFoundPage } from "./pages/NotFoundPage.js";
 
 // =============================================================================
 // Home page (static, no params)
@@ -14,29 +18,7 @@ const HomeRoute = Route.make("/").pipe(
         title: "Welcome to Stax",
         description: "A reactive UI framework built on Effect.ts primitives.",
       }),
-    render: (data) =>
-      $.div(
-        {},
-        collect(
-          $.h1({}, $.of(data.title)),
-          $.p({}, $.of(data.description)),
-          $.div(
-            { class: "card" },
-            collect(
-              $.h2({}, $.of("Features")),
-              $.ul(
-                {},
-                collect(
-                  $.li({}, $.of("Static site generation")),
-                  $.li({}, $.of("Pre-rendered HTML pages")),
-                  $.li({}, $.of("Built on Effect.ts")),
-                  $.li({}, $.of("Type-safe routing")),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+    render: (data) => HomePage(data),
   }),
 );
 
@@ -47,20 +29,7 @@ const HomeRoute = Route.make("/").pipe(
 const AboutRoute = Route.make("/about").pipe(
   Route.static({
     load: () => Effect.succeed({ title: "About" }),
-    render: (data) =>
-      $.div(
-        {},
-        collect(
-          $.h1({}, $.of(data.title)),
-          $.p(
-            {},
-            $.of(
-              "This is a statically generated Stax site. Every page is pre-rendered at build time.",
-            ),
-          ),
-          $.div({ class: "card" }, Link({ href: "/" }, $.of("Back to Home"))),
-        ),
-      ),
+    render: (data) => AboutPage(data),
   }),
 );
 
@@ -92,34 +61,9 @@ const DocsRoute = Route.make("/docs/:slug").pipe(
           content: "This page does not exist.",
         },
       ),
-    render: (data) =>
-      $.div(
-        {},
-        collect(
-          $.h1({}, $.of(data.title)),
-          $.p({}, $.of(data.content)),
-          $.div(
-            { class: "card" },
-            collect(
-              $.h3({}, $.of("Documentation")),
-              $.ul(
-                {},
-                collect(
-                  $.li(
-                    {},
-                    Link(
-                      { href: "/docs/getting-started" },
-                      $.of("Getting Started"),
-                    ),
-                  ),
-                  $.li({}, Link({ href: "/docs/routing" }, $.of("Routing"))),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+    render: (data) => DocsPage(data),
   }),
+  Route.catchAll(() => NotFoundPage()),
 );
 
 // =============================================================================
@@ -130,13 +74,5 @@ export const router = Router.empty.pipe(
   Router.concat(HomeRoute),
   Router.concat(AboutRoute),
   Router.concat(DocsRoute),
-  Router.fallback(() =>
-    $.div(
-      {},
-      collect(
-        $.h1({}, $.of("404 — Not Found")),
-        Link({ href: "/" }, $.of("Go Home")),
-      ),
-    ),
-  ),
+  Router.fallback(() => NotFoundPage()),
 );

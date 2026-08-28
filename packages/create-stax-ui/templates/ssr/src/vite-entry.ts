@@ -23,7 +23,7 @@ const staxRoutes = Platform.toHttpRoutes(router, {
 
 const app = HttpRouter.empty.pipe(HttpRouter.concat(staxRoutes));
 
-const { handler } = HttpApp.toWebHandlerLayer(app);
+const handler = HttpApp.toWebHandler(app);
 
 /**
  * Handle an incoming request and return the Response.
