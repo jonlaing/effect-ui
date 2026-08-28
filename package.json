@@ -12,7 +12,8 @@
     "url": "https://github.com/stax-ui/stax.git"
   },
   "scripts": {
-    "build": "pnpm -r build",
+    "build": "pnpm -r --filter='!stax-template-*' build",
+    "build:templates": "pnpm -r --filter='stax-template-*' build",
     "lint": "eslint .",
     "format": "prettier --log-level=silent --write .",
     "test": "vitest",

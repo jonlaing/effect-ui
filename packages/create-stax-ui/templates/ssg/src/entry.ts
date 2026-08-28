@@ -22,17 +22,9 @@ export const document = {
 };
 
 // Used by the dev server during development
-const staxRoutes = Platform.toHttpRoutes(router, {
-  app: App,
-  document: {
-    title: "Stax App",
-    scripts: ["/src/client.ts"],
-    styles: ["/styles.css"],
-  },
-});
-
+const staxRoutes = Platform.toHttpRoutes(router, { app, document });
 const httpApp = HttpRouter.empty.pipe(HttpRouter.concat(staxRoutes));
-const { handler } = HttpApp.toWebHandlerLayer(httpApp);
+const handler = HttpApp.toWebHandler(httpApp);
 
 export async function render(request: Request): Promise<Response> {
   return handler(request);

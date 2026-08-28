@@ -1,12 +1,12 @@
 {
-  "name": "stax-app",
+  "name": "stax-template-ssr",
   "version": "0.0.1",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build && vite build --ssr src/client.ts",
-    "start": "node --import tsx dist/server/server.js"
+    "start": "tsx src/server.ts"
   },
   "dependencies": {
     "@stax-ui/dom": "^0.5.0",

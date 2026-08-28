@@ -166,3 +166,26 @@ Options:
 ```
 
 If both a project name and a template flag are provided, all prompts are skipped.
+
+## Iterating on the templates locally
+
+The three templates under `templates/` are workspace packages
+(`stax-template-spa`, `stax-template-ssg`, `stax-template-ssr`) so
+you can dev-loop on them without publishing:
+
+```bash
+# Root-level install links each template's @stax-ui/* deps to the
+# workspace copies via pnpm overrides.
+pnpm install
+
+# Edit templates/spa/src/App.ts and see it live:
+cd packages/create-stax-ui/templates/spa
+pnpm dev
+```
+
+Changes to `@stax-ui/*` sources reflect in the running template via
+the workspace symlinks. When the CLI scaffolds a user's project, the
+template's `name` field (`stax-template-spa` etc.) gets rewritten
+to the user's project name, and the `@stax-ui/*` deps ship with the
+version specs written in the template's `package.json` — the
+workspace `overrides` are dev-only, not published.

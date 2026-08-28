@@ -6,6 +6,12 @@ settings:
 
 overrides:
   effect: 3.19.19
+  '@stax-ui/core': workspace:*
+  '@stax-ui/dom': workspace:*
+  '@stax-ui/form': workspace:*
+  '@stax-ui/platform': workspace:*
+  '@stax-ui/router': workspace:*
+  '@stax-ui/vite-plugin': workspace:*
 
 importers:
 
@@ -279,6 +285,87 @@ importers:
         specifier: ^2.4.9
         version: 2.4.9
 
+  packages/create-stax-ui/templates/spa:
+    dependencies:
+      '@stax-ui/dom':
+        specifier: workspace:*
+        version: link:../../../dom
+      '@stax-ui/router':
+        specifier: workspace:*
+        version: link:../../../router
+      effect:
+        specifier: 3.19.19
+        version: 3.19.19
+    devDependencies:
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^7.0.0
+        version: 7.3.6(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.12)(yaml@2.9.0)
+
+  packages/create-stax-ui/templates/ssg:
+    dependencies:
+      '@effect/platform':
+        specifier: ^0.94.0
+        version: 0.94.5(effect@3.19.19)
+      '@stax-ui/dom':
+        specifier: workspace:*
+        version: link:../../../dom
+      '@stax-ui/platform':
+        specifier: workspace:*
+        version: link:../../../platform
+      '@stax-ui/router':
+        specifier: workspace:*
+        version: link:../../../router
+      effect:
+        specifier: 3.19.19
+        version: 3.19.19
+    devDependencies:
+      '@stax-ui/vite-plugin':
+        specifier: workspace:*
+        version: link:../../../vite-plugin
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^7.0.0
+        version: 7.3.6(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.12)(yaml@2.9.0)
+
+  packages/create-stax-ui/templates/ssr:
+    dependencies:
+      '@effect/platform':
+        specifier: ^0.94.0
+        version: 0.94.5(effect@3.19.19)
+      '@effect/platform-node':
+        specifier: ^0.104.0
+        version: 0.104.1(@effect/cluster@0.56.4(@effect/platform@0.94.5(effect@3.19.19))(@effect/rpc@0.73.2(@effect/platform@0.94.5(effect@3.19.19))(effect@3.19.19))(@effect/sql@0.49.0(@effect/experimental@0.58.0(@effect/platform@0.94.5(effect@3.19.19))(effect@3.19.19))(@effect/platform@0.94.5(effect@3.19.19))(effect@3.19.19))(@effect/workflow@0.16.0(@effect/experimental@0.58.0(@effect/platform@0.94.5(effect@3.19.19))(effect@3.19.19))(@effect/platform@0.94.5(effect@3.19.19))(@effect/rpc@0.73.2(@effect/platform@0.94.5(effect@3.19.19))(effect@3.19.19))(effect@3.19.19))(effect@3.19.19))(@effect/platform@0.94.5(effect@3.19.19))(@effect/rpc@0.73.2(@effect/platform@0.94.5(effect@3.19.19))(effect@3.19.19))(@effect/sql@0.49.0(@effect/experimental@0.58.0(@effect/platform@0.94.5(effect@3.19.19))(effect@3.19.19))(@effect/platform@0.94.5(effect@3.19.19))(effect@3.19.19))(effect@3.19.19)
+      '@stax-ui/dom':
+        specifier: workspace:*
+        version: link:../../../dom
+      '@stax-ui/platform':
+        specifier: workspace:*
+        version: link:../../../platform
+      '@stax-ui/router':
+        specifier: workspace:*
+        version: link:../../../router
+      effect:
+        specifier: 3.19.19
+        version: 3.19.19
+    devDependencies:
+      '@stax-ui/vite-plugin':
+        specifier: workspace:*
+        version: link:../../../vite-plugin
+      tsx:
+        specifier: ^4.19.0
+        version: 4.23.12
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^7.0.0
+        version: 7.3.6(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.12)(yaml@2.9.0)
+
   packages/dom:
     dependencies:
       '@stax-ui/core':
@@ -303,10 +390,10 @@ importers:
         specifier: ^0.94.0
         version: 0.94.5(effect@3.19.19)
       '@stax-ui/dom':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../dom
       '@stax-ui/router':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../router
       effect:
         specifier: 3.19.19
@@ -327,7 +414,7 @@ importers:
   packages/vite-plugin:
     dependencies:
       '@stax-ui/platform':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../platform
     devDependencies:
       vite:

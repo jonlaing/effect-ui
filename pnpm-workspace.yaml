@@ -2,10 +2,29 @@ packages:
   - "packages/*"
   - "apps/*"
   - "examples/*"
+  # The create-stax-ui templates are workspace members so contributors
+  # can `cd packages/create-stax-ui/templates/spa && pnpm dev` and see
+  # their template edits live against local @stax-ui/* changes. The
+  # `@stax-ui/*` overrides below make their published-version specs
+  # (e.g. `"@stax-ui/dom": "^0.5.0"`) resolve to the workspace copies
+  # locally — end users installing the scaffolded project outside our
+  # workspace still get the real npm ranges as written.
+  - "packages/create-stax-ui/templates/*"
 
-# Force a single `effect` copy across the workspace. Without this pin,
-# @effect/platform (peer ^3.0.0 → 3.19.13) and @effect/vitest (peer ^3.0.0 →
-# 3.19.19) resolve to different copies and the runtime prints hundreds of
-# "Executing Effect X under Runtime Y" warnings during tests.
 overrides:
+  # Force a single `effect` copy across the workspace. Without this pin,
+  # @effect/platform (peer ^3.0.0 → 3.19.13) and @effect/vitest (peer
+  # ^3.0.0 → 3.19.19) resolve to different copies and the runtime prints
+  # hundreds of "Executing Effect X under Runtime Y" warnings during tests.
   effect: "3.19.19"
+  # Route every workspace project's `@stax-ui/*` deps to the workspace
+  # copies at install time — including the create-stax-ui templates,
+  # which need to build against the current source rather than the last
+  # published version. These overrides are workspace-local; they don't
+  # affect what gets shipped or what end users see.
+  "@stax-ui/core": "workspace:*"
+  "@stax-ui/dom": "workspace:*"
+  "@stax-ui/form": "workspace:*"
+  "@stax-ui/platform": "workspace:*"
+  "@stax-ui/router": "workspace:*"
+  "@stax-ui/vite-plugin": "workspace:*"
