@@ -115,6 +115,41 @@ const syncTemplates = async (versions) => {
   return updated;
 };
 
+/**
+ * Bump the `create-stax-ui` package's own version by one patch level.
+ * Called after templates changed so the CLI actually republishes on the
+ * next `changeset publish` — otherwise the fixed templates never leave
+ * the workspace.
+ *
+ * Why this is needed: `create-stax-ui` doesn't declare `@stax-ui/*` as
+ * regular dependencies (the deps live inside the *templates*, which are
+ * shipped as data), so changesets has no way to know that a bump to
+ * `@stax-ui/dom` should also republish the CLI. Without an explicit
+ * bump the CLI's tarball on npm keeps shipping stale template deps.
+ */
+const bumpCreateStaxUi = async () => {
+  const pkgPath = join(PACKAGES_DIR, "create-stax-ui", "package.json");
+  const raw = await readFile(pkgPath, "utf8");
+  const pkg = JSON.parse(raw);
+  const parts = String(pkg.version).split(".");
+  if (parts.length !== 3 || parts.some((p) => !/^\d+$/.test(p))) {
+    throw new Error(
+      `[sync-template-versions] create-stax-ui has non-semver version "${pkg.version}"; refusing to auto-bump.`,
+    );
+  }
+  const previous = pkg.version;
+  parts[2] = String(Number(parts[2]) + 1);
+  pkg.version = parts.join(".");
+
+  const trailingNewline = raw.endsWith("\n") ? "\n" : "";
+  await writeFile(
+    pkgPath,
+    JSON.stringify(pkg, null, 2) + trailingNewline,
+    "utf8",
+  );
+  return { previous, next: pkg.version, path: pkgPath };
+};
+
 const main = async () => {
   const versions = await readWorkspaceVersions();
   const known = Object.entries(versions);
@@ -142,6 +177,11 @@ const main = async () => {
   for (const file of updated) {
     console.log(`  ${file.replace(repoRoot + "/", "")}`);
   }
+
+  const bumped = await bumpCreateStaxUi();
+  console.log(
+    `[sync-template-versions] Bumped create-stax-ui ${bumped.previous} → ${bumped.next} so the next publish ships the updated templates.`,
+  );
 };
 
 main().catch((err) => {

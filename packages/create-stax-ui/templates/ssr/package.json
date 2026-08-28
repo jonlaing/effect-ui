@@ -9,15 +9,15 @@
     "start": "node --import tsx dist/server/server.js"
   },
   "dependencies": {
-    "@stax-ui/dom": "^0.3.0",
-    "@stax-ui/platform": "^0.4.0",
-    "@stax-ui/router": "^0.2.1",
+    "@stax-ui/dom": "^0.5.0",
+    "@stax-ui/platform": "^0.5.1",
+    "@stax-ui/router": "^0.3.1",
     "@effect/platform": "^0.94.0",
     "@effect/platform-node": "^0.104.0",
     "effect": "^3.19.13"
   },
   "devDependencies": {
-    "@stax-ui/vite-plugin": "^0.4.0",
+    "@stax-ui/vite-plugin": "^0.5.1",
     "tsx": "^4.19.0",
     "typescript": "~5.9.3",
     "vite": "^7.0.0"
