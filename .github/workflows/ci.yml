@@ -24,6 +24,16 @@ jobs:
       - name: Verify no package has moved off the 0.x track
         run: pnpm check-versions
 
+      - name: Verify create-stax-ui templates are in sync with workspace versions
+        run: |
+          pnpm sync-template-versions
+          if ! git diff --quiet; then
+            echo "::error::create-stax-ui templates are out of sync with workspace versions."
+            echo "::error::Run 'pnpm sync-template-versions' and commit the diff:"
+            git diff
+            exit 1
+          fi
+
       - run: pnpm typecheck
 
       - run: pnpm build
