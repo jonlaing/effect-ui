@@ -1,5 +1,12 @@
 # kanban
 
+## 0.0.4
+
+### Patch Changes
+
+- @stax-ui/dom@0.5.1
+- @stax-ui/form@0.2.3
+
 ## 0.0.3
 
 ### Patch Changes

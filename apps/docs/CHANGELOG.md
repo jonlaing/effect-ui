@@ -1,5 +1,12 @@
 # docs
 
+## 0.0.39
+
+### Patch Changes
+
+- @stax-ui/dom@0.5.1
+- @stax-ui/router@0.3.2
+
 ## 0.0.38
 
 ### Patch Changes
