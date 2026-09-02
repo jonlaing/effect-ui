@@ -33,6 +33,39 @@ export const logDebug = (
 };
 
 /**
+ * Wrap an Effect-returning method on a Signal collection so every call is
+ * logged under `stax.signal` at Debug level, with the method name, its
+ * arguments, and the caller's stack trace.
+ *
+ * Preserves the wrapped method's exact type (parameters + return type). The
+ * `new Error()` capture is inside the returned function, so it runs on the
+ * caller's synchronous frame — the stack top is user code, not the wrapper.
+ *
+ * Internal to `Signal.<Kind>.trace` implementations; not exported publicly.
+ *
+ * @internal
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const traceSignalMethod = <
+  F extends (...args: any[]) => Effect.Effect<any, any, any>,
+>(
+  method: string,
+  id: string,
+  fn: F,
+): F =>
+  ((...args: Parameters<F>) => {
+    const err = new Error();
+    return Effect.gen(function* () {
+      yield* logDebug(method, "stax.signal", {
+        id,
+        args,
+        callSite: err.stack,
+      });
+      return yield* fn(...args);
+    });
+  }) as F;
+
+/**
  * Emit an error log annotated with an Stax subsystem tag.
  *
  * Unlike {@link logDebug}, this always emits at Error level — users see

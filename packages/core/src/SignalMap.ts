@@ -1,6 +1,8 @@
 import {
   Data,
   Effect,
+  FiberRef,
+  LogLevel,
   Option,
   Pipeable,
   Predicate,
@@ -9,6 +11,7 @@ import {
   SubscriptionRef,
 } from "effect";
 
+import { traceSignalMethod } from "./Debug.js";
 import { Readable, TypeId as ReadableTypeId } from "./Readable.js";
 
 // -----------------------------------------------------------------------------
@@ -295,11 +298,60 @@ export const make = <K, V>(
   });
 
 /**
+ * Log every mutation call on a SignalMap at Debug level, tagged under
+ * the `stax.signal` subsystem, with the call site captured at the
+ * caller's frame.
+ *
+ * The write-side counterpart to `Readable.debug`, for SignalMap. Wraps
+ * `set`, `delete`, `clear`, `replace`, `update`, and `modifyAt` so each
+ * call emits `{ id, args, callSite }`. Zero cost at the default log
+ * level — the check runs once at construction and returns the
+ * underlying signal unwrapped if Debug isn't enabled.
+ *
+ * Unlike `Signal.trace` (which logs `from`/`to`), collection tracing
+ * logs the method name and its arguments — a full snapshot of the map
+ * on every write would be expensive and rarely what you want. Pair
+ * with `Readable.debug` if you also want a "value changed" line.
+ *
+ * @example
+ * ```ts
+ * const users = yield* Signal.Map.make<string, User>().pipe(
+ *   Signal.Map.trace("users"),
+ * );
+ * yield* users.set("ada", { name: "Ada" });
+ * // Debug logs:
+ * //   stax.signal  "set"  { id: "users", args: ["ada", {...}], callSite: "..." }
+ * ```
+ */
+export const trace =
+  (id: string) =>
+  <K, V>(
+    self: Effect.Effect<SignalMap<K, V>, never, Scope.Scope>,
+  ): Effect.Effect<SignalMap<K, V>, never, Scope.Scope> =>
+    Effect.gen(function* () {
+      const minLevel = yield* FiberRef.get(FiberRef.currentMinimumLogLevel);
+      const signal = yield* self;
+
+      if (!LogLevel.lessThanEqual(minLevel, LogLevel.Debug)) return signal;
+
+      return {
+        ...signal,
+        set: traceSignalMethod("set", id, signal.set),
+        delete: traceSignalMethod("delete", id, signal.delete),
+        clear: traceSignalMethod("clear", id, signal.clear),
+        replace: traceSignalMethod("replace", id, signal.replace),
+        update: traceSignalMethod("update", id, signal.update),
+        modifyAt: traceSignalMethod("modifyAt", id, signal.modifyAt),
+      };
+    });
+
+/**
  * SignalMap namespace.
  */
 export const SignalMap = {
   SignalMapTypeId,
   isSignalMap,
   make,
+  trace,
   KeyNotFoundError,
 };
