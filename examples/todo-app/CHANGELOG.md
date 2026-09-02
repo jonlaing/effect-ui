@@ -1,5 +1,11 @@
 # todo-app
 
+## 0.0.4
+
+### Patch Changes
+
+- @stax-ui/dom@0.5.1
+
 ## 0.0.3
 
 ### Patch Changes

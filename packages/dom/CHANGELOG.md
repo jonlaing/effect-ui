@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [8a13e9b]
+  - @stax-ui/core@0.5.0
+
 ## 0.5.0
 
 ### Minor Changes
