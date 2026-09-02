@@ -1,8 +1,37 @@
-import { Effect, Fiber, Scope, Stream } from "effect";
+import {
+  Effect,
+  Fiber,
+  HashMap,
+  Logger,
+  LogLevel,
+  Option,
+  Scope,
+  Stream,
+} from "effect";
 import { describe, expect, it } from "vitest";
 
 import { combine } from "./Readable.js";
 import { Signal } from "./Signal.js";
+
+interface CapturedLog {
+  readonly message: unknown;
+  readonly subsystem: string | undefined;
+}
+
+const captureLogger = () => {
+  const sink: CapturedLog[] = [];
+  const layer = Logger.replace(
+    Logger.defaultLogger,
+    Logger.make((opts) => {
+      const sub = HashMap.get(opts.annotations, "subsystem");
+      sink.push({
+        message: opts.message,
+        subsystem: Option.isSome(sub) ? String(sub.value) : undefined,
+      });
+    }),
+  );
+  return { sink, layer };
+};
 
 const runTest = <A>(effect: Effect.Effect<A, never, Scope.Scope>): Promise<A> =>
   Effect.runPromise(Effect.scoped(effect));
@@ -273,5 +302,98 @@ describe("Signal.Struct", () => {
           expect(c).toBe(10);
         }),
       ));
+  });
+
+  describe("trace", () => {
+    it("logs update and replace under stax.signal at Debug level", async () => {
+      const { sink, layer } = captureLogger();
+      await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const user = yield* Signal.Struct.make({
+              name: "Ada",
+              email: "a@b.co",
+            }).pipe(Signal.Struct.trace("user"));
+            yield* user.update({ name: "Ada L." });
+            yield* user.replace({ name: "Grace", email: "g@h.co" });
+          }),
+        ).pipe(
+          Logger.withMinimumLogLevel(LogLevel.Debug),
+          Effect.provide(layer),
+        ),
+      );
+      const methods = sink
+        .filter(
+          (l) => l.subsystem === "stax.signal" && Array.isArray(l.message),
+        )
+        .map((l) => (l.message as [string, unknown])[0]);
+      expect(methods).toEqual(["update", "replace"]);
+    });
+
+    it("payload contains id, args, and callSite", async () => {
+      const { sink, layer } = captureLogger();
+      await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const user = yield* Signal.Struct.make({
+              name: "Ada",
+              email: "a@b.co",
+            }).pipe(Signal.Struct.trace("user"));
+            yield* user.update({ name: "Ada L." });
+          }),
+        ).pipe(
+          Logger.withMinimumLogLevel(LogLevel.Debug),
+          Effect.provide(layer),
+        ),
+      );
+      const write = sink.find(
+        (l) =>
+          l.subsystem === "stax.signal" &&
+          Array.isArray(l.message) &&
+          l.message[0] === "update",
+      );
+      const payload = (write?.message as [string, Record<string, unknown>])[1];
+      expect(payload.id).toBe("user");
+      expect(payload.args).toEqual([{ name: "Ada L." }]);
+      expect(typeof payload.callSite).toBe("string");
+      expect(String(payload.callSite)).not.toMatch(/^Error/);
+      expect(String(payload.callSite)).not.toContain("/packages/core/");
+    });
+
+    it("emits nothing when the log level is above Debug", async () => {
+      const { sink, layer } = captureLogger();
+      await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const user = yield* Signal.Struct.make({ name: "Ada" }).pipe(
+              Signal.Struct.trace("user"),
+            );
+            yield* user.update({ name: "Grace" });
+          }),
+        ).pipe(Effect.provide(layer)),
+      );
+      expect(sink.filter((l) => l.subsystem === "stax.signal")).toEqual([]);
+    });
+
+    it("still applies mutations — the wrapper is transparent", async () => {
+      const { layer } = captureLogger();
+      const finalName = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const user = yield* Signal.Struct.make({
+              name: "Ada",
+              email: "a@b.co",
+            }).pipe(Signal.Struct.trace("user"));
+            yield* user.update({ name: "Ada L." });
+            const value = yield* user.get;
+            return value.name;
+          }),
+        ).pipe(
+          Logger.withMinimumLogLevel(LogLevel.Debug),
+          Effect.provide(layer),
+        ),
+      );
+      expect(finalName).toBe("Ada L.");
+    });
   });
 });

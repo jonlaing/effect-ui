@@ -1,5 +1,7 @@
 import {
   Effect,
+  FiberRef,
+  LogLevel,
   Pipeable,
   Predicate,
   Scope,
@@ -7,6 +9,7 @@ import {
   SubscriptionRef,
 } from "effect";
 
+import { traceSignalMethod } from "./Debug.js";
 import { Readable, TypeId as ReadableTypeId } from "./Readable.js";
 import { Signal, SignalTypeId } from "./Signal.js";
 
@@ -221,10 +224,54 @@ export const make = <T extends Record<string, unknown>>(
   });
 
 /**
+ * Log every struct-level mutation call on a SignalStruct at Debug
+ * level, tagged under the `stax.signal` subsystem, with the call site
+ * captured at the caller's frame.
+ *
+ * The write-side counterpart to `Readable.debug`, for SignalStruct.
+ * Wraps `update` and `replace` — the struct-level mutations. Field
+ * signals (`struct.name.set(...)` etc.) are plain Signals and can be
+ * traced individually with `Signal.trace` if needed.
+ *
+ * Zero cost at the default log level — the check runs once at
+ * construction and returns the underlying signal unwrapped if Debug
+ * isn't enabled.
+ *
+ * @example
+ * ```ts
+ * const user = yield* Signal.Struct.make({
+ *   name: "Ada",
+ *   email: "a@b.co",
+ * }).pipe(Signal.Struct.trace("user"));
+ * yield* user.update({ name: "Ada L." });
+ * // Debug logs:
+ * //   stax.signal  "update"  { id: "user", args: [{...}], callSite: "..." }
+ * ```
+ */
+export const trace =
+  (id: string) =>
+  <T extends Record<string, unknown>>(
+    self: Effect.Effect<SignalStruct<T>, never, Scope.Scope>,
+  ): Effect.Effect<SignalStruct<T>, never, Scope.Scope> =>
+    Effect.gen(function* () {
+      const minLevel = yield* FiberRef.get(FiberRef.currentMinimumLogLevel);
+      const signal = yield* self;
+
+      if (!LogLevel.lessThanEqual(minLevel, LogLevel.Debug)) return signal;
+
+      return {
+        ...signal,
+        update: traceSignalMethod("update", id, signal.update),
+        replace: traceSignalMethod("replace", id, signal.replace),
+      } as SignalStruct<T>;
+    });
+
+/**
  * SignalStruct namespace.
  */
 export const SignalStruct = {
   SignalStructTypeId,
   isSignalStruct,
   make,
+  trace,
 };

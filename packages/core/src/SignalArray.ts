@@ -1,6 +1,8 @@
 import {
   Data,
   Effect,
+  FiberRef,
+  LogLevel,
   Option,
   Pipeable,
   Scope,
@@ -8,6 +10,7 @@ import {
   SubscriptionRef,
 } from "effect";
 
+import { traceSignalMethod } from "./Debug.js";
 import { Readable, TypeId as ReadableTypeId } from "./Readable.js";
 import { Signal, SignalTypeId } from "./Signal.js";
 
@@ -352,9 +355,71 @@ export const make = <T>(
   });
 
 /**
+ * Log every mutation call on a SignalArray at Debug level, tagged
+ * under the `stax.signal` subsystem, with the call site captured at
+ * the caller's frame.
+ *
+ * The write-side counterpart to `Readable.debug`, for SignalArray.
+ * Wraps every mutation method (`push`, `pop`, `unshift`, `shift`,
+ * `splice`, `insertAt`, `removeAt`, `replaceAt`, `modifyAt`, `remove`,
+ * `move`, `swap`, `sort`, `reverse`, `clear`, and the inherited
+ * `Signal.set` / `Signal.update`). Zero cost at the default log level
+ * — the check runs once at construction and returns the underlying
+ * signal unwrapped if Debug isn't enabled.
+ *
+ * Unlike `Signal.trace` (which logs `from`/`to`), collection tracing
+ * logs the method name and its arguments — a full snapshot of the
+ * array on every write would be expensive and rarely what you want.
+ * Pair with `Readable.debug` if you also want a "value changed" line.
+ *
+ * @example
+ * ```ts
+ * const todos = yield* Signal.Array.make<Todo>().pipe(
+ *   Signal.Array.trace("todos"),
+ * );
+ * yield* todos.push({ id: 1, text: "buy milk" });
+ * // Debug logs:
+ * //   stax.signal  "push"  { id: "todos", args: [{...}], callSite: "..." }
+ * ```
+ */
+export const trace =
+  (id: string) =>
+  <T>(
+    self: Effect.Effect<SignalArray<T>, never, Scope.Scope>,
+  ): Effect.Effect<SignalArray<T>, never, Scope.Scope> =>
+    Effect.gen(function* () {
+      const minLevel = yield* FiberRef.get(FiberRef.currentMinimumLogLevel);
+      const signal = yield* self;
+
+      if (!LogLevel.lessThanEqual(minLevel, LogLevel.Debug)) return signal;
+
+      return {
+        ...signal,
+        set: traceSignalMethod("set", id, signal.set),
+        update: traceSignalMethod("update", id, signal.update),
+        push: traceSignalMethod("push", id, signal.push),
+        pop: traceSignalMethod("pop", id, signal.pop),
+        unshift: traceSignalMethod("unshift", id, signal.unshift),
+        shift: traceSignalMethod("shift", id, signal.shift),
+        splice: traceSignalMethod("splice", id, signal.splice),
+        insertAt: traceSignalMethod("insertAt", id, signal.insertAt),
+        removeAt: traceSignalMethod("removeAt", id, signal.removeAt),
+        replaceAt: traceSignalMethod("replaceAt", id, signal.replaceAt),
+        modifyAt: traceSignalMethod("modifyAt", id, signal.modifyAt),
+        remove: traceSignalMethod("remove", id, signal.remove),
+        move: traceSignalMethod("move", id, signal.move),
+        swap: traceSignalMethod("swap", id, signal.swap),
+        sort: traceSignalMethod("sort", id, signal.sort),
+        reverse: traceSignalMethod("reverse", id, signal.reverse),
+        clear: traceSignalMethod("clear", id, signal.clear),
+      };
+    });
+
+/**
  * SignalArray namespace.
  */
 export const SignalArray = {
   make,
+  trace,
   OutOfBoundsError,
 };

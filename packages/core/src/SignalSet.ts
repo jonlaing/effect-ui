@@ -1,5 +1,7 @@
 import {
   Effect,
+  FiberRef,
+  LogLevel,
   Pipeable,
   Predicate,
   Scope,
@@ -7,6 +9,7 @@ import {
   SubscriptionRef,
 } from "effect";
 
+import { traceSignalMethod } from "./Debug.js";
 import { Readable, TypeId as ReadableTypeId } from "./Readable.js";
 
 // -----------------------------------------------------------------------------
@@ -226,10 +229,52 @@ export const make = <T>(
   });
 
 /**
+ * Log every mutation call on a SignalSet at Debug level, tagged under
+ * the `stax.signal` subsystem, with the call site captured at the
+ * caller's frame.
+ *
+ * The write-side counterpart to `Readable.debug`, for SignalSet. Wraps
+ * `add`, `delete`, `toggle`, `clear`, `replace`, and `update` so each
+ * call emits `{ id, args, callSite }`. Zero cost at the default log
+ * level — the check runs once at construction and returns the
+ * underlying signal unwrapped if Debug isn't enabled.
+ *
+ * @example
+ * ```ts
+ * const tags = yield* Signal.Set.make<string>().pipe(Signal.Set.trace("tags"));
+ * yield* tags.add("urgent");
+ * // Debug logs:
+ * //   stax.signal  "add"  { id: "tags", args: ["urgent"], callSite: "..." }
+ * ```
+ */
+export const trace =
+  (id: string) =>
+  <T>(
+    self: Effect.Effect<SignalSet<T>, never, Scope.Scope>,
+  ): Effect.Effect<SignalSet<T>, never, Scope.Scope> =>
+    Effect.gen(function* () {
+      const minLevel = yield* FiberRef.get(FiberRef.currentMinimumLogLevel);
+      const signal = yield* self;
+
+      if (!LogLevel.lessThanEqual(minLevel, LogLevel.Debug)) return signal;
+
+      return {
+        ...signal,
+        add: traceSignalMethod("add", id, signal.add),
+        delete: traceSignalMethod("delete", id, signal.delete),
+        toggle: traceSignalMethod("toggle", id, signal.toggle),
+        clear: traceSignalMethod("clear", id, signal.clear),
+        replace: traceSignalMethod("replace", id, signal.replace),
+        update: traceSignalMethod("update", id, signal.update),
+      };
+    });
+
+/**
  * SignalSet namespace.
  */
 export const SignalSet = {
   SignalSetTypeId,
   isSignalSet,
   make,
+  trace,
 };

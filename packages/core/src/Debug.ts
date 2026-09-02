@@ -33,6 +33,82 @@ export const logDebug = (
 };
 
 /**
+ * Test whether a stack-trace line points inside `@stax-ui/core`'s own
+ * sources or built output.
+ *
+ * Matches path segments that can only appear as a package directory:
+ *
+ * - `/@stax-ui/core/` — resolved via `node_modules` (installed dep, or
+ *   pnpm's flat store)
+ * - `/packages/core/` — workspace source or dist (this repo)
+ *
+ * Both are anchored with a path separator on either side, so a user
+ * file named `packages/core.ts` or `stax-ui.ts` in application code
+ * won't be misidentified as internal. Windows separators handled too.
+ */
+const isStaxCoreFrame = (line: string): boolean =>
+  /[/\\]@stax-ui[/\\]core[/\\]|[/\\]packages[/\\]core[/\\]/.test(line);
+
+/**
+ * Take an `Error.stack` string and return only the user-code frames:
+ *
+ * - Drops the header (V8's stacks start with the literal `Error`, which
+ *   reads as a real error in log output).
+ * - Drops the leading contiguous run of `@stax-ui/core` frames — the
+ *   `trace` wrapper itself, so the top of what we log is where the
+ *   user actually called `set` / `push` / etc.
+ *
+ * Once a non-stax frame is seen, everything below it is kept as-is —
+ * so if a user's own function is also named `set` and lives in a file
+ * called `Signal.ts`, we don't strip it.
+ *
+ * @internal
+ */
+export const parseCallSite = (
+  stack: string | undefined,
+): string | undefined => {
+  if (!stack) return undefined;
+  const lines = stack.split("\n").slice(1); // drop "Error" header
+  let i = 0;
+  while (i < lines.length && isStaxCoreFrame(lines[i])) i++;
+  const trimmed = lines.slice(i).join("\n").trimStart();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
+/**
+ * Wrap an Effect-returning method on a Signal collection so every call is
+ * logged under `stax.signal` at Debug level, with the method name, its
+ * arguments, and the caller's stack trace.
+ *
+ * Preserves the wrapped method's exact type (parameters + return type). The
+ * `new Error()` capture is inside the returned function, so it runs on the
+ * caller's synchronous frame — the stack top is user code, not the wrapper.
+ *
+ * Internal to `Signal.<Kind>.trace` implementations; not exported publicly.
+ *
+ * @internal
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const traceSignalMethod = <
+  F extends (...args: any[]) => Effect.Effect<any, any, any>,
+>(
+  method: string,
+  id: string,
+  fn: F,
+): F =>
+  ((...args: Parameters<F>) => {
+    const err = new Error();
+    return Effect.gen(function* () {
+      yield* logDebug(method, "stax.signal", {
+        id,
+        args,
+        callSite: parseCallSite(err.stack),
+      });
+      return yield* fn(...args);
+    });
+  }) as F;
+
+/**
  * Emit an error log annotated with an Stax subsystem tag.
  *
  * Unlike {@link logDebug}, this always emits at Error level — users see

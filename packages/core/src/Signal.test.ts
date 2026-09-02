@@ -1,4 +1,4 @@
-import { Effect, Stream } from "effect";
+import { Effect, HashMap, Logger, LogLevel, Option, Stream } from "effect";
 import { describe, expect, it } from "vitest";
 
 import { Readable } from "./Readable.js";
@@ -509,5 +509,150 @@ describe("Signal", () => {
     const readable = Readable.of(42);
     expect(Signal.isSignal(readable)).toBe(false);
     expect(Readable.isReadable(readable)).toBe(true);
+  });
+});
+
+describe("Signal.trace", () => {
+  interface Captured {
+    readonly level: string;
+    readonly message: unknown;
+    readonly subsystem: string | undefined;
+  }
+
+  const capture = () => {
+    const sink: Captured[] = [];
+    const layer = Logger.replace(
+      Logger.defaultLogger,
+      Logger.make((opts) => {
+        const sub = HashMap.get(opts.annotations, "subsystem");
+        sink.push({
+          level: opts.logLevel.label,
+          message: opts.message,
+          subsystem: Option.isSome(sub) ? String(sub.value) : undefined,
+        });
+      }),
+    );
+    return { sink, layer };
+  };
+
+  it("logs every set call under stax.signal at Debug level", async () => {
+    const { sink, layer } = capture();
+    await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const count = yield* Signal.make(0).pipe(Signal.trace("count"));
+          yield* count.set(1);
+          yield* count.set(2);
+        }),
+      ).pipe(Logger.withMinimumLogLevel(LogLevel.Debug), Effect.provide(layer)),
+    );
+    const writes = sink.filter(
+      (l) =>
+        l.subsystem === "stax.signal" && String(l.message).includes("write"),
+    );
+    expect(writes).toHaveLength(2);
+    expect(writes[0].level).toBe("DEBUG");
+  });
+
+  it("logs every update call", async () => {
+    const { sink, layer } = capture();
+    await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const count = yield* Signal.make(0).pipe(Signal.trace("count"));
+          yield* count.update((c) => c + 1);
+          yield* count.update((c) => c + 10);
+        }),
+      ).pipe(Logger.withMinimumLogLevel(LogLevel.Debug), Effect.provide(layer)),
+    );
+    const updates = sink.filter(
+      (l) =>
+        l.subsystem === "stax.signal" && String(l.message).includes("update"),
+    );
+    expect(updates).toHaveLength(2);
+  });
+
+  it("includes id, from, to, and callSite in the log payload", async () => {
+    const { sink, layer } = capture();
+    await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const count = yield* Signal.make(5).pipe(Signal.trace("count"));
+          yield* count.set(9);
+        }),
+      ).pipe(Logger.withMinimumLogLevel(LogLevel.Debug), Effect.provide(layer)),
+    );
+    const write = sink.find(
+      (l) =>
+        l.subsystem === "stax.signal" &&
+        Array.isArray(l.message) &&
+        l.message[0] === "write",
+    );
+    expect(write).toBeDefined();
+    // Effect emits message as a tuple: [<label>, <data>]
+    const payload = (write?.message as [string, Record<string, unknown>])[1];
+    expect(payload.id).toBe("count");
+    expect(payload.from).toBe(5);
+    expect(payload.to).toBe(9);
+    // callSite is populated and header/internals are stripped
+    // (V8 doesn't preserve generator-body frames, so we can't assert on
+    //  the test file itself — see parseCallSite unit tests for full
+    //  strip-behavior coverage against synthetic stacks.)
+    expect(typeof payload.callSite).toBe("string");
+    expect(String(payload.callSite)).not.toMatch(/^Error/);
+    expect(String(payload.callSite)).not.toContain("/packages/core/");
+    expect(String(payload.callSite)).not.toContain("/@stax-ui/core/");
+  });
+
+  it("still applies writes — the wrapper is transparent to state", async () => {
+    const { layer } = capture();
+    const finalValue = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const count = yield* Signal.make(0).pipe(Signal.trace("count"));
+          yield* count.set(42);
+          yield* count.update((c) => c + 1);
+          return yield* count.get;
+        }),
+      ).pipe(Logger.withMinimumLogLevel(LogLevel.Debug), Effect.provide(layer)),
+    );
+    expect(finalValue).toBe(43);
+  });
+
+  it("returns the original Signal unwrapped when log level is above Debug", async () => {
+    // We can't observe "unwrapped" from the outside easily, so we prove it
+    // indirectly: with Debug off, no stax.signal logs are ever emitted, even
+    // for a signal that was piped through trace.
+    const { sink, layer } = capture();
+    await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const count = yield* Signal.make(0).pipe(Signal.trace("count"));
+          yield* count.set(1);
+          yield* count.update((c) => c + 1);
+        }),
+      ).pipe(Effect.provide(layer)),
+    );
+    const staxSignalLogs = sink.filter((l) => l.subsystem === "stax.signal");
+    expect(staxSignalLogs).toEqual([]);
+  });
+
+  it("runs update reducer once even when tracing is enabled", async () => {
+    // Non-pure reducers shouldn't double-fire — the wrapper computes `to`
+    // once and applies via `set`, not by re-running `signal.update(fn)`.
+    const { layer } = capture();
+    let calls = 0;
+    await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const count = yield* Signal.make(0).pipe(Signal.trace("count"));
+          yield* count.update((c) => {
+            calls++;
+            return c + 1;
+          });
+        }),
+      ).pipe(Logger.withMinimumLogLevel(LogLevel.Debug), Effect.provide(layer)),
+    );
+    expect(calls).toBe(1);
   });
 });

@@ -1,8 +1,37 @@
-import { Effect, Fiber, Option, Scope, Stream } from "effect";
+import {
+  Effect,
+  Fiber,
+  HashMap,
+  Logger,
+  LogLevel,
+  Option,
+  Scope,
+  Stream,
+} from "effect";
 import { describe, expect, it } from "vitest";
 
 import { Readable } from "./Readable.js";
 import { Signal } from "./Signal.js";
+
+interface CapturedLog {
+  readonly message: unknown;
+  readonly subsystem: string | undefined;
+}
+
+const captureLogger = () => {
+  const sink: CapturedLog[] = [];
+  const layer = Logger.replace(
+    Logger.defaultLogger,
+    Logger.make((opts) => {
+      const sub = HashMap.get(opts.annotations, "subsystem");
+      sink.push({
+        message: opts.message,
+        subsystem: Option.isSome(sub) ? String(sub.value) : undefined,
+      });
+    }),
+  );
+  return { sink, layer };
+};
 
 const runTest = <A>(effect: Effect.Effect<A, never, Scope.Scope>): Promise<A> =>
   Effect.runPromise(Effect.scoped(effect));
@@ -450,5 +479,99 @@ describe("Signal.Array", () => {
           expect(value).toBe(6);
         }),
       ));
+  });
+
+  describe("trace", () => {
+    it("logs every mutation method under stax.signal at Debug level", async () => {
+      const { sink, layer } = captureLogger();
+      await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const arr = yield* Signal.Array.make<number>().pipe(
+              Signal.Array.trace("nums"),
+            );
+            yield* arr.push(1, 2);
+            yield* arr.unshift(0);
+            yield* arr.pop();
+            yield* arr.reverse();
+            yield* arr.clear();
+          }),
+        ).pipe(
+          Logger.withMinimumLogLevel(LogLevel.Debug),
+          Effect.provide(layer),
+        ),
+      );
+      const methods = sink
+        .filter(
+          (l) => l.subsystem === "stax.signal" && Array.isArray(l.message),
+        )
+        .map((l) => (l.message as [string, unknown])[0]);
+      expect(methods).toEqual(["push", "unshift", "pop", "reverse", "clear"]);
+    });
+
+    it("payload contains id, args, and callSite", async () => {
+      const { sink, layer } = captureLogger();
+      await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const arr = yield* Signal.Array.make<number>().pipe(
+              Signal.Array.trace("nums"),
+            );
+            yield* arr.push(7, 8, 9);
+          }),
+        ).pipe(
+          Logger.withMinimumLogLevel(LogLevel.Debug),
+          Effect.provide(layer),
+        ),
+      );
+      const write = sink.find(
+        (l) =>
+          l.subsystem === "stax.signal" &&
+          Array.isArray(l.message) &&
+          l.message[0] === "push",
+      );
+      const payload = (write?.message as [string, Record<string, unknown>])[1];
+      expect(payload.id).toBe("nums");
+      expect(payload.args).toEqual([7, 8, 9]);
+      expect(typeof payload.callSite).toBe("string");
+      expect(String(payload.callSite)).not.toMatch(/^Error/);
+      expect(String(payload.callSite)).not.toContain("/packages/core/");
+    });
+
+    it("emits nothing when the log level is above Debug", async () => {
+      const { sink, layer } = captureLogger();
+      await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const arr = yield* Signal.Array.make<number>().pipe(
+              Signal.Array.trace("nums"),
+            );
+            yield* arr.push(1);
+            yield* arr.pop();
+          }),
+        ).pipe(Effect.provide(layer)),
+      );
+      expect(sink.filter((l) => l.subsystem === "stax.signal")).toEqual([]);
+    });
+
+    it("still applies mutations — the wrapper is transparent", async () => {
+      const { layer } = captureLogger();
+      const finalArr = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const arr = yield* Signal.Array.make<number>().pipe(
+              Signal.Array.trace("nums"),
+            );
+            yield* arr.push(1, 2, 3);
+            yield* arr.reverse();
+            return yield* arr.get;
+          }),
+        ).pipe(
+          Logger.withMinimumLogLevel(LogLevel.Debug),
+          Effect.provide(layer),
+        ),
+      );
+      expect(finalArr).toEqual([3, 2, 1]);
+    });
   });
 });
