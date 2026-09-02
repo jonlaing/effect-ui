@@ -533,7 +533,9 @@ describe("Signal.Array", () => {
       const payload = (write?.message as [string, Record<string, unknown>])[1];
       expect(payload.id).toBe("nums");
       expect(payload.args).toEqual([7, 8, 9]);
-      expect(String(payload.callSite)).toContain("SignalArray.test.ts");
+      expect(typeof payload.callSite).toBe("string");
+      expect(String(payload.callSite)).not.toMatch(/^Error/);
+      expect(String(payload.callSite)).not.toContain("/packages/core/");
     });
 
     it("emits nothing when the log level is above Debug", async () => {

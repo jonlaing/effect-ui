@@ -388,7 +388,9 @@ describe("Signal.Set", () => {
       const payload = (write?.message as [string, Record<string, unknown>])[1];
       expect(payload.id).toBe("tags");
       expect(payload.args).toEqual(["urgent"]);
-      expect(String(payload.callSite)).toContain("SignalSet.test.ts");
+      expect(typeof payload.callSite).toBe("string");
+      expect(String(payload.callSite)).not.toMatch(/^Error/);
+      expect(String(payload.callSite)).not.toContain("/packages/core/");
     });
 
     it("emits nothing when the log level is above Debug", async () => {

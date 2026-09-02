@@ -11,7 +11,7 @@ import {
   SubscriptionRef,
 } from "effect";
 
-import { logDebug } from "./Debug.js";
+import { logDebug, parseCallSite } from "./Debug.js";
 import { Readable, TypeId as ReadableTypeId } from "./Readable.js";
 import {
   SignalArray,
@@ -263,7 +263,7 @@ export const trace =
               id,
               from,
               to: value,
-              callSite: err.stack,
+              callSite: parseCallSite(err.stack),
             });
             yield* signal.set(value);
           });
@@ -277,7 +277,7 @@ export const trace =
               id,
               from,
               to,
-              callSite: err.stack,
+              callSite: parseCallSite(err.stack),
             });
             yield* signal.set(to);
           });

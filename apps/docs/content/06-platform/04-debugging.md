@@ -88,7 +88,7 @@ yield* count.set(1);
 // stax.signal  "write"  { id: "count", from: 0, to: 1, callSite: "Error\n    at ..." }
 ```
 
-Source maps make the stack readable in browser devtools automatically; in Node, run with `--enable-source-maps`.
+Source maps make the stack readable in browser devtools automatically; in Node, run with `--enable-source-maps`. Stack frames from `@stax-ui/core` itself are stripped so the top of the trace is your code; frames buried inside `Effect.gen(function*() { … })` may show up only as `Generator.next (<anonymous>)` — a V8 limitation for generator-body traces — while writes from event handlers, `Effect.sync`, and plain functions come through with their source location intact.
 
 Every collection variant carries the same combinator, scoped under its namespace — `Signal.Array.trace`, `Signal.Map.trace`, `Signal.Set.trace`, `Signal.Struct.trace`. Each wraps its collection's mutation methods (`push`/`pop`/`splice`/... for arrays, `set`/`delete`/`clear`/... for maps, and so on) and emits one line per call, tagged with the method name plus the arguments it was called with.
 
