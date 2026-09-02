@@ -4,12 +4,14 @@ import {
   FiberRef,
   Function as Fn,
   Layer,
+  LogLevel,
   Predicate,
   Scope,
   Stream,
   SubscriptionRef,
 } from "effect";
 
+import { logDebug } from "./Debug.js";
 import { Readable, TypeId as ReadableTypeId } from "./Readable.js";
 import {
   SignalArray,
@@ -201,6 +203,89 @@ export const equals: {
 );
 
 /**
+ * Log every `set` and `update` call on a Signal at Debug level, tagged
+ * under the `stax.signal` subsystem, with the call site captured at the
+ * caller's frame.
+ *
+ * A pipeable pass-through observer — mirrors {@link Readable.debug}
+ * (which covers *reads*) for the *write* side. Zero cost at the default
+ * log level: the pipe reads the current minimum log level once at
+ * construction, and if Debug isn't enabled it returns the underlying
+ * Signal unwrapped — no proxy `set`/`update`, no `new Error()` per
+ * write, no branch.
+ *
+ * Each emitted event carries the label, the previous value, the value
+ * being written, and the stack trace at the write's call site (so you
+ * can answer "where in the code did this update come from"). Source
+ * maps make the stack readable in browser devtools automatically; in
+ * Node, run with `--enable-source-maps`.
+ *
+ * @example
+ * ```ts
+ * const count = yield* Signal.make(0).pipe(Signal.trace("count"));
+ * yield* count.set(1);
+ * // Debug logs:
+ * //   stax.signal  "write"  { id: "count", from: 0, to: 1, callSite: "Error\n    at ..." }
+ * ```
+ *
+ * `update`'s reducer function runs once (to compute the value we log),
+ * then the result is applied via the underlying `set` — so non-pure
+ * reducers don't double-fire. Trades the atomic read-modify-write
+ * semantics of `signal.update` for observability; if you need the
+ * atomicity, don't pipe `trace` on that signal.
+ *
+ * The log-level check is captured at pipe time — a later
+ * `Logger.withMinimumLogLevel` won't toggle an already-piped signal.
+ * That matches how tracing is usually enabled (once, at startup) and
+ * keeps the fast path branchless.
+ */
+export const trace =
+  (id: string) =>
+  <A>(
+    self: Effect.Effect<Signal<A>, never, Scope.Scope>,
+  ): Effect.Effect<Signal<A>, never, Scope.Scope> =>
+    Effect.gen(function* () {
+      const minLevel = yield* FiberRef.get(FiberRef.currentMinimumLogLevel);
+      const signal = yield* self;
+
+      // Fast path — Debug not enabled, no wrapper installed.
+      if (!LogLevel.lessThanEqual(minLevel, LogLevel.Debug)) {
+        return signal;
+      }
+
+      return {
+        ...signal,
+        set: (value) => {
+          const err = new Error();
+          return Effect.gen(function* () {
+            const from = yield* signal.get;
+            yield* logDebug("write", "stax.signal", {
+              id,
+              from,
+              to: value,
+              callSite: err.stack,
+            });
+            yield* signal.set(value);
+          });
+        },
+        update: (fn) => {
+          const err = new Error();
+          return Effect.gen(function* () {
+            const from = yield* signal.get;
+            const to = fn(from);
+            yield* logDebug("update", "stax.signal", {
+              id,
+              from,
+              to,
+              callSite: err.stack,
+            });
+            yield* signal.set(to);
+          });
+        },
+      };
+    });
+
+/**
  * Use an existing Signal if provided, otherwise create a new one with the default value.
  * This enables the controlled/uncontrolled component pattern.
  *
@@ -317,6 +402,7 @@ export const Signal = {
   isSignal,
   make,
   equals,
+  trace,
   fromNullable,
   fromReactive,
   SignalRegistry,
