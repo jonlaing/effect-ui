@@ -46,6 +46,11 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
+          # Route through the root "version" script so `pnpm sync-template-versions`
+          # runs after `changeset version` — otherwise the changesets action's
+          # default (bare `changeset version`) skips it and the create-stax-ui
+          # templates drift out of sync with the workspace packages.
+          version: pnpm run version
           publish: pnpm release
           title: "chore: version packages"
           commit: "chore: version packages"
