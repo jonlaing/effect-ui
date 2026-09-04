@@ -48,7 +48,7 @@
  * what its registered animations dictate.
  */
 
-import { Deferred, Effect } from "effect";
+import { Deferred, Effect, Scope } from "effect";
 
 /**
  * Opaque handle representing a group of animations that can be gated and
@@ -123,10 +123,16 @@ export interface GroupOptions {
  * chain's completion drives the parent's `_done` through a virtual
  * registration — the parent effectively "contains" the sequence.
  */
-export const sequence = (
+// The impl always returns `Effect<_, _, Scope>` because it installs a scope
+// finalizer when `options.group` is set. When no parent is passed the
+// finalizer path is never reached and the runtime doesn't touch Scope, so
+// the no-parent overload widens Scope back to `never` — the cast at the end
+// bridges the impl's static type to the overload set the exported name
+// exposes to callers.
+const sequenceImpl = (
   count: number,
   options?: GroupOptions,
-): Effect.Effect<AnimationGroup[]> =>
+): Effect.Effect<AnimationGroup[], never, Scope.Scope> =>
   Effect.gen(function* () {
     if (count <= 0) return [];
 
@@ -141,18 +147,23 @@ export const sequence = (
       // register up front so parent's pending count reflects it before any
       // sibling completions can drive it to zero.
       _register(parent);
+      // Scope-aware release: whichever fires first — the last child's
+      // `_done` OR this call site's scope closing — decrements parent's
+      // virtual registration exactly once. The scope path is the one
+      // that handles reactive branch swaps: `when(cond, {onTrue: A, onFalse: B})`
+      // where each branch owns a nested `sequence(_, {group: parent})`
+      // would otherwise leak the losing branch's `_register` forever —
+      // parent's `pending` would never balance because the losing branch's
+      // last group never completes.
+      yield* releaseParentOnDoneOrScopeClose(
+        parent,
+        Deferred.await(groups[count - 1]._done),
+      );
       // Open child 0's gate when parent's gate opens. Daemon so the wiring
       // outlives the render scope.
       yield* Effect.forkDaemon(
         Deferred.await(parent._gate).pipe(
           Effect.andThen(() => openGate(groups[0])),
-        ),
-      );
-      // When the last child's chain completes, mark parent's virtual
-      // registration done so its `_done` can fire.
-      yield* Effect.forkDaemon(
-        Deferred.await(groups[count - 1]._done).pipe(
-          Effect.andThen(() => _complete(parent)),
         ),
       );
     } else {
@@ -174,6 +185,20 @@ export const sequence = (
     return groups;
   });
 
+export const sequence: {
+  (count: number): Effect.Effect<AnimationGroup[]>;
+  (
+    count: number,
+    options: GroupOptions,
+  ): Effect.Effect<AnimationGroup[], never, Scope.Scope>;
+} = sequenceImpl as {
+  (count: number): Effect.Effect<AnimationGroup[]>;
+  (
+    count: number,
+    options: GroupOptions,
+  ): Effect.Effect<AnimationGroup[], never, Scope.Scope>;
+};
+
 /**
  * Create `count` groups whose gates are all open immediately. Useful nested
  * inside `sequence` for concurrent segments.
@@ -182,10 +207,10 @@ export const sequence = (
  * opens, and the child chain's completion drives the parent's `_done`
  * through a virtual registration.
  */
-export const parallel = (
+const parallelImpl = (
   count: number,
   options?: GroupOptions,
-): Effect.Effect<AnimationGroup[]> =>
+): Effect.Effect<AnimationGroup[], never, Scope.Scope> =>
   Effect.gen(function* () {
     if (count <= 0) return [];
 
@@ -198,6 +223,17 @@ export const parallel = (
     if (parent) {
       // Register the child chain as one virtual animation on the parent.
       _register(parent);
+      // Scope-aware release: parent's virtual registration completes
+      // when EVERY child's `_done` has fired OR when this call site's
+      // scope closes — whichever comes first. See `sequence` for the
+      // rationale (reactive branch swaps would otherwise leak).
+      yield* releaseParentOnDoneOrScopeClose(
+        parent,
+        Effect.forEach(groups, (g) => Deferred.await(g._done), {
+          concurrency: "unbounded",
+          discard: true,
+        }).pipe(Effect.asVoid),
+      );
       // All child gates open in unison when parent's gate does.
       yield* Effect.forkDaemon(
         Deferred.await(parent._gate).pipe(
@@ -205,14 +241,6 @@ export const parallel = (
             Effect.forEach(groups, openGate, { discard: true }),
           ),
         ),
-      );
-      // Parent's virtual registration completes when EVERY child's `_done`
-      // has fired. Await all in parallel then decrement parent's pending.
-      yield* Effect.forkDaemon(
-        Effect.forEach(groups, (g) => Deferred.await(g._done), {
-          concurrency: "unbounded",
-          discard: true,
-        }).pipe(Effect.andThen(() => _complete(parent))),
       );
     } else {
       // Top-level: open every child's gate immediately.
@@ -223,6 +251,20 @@ export const parallel = (
 
     return groups;
   });
+
+export const parallel: {
+  (count: number): Effect.Effect<AnimationGroup[]>;
+  (
+    count: number,
+    options: GroupOptions,
+  ): Effect.Effect<AnimationGroup[], never, Scope.Scope>;
+} = parallelImpl as {
+  (count: number): Effect.Effect<AnimationGroup[]>;
+  (
+    count: number,
+    options: GroupOptions,
+  ): Effect.Effect<AnimationGroup[], never, Scope.Scope>;
+};
 
 const openGate = (g: AnimationGroup): Effect.Effect<void> =>
   Effect.gen(function* () {
@@ -299,6 +341,45 @@ export const _register = (g: AnimationGroup): void => {
   g._state.pending += 1;
   g._state.started = true;
 };
+
+/**
+ * Balance the parent-side `_register` from `sequence` / `parallel` against
+ * two possible completion signals: the child chain's natural `_done` OR the
+ * enclosing scope closing before that ever happens (e.g. the `when` branch
+ * that owned the sub-sequence got unmounted mid-hydration).
+ *
+ * `_complete(parent)` is idempotent within one registration — a shared
+ * `released` flag ensures whichever completion signal wins fires the
+ * decrement exactly once. Without the scope-close arm, a swap between two
+ * `when` branches that each nest a `sequence(_, { group: parent })` under
+ * the same parent leaks the losing branch's `_register` forever — parent's
+ * `pending` never balances, and every downstream sibling of the parent
+ * hangs.
+ *
+ * Internal.
+ */
+const releaseParentOnDoneOrScopeClose = (
+  parent: AnimationGroup,
+  awaitNaturalDone: Effect.Effect<void>,
+): Effect.Effect<void, never, Scope.Scope> =>
+  Effect.gen(function* () {
+    let released = false;
+    const releaseOnce = Effect.suspend(() => {
+      if (released) return Effect.void;
+      released = true;
+      return _complete(parent);
+    });
+
+    // Natural completion path — daemon so the wiring outlives the render
+    // scope (matches how the pre-fix `_done → _complete` daemon behaved).
+    yield* Effect.forkDaemon(
+      awaitNaturalDone.pipe(Effect.andThen(releaseOnce)),
+    );
+
+    // Scope-close path — fires only if the enclosing scope tears down
+    // before the natural path won. Idempotent via `released`.
+    yield* Effect.addFinalizer(() => releaseOnce);
+  });
 
 /**
  * Signal that a registered animation has finished. When the pending

@@ -1,4 +1,4 @@
-import { Deferred, Effect } from "effect";
+import { Deferred, Effect, Scope } from "effect";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -10,6 +10,13 @@ import {
   sequence,
   skip,
 } from "./groups.js";
+
+// `sequence(_, { group })` and `parallel(_, { group })` install a scope
+// finalizer so branch swaps release the parent's virtual registration;
+// tests exercising the nested overload run under `Effect.scoped`.
+const runScoped = <A, E>(
+  program: Effect.Effect<A, E, Scope.Scope>,
+): Promise<A> => Effect.runPromise(Effect.scoped(program));
 
 describe("Animation groups", () => {
   describe("group()", () => {
@@ -196,7 +203,7 @@ describe("Animation groups", () => {
 
   describe("sequence({ group: parent })", () => {
     it("keeps child 0's gate closed until parent's gate opens", async () => {
-      const gates = await Effect.runPromise(
+      const gates = await runScoped(
         Effect.gen(function* () {
           const [parent] = yield* sequence(1);
           // Immediately close and swap parent so its gate isn't yet open.
@@ -217,7 +224,7 @@ describe("Animation groups", () => {
     });
 
     it("opens child 0's gate when parent's gate opens; children chain as usual", async () => {
-      const events = await Effect.runPromise(
+      const events = await runScoped(
         Effect.gen(function* () {
           const parent = yield* group();
           const [c0, c1] = yield* sequence(2, { group: parent });
@@ -255,7 +262,7 @@ describe("Animation groups", () => {
     });
 
     it("parent's `_done` waits for the child chain to complete", async () => {
-      const doneStates = await Effect.runPromise(
+      const doneStates = await runScoped(
         Effect.gen(function* () {
           const parent = yield* group();
           const [c0, c1] = yield* sequence(2, { group: parent });
@@ -292,7 +299,7 @@ describe("Animation groups", () => {
     });
 
     it("parent with BOTH a direct animation AND a nested chain — waits for both", async () => {
-      const doneAfterEach = await Effect.runPromise(
+      const doneAfterEach = await runScoped(
         Effect.gen(function* () {
           const parent = yield* group();
           const [child] = yield* sequence(1, { group: parent });
@@ -323,7 +330,7 @@ describe("Animation groups", () => {
     });
 
     it("returns [] and does not touch parent when count is 0", async () => {
-      const parentState = await Effect.runPromise(
+      const parentState = await runScoped(
         Effect.gen(function* () {
           const parent = yield* group();
           const groups = yield* sequence(0, { group: parent });
@@ -338,7 +345,7 @@ describe("Animation groups", () => {
     });
 
     it("nests arbitrarily — a sequence under a child of another sequence", async () => {
-      const events = await Effect.runPromise(
+      const events = await runScoped(
         Effect.gen(function* () {
           const [outer0, outer1, outer2] = yield* sequence(3);
           const [inner0, inner1] = yield* sequence(2, { group: outer1 });
@@ -384,7 +391,7 @@ describe("Animation groups", () => {
 
   describe("parallel({ group: parent })", () => {
     it("keeps every child's gate closed until parent's gate opens", async () => {
-      const gates = await Effect.runPromise(
+      const gates = await runScoped(
         Effect.gen(function* () {
           const parent = yield* group();
           const [c0, c1, c2] = yield* parallel(3, { group: parent });
@@ -399,7 +406,7 @@ describe("Animation groups", () => {
     });
 
     it("opens all child gates in unison when parent's gate opens", async () => {
-      const openedTogether = await Effect.runPromise(
+      const openedTogether = await runScoped(
         Effect.gen(function* () {
           const parent = yield* group();
           const [c0, c1, c2] = yield* parallel(3, { group: parent });
@@ -420,7 +427,7 @@ describe("Animation groups", () => {
     });
 
     it("parent's `_done` waits until EVERY child finishes", async () => {
-      const doneStates = await Effect.runPromise(
+      const doneStates = await runScoped(
         Effect.gen(function* () {
           const parent = yield* group();
           const [c0, c1] = yield* parallel(2, { group: parent });
@@ -450,7 +457,7 @@ describe("Animation groups", () => {
     });
 
     it("returns [] and does not touch parent when count is 0", async () => {
-      const parentState = await Effect.runPromise(
+      const parentState = await runScoped(
         Effect.gen(function* () {
           const parent = yield* group();
           const groups = yield* parallel(0, { group: parent });
@@ -636,6 +643,125 @@ describe("Animation groups", () => {
         }),
       );
       expect(state).toEqual({ g0Done: true, g1Open: true, g0PendingAfter: 0 });
+    });
+  });
+
+  describe("scope-aware parent registration", () => {
+    // Regression: a `when` branch swap that tears down a sub-scope
+    // containing `sequence(_, { group: parent })` used to leak the
+    // parent's virtual `_register`. Parent's `pending` never balanced
+    // because the losing branch's last group never completed, and every
+    // sibling downstream of `parent` hung forever.
+    it("decrements parent's pending when the sub-scope closes before completion", async () => {
+      const state = await Effect.runPromise(
+        Effect.gen(function* () {
+          const parent = yield* group();
+          const outerScope = yield* Scope.make();
+
+          // Build a nested sequence under `parent` inside `outerScope`.
+          yield* sequence(3, { group: parent }).pipe(Scope.extend(outerScope));
+
+          const pendingWhileOpen = parent._state.pending;
+
+          // Close the sub-scope — no child ever completes.
+          yield* Scope.close(
+            outerScope,
+            Effect.void
+              .pipe(Effect.exit)
+              .pipe(Effect.map(() => undefined)) as never,
+          );
+
+          const pendingAfterClose = parent._state.pending;
+          return { pendingWhileOpen, pendingAfterClose };
+        }),
+      );
+      // While the sub-scope is open, parent has our virtual registration.
+      expect(state.pendingWhileOpen).toBe(1);
+      // After the sub-scope closes, the finalizer decrements it back.
+      expect(state.pendingAfterClose).toBe(0);
+    });
+
+    it("parent completes when the surviving branch's sub-sequence finishes after a swap", async () => {
+      // Simulates the hydration branch-swap case:
+      //   1. Sub-scope A opens → sequence(N, {group}) registers with parent
+      //   2. Sub-scope A closes (branch swapped out) → finalizer decrements
+      //   3. Sub-scope B opens → sequence(M, {group}) registers with parent
+      //   4. B's chain runs to completion → _complete(parent) → parent done
+      const state = await Effect.runPromise(
+        Effect.gen(function* () {
+          const parent = yield* group();
+
+          // Branch A mounts under its own scope, then unmounts.
+          const scopeA = yield* Scope.make();
+          yield* sequence(2, { group: parent }).pipe(Scope.extend(scopeA));
+          yield* Scope.close(
+            scopeA,
+            (yield* Effect.exit(Effect.void)) as never,
+          );
+
+          const pendingAfterAClosed = parent._state.pending;
+
+          // Branch B mounts. Register with parent, then complete.
+          const scopeB = yield* Scope.make();
+          const [b0, b1] = yield* sequence(2, { group: parent }).pipe(
+            Scope.extend(scopeB),
+          );
+
+          // Open parent's gate so b0 opens.
+          yield* Deferred.succeed(parent._gate, void 0);
+          parent._state.gateResolved = true;
+
+          // Register + complete an animation in each of B's groups so
+          // b1._done ends up firing — which drives parent's virtual
+          // completion via the daemon.
+          _register(b0);
+          yield* _complete(b0);
+          // b1's gate opens off b0's done. Give the daemon a tick.
+          yield* Effect.sleep(2);
+          _register(b1);
+          yield* _complete(b1);
+          yield* Effect.sleep(2);
+
+          const parentDone = yield* Deferred.isDone(parent._done);
+          const pendingAtEnd = parent._state.pending;
+
+          yield* Scope.close(
+            scopeB,
+            (yield* Effect.exit(Effect.void)) as never,
+          );
+
+          return { pendingAfterAClosed, parentDone, pendingAtEnd };
+        }),
+      );
+      expect(state.pendingAfterAClosed).toBe(0);
+      expect(state.parentDone).toBe(true);
+      expect(state.pendingAtEnd).toBe(0);
+    });
+
+    it("normal completion path is unaffected by the scope finalizer", async () => {
+      // Belt-and-suspenders: if the natural `_done` path wins, the
+      // scope-close finalizer must NOT double-decrement.
+      const state = await runScoped(
+        Effect.gen(function* () {
+          const parent = yield* group();
+          const [c0] = yield* sequence(1, { group: parent });
+
+          _register(c0);
+          yield* Deferred.succeed(parent._gate, void 0);
+          parent._state.gateResolved = true;
+          yield* _complete(c0);
+          yield* Effect.sleep(2);
+
+          return {
+            parentDone: yield* Deferred.isDone(parent._done),
+            pendingAfterNaturalCompletion: parent._state.pending,
+          };
+        }),
+      );
+      expect(state.parentDone).toBe(true);
+      // The finalizer fires when the enclosing scope closes AFTER this
+      // block, but by then `released` is already true so it's a no-op.
+      expect(state.pendingAfterNaturalCompletion).toBe(0);
     });
   });
 });
