@@ -300,11 +300,21 @@ describe("DOMRenderer", () => {
     });
   });
 
-  describe("isHydrating", () => {
-    it("should return false for DOM renderer", async () => {
+  describe("hydrationPhase", () => {
+    it("returns a constant false Readable for the DOM renderer", async () => {
       await runTest(
         Effect.gen(function* () {
-          const hydrating = yield* DOMRenderer.isHydrating;
+          const hydrating = yield* DOMRenderer.hydrationPhase.get;
+          expect(hydrating).toBe(false);
+        }),
+      );
+    });
+
+    it("completeHydration is a no-op on the DOM renderer", async () => {
+      await runTest(
+        Effect.gen(function* () {
+          yield* DOMRenderer.completeHydration;
+          const hydrating = yield* DOMRenderer.hydrationPhase.get;
           expect(hydrating).toBe(false);
         }),
       );

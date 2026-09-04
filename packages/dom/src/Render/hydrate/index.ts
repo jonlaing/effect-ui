@@ -143,6 +143,13 @@ export function hydrate<
     const context = yield* Layer.build(elementLayers);
     yield* Effect.provide(element, context);
 
+    // Signal that the initial hydration walk is done. Browser-only
+    // reactive values (Screen.match, etc.) observe this and emit their
+    // live-value delta so reconcile can swap the DOM to the real state
+    // — the first client render matched SSR, and now we transition off
+    // the SSR-safe fallback.
+    yield* renderer.completeHydration;
+
     // Keep the scope alive - subscriptions run in forked fibers that need to persist
     // Wait forever (until page unload) so subscription fibers stay alive
     yield* Effect.never;

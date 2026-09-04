@@ -17,12 +17,12 @@ import { Screen } from "@stax-ui/dom";
 
 ## Media queries
 
-`Screen.match(query, opts?)` is the primary API. It returns a `Readable<boolean>` that flips when the underlying media query's match state changes.
+`Screen.match(query, opts?)` is the primary API. It returns an `Effect<Readable<boolean>>` (it reads the renderer's hydration phase from context), which you unwrap with `yield*`. The resulting `Readable<boolean>` flips when the underlying media query's match state changes.
 
 ```typescript
-const isMobile = Screen.match("(max-width: 767px)");
-const reducedMotion = Screen.match("(prefers-reduced-motion: reduce)");
-const prefersDark = Screen.match("(prefers-color-scheme: dark)");
+const isMobile = yield* Screen.match("(max-width: 767px)");
+const reducedMotion = yield* Screen.match("(prefers-reduced-motion: reduce)");
+const prefersDark = yield* Screen.match("(prefers-color-scheme: dark)");
 ```
 
 Use it wherever any other `Readable<boolean>` fits — as the condition on `when`, mapped through `Readable.map`, or passed as the `group` argument to an animated block:
@@ -30,7 +30,7 @@ Use it wherever any other `Readable<boolean>` fits — as the condition on `when
 ```typescript
 const Card = () =>
   Effect.gen(function* () {
-    const isMobile = Screen.match("(max-width: 767px)");
+    const isMobile = yield* Screen.match("(max-width: 767px)");
     return yield* $.div(
       {},
       when(isMobile, {
@@ -41,17 +41,19 @@ const Card = () =>
   });
 ```
 
-### SSR defaults
+### SSR defaults and hydration safety
 
 On the server there's no `matchMedia`, so `Screen.match` returns `false` by default. Pass an `initial` option to bias the fallback per-query:
 
 ```typescript
 // Portfolio site — expect mostly mobile visitors. Bias the SSR
 // render toward mobile so most users don't see a hydration flash.
-const isMobile = Screen.match("(max-width: 767px)", { initial: true });
+const isMobile = yield* Screen.match("(max-width: 767px)", { initial: true });
 ```
 
-Once the client bundle boots, `Screen.match` swaps in the real `matchMedia` value automatically. Request-aware SSR defaults (from `Sec-CH-UA-Mobile` client hints or a cookie) are a follow-up feature — for now, `initial` is a single-value bias.
+`Screen.match` is **hydration-safe by construction**. During SSR *and* while the client-side hydration walk is in progress, `.get` returns `initial` — matching the SSR HTML exactly, so hydration doesn't see a mismatch. Once hydration completes, `.changes` emits the live `matchMedia` value, and reconcile swaps the DOM to the real state in a single follow-up pass. The read is gated on the renderer's `hydrationPhase`, which is why the API returns an `Effect` rather than a bare `Readable` — this is what pulls the phase from context.
+
+Request-aware SSR defaults (from `Sec-CH-UA-Mobile` client hints or a cookie) are a follow-up feature — for now, `initial` is a single-value bias.
 
 ### When to use `Screen.match` vs. CSS `@media`
 

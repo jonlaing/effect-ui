@@ -1,7 +1,20 @@
 import { Chunk, Effect, Fiber, Stream } from "effect";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { RendererContext } from "@stax-ui/core";
+
+import { DOMRendererLive } from "../Render/DOMRenderer.js";
 import * as Screen from "./index.js";
+
+// Screen.match now requires a RendererContext (to read the hydration
+// phase). These tests exercise the client-side path only — provide the
+// plain DOMRenderer whose `hydrationPhase` is a constant `false`, so
+// there's no phase transition and the behavior collapses to raw
+// `matchMedia` observation.
+const runWithRenderer = <A, E>(
+  program: Effect.Effect<A, E, RendererContext>,
+): Promise<A> =>
+  Effect.runPromise(program.pipe(Effect.provide(DOMRendererLive)));
 
 // -----------------------------------------------------------------------------
 // Test helpers
@@ -155,9 +168,9 @@ describe("Screen.match", () => {
   });
 
   it("reads the current matches state via matchMedia", async () => {
-    const result = await Effect.runPromise(
+    const result = await runWithRenderer(
       Effect.gen(function* () {
-        const readable = Screen.match("(max-width: 767px)");
+        const readable = yield* Screen.match("(max-width: 767px)");
         // Prime the mock with a known state.
         media.ensure("(max-width: 767px)").matches = true;
         return yield* readable.get;
@@ -167,8 +180,13 @@ describe("Screen.match", () => {
   });
 
   it("emits when the underlying MediaQueryList fires change", async () => {
-    const promise = Effect.runPromise(
-      Effect.scoped(collect(Screen.match("(max-width: 767px)"), 2)),
+    const promise = runWithRenderer(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const readable = yield* Screen.match("(max-width: 767px)");
+          return yield* collect(readable, 2);
+        }),
+      ),
     );
     await new Promise((r) => setTimeout(r, 5));
     media.ensure("(max-width: 767px)").fire(true);
@@ -177,22 +195,20 @@ describe("Screen.match", () => {
     expect(events).toEqual([true, false]);
   });
 
-  it("respects the `initial` option when window has no matchMedia (falls back to caller-provided default)", () => {
+  it("respects the `initial` option when window has no matchMedia (falls back to caller-provided default)", async () => {
     // A synchronous read against the initial value — this covers the
     // SSR default indirectly by unmounting matchMedia.
     const original = window.matchMedia;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).matchMedia = undefined;
-    const stashedIsBrowser = typeof window !== "undefined";
-    void stashedIsBrowser;
     try {
       // Even with matchMedia absent, `initial` should surface — but since
       // the module's `isBrowser` was computed at import time, we can't
-      // fully simulate SSR here. Just assert the mock got called on an
-      // ordinary read and initial isn't lost.
-      const readable = Screen.match("(prefers-reduced-motion: reduce)", {
-        initial: true,
-      });
+      // fully simulate SSR here. Just assert construction succeeds and
+      // the resulting Readable is defined.
+      const readable = await runWithRenderer(
+        Screen.match("(prefers-reduced-motion: reduce)", { initial: true }),
+      );
       expect(readable).toBeDefined();
     } finally {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -200,18 +216,96 @@ describe("Screen.match", () => {
     }
   });
 
+  // ---------------------------------------------------------------------
+  // Hydration-safe behavior
+  // ---------------------------------------------------------------------
+  //
+  // Build a bespoke Renderer where `hydrationPhase` is a controllable
+  // Signal — the client's initial read returns `initial`, then when we
+  // flip the phase to `false` the `.changes` stream must fire with the
+  // live matchMedia value so reconcile can swap the DOM off the SSR
+  // fallback. Uses only the Renderer fields Screen.match consults; the
+  // rest of the tree is unused for this scenario.
+  describe("hydration", () => {
+    it("returns `initial` while phase is true, then emits live value on completeHydration", async () => {
+      const { Signal } = await import("@stax-ui/core");
+      const { RendererContext } = await import("@stax-ui/core");
+      const { Layer } = await import("effect");
+
+      // Prime matchMedia so the "live" side is unambiguously `true`
+      // while our SSR-safe `initial` is `false`.
+      media.ensure("(max-width: 767px)").matches = true;
+
+      const events = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const phase = yield* Signal.make(true); // hydrating
+
+            const fakeRenderer = {
+              hydrationPhase: phase,
+              completeHydration: phase.set(false),
+              // Fields not read by Screen.match — safe to leave unset
+              // by casting; TypeScript sees the shape we care about.
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any;
+
+            const fakeLayer = Layer.succeed(RendererContext, fakeRenderer);
+
+            return yield* Effect.gen(function* () {
+              const readable = yield* Screen.match("(max-width: 767px)", {
+                initial: false,
+              });
+
+              // Initial read during hydration — SSR-safe fallback.
+              const duringHydration = yield* readable.get;
+
+              // Attach a collector that expects one emission (the
+              // post-hydration delta).
+              const collectFiber = yield* readable.changes.pipe(
+                Stream.take(1),
+                Stream.runCollect,
+                Effect.fork,
+              );
+              yield* Effect.sleep("5 millis"); // let it subscribe
+
+              // Flip the phase — completeHydration fires, phase.changes
+              // emits `false`, Screen.match's hydrationFlip picks it up.
+              yield* phase.set(false);
+              yield* Effect.sleep("5 millis");
+
+              const emitted = Chunk.toReadonlyArray(
+                yield* Fiber.join(collectFiber),
+              );
+
+              // After the flip, subsequent reads return the live value.
+              const afterHydration = yield* readable.get;
+
+              return { duringHydration, emitted, afterHydration };
+            }).pipe(Effect.provide(fakeLayer));
+          }),
+        ),
+      );
+
+      expect(events.duringHydration).toBe(false); // SSR fallback
+      expect(events.emitted).toEqual([true]); // live delta
+      expect(events.afterHydration).toBe(true); // post-flip reads real
+    });
+  });
+
   it("cleans up its matchMedia listener when the scope closes", async () => {
     const query = "(min-width: 1024px)";
-    // Prime the mock so ensure() has a registered entry.
-    Screen.match(query);
+    // Prime the mock so ensure() has a registered entry — build one
+    // Readable and drop it so the mql exists in `media`.
+    await runWithRenderer(Effect.map(Screen.match(query), () => undefined));
     const before = media.ensure(query).listeners.size;
 
-    await Effect.runPromise(
+    await runWithRenderer(
       Effect.scoped(
         Effect.gen(function* () {
-          const fiber = yield* Stream.runDrain(
-            Screen.match(query).changes,
-          ).pipe(Effect.fork);
+          const readable = yield* Screen.match(query);
+          const fiber = yield* Stream.runDrain(readable.changes).pipe(
+            Effect.fork,
+          );
           yield* Effect.sleep("5 millis");
           const during = media.ensure(query).listeners.size;
           yield* Fiber.interrupt(fiber);

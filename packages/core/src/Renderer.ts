@@ -1,5 +1,7 @@
 import { Context, Effect, Scope } from "effect";
 
+import { Readable } from "./Readable.js";
+
 /**
  * A slot is a swappable content placeholder.
  * Used by Boundary.suspense to swap fallback content with actual content
@@ -172,9 +174,22 @@ export interface Renderer<Node> {
   readonly getChildren: (node: Node) => Effect.Effect<readonly Node[]>;
 
   /**
-   * Check if the renderer is in hydration mode.
+   * Reactive hydration phase — `true` while the initial hydration walk is
+   * in progress, `false` afterwards (or from the outset for non-hydration
+   * renderers). Observed by browser-only reactive values (e.g.
+   * `Screen.match`) that need to serve their SSR-safe fallback during
+   * hydration and switch to the live value once hydration completes, so
+   * the first client render matches the SSR HTML.
    */
-  readonly isHydrating: Effect.Effect<boolean>;
+  readonly hydrationPhase: Readable.Readable<boolean>;
+
+  /**
+   * Mark the initial hydration walk as complete — flips `hydrationPhase`
+   * from `true` to `false` and emits the transition to subscribers.
+   * Called by `hydrate()` after the initial `Effect.provide(element, …)`
+   * returns; no-op for non-hydration renderers.
+   */
+  readonly completeHydration: Effect.Effect<void>;
 
   /**
    * Signal that an element created with createNode has been fully built
