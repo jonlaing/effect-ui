@@ -183,17 +183,29 @@ export const match = (
           });
         });
 
-        // Post-hydration delta: when the phase flips false, emit the
-        // real matchMedia value once so reconcile can swap the DOM off
-        // the SSR-safe fallback. On a non-hydrating renderer this
-        // stream is empty (`Readable.of(false).changes`), so nothing
-        // fires and only `mqlEvents` drives updates.
-        const hydrationFlip = phase.changes.pipe(
+        // Post-hydration seed: as soon as this subscriber is past
+        // hydration — either because it observes the flip, or because
+        // it discovers the phase is already false when it attaches —
+        // emit the live `matchMedia` value once so reconcile can swap
+        // the DOM off the SSR fallback.
+        //
+        // We subscribe to `.values` (not `.changes`) so a subscriber
+        // that races past `completeHydration` still sees `false` as
+        // the current value on subscribe rather than missing the
+        // one-shot transition; `Stream.take(1)` limits it to that one
+        // corrective emission.
+        //
+        // On a fresh (non-hydrating) client, `.values` immediately
+        // emits `false`, this fires once with `mql.matches`, and
+        // reconcile sees the same value it just read from `.get` — an
+        // idempotent no-op, not a wasted DOM update.
+        const postHydrationSeed = phase.values.pipe(
           Stream.filter((hydrating) => !hydrating),
+          Stream.take(1),
           Stream.map(() => mql.matches),
         );
 
-        return Stream.merge(hydrationFlip, mqlEvents);
+        return Stream.merge(postHydrationSeed, mqlEvents);
       },
     );
   });

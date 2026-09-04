@@ -180,11 +180,17 @@ describe("Screen.match", () => {
   });
 
   it("emits when the underlying MediaQueryList fires change", async () => {
+    // On subscribe, `.changes` first emits a post-hydration seed with
+    // the current `mql.matches` (see the hydration-safety design in
+    // Screen/index.ts). For a non-hydrating renderer that seed matches
+    // whatever `.get` would return, so downstream reconcile treats it
+    // as an idempotent no-op. Here we skip past it and assert the
+    // real mql-change events.
     const promise = runWithRenderer(
       Effect.scoped(
         Effect.gen(function* () {
           const readable = yield* Screen.match("(max-width: 767px)");
-          return yield* collect(readable, 2);
+          return yield* collect(readable, 3);
         }),
       ),
     );
@@ -192,7 +198,10 @@ describe("Screen.match", () => {
     media.ensure("(max-width: 767px)").fire(true);
     media.ensure("(max-width: 767px)").fire(false);
     const events = await promise;
-    expect(events).toEqual([true, false]);
+    // events[0] is the post-hydration seed (mql.matches at subscribe
+    // time — false, since we haven't fired anything yet).
+    expect(events[0]).toBe(false);
+    expect(events.slice(1)).toEqual([true, false]);
   });
 
   it("respects the `initial` option when window has no matchMedia (falls back to caller-provided default)", async () => {
@@ -289,6 +298,63 @@ describe("Screen.match", () => {
       expect(events.duringHydration).toBe(false); // SSR fallback
       expect(events.emitted).toEqual([true]); // live delta
       expect(events.afterHydration).toBe(true); // post-flip reads real
+    });
+
+    it("delivers the live value to a subscriber that attaches AFTER completeHydration", async () => {
+      // Regression: an earlier version emitted the post-hydration delta
+      // via a one-shot `phase.changes` filter. If a `when`/reconcile
+      // block's forked subscription attached after `completeHydration`
+      // had already fired, the emission was gone — the subscriber never
+      // heard about the SSR→live correction and the DOM stayed on the
+      // fallback branch until the user actually resized across the
+      // breakpoint. Fixed by seeding from `phase.values` (which prepends
+      // the current value on subscribe) + `Stream.take(1)`.
+      const { Signal } = await import("@stax-ui/core");
+      const { RendererContext } = await import("@stax-ui/core");
+      const { Layer } = await import("effect");
+
+      media.ensure("(max-width: 767px)").matches = true;
+
+      const events = await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const phase = yield* Signal.make(true);
+
+            const fakeRenderer = {
+              hydrationPhase: phase,
+              completeHydration: phase.set(false),
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any;
+
+            const fakeLayer = Layer.succeed(RendererContext, fakeRenderer);
+
+            return yield* Effect.gen(function* () {
+              const readable = yield* Screen.match("(max-width: 767px)", {
+                initial: false,
+              });
+
+              // Fire completeHydration FIRST — the "flip" moment
+              // happens before any subscriber is listening.
+              yield* phase.set(false);
+              yield* Effect.sleep("5 millis");
+
+              // NOW attach a subscriber. It missed the transition on
+              // `phase.changes` entirely — but should still receive the
+              // live value from the `phase.values` seed.
+              const collectFiber = yield* readable.changes.pipe(
+                Stream.take(1),
+                Stream.runCollect,
+                Effect.fork,
+              );
+              yield* Effect.sleep("5 millis");
+
+              return Chunk.toReadonlyArray(yield* Fiber.join(collectFiber));
+            }).pipe(Effect.provide(fakeLayer));
+          }),
+        ),
+      );
+
+      expect(events).toEqual([true]);
     });
   });
 
