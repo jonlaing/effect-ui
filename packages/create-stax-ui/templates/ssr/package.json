@@ -9,9 +9,9 @@
     "start": "tsx src/server.ts"
   },
   "dependencies": {
-    "@stax-ui/dom": "^0.7.0",
+    "@stax-ui/dom": "^0.7.1",
     "@stax-ui/platform": "^0.5.3",
-    "@stax-ui/router": "^0.3.4",
+    "@stax-ui/router": "^0.3.5",
     "@effect/platform": "^0.94.0",
     "@effect/platform-node": "^0.104.0",
     "effect": "^3.19.13"
