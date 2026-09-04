@@ -45,7 +45,7 @@
 
 import { Effect, Stream } from "effect";
 
-import { Readable } from "@stax-ui/core";
+import { Readable, RendererContext } from "@stax-ui/core";
 
 const isBrowser = typeof window !== "undefined";
 
@@ -123,48 +123,80 @@ export interface MatchOptions {
 }
 
 /**
- * A reactive `Readable<boolean>` from any `matchMedia` query.
- * Updates when the query's match state changes (viewport crossing
- * the breakpoint, orientation change, theme preference flip, etc.).
+ * A reactive `Readable<boolean>` from any `matchMedia` query. Updates
+ * when the query's match state changes (viewport crossing the
+ * breakpoint, orientation change, theme preference flip, etc.).
  *
- * On SSR returns `options.initial ?? false` and never emits changes.
+ * **Hydration-safe.** During SSR and while client-side hydration is in
+ * progress, `.get` returns `options.initial ?? false` — matching what
+ * the server rendered, so the client's first walk hydrates the SSR HTML
+ * without a mismatch. Once hydration completes, `.changes` emits the
+ * live `matchMedia` value, so reconcile swaps the DOM to the real state
+ * in a single follow-up pass.
+ *
+ * Reads the renderer's `hydrationPhase` from `RendererContext`, so the
+ * result is `Effect<Readable<boolean>>` — call it with `yield*`.
  *
  * @example Breakpoint matching:
  * ```ts
- * const isMobile = Screen.match("(max-width: 767px)", { initial: true });
+ * const isMobile = yield* Screen.match("(max-width: 767px)", { initial: true });
  * ```
  *
  * @example Accessibility hooks — respect reduced-motion preference:
  * ```ts
- * const reducedMotion = Screen.match("(prefers-reduced-motion: reduce)");
+ * const reducedMotion = yield* Screen.match("(prefers-reduced-motion: reduce)");
  * ```
  *
  * @example Theme preference:
  * ```ts
- * const prefersDark = Screen.match("(prefers-color-scheme: dark)");
+ * const prefersDark = yield* Screen.match("(prefers-color-scheme: dark)");
  * ```
  */
 export const match = (
   query: string,
   options: MatchOptions = {},
-): Readable.Readable<boolean> => {
-  const initial = options.initial ?? false;
-  return Readable.make(
-    Effect.sync(() => (isBrowser ? window.matchMedia(query).matches : initial)),
-    () =>
-      Stream.async<boolean>((emit) => {
-        if (!isBrowser) return;
-        const mql = window.matchMedia(query);
-        const handler = (event: MediaQueryListEvent) => {
-          emit.single(event.matches);
-        };
-        mql.addEventListener("change", handler);
-        return Effect.sync(() => {
-          mql.removeEventListener("change", handler);
-        });
+): Effect.Effect<Readable.Readable<boolean>, never, RendererContext> =>
+  Effect.gen(function* () {
+    const initial = options.initial ?? false;
+    const renderer = yield* RendererContext;
+    const phase = renderer.hydrationPhase;
+
+    return Readable.make(
+      Effect.gen(function* () {
+        if (!isBrowser) return initial;
+        const hydrating = yield* phase.get;
+        if (hydrating) return initial;
+        return window.matchMedia(query).matches;
       }),
-  );
-};
+      () => {
+        if (!isBrowser) return Stream.empty;
+        const mql = window.matchMedia(query);
+
+        // Live matchMedia change events.
+        const mqlEvents = Stream.async<boolean>((emit) => {
+          const handler = (event: MediaQueryListEvent) => {
+            emit.single(event.matches);
+          };
+          mql.addEventListener("change", handler);
+          return Effect.sync(() => {
+            mql.removeEventListener("change", handler);
+          });
+        });
+
+        // Post-hydration delta: when the phase flips false, emit the
+        // real matchMedia value once so reconcile can swap the DOM off
+        // the SSR-safe fallback. On a non-hydrating renderer this
+        // stream is empty (`Readable.of(false).changes`), so nothing
+        // fires and only `mqlEvents` drives updates.
+        const hydrationFlip = phase.changes.pipe(
+          Stream.filter((hydrating) => !hydrating),
+          Stream.map(() => mql.matches),
+        );
+
+        return Stream.merge(hydrationFlip, mqlEvents);
+      },
+    );
+  });
 
 // ─── Physical / logical display metrics ──────────────────────────────
 

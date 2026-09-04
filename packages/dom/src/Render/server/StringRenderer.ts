@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import type { Renderer, Slot } from "@stax-ui/core";
+import { Readable, type Renderer, type Slot } from "@stax-ui/core";
 
 import { warnIfInvalidNesting } from "../validateNesting.js";
 import {
@@ -205,7 +205,9 @@ export const StringRenderer: Renderer<VNode> = {
   getChildren: (node: VNode) =>
     Effect.sync(() => (node._tag === "VElement" ? node.children : [])),
 
-  isHydrating: Effect.succeed(false),
+  hydrationPhase: Readable.of(false),
+
+  completeHydration: Effect.void,
 
   finalizeNode: () => Effect.void,
 

@@ -2,9 +2,9 @@
  * Hydration renderer that attaches to existing DOM using tree walking.
  */
 
-import { Effect } from "effect";
+import { Effect, Stream } from "effect";
 
-import type { Renderer, Slot } from "@stax-ui/core";
+import { Readable, type Renderer, type Slot } from "@stax-ui/core";
 
 import type { HydrateOptions } from "./index.js";
 
@@ -45,6 +45,27 @@ export const createHydrationRenderer = (
   ];
 
   const getCurrentContext = () => parentStack[parentStack.length - 1];
+
+  // Reactive hydration phase. Browser-only reactive values (Screen.match,
+  // etc.) observe this to serve their SSR-safe fallback during the initial
+  // walk and switch to the live value once `completeHydration` fires.
+  //
+  // A tiny hand-rolled pubsub — using SubscriptionRef would need a Scope
+  // during renderer construction, and the renderer factory is a plain sync
+  // function.
+  let hydrating = true;
+  const phaseSubscribers = new Set<(v: boolean) => void>();
+  const hydrationPhase = Readable.make(
+    Effect.sync(() => hydrating),
+    () =>
+      Stream.async<boolean>((emit) => {
+        const cb = (v: boolean) => emit.single(v);
+        phaseSubscribers.add(cb);
+        return Effect.sync(() => {
+          phaseSubscribers.delete(cb);
+        });
+      }),
+  );
 
   const renderer: Renderer<Node> = {
     environment: "dom-hydration",
@@ -268,7 +289,13 @@ export const createHydrationRenderer = (
 
     getChildren: (node: Node) => Effect.sync(() => Array.from(node.childNodes)),
 
-    isHydrating: Effect.succeed(true),
+    hydrationPhase,
+
+    completeHydration: Effect.sync(() => {
+      if (!hydrating) return;
+      hydrating = false;
+      for (const cb of phaseSubscribers) cb(false);
+    }),
 
     finalizeNode: (node: Node) =>
       Effect.sync(() => {

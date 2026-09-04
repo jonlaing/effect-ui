@@ -1,6 +1,11 @@
 import { Effect, Layer } from "effect";
 
-import { RendererContext, type Renderer, type Slot } from "@stax-ui/core";
+import {
+  Readable,
+  RendererContext,
+  type Renderer,
+  type Slot,
+} from "@stax-ui/core";
 
 import { toKebabCase } from "../helpers/index.js";
 import { warnIfInvalidNesting } from "./validateNesting.js";
@@ -123,7 +128,9 @@ export const DOMRenderer: Renderer<Node> = {
 
   getChildren: (node: Node) => Effect.sync(() => Array.from(node.childNodes)),
 
-  isHydrating: Effect.succeed(false),
+  hydrationPhase: Readable.of(false),
+
+  completeHydration: Effect.void,
 
   finalizeNode: () => Effect.void,
 
