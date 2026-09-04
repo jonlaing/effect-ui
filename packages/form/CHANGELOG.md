@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.4
+
+### Patch Changes
+
+- Updated dependencies [904a41b]
+  - @stax-ui/core@0.6.0
+
 ## 0.2.3
 
 ### Patch Changes
