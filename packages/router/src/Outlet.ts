@@ -290,6 +290,13 @@ export const Outlet = <
       // entry positions better than a URL-keyed cache could. lastSource is
       // set before pathname publishes (see Navigation.ts), so reading it
       // inside the subscriber reflects the source of the change.
+      //
+      // `container` is closed over by the subscription and populated by the
+      // return statement below once `reconcile` has produced the outlet's
+      // slot host. The first push nav after mount is well after the initial
+      // reconcile has completed, so the subscription always sees the real
+      // element when it needs to walk for a scroll root.
+      let container: HTMLElement | SVGElement | null = null;
       let previousPathname = yield* nav.pathname.get;
       yield* Stream.runForEach(nav.pathname.changes, (to) =>
         Effect.gen(function* () {
@@ -303,13 +310,13 @@ export const Outlet = <
             : null;
           const effective: ScrollBehavior =
             routeBehavior ?? router.scrollBehavior ?? "top";
-          yield* runScrollBehavior(effective, from, to);
+          yield* runScrollBehavior(effective, from, to, container);
         }),
       ).pipe(Effect.forkIn(scope));
 
       // Use pathname as the reconcile key so param-only navigations
       // (e.g. /users/alice → /users/bob) trigger a re-render.
-      return (yield* reconcile(nav.pathname, {
+      container = (yield* reconcile(nav.pathname, {
         getTargetKeys: (pathname: string) => {
           const matched = findMatch(router, pathname);
           if (Option.isSome(matched)) return [pathname];
@@ -328,6 +335,7 @@ export const Outlet = <
           return renderRouteWithGuard(matched.value.route, nav, layouts);
         },
       })) as HTMLElement | SVGElement;
+      return container;
     }),
     // Provide the animation config the way `match`/`when` do — reconcile's
     // addSlot/removeSlot read `AnimationConfigCtx` lazily to drive enter/
