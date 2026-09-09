@@ -46,6 +46,7 @@ export const Animation = {
   sequence: Groups.sequence,
   parallel: Groups.parallel,
   skip: Groups.skip,
+  awaitDone: Groups.awaitDone,
   moveTranslate,
   moveTranslate3d,
   moveTranslateY,

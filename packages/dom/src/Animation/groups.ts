@@ -407,3 +407,28 @@ export const _complete = (g: AnimationGroup): Effect.Effect<void> =>
  */
 export const _awaitGate = (g: AnimationGroup): Effect.Effect<void> =>
   Deferred.await(g._gate);
+
+/**
+ * Wait until the group's `_done` signal has fired — i.e. all registered
+ * animations have completed (or the empty-group fast-path resolved).
+ * Returns immediately if `_done` has already fired.
+ *
+ * Public wrapper around the internal `Deferred.await(g._done)` so
+ * downstream code (custom `Router.scrollBehavior` fns, page components
+ * that want to sequence an intro AFTER a parent transition, etc.) can
+ * coordinate off a group without dipping into its internals.
+ *
+ * @example Defer a `Router.scrollBehavior` custom fn until the outlet's
+ * transition finishes:
+ * ```ts
+ * Router.scrollBehavior((from, to) =>
+ *   Effect.gen(function* () {
+ *     const outlet = yield* OutletCtx;
+ *     yield* Animation.awaitDone(outlet.transition);
+ *     window.scrollTo(0, 0);
+ *   }),
+ * );
+ * ```
+ */
+export const awaitDone = (g: AnimationGroup): Effect.Effect<void> =>
+  Deferred.await(g._done);

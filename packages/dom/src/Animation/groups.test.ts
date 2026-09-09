@@ -764,4 +764,52 @@ describe("Animation groups", () => {
       expect(state.pendingAfterNaturalCompletion).toBe(0);
     });
   });
+
+  describe("awaitDone", () => {
+    // Public wrapper around `Deferred.await(g._done)` so downstream
+    // code (custom `Router.scrollBehavior` fns, page components that
+    // sequence off a parent transition) can coordinate off a group's
+    // completion without dipping into internals.
+    it("blocks until the group's `_done` fires, then resolves", async () => {
+      const { awaitDone } = await import("./groups.js");
+      const events = await Effect.runPromise(
+        Effect.gen(function* () {
+          const g = yield* group();
+          _register(g);
+
+          const log: string[] = [];
+          const awaiter = yield* Effect.fork(
+            Effect.gen(function* () {
+              yield* awaitDone(g);
+              log.push("resolved");
+            }),
+          );
+          yield* Effect.sleep(5);
+          log.push("before-complete");
+
+          yield* _complete(g);
+          yield* awaiter.await;
+          return log;
+        }),
+      );
+      // "before-complete" must land before "resolved" — awaitDone was
+      // parked waiting for `_complete` to fire `_done`.
+      expect(events).toEqual(["before-complete", "resolved"]);
+    });
+
+    it("resolves immediately when `_done` has already fired", async () => {
+      const { awaitDone } = await import("./groups.js");
+      const result = await Effect.runPromise(
+        Effect.gen(function* () {
+          const [g0] = yield* sequence(1);
+          // Empty-group fast-path fires `_done` on the next tick.
+          yield* Effect.sleep(5);
+          const before = yield* Deferred.isDone(g0._done);
+          yield* awaitDone(g0);
+          return before;
+        }),
+      );
+      expect(result).toBe(true);
+    });
+  });
 });

@@ -3,12 +3,14 @@ import { Effect, Option, pipe, Record, Stream } from "effect";
 import { ControlCtx, logDebug, reconcile } from "@stax-ui/core";
 import {
   $,
+  Animation,
   AnimationConfigCtx,
   Element,
   type AnimationOptions,
 } from "@stax-ui/dom";
 
 import { buildPath, NavigationContext, type Navigation } from "./Navigation.js";
+import { OutletCtx } from "./OutletCtx.js";
 import { resolveMeta, type Route } from "./Route.js";
 import {
   RouteDataContext,
@@ -272,10 +274,13 @@ export const Outlet = <
   R,
 >(
   config: OutletConfig<P, S, D, E, R>,
+  // Outlet provides `OutletCtx` to every route's render — strip it
+  // from the requirement channel here so pages that consume it don't
+  // force callers of Outlet to provide it themselves.
 ): Element.Element<
   HTMLElement | SVGElement,
   E,
-  R | NavigationContext | ControlCtx
+  Exclude<R, OutletCtx> | NavigationContext | ControlCtx
 > =>
   pipe(
     Effect.gen(function* () {
@@ -323,17 +328,31 @@ export const Outlet = <
           if (router.fallback) return ["__fallback__"];
           return [];
         },
-        renderSlot: (key: string) => {
-          if (key === "__fallback__") {
-            return router.fallback?.() ?? $.div();
-          }
-          // Find the route that matches this pathname
-          const matched = findMatch(router, key);
-          if (Option.isNone(matched)) {
-            return router.fallback?.() ?? $.div();
-          }
-          return renderRouteWithGuard(matched.value.route, nav, layouts);
-        },
+        renderSlot: (key: string) =>
+          Effect.gen(function* () {
+            // Fresh transition group per slot render. Page components
+            // read this via `OutletCtx.transition` and sequence their
+            // own intros against it (e.g. `Animation.sequence(N,
+            // { group: outlet.transition })`) so their intros wait for
+            // the outer transition rather than racing with it. Uses
+            // `sequence(1)` so the group's gate opens immediately and
+            // the empty-group fast-path fires `_done` on the next tick
+            // when nothing registers — a page that doesn't opt into
+            // the coordination sees no downside.
+            const [transition] = yield* Animation.sequence(1);
+            let inner;
+            if (key === "__fallback__") {
+              inner = router.fallback?.() ?? $.div();
+            } else {
+              const m = findMatch(router, key);
+              inner = Option.isSome(m)
+                ? renderRouteWithGuard(m.value.route, nav, layouts)
+                : (router.fallback?.() ?? $.div());
+            }
+            return yield* inner.pipe(
+              Effect.provideService(OutletCtx, { transition }),
+            );
+          }),
       })) as HTMLElement | SVGElement;
       return container;
     }),
@@ -350,5 +369,5 @@ export const Outlet = <
   ) as Element.Element<
     HTMLElement | SVGElement,
     E,
-    R | NavigationContext | ControlCtx
+    Exclude<R, OutletCtx> | NavigationContext | ControlCtx
   >;

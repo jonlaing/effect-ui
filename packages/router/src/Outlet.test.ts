@@ -450,4 +450,75 @@ describe("Outlet", () => {
       expect(document.querySelector(".about")?.textContent).toBe("About");
     });
   });
+
+  describe("OutletCtx", () => {
+    // Page components see a fresh transition group per mount via
+    // `yield* OutletCtx` — used to sequence their own intro animations
+    // off the outlet's transition rather than racing with it.
+    it("provides a fresh AnimationGroup to each rendered route", async () => {
+      const { OutletCtx } = await import("./OutletCtx.js");
+      const { Animation } = await import("@stax-ui/dom");
+
+      const seen: unknown[] = [];
+      const collectGroup = (label: string) =>
+        Effect.gen(function* () {
+          const outlet = yield* OutletCtx;
+          seen.push({ label, group: outlet.transition });
+          return yield* $.div({ class: label }, $.of(label));
+        });
+
+      const HomeRoute = Route.make("/").pipe(
+        Route.render(() => collectGroup("home")),
+      );
+      const AboutRoute = Route.make("/about").pipe(
+        Route.render(() => collectGroup("about")),
+      );
+      const router = empty.pipe(concat(HomeRoute), concat(AboutRoute));
+      const navLayer = Navigation.makeLayer(router, { initialPath: "/" });
+
+      await Effect.runPromise(
+        Effect.gen(function* () {
+          const nav = yield* Navigation.Context;
+          yield* Outlet({ router });
+          yield* Effect.sleep("10 millis");
+          yield* nav.pushPath("/about");
+          yield* Effect.sleep("10 millis");
+        }).pipe(
+          Effect.scoped,
+          Effect.provide(navLayer),
+          Effect.provide(TestLayer),
+        ),
+      );
+
+      const homeEntry = seen.find(
+        (e): e is { label: string; group: unknown } =>
+          typeof e === "object" &&
+          e !== null &&
+          (e as { label: string }).label === "home",
+      );
+      const aboutEntry = seen.find(
+        (e): e is { label: string; group: unknown } =>
+          typeof e === "object" &&
+          e !== null &&
+          (e as { label: string }).label === "about",
+      );
+      expect(homeEntry).toBeDefined();
+      expect(aboutEntry).toBeDefined();
+
+      // Each mount got its own group — the outlet doesn't hand the same
+      // handle to both, so page-level `Animation.sequence(_, { group })`
+      // in one nav doesn't get gated by a stale `_done` from a previous
+      // one.
+      expect(homeEntry!.group).not.toBe(aboutEntry!.group);
+
+      // The values are actually AnimationGroups (tag brand).
+      const g = aboutEntry!.group as { _tag: string };
+      expect(g._tag).toBe("AnimationGroup");
+
+      // Silence unused-import lint — the import is a compile-time
+      // check that Animation is still the same reference the outlet
+      // wires through.
+      void Animation;
+    });
+  });
 });
