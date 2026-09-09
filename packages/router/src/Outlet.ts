@@ -34,6 +34,28 @@ import {
 } from "./ScrollBehavior.js";
 
 /**
+ * One nav's pair of independent enter/exit groups, keyed by the
+ * pathname it was created for.
+ */
+interface CachedTransition {
+  readonly key: string;
+  readonly exit: AnimationGroup;
+  readonly enter: AnimationGroup;
+}
+
+/**
+ * State held in the outlet's `SynchronizedRef` — the current nav's
+ * transition pair, plus the previous nav's pair. Keeping the
+ * previous entry alive means a late exit from the outgoing nav still
+ * resolves against the group it was registered with rather than the
+ * incoming nav's fresh pair.
+ */
+interface TransitionCache {
+  readonly current: CachedTransition | null;
+  readonly previous: CachedTransition | null;
+}
+
+/**
  * Configuration for the Outlet component.
  */
 export interface OutletConfig<
@@ -314,15 +336,6 @@ export const Outlet = <
       // Keeping current AND previous alive means a late exit from the
       // outgoing nav still resolves against the group it was
       // registered with, not the incoming nav's fresh pair.
-      interface CachedTransition {
-        readonly key: string;
-        readonly exit: AnimationGroup;
-        readonly enter: AnimationGroup;
-      }
-      interface TransitionCache {
-        readonly current: CachedTransition | null;
-        readonly previous: CachedTransition | null;
-      }
       const transitionRef = yield* SynchronizedRef.make<TransitionCache>({
         current: null,
         previous: null,
