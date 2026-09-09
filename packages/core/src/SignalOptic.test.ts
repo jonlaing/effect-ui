@@ -321,4 +321,179 @@ describe("Signal.Optic", () => {
       );
     });
   });
+
+  describe("arrays (numeric-segment paths)", () => {
+    interface WithItems {
+      readonly items: readonly { readonly name: string; readonly n: number }[];
+      readonly meta: { readonly total: number };
+    }
+    const initialItems: WithItems = {
+      items: [
+        { name: "a", n: 1 },
+        { name: "b", n: 2 },
+        { name: "c", n: 3 },
+      ],
+      meta: { total: 3 },
+    };
+
+    it("reads a field through a numeric segment", async () => {
+      const value = await runScoped(
+        Effect.gen(function* () {
+          const state = yield* Signal.Optic.make(initialItems);
+          const firstName = yield* Signal.Optic.get(state, "items.0.name");
+          return yield* firstName.get;
+        }),
+      );
+      expect(value).toBe("a");
+    });
+
+    it("writes through a numeric segment; ancestor + descendant readables see the change", async () => {
+      const result = await runScoped(
+        Effect.gen(function* () {
+          const state = yield* Signal.Optic.make(initialItems);
+          const firstName = yield* Signal.Optic.get(state, "items.0.name");
+          const firstItem = yield* Signal.Optic.get(state, "items.0");
+
+          yield* Signal.Optic.set(state, "items.0.name", "A");
+
+          return {
+            firstName: yield* firstName.get,
+            firstItem: yield* firstItem.get,
+          };
+        }),
+      );
+      expect(result.firstName).toBe("A");
+      expect(result.firstItem).toEqual({ name: "A", n: 1 });
+    });
+
+    it("preserves array-ness on writes (setIn uses slice, not spread)", async () => {
+      const result = await runScoped(
+        Effect.gen(function* () {
+          const state = yield* Signal.Optic.make(initialItems);
+          yield* Signal.Optic.set(state, "items.1.n", 99);
+          const tree = yield* state.get;
+          return {
+            isArray: Array.isArray(tree.items),
+            length: tree.items.length,
+            values: tree.items,
+          };
+        }),
+      );
+      expect(result.isArray).toBe(true);
+      expect(result.length).toBe(3);
+      expect(result.values).toEqual([
+        { name: "a", n: 1 },
+        { name: "b", n: 99 },
+        { name: "c", n: 3 },
+      ]);
+    });
+
+    it("preserves structural sharing on sibling array indices", async () => {
+      // Writing to items[1] should NOT rebuild items[0] or items[2].
+      const result = await runScoped(
+        Effect.gen(function* () {
+          const state = yield* Signal.Optic.make(initialItems);
+          const before = yield* state.get;
+          yield* Signal.Optic.set(state, "items.1.name", "B");
+          const after = yield* state.get;
+          return {
+            item0Same: before.items[0] === after.items[0],
+            item2Same: before.items[2] === after.items[2],
+            item1Changed: before.items[1] !== after.items[1],
+            arrayChanged: before.items !== after.items,
+          };
+        }),
+      );
+      expect(result).toEqual({
+        item0Same: true,
+        item2Same: true,
+        item1Changed: true,
+        arrayChanged: true,
+      });
+    });
+
+    it("sibling-index writes do NOT fire other indices' `.changes`", async () => {
+      const events = await runScoped(
+        Effect.gen(function* () {
+          const state = yield* Signal.Optic.make(initialItems);
+          const firstName = yield* Signal.Optic.get(state, "items.0.name");
+
+          const seen: string[] = [];
+          const collector = yield* Effect.fork(
+            firstName.changes.pipe(
+              Stream.runForEach((v) => Effect.sync(() => seen.push(v))),
+            ),
+          );
+          yield* Effect.sleep("5 millis");
+
+          yield* Signal.Optic.set(state, "items.1.name", "B");
+          yield* Signal.Optic.set(state, "items.2.name", "C");
+          yield* Effect.sleep("20 millis");
+
+          yield* Fiber.interrupt(collector);
+          return seen;
+        }),
+      );
+      expect(events).toEqual([]);
+    });
+
+    it("replaces an entire array via a bare `items` write", async () => {
+      const result = await runScoped(
+        Effect.gen(function* () {
+          const state = yield* Signal.Optic.make(initialItems);
+          const firstName = yield* Signal.Optic.get(state, "items.0.name");
+
+          yield* Signal.Optic.set(state, "items", [
+            { name: "X", n: 10 },
+            { name: "Y", n: 20 },
+          ]);
+
+          return {
+            firstName: yield* firstName.get,
+            tree: yield* state.get,
+          };
+        }),
+      );
+      expect(result.firstName).toBe("X");
+      expect(result.tree.items).toEqual([
+        { name: "X", n: 10 },
+        { name: "Y", n: 20 },
+      ]);
+    });
+
+    it("updates via `Signal.Optic.update` on a numeric path", async () => {
+      const value = await runScoped(
+        Effect.gen(function* () {
+          const state = yield* Signal.Optic.make(initialItems);
+          yield* Signal.Optic.update(state, "items.1.n", (n) => n + 100);
+          const readable = yield* Signal.Optic.get(state, "items.1.n");
+          return yield* readable.get;
+        }),
+      );
+      expect(value).toBe(102);
+    });
+
+    it("compile-time: infers ValueAtPath through arrays", async () => {
+      // Purely a type-check assertion via explicit annotations; the
+      // runtime .toBe() just keeps vitest happy.
+      await runScoped(
+        Effect.gen(function* () {
+          const state = yield* Signal.Optic.make(initialItems);
+
+          const firstItem = yield* Signal.Optic.get(state, "items.0");
+          const firstName = yield* Signal.Optic.get(state, "items.0.name");
+          const firstN = yield* Signal.Optic.get(state, "items.0.n");
+
+          const firstItemValue: { readonly name: string; readonly n: number } =
+            yield* firstItem.get;
+          const firstNameValue: string = yield* firstName.get;
+          const firstNValue: number = yield* firstN.get;
+
+          expect(firstItemValue.name).toBe("a");
+          expect(firstNameValue).toBe("a");
+          expect(firstNValue).toBe(1);
+        }),
+      );
+    });
+  });
 });

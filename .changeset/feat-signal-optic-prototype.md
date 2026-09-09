@@ -33,6 +33,12 @@ yield* c.get; // 5 — ancestor write propagates down
 - Type-safe paths via a template-literal `Paths<T>` / `ValueAtPath<T, P>`
   pair; depth-limited (5) to keep the TS server responsive on realistic
   trees.
+- **Array-index syntax.** Numeric path segments walk into arrays:
+  `Signal.Optic.get(state, "items.0.name")` returns `Readable<string>`.
+  Writes preserve array shape via structural-sharing `slice()` — a
+  write to `items[1]` keeps `items[0]` and `items[2]` reference-equal,
+  so subscribers on other indices don't fire. Tuple element types
+  widen to their union (`items[number]`) for path inference.
 - Structural sharing on writes: unaffected branches keep reference
   equality, so subscriber-side dedup and downstream memoization work
   without any explicit config.

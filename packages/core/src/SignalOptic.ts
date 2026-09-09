@@ -27,6 +27,19 @@
  * yield* c.get; // 5  ← ancestor write propagates to child readables
  * ```
  *
+ * Arrays are addressed by numeric segments — `"items.0.name"` walks
+ * into `state.items[0].name`. Writes preserve array-ness via
+ * structural-sharing `slice()`; siblings at other indices keep
+ * reference equality, so a subscriber to `"items.3.name"` doesn't fire
+ * when `"items.0.name"` is written:
+ *
+ * ```ts
+ * const state = yield* Signal.Optic.make({ items: [{ name: "a" }, { name: "b" }] });
+ * const firstName = yield* Signal.Optic.get(state, "items.0.name");
+ * yield* Signal.Optic.set(state, "items.0.name", "A");
+ * yield* firstName.get; // "A"
+ * ```
+ *
  * The root handle itself is a `Readable<T>` (whole tree), so
  * `yield* state.get` works and so does `state.changes` for observing
  * every write. Direct `.set` on the root is intentionally NOT
@@ -68,30 +81,46 @@ export type OpticTypeId = typeof OpticTypeId;
 type Prev = [never, 0, 1, 2, 3, 4, 5];
 
 /**
- * All valid dot-separated paths into `T` — object keys separated by
- * `.`, terminating either at a primitive leaf or at the maximum
- * recursion depth. Non-object values ignore recursion and only
- * contribute their own key.
+ * All valid dot-separated paths into `T` — object keys or (for arrays)
+ * numeric indices separated by `.`, terminating either at a primitive
+ * leaf or at the maximum recursion depth. Non-object values ignore
+ * recursion and only contribute their own segment.
+ *
+ * Arrays produce `` `${number}` `` segments (e.g. `"items.0.name"`).
+ * For tuples this widens to the union of element types — precision is
+ * traded for simpler types; if you need per-index precision, use a
+ * union-narrowing check at the read site.
  */
 export type Paths<T, D extends number = 5> = [D] extends [never]
   ? never
-  : T extends object
-    ? {
-        [K in keyof T & string]:
-          K | (T[K] extends object ? `${K}.${Paths<T[K], Prev[D]>}` : never);
-      }[keyof T & string]
-    : never;
+  : T extends readonly (infer E)[]
+    ? E extends object
+      ? `${number}` | `${number}.${Paths<E, Prev[D]>}`
+      : `${number}`
+    : T extends object
+      ? {
+          [K in keyof T & string]:
+            K | (T[K] extends object ? `${K}.${Paths<T[K], Prev[D]>}` : never);
+        }[keyof T & string]
+      : never;
 
 /**
- * The value type at a dot-separated path `P` in `T`.
+ * The value type at a dot-separated path `P` in `T`. Numeric segments
+ * project into arrays' element type.
  */
-export type ValueAtPath<T, P extends string> = P extends keyof T
-  ? T[P]
-  : P extends `${infer K}.${infer Rest}`
-    ? K extends keyof T
-      ? ValueAtPath<T[K], Rest>
+export type ValueAtPath<T, P extends string> = T extends readonly (infer E)[]
+  ? P extends `${number}`
+    ? E
+    : P extends `${number}.${infer Rest}`
+      ? ValueAtPath<E, Rest>
       : never
-    : never;
+  : P extends keyof T
+    ? T[P]
+    : P extends `${infer K}.${infer Rest}`
+      ? K extends keyof T
+        ? ValueAtPath<T[K], Rest>
+        : never
+      : never;
 
 // =============================================================================
 // Model
@@ -176,6 +205,14 @@ const getIn = (root: unknown, keys: readonly string[]): unknown => {
 // branches keep their previous references (structural sharing). That
 // lets subscriber-side dedup rely on `Object.is` at the read path
 // rather than deep-comparing every emission.
+//
+// Preserves array vs object shape: `["items", "0", "name"]` walks into
+// an array via numeric index and rebuilds the array with `slice()` so
+// the result is still an array (spreading into `{...arr}` would
+// silently produce an object with numeric-string keys and drop
+// `length`). If a numeric segment lands on a null / undefined parent,
+// we default to `[]` — matches the "object default is `{}`" behavior
+// on the other branch.
 const setIn = (
   root: unknown,
   keys: readonly string[],
@@ -183,6 +220,13 @@ const setIn = (
 ): unknown => {
   if (keys.length === 0) return value;
   const [head, ...rest] = keys;
+  const isIndex = /^\d+$/.test(head);
+  if (isIndex && (Array.isArray(root) || root === null || root === undefined)) {
+    const idx = Number(head);
+    const next = Array.isArray(root) ? root.slice() : [];
+    next[idx] = setIn(next[idx], rest, value);
+    return next;
+  }
   const parent =
     root === null || root === undefined
       ? {}
