@@ -87,5 +87,9 @@ export { Link, type LinkProps } from "./Link.js";
 // Outlet
 export { Outlet, type OutletConfig } from "./Outlet.js";
 
+// Outlet coordination context — page components read this to sequence
+// their intro animations off the outlet's current transition group.
+export { OutletCtx, type OutletCtxService } from "./OutletCtx.js";
+
 // ScrollBehavior
 export { runScrollBehavior, type ScrollBehavior } from "./ScrollBehavior.js";
