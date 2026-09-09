@@ -519,15 +519,16 @@ describe("Outlet", () => {
       // scrollContainer is an Effect (matches AnimationHook's
       // `Effect<HTMLElement>` shape) — resolved at consumption time
       // so it sees the post-mount container even if read during the
-      // initial render pass.
+      // initial render pass. Falls back to `window` when no
+      // scrollable HTML ancestor is found, so it always resolves to a
+      // real scroll target and `Element.scrollTo` can pipe over it
+      // without branching on null.
       const target = await Effect.runPromise(
-        home!.scrollContainer as Effect.Effect<HTMLElement | SVGElement | null>,
+        home!.scrollContainer as Effect.Effect<HTMLElement | Window>,
       );
-      // In jsdom with no styled overflow ancestors, the walk finds
-      // nothing — the value is `null` (caller falls back to
-      // window.scrollTo). Verifying it resolved without throwing is
-      // the wiring check.
-      expect(target).toBeNull();
+      // jsdom has no styled overflow ancestors here — the walk finds
+      // nothing, so the fallback fires.
+      expect(target).toBe(window);
     });
 
     it("wires the outlet's own slot animation into OutletCtx.enter (via AnimationConfigCtx factory)", async () => {

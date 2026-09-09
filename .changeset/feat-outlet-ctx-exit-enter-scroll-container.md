@@ -19,8 +19,11 @@ Router.scrollBehavior((from, to) =>
   Effect.gen(function* () {
     const outlet = yield* OutletCtx;
     yield* Animation.awaitDone(outlet.exit);
-    const target = yield* outlet.scrollContainer;
-    (target ?? window).scrollTo({ top: 0, left: 0, behavior: "instant" });
+    yield* Element.scrollTo(outlet.scrollContainer, {
+      top: 0,
+      left: 0,
+      behavior: "instant",
+    });
   }),
 );
 
@@ -44,14 +47,16 @@ const HomePage = () => Effect.gen(function* () {
   nav, regardless of which subscriber's fiber runs first. Late
   completions from the outgoing nav still resolve against the group
   they registered with.
-- **`scrollContainer` is an `Effect<HTMLElement | SVGElement | null>`** —
-  matches `AnimationHook`'s `Effect<HTMLElement>` shape for framework
-  consistency. Resolves at consumption time (via `yield*
-  outlet.scrollContainer`) so it sees the post-mount container even
-  if read during the initial render pass. Cached after the first
-  successful walk. `null` in the result — not `Effect.fail` — because
-  "no scrollable ancestor" is a legitimate window-scrolled layout,
-  not an error.
+- **`scrollContainer` is an `Effect<HTMLElement | Window>`** — matches
+  `AnimationHook`'s `Effect<HTMLElement>` shape and integrates with
+  the `Element` combinators. Resolves at consumption time so it sees
+  the post-mount container even if read during the initial render
+  pass. When no scrollable HTML ancestor is found on the walk up, it
+  falls back to `window` — both shapes expose `scrollTo(options)`
+  identically, so callers pipe through `Element.scrollTo` without
+  branching. Cached after the first successful walk. SVGs are
+  excluded from the walk since they use `viewBox`, not CSS overflow,
+  for their internal coordinate space.
 - Wiring uses the new `AnimationOptions.enterGroup` / `.exitGroup`
   factory shape (see the `@stax-ui/dom` changeset) — the outlet's
   `AnimationConfigCtx` provision stays stable across the outlet's

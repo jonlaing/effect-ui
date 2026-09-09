@@ -339,25 +339,31 @@ export const Outlet = <
           return fresh;
         });
 
-      // Cached scroll-container walk. First read walks; subsequent
-      // reads return the cached element. Effect-typed to match the
-      // `AnimationHook`'s `Effect<HTMLElement>` shape — an
-      // Effect-returning ref that resolves at consumption time so
-      // consumers don't see `null` just because the outlet's
-      // container hadn't been assigned yet during the initial
-      // reconcile.
-      let cachedScrollContainer: HTMLElement | SVGElement | null = null;
+      // Cached scroll-target walk. First read walks; subsequent reads
+      // return the cached target. Effect-typed to match the
+      // `AnimationHook`'s `Effect<HTMLElement>` shape — resolves at
+      // consumption time so consumers see the post-mount container
+      // even when reading during the initial render pass. The window
+      // fallback is folded in here so the Effect always resolves to a
+      // real scroll target and `Element.scrollTo` doesn't have to
+      // branch on null.
+      let cachedScrollContainer: HTMLElement | Window | null = null;
       let cachedScrollContainerFor: HTMLElement | SVGElement | null = null;
-      const scrollContainer: Effect.Effect<HTMLElement | SVGElement | null> =
-        Effect.sync(() => {
-          if (!container) return null;
-          if (cachedScrollContainerFor === container)
+      const scrollContainer: Effect.Effect<HTMLElement | Window> = Effect.sync(
+        () => {
+          if (!container) return globalThis.window;
+          if (
+            cachedScrollContainerFor === container &&
+            cachedScrollContainer !== null
+          ) {
             return cachedScrollContainer;
+          }
           cachedScrollContainerFor = container;
-          cachedScrollContainer = findScrollRoot(container) as
-            HTMLElement | SVGElement | null;
+          cachedScrollContainer =
+            findScrollRoot(container) ?? globalThis.window;
           return cachedScrollContainer;
-        });
+        },
+      );
 
       // Scroll behavior subscription: apply the effective ScrollBehavior for
       // the target route on push/replace navigations. Popstate is skipped —

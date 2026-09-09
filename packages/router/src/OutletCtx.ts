@@ -37,16 +37,18 @@
  * });
  * ```
  *
- * ### Nearest scroll container
+ * ### Nearest scroll target
  *
  * `scrollContainer` walks up from the outlet's own container element
- * to the nearest actually-scrollable ancestor (or falls back to
- * `null` for window-scrolled apps). A custom `scrollBehavior` fn
- * reads this instead of re-implementing the walk.
+ * to the nearest actually-scrollable ancestor, or falls back to
+ * `window` for window-scrolled apps — both expose `scrollTo(options)`
+ * uniformly, so callers pipe through `Element.scrollTo` without
+ * branching on null. A custom `scrollBehavior` fn reads this instead
+ * of re-implementing the walk.
  *
- * Exposed as a function so it's resolved at call time — the outlet's
- * container isn't populated during the initial reconcile that runs at
- * mount, but by the time any nav-driven callback fires (which is when
+ * Effect-typed so it resolves at call time — the outlet's container
+ * isn't populated during the initial reconcile that runs at mount,
+ * but by the time any nav-driven callback fires (which is when
  * `scrollBehavior` runs) the container is present.
  *
  * @module
@@ -81,27 +83,34 @@ export interface OutletCtxService {
   readonly enter: AnimationGroup;
 
   /**
-   * Nearest scrollable ancestor of the outlet's own container
-   * element, or `null` if none was found on the walk up (the app is
-   * window-scrolled, so `window.scrollTo` is the right fallback).
+   * Nearest scroll target for the outlet's own container element —
+   * the first scrollable HTML ancestor on the walk up, or `window`
+   * when nothing scrollable is found (the common
+   * document-scrolls-the-viewport case). Both shapes expose
+   * `scrollTo(options)` identically, so callers pipe through
+   * `Element.scrollTo` without branching on null.
    *
    * Effect-typed rather than a plain ref, to match the shape of
-   * `AnimationHook`'s `Effect.Effect<HTMLElement>` — the outlet's
-   * container isn't populated during the initial reconcile pass, so
-   * wrapping the walk in an Effect gets it resolved at consumption
-   * time (which is always post-mount for a scroll-behavior callback).
+   * `AnimationHook`'s `Effect.Effect<HTMLElement>` and integrate with
+   * the `Element` combinators — the outlet's container isn't
+   * populated during the initial reconcile pass, so wrapping the walk
+   * in an Effect gets it resolved at consumption time (which is
+   * always post-mount for a scroll-behavior callback).
    *
    * ```ts
    * Router.scrollBehavior((from, to) =>
    *   Effect.gen(function* () {
    *     const outlet = yield* OutletCtx;
-   *     const target = yield* outlet.scrollContainer;
-   *     (target ?? window).scrollTo({ top: 0, left: 0, behavior: "instant" });
+   *     yield* Element.scrollTo(outlet.scrollContainer, {
+   *       top: 0,
+   *       left: 0,
+   *       behavior: "instant",
+   *     });
    *   }),
    * );
    * ```
    */
-  readonly scrollContainer: Effect.Effect<HTMLElement | SVGElement | null>;
+  readonly scrollContainer: Effect.Effect<HTMLElement | Window>;
 }
 
 /**

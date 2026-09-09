@@ -1184,6 +1184,49 @@ export const click: <A extends HTMLElement, E, R>(
   Effect.tap(self, (el) => Effect.sync(() => el.click())) as Element<A, E, R>;
 
 // =============================================================================
+// Scrolling
+// =============================================================================
+
+/**
+ * Scroll the target to the position described by `options`. Accepts
+ * `HTMLElement | Window` because both expose `scrollTo(options)`
+ * identically — pair with `OutletCtx.scrollContainer`, which resolves
+ * to the nearest scrollable HTML ancestor or falls back to `window`,
+ * so scroll behaviors don't have to branch on the two shapes.
+ *
+ * ```ts
+ * Router.scrollBehavior((from, to) =>
+ *   Effect.gen(function* () {
+ *     const outlet = yield* OutletCtx;
+ *     yield* Animation.awaitDone(outlet.exit);
+ *     yield* Element.scrollTo(outlet.scrollContainer, {
+ *       top: 0,
+ *       behavior: "instant",
+ *     });
+ *   }),
+ * );
+ * ```
+ */
+export const scrollTo: {
+  (
+    options: ScrollToOptions,
+  ): <E, R>(
+    self: Effect.Effect<HTMLElement | Window, E, R>,
+  ) => Effect.Effect<HTMLElement | Window, E, R>;
+  <E, R>(
+    self: Effect.Effect<HTMLElement | Window, E, R>,
+    options: ScrollToOptions,
+  ): Effect.Effect<HTMLElement | Window, E, R>;
+} = dual(
+  2,
+  <E, R>(
+    self: Effect.Effect<HTMLElement | Window, E, R>,
+    options: ScrollToOptions,
+  ): Effect.Effect<HTMLElement | Window, E, R> =>
+    Effect.tap(self, (target) => Effect.sync(() => target.scrollTo(options))),
+);
+
+// =============================================================================
 // Custom Taps
 // =============================================================================
 
