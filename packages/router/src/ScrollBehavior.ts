@@ -38,9 +38,10 @@ export type ScrollBehavior =
  * didn't, an outer `overflow: auto` shell with a currently-short child
  * would shadow the real page scroller further up the tree.
  *
- * Internal.
+ * Exported so `OutletCtx.scrollContainer` can reuse it — same walk,
+ * one implementation.
  */
-const findScrollRoot = (el: Element): Element | null => {
+export const findScrollRoot = (el: Element): Element | null => {
   let cur: Element | null = el;
   while (cur && cur !== document.scrollingElement) {
     const style = getComputedStyle(cur);

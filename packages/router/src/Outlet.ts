@@ -6,6 +6,7 @@ import {
   Animation,
   AnimationConfigCtx,
   Element,
+  type AnimationGroup,
   type AnimationOptions,
 } from "@stax-ui/dom";
 
@@ -18,7 +19,11 @@ import {
   type RouteDataService,
 } from "./RouteData.js";
 import { findMatch, type LayoutWrapper, type Router } from "./Router.js";
-import { runScrollBehavior, type ScrollBehavior } from "./ScrollBehavior.js";
+import {
+  findScrollRoot,
+  runScrollBehavior,
+  type ScrollBehavior,
+} from "./ScrollBehavior.js";
 
 /**
  * Configuration for the Outlet component.
@@ -289,6 +294,65 @@ export const Outlet = <
       const layouts = router.layouts;
       const scope = yield* Effect.scope;
 
+      // Per-nav transition groups. `getTransitionForKey(pathname)` is
+      // called from three places — the scroll subscription (which
+      // provides `OutletCtx` to a custom scroll behavior), the slot
+      // renderer (which provides `OutletCtx` to the page component),
+      // and the ambient `AnimationConfigCtx` factories that route
+      // enter/exit to `enter`/`exit` respectively. Whichever caller
+      // fires first for a given key creates the pair; every subsequent
+      // caller for the same key returns the cached one, so scroll,
+      // reconcile, and the outlet's own slot animation all see the
+      // same handles.
+      //
+      // Keeping current AND previous entries alive means a late
+      // exit-animation completion from the OUTGOING nav still resolves
+      // against the group it was registered with, not the incoming
+      // nav's fresh pair.
+      interface CachedTransition {
+        readonly key: string;
+        readonly exit: AnimationGroup;
+        readonly enter: AnimationGroup;
+      }
+      let currentTransition: CachedTransition | null = null;
+      let previousTransitionEntry: CachedTransition | null = null;
+
+      const getTransitionForKey = (
+        key: string,
+      ): Effect.Effect<CachedTransition> =>
+        Effect.gen(function* () {
+          if (currentTransition && currentTransition.key === key) {
+            return currentTransition;
+          }
+          if (previousTransitionEntry && previousTransitionEntry.key === key) {
+            return previousTransitionEntry;
+          }
+          // `parallel(2)` gives two independent groups whose gates are
+          // both open immediately — matches the current outlet
+          // behavior of running enter and exit in parallel. The
+          // empty-group fast-path resolves `_done` on the next tick
+          // for either group if nothing registers with it.
+          const [exit, enter] = yield* Animation.parallel(2);
+          const fresh: CachedTransition = { key, exit, enter };
+          if (currentTransition) previousTransitionEntry = currentTransition;
+          currentTransition = fresh;
+          return fresh;
+        });
+
+      // Cached scroll-container walk. First call walks; subsequent
+      // calls return the cached element. Reset on `null` so an outlet
+      // remounted in a new place recomputes.
+      let cachedScrollContainer: Element | null = null;
+      let cachedScrollContainerFor: Element | null = null;
+      const getScrollContainer = (): Element | null => {
+        if (!container) return null;
+        if (cachedScrollContainerFor === container)
+          return cachedScrollContainer;
+        cachedScrollContainerFor = container;
+        cachedScrollContainer = findScrollRoot(container);
+        return cachedScrollContainer;
+      };
+
       // Scroll behavior subscription: apply the effective ScrollBehavior for
       // the target route on push/replace navigations. Popstate is skipped —
       // the browser's `history.scrollRestoration = "auto"` restores per-
@@ -315,7 +379,19 @@ export const Outlet = <
             : null;
           const effective: ScrollBehavior =
             routeBehavior ?? router.scrollBehavior ?? "top";
-          yield* runScrollBehavior(effective, from, to, container);
+          // Resolve this nav's transition pair and provide OutletCtx to
+          // the scroll effect so custom scrollBehavior fns can `yield*
+          // OutletCtx` and coordinate with the transition — most
+          // commonly `Animation.awaitDone(outlet.exit)` before
+          // scrolling.
+          const t = yield* getTransitionForKey(to);
+          yield* runScrollBehavior(effective, from, to, container).pipe(
+            Effect.provideService(OutletCtx, {
+              exit: t.exit,
+              enter: t.enter,
+              scrollContainer: getScrollContainer,
+            }),
+          );
         }),
       ).pipe(Effect.forkIn(scope));
 
@@ -330,16 +406,7 @@ export const Outlet = <
         },
         renderSlot: (key: string) =>
           Effect.gen(function* () {
-            // Fresh transition group per slot render. Page components
-            // read this via `OutletCtx.transition` and sequence their
-            // own intros against it (e.g. `Animation.sequence(N,
-            // { group: outlet.transition })`) so their intros wait for
-            // the outer transition rather than racing with it. Uses
-            // `sequence(1)` so the group's gate opens immediately and
-            // the empty-group fast-path fires `_done` on the next tick
-            // when nothing registers — a page that doesn't opt into
-            // the coordination sees no downside.
-            const [transition] = yield* Animation.sequence(1);
+            const t = yield* getTransitionForKey(key);
             let inner;
             if (key === "__fallback__") {
               inner = router.fallback?.() ?? $.div();
@@ -350,22 +417,36 @@ export const Outlet = <
                 : (router.fallback?.() ?? $.div());
             }
             return yield* inner.pipe(
-              Effect.provideService(OutletCtx, { transition }),
+              Effect.provideService(OutletCtx, {
+                exit: t.exit,
+                enter: t.enter,
+                scrollContainer: getScrollContainer,
+              }),
             );
           }),
-      })) as HTMLElement | SVGElement;
+      }).pipe(
+        // Provide the animation config the way `match`/`when` do —
+        // reconcile's addSlot/removeSlot read `AnimationConfigCtx`
+        // lazily to drive enter/exit transitions between routes. We
+        // wire the per-nav exit/enter groups via factories that read
+        // the current pair at animation-fire time — since the outlet's
+        // AnimationConfigCtx is provided once per mount but the group
+        // pair rotates per nav, the factory shape is what keeps the
+        // slot's own animation firing against the SAME groups
+        // `OutletCtx.exit` / `.enter` expose.
+        config.animate || config.intro
+          ? Effect.provideService(AnimationConfigCtx, {
+              single: {
+                ...config.animate,
+                enterGroup: () => currentTransition?.enter,
+                exitGroup: () => currentTransition?.exit,
+              },
+              intro: config.intro,
+            })
+          : (x) => x,
+      )) as HTMLElement | SVGElement;
       return container;
     }),
-    // Provide the animation config the way `match`/`when` do — reconcile's
-    // addSlot/removeSlot read `AnimationConfigCtx` lazily to drive enter/
-    // exit transitions between routes. Without this, `config.animate` and
-    // `config.intro` sit in the type but never reach the control ctx.
-    config.animate || config.intro
-      ? Effect.provideService(AnimationConfigCtx, {
-          single: config.animate,
-          intro: config.intro,
-        })
-      : (x) => x,
   ) as Element.Element<
     HTMLElement | SVGElement,
     E,

@@ -142,7 +142,13 @@ export const forkSlotEnter = (
     if (opts?.hydrating && !resolved.intro) return;
 
     const { animate } = resolved;
-    const grp = animate.group;
+    // Resolve the enter-side group: prefer `enterGroup` (a per-nav
+    // override handed in by e.g. `OutletCtx`), fall back to `group`.
+    // Factory-valued overrides are called at animation-fire time so
+    // late-binding schemes (a stable AnimationConfigCtx pointing at
+    // per-nav Refs) work without freezing the group at Ctx-provision
+    // time.
+    const grp = resolveGroup(animate.enterGroup) ?? animate.group;
     if (grp) {
       _register(grp);
     }
@@ -541,13 +547,32 @@ export const forkSlotRemoval = (
       const resolved =
         yield* readAnimation<Parameters<typeof runExitAnimation>[1]>();
       if (resolved) {
+        // Resolve the exit-side group same way as enter — `exitGroup`
+        // takes precedence over `group`. Register/complete on the
+        // group so `Animation.awaitDone(exitGroup)` in a custom
+        // scroll behavior (etc.) actually gates on the exit
+        // animation completing.
+        const grp =
+          resolveGroup(resolved.animate.exitGroup) ?? resolved.animate.group;
+        if (grp) {
+          _register(grp);
+        }
         yield* runExitAnimation(
           Effect.succeed(entry.element),
           resolved.animate,
-        );
+        ).pipe(Effect.ensuring(grp ? _complete(grp) : Effect.void));
       }
     }
     removeFromDom();
   });
   return Effect.asVoid(Effect.forkScoped(body));
 };
+
+// Resolve a group override that may be either a value or a factory
+// returning one. Factory form is what lets `AnimationConfigCtx` be
+// stable at provision time while the group it points at (e.g. the
+// current-nav `OutletCtx.enter`) rotates.
+const resolveGroup = (
+  override: AnimationGroup | (() => AnimationGroup | undefined) | undefined,
+): AnimationGroup | undefined =>
+  typeof override === "function" ? override() : override;

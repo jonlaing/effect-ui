@@ -182,9 +182,28 @@ export interface AnimationOptions {
    * choreograph animations across multiple blocks (e.g. one `each` per word
    * in a headline).
    *
+   * Applies to both enter and exit unless narrowed by
+   * {@link enterGroup} / {@link exitGroup}.
+   *
    * @see {@link ./groups.ts}
    */
   group?: AnimationGroup;
+
+  /**
+   * Enter-only group override. Takes precedence over {@link group} for the
+   * enter animation only. May be a factory `() => AnimationGroup | undefined`
+   * so ambient contexts (like the router's per-nav `OutletCtx.enter`) can
+   * hand off a fresh group each time the animation fires rather than being
+   * frozen at `AnimationConfigCtx` provision time.
+   */
+  enterGroup?: AnimationGroup | (() => AnimationGroup | undefined);
+
+  /**
+   * Exit-only group override. Takes precedence over {@link group} for the
+   * exit animation only. Same factory-or-value shape as {@link enterGroup}
+   * for the per-nav dynamic-group case.
+   */
+  exitGroup?: AnimationGroup | (() => AnimationGroup | undefined);
 }
 
 /**
