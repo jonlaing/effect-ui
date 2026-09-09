@@ -1,51 +1,60 @@
 /**
  * Per-outlet coordination context.
  *
- * Provided by `Outlet` into each rendered route's scope, so route
- * components — and any downstream custom `Router.scrollBehavior` fn —
- * can read the current outlet's transition state without the outlet
- * having to plumb it through every component's props.
+ * Provided by `Outlet` into each rendered route's scope (and into
+ * every `Router.scrollBehavior` custom-fn invocation), so route
+ * components and scroll behaviors can react to the outlet's transition
+ * lifecycle without the outlet having to plumb it through every
+ * component's props.
  *
- * The classic uses:
+ * ## Uses
  *
- * - **Intro animations that don't race with the outlet transition.** A
- *   route component with its own `Animation.sequence(...)` intro can
- *   nest that sequence under the outlet's transition group so its
- *   first animation doesn't fire at the same wall-clock moment as the
- *   outlet's enter — which used to look like "the beginning of the
- *   intro was dropped."
+ * ### Split `exit` / `enter` groups
  *
- *   ```ts
- *   const HomePage = () => Effect.gen(function* () {
+ * `exit` and `enter` are independent per-nav `AnimationGroup`s wired
+ * into the outlet's own slot animations. `_done` on each fires
+ * exactly once per navigation — when the outlet's exit (or enter)
+ * finishes.
+ *
+ * ```ts
+ * // Scroll fires after the outlet's EXIT animation completes.
+ * Router.scrollBehavior((from, to) =>
+ *   Effect.gen(function* () {
  *     const outlet = yield* OutletCtx;
- *     const groups = yield* Animation.sequence(3, { group: outlet.transition });
- *     // ...
- *   });
- *   ```
+ *     yield* Animation.awaitDone(outlet.exit);
+ *     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+ *   }),
+ * );
  *
- * - **Scroll timing.** A custom scroll behavior can await the outlet's
- *   transition before scrolling so users don't see a flash of the old
- *   page scrolled to the top mid-exit-animation.
+ * // Page's intro sequence fires after the outlet's ENTER animation
+ * // completes — so the first item of the intro doesn't overlap the
+ * // outlet's own enter.
+ * const HomePage = () => Effect.gen(function* () {
+ *   const outlet = yield* OutletCtx;
+ *   yield* Animation.awaitDone(outlet.enter);
+ *   const groups = yield* Animation.sequence(3);
+ *   // ...
+ * });
+ * ```
  *
- *   ```ts
- *   Router.scrollBehavior((from, to) =>
- *     Effect.gen(function* () {
- *       const outlet = yield* OutletCtx;
- *       yield* Animation.awaitDone(outlet.transition);
- *       window.scrollTo({ top: 0, left: 0, behavior: "instant" });
- *     }),
- *   );
- *   ```
+ * ### Nearest scroll target
  *
- * The transition group is **fresh per nav** — each route render sees a
- * group that fires `_done` exactly once, for its own transition cycle,
- * so downstream sequencing behaves predictably across multiple
- * navigations.
+ * `scrollContainer` walks up from the outlet's own container element
+ * to the nearest actually-scrollable ancestor, or falls back to
+ * `window` for window-scrolled apps — both expose `scrollTo(options)`
+ * uniformly, so callers pipe through `Element.scrollTo` without
+ * branching on null. A custom `scrollBehavior` fn reads this instead
+ * of re-implementing the walk.
+ *
+ * Effect-typed so it resolves at call time — the outlet's container
+ * isn't populated during the initial reconcile that runs at mount,
+ * but by the time any nav-driven callback fires (which is when
+ * `scrollBehavior` runs) the container is present.
  *
  * @module
  */
 
-import { Context } from "effect";
+import { Context, type Effect } from "effect";
 
 import type { AnimationGroup } from "@stax-ui/dom";
 
@@ -54,15 +63,54 @@ import type { AnimationGroup } from "@stax-ui/dom";
  */
 export interface OutletCtxService {
   /**
-   * The current transition's animation group. The outlet's own
-   * enter/exit animation is registered with this group, so
-   * `Animation.awaitDone(transition)` resolves when the outlet's
-   * transition for this nav has completed.
+   * `AnimationGroup` for the outlet's own exit animation on this nav.
+   * `_done` fires once the exit completes — `Animation.awaitDone(exit)`
+   * is the canonical "wait for the old page to finish leaving."
    *
-   * Fresh per nav — a page component that reads this on mount gets a
-   * group scoped to *its own* mount cycle.
+   * Fresh per nav.
    */
-  readonly transition: AnimationGroup;
+  readonly exit: AnimationGroup;
+
+  /**
+   * `AnimationGroup` for the outlet's own enter animation on this nav.
+   * `_done` fires once the enter completes —
+   * `Animation.awaitDone(enter)` is the canonical "wait for the new
+   * page to finish appearing" before running downstream intros.
+   *
+   * Fresh per nav. Runs in parallel with `exit` by default — sequence
+   * them yourself if you want a serial exit → enter timeline.
+   */
+  readonly enter: AnimationGroup;
+
+  /**
+   * Nearest scroll target for the outlet's own container element —
+   * the first scrollable HTML ancestor on the walk up, or `window`
+   * when nothing scrollable is found (the common
+   * document-scrolls-the-viewport case). Both shapes expose
+   * `scrollTo(options)` identically, so callers pipe through
+   * `Element.scrollTo` without branching on null.
+   *
+   * Effect-typed rather than a plain ref, to match the shape of
+   * `AnimationHook`'s `Effect.Effect<HTMLElement>` and integrate with
+   * the `Element` combinators — the outlet's container isn't
+   * populated during the initial reconcile pass, so wrapping the walk
+   * in an Effect gets it resolved at consumption time (which is
+   * always post-mount for a scroll-behavior callback).
+   *
+   * ```ts
+   * Router.scrollBehavior((from, to) =>
+   *   Effect.gen(function* () {
+   *     const outlet = yield* OutletCtx;
+   *     yield* Element.scrollTo(outlet.scrollContainer, {
+   *       top: 0,
+   *       left: 0,
+   *       behavior: "instant",
+   *     });
+   *   }),
+   * );
+   * ```
+   */
+  readonly scrollContainer: Effect.Effect<HTMLElement | Window>;
 }
 
 /**

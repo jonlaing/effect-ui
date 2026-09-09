@@ -452,26 +452,33 @@ describe("Outlet", () => {
   });
 
   describe("OutletCtx", () => {
-    // Page components see a fresh transition group per mount via
-    // `yield* OutletCtx` — used to sequence their own intro animations
-    // off the outlet's transition rather than racing with it.
-    it("provides a fresh AnimationGroup to each rendered route", async () => {
+    it("provides distinct exit + enter AnimationGroups per rendered route, plus a scrollContainer Effect", async () => {
       const { OutletCtx } = await import("./OutletCtx.js");
-      const { Animation } = await import("@stax-ui/dom");
 
-      const seen: unknown[] = [];
-      const collectGroup = (label: string) =>
+      interface CtxSample {
+        readonly label: string;
+        readonly exit: unknown;
+        readonly enter: unknown;
+        readonly scrollContainer: unknown;
+      }
+      const seen: CtxSample[] = [];
+      const collectCtx = (label: string) =>
         Effect.gen(function* () {
           const outlet = yield* OutletCtx;
-          seen.push({ label, group: outlet.transition });
+          seen.push({
+            label,
+            exit: outlet.exit,
+            enter: outlet.enter,
+            scrollContainer: outlet.scrollContainer,
+          });
           return yield* $.div({ class: label }, $.of(label));
         });
 
       const HomeRoute = Route.make("/").pipe(
-        Route.render(() => collectGroup("home")),
+        Route.render(() => collectCtx("home")),
       );
       const AboutRoute = Route.make("/about").pipe(
-        Route.render(() => collectGroup("about")),
+        Route.render(() => collectCtx("about")),
       );
       const router = empty.pipe(concat(HomeRoute), concat(AboutRoute));
       const navLayer = Navigation.makeLayer(router, { initialPath: "/" });
@@ -490,35 +497,97 @@ describe("Outlet", () => {
         ),
       );
 
-      const homeEntry = seen.find(
-        (e): e is { label: string; group: unknown } =>
-          typeof e === "object" &&
-          e !== null &&
-          (e as { label: string }).label === "home",
+      const home = seen.find((e) => e.label === "home");
+      const about = seen.find((e) => e.label === "about");
+      expect(home).toBeDefined();
+      expect(about).toBeDefined();
+
+      // Each mount got its own PAIR — the outlet doesn't hand the same
+      // handles to both, so page-level sequencing on one nav doesn't
+      // get gated by a stale `_done` from a previous one.
+      expect(home!.exit).not.toBe(about!.exit);
+      expect(home!.enter).not.toBe(about!.enter);
+
+      // exit and enter are DIFFERENT groups within a single nav —
+      // they're independent gates, run in parallel by default.
+      expect(home!.exit).not.toBe(home!.enter);
+
+      // Both are AnimationGroups (tag brand).
+      expect((home!.exit as { _tag: string })._tag).toBe("AnimationGroup");
+      expect((home!.enter as { _tag: string })._tag).toBe("AnimationGroup");
+
+      // scrollContainer is an Effect (matches AnimationHook's
+      // `Effect<HTMLElement>` shape) — resolved at consumption time
+      // so it sees the post-mount container even if read during the
+      // initial render pass. Falls back to `window` when no
+      // scrollable HTML ancestor is found, so it always resolves to a
+      // real scroll target and `Element.scrollTo` can pipe over it
+      // without branching on null.
+      const target = await Effect.runPromise(
+        home!.scrollContainer as Effect.Effect<HTMLElement | Window>,
       );
-      const aboutEntry = seen.find(
-        (e): e is { label: string; group: unknown } =>
-          typeof e === "object" &&
-          e !== null &&
-          (e as { label: string }).label === "about",
+      // jsdom has no styled overflow ancestors here — the walk finds
+      // nothing, so the fallback fires.
+      expect(target).toBe(window);
+    });
+
+    it("wires the outlet's own slot animation into OutletCtx.enter (via AnimationConfigCtx group refs)", async () => {
+      // Sanity that the enterGroup ref on the ambient
+      // AnimationConfigCtx resolves to the current nav's
+      // `OutletCtx.enter`. We can't drive real CSS transitions in
+      // jsdom, so we assert the wiring by reading the resolved
+      // animation config from within a route render and comparing
+      // the ref's resolved value to outlet.enter.
+      const { OutletCtx } = await import("./OutletCtx.js");
+      const { AnimationConfigCtx } = await import("@stax-ui/dom");
+
+      let sameEnterGroup: boolean | null = null;
+      let sameExitGroup: boolean | null = null;
+
+      const inspect = () =>
+        Effect.gen(function* () {
+          const outlet = yield* OutletCtx;
+          const cfgOpt = yield* Effect.serviceOption(AnimationConfigCtx);
+          const cfg = cfgOpt._tag === "Some" ? cfgOpt.value : null;
+          const enterRef = cfg?.single?.enterGroup;
+          const exitRef = cfg?.single?.exitGroup;
+          const resolvedEnter = Effect.isEffect(enterRef)
+            ? yield* enterRef
+            : enterRef;
+          const resolvedExit = Effect.isEffect(exitRef)
+            ? yield* exitRef
+            : exitRef;
+          sameEnterGroup = resolvedEnter === outlet.enter;
+          sameExitGroup = resolvedExit === outlet.exit;
+          return yield* $.div({ class: "probe" }, $.of("probe"));
+        });
+
+      const Probe = Route.make("/").pipe(Route.render(() => inspect()));
+      const router = empty.pipe(concat(Probe));
+      const navLayer = Navigation.makeLayer(router, { initialPath: "/" });
+
+      await Effect.runPromise(
+        Effect.gen(function* () {
+          yield* Outlet({
+            router,
+            animate: {
+              enter: "transition-opacity duration-100",
+              enterFrom: "opacity-0",
+              enterTo: "opacity-100",
+              exit: "transition-opacity duration-100",
+              exitTo: "opacity-0",
+            },
+          });
+          yield* Effect.sleep("10 millis");
+        }).pipe(
+          Effect.scoped,
+          Effect.provide(navLayer),
+          Effect.provide(TestLayer),
+        ),
       );
-      expect(homeEntry).toBeDefined();
-      expect(aboutEntry).toBeDefined();
 
-      // Each mount got its own group — the outlet doesn't hand the same
-      // handle to both, so page-level `Animation.sequence(_, { group })`
-      // in one nav doesn't get gated by a stale `_done` from a previous
-      // one.
-      expect(homeEntry!.group).not.toBe(aboutEntry!.group);
-
-      // The values are actually AnimationGroups (tag brand).
-      const g = aboutEntry!.group as { _tag: string };
-      expect(g._tag).toBe("AnimationGroup");
-
-      // Silence unused-import lint — the import is a compile-time
-      // check that Animation is still the same reference the outlet
-      // wires through.
-      void Animation;
+      expect(sameEnterGroup).toBe(true);
+      expect(sameExitGroup).toBe(true);
     });
   });
 });

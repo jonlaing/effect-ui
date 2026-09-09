@@ -29,6 +29,7 @@ import { prefersReducedMotion } from "../Animation/helpers.js";
 import {
   runEnterAnimation,
   runExitAnimation,
+  type AnimationGroupRef,
   type ListAnimationOptions,
   type MoveAnimation,
   type MoveDelta,
@@ -142,7 +143,15 @@ export const forkSlotEnter = (
     if (opts?.hydrating && !resolved.intro) return;
 
     const { animate } = resolved;
-    const grp = animate.group;
+    // Resolve the enter-side group: prefer `enterGroup` (a per-nav
+    // override handed in by e.g. `OutletCtx`), fall back to `group`.
+    // Effect-valued refs are read at animation-fire time so
+    // late-binding schemes (a stable AnimationConfigCtx pointing at
+    // per-nav Refs) work without freezing the group at Ctx-provision
+    // time.
+    const grp =
+      (yield* resolveGroup(animate.enterGroup)) ??
+      (yield* resolveGroup(animate.group));
     if (grp) {
       _register(grp);
     }
@@ -541,13 +550,38 @@ export const forkSlotRemoval = (
       const resolved =
         yield* readAnimation<Parameters<typeof runExitAnimation>[1]>();
       if (resolved) {
+        // Resolve the exit-side group same way as enter — `exitGroup`
+        // takes precedence over `group`. Register/complete on the
+        // group so `Animation.awaitDone(exitGroup)` in a custom
+        // scroll behavior (etc.) actually gates on the exit
+        // animation completing.
+        const grp =
+          (yield* resolveGroup(resolved.animate.exitGroup)) ??
+          (yield* resolveGroup(resolved.animate.group));
+        if (grp) {
+          _register(grp);
+        }
         yield* runExitAnimation(
           Effect.succeed(entry.element),
           resolved.animate,
-        );
+        ).pipe(Effect.ensuring(grp ? _complete(grp) : Effect.void));
       }
     }
     removeFromDom();
   });
   return Effect.asVoid(Effect.forkScoped(body));
+};
+
+// Resolve a group ref that may be either a value or an
+// `Effect<AnimationGroup | undefined>`. The Effect form is what lets
+// a stable `AnimationConfigCtx` point at a group that rotates over
+// time (e.g. the current-nav `OutletCtx.enter`, read through a Ref)
+// without freezing at Ctx-provision time.
+const resolveGroup = (
+  ref: AnimationGroupRef | undefined,
+): Effect.Effect<AnimationGroup | undefined> => {
+  if (ref === undefined) return Effect.succeed(undefined);
+  return Effect.isEffect(ref)
+    ? (ref as Effect.Effect<AnimationGroup | undefined>)
+    : Effect.succeed(ref);
 };

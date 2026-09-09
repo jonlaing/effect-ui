@@ -1,4 +1,12 @@
-import { Effect, Option, pipe, Record, Stream } from "effect";
+import {
+  Effect,
+  Option,
+  pipe,
+  Record,
+  Ref,
+  Stream,
+  SynchronizedRef,
+} from "effect";
 
 import { ControlCtx, logDebug, reconcile } from "@stax-ui/core";
 import {
@@ -6,6 +14,7 @@ import {
   Animation,
   AnimationConfigCtx,
   Element,
+  type AnimationGroup,
   type AnimationOptions,
 } from "@stax-ui/dom";
 
@@ -18,7 +27,33 @@ import {
   type RouteDataService,
 } from "./RouteData.js";
 import { findMatch, type LayoutWrapper, type Router } from "./Router.js";
-import { runScrollBehavior, type ScrollBehavior } from "./ScrollBehavior.js";
+import {
+  findScrollRoot,
+  runScrollBehavior,
+  type ScrollBehavior,
+} from "./ScrollBehavior.js";
+
+/**
+ * One nav's pair of independent enter/exit groups, keyed by the
+ * pathname it was created for.
+ */
+interface CachedTransition {
+  readonly key: string;
+  readonly exit: AnimationGroup;
+  readonly enter: AnimationGroup;
+}
+
+/**
+ * State held in the outlet's `SynchronizedRef` — the current nav's
+ * transition pair, plus the previous nav's pair. Keeping the
+ * previous entry alive means a late exit from the outgoing nav still
+ * resolves against the group it was registered with rather than the
+ * incoming nav's fresh pair.
+ */
+interface TransitionCache {
+  readonly current: CachedTransition | null;
+  readonly previous: CachedTransition | null;
+}
 
 /**
  * Configuration for the Outlet component.
@@ -289,39 +324,115 @@ export const Outlet = <
       const layouts = router.layouts;
       const scope = yield* Effect.scope;
 
-      // Scroll behavior subscription: apply the effective ScrollBehavior for
-      // the target route on push/replace navigations. Popstate is skipped —
-      // the browser's `history.scrollRestoration = "auto"` restores per-
-      // entry positions better than a URL-keyed cache could. lastSource is
-      // set before pathname publishes (see Navigation.ts), so reading it
-      // inside the subscriber reflects the source of the change.
+      // Per-nav transition groups. `getTransitionForKey(pathname)` is
+      // called from three places — the scroll subscription (which
+      // provides `OutletCtx` to a custom scroll behavior), the slot
+      // renderer (which provides `OutletCtx` to the page component),
+      // and the ambient `AnimationConfigCtx` refs the outlet's own
+      // slot animation reads. Whichever fiber wins the ref mutex for
+      // a given key creates the pair; the rest see it via the cache,
+      // so all three see the same handles.
       //
-      // `container` is closed over by the subscription and populated by the
-      // return statement below once `reconcile` has produced the outlet's
-      // slot host. The first push nav after mount is well after the initial
-      // reconcile has completed, so the subscription always sees the real
-      // element when it needs to walk for a scroll root.
-      let container: HTMLElement | SVGElement | null = null;
-      let previousPathname = yield* nav.pathname.get;
-      yield* Stream.runForEach(nav.pathname.changes, (to) =>
-        Effect.gen(function* () {
-          const from = previousPathname;
-          previousPathname = to;
-          const source = yield* nav.lastSource.get;
-          if (source === "pop") return;
-          const matched = findMatch(router, to);
-          const routeBehavior: ScrollBehavior | null = Option.isSome(matched)
-            ? matched.value.route._scrollBehavior
-            : null;
-          const effective: ScrollBehavior =
-            routeBehavior ?? router.scrollBehavior ?? "top";
-          yield* runScrollBehavior(effective, from, to, container);
-        }),
-      ).pipe(Effect.forkIn(scope));
+      // Keeping current AND previous alive means a late exit from the
+      // outgoing nav still resolves against the group it was
+      // registered with, not the incoming nav's fresh pair.
+      const transitionRef = yield* SynchronizedRef.make<TransitionCache>({
+        current: null,
+        previous: null,
+      });
+      const getTransitionForKey = (
+        key: string,
+      ): Effect.Effect<CachedTransition> =>
+        SynchronizedRef.modifyEffect(transitionRef, (s) => {
+          if (s.current?.key === key)
+            return Effect.succeed([s.current, s] as const);
+          if (s.previous?.key === key)
+            return Effect.succeed([s.previous, s] as const);
+          // `parallel(2)` gives two independent groups whose gates
+          // are both open immediately — matches the outlet's
+          // parallel enter/exit behavior. The empty-group fast-path
+          // resolves `_done` on the next tick if nothing registers.
+          return Animation.parallel(2).pipe(
+            Effect.map(([exit, enter]) => {
+              const fresh: CachedTransition = { key, exit, enter };
+              return [fresh, { current: fresh, previous: s.current }] as const;
+            }),
+          );
+        });
+
+      // The outlet's own slot host. Bound to `containerRef` via
+      // `Element.setRef` in the reconcile pipeline below, read from
+      // the scroll subscription and the `scrollContainer` walker.
+      const containerRef = yield* Element.ref<HTMLElement | SVGElement>();
+
+      // Nearest scroll target for the outlet's container — the first
+      // scrollable HTML ancestor, or `window` when nothing scrollable
+      // is found. Effect-typed to match `AnimationHook`'s
+      // `Effect<HTMLElement>` shape and defer the walk until
+      // consumption time (post-mount, when the container is bound).
+      // Falls back to `window` if read before the ref is bound too, so
+      // callers pipe through `Element.scrollTo` without branching.
+      const scrollContainer: Effect.Effect<HTMLElement | Window> =
+        containerRef.pipe(
+          Effect.map(
+            (el): HTMLElement | Window =>
+              findScrollRoot(el) ?? globalThis.window,
+          ),
+          Effect.orElseSucceed(() => globalThis.window),
+        );
+
+      // Scroll behavior subscription. Popstate is skipped — the
+      // browser's `history.scrollRestoration = "auto"` restores per-
+      // entry positions better than a URL-keyed cache could.
+      // `mapAccum` threads the previous pathname through the stream
+      // so subscribers get `(from, to)` pairs directly.
+      const initialPathname = yield* nav.pathname.get;
+      yield* nav.pathname.changes.pipe(
+        Stream.mapAccum(
+          initialPathname,
+          (from: string, to: string) => [to, [from, to] as const] as const,
+        ),
+        Stream.runForEach(([from, to]) =>
+          Effect.gen(function* () {
+            const source = yield* nav.lastSource.get;
+            if (source === "pop") return;
+            const matched = findMatch(router, to);
+            const routeBehavior: ScrollBehavior | null = Option.isSome(matched)
+              ? matched.value.route._scrollBehavior
+              : null;
+            const effective: ScrollBehavior =
+              routeBehavior ?? router.scrollBehavior ?? "top";
+            const containerEl = yield* containerRef.pipe(
+              Effect.orElseSucceed(() => null),
+            );
+            const t = yield* getTransitionForKey(to);
+            yield* runScrollBehavior(effective, from, to, containerEl).pipe(
+              Effect.provideService(OutletCtx, {
+                exit: t.exit,
+                enter: t.enter,
+                scrollContainer,
+              }),
+            );
+          }),
+        ),
+        Effect.forkIn(scope),
+      );
 
       // Use pathname as the reconcile key so param-only navigations
       // (e.g. /users/alice → /users/bob) trigger a re-render.
-      container = (yield* reconcile(nav.pathname, {
+      // `bindElementToRef` binds the slot host to `containerRef` so
+      // the scroll subscription and `scrollContainer` walker can
+      // reach it — `reconcile` returns `Element<unknown, ...>`, so we
+      // tap in the bind directly rather than pipe through
+      // `Element.setRef` (which requires the strict `HTMLElement |
+      // SVGElement` element type).
+      //
+      // The ambient `AnimationConfigCtx` routes the outlet's own slot
+      // animation to `OutletCtx.enter`/`.exit` via Effect-shaped
+      // group refs that read the current pair fresh from
+      // `transitionRef` at animation-fire time — a stable Ctx
+      // provision pointing at a rotating pair.
+      const reconciled = reconcile(nav.pathname, {
         getTargetKeys: (pathname: string) => {
           const matched = findMatch(router, pathname);
           if (Option.isSome(matched)) return [pathname];
@@ -330,42 +441,50 @@ export const Outlet = <
         },
         renderSlot: (key: string) =>
           Effect.gen(function* () {
-            // Fresh transition group per slot render. Page components
-            // read this via `OutletCtx.transition` and sequence their
-            // own intros against it (e.g. `Animation.sequence(N,
-            // { group: outlet.transition })`) so their intros wait for
-            // the outer transition rather than racing with it. Uses
-            // `sequence(1)` so the group's gate opens immediately and
-            // the empty-group fast-path fires `_done` on the next tick
-            // when nothing registers — a page that doesn't opt into
-            // the coordination sees no downside.
-            const [transition] = yield* Animation.sequence(1);
-            let inner;
-            if (key === "__fallback__") {
-              inner = router.fallback?.() ?? $.div();
-            } else {
-              const m = findMatch(router, key);
-              inner = Option.isSome(m)
-                ? renderRouteWithGuard(m.value.route, nav, layouts)
-                : (router.fallback?.() ?? $.div());
-            }
+            const t = yield* getTransitionForKey(key);
+            const inner =
+              key === "__fallback__"
+                ? (router.fallback?.() ?? $.div())
+                : Option.match(findMatch(router, key), {
+                    onNone: () => router.fallback?.() ?? $.div(),
+                    onSome: (m) => renderRouteWithGuard(m.route, nav, layouts),
+                  });
             return yield* inner.pipe(
-              Effect.provideService(OutletCtx, { transition }),
+              Effect.provideService(OutletCtx, {
+                exit: t.exit,
+                enter: t.enter,
+                scrollContainer,
+              }),
             );
           }),
-      })) as HTMLElement | SVGElement;
-      return container;
+      }).pipe(
+        Effect.tap((el) =>
+          Effect.sync(() =>
+            Element.bindElementToRef(
+              containerRef,
+              el as HTMLElement | SVGElement,
+            ),
+          ),
+        ),
+      );
+
+      return yield* config.animate || config.intro
+        ? reconciled.pipe(
+            Effect.provideService(AnimationConfigCtx, {
+              single: {
+                ...config.animate,
+                enterGroup: Ref.get(transitionRef).pipe(
+                  Effect.map((s) => s.current?.enter),
+                ),
+                exitGroup: Ref.get(transitionRef).pipe(
+                  Effect.map((s) => s.current?.exit),
+                ),
+              },
+              intro: config.intro,
+            }),
+          )
+        : reconciled;
     }),
-    // Provide the animation config the way `match`/`when` do — reconcile's
-    // addSlot/removeSlot read `AnimationConfigCtx` lazily to drive enter/
-    // exit transitions between routes. Without this, `config.animate` and
-    // `config.intro` sit in the type but never reach the control ctx.
-    config.animate || config.intro
-      ? Effect.provideService(AnimationConfigCtx, {
-          single: config.animate,
-          intro: config.intro,
-        })
-      : (x) => x,
   ) as Element.Element<
     HTMLElement | SVGElement,
     E,

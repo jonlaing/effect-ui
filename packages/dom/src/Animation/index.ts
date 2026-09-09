@@ -6,6 +6,7 @@ import type { MoveDelta, StaggerFunction } from "./types.js";
 // Re-export types
 export type {
   AnimationEndResult,
+  AnimationGroupRef,
   AnimationHook,
   AnimationOptions,
   EnterOnlyAnimationOptions,

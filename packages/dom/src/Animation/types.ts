@@ -182,10 +182,48 @@ export interface AnimationOptions {
    * choreograph animations across multiple blocks (e.g. one `each` per word
    * in a headline).
    *
+   * Applies to both enter and exit unless narrowed by
+   * {@link enterGroup} / {@link exitGroup}.
+   *
    * @see {@link ./groups.ts}
    */
-  group?: AnimationGroup;
+  group?: AnimationGroupRef;
+
+  /**
+   * Enter-only group override. Takes precedence over {@link group} for the
+   * enter animation only.
+   *
+   * @see {@link AnimationGroupRef} for the effect-form that lets a stable
+   * `AnimationConfigCtx` point at a group that rotates over time (e.g.
+   * the router's per-nav `OutletCtx.enter`).
+   */
+  enterGroup?: AnimationGroupRef;
+
+  /**
+   * Exit-only group override. Takes precedence over {@link group} for the
+   * exit animation only.
+   *
+   * @see {@link AnimationGroupRef}
+   */
+  exitGroup?: AnimationGroupRef;
 }
+
+/**
+ * Where an animation reads its `group` / `enterGroup` / `exitGroup` from.
+ *
+ * - A plain `AnimationGroup` — resolved once at animation-fire time.
+ *   Typical when the caller creates the group (`Animation.sequence(3)`)
+ *   and hands it in directly.
+ * - An `Effect<AnimationGroup | undefined>` — resolved fresh at
+ *   animation-fire time. The effect form is what lets a stable
+ *   `AnimationConfigCtx` provision point at a group that rotates over
+ *   time (e.g. the router's per-nav `OutletCtx.enter`, read through a
+ *   `Ref`) without freezing at Ctx-provision time. `undefined` means
+ *   "no group active for this fire" and falls through to the next
+ *   override in the `enterGroup ?? group` chain.
+ */
+export type AnimationGroupRef =
+  AnimationGroup | Effect.Effect<AnimationGroup | undefined>;
 
 /**
  * Subset of {@link AnimationOptions} covering only the enter lifecycle.

@@ -26,7 +26,7 @@ export type ScrollBehavior =
   "top" | "preserve" | ((from: string, to: string) => Effect.Effect<void>);
 
 /**
- * Walk up from `el`, returning the first ancestor whose vertical
+ * Walk up from `el`, returning the first HTML ancestor whose vertical
  * overflow can actually scroll (`overflow-y: auto|scroll` AND
  * `scrollHeight > clientHeight`). Returns `null` when nothing
  * scrollable is found on the way up — the caller then falls back to
@@ -38,17 +38,24 @@ export type ScrollBehavior =
  * didn't, an outer `overflow: auto` shell with a currently-short child
  * would shadow the real page scroller further up the tree.
  *
- * Internal.
+ * Return is narrowed to `HTMLElement` — SVGs use `viewBox` for their
+ * internal coordinate space, not CSS overflow, so an ancestor SVG is
+ * never a real scroll container.
+ *
+ * Exported so `OutletCtx.scrollContainer` can reuse it — same walk,
+ * one implementation.
  */
-const findScrollRoot = (el: Element): Element | null => {
+export const findScrollRoot = (el: Element): HTMLElement | null => {
   let cur: Element | null = el;
   while (cur && cur !== document.scrollingElement) {
-    const style = getComputedStyle(cur);
-    if (
-      (style.overflowY === "auto" || style.overflowY === "scroll") &&
-      cur.scrollHeight > cur.clientHeight
-    ) {
-      return cur;
+    if (cur instanceof HTMLElement) {
+      const style = getComputedStyle(cur);
+      if (
+        (style.overflowY === "auto" || style.overflowY === "scroll") &&
+        cur.scrollHeight > cur.clientHeight
+      ) {
+        return cur;
+      }
     }
     cur = cur.parentElement;
   }
