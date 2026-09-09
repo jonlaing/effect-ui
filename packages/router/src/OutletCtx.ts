@@ -52,7 +52,7 @@
  * @module
  */
 
-import { Context } from "effect";
+import { Context, type Effect } from "effect";
 
 import type { AnimationGroup } from "@stax-ui/dom";
 
@@ -85,12 +85,23 @@ export interface OutletCtxService {
    * element, or `null` if none was found on the walk up (the app is
    * window-scrolled, so `window.scrollTo` is the right fallback).
    *
-   * Function-typed because the outlet's container isn't populated
-   * during the initial reconcile pass — reading via
-   * `outlet.scrollContainer()` at scroll-behavior time (which is
-   * always post-mount) gets the resolved element.
+   * Effect-typed rather than a plain ref, to match the shape of
+   * `AnimationHook`'s `Effect.Effect<HTMLElement>` — the outlet's
+   * container isn't populated during the initial reconcile pass, so
+   * wrapping the walk in an Effect gets it resolved at consumption
+   * time (which is always post-mount for a scroll-behavior callback).
+   *
+   * ```ts
+   * Router.scrollBehavior((from, to) =>
+   *   Effect.gen(function* () {
+   *     const outlet = yield* OutletCtx;
+   *     const target = yield* outlet.scrollContainer;
+   *     (target ?? window).scrollTo({ top: 0, left: 0, behavior: "instant" });
+   *   }),
+   * );
+   * ```
    */
-  readonly scrollContainer: () => Element | null;
+  readonly scrollContainer: Effect.Effect<HTMLElement | SVGElement | null>;
 }
 
 /**

@@ -452,7 +452,7 @@ describe("Outlet", () => {
   });
 
   describe("OutletCtx", () => {
-    it("provides distinct exit + enter AnimationGroups per rendered route, plus a scrollContainer getter", async () => {
+    it("provides distinct exit + enter AnimationGroups per rendered route, plus a scrollContainer Effect", async () => {
       const { OutletCtx } = await import("./OutletCtx.js");
 
       interface CtxSample {
@@ -516,9 +516,18 @@ describe("Outlet", () => {
       expect((home!.exit as { _tag: string })._tag).toBe("AnimationGroup");
       expect((home!.enter as { _tag: string })._tag).toBe("AnimationGroup");
 
-      // scrollContainer is exposed as a function so it can be resolved
-      // at scroll-behavior time (post-mount).
-      expect(typeof home!.scrollContainer).toBe("function");
+      // scrollContainer is an Effect (matches AnimationHook's
+      // `Effect<HTMLElement>` shape) — resolved at consumption time
+      // so it sees the post-mount container even if read during the
+      // initial render pass.
+      const target = await Effect.runPromise(
+        home!.scrollContainer as Effect.Effect<HTMLElement | SVGElement | null>,
+      );
+      // In jsdom with no styled overflow ancestors, the walk finds
+      // nothing — the value is `null` (caller falls back to
+      // window.scrollTo). Verifying it resolved without throwing is
+      // the wiring check.
+      expect(target).toBeNull();
     });
 
     it("wires the outlet's own slot animation into OutletCtx.enter (via AnimationConfigCtx factory)", async () => {

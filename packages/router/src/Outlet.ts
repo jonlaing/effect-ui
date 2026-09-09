@@ -339,19 +339,25 @@ export const Outlet = <
           return fresh;
         });
 
-      // Cached scroll-container walk. First call walks; subsequent
-      // calls return the cached element. Reset on `null` so an outlet
-      // remounted in a new place recomputes.
-      let cachedScrollContainer: Element | null = null;
-      let cachedScrollContainerFor: Element | null = null;
-      const getScrollContainer = (): Element | null => {
-        if (!container) return null;
-        if (cachedScrollContainerFor === container)
+      // Cached scroll-container walk. First read walks; subsequent
+      // reads return the cached element. Effect-typed to match the
+      // `AnimationHook`'s `Effect<HTMLElement>` shape — an
+      // Effect-returning ref that resolves at consumption time so
+      // consumers don't see `null` just because the outlet's
+      // container hadn't been assigned yet during the initial
+      // reconcile.
+      let cachedScrollContainer: HTMLElement | SVGElement | null = null;
+      let cachedScrollContainerFor: HTMLElement | SVGElement | null = null;
+      const scrollContainer: Effect.Effect<HTMLElement | SVGElement | null> =
+        Effect.sync(() => {
+          if (!container) return null;
+          if (cachedScrollContainerFor === container)
+            return cachedScrollContainer;
+          cachedScrollContainerFor = container;
+          cachedScrollContainer = findScrollRoot(container) as
+            HTMLElement | SVGElement | null;
           return cachedScrollContainer;
-        cachedScrollContainerFor = container;
-        cachedScrollContainer = findScrollRoot(container);
-        return cachedScrollContainer;
-      };
+        });
 
       // Scroll behavior subscription: apply the effective ScrollBehavior for
       // the target route on push/replace navigations. Popstate is skipped —
@@ -389,7 +395,7 @@ export const Outlet = <
             Effect.provideService(OutletCtx, {
               exit: t.exit,
               enter: t.enter,
-              scrollContainer: getScrollContainer,
+              scrollContainer,
             }),
           );
         }),
@@ -420,7 +426,7 @@ export const Outlet = <
               Effect.provideService(OutletCtx, {
                 exit: t.exit,
                 enter: t.enter,
-                scrollContainer: getScrollContainer,
+                scrollContainer,
               }),
             );
           }),

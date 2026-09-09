@@ -19,10 +19,8 @@ Router.scrollBehavior((from, to) =>
   Effect.gen(function* () {
     const outlet = yield* OutletCtx;
     yield* Animation.awaitDone(outlet.exit);
-    const target = outlet.scrollContainer();
-    target
-      ? target.scrollTo({ top: 0, left: 0, behavior: "instant" })
-      : window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    const target = yield* outlet.scrollContainer;
+    (target ?? window).scrollTo({ top: 0, left: 0, behavior: "instant" });
   }),
 );
 
@@ -46,11 +44,14 @@ const HomePage = () => Effect.gen(function* () {
   nav, regardless of which subscriber's fiber runs first. Late
   completions from the outgoing nav still resolve against the group
   they registered with.
-- **`scrollContainer` is a function** (`() => Element | null`) because
-  the outlet's container element isn't populated during the initial
-  reconcile — resolving lazily at scroll-behavior time gives the
-  walker a real element to walk from. Cached after the first
-  successful walk.
+- **`scrollContainer` is an `Effect<HTMLElement | SVGElement | null>`** —
+  matches `AnimationHook`'s `Effect<HTMLElement>` shape for framework
+  consistency. Resolves at consumption time (via `yield*
+  outlet.scrollContainer`) so it sees the post-mount container even
+  if read during the initial render pass. Cached after the first
+  successful walk. `null` in the result — not `Effect.fail` — because
+  "no scrollable ancestor" is a legitimate window-scrolled layout,
+  not an error.
 - Wiring uses the new `AnimationOptions.enterGroup` / `.exitGroup`
   factory shape (see the `@stax-ui/dom` changeset) — the outlet's
   `AnimationConfigCtx` provision stays stable across the outlet's
