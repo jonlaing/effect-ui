@@ -531,13 +531,13 @@ describe("Outlet", () => {
       expect(target).toBe(window);
     });
 
-    it("wires the outlet's own slot animation into OutletCtx.enter (via AnimationConfigCtx factory)", async () => {
-      // Sanity that the enterGroup factory on the ambient
-      // AnimationConfigCtx points at the current nav's `OutletCtx.enter`.
-      // We can't drive real CSS transitions in jsdom, so we assert the
-      // wiring by reading the resolved animation config from within a
-      // route render and comparing its enterGroup() result to
-      // outlet.enter.
+    it("wires the outlet's own slot animation into OutletCtx.enter (via AnimationConfigCtx group refs)", async () => {
+      // Sanity that the enterGroup ref on the ambient
+      // AnimationConfigCtx resolves to the current nav's
+      // `OutletCtx.enter`. We can't drive real CSS transitions in
+      // jsdom, so we assert the wiring by reading the resolved
+      // animation config from within a route render and comparing
+      // the ref's resolved value to outlet.enter.
       const { OutletCtx } = await import("./OutletCtx.js");
       const { AnimationConfigCtx } = await import("@stax-ui/dom");
 
@@ -549,12 +549,14 @@ describe("Outlet", () => {
           const outlet = yield* OutletCtx;
           const cfgOpt = yield* Effect.serviceOption(AnimationConfigCtx);
           const cfg = cfgOpt._tag === "Some" ? cfgOpt.value : null;
-          const enterFactory = cfg?.single?.enterGroup;
-          const exitFactory = cfg?.single?.exitGroup;
-          const resolvedEnter =
-            typeof enterFactory === "function" ? enterFactory() : enterFactory;
-          const resolvedExit =
-            typeof exitFactory === "function" ? exitFactory() : exitFactory;
+          const enterRef = cfg?.single?.enterGroup;
+          const exitRef = cfg?.single?.exitGroup;
+          const resolvedEnter = Effect.isEffect(enterRef)
+            ? yield* enterRef
+            : enterRef;
+          const resolvedExit = Effect.isEffect(exitRef)
+            ? yield* exitRef
+            : exitRef;
           sameEnterGroup = resolvedEnter === outlet.enter;
           sameExitGroup = resolvedExit === outlet.exit;
           return yield* $.div({ class: "probe" }, $.of("probe"));

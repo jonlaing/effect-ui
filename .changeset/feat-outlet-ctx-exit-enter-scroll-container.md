@@ -7,11 +7,12 @@ feat(router): `OutletCtx` grows to `{ exit, enter, scrollContainer }`
 Per the follow-up flagged in #148 — replaces the single `transition`
 group with independent per-nav `exit` and `enter` `AnimationGroup`s,
 wired into the outlet's own slot animation via the new
-`AnimationConfigCtx.single.enterGroup` / `.exitGroup` factories, so
-`Animation.awaitDone(exit)` / `awaitDone(enter)` gate on the actual
-lifecycle rather than the empty-group fast-path. Plus a
-`scrollContainer` getter that reuses `ScrollBehavior`'s walker so
-custom scroll behaviors don't have to re-implement it.
+`AnimationConfigCtx.single.enterGroup` / `.exitGroup` group refs (see
+the `@stax-ui/dom` changeset), so `Animation.awaitDone(exit)` /
+`awaitDone(enter)` gate on the actual lifecycle rather than the
+empty-group fast-path. Plus a `scrollContainer` accessor that reuses
+`ScrollBehavior`'s walker so custom scroll behaviors don't have to
+re-implement it.
 
 ```ts
 // Scroll waits for the outlet's EXIT to complete
@@ -41,12 +42,12 @@ const HomePage = () => Effect.gen(function* () {
 - `exit` and `enter` are **independent groups** — they run in parallel
   by default, matching the current outlet behavior. Sequence them
   yourself in code if you want a serial exit → enter timeline.
-- **Fresh per nav.** A shared per-key cache (current + previous) means
-  the scroll subscription, the slot renderer, and the outlet's own
-  slot animation all resolve to the same group handles for a given
-  nav, regardless of which subscriber's fiber runs first. Late
-  completions from the outgoing nav still resolve against the group
-  they registered with.
+- **Fresh per nav.** The pair is stored in a `SynchronizedRef` so all
+  three callers — scroll subscription, slot renderer, and the ambient
+  `AnimationConfigCtx` refs — atomically get the same handles for a
+  given key. Current + previous entries are retained, so a late exit
+  completion from the outgoing nav still resolves against the group
+  it registered with, not the incoming nav's fresh pair.
 - **`scrollContainer` is an `Effect<HTMLElement | Window>`** — matches
   `AnimationHook`'s `Effect<HTMLElement>` shape and integrates with
   the `Element` combinators. Resolves at consumption time so it sees
@@ -58,9 +59,10 @@ const HomePage = () => Effect.gen(function* () {
   excluded from the walk since they use `viewBox`, not CSS overflow,
   for their internal coordinate space.
 - Wiring uses the new `AnimationOptions.enterGroup` / `.exitGroup`
-  factory shape (see the `@stax-ui/dom` changeset) — the outlet's
-  `AnimationConfigCtx` provision stays stable across the outlet's
-  lifetime while the group pair rotates per nav.
+  `AnimationGroupRef` shape (see the `@stax-ui/dom` changeset) — the
+  outlet's `AnimationConfigCtx` provision stays stable across the
+  outlet's lifetime while the group pair rotates per nav via
+  `Ref.get(transitionRef)`.
 
 ### Breaking change
 

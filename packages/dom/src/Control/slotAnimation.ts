@@ -29,6 +29,7 @@ import { prefersReducedMotion } from "../Animation/helpers.js";
 import {
   runEnterAnimation,
   runExitAnimation,
+  type AnimationGroupRef,
   type ListAnimationOptions,
   type MoveAnimation,
   type MoveDelta,
@@ -144,11 +145,13 @@ export const forkSlotEnter = (
     const { animate } = resolved;
     // Resolve the enter-side group: prefer `enterGroup` (a per-nav
     // override handed in by e.g. `OutletCtx`), fall back to `group`.
-    // Factory-valued overrides are called at animation-fire time so
+    // Effect-valued refs are read at animation-fire time so
     // late-binding schemes (a stable AnimationConfigCtx pointing at
     // per-nav Refs) work without freezing the group at Ctx-provision
     // time.
-    const grp = resolveGroup(animate.enterGroup) ?? animate.group;
+    const grp =
+      (yield* resolveGroup(animate.enterGroup)) ??
+      (yield* resolveGroup(animate.group));
     if (grp) {
       _register(grp);
     }
@@ -553,7 +556,8 @@ export const forkSlotRemoval = (
         // scroll behavior (etc.) actually gates on the exit
         // animation completing.
         const grp =
-          resolveGroup(resolved.animate.exitGroup) ?? resolved.animate.group;
+          (yield* resolveGroup(resolved.animate.exitGroup)) ??
+          (yield* resolveGroup(resolved.animate.group));
         if (grp) {
           _register(grp);
         }
@@ -568,11 +572,16 @@ export const forkSlotRemoval = (
   return Effect.asVoid(Effect.forkScoped(body));
 };
 
-// Resolve a group override that may be either a value or a factory
-// returning one. Factory form is what lets `AnimationConfigCtx` be
-// stable at provision time while the group it points at (e.g. the
-// current-nav `OutletCtx.enter`) rotates.
+// Resolve a group ref that may be either a value or an
+// `Effect<AnimationGroup | undefined>`. The Effect form is what lets
+// a stable `AnimationConfigCtx` point at a group that rotates over
+// time (e.g. the current-nav `OutletCtx.enter`, read through a Ref)
+// without freezing at Ctx-provision time.
 const resolveGroup = (
-  override: AnimationGroup | (() => AnimationGroup | undefined) | undefined,
-): AnimationGroup | undefined =>
-  typeof override === "function" ? override() : override;
+  ref: AnimationGroupRef | undefined,
+): Effect.Effect<AnimationGroup | undefined> => {
+  if (ref === undefined) return Effect.succeed(undefined);
+  return Effect.isEffect(ref)
+    ? (ref as Effect.Effect<AnimationGroup | undefined>)
+    : Effect.succeed(ref);
+};

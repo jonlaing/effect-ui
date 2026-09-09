@@ -187,24 +187,43 @@ export interface AnimationOptions {
    *
    * @see {@link ./groups.ts}
    */
-  group?: AnimationGroup;
+  group?: AnimationGroupRef;
 
   /**
    * Enter-only group override. Takes precedence over {@link group} for the
-   * enter animation only. May be a factory `() => AnimationGroup | undefined`
-   * so ambient contexts (like the router's per-nav `OutletCtx.enter`) can
-   * hand off a fresh group each time the animation fires rather than being
-   * frozen at `AnimationConfigCtx` provision time.
+   * enter animation only.
+   *
+   * @see {@link AnimationGroupRef} for the effect-form that lets a stable
+   * `AnimationConfigCtx` point at a group that rotates over time (e.g.
+   * the router's per-nav `OutletCtx.enter`).
    */
-  enterGroup?: AnimationGroup | (() => AnimationGroup | undefined);
+  enterGroup?: AnimationGroupRef;
 
   /**
    * Exit-only group override. Takes precedence over {@link group} for the
-   * exit animation only. Same factory-or-value shape as {@link enterGroup}
-   * for the per-nav dynamic-group case.
+   * exit animation only.
+   *
+   * @see {@link AnimationGroupRef}
    */
-  exitGroup?: AnimationGroup | (() => AnimationGroup | undefined);
+  exitGroup?: AnimationGroupRef;
 }
+
+/**
+ * Where an animation reads its `group` / `enterGroup` / `exitGroup` from.
+ *
+ * - A plain `AnimationGroup` — resolved once at animation-fire time.
+ *   Typical when the caller creates the group (`Animation.sequence(3)`)
+ *   and hands it in directly.
+ * - An `Effect<AnimationGroup | undefined>` — resolved fresh at
+ *   animation-fire time. The effect form is what lets a stable
+ *   `AnimationConfigCtx` provision point at a group that rotates over
+ *   time (e.g. the router's per-nav `OutletCtx.enter`, read through a
+ *   `Ref`) without freezing at Ctx-provision time. `undefined` means
+ *   "no group active for this fire" and falls through to the next
+ *   override in the `enterGroup ?? group` chain.
+ */
+export type AnimationGroupRef =
+  AnimationGroup | Effect.Effect<AnimationGroup | undefined>;
 
 /**
  * Subset of {@link AnimationOptions} covering only the enter lifecycle.
